@@ -69,6 +69,11 @@ export type PongEvent = {
 export type UserAudioEvent = {
   user_audio_chunk: string;
 };
+export type UserFeedbackEvent = {
+  type: "feedback";
+  feedback: "like" | "dislike";
+  event_id: number;
+};
 export type ClientToolResultEvent = {
   type: "client_tool_result";
   tool_call_id: string;
@@ -95,6 +100,7 @@ export type OutgoingSocketEvent =
   | PongEvent
   | UserAudioEvent
   | InitiationClientDataEvent
+  | UserFeedbackEvent
   | ClientToolResultEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {

@@ -2,7 +2,7 @@
 
 An SDK library for using ElevenLabs in React based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
 
-> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.   
+> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.
 
 ![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
 [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
@@ -35,7 +35,7 @@ const conversation = useConversation();
 ```
 
 Note that Conversational AI requires microphone access.
-Consider explaining and allowing access in your apps UI before the Conversation kicks off. 
+Consider explaining and allowing access in your apps UI before the Conversation kicks off.
 
 ```js
 // call after explaning to the user why the microphone access is needed
@@ -47,15 +47,17 @@ await navigator.mediaDevices.getUserMedia();
 The Conversation can be initialized with certain options. Those are all optional.
 
 ```tsx
-const conversation = useConversation({/* options object */});
+const conversation = useConversation({
+  /* options object */
+});
 ```
 
-* **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
-* **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
-* **onConnect** - handler called when the conversation websocket connection is established.  
-* **onDisconnect** - handler called when the conversation websocket connection is ended.
-* **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
-* **onError** - handler called when a error is encountered.
+- **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
+- **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
+- **onConnect** - handler called when the conversation websocket connection is established.
+- **onDisconnect** - handler called when the conversation websocket connection is ended.
+- **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
+- **onError** - handler called when a error is encountered.
 
 ##### Client Tools
 
@@ -64,14 +66,14 @@ Client tools are a way to enabled agent to invoke client-side functionality. Thi
 Client tools definition is an object of functions, and needs to be identical with your configuration within the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
 
 ```ts
-const conversation = useConversation({ 
+const conversation = useConversation({
   clientTools: {
-    displayMessage: (parameters: {text: string}) => {
+    displayMessage: (parameters: { text: string }) => {
       alert(text);
-      
+
       return "Message displayed";
-    } 
-  }
+    },
+  },
 });
 ```
 
@@ -96,7 +98,7 @@ const conversation = useConversation({
       language: "en",
     },
     tts: {
-      voiceId: "custom voice id"
+      voiceId: "custom voice id",
     },
   },
 });
@@ -117,7 +119,7 @@ const conversationId = await conversation.startSession({ url });
 ```
 
 For the public agents, define `agentId` - no signed link generation necessary.
- 
+
 In case the conversation requires authorization, use the REST API to generate signed links. Use the signed link as a `url` parameter.
 
 `startSession` returns promise resolving to `conversationId`. The value is a globally unique conversation ID you can use to identify separate conversations.
@@ -125,7 +127,7 @@ In case the conversation requires authorization, use the REST API to generate si
 ```js
 // your server
 const requestHeaders: HeadersInit = new Headers();
-requestHeaders.set("xi-api-key", process.env.XI_API_KEY); // use your ElevenLabs API key 
+requestHeaders.set("xi-api-key", process.env.XI_API_KEY); // use your ElevenLabs API key
 
 const response = await fetch(
     "https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id={{agent id created through ElevenLabs UI}}",
@@ -143,12 +145,26 @@ const body = await response.json();
 const url = body.signed_url; // use this URL for startConversation method.
 ```
 
-##### endConversation
+##### endSession
 
 A method to manually end the conversation. The method will end the conversation and disconnect from websocket.
 
 ```js
 await conversation.endSession();
+```
+
+##### sendFeedback
+
+A method for sending binary feedback to the agent.
+The method accepts a boolean value, where `true` represents positive feedback and `false` negative feedback.
+Feedback is always correlated to the most recent agent response and can be sent only once per response.
+Check `canSendFeedback` state to see if feedback can be sent in the given moment.
+
+```js
+const { sendFeedback } = useConversation();
+
+sendFeedback(true); // positive feedback
+sendFeedback(false); // negative feedback
 ```
 
 ##### setVolume
@@ -161,30 +177,40 @@ await conversation.setVolume({ volume: 0.5 });
 
 ##### status
 
-A React state containing the current status of the conversation. 
+A React state containing the current status of the conversation.
 
 ```js
 const { status } = useConversation();
 console.log(status); // "connected" or "disconnected"
 ```
 
-##### mode
+##### isSpeaking
 
-A React state containing the information of whether the agent is currently speaking. 
-This is helpful for indicating the mode in your UI. 
+A React state containing the information of whether the agent is currently speaking.
+This is helpful for indicating the mode in your UI.
 
 ```js
 const { isSpeaking } = useConversation();
 console.log(isSpeaking); // boolean
 ```
 
+##### canSendFeedback
+
+A React state representing whether the user can send feedback to the agent.
+When false, calls to `sendFeedback` will be ignored.
+This is helpful to conditionally show the feedback button in your UI.
+
+```js
+const { canSendFeedback } = useConversation();
+console.log(canSendFeedback); // boolean
+```
+
 ## Development
 
-Please, refer to the README.md file in the root of this repository. 
+Please, refer to the README.md file in the root of this repository.
 
-## Contributing 
+## Contributing
 
 Please, create an issue first to discuss the proposed changes. Any contributions are welcome!
 
 Remember, if merged, your code will be used as part of a MIT licensed project. By submitting a Pull Request, you are giving your consent for your code to be integrated into this library.
-
