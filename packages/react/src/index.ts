@@ -27,6 +27,7 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
+  const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
 
   useEffect(() => {
@@ -55,6 +56,9 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
           },
           onStatusChange: ({ status }) => {
             setStatus(status);
+          },
+          onCanSendFeedbackChange: ({ canSendFeedback }) => {
+            setCanSendFeedback(canSendFeedback);
           },
         } as Options);
 
@@ -86,7 +90,11 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     getOutputVolume: () => {
       return conversationRef.current?.getOutputVolume() ?? 0;
     },
+    sendFeedback: (like: boolean) => {
+      conversationRef.current?.sendFeedback(like);
+    },
     status,
+    canSendFeedback,
     isSpeaking: mode === "speaking",
   };
 }

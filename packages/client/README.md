@@ -107,6 +107,7 @@ The options passed to `startSession` can also be used to register optional callb
 - **onError** - handler called when an error is encountered.
 - **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
 - **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
+- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
 
 #### Client Tools
 
@@ -115,25 +116,25 @@ Client tools are a way to enabled agent to invoke client-side functionality. Thi
 Client tools definition is an object of functions, and needs to be identical with your configuration within the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
 
 ```ts
-const conversation = await Conversation.startSession({ 
+const conversation = await Conversation.startSession({
   clientTools: {
-    displayMessage: async (parameters: {text: string}) => {
+    displayMessage: async (parameters: { text: string }) => {
       alert(text);
-      
+
       return "Message displayed";
-    } 
-  }
+    },
+  },
 });
 ```
 
-In case function returns a value, it will be passed back to the agent as a response. 
+In case function returns a value, it will be passed back to the agent as a response.
 Note that the tool needs to be explicitly set to be blocking conversation in ElevenLabs UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
 
 #### Conversation overrides
 
 You may choose to override various settings of the conversation and set them dynamically based other user interactions.
-We support overriding various settings. 
-These settings are optional and can be used to customize the conversation experience. 
+We support overriding various settings.
+These settings are optional and can be used to customize the conversation experience.
 The following settings are available:
 
 ```ts
@@ -147,7 +148,7 @@ const conversation = await Conversation.startSession({
       language: "en",
     },
     tts: {
-      voiceId: "custom voice id"
+      voiceId: "custom voice id",
     },
   },
 });
@@ -165,6 +166,17 @@ Afterwards the conversation instance will be unusable and can be safely discarde
 
 ```js
 await conversation.endSession();
+```
+
+##### sendFeedback
+
+A method for sending binary feedback to the agent.
+The method accepts a boolean value, where `true` represents positive feedback and `false` negative feedback.
+Feedback is always correlated to the most recent agent response and can be sent only once per response.
+You can listen to `onCanSendFeedbackChange` to know if feedback can be sent at the given moment.
+
+```js
+conversation.sendFeedback(true);
 ```
 
 ##### getId
