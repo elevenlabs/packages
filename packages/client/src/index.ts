@@ -405,7 +405,7 @@ export class Conversation {
 
     this.connection.sendMessage({
       type: "feedback",
-      feedback: like ? "like" : "dislike",
+      score: like ? "like" : "dislike",
       event_id: this.currentEventId,
     });
     this.lastFeedbackEventId = this.currentEventId;

@@ -71,7 +71,7 @@ export type UserAudioEvent = {
 };
 export type UserFeedbackEvent = {
   type: "feedback";
-  feedback: "like" | "dislike";
+  score: "like" | "dislike";
   event_id: number;
 };
 export type ClientToolResultEvent = {
