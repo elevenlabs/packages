@@ -72,7 +72,7 @@ export type UserAudioEvent = {
 export type ClientToolResultEvent = {
   type: "client_tool_result";
   tool_call_id: string;
-  response: any;
+  result: any;
   is_error: boolean;
 };
 export type InitiationClientDataEvent = {

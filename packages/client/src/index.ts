@@ -195,12 +195,12 @@ export class Conversation {
             try {
               const result = await this.options.clientTools[
                 parsedEvent.client_tool_call.tool_name
-              ](parsedEvent.client_tool_call.parameters);
+              ](parsedEvent.client_tool_call.parameters) ?? "Client tool execution successful."; // default client-tool call response
 
               this.connection.sendMessage({
                 type: "client_tool_result",
                 tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-                response: result,
+                result: result,
                 is_error: false,
               });
             } catch (e) {
@@ -214,8 +214,7 @@ export class Conversation {
               this.connection.sendMessage({
                 type: "client_tool_result",
                 tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-                response:
-                  "Client tool execution failed: " + (e as Error)?.message,
+                result: "Client tool execution failed: " + (e as Error)?.message,
                 is_error: true,
               });
             }
@@ -240,7 +239,7 @@ export class Conversation {
           this.connection.sendMessage({
             type: "client_tool_result",
             tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-            response: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
+            result: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
             is_error: true,
           });
 
