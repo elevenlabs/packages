@@ -8,7 +8,8 @@ import {
   Status,
   ClientToolsConfig,
 } from "@11labs/client";
-export type { Role, Mode, Status } from "@11labs/client";
+export type { Role, Mode, Status, SessionConfig } from "@11labs/client";
+export { postOverallFeedback } from "@11labs/client";
 
 export type HookOptions = Partial<
   SessionConfig & HookCallbacks & ClientToolsConfig
