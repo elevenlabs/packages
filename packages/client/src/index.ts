@@ -41,8 +41,6 @@ export type Callbacks = {
   ) => void;
 };
 
-const DEFAULT_SAMPLE_RATE = 16000;
-
 const defaultClientTools = { clientTools: {} };
 const defaultCallbacks: Callbacks = {
   onConnect: () => {},
@@ -71,9 +69,11 @@ export class Conversation {
     let output: Output | null = null;
 
     try {
-      input = await Input.create(DEFAULT_SAMPLE_RATE);
       connection = await Connection.create(options);
-      output = await Output.create(connection.sampleRate);
+      [input, output] = await Promise.all([
+        Input.create(connection.inputFormat),
+        Output.create(connection.outputFormat),
+      ]);
 
       return new Conversation(fullOptions, connection, input, output);
     } catch (error) {

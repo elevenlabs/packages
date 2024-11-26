@@ -1,7 +1,11 @@
 import { audioConcatProcessor } from "./audioConcatProcessor";
+import { FormatConfig } from "./connection";
 
 export class Output {
-  public static async create(sampleRate: number): Promise<Output> {
+  public static async create({
+    sampleRate,
+    format,
+  }: FormatConfig): Promise<Output> {
     let context: AudioContext | null = null;
     try {
       context = new AudioContext({ sampleRate });
@@ -11,6 +15,7 @@ export class Output {
       analyser.connect(context.destination);
       await context.audioWorklet.addModule(audioConcatProcessor);
       const worklet = new AudioWorkletNode(context, "audio-concat-processor");
+      worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 
       return new Output(context, analyser, gain, worklet);

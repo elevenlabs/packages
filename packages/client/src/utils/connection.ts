@@ -57,6 +57,10 @@ export type SessionConfig = {
   | { signedUrl: string; agentId?: undefined }
   | { agentId: string; signedUrl?: undefined }
 );
+export type FormatConfig = {
+  format: "pcm" | "ulaw";
+  sampleRate: number;
+};
 
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
@@ -130,12 +134,16 @@ export class Connection {
         );
       });
 
-      const conversationId = conversationConfig.conversation_id;
-      const sampleRate = parseInt(
-        conversationConfig.agent_output_audio_format.replace("pcm_", "")
-      );
+      const {
+        conversation_id,
+        agent_output_audio_format,
+        user_input_audio_format,
+      } = conversationConfig;
 
-      return new Connection(socket, conversationId, sampleRate);
+      const inputFormat = parseFormat(user_input_audio_format ?? "pcm_16000");
+      const outputFormat = parseFormat(agent_output_audio_format);
+
+      return new Connection(socket, conversation_id, inputFormat, outputFormat);
     } catch (error) {
       socket?.close();
       throw error;
@@ -145,7 +153,8 @@ export class Connection {
   private constructor(
     public readonly socket: WebSocket,
     public readonly conversationId: string,
-    public readonly sampleRate: number
+    public readonly inputFormat: FormatConfig,
+    public readonly outputFormat: FormatConfig
   ) {}
 
   public close() {
@@ -155,4 +164,21 @@ export class Connection {
   public sendMessage(message: OutgoingSocketEvent) {
     this.socket.send(JSON.stringify(message));
   }
+}
+
+function parseFormat(format: string): FormatConfig {
+  const [formatPart, sampleRatePart] = format.split("_");
+  if (!["pcm", "ulaw"].includes(formatPart)) {
+    throw new Error(`Invalid format: ${format}`);
+  }
+
+  const sampleRate = parseInt(sampleRatePart);
+  if (isNaN(sampleRate)) {
+    throw new Error(`Invalid sample rate: ${sampleRatePart}`);
+  }
+
+  return {
+    format: formatPart as FormatConfig["format"],
+    sampleRate,
+  };
 }

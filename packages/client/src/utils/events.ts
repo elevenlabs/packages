@@ -32,6 +32,7 @@ export type ConfigEvent = {
   conversation_initiation_metadata_event: {
     conversation_id: string;
     agent_output_audio_format: string;
+    user_input_audio_format?: string;
   };
 };
 export type PingEvent = {

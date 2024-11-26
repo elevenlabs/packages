@@ -1,10 +1,14 @@
 import { rawAudioProcessor } from "./rawAudioProcessor";
+import { FormatConfig } from "./connection";
 
 const LIBSAMPLERATE_JS =
   "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
 
 export class Input {
-  public static async create(sampleRate: number): Promise<Input> {
+  public static async create({
+    sampleRate,
+    format,
+  }: FormatConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -31,6 +35,7 @@ export class Input {
 
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "raw-audio-processor");
+      worklet.port.postMessage({ type: "setFormat", format, sampleRate });
 
       source.connect(analyser);
       analyser.connect(worklet);
