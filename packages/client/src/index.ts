@@ -96,8 +96,8 @@ export class Conversation {
   private inputFrequencyData?: Uint8Array;
   private outputFrequencyData?: Uint8Array;
   private volume: number = 1;
-  private currentEventId: number = 0;
-  private lastFeedbackEventId: number = 0;
+  private currentEventId: number = 1;
+  private lastFeedbackEventId: number = 1;
   private canSendFeedback: boolean = false;
 
   private constructor(
