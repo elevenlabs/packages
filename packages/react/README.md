@@ -35,11 +35,16 @@ const conversation = useConversation();
 ```
 
 Note that Conversational AI requires microphone access.
-Consider explaining and allowing access in your apps UI before the Conversation kicks off.
+Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
 // call after explaning to the user why the microphone access is needed
-await navigator.mediaDevices.getUserMedia();
+// handle errors and show appropriate message to the user
+try {
+  await navigator.mediaDevices.getUserMedia();
+} catch {
+  // handle error
+}
 ```
 
 #### Options

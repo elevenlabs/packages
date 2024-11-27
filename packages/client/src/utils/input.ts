@@ -13,6 +13,13 @@ export class Input {
     let inputStream: MediaStream | null = null;
 
     try {
+      // some browsers won't allow calling getSupportedConstraints
+      // before getting approval for microphone access
+      const preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+
       const supportsSampleRateConstraint =
         navigator.mediaDevices.getSupportedConstraints().sampleRate;
 

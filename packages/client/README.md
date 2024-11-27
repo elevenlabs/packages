@@ -34,11 +34,16 @@ First, initialize the Conversation instance:
 const conversation = await Conversation.startSession(options);
 ```
 
-This will kick off the websocket connection and start using microphone to communicate with the ElevenLabs Conversational AI agent. Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off:
+This will kick off the websocket connection and start using microphone to communicate with the ElevenLabs Conversational AI agent. Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
 // call after explaning to the user why the microphone access is needed
-await navigator.mediaDevices.getUserMedia();
+// handle errors and show appropriate message to the user
+try {
+  await navigator.mediaDevices.getUserMedia();
+} catch {
+  // handle error
+}
 ```
 
 #### Session configuration
