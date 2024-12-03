@@ -109,6 +109,16 @@ const conversation = useConversation({
 });
 ```
 
+#### Prefer Headphones for iOS Devices
+
+While this SDK leaves the choice of audio input/output device to the browser/system, iOS Safari seem to prefer the built-in speaker over headphones even when bluetooth device is in use. If you want to "force" the use of headphones on iOS devices when available, you can use the following option. Please, keep in mind that this is not guaranteed, since this functionality is not provided by the browser. System audio should be the default choice.
+
+```ts
+const conversation = useConversation({
+  preferHeadphonesForIosDevices: true,
+});
+```
+
 #### Methods
 
 ##### startConversation

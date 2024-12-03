@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
-import { Input } from "./utils/input";
+import { Input, InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { Connection, SessionConfig } from "./utils/connection";
 import {
@@ -18,7 +18,10 @@ export type Status =
   | "connected"
   | "disconnecting"
   | "disconnected";
-export type Options = SessionConfig & Callbacks & ClientToolsConfig;
+export type Options = SessionConfig &
+  Callbacks &
+  ClientToolsConfig &
+  InputConfig;
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
@@ -58,7 +61,10 @@ const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
 export class Conversation {
   public static async startSession(
-    options: SessionConfig & Partial<Callbacks> & Partial<ClientToolsConfig>
+    options: SessionConfig &
+      Partial<Callbacks> &
+      Partial<ClientToolsConfig> &
+      Partial<InputConfig>
   ): Promise<Conversation> {
     const fullOptions: Options = {
       ...defaultClientTools,
@@ -76,7 +82,10 @@ export class Conversation {
     try {
       connection = await Connection.create(options);
       [input, output] = await Promise.all([
-        Input.create(connection.inputFormat),
+        Input.create({
+          ...connection.inputFormat,
+          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+        }),
         Output.create(connection.outputFormat),
       ]);
 
@@ -209,9 +218,11 @@ export class Conversation {
             )
           ) {
             try {
-              const result = await this.options.clientTools[
-                parsedEvent.client_tool_call.tool_name
-              ](parsedEvent.client_tool_call.parameters) ?? "Client tool execution successful."; // default client-tool call response
+              const result =
+                (await this.options.clientTools[
+                  parsedEvent.client_tool_call.tool_name
+                ](parsedEvent.client_tool_call.parameters)) ??
+                "Client tool execution successful."; // default client-tool call response
 
               this.connection.sendMessage({
                 type: "client_tool_result",
@@ -230,7 +241,8 @@ export class Conversation {
               this.connection.sendMessage({
                 type: "client_tool_result",
                 tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-                result: "Client tool execution failed: " + (e as Error)?.message,
+                result:
+                  "Client tool execution failed: " + (e as Error)?.message,
                 is_error: true,
               });
             }
