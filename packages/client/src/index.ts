@@ -108,6 +108,7 @@ export class Conversation {
   private currentEventId: number = 1;
   private lastFeedbackEventId: number = 1;
   private canSendFeedback: boolean = false;
+  private isMuted: boolean = false;
 
   private constructor(
     private readonly options: Options,
@@ -132,6 +133,14 @@ export class Conversation {
     this.input.worklet.port.onmessage = this.onInputWorkletMessage;
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
     this.updateStatus("connected");
+  }
+
+  public muteMicrophone = () => {
+    this.isMuted = true;
+  }
+
+  public unmuteMicrophone = () => {
+    this.isMuted = false;
   }
 
   public endSession = async () => {
@@ -313,7 +322,7 @@ export class Conversation {
     // check if the sound was loud enough, so we don't send unnecessary chunks
     // then forward audio to websocket
     //if (maxVolume > 0.001) {
-    if (this.status === "connected") {
+    if (this.status === "connected" && !this.isMuted) {
       this.connection.sendMessage({
         user_audio_chunk: arrayBufferToBase64(rawAudioPcmData.buffer),
         //sample_rate: this.inputAudioContext?.inputSampleRate || this.inputSampleRate,
