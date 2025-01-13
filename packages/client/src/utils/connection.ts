@@ -53,6 +53,7 @@ export type SessionConfig = {
     };
   };
   customLlmExtraBody?: any;
+  dynamicVariables?: Record<string, string | number | boolean>;
 } & (
   | { signedUrl: string; agentId?: undefined }
   | { agentId: string; signedUrl?: undefined }
@@ -105,6 +106,10 @@ export class Connection {
 
             if (config.customLlmExtraBody) {
               overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
+            }
+
+            if (config.dynamicVariables) {
+              overridesEvent.dynamic_variables = config.dynamicVariables;
             }
 
             socket?.send(JSON.stringify(overridesEvent));
