@@ -81,6 +81,35 @@ export class Connection {
         protocols.push(`bearer.${config.authorization}`);
       }
       socket = new WebSocket(url, protocols);
+
+      socket.addEventListener("close", event => {
+        if (!event.wasClean) {
+          console.warn("Connection lost unexpectedly");
+          // Attempt to reconnect if connection was lost unexpectedly
+          const reconnect = async () => {
+            try {
+              console.warn("Reconnecting to the server");
+              socket = new WebSocket(url, protocols);
+            } catch (error) {
+              console.error("Failed to reconnect:", error);
+            }
+          };
+
+          // Add exponential backoff for reconnection attempts
+          let retryCount = 0;
+          const maxRetries = 5;
+          const backoff = () => {
+            if (retryCount < maxRetries) {
+              const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+              retryCount++;
+              setTimeout(reconnect, delay);
+            }
+          };
+
+          backoff();
+        }
+      });
+
       const conversationConfig = await new Promise<
         ConfigEvent["conversation_initiation_metadata_event"]
       >((resolve, reject) => {
