@@ -1,7 +1,12 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input, InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
-import { Connection, SessionConfig } from "./utils/connection";
+import {
+  Connection,
+  DisconnectionDetails,
+  OnDisconnectCallback,
+  SessionConfig,
+} from "./utils/connection";
 import {
   ClientToolCallEvent,
   isValidSocketEvent,
@@ -9,8 +14,7 @@ import {
 } from "./utils/events";
 
 export type { IncomingSocketEvent } from "./utils/events";
-export type { SessionConfig } from "./utils/connection";
-
+export type { SessionConfig, DisconnectionDetails } from "./utils/connection";
 export type Role = "user" | "ai";
 export type Mode = "speaking" | "listening";
 export type Status =
@@ -34,7 +38,7 @@ export type Callbacks = {
   onConnect: (props: { conversationId: string }) => void;
   // internal debug events, not to be used
   onDebug: (props: any) => void;
-  onDisconnect: () => void;
+  onDisconnect: OnDisconnectCallback;
   onError: (message: string, context?: any) => void;
   onMessage: (props: { message: string; source: Role }) => void;
   onModeChange: (prop: { mode: Mode }) => void;
@@ -117,16 +121,9 @@ export class Conversation {
   ) {
     this.options.onConnect({ conversationId: connection.conversationId });
 
+    this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.socket.addEventListener("message", event => {
       this.onEvent(event);
-    });
-    this.connection.socket.addEventListener("error", event => {
-      this.updateStatus("disconnected");
-      this.onError("Socket error", event);
-    });
-    this.connection.socket.addEventListener("close", () => {
-      this.updateStatus("disconnected");
-      this.options.onDisconnect();
     });
 
     this.input.worklet.port.onmessage = this.onInputWorkletMessage;
@@ -134,8 +131,10 @@ export class Conversation {
     this.updateStatus("connected");
   }
 
-  public endSession = async () => {
-    if (this.status !== "connected") return;
+  public endSession = () => this.endSessionWithDetails({ reason: "user" });
+
+  private endSessionWithDetails = async (details: DisconnectionDetails) => {
+    if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
 
     this.connection.close();
@@ -143,6 +142,7 @@ export class Conversation {
     await this.output.close();
 
     this.updateStatus("disconnected");
+    this.options.onDisconnect(details);
   };
 
   private updateMode = (mode: Mode) => {
@@ -375,6 +375,8 @@ export class Conversation {
   };
 
   public getId = () => this.connection.conversationId;
+
+  public isOpen = () => this.status === "connected";
 
   public setVolume = ({ volume }: { volume: number }) => {
     this.volume = volume;

@@ -9,7 +9,13 @@ import {
   ClientToolsConfig,
 } from "@11labs/client";
 import { InputConfig } from "@11labs/client/dist/utils/input";
-export type { Role, Mode, Status, SessionConfig } from "@11labs/client";
+export type {
+  Role,
+  Mode,
+  Status,
+  SessionConfig,
+  DisconnectionDetails,
+} from "@11labs/client";
 export { postOverallFeedback } from "@11labs/client";
 
 export type HookOptions = Partial<
@@ -40,7 +46,7 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
 
   return {
     startSession: (async (options?: HookOptions) => {
-      if (conversationRef.current) {
+      if (conversationRef.current?.isOpen()) {
         return conversationRef.current.getId();
       }
 

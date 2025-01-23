@@ -62,6 +62,20 @@ export type FormatConfig = {
   format: "pcm" | "ulaw";
   sampleRate: number;
 };
+export type DisconnectionDetails =
+  | {
+      reason: "error";
+      message: string;
+      context: Event;
+    }
+  | {
+      reason: "agent";
+      context: CloseEvent;
+    }
+  | {
+      reason: "user";
+    };
+export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
@@ -116,7 +130,12 @@ export class Connection {
           },
           { once: true }
         );
-        socket!.addEventListener("error", reject);
+        socket!.addEventListener("error", event => {
+          // In case the error event is followed by a close event, we want the
+          // latter to be the one that rejects the promise as it contains more
+          // useful information.
+          setTimeout(() => reject(event), 0);
+        });
         socket!.addEventListener("close", reject);
         socket!.addEventListener(
           "message",
@@ -155,12 +174,45 @@ export class Connection {
     }
   }
 
+  private disconnectionDetails: DisconnectionDetails | null = null;
+  private onDisconnectCallback: OnDisconnectCallback | null = null;
+
   private constructor(
     public readonly socket: WebSocket,
     public readonly conversationId: string,
     public readonly inputFormat: FormatConfig,
     public readonly outputFormat: FormatConfig
-  ) {}
+  ) {
+    this.socket.addEventListener("error", event => {
+      // In case the error event is followed by a close event, we want the
+      // latter to be the one that disconnects the session as it contains more
+      // useful information.
+      setTimeout(
+        () =>
+          this.disconnect({
+            reason: "error",
+            message: "The connection was closed due to a socket error.",
+            context: event,
+          }),
+        0
+      );
+    });
+    this.socket.addEventListener("close", event => {
+      this.disconnect(
+        event.code === 1000
+          ? {
+              reason: "agent",
+              context: event,
+            }
+          : {
+              reason: "error",
+              message:
+                event.reason || "The connection was closed by the server.",
+              context: event,
+            }
+      );
+    });
+  }
 
   public close() {
     this.socket.close();
@@ -168,6 +220,20 @@ export class Connection {
 
   public sendMessage(message: OutgoingSocketEvent) {
     this.socket.send(JSON.stringify(message));
+  }
+
+  public onDisconnect(callback: OnDisconnectCallback) {
+    this.onDisconnectCallback = callback;
+    if (this.disconnectionDetails) {
+      callback(this.disconnectionDetails);
+    }
+  }
+
+  private disconnect(details: DisconnectionDetails) {
+    if (!this.disconnectionDetails) {
+      this.disconnectionDetails = details;
+      this.onDisconnectCallback?.(details);
+    }
   }
 }
 
