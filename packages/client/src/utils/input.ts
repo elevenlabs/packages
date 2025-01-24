@@ -39,13 +39,6 @@ export class Input {
         noiseSuppression: { ideal: true },
       };
 
-      // some browsers won't allow calling getSupportedConstraints or enumerateDevices
-      // before getting approval for microphone access
-      const preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-      preliminaryInputStream?.getTracks().forEach(track => track.stop());
-
       if (isIosDevice() && preferHeadphonesForIosDevices) {
         const availableDevices =
           await window.navigator.mediaDevices.enumerateDevices();

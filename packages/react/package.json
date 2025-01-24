@@ -1,6 +1,6 @@
 {
   "name": "@11labs/react",
-  "version": "0.0.6-beta.2",
+  "version": "0.0.6-beta.3",
   "description": "ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",

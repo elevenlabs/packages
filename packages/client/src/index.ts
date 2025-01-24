@@ -7,11 +7,7 @@ import {
   OnDisconnectCallback,
   SessionConfig,
 } from "./utils/connection";
-import {
-  ClientToolCallEvent,
-  isValidSocketEvent,
-  PingEvent,
-} from "./utils/events";
+import { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
 
 export type { IncomingSocketEvent } from "./utils/events";
 export type { SessionConfig, DisconnectionDetails } from "./utils/connection";
@@ -84,6 +80,13 @@ export class Conversation {
     let output: Output | null = null;
 
     try {
+      // some browsers won't allow calling getSupportedConstraints or enumerateDevices
+      // before getting approval for microphone access
+      const preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+
       connection = await Connection.create(options);
       [input, output] = await Promise.all([
         Input.create({
@@ -122,9 +125,7 @@ export class Conversation {
     this.options.onConnect({ conversationId: connection.conversationId });
 
     this.connection.onDisconnect(this.endSessionWithDetails);
-    this.connection.socket.addEventListener("message", event => {
-      this.onEvent(event);
-    });
+    this.connection.onMessage(this.onMessage);
 
     this.input.worklet.port.onmessage = this.onInputWorkletMessage;
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
@@ -167,142 +168,127 @@ export class Conversation {
     }
   };
 
-  private onEvent = async (event: MessageEvent) => {
-    try {
-      const parsedEvent = JSON.parse(event.data);
-
-      if (!isValidSocketEvent(parsedEvent)) {
-        return;
+  private onMessage = async (parsedEvent: IncomingSocketEvent) => {
+    switch (parsedEvent.type) {
+      case "interruption": {
+        if (parsedEvent.interruption_event) {
+          this.lastInterruptTimestamp = parsedEvent.interruption_event.event_id;
+        }
+        this.fadeOutAudio();
+        break;
       }
 
-      switch (parsedEvent.type) {
-        case "interruption": {
-          if (parsedEvent.interruption_event) {
-            this.lastInterruptTimestamp =
-              parsedEvent.interruption_event.event_id;
-          }
-          this.fadeOutAudio();
-          break;
-        }
+      case "agent_response": {
+        this.options.onMessage({
+          source: "ai",
+          message: parsedEvent.agent_response_event.agent_response,
+        });
+        break;
+      }
 
-        case "agent_response": {
-          this.options.onMessage({
-            source: "ai",
-            message: parsedEvent.agent_response_event.agent_response,
-          });
-          break;
-        }
+      case "user_transcript": {
+        this.options.onMessage({
+          source: "user",
+          message: parsedEvent.user_transcription_event.user_transcript,
+        });
+        break;
+      }
 
-        case "user_transcript": {
-          this.options.onMessage({
-            source: "user",
-            message: parsedEvent.user_transcription_event.user_transcript,
-          });
-          break;
-        }
+      case "internal_tentative_agent_response": {
+        this.options.onDebug({
+          type: "tentative_agent_response",
+          response:
+            parsedEvent.tentative_agent_response_internal_event
+              .tentative_agent_response,
+        });
+        break;
+      }
 
-        case "internal_tentative_agent_response": {
-          this.options.onDebug({
-            type: "tentative_agent_response",
-            response:
-              parsedEvent.tentative_agent_response_internal_event
-                .tentative_agent_response,
-          });
-          break;
-        }
+      case "client_tool_call": {
+        if (
+          this.options.clientTools.hasOwnProperty(
+            parsedEvent.client_tool_call.tool_name
+          )
+        ) {
+          try {
+            const result =
+              (await this.options.clientTools[
+                parsedEvent.client_tool_call.tool_name
+              ](parsedEvent.client_tool_call.parameters)) ??
+              "Client tool execution successful."; // default client-tool call response
 
-        case "client_tool_call": {
-          if (
-            this.options.clientTools.hasOwnProperty(
-              parsedEvent.client_tool_call.tool_name
-            )
-          ) {
-            try {
-              const result =
-                (await this.options.clientTools[
-                  parsedEvent.client_tool_call.tool_name
-                ](parsedEvent.client_tool_call.parameters)) ??
-                "Client tool execution successful."; // default client-tool call response
-
-              this.connection.sendMessage({
-                type: "client_tool_result",
-                tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-                result: result,
-                is_error: false,
-              });
-            } catch (e) {
-              this.onError(
-                "Client tool execution failed with following error: " +
-                  (e as Error)?.message,
-                {
-                  clientToolName: parsedEvent.client_tool_call.tool_name,
-                }
-              );
-              this.connection.sendMessage({
-                type: "client_tool_result",
-                tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-                result:
-                  "Client tool execution failed: " + (e as Error)?.message,
-                is_error: true,
-              });
-            }
-
-            break;
-          }
-
-          if (this.options.onUnhandledClientToolCall) {
-            this.options.onUnhandledClientToolCall(
-              parsedEvent.client_tool_call
+            this.connection.sendMessage({
+              type: "client_tool_result",
+              tool_call_id: parsedEvent.client_tool_call.tool_call_id,
+              result: result,
+              is_error: false,
+            });
+          } catch (e) {
+            this.onError(
+              "Client tool execution failed with following error: " +
+                (e as Error)?.message,
+              {
+                clientToolName: parsedEvent.client_tool_call.tool_name,
+              }
             );
-
-            break;
+            this.connection.sendMessage({
+              type: "client_tool_result",
+              tool_call_id: parsedEvent.client_tool_call.tool_call_id,
+              result: "Client tool execution failed: " + (e as Error)?.message,
+              is_error: true,
+            });
           }
 
-          this.onError(
-            `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
-            {
-              clientToolName: parsedEvent.client_tool_call.tool_name,
-            }
-          );
-          this.connection.sendMessage({
-            type: "client_tool_result",
-            tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-            result: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
-            is_error: true,
-          });
+          break;
+        }
+
+        if (this.options.onUnhandledClientToolCall) {
+          this.options.onUnhandledClientToolCall(parsedEvent.client_tool_call);
 
           break;
         }
 
-        case "audio": {
-          if (this.lastInterruptTimestamp <= parsedEvent.audio_event.event_id) {
-            this.addAudioBase64Chunk(parsedEvent.audio_event.audio_base_64);
-            this.currentEventId = parsedEvent.audio_event.event_id;
-            this.updateCanSendFeedback();
-            this.updateMode("speaking");
+        this.onError(
+          `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
+          {
+            clientToolName: parsedEvent.client_tool_call.tool_name,
           }
-          break;
-        }
+        );
+        this.connection.sendMessage({
+          type: "client_tool_result",
+          tool_call_id: parsedEvent.client_tool_call.tool_call_id,
+          result: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
+          is_error: true,
+        });
 
-        case "ping": {
-          this.connection.sendMessage({
-            type: "pong",
-            event_id: (parsedEvent as PingEvent).ping_event.event_id,
-          });
-          // parsedEvent.ping_event.ping_ms can be used on client side, for example
-          // to warn if ping is too high that experience might be degraded.
-          break;
-        }
-
-        // unhandled events are expected to be internal events
-        default: {
-          this.options.onDebug(parsedEvent);
-          break;
-        }
+        break;
       }
-    } catch {
-      this.onError("Failed to parse event data", { event });
-      return;
+
+      case "audio": {
+        if (this.lastInterruptTimestamp <= parsedEvent.audio_event.event_id) {
+          this.addAudioBase64Chunk(parsedEvent.audio_event.audio_base_64);
+          this.currentEventId = parsedEvent.audio_event.event_id;
+          this.updateCanSendFeedback();
+          this.updateMode("speaking");
+        }
+        break;
+      }
+
+      case "ping": {
+        this.connection.sendMessage({
+          type: "pong",
+          event_id: parsedEvent.ping_event.event_id,
+        });
+        // parsedEvent.ping_event.ping_ms can be used on client side, for example
+        // to warn if ping is too high that experience might be degraded.
+        break;
+      }
+
+      // unhandled events are expected to be internal events
+      default: {
+        this.options.onDebug(parsedEvent);
+        break;
+      }
     }
   };
 
@@ -328,7 +314,7 @@ export class Conversation {
     }
   };
 
-  private addAudioBase64Chunk = async (chunk: string) => {
+  private addAudioBase64Chunk = (chunk: string) => {
     this.output.gain.gain.value = this.volume;
     this.output.worklet.port.postMessage({ type: "clearInterrupted" });
     this.output.worklet.port.postMessage({
@@ -337,7 +323,7 @@ export class Conversation {
     });
   };
 
-  private fadeOutAudio = async () => {
+  private fadeOutAudio = () => {
     // mute agent
     this.updateMode("listening");
     this.output.worklet.port.postMessage({ type: "interrupt" });

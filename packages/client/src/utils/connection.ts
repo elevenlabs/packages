@@ -3,6 +3,7 @@ import {
   ConfigEvent,
   isValidSocketEvent,
   OutgoingSocketEvent,
+  IncomingSocketEvent,
 } from "./events";
 
 const MAIN_PROTOCOL = "convai";
@@ -76,6 +77,7 @@ export type DisconnectionDetails =
       reason: "user";
     };
 export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
+export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
@@ -174,11 +176,13 @@ export class Connection {
     }
   }
 
+  private queue: IncomingSocketEvent[] = [];
   private disconnectionDetails: DisconnectionDetails | null = null;
   private onDisconnectCallback: OnDisconnectCallback | null = null;
+  private onMessageCallback: OnMessageCallback | null = null;
 
   private constructor(
-    public readonly socket: WebSocket,
+    private readonly socket: WebSocket,
     public readonly conversationId: string,
     public readonly inputFormat: FormatConfig,
     public readonly outputFormat: FormatConfig
@@ -212,6 +216,20 @@ export class Connection {
             }
       );
     });
+    this.socket.addEventListener("message", event => {
+      try {
+        const parsedEvent = JSON.parse(event.data);
+        if (!isValidSocketEvent(parsedEvent)) {
+          return;
+        }
+
+        if (this.onMessageCallback) {
+          this.onMessageCallback(parsedEvent);
+        } else {
+          this.queue.push(parsedEvent);
+        }
+      } catch (_) {}
+    });
   }
 
   public close() {
@@ -220,6 +238,12 @@ export class Connection {
 
   public sendMessage(message: OutgoingSocketEvent) {
     this.socket.send(JSON.stringify(message));
+  }
+
+  public onMessage(callback: OnMessageCallback) {
+    this.onMessageCallback = callback;
+    this.queue.forEach(callback);
+    this.queue = [];
   }
 
   public onDisconnect(callback: OnDisconnectCallback) {
