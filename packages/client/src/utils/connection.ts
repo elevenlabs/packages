@@ -182,7 +182,7 @@ export class Connection {
   private onMessageCallback: OnMessageCallback | null = null;
 
   private constructor(
-    private readonly socket: WebSocket,
+    public readonly socket: WebSocket,
     public readonly conversationId: string,
     public readonly inputFormat: FormatConfig,
     public readonly outputFormat: FormatConfig
