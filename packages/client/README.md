@@ -180,7 +180,7 @@ const conversation = await Conversation.startSession({
   connectionDelay: {
     android: 3_000,
     ios: 0,
-    other: 0,
+    default: 0,
   },
 });
 ```

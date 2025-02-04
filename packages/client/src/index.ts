@@ -93,16 +93,15 @@ export class Conversation {
       });
 
       const delayConfig = options.connectionDelay ?? {
-        other: 0,
+        default: 0,
         // Give the Android AudioManager enough time to switch to the correct audio mode
         android: 3_000,
-        ios: 0,
       };
-      let delay = delayConfig.other;
+      let delay = delayConfig.default;
       if (isAndroidDevice()) {
-        delay = delayConfig.android;
+        delay = delayConfig.android ?? delay;
       } else if (isIosDevice()) {
-        delay = delayConfig.ios;
+        delay = delayConfig.ios ?? delay;
       }
 
       if (delay > 0) {
