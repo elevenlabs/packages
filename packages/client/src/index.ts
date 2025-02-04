@@ -11,11 +11,7 @@ import { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
 import { isAndroidDevice, isIosDevice } from "./utils/compatibility";
 
 export type { IncomingSocketEvent } from "./utils/events";
-export type {
-  SessionConfig,
-  DisconnectionDetails,
-  Language,
-} from "./utils/connection";
+export type { SessionConfig, DisconnectionDetails } from "./utils/connection";
 export type Role = "user" | "ai";
 export type Mode = "speaking" | "listening";
 export type Status =

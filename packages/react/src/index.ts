@@ -15,7 +15,6 @@ export type {
   Status,
   SessionConfig,
   DisconnectionDetails,
-  Language,
 } from "@11labs/client";
 export { postOverallFeedback } from "@11labs/client";
 
