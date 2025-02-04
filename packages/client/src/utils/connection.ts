@@ -55,6 +55,11 @@ export type SessionConfig = {
   };
   customLlmExtraBody?: any;
   dynamicVariables?: Record<string, string | number | boolean>;
+  connectionDelay?: {
+    other: number;
+    android: number;
+    ios: number;
+  };
 } & (
   | { signedUrl: string; agentId?: undefined }
   | { agentId: string; signedUrl?: undefined }

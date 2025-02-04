@@ -18,6 +18,8 @@ export class Output {
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 
+      await context.resume();
+
       return new Output(context, analyser, gain, worklet);
     } catch (error) {
       context?.close();

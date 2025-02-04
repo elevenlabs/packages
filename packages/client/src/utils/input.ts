@@ -1,5 +1,6 @@
 import { rawAudioProcessor } from "./rawAudioProcessor";
 import { FormatConfig } from "./connection";
+import { isIosDevice } from "./compatibility";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
@@ -7,21 +8,6 @@ export type InputConfig = {
 
 const LIBSAMPLERATE_JS =
   "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
-
-function isIosDevice() {
-  return (
-    [
-      "iPad Simulator",
-      "iPhone Simulator",
-      "iPod Simulator",
-      "iPad",
-      "iPhone",
-      "iPod",
-    ].includes(navigator.platform) ||
-    // iPad on iOS 13 detection
-    (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-  );
-}
 
 export class Input {
   public static async create({
@@ -78,6 +64,8 @@ export class Input {
 
       source.connect(analyser);
       analyser.connect(worklet);
+
+      await context.resume();
 
       return new Input(context, analyser, worklet, inputStream);
     } catch (error) {

@@ -119,6 +119,22 @@ const conversation = useConversation({
 });
 ```
 
+#### Connection delay
+
+You can configure additional delay between when the microphone is activated and when the connection is established.
+On Android, the delay is set to 3 seconds by default to make sure the device has time to switch to the correct audio mode.
+Without it, you may experience issues with the beginning of the first message being cut off.
+
+```ts
+const conversation = useConversation({
+  connectionDelay: {
+    android: 3_000,
+    ios: 0,
+    other: 0,
+  },
+});
+```
+
 #### Methods
 
 ##### startConversation
