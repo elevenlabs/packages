@@ -35,9 +35,9 @@ jobs:
 
       - name: Install pulseaudio
         run: |
-          apt-get update
-          apt-get install -y pulseaudio
-          pulseaudio --start
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio
+          sudo pulseaudio --start
 
       - name: Run tests
         run: pnpm run test
