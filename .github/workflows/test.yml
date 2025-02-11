@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.46.1-jammy
-      options: --user root
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
