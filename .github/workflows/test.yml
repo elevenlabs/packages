@@ -35,8 +35,8 @@ jobs:
 
       - name: Install pulseaudio
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pulseaudio
+          apt-get update
+          apt-get install -y pulseaudio
           pulseaudio --start
 
       - name: Run tests
