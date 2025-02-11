@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.46.1-jammy
+      options: --user pwuser --workdir /home/pwuser
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
@@ -36,8 +37,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y pulseaudio
-          apt-get install -y sudo
-          sudo pulseaudio --start
+          pulseaudio --start
 
       - name: Run tests
         run: pnpm run test
