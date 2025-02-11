@@ -65,7 +65,9 @@ export class Input {
       source.connect(analyser);
       analyser.connect(worklet);
 
-      // await context.resume();
+      if (context?.state === "suspended") {
+        await context.resume();
+      }
 
       return new Input(context, analyser, worklet, inputStream);
     } catch (error) {
