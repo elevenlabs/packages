@@ -55,6 +55,7 @@ describe("Conversation", () => {
         status = value.status;
       },
       onUnhandledClientToolCall,
+      connectionDelay: { default: 0 },
     });
     const client = await clientPromise;
 
@@ -190,6 +191,7 @@ describe("Conversation", () => {
     await expect(async () => {
       await Conversation.startSession({
         signedUrl: "wss://api.elevenlabs.io/2",
+        connectionDelay: { default: 0 },
       });
       await clientPromise;
     }).rejects.toThrowError(
@@ -212,6 +214,7 @@ describe("Conversation", () => {
       Conversation.startSession({
         signedUrl: "wss://api.elevenlabs.io/3",
         onDisconnect: resolve,
+        connectionDelay: { default: 0 },
       });
       setTimeout(() => reject(new Error("timeout")), 5000);
     });
