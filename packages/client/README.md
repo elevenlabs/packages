@@ -215,7 +215,7 @@ conversation.sendFeedback(true);
 A method returning the conversation ID.
 
 ```js
-const id = conversation.geId();
+const id = conversation.getId();
 ```
 
 ##### setVolume
