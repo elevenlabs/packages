@@ -226,6 +226,19 @@ A method to set the output volume of the conversation. Accepts object with volum
 await conversation.setVolume({ volume: 0.5 });
 ```
 
+##### muteMic
+
+A method to mute/unmute the microphone.
+While muted, no audio data will be sent to the server.
+
+```js
+// Mute the microphone
+conversation.setMicMuted(true);
+
+// Unmute the microphone
+conversation.setMicMuted(false);
+```
+
 ##### getInputVolume / getOutputVolume
 
 Methods that return the current input/output volume on a scale from `0` to `1` where `0` is -100 dB and `1` is -30 dB.

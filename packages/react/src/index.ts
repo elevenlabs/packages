@@ -37,6 +37,7 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
+  const [micMuted, setMicMuted] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -71,6 +72,9 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
         } as Options);
 
         conversationRef.current = await lockRef.current;
+        // Persist controlled state between sessions
+        conversationRef.current.setMicMuted(micMuted);
+
         return conversationRef.current.getId();
       } finally {
         lockRef.current = null;
@@ -85,6 +89,10 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     },
     setVolume: ({ volume }: { volume: number }) => {
       conversationRef.current?.setVolume({ volume });
+    },
+    setMicMuted: (isMuted: boolean) => {
+      setMicMuted(isMuted);
+      conversationRef.current?.setMicMuted(isMuted);
     },
     getInputByteFrequencyData: () => {
       return conversationRef.current?.getInputByteFrequencyData();
@@ -103,6 +111,7 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     },
     status,
     canSendFeedback,
+    micMuted,
     isSpeaking: mode === "speaking",
   };
 }

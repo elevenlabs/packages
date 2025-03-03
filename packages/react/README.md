@@ -206,6 +206,24 @@ A method to set the output volume of the conversation. Accepts object with volum
 await conversation.setVolume({ volume: 0.5 });
 ```
 
+##### muteMic
+
+A method to mute/unmute the microphone.
+While muted, no audio data will be sent to the server.
+
+```js
+const { micMuted, setMicMuted } = useConversation();
+
+// Mute the microphone
+muteMic(true);
+
+// Unmute the microphone
+muteMic(false);
+
+// Check if the microphone is currently muted
+console.log(isMicMuted);
+```
+
 ##### status
 
 A React state containing the current status of the conversation.
