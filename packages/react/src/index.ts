@@ -101,6 +101,9 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     sendFeedback: (like: boolean) => {
       conversationRef.current?.sendFeedback(like);
     },
+    interrupt: () => {
+      conversationRef.current?.interrupt();
+    },
     status,
     canSendFeedback,
     isSpeaking: mode === "speaking",
