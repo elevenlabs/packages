@@ -7,20 +7,26 @@ import {
   Options,
   Status,
   ClientToolsConfig,
+  InputConfig,
 } from "@11labs/client";
-import { InputConfig } from "@11labs/client/dist/utils/input";
+
 export type {
   Role,
   Mode,
   Status,
   SessionConfig,
   DisconnectionDetails,
+  Language,
 } from "@11labs/client";
 export { postOverallFeedback } from "@11labs/client";
 
 export type HookOptions = Partial<
   SessionConfig & HookCallbacks & ClientToolsConfig & InputConfig
 >;
+export type ControlledState = {
+  micMuted?: boolean;
+  volume?: number;
+}
 export type HookCallbacks = Pick<
   Callbacks,
   | "onConnect"
@@ -31,13 +37,25 @@ export type HookCallbacks = Pick<
   | "onUnhandledClientToolCall"
 >;
 
-export function useConversation<T extends HookOptions>(defaultOptions?: T) {
+export function useConversation<T extends HookOptions & ControlledState>(props: T = {} as T) {
+  const {micMuted, volume, ...defaultOptions} = props;
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
-  const [micMuted, setMicMuted] = useState(false);
+
+  useEffect(() => {
+    if (micMuted !== undefined) {
+      conversationRef?.current?.setMicMuted(micMuted);
+    }
+  }, [micMuted]);
+
+  useEffect(() => {
+    if (volume !== undefined) {
+      conversationRef?.current?.setVolume({ volume });
+    }
+  }, [volume]);
 
   useEffect(() => {
     return () => {
@@ -73,7 +91,12 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
 
         conversationRef.current = await lockRef.current;
         // Persist controlled state between sessions
-        conversationRef.current.setMicMuted(micMuted);
+        if (micMuted !== undefined) {
+          conversationRef.current.setMicMuted(micMuted);
+        }
+        if (volume !== undefined) {
+          conversationRef.current.setVolume({ volume });
+        }
 
         return conversationRef.current.getId();
       } finally {
@@ -89,10 +112,6 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     },
     setVolume: ({ volume }: { volume: number }) => {
       conversationRef.current?.setVolume({ volume });
-    },
-    setMicMuted: (isMuted: boolean) => {
-      setMicMuted(isMuted);
-      conversationRef.current?.setMicMuted(isMuted);
     },
     getInputByteFrequencyData: () => {
       return conversationRef.current?.getInputByteFrequencyData();
