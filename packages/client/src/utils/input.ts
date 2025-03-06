@@ -86,4 +86,8 @@ export class Input {
     this.inputStream.getTracks().forEach(track => track.stop());
     await this.context.close();
   }
+
+  public setMuted(isMuted: boolean) {
+    this.worklet.port.postMessage({ type: "setMuted", isMuted });
+  }
 }

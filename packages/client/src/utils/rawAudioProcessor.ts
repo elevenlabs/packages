@@ -49,14 +49,22 @@ const blob = new Blob(
           super();
                     
           this.port.onmessage = ({ data }) => {
-            this.buffer = []; // Initialize an empty buffer
-            this.bufferSize = data.sampleRate / 4;
-            
-            if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
-              globalThis.LibSampleRate.create(1, sampleRate, data.sampleRate).then(resampler => {
-                this.resampler = resampler;
-              });
-            } 
+            switch (data.type) {
+              case "setFormat":
+                this.isMuted = false;
+                this.buffer = []; // Initialize an empty buffer
+                this.bufferSize = data.sampleRate / 4;
+
+                if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
+                  globalThis.LibSampleRate.create(1, sampleRate, data.sampleRate).then(resampler => {
+                    this.resampler = resampler;
+                  });
+                }
+                break;
+              case "setMuted":
+                this.isMuted = data.isMuted;
+                break;
+            }
           };
         }
         process(inputs) {
@@ -83,7 +91,10 @@ const blob = new Blob(
             const maxVolume = Math.sqrt(sum / channelData.length);
             // Check if buffer size has reached or exceeded the threshold
             if (this.buffer.length >= this.bufferSize) {
-              const float32Array = new Float32Array(this.buffer)
+              const float32Array = this.isMuted 
+                ? new Float32Array(this.buffer.length)
+                : new Float32Array(this.buffer);
+
               let encodedArray = this.format === "ulaw"
                 ? new Uint8Array(float32Array.length)
                 : new Int16Array(float32Array.length);
