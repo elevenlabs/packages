@@ -229,7 +229,6 @@ await conversation.setVolume({ volume: 0.5 });
 ##### muteMic
 
 A method to mute/unmute the microphone.
-While muted, no audio data will be sent to the server.
 
 ```js
 // Mute the microphone

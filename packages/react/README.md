@@ -213,7 +213,6 @@ setVolume(0.5);
 ##### muteMic
 
 A method to mute/unmute the microphone.
-While muted, no audio data will be sent to the server.
 
 ```js
 const [micMuted, setMicMuted] = useState(false);
