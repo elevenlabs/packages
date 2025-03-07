@@ -54,6 +54,7 @@ const blob = new Blob(
                 this.isMuted = false;
                 this.buffer = []; // Initialize an empty buffer
                 this.bufferSize = data.sampleRate / 4;
+                this.format = data.format;
 
                 if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
                   globalThis.LibSampleRate.create(1, sampleRate, data.sampleRate).then(resampler => {
