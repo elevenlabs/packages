@@ -436,6 +436,10 @@ export class Conversation {
     this.lastFeedbackEventId = this.currentEventId;
     this.updateCanSendFeedback();
   };
+
+  public interrupt = () => {
+    return this.fadeOutAudio()
+  };
 }
 
 export function postOverallFeedback(
