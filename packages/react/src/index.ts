@@ -128,6 +128,9 @@ export function useConversation<T extends HookOptions & ControlledState>(props: 
     sendFeedback: (like: boolean) => {
       conversationRef.current?.sendFeedback(like);
     },
+    getId: () => {
+      return conversationRef.current?.getId();
+    },
     status,
     canSendFeedback,
     micMuted,
