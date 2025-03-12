@@ -227,6 +227,7 @@ export class Conversation {
       }
 
       case "client_tool_call": {
+        console.info("Received client tool call request", parsedEvent.client_tool_call);
         if (
           this.options.clientTools.hasOwnProperty(
             parsedEvent.client_tool_call.tool_name
@@ -260,28 +261,26 @@ export class Conversation {
               is_error: true,
             });
           }
-
-          break;
-        }
-
-        if (this.options.onUnhandledClientToolCall) {
-          this.options.onUnhandledClientToolCall(parsedEvent.client_tool_call);
-
-          break;
-        }
-
-        this.onError(
-          `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
-          {
-            clientToolName: parsedEvent.client_tool_call.tool_name,
+        } else {
+          if (this.options.onUnhandledClientToolCall) {
+            this.options.onUnhandledClientToolCall(parsedEvent.client_tool_call);
+  
+            break;
           }
-        );
-        this.connection.sendMessage({
-          type: "client_tool_result",
-          tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-          result: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
-          is_error: true,
-        });
+  
+          this.onError(
+            `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
+            {
+              clientToolName: parsedEvent.client_tool_call.tool_name,
+            }
+          );
+          this.connection.sendMessage({
+            type: "client_tool_result",
+            tool_call_id: parsedEvent.client_tool_call.tool_call_id,
+            result: `Client tool with name ${parsedEvent.client_tool_call.tool_name} is not defined on client`,
+            is_error: true,
+          });
+        }
 
         break;
       }
