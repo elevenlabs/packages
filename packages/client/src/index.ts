@@ -197,7 +197,7 @@ export class Conversation {
           this.lastInterruptTimestamp = parsedEvent.interruption_event.event_id;
         }
         this.fadeOutAudio();
-        break;
+        return;
       }
 
       case "agent_response": {
@@ -205,7 +205,7 @@ export class Conversation {
           source: "ai",
           message: parsedEvent.agent_response_event.agent_response,
         });
-        break;
+        return;
       }
 
       case "user_transcript": {
@@ -213,7 +213,7 @@ export class Conversation {
           source: "user",
           message: parsedEvent.user_transcription_event.user_transcript,
         });
-        break;
+        return;
       }
 
       case "internal_tentative_agent_response": {
@@ -223,7 +223,7 @@ export class Conversation {
             parsedEvent.tentative_agent_response_internal_event
               .tentative_agent_response,
         });
-        break;
+        return;
       }
 
       case "client_tool_call": {
@@ -265,7 +265,7 @@ export class Conversation {
           if (this.options.onUnhandledClientToolCall) {
             this.options.onUnhandledClientToolCall(parsedEvent.client_tool_call);
   
-            break;
+            return;
           }
   
           this.onError(
@@ -282,7 +282,7 @@ export class Conversation {
           });
         }
 
-        break;
+        return;
       }
 
       case "audio": {
@@ -292,7 +292,7 @@ export class Conversation {
           this.updateCanSendFeedback();
           this.updateMode("speaking");
         }
-        break;
+        return;
       }
 
       case "ping": {
@@ -302,13 +302,13 @@ export class Conversation {
         });
         // parsedEvent.ping_event.ping_ms can be used on client side, for example
         // to warn if ping is too high that experience might be degraded.
-        break;
+        return;
       }
 
       // unhandled events are expected to be internal events
       default: {
         this.options.onDebug(parsedEvent);
-        break;
+        return;
       }
     }
   };
