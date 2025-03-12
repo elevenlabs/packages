@@ -30,7 +30,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "dependencies": {
-    "@11labs/client": "workspace:*"
+    "@11labs/client": "file:../client"
   },
   "peerDependencies": {
     "react": ">=16.8.0"

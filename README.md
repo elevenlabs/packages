@@ -1,6 +1,6 @@
 # ElevenLabs Monorepo for NPM Package
 
-This repository contains multiple package published on npm under `@elevenlabs` scope. 
+This repository contains multiple package published on npm under `@elevenlabs` scope.
 Separate packages can be found in the `packages` folder.
 
 ![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
@@ -42,23 +42,24 @@ pnpm link --global
 pnpm link --global <pkg>
 ```
 
-You can run `pnpm run dev` to automatically apply changes to your project. 
+You can run `pnpm run dev` to automatically apply changes to your project.
 Note that many projects don't watch for changes inside of `node_modules` folder to rebuild.
 You might have to restart the application, or modify you setup to watch for node_modules (possible development performance implications).
 
+Also note that the above won't work with turbopack projects. Instead use webpack to develop locally.
 
 Don't forget to run the `unlink` equivalent once you're done, to prevent confusion in the future.
 
 ## Creating New Package
 
-You can always just add a new folder with package.json inside of `packages` folder. 
+You can always just add a new folder with package.json inside of `packages` folder.
 Alternatively run `pnpm run create --name=[package-name]` in the root of this repository to create a new package from template.
 
 ## Publishing
 
-To publish a package from the packages folder, create new GitHub release. 
+To publish a package from the packages folder, create new GitHub release.
 Since there are multiple packages contained in this folder, the release name/tag should follow format `<package>@version`.
-The release will trigger GitHub action publishing the package, and the tag will be used to publish specific package. 
+The release will trigger GitHub action publishing the package, and the tag will be used to publish specific package.
 
-The GitHub action will only run the publish command. Make sure you've update the version number manually in `package.json`.  
+The GitHub action will only run the publish command. Make sure you've update the version number manually in `package.json`.
 

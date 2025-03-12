@@ -1,18 +1,15 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
-import { Input, InputConfig } from "./utils/input";
+import { Input } from "./utils/input";
+import type { InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
-import {
-  Connection,
-  DisconnectionDetails,
-  OnDisconnectCallback,
-  SessionConfig,
-} from "./utils/connection";
-import { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
+import { Connection, ConnectionType } from "./utils/connection";
+import type { DisconnectionDetails, OnDisconnectCallback, SessionConfig } from "./utils/connection";
+import type { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
 import { isAndroidDevice, isIosDevice } from "./utils/compatibility";
 
 export type { InputConfig } from "./utils/input";
 export type { IncomingSocketEvent } from "./utils/events";
-export type { SessionConfig, DisconnectionDetails, Language } from "./utils/connection";
+export type { SessionConfig, DisconnectionDetails, Language, ConnectionType } from "./utils/connection";
 export type Role = "user" | "ai";
 export type Mode = "speaking" | "listening";
 export type Status =
@@ -28,16 +25,16 @@ export type ClientToolsConfig = {
   clientTools: Record<
     string,
     (
-      parameters: any
-    ) => Promise<string | number | void> | string | number | void
+      parameters: unknown
+    ) => Promise<string | number | null> | string | number | null
   >;
 };
 export type Callbacks = {
   onConnect: (props: { conversationId: string }) => void;
   // internal debug events, not to be used
-  onDebug: (props: any) => void;
+  onDebug: (props: unknown) => void;
   onDisconnect: OnDisconnectCallback;
-  onError: (message: string, context?: any) => void;
+  onError: (message: string, context?: unknown) => void;
   onMessage: (props: { message: string; source: Role }) => void;
   onModeChange: (prop: { mode: Mode }) => void;
   onStatusChange: (prop: { status: Status }) => void;
@@ -73,6 +70,8 @@ export class Conversation {
       ...defaultCallbacks,
       ...options,
     };
+
+    fullOptions.connectionType = fullOptions.connectionType || ConnectionType.WEBSOCKET;
 
     fullOptions.onStatusChange({ status: "connecting" });
     fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
@@ -114,13 +113,17 @@ export class Conversation {
         Output.create(connection.outputFormat),
       ]);
 
-      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      for (const track of preliminaryInputStream.getTracks()) {
+        track.stop();
+      }
       preliminaryInputStream = null;
 
       return new Conversation(fullOptions, connection, input, output);
     } catch (error) {
       fullOptions.onStatusChange({ status: "disconnected" });
-      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      for (const track of preliminaryInputStream?.getTracks() ?? []) {
+        track.stop();
+      }
       connection?.close();
       await input?.close();
       await output?.close();
@@ -128,15 +131,15 @@ export class Conversation {
     }
   }
 
-  private lastInterruptTimestamp: number = 0;
+  private lastInterruptTimestamp = 0;
   private mode: Mode = "listening";
   private status: Status = "connecting";
   private inputFrequencyData?: Uint8Array;
   private outputFrequencyData?: Uint8Array;
-  private volume: number = 1;
-  private currentEventId: number = 1;
-  private lastFeedbackEventId: number = 1;
-  private canSendFeedback: boolean = false;
+  private volume = 1;
+  private currentEventId = 1;
+  private lastFeedbackEventId = 1;
+  private canSendFeedback = false;
 
   private constructor(
     private readonly options: Options,
@@ -228,7 +231,8 @@ export class Conversation {
 
       case "client_tool_call": {
         if (
-          this.options.clientTools.hasOwnProperty(
+          Object.prototype.hasOwnProperty.call(
+            this.options.clientTools,
             parsedEvent.client_tool_call.tool_name
           )
         ) {
@@ -246,17 +250,18 @@ export class Conversation {
               is_error: false,
             });
           } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
             this.onError(
-              "Client tool execution failed with following error: " +
-                (e as Error)?.message,
+              `Client tool execution failed with following error: ${errorMessage}`,
               {
                 clientToolName: parsedEvent.client_tool_call.tool_name,
               }
             );
+
             this.connection.sendMessage({
               type: "client_tool_result",
               tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-              result: "Client tool execution failed: " + (e as Error)?.message,
+              result: `Client tool execution failed: ${errorMessage}`,
               is_error: true,
             });
           }
@@ -361,7 +366,7 @@ export class Conversation {
     }, 2000); // Adjust the duration as needed
   };
 
-  private onError = (message: string, context?: any) => {
+  private onError = (message: string, context?: unknown) => {
     console.error(message, context);
     this.options.onError(message, context);
   };

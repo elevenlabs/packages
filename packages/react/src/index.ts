@@ -45,6 +45,7 @@ export function useConversation<T extends HookOptions & ControlledState>(props: 
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
 
+
   useEffect(() => {
     if (micMuted !== undefined) {
       conversationRef?.current?.setMicMuted(micMuted);

@@ -1,4 +1,4 @@
-import { Language } from "./connection";
+import type { Language } from "./connection";
 
 export type UserTranscriptionEvent = {
   type: "user_transcript";
@@ -47,7 +47,7 @@ export type ClientToolCallEvent = {
   client_tool_call: {
     tool_name: string;
     tool_call_id: string;
-    parameters: any;
+    parameters: unknown;
     expects_response: boolean;
   };
 };
@@ -78,7 +78,7 @@ export type UserFeedbackEvent = {
 export type ClientToolResultEvent = {
   type: "client_tool_result";
   tool_call_id: string;
-  result: any;
+  result: unknown;
   is_error: boolean;
 };
 export type InitiationClientDataEvent = {
@@ -95,7 +95,7 @@ export type InitiationClientDataEvent = {
       voice_id?: string;
     };
   };
-  custom_llm_extra_body?: any;
+  custom_llm_extra_body?: unknown;
   dynamic_variables?: Record<string, string | number | boolean>;
 };
 export type OutgoingSocketEvent =
