@@ -239,10 +239,13 @@ export class Conversation {
               ](parsedEvent.client_tool_call.parameters)) ??
               "Client tool execution successful."; // default client-tool call response
 
+            // The API expects result to be a string, so we need to convert it if it's not already a string
+            const formattedResult = typeof result === 'object' ? JSON.stringify(result) : String(result);
+
             this.connection.sendMessage({
               type: "client_tool_result",
               tool_call_id: parsedEvent.client_tool_call.tool_call_id,
-              result: result,
+              result: formattedResult,
               is_error: false,
             });
           } catch (e) {
