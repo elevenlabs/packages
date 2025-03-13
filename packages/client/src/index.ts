@@ -71,7 +71,7 @@ export class Conversation {
       ...options,
     };
 
-    fullOptions.connectionType = fullOptions.connectionType || ConnectionType.WEBSOCKET;
+    options.connectionType = options.connectionType || ConnectionType.WEBSOCKET;
 
     fullOptions.onStatusChange({ status: "connecting" });
     fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });

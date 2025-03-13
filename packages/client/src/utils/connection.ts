@@ -5,6 +5,7 @@ import type {
   IncomingSocketEvent,
 } from "./events";
 import { isValidSocketEvent } from "./events";
+import { Room, RoomEvent } from "livekit-client";
 
 const MAIN_PROTOCOL = "convai";
 
@@ -93,6 +94,8 @@ export enum ConnectionType {
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
 
+const WEBRTC_TOKEN_API_ORIGIN = "http://localhost:3000";
+const WEBRTC_TOKEN_PATHNAME = "/api/token";
 const WEBRTC_API_ORIGIN = "wss://livekit.rtc.eleven2.dev"
 
 export class Connection {
@@ -103,8 +106,41 @@ export class Connection {
   }
 
   private static async createWebRTCConnection(config: SessionConfig): Promise<Connection> {
-    // Implementation for WebRTC connection
-    throw new Error("WebRTC connection not implemented yet");
+    console.log('createWebRTCConnection', config);
+
+    let room: Room
+
+    try {
+      // Get token from server
+      const { token } = await fetch(`${WEBRTC_TOKEN_API_ORIGIN}/${WEBRTC_TOKEN_PATHNAME}?agent_id=${config.agentId}`).then(res => res.json());
+      room = new Room();
+
+      // if webrtc becomes the default, use the following on start up
+      //await room.prepareConnection(WEBRTC_API_ORIGIN, token);
+
+      await room.connect(WEBRTC_API_ORIGIN, token);
+    } catch (error) {
+      console.error('Error getting token:', error);
+      throw error;
+    }
+
+    // enable audio stream
+    room.localParticipant.setMicrophoneEnabled(true);
+
+    // When the agent joins the room
+    room.on(RoomEvent.ParticipantConnected, (participant) => {
+      console.log('Participant connected:', participant);
+
+
+    });
+
+    // When the agent leaves the room
+    room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+      console.log('Participant disconnected:', participant);
+    });
+
+    return await Connection.createWebSocketConnection(config);
+
   }
 
   private static async createWebSocketConnection(config: SessionConfig): Promise<Connection> {
@@ -203,6 +239,10 @@ export class Connection {
       socket?.close();
       throw error;
     }
+  }
+
+  private static getOverridesEvent() {
+
   }
 
   private queue: IncomingSocketEvent[] = [];
