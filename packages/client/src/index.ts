@@ -2,14 +2,16 @@ import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input } from "./utils/input";
 import type { InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
-import { Connection, ConnectionType } from "./utils/connection";
-import type { DisconnectionDetails, OnDisconnectCallback, SessionConfig } from "./utils/connection";
 import type { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
 import { isAndroidDevice, isIosDevice } from "./utils/compatibility";
+import { WSSConnection } from "./utils/connection/wssConnection";
+import type { SessionConfig, DisconnectionDetails, OnDisconnectCallback } from "./utils/connection/connection.interface";
+import type { Connection } from "./utils/connection/connection";
+
 
 export type { InputConfig } from "./utils/input";
 export type { IncomingSocketEvent } from "./utils/events";
-export type { SessionConfig, DisconnectionDetails, Language, ConnectionType } from "./utils/connection";
+export type { SessionConfig, DisconnectionDetails, Language, ConnectionType } from "./utils/connection/connection.interface";
 export type Role = "user" | "ai";
 export type Mode = "speaking" | "listening";
 export type Status =
@@ -71,8 +73,6 @@ export class Conversation {
       ...options,
     };
 
-    options.connectionType = options.connectionType || ConnectionType.WEBSOCKET;
-
     fullOptions.onStatusChange({ status: "connecting" });
     fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
 
@@ -104,7 +104,8 @@ export class Conversation {
         await new Promise(resolve => setTimeout(resolve, delay));
       }
 
-      connection = await Connection.create(options);
+      connection = await WSSConnection.create(options);
+
       [input, output] = await Promise.all([
         Input.create({
           ...connection.inputFormat,

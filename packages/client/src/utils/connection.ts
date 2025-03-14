@@ -106,38 +106,8 @@ export class Connection {
   }
 
   private static async createWebRTCConnection(config: SessionConfig): Promise<Connection> {
-    console.log('createWebRTCConnection', config);
-
-    let room: Room
-
-    try {
-      // Get token from server
-      const { token } = await fetch(`${WEBRTC_TOKEN_API_ORIGIN}/${WEBRTC_TOKEN_PATHNAME}?agent_id=${config.agentId}`).then(res => res.json());
-      room = new Room();
-
-      // if webrtc becomes the default, use the following on start up
-      //await room.prepareConnection(WEBRTC_API_ORIGIN, token);
-
-      await room.connect(WEBRTC_API_ORIGIN, token);
-    } catch (error) {
-      console.error('Error getting token:', error);
-      throw error;
-    }
-
-    // enable audio stream
-    room.localParticipant.setMicrophoneEnabled(true);
-
-    // When the agent joins the room
-    room.on(RoomEvent.ParticipantConnected, (participant) => {
-      console.log('Participant connected:', participant);
 
 
-    });
-
-    // When the agent leaves the room
-    room.on(RoomEvent.ParticipantDisconnected, (participant) => {
-      console.log('Participant disconnected:', participant);
-    });
 
     return await Connection.createWebSocketConnection(config);
 
@@ -168,30 +138,7 @@ export class Connection {
         socket.addEventListener(
           "open",
           () => {
-            const overridesEvent: InitiationClientDataEvent = {
-              type: "conversation_initiation_client_data",
-            };
-
-            if (config.overrides) {
-              overridesEvent.conversation_config_override = {
-                agent: {
-                  prompt: config.overrides.agent?.prompt,
-                  first_message: config.overrides.agent?.firstMessage,
-                  language: config.overrides.agent?.language,
-                },
-                tts: {
-                  voice_id: config.overrides.tts?.voiceId,
-                },
-              };
-            }
-
-            if (config.customLlmExtraBody) {
-              overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
-            }
-
-            if (config.dynamicVariables) {
-              overridesEvent.dynamic_variables = config.dynamicVariables;
-            }
+            const overridesEvent = Connection.getOverridesEvent(config);
 
             socket!.send(JSON.stringify(overridesEvent));
           },
@@ -241,8 +188,33 @@ export class Connection {
     }
   }
 
-  private static getOverridesEvent() {
+  private static getOverridesEvent(config: SessionConfig): InitiationClientDataEvent {
+    const overridesEvent: InitiationClientDataEvent = {
+      type: "conversation_initiation_client_data",
+    };
 
+    if (config.overrides) {
+      overridesEvent.conversation_config_override = {
+        agent: {
+          prompt: config.overrides.agent?.prompt,
+          first_message: config.overrides.agent?.firstMessage,
+          language: config.overrides.agent?.language,
+        },
+        tts: {
+          voice_id: config.overrides.tts?.voiceId,
+        },
+      };
+    }
+
+    if (config.customLlmExtraBody) {
+      overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
+    }
+
+    if (config.dynamicVariables) {
+      overridesEvent.dynamic_variables = config.dynamicVariables;
+    }
+
+    return overridesEvent;
   }
 
   private queue: IncomingSocketEvent[] = [];

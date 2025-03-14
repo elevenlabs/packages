@@ -1,5 +1,5 @@
 import { audioConcatProcessor } from "./audioConcatProcessor";
-import { FormatConfig } from "./connection";
+import type { FormatConfig } from "./connection/connection.interface";
 
 export class Output {
   public static async create({
