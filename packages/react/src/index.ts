@@ -7,14 +7,26 @@ import {
   Options,
   Status,
   ClientToolsConfig,
+  InputConfig,
 } from "@11labs/client";
-import { InputConfig } from "@11labs/client/dist/utils/input";
-export type { Role, Mode, Status, SessionConfig } from "@11labs/client";
+
+export type {
+  Role,
+  Mode,
+  Status,
+  SessionConfig,
+  DisconnectionDetails,
+  Language,
+} from "@11labs/client";
 export { postOverallFeedback } from "@11labs/client";
 
 export type HookOptions = Partial<
   SessionConfig & HookCallbacks & ClientToolsConfig & InputConfig
 >;
+export type ControlledState = {
+  micMuted?: boolean;
+  volume?: number;
+}
 export type HookCallbacks = Pick<
   Callbacks,
   | "onConnect"
@@ -25,12 +37,25 @@ export type HookCallbacks = Pick<
   | "onUnhandledClientToolCall"
 >;
 
-export function useConversation<T extends HookOptions>(defaultOptions?: T) {
+export function useConversation<T extends HookOptions & ControlledState>(props: T = {} as T) {
+  const {micMuted, volume, ...defaultOptions} = props;
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
+
+  useEffect(() => {
+    if (micMuted !== undefined) {
+      conversationRef?.current?.setMicMuted(micMuted);
+    }
+  }, [micMuted]);
+
+  useEffect(() => {
+    if (volume !== undefined) {
+      conversationRef?.current?.setVolume({ volume });
+    }
+  }, [volume]);
 
   useEffect(() => {
     return () => {
@@ -40,7 +65,7 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
 
   return {
     startSession: (async (options?: HookOptions) => {
-      if (conversationRef.current) {
+      if (conversationRef.current?.isOpen()) {
         return conversationRef.current.getId();
       }
 
@@ -65,6 +90,14 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
         } as Options);
 
         conversationRef.current = await lockRef.current;
+        // Persist controlled state between sessions
+        if (micMuted !== undefined) {
+          conversationRef.current.setMicMuted(micMuted);
+        }
+        if (volume !== undefined) {
+          conversationRef.current.setVolume({ volume });
+        }
+
         return conversationRef.current.getId();
       } finally {
         lockRef.current = null;
@@ -98,8 +131,12 @@ export function useConversation<T extends HookOptions>(defaultOptions?: T) {
     interrupt: () => {
       conversationRef.current?.interrupt();
     },
+    getId: () => {
+      return conversationRef.current?.getId();
+    },
     status,
     canSendFeedback,
+    micMuted,
     isSpeaking: mode === "speaking",
   };
 }

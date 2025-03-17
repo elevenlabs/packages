@@ -119,6 +119,22 @@ const conversation = useConversation({
 });
 ```
 
+#### Connection delay
+
+You can configure additional delay between when the microphone is activated and when the connection is established.
+On Android, the delay is set to 3 seconds by default to make sure the device has time to switch to the correct audio mode.
+Without it, you may experience issues with the beginning of the first message being cut off.
+
+```ts
+const conversation = useConversation({
+  connectionDelay: {
+    android: 3_000,
+    ios: 0,
+    default: 0,
+  },
+});
+```
+
 #### Methods
 
 ##### startConversation
@@ -187,7 +203,26 @@ sendFeedback(false); // negative feedback
 A method to set the output volume of the conversation. Accepts object with volume field between 0 and 1.
 
 ```js
-await conversation.setVolume({ volume: 0.5 });
+const [volume, setVolume] = useState(0.5);
+const conversation = useConversation({ volume });
+
+// Set the volume
+setVolume(0.5);
+```
+
+##### muteMic
+
+A method to mute/unmute the microphone.
+
+```js
+const [micMuted, setMicMuted] = useState(false);
+const conversation = useConversation({ micMuted });
+
+// Mute the microphone
+setMicMuted(true);
+
+// Unmute the microphone
+setMicMuted(false);
 ```
 
 ##### status

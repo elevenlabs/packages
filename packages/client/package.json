@@ -1,6 +1,6 @@
 {
   "name": "@11labs/client",
-  "version": "0.0.5-beta.2",
+  "version": "0.0.8",
   "description": "ElevenLabs JavaScript Client Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -31,14 +31,14 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node-wav": "^0.0.3",
-    "@vitest/browser": "^2.0.5",
+    "@vitest/browser": "^3.0.5",
     "eslint": "^9.8.0",
     "microbundle": "^0.15.1",
     "mock-socket": "^9.3.1",
     "node-wav": "^0.0.2",
     "playwright": "^1.46.1",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "vitest": "^3.0.5"
   },
   "repository": {
     "type": "git",

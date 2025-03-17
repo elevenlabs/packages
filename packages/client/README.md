@@ -169,6 +169,22 @@ const conversation = await Conversation.startSession({
 });
 ```
 
+#### Connection delay
+
+You can configure additional delay between when the microphone is activated and when the connection is established.
+On Android, the delay is set to 3 seconds by default to make sure the device has time to switch to the correct audio mode.
+Without it, you may experience issues with the beginning of the first message being cut off.
+
+```ts
+const conversation = await Conversation.startSession({
+  connectionDelay: {
+    android: 3_000,
+    ios: 0,
+    default: 0,
+  },
+});
+```
+
 #### Return value
 
 `startSession` returns a `Conversation` instance that can be used to control the session. The method will throw an error if the session cannot be established. This can happen if the user denies microphone access, or if the websocket connection
@@ -199,7 +215,7 @@ conversation.sendFeedback(true);
 A method returning the conversation ID.
 
 ```js
-const id = conversation.geId();
+const id = conversation.getId();
 ```
 
 ##### setVolume
@@ -208,6 +224,18 @@ A method to set the output volume of the conversation. Accepts object with volum
 
 ```js
 await conversation.setVolume({ volume: 0.5 });
+```
+
+##### muteMic
+
+A method to mute/unmute the microphone.
+
+```js
+// Mute the microphone
+conversation.setMicMuted(true);
+
+// Unmute the microphone
+conversation.setMicMuted(false);
 ```
 
 ##### getInputVolume / getOutputVolume

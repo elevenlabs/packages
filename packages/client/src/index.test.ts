@@ -3,7 +3,6 @@ import { Conversation, Mode, Status } from ".";
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk";
 
-const AGENT_ID = "TEST_AGENT_ID";
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
 const AGENT_RESPONSE = "Hello, how can I help you?";
@@ -16,7 +15,7 @@ const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
 
 describe("Conversation", () => {
   it("invokes respective callbacks", async () => {
-    const server = new Server("wss://api.elevenlabs.io/v1/convai/conversation");
+    const server = new Server("wss://api.elevenlabs.io/1");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => {
         resolve(socket);
@@ -34,7 +33,7 @@ describe("Conversation", () => {
     let mode: Mode | null = null;
 
     const conversationPromise = Conversation.startSession({
-      agentId: AGENT_ID,
+      signedUrl: "wss://api.elevenlabs.io/1",
       overrides: {
         agent: {
           prompt: {
@@ -56,6 +55,7 @@ describe("Conversation", () => {
         status = value.status;
       },
       onUnhandledClientToolCall,
+      connectionDelay: { default: 0 },
     });
     const client = await clientPromise;
 
@@ -171,6 +171,78 @@ describe("Conversation", () => {
     expect(onDisconnect).toHaveBeenCalledTimes(1);
 
     server.close();
+  });
+
+  it("throws upon immediate cancellation", async () => {
+    const server = new Server("wss://api.elevenlabs.io/2");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        socket.close({
+          code: 3000,
+          reason: "Test cancellation reason",
+          wasClean: true,
+        });
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    await expect(async () => {
+      await Conversation.startSession({
+        signedUrl: "wss://api.elevenlabs.io/2",
+        connectionDelay: { default: 0 },
+      });
+      await clientPromise;
+    }).rejects.toThrowError(
+      expect.objectContaining({
+        code: 3000,
+        reason: "Test cancellation reason",
+      })
+    );
+  });
+
+  it("terminates when server closes connection", async () => {
+    const server = new Server("wss://api.elevenlabs.io/3");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const disconnectionPromise = new Promise((resolve, reject) => {
+      Conversation.startSession({
+        signedUrl: "wss://api.elevenlabs.io/3",
+        onDisconnect: resolve,
+        connectionDelay: { default: 0 },
+      });
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    client.close({
+      code: 3000,
+      reason: "Test cancellation reason",
+      wasClean: true,
+    });
+
+    const details = await disconnectionPromise;
+    expect(details).toEqual(
+      expect.objectContaining({
+        reason: "error",
+        message: "Test cancellation reason",
+      })
+    );
   });
 });
 
