@@ -440,6 +440,7 @@ export class Conversation {
   };
 
   public interrupt = () => {
+    this.lastInterruptTimestamp = this.currentEventId
     return this.fadeOutAudio()
   };
 }
