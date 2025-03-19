@@ -1,10 +1,11 @@
-import {
+import type {
   InitiationClientDataEvent,
   ConfigEvent,
-  isValidSocketEvent,
   OutgoingSocketEvent,
   IncomingSocketEvent,
 } from "./events";
+import { isValidSocketEvent } from "./events";
+import { Room, RoomEvent } from "livekit-client";
 
 const MAIN_PROTOCOL = "convai";
 
@@ -53,13 +54,14 @@ export type SessionConfig = {
       voiceId?: string;
     };
   };
-  customLlmExtraBody?: any;
+  customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   connectionDelay?: {
     default: number;
     android?: number;
     ios?: number;
   };
+  connectionType?: ConnectionType;
 } & (
   | { signedUrl: string; agentId?: undefined }
   | { agentId: string; signedUrl?: undefined }
@@ -84,11 +86,34 @@ export type DisconnectionDetails =
 export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 
+export enum ConnectionType {
+  WEBSOCKET = "websocket",
+  WEBRTC = "webrtc",
+}
+
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
 
+const WEBRTC_TOKEN_API_ORIGIN = "http://localhost:3000";
+const WEBRTC_TOKEN_PATHNAME = "/api/token";
+const WEBRTC_API_ORIGIN = "wss://livekit.rtc.eleven2.dev"
+
 export class Connection {
   public static async create(config: SessionConfig): Promise<Connection> {
+    return config.connectionType === ConnectionType.WEBSOCKET
+      ? Connection.createWebSocketConnection(config)
+      : Connection.createWebRTCConnection(config);
+  }
+
+  private static async createWebRTCConnection(config: SessionConfig): Promise<Connection> {
+
+
+
+    return await Connection.createWebSocketConnection(config);
+
+  }
+
+  private static async createWebSocketConnection(config: SessionConfig): Promise<Connection> {
     let socket: WebSocket | null = null;
 
     try {
@@ -105,46 +130,28 @@ export class Connection {
       const conversationConfig = await new Promise<
         ConfigEvent["conversation_initiation_metadata_event"]
       >((resolve, reject) => {
-        socket!.addEventListener(
+        if (!socket) {
+          reject(new Error("Socket is not initialized"));
+          return;
+        }
+
+        socket.addEventListener(
           "open",
           () => {
-            const overridesEvent: InitiationClientDataEvent = {
-              type: "conversation_initiation_client_data",
-            };
+            const overridesEvent = Connection.getOverridesEvent(config);
 
-            if (config.overrides) {
-              overridesEvent.conversation_config_override = {
-                agent: {
-                  prompt: config.overrides.agent?.prompt,
-                  first_message: config.overrides.agent?.firstMessage,
-                  language: config.overrides.agent?.language,
-                },
-                tts: {
-                  voice_id: config.overrides.tts?.voiceId,
-                },
-              };
-            }
-
-            if (config.customLlmExtraBody) {
-              overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
-            }
-
-            if (config.dynamicVariables) {
-              overridesEvent.dynamic_variables = config.dynamicVariables;
-            }
-
-            socket?.send(JSON.stringify(overridesEvent));
+            socket!.send(JSON.stringify(overridesEvent));
           },
           { once: true }
         );
-        socket!.addEventListener("error", event => {
+        socket.addEventListener("error", event => {
           // In case the error event is followed by a close event, we want the
           // latter to be the one that rejects the promise as it contains more
           // useful information.
           setTimeout(() => reject(event), 0);
         });
-        socket!.addEventListener("close", reject);
-        socket!.addEventListener(
+        socket.addEventListener("close", reject);
+        socket.addEventListener(
           "message",
           (event: MessageEvent) => {
             const message = JSON.parse(event.data);
@@ -179,6 +186,35 @@ export class Connection {
       socket?.close();
       throw error;
     }
+  }
+
+  private static getOverridesEvent(config: SessionConfig): InitiationClientDataEvent {
+    const overridesEvent: InitiationClientDataEvent = {
+      type: "conversation_initiation_client_data",
+    };
+
+    if (config.overrides) {
+      overridesEvent.conversation_config_override = {
+        agent: {
+          prompt: config.overrides.agent?.prompt,
+          first_message: config.overrides.agent?.firstMessage,
+          language: config.overrides.agent?.language,
+        },
+        tts: {
+          voice_id: config.overrides.tts?.voiceId,
+        },
+      };
+    }
+
+    if (config.customLlmExtraBody) {
+      overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
+    }
+
+    if (config.dynamicVariables) {
+      overridesEvent.dynamic_variables = config.dynamicVariables;
+    }
+
+    return overridesEvent;
   }
 
   private queue: IncomingSocketEvent[] = [];
@@ -272,8 +308,8 @@ function parseFormat(format: string): FormatConfig {
     throw new Error(`Invalid format: ${format}`);
   }
 
-  const sampleRate = parseInt(sampleRatePart);
-  if (isNaN(sampleRate)) {
+  const sampleRate = Number.parseInt(sampleRatePart);
+  if (Number.isNaN(sampleRate)) {
     throw new Error(`Invalid sample rate: ${sampleRatePart}`);
   }
 
