@@ -39,6 +39,7 @@ export type Callbacks = {
   onDisconnect: OnDisconnectCallback;
   onError: (message: string, context?: any) => void;
   onMessage: (props: { message: string; source: Role }) => void;
+  onAudio: (base64Audio: string) => void;
   onModeChange: (prop: { mode: Mode }) => void;
   onStatusChange: (prop: { status: Status }) => void;
   onCanSendFeedbackChange: (prop: { canSendFeedback: boolean }) => void;
@@ -54,6 +55,7 @@ const defaultCallbacks: Callbacks = {
   onDisconnect: () => {},
   onError: () => {},
   onMessage: () => {},
+  onAudio: () => {},
   onModeChange: () => {},
   onStatusChange: () => {},
   onCanSendFeedbackChange: () => {},
@@ -289,7 +291,9 @@ export class Conversation {
       }
 
       case "audio": {
+
         if (this.lastInterruptTimestamp <= parsedEvent.audio_event.event_id) {
+          this.options.onAudio(parsedEvent.audio_event.audio_base_64)
           this.addAudioBase64Chunk(parsedEvent.audio_event.audio_base_64);
           this.currentEventId = parsedEvent.audio_event.event_id;
           this.updateCanSendFeedback();

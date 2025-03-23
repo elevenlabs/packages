@@ -33,6 +33,7 @@ export type HookCallbacks = Pick<
   | "onDisconnect"
   | "onError"
   | "onMessage"
+  | "onAudio"
   | "onDebug"
   | "onUnhandledClientToolCall"
 >;
