@@ -19,10 +19,10 @@
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
-    "lint": "npm run lint:ts && npm run lint:es",
+    "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts'",
+    "lint:prettier": "prettier 'src/**/*.ts' --check",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },

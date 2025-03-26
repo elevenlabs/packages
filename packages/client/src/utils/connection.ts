@@ -17,6 +17,7 @@ export type Language =
   | "fr"
   | "ko"
   | "pt"
+  | "pt-br"
   | "it"
   | "es"
   | "id"
