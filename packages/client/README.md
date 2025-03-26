@@ -185,6 +185,17 @@ const conversation = await Conversation.startSession({
 });
 ```
 
+#### Acquiring a Wake Lock
+
+By default, the conversation will attempt to acquire a [wake lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device from going to sleep during the conversation. 
+This can be disabled by setting the `useWakeLock` option to `false`:
+
+```ts
+const conversation = await Conversation.startSession({
+  useWakeLock: false,
+});
+```
+
 #### Return value
 
 `startSession` returns a `Conversation` instance that can be used to control the session. The method will throw an error if the session cannot be established. This can happen if the user denies microphone access, or if the websocket connection

@@ -123,10 +123,12 @@ export class Conversation {
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
       preliminaryInputStream = null;
 
-      try {
-        wakeLock = await navigator.wakeLock.request("screen");
-      } catch (e) {
-        // Wake Lock is not required for the conversation to work
+      if (options.useWakeLock ?? true) {
+        try {
+          wakeLock = await navigator.wakeLock.request("screen");
+        } catch (e) {
+          // Wake Lock is not required for the conversation to work
+        }
       }
 
       return new Conversation(fullOptions, connection, input, output, wakeLock);
