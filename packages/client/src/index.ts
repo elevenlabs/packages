@@ -87,7 +87,16 @@ export class Conversation {
     let connection: Connection | null = null;
     let output: Output | null = null;
     let preliminaryInputStream: MediaStream | null = null;
+
     let wakeLock: WakeLockSentinel | null = null;
+    if (options.useWakeLock ?? true) {
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+      } catch (e) {
+        // Wake Lock is not required for the conversation to work
+      }
+    }
+
     try {
       // some browsers won't allow calling getSupportedConstraints or enumerateDevices
       // before getting approval for microphone access
@@ -123,14 +132,6 @@ export class Conversation {
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
       preliminaryInputStream = null;
 
-      if (options.useWakeLock ?? true) {
-        try {
-          wakeLock = await navigator.wakeLock.request("screen");
-        } catch (e) {
-          // Wake Lock is not required for the conversation to work
-        }
-      }
-
       return new Conversation(fullOptions, connection, input, output, wakeLock);
     } catch (error) {
       fullOptions.onStatusChange({ status: "disconnected" });
@@ -138,6 +139,9 @@ export class Conversation {
       connection?.close();
       await input?.close();
       await output?.close();
+      try {
+        await wakeLock?.release();
+      } catch (e) {}
       throw error;
     }
   }
