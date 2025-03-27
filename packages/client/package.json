@@ -1,6 +1,6 @@
 {
   "name": "@11labs/client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ElevenLabs JavaScript Client Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -19,10 +19,10 @@
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
-    "lint": "npm run lint:ts && npm run lint:es",
+    "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts'",
+    "lint:prettier": "prettier 'src/**/*.ts' --check",
     "prepublishOnly": "npm run build",
     "test": "vitest"
   },

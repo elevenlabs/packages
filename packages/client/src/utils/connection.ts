@@ -17,6 +17,7 @@ export type Language =
   | "fr"
   | "ko"
   | "pt"
+  | "pt-br"
   | "it"
   | "es"
   | "id"
@@ -55,6 +56,7 @@ export type SessionConfig = {
   };
   customLlmExtraBody?: any;
   dynamicVariables?: Record<string, string | number | boolean>;
+  useWakeLock?: boolean;
   connectionDelay?: {
     default: number;
     android?: number;

@@ -88,6 +88,15 @@ export class Conversation {
     let output: Output | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
+    let wakeLock: WakeLockSentinel | null = null;
+    if (options.useWakeLock ?? true) {
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+      } catch (e) {
+        // Wake Lock is not required for the conversation to work
+      }
+    }
+
     try {
       // some browsers won't allow calling getSupportedConstraints or enumerateDevices
       // before getting approval for microphone access
@@ -123,13 +132,17 @@ export class Conversation {
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
       preliminaryInputStream = null;
 
-      return new Conversation(fullOptions, connection, input, output);
+      return new Conversation(fullOptions, connection, input, output, wakeLock);
     } catch (error) {
       fullOptions.onStatusChange({ status: "disconnected" });
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
       connection?.close();
       await input?.close();
       await output?.close();
+      try {
+        await wakeLock?.release();
+        wakeLock = null;
+      } catch (e) {}
       throw error;
     }
   }
@@ -148,7 +161,8 @@ export class Conversation {
     private readonly options: Options,
     private readonly connection: Connection,
     public readonly input: Input,
-    public readonly output: Output
+    public readonly output: Output,
+    public wakeLock: WakeLockSentinel | null
   ) {
     this.options.onConnect({ conversationId: connection.conversationId });
 
@@ -165,6 +179,11 @@ export class Conversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
+
+    try {
+      await this.wakeLock?.release();
+      this.wakeLock = null;
+    } catch (e) {}
 
     this.connection.close();
     await this.input.close();
@@ -233,10 +252,6 @@ export class Conversation {
       }
 
       case "client_tool_call": {
-        console.info(
-          "Received client tool call request",
-          parsedEvent.client_tool_call
-        );
         if (
           this.options.clientTools.hasOwnProperty(
             parsedEvent.client_tool_call.tool_name
