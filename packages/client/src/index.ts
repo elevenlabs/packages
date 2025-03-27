@@ -252,10 +252,6 @@ export class Conversation {
       }
 
       case "client_tool_call": {
-        console.info(
-          "Received client tool call request",
-          parsedEvent.client_tool_call
-        );
         if (
           this.options.clientTools.hasOwnProperty(
             parsedEvent.client_tool_call.tool_name
