@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Conversation,
-  Mode,
-  SessionConfig,
-  Callbacks,
-  Options,
-  Status,
-  ClientToolsConfig,
-  InputConfig,
+  type Mode,
+  type SessionConfig,
+  type Callbacks,
+  type Options,
+  type Status,
+  type ClientToolsConfig,
+  type InputConfig,
 } from "@11labs/client";
 
 export type {
@@ -46,6 +46,7 @@ export function useConversation<T extends HookOptions & ControlledState>(props: 
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
 
+
   useEffect(() => {
     if (micMuted !== undefined) {
       conversationRef?.current?.setMicMuted(micMuted);
@@ -79,13 +80,13 @@ export function useConversation<T extends HookOptions & ControlledState>(props: 
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
-          onModeChange: ({ mode }) => {
+          onModeChange: ({ mode }: { mode: Mode }) => {
             setMode(mode);
           },
-          onStatusChange: ({ status }) => {
+          onStatusChange: ({ status }: { status: Status }) => {
             setStatus(status);
           },
-          onCanSendFeedbackChange: ({ canSendFeedback }) => {
+          onCanSendFeedbackChange: ({ canSendFeedback }: { canSendFeedback: boolean }) => {
             setCanSendFeedback(canSendFeedback);
           },
         } as Options);
