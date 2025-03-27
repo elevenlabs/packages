@@ -198,6 +198,19 @@ sendFeedback(true); // positive feedback
 sendFeedback(false); // negative feedback
 ```
 
+##### sendContextualUpdate
+
+A method to send contextual updates to the agent.
+This can be used to inform the agent about user actions that are not directly related to the conversation, but may influence the agent's responses.
+
+```js
+const { sendContextualUpdate } = useConversation();
+
+sendContextualUpdate(
+  "User navigated to another page. Consider it for next response, but don't react to this contextual update."
+);
+```
+
 ##### setVolume
 
 A method to set the output volume of the conversation. Accepts object with volume field between 0 and 1.

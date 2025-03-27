@@ -26,7 +26,7 @@ export type HookOptions = Partial<
 export type ControlledState = {
   micMuted?: boolean;
   volume?: number;
-}
+};
 export type HookCallbacks = Pick<
   Callbacks,
   | "onConnect"
@@ -38,8 +38,10 @@ export type HookCallbacks = Pick<
   | "onUnhandledClientToolCall"
 >;
 
-export function useConversation<T extends HookOptions & ControlledState>(props: T = {} as T) {
-  const {micMuted, volume, ...defaultOptions} = props;
+export function useConversation<T extends HookOptions & ControlledState>(
+  props: T = {} as T
+) {
+  const { micMuted, volume, ...defaultOptions } = props;
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
@@ -132,9 +134,14 @@ export function useConversation<T extends HookOptions & ControlledState>(props: 
     getId: () => {
       return conversationRef.current?.getId();
     },
+    sendContextualUpdate: (text: string) => {
+      conversationRef.current?.sendContextualUpdate(text);
+    },
     status,
     canSendFeedback,
     micMuted,
     isSpeaking: mode === "speaking",
   };
 }
+
+// const con = useConversation({agentId: ""})

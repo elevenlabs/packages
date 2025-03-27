@@ -98,12 +98,17 @@ export type InitiationClientDataEvent = {
   custom_llm_extra_body?: any;
   dynamic_variables?: Record<string, string | number | boolean>;
 };
+export type ContextualUpdateEvent = {
+  type: "contextual_update";
+  text: string;
+};
 export type OutgoingSocketEvent =
   | PongEvent
   | UserAudioEvent
   | InitiationClientDataEvent
   | UserFeedbackEvent
-  | ClientToolResultEvent;
+  | ClientToolResultEvent
+  | ContextualUpdateEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
   return !!event.type;

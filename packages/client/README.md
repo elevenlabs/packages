@@ -210,6 +210,17 @@ You can listen to `onCanSendFeedbackChange` to know if feedback can be sent at t
 conversation.sendFeedback(true);
 ```
 
+##### sendContextualUpdate
+
+A method to send contextual updates to the agent.
+This can be used to inform the agent about user actions that are not directly related to the conversation, but may influence the agent's responses.
+
+```js
+conversation.sendContextualUpdate(
+  "User navigated to another page. Consider it for next response, but don't react to this contextual update."
+);
+```
+
 ##### getId
 
 A method returning the conversation ID.
