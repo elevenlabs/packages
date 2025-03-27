@@ -141,6 +141,7 @@ export class Conversation {
       await output?.close();
       try {
         await wakeLock?.release();
+        wakeLock = null;
       } catch (e) {}
       throw error;
     }
@@ -161,7 +162,7 @@ export class Conversation {
     private readonly connection: Connection,
     public readonly input: Input,
     public readonly output: Output,
-    public readonly wakeLock: WakeLockSentinel | null
+    public wakeLock: WakeLockSentinel | null
   ) {
     this.options.onConnect({ conversationId: connection.conversationId });
 
@@ -181,6 +182,7 @@ export class Conversation {
 
     try {
       await this.wakeLock?.release();
+      this.wakeLock = null;
     } catch (e) {}
 
     this.connection.close();
