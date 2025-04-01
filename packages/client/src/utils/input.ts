@@ -67,8 +67,7 @@ export class Input {
 
       await context.resume();
 
-      const input = new Input(context, analyser, worklet, inputStream);
-      return input;
+      return new Input(context, analyser, worklet, inputStream);
     } catch (error) {
       inputStream?.getTracks().forEach(track => track.stop());
       context?.close();
@@ -80,7 +79,7 @@ export class Input {
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly inputStream: MediaStream
+    public inputStream: MediaStream
   ) {}
 
   public async close() {
@@ -92,15 +91,12 @@ export class Input {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
-  public async setInputDevice(deviceId: string): Promise<void> {
+  public async setInputDevice(deviceId: string): Promise<boolean> {
     try {
-      // Stop all tracks in the existing stream
       this.inputStream.getTracks().forEach(track => track.stop());
-      
-      // Suspend the audio context temporarily
+
       await this.context.suspend();
       
-      // Get a new stream with the requested device
       const newStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: { exact: deviceId },
@@ -109,29 +105,26 @@ export class Input {
         },
       });
       
-      // Disconnect all nodes in the audio graph
-      this.analyser.disconnect();
-      
-      // Create a new source node with the new stream
+      this.analyser.disconnect();      
       const newSource = this.context.createMediaStreamSource(newStream);
-      
-      // Create a new connection path
       newSource.connect(this.analyser);
       this.analyser.connect(this.worklet);
 
-      // Update stream only
-      Object.defineProperty(this, 'inputStream', { value: newStream });
+      this.inputStream = newStream;
 
-      // Resume the audio context
       await this.context.resume();
+
+      return true;
     } catch (error) {
       try {
         await this.context.resume();
       } catch (resumeError) {
         console.error("Error resuming audio context:", resumeError);
+        return false;
       }
-      
-      throw new Error(`Failed to set input device: ${(error as Error).message}`);
+
+      console.error("Error switching input device:", error);
+      return false;
     }
   }
 }

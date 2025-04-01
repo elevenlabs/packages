@@ -473,7 +473,7 @@ export class Conversation {
     return this.output?.setOutputDevice(deviceId);
   };
 
-  public setInputDevice = async (deviceId: string): Promise<void> => {
+  public setInputDevice = async (deviceId: string): Promise<boolean> => {
     return this.input?.setInputDevice(deviceId);
   };
 
