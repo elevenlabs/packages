@@ -469,6 +469,14 @@ export class Conversation {
     this.updateCanSendFeedback();
   };
 
+  public setOutputDevice = async (deviceId: string): Promise<boolean> => {
+    return this.output?.setOutputDevice(deviceId);
+  };
+
+  public setInputDevice = async (deviceId: string): Promise<void> => {
+    return this.input?.setInputDevice(deviceId);
+  };
+
   public sendContextualUpdate = (text: string) => {
     this.connection.sendMessage({
       type: "contextual_update",

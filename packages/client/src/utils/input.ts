@@ -3,6 +3,7 @@ import { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 
 export type InputConfig = {
+  inputDeviceId?: string;
   preferHeadphonesForIosDevices?: boolean;
 };
 
@@ -10,9 +11,12 @@ const LIBSAMPLERATE_JS =
   "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
 
 export class Input {
+  private currentDeviceId: string | null = null;
+
   public static async create({
     sampleRate,
     format,
+    inputDeviceId,
     preferHeadphonesForIosDevices,
   }: FormatConfig & InputConfig): Promise<Input> {
     let context: AudioContext | null = null;
@@ -25,21 +29,8 @@ export class Input {
         noiseSuppression: { ideal: true },
       };
 
-      if (isIosDevice() && preferHeadphonesForIosDevices) {
-        const availableDevices =
-          await window.navigator.mediaDevices.enumerateDevices();
-        const idealDevice = availableDevices.find(
-          d =>
-            // cautious to include "bluetooth" in the search
-            // as might trigger bluetooth speakers
-            d.kind === "audioinput" &&
-            ["airpod", "headphone", "earphone"].find(keyword =>
-              d.label.toLowerCase().includes(keyword)
-            )
-        );
-        if (idealDevice) {
-          options.deviceId = { ideal: idealDevice.deviceId };
-        }
+      if (inputDeviceId) {
+        options.deviceId = { exact: inputDeviceId };
       }
 
       const supportsSampleRateConstraint =
@@ -58,6 +49,9 @@ export class Input {
         audio: options,
       });
 
+      const activeTrack = inputStream.getAudioTracks()[0];
+      const currentDeviceId = activeTrack.getSettings().deviceId || null;
+
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "raw-audio-processor");
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
@@ -67,7 +61,9 @@ export class Input {
 
       await context.resume();
 
-      return new Input(context, analyser, worklet, inputStream);
+      const input = new Input(context, analyser, worklet, inputStream);
+      input.currentDeviceId = currentDeviceId;
+      return input;
     } catch (error) {
       inputStream?.getTracks().forEach(track => track.stop());
       context?.close();
@@ -89,5 +85,44 @@ export class Input {
 
   public setMuted(isMuted: boolean) {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
+  }
+
+  public async setInputDevice(deviceId: string): Promise<void> {
+    if (this.currentDeviceId === deviceId) {
+      return;
+    }
+    
+    try {
+      this.inputStream.getTracks().forEach(track => track.stop());
+      
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+        },
+      });
+      
+      const newSource = this.context.createMediaStreamSource(newStream);
+      newSource.connect(this.analyser);
+      
+      Object.defineProperty(this, 'inputStream', { value: newStream });
+      this.currentDeviceId = deviceId;
+    } catch (error) {
+      throw new Error(`Failed to set input device: ${(error as Error).message}`);
+    }
+  }
+
+  public getCurrentInputDevice(): string | null {
+    return this.currentDeviceId;
+  }
+
+  public async getInputDevices(): Promise<MediaDeviceInfo[]> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(device => device.kind === 'audioinput');
+    } catch (error) {
+      throw new Error(`Failed to get input devices: ${(error as Error).message}`);
+    }
   }
 }

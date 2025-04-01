@@ -2,6 +2,9 @@ import { audioConcatProcessor } from "./audioConcatProcessor";
 import { FormatConfig } from "./connection";
 
 export class Output {
+  private audioElement: HTMLAudioElement | null = null;
+  private mediaStreamDestination: MediaStreamAudioDestinationNode | null = null;
+
   public static async create({
     sampleRate,
     format,
@@ -35,6 +38,39 @@ export class Output {
   ) {}
 
   public async close() {
+    this.audioElement?.pause();
+    this.audioElement = null;
+    this.mediaStreamDestination = null;
     await this.context.close();
+  }
+
+  public async setOutputDevice(deviceId: string): Promise<boolean> {
+    // Check if the device is supported
+    if (!('setSinkId' in HTMLAudioElement.prototype)) {
+      return false;
+    }
+
+    // Create a MediaStreamDestination if we don't have one yet
+    if (!this.mediaStreamDestination) {
+      this.mediaStreamDestination = this.context.createMediaStreamDestination();
+
+      // Disconnect analyser from its current destination
+      this.analyser.disconnect();
+      
+      // Connect to our new MediaStreamDestination
+      this.analyser.connect(this.mediaStreamDestination);
+      
+      // Create an audio element if we don't have one
+      if (!this.audioElement) {
+        this.audioElement = new Audio();
+        this.audioElement.srcObject = this.mediaStreamDestination.stream;
+        this.audioElement.play();
+      }
+    }
+
+      // Set the sink ID on the audio element
+    await (this.audioElement as any).setSinkId(deviceId);
+
+    return true;
   }
 }
