@@ -36,7 +36,7 @@ export class Output {
     public readonly analyser: AnalyserNode,
     public readonly gain: GainNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly mediaStreamDestination: MediaStreamAudioDestinationNode
+    public readonly mediaStreamDestination: MediaStreamAudioDestinationNode,
   ) {}
 
   public async close() {
