@@ -119,14 +119,6 @@ export class Input {
         },
       });
       
-      // Verify that we got the requested device
-      const activeTrack = newStream.getAudioTracks()[0];
-      const actualDeviceId = activeTrack.getSettings().deviceId;
-      
-      if (!actualDeviceId) {
-        throw new Error("Failed to get device ID from new audio track");
-      }
-      
       // Disconnect all nodes in the audio graph
       this.analyser.disconnect();
       
@@ -137,39 +129,20 @@ export class Input {
       newSource.connect(this.analyser);
       this.analyser.connect(this.worklet);
       
-      // Store the new stream (we need to use Object.defineProperty because inputStream is readonly)
+      // Update stream and device ID
       Object.defineProperty(this, 'inputStream', { value: newStream });
-      
-      // Update the current device ID
-      this.currentDeviceId = actualDeviceId;
+      this.currentDeviceId = deviceId;
 
-      // Resume the audio context to restart processing
+      // Resume the audio context
       await this.context.resume();
-      
-      console.log(`Successfully switched input device to: ${actualDeviceId}`);
     } catch (error) {
-      // Try to resume the context even if there was an error
       try {
         await this.context.resume();
       } catch (resumeError) {
         console.error("Error resuming audio context:", resumeError);
       }
       
-      console.error("Error switching input device:", error);
       throw new Error(`Failed to set input device: ${(error as Error).message}`);
-    }
-  }
-
-  public getCurrentInputDevice(): string | null {
-    return this.currentDeviceId;
-  }
-
-  public async getInputDevices(): Promise<MediaDeviceInfo[]> {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.filter(device => device.kind === 'audioinput');
-    } catch (error) {
-      throw new Error(`Failed to get input devices: ${(error as Error).message}`);
     }
   }
 }
