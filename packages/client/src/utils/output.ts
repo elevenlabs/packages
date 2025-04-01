@@ -3,7 +3,6 @@ import { FormatConfig } from "./connection";
 
 export class Output {
   private audioElement: HTMLAudioElement | null = null;
-  private mediaStreamDestination: MediaStreamAudioDestinationNode | null = null;
 
   public static async create({
     sampleRate,
@@ -21,9 +20,11 @@ export class Output {
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 
+      const mediaStreamDestination = context.createMediaStreamDestination();
+
       await context.resume();
 
-      return new Output(context, analyser, gain, worklet);
+      return new Output(context, analyser, gain, worklet, mediaStreamDestination);
     } catch (error) {
       context?.close();
       throw error;
@@ -34,43 +35,35 @@ export class Output {
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
     public readonly gain: GainNode,
-    public readonly worklet: AudioWorkletNode
+    public readonly worklet: AudioWorkletNode,
+    public readonly mediaStreamDestination: MediaStreamAudioDestinationNode
   ) {}
 
   public async close() {
     this.audioElement?.pause();
     this.audioElement = null;
-    this.mediaStreamDestination = null;
     await this.context.close();
   }
 
   public async setOutputDevice(deviceId: string): Promise<boolean> {
-    // Check if the device is supported
+    // Check if the device selection API is supported
     if (!('setSinkId' in HTMLAudioElement.prototype)) {
       return false;
     }
 
-    // Create a MediaStreamDestination if we don't have one yet
-    if (!this.mediaStreamDestination) {
-      this.mediaStreamDestination = this.context.createMediaStreamDestination();
-
-      // Disconnect analyser from its current destination
-      this.analyser.disconnect();
-      
-      // Connect to our new MediaStreamDestination
+    if (!this.audioElement) {
+      // Reroute audio through the media stream
+      this.analyser.disconnect(this.context.destination);
       this.analyser.connect(this.mediaStreamDestination);
       
-      // Create an audio element if we don't have one
-      if (!this.audioElement) {
-        this.audioElement = new Audio();
-        this.audioElement.srcObject = this.mediaStreamDestination.stream;
-        this.audioElement.play();
-      }
+      // Create and start the audio element
+      this.audioElement = new Audio();
+      this.audioElement.srcObject = this.mediaStreamDestination.stream;
+      this.audioElement.play();
     }
 
-      // Set the sink ID on the audio element
+    // Set the output device
     await (this.audioElement as any).setSinkId(deviceId);
-
     return true;
   }
 }
