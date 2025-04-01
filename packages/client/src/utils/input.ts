@@ -3,7 +3,6 @@ import { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 
 export type InputConfig = {
-  inputDeviceId?: string;
   preferHeadphonesForIosDevices?: boolean;
 };
 
@@ -16,7 +15,6 @@ export class Input {
   public static async create({
     sampleRate,
     format,
-    inputDeviceId,
     preferHeadphonesForIosDevices,
   }: FormatConfig & InputConfig): Promise<Input> {
     let context: AudioContext | null = null;
@@ -29,8 +27,21 @@ export class Input {
         noiseSuppression: { ideal: true },
       };
 
-      if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+      if (isIosDevice() && preferHeadphonesForIosDevices) {
+        const availableDevices =
+          await window.navigator.mediaDevices.enumerateDevices();
+        const idealDevice = availableDevices.find(
+          d =>
+            // cautious to include "bluetooth" in the search
+            // as might trigger bluetooth speakers
+            d.kind === "audioinput" &&
+            ["airpod", "headphone", "earphone"].find(keyword =>
+              d.label.toLowerCase().includes(keyword)
+            )
+        );
+        if (idealDevice) {
+          options.deviceId = { ideal: idealDevice.deviceId };
+        }
       }
 
       const supportsSampleRateConstraint =
@@ -51,12 +62,6 @@ export class Input {
 
       const activeTrack = inputStream.getAudioTracks()[0];
       const currentDeviceId = activeTrack.getSettings().deviceId || null;
-      
-      if (inputDeviceId && currentDeviceId !== inputDeviceId) {
-        console.warn(`Requested device ID ${inputDeviceId} but got ${currentDeviceId}`);
-      }
-      
-      console.log(`Using input device: ${currentDeviceId}`);
 
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "raw-audio-processor");
