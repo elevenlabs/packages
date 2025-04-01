@@ -10,8 +10,6 @@ const LIBSAMPLERATE_JS =
   "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
 
 export class Input {
-  private currentDeviceId: string | null = null;
-
   public static async create({
     sampleRate,
     format,
@@ -60,9 +58,6 @@ export class Input {
         audio: options,
       });
 
-      const activeTrack = inputStream.getAudioTracks()[0];
-      const currentDeviceId = activeTrack.getSettings().deviceId || null;
-
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "raw-audio-processor");
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
@@ -73,7 +68,6 @@ export class Input {
       await context.resume();
 
       const input = new Input(context, analyser, worklet, inputStream);
-      input.currentDeviceId = currentDeviceId;
       return input;
     } catch (error) {
       inputStream?.getTracks().forEach(track => track.stop());
@@ -99,10 +93,6 @@ export class Input {
   }
 
   public async setInputDevice(deviceId: string): Promise<void> {
-    if (this.currentDeviceId === deviceId) {
-      return;
-    }
-    
     try {
       // Stop all tracks in the existing stream
       this.inputStream.getTracks().forEach(track => track.stop());
@@ -128,10 +118,9 @@ export class Input {
       // Create a new connection path
       newSource.connect(this.analyser);
       this.analyser.connect(this.worklet);
-      
-      // Update stream and device ID
+
+      // Update stream only
       Object.defineProperty(this, 'inputStream', { value: newStream });
-      this.currentDeviceId = deviceId;
 
       // Resume the audio context
       await this.context.resume();
