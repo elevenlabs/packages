@@ -96,7 +96,7 @@ export class Input {
       this.inputStream.getTracks().forEach(track => track.stop());
 
       await this.context.suspend();
-      
+
       const newStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: { exact: deviceId },
@@ -104,8 +104,8 @@ export class Input {
           noiseSuppression: { ideal: true },
         },
       });
-      
-      this.analyser.disconnect();      
+
+      this.analyser.disconnect();
       const newSource = this.context.createMediaStreamSource(newStream);
       newSource.connect(this.analyser);
       this.analyser.connect(this.worklet);

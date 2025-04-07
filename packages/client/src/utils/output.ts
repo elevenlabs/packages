@@ -24,7 +24,13 @@ export class Output {
 
       await context.resume();
 
-      return new Output(context, analyser, gain, worklet, mediaStreamDestination);
+      return new Output(
+        context,
+        analyser,
+        gain,
+        worklet,
+        mediaStreamDestination
+      );
     } catch (error) {
       context?.close();
       throw error;
@@ -36,7 +42,7 @@ export class Output {
     public readonly analyser: AnalyserNode,
     public readonly gain: GainNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly mediaStreamDestination: MediaStreamAudioDestinationNode,
+    public readonly mediaStreamDestination: MediaStreamAudioDestinationNode
   ) {}
 
   public async close() {
@@ -47,7 +53,7 @@ export class Output {
 
   public async setOutputDevice(deviceId: string): Promise<boolean> {
     // Check if the device selection API is supported
-    if (!('setSinkId' in HTMLAudioElement.prototype)) {
+    if (!("setSinkId" in HTMLAudioElement.prototype)) {
       return false;
     }
 
@@ -55,7 +61,7 @@ export class Output {
       // Reroute audio through the media stream
       this.analyser.disconnect(this.context.destination);
       this.analyser.connect(this.mediaStreamDestination);
-      
+
       // Create and start the audio element
       this.audioElement = new Audio();
       this.audioElement.srcObject = this.mediaStreamDestination.stream;
