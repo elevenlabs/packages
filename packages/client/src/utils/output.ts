@@ -1,4 +1,4 @@
-import { audioConcatProcessor } from "./audioConcatProcessor";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor";
 import { FormatConfig } from "./connection";
 
 export class Output {
@@ -13,7 +13,7 @@ export class Output {
       const gain = context.createGain();
       gain.connect(analyser);
       analyser.connect(context.destination);
-      await context.audioWorklet.addModule(audioConcatProcessor);
+      await loadAudioConcatProcessor(context.audioWorklet);
       const worklet = new AudioWorkletNode(context, "audio-concat-processor");
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);

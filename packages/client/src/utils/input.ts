@@ -1,4 +1,4 @@
-import { rawAudioProcessor } from "./rawAudioProcessor";
+import { loadRawAudioProcessor } from "./rawAudioProcessor";
 import { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 
@@ -52,7 +52,7 @@ export class Input {
       if (!supportsSampleRateConstraint) {
         await context.audioWorklet.addModule(LIBSAMPLERATE_JS);
       }
-      await context.audioWorklet.addModule(rawAudioProcessor);
+      await loadRawAudioProcessor(context.audioWorklet);
 
       inputStream = await navigator.mediaDevices.getUserMedia({
         audio: options,
