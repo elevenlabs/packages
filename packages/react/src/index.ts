@@ -137,6 +137,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
     sendContextualUpdate: (text: string) => {
       conversationRef.current?.sendContextualUpdate(text);
     },
+    setOutputDevice: async (deviceId: string): Promise<boolean> => {
+      return conversationRef.current?.setOutputDevice(deviceId) ?? false;
+    },
+    setInputDevice: async (deviceId: string): Promise<boolean> => {
+      return conversationRef.current?.setInputDevice(deviceId) ?? false;
+    },
     status,
     canSendFeedback,
     micMuted,
