@@ -34,6 +34,7 @@ export type HookCallbacks = Pick<
   | "onError"
   | "onMessage"
   | "onAudio"
+  | "onInterruption"
   | "onDebug"
   | "onUnhandledClientToolCall"
 >;
