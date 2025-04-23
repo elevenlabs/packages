@@ -5,7 +5,7 @@ export function ConvAIWidget() {
   return (
     <>
       <Style />
-      <p> "Hello from ConvAI Widget!"</p>;
+      <p>Hello from ConvAI Widget!</p>
     </>
   );
 }

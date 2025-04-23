@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Web Component | Conversational AI Widget</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  </head>
+  <body>
+    <script type="module">
+      import { registerWidget } from "./src/index.js";
+      registerWidget();
+
+      const widget = document.createElement("elevenlabs-convai");
+      widget.setAttribute("agent-id", import.meta.env.VITE_AGENT_ID);
+      document.body.appendChild(widget);
+    </script>
+  </body>
+</html>
