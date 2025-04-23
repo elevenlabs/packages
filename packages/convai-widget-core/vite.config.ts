@@ -5,7 +5,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    preserveSymlinks: true,
     alias: {
       react: "preact/compat",
       "react-dom": "preact/compat",
