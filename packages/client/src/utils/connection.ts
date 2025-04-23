@@ -37,6 +37,8 @@ export type Language =
   | "uk"
   | "ru"
   | "hu"
+  | "hr"
+  | "sk"
   | "no"
   | "vi";
 export type SessionConfig = {

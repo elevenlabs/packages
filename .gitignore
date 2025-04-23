@@ -44,8 +44,8 @@ testem.log
 Thumbs.db
 
 # env
-.env*
-!.env.example
+.env.local
+.env.*.local
 venv
 
 # formatters

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "lib": ["es2015", "dom"],
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "sourceMap": true,
+    "outDir": "dist",
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "react": ["./node_modules/preact/compat/"],
+      "react/jsx-runtime": ["./node_modules/preact/jsx-runtime"],
+      "react-dom": ["./node_modules/preact/compat/"],
+      "react-dom/*": ["./node_modules/preact/compat/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}
