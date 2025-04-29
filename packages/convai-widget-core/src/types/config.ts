@@ -1,10 +1,34 @@
 import { Language } from "@11labs/client";
 
-export type Variant = "full" | "compact";
+export const Variants = ["tiny", "compact", "full"] as const;
+export type Variant = (typeof Variants)[number];
+
+export function parseVariant(variant: string | undefined): Variant {
+  return Variants.includes(variant as Variant)
+    ? (variant as Variant)
+    : Variants[0];
+}
+
+export const Placements = [
+  "top-left",
+  "top",
+  "top-right",
+  "bottom-left",
+  "bottom",
+  "bottom-right",
+] as const;
+export type Placement = (typeof Placements)[number];
+export function parsePlacement(placement: string | undefined): Placement {
+  return Placements.includes(placement as Placement)
+    ? (placement as Placement)
+    : "bottom-right";
+}
+
 export type FeedbackMode = "none" | "during" | "end";
 
 export interface WidgetConfig extends Partial<TextContents> {
   variant: Variant;
+  placement: Placement;
   avatar: AvatarConfig;
   show_avatar_when_collapsed: boolean;
   feedback_mode: FeedbackMode;

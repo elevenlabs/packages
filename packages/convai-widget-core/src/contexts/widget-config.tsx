@@ -1,0 +1,121 @@
+import {
+  ReadonlySignal,
+  useComputed,
+  useSignal,
+  useSignalEffect,
+} from "@preact/signals";
+import { ComponentChildren } from "preact";
+import { createContext } from "preact/compat";
+import { parsePlacement, parseVariant, WidgetConfig } from "../types/config";
+import { useAttribute } from "./attributes";
+import { useServerLocation } from "./server-location";
+
+import { useContextSafely } from "../utils/useContextSafely";
+
+const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
+  null
+);
+
+interface WidgetConfigProviderProps {
+  children: ComponentChildren;
+}
+
+export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
+  const { serverUrl } = useServerLocation();
+  const agentId = useAttribute("agent-id");
+  const overrideConfig = useAttribute("override-config");
+  const fetchedConfig = useSignal<WidgetConfig | null>(null);
+
+  useSignalEffect(() => {
+    if (overrideConfig.value) {
+      try {
+        const config = JSON.parse(overrideConfig.value);
+        if (config) {
+          fetchedConfig.value = config;
+          return;
+        }
+      } catch (error: any) {
+        console.error(
+          `[ConversationalAI] Cannot parse override-config: ${error?.message}`
+        );
+      }
+    }
+
+    if (!agentId.value) {
+      fetchedConfig.value = null;
+      return;
+    }
+
+    const abort = new AbortController();
+    fetchConfig(agentId.value, serverUrl.value, abort.signal)
+      .then(config => {
+        if (!abort.signal.aborted) {
+          fetchedConfig.value = config;
+        }
+      })
+      .catch(error => {
+        console.error(
+          `[ConversationalAI] Cannot fetch config for agent ${agentId.value}: ${error?.message}`
+        );
+        if (!abort.signal.aborted) {
+          fetchedConfig.value = null;
+        }
+      });
+
+    return () => {
+      abort.abort();
+    };
+  });
+
+  const variant = useAttribute("variant");
+  const placement = useAttribute("placement");
+  const termsKey = useAttribute("terms-key");
+
+  const value = useComputed<WidgetConfig | null>(() => {
+    if (!fetchedConfig.value) {
+      return null;
+    }
+
+    const patchedVariant = variant.value ?? fetchedConfig.value.variant;
+    const patchedPlacement = placement.value ?? fetchedConfig.value.placement;
+
+    return {
+      ...fetchedConfig.value,
+      variant: parseVariant(patchedVariant),
+      placement: parsePlacement(patchedPlacement),
+      termsKey: termsKey.value ?? fetchedConfig.value.terms_key,
+    };
+  });
+
+  if (!value.value) {
+    return null;
+  }
+
+  return (
+    <WidgetConfigContext.Provider value={value as ReadonlySignal<WidgetConfig>}>
+      {children}
+    </WidgetConfigContext.Provider>
+  );
+}
+
+export function useWidgetConfig() {
+  return useContextSafely(WidgetConfigContext);
+}
+
+async function fetchConfig(
+  agentId: string,
+  serverUrl: string,
+  signal: AbortSignal
+): Promise<WidgetConfig> {
+  const response = await fetch(
+    `${serverUrl}/v1/convai/agents/${agentId}/widget`,
+    {
+      signal,
+    }
+  );
+  const data = await response.json();
+  if (!data.widget_config) {
+    throw new Error("Response does not contain widget_config");
+  }
+  return data.widget_config;
+}

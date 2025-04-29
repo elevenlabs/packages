@@ -1,0 +1,68 @@
+import * as Select from "@radix-ui/react-select";
+import { Language } from "@11labs/client";
+import { useState } from "preact/compat";
+import { Icon } from "../components/Icon";
+import { useLanguageConfig } from "../contexts/language-config";
+import { Flag } from "../components/Flag";
+import { useRootPortal } from "../contexts/root-portal";
+import { ComponentChildren } from "preact";
+
+interface LanguageSelectProps {
+  children: ComponentChildren;
+}
+
+export function LanguageSelect({ children }: LanguageSelectProps) {
+  const [open, setOpen] = useState(false);
+  const { language, setLanguage, options } = useLanguageConfig();
+  const portal = useRootPortal();
+
+  return (
+    <Select.Root
+      open={open}
+      value={language.value.languageCode}
+      onValueChange={value => {
+        setLanguage(value as Language);
+        setOpen(false);
+      }}
+      onOpenChange={open => {
+        if (open) setOpen(true);
+      }}
+    >
+      {children}
+      <Select.Portal container={portal}>
+        <Select.Content
+          className="overflow-hidden bg-background border rounded-3xl max-h-[min(384px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] z-10"
+          position="popper"
+          sideOffset={8}
+          align="end"
+          side="top"
+          onPointerDownOutside={() => setOpen(false)}
+          onCloseAutoFocus={() => setOpen(false)}
+          onEscapeKeyDown={() => setOpen(false)}
+        >
+          <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-background text-subtle cursor-default">
+            <Icon size="sm" name="chevron-up" />
+          </Select.ScrollUpButton>
+          <Select.Viewport className="p-1">
+            {options.value.map(language => (
+              <Select.Item
+                key={language.languageCode}
+                value={language.languageCode}
+                className="flex select-none items-center p-1.5 gap-2 cursor-pointer rounded-full relative focus-visible:outline-none data-[highlighted]:bg-gray-100 text-sm"
+              >
+                <Flag flagCode={language.flagCode} />
+                <Select.ItemText>{language.name}</Select.ItemText>
+                <Select.ItemIndicator className="text-foreground p-1.5 ml-auto">
+                  <Icon size="sm" name="check" />
+                </Select.ItemIndicator>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+          <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-background text-subtle cursor-default">
+            <Icon size="sm" name="chevron-down" />
+          </Select.ScrollDownButton>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
+  );
+}

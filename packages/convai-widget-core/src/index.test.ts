@@ -11,10 +11,21 @@ describe("elevenlabs-convai", () => {
     expect(window.customElements.get("elevenlabs-convai")).toBeDefined();
   });
 
-  it("should display the widget contents", async () => {
+  it("should go through a happy path", async () => {
     setupWebComponent({ "agent-id": "basic" });
-    await expect
-      .element(page.getByText("Hello from ConvAI Widget!"))
-      .toBeInTheDocument();
+
+    const startButton = page.getByRole("button", { name: "Start a call" });
+    await expect.element(startButton).toBeInTheDocument();
+    await expect.element(page.getByText("Need help?")).toBeInTheDocument();
+
+    await startButton.click();
+
+    const endButton = page.getByRole("button", { name: "End" });
+    await expect.element(page.getByText("Listening")).toBeInTheDocument();
+    await expect.element(endButton).toBeInTheDocument();
+
+    await endButton.click();
+
+    await expect.element(startButton).toBeInTheDocument();
   });
 });

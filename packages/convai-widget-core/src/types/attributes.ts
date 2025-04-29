@@ -10,7 +10,7 @@ function snakeToKebab<S extends string>(str: S): SnakeToKebab<S> {
 
 const MainAttributeList = [
   "variant",
-  "expandable",
+  "placement",
   "override-config",
   "avatar-image-url",
   "avatar-orb-color-1",
@@ -26,6 +26,7 @@ const MainAttributeList = [
   "override-first-message",
   "override-language",
   "override-voice-id",
+  "_dev-expandable",
 ] as const;
 
 export const TextKeyList = Object.keys(

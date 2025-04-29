@@ -4,10 +4,11 @@ import { WidgetConfig } from "../types/config";
 
 const BASIC_CONFIG: WidgetConfig = {
   variant: "full",
+  placement: "bottom-right",
   avatar: {
     type: "orb",
-    color_1: "#000",
-    color_2: "#fff",
+    color_1: "#000000",
+    color_2: "#ffffff",
   },
   show_avatar_when_collapsed: false,
   feedback_mode: "end",
@@ -27,7 +28,7 @@ function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
 
 export const Worker = setupWorker(
   http.get<{ agentId: string }>(
-    `${import.meta.env.VITE_SERVER_URL}/v1/convai/agents/:agentId/widget`,
+    `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
     ({ params }) => {
       if (isValidAgentId(params.agentId)) {
         return HttpResponse.json({
@@ -40,7 +41,7 @@ export const Worker = setupWorker(
     }
   ),
   ws
-    .link(`${import.meta.env.VITE_WEBSOCKET_URL}/v1/convai/conversation`)
+    .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
     .addEventListener("connection", ({ client }) => {
       const agentId = client.url.searchParams.get("agent_id");
       const conversationId = Math.random().toString(36).substring(7);

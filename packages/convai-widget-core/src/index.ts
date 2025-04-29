@@ -1,6 +1,6 @@
 import register from "preact-custom-element";
 import { CustomAttributeList } from "./types/attributes";
-import { ConvAIWidget } from "./ConvAIWidget";
+import { ConvAIWidget } from "./widget";
 
 export type { CustomAttributes } from "./types/attributes";
 

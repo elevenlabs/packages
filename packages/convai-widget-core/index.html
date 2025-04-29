@@ -4,26 +4,9 @@
     <meta charset="utf-8" />
     <title>Direct Rendering | Conversational AI Widget</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <style>
-      #widget {
-        pointer-events: none;
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-      }
-    </style>
+    <link href="src/styles/index.css" rel="stylesheet" />
   </head>
   <body>
-    <div id="widget"></div>
-    <script type="module">
-      import { render } from "preact";
-      import { jsx } from "preact/jsx-runtime";
-      import { ConvAIWidget } from "./src/ConvAIWidget";
-
-      render(
-        jsx(ConvAIWidget, { "agent-id": import.meta.env.VITE_AGENT_ID }),
-        document.getElementById("widget")
-      );
-    </script>
+    <script type="module" src="src/index.dev.tsx"></script>
   </body>
 </html>

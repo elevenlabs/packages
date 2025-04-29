@@ -2,9 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+.dev-host,
 :host {
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply ring-foreground ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
+  }
+
+  .animate-text {
+    background-image: linear-gradient(
+      75deg,
+      #030712,
+      #9ca3af,
+      #030712,
+      #9ca3af
+    );
+    background-size: 300% 100%;
+    background-clip: text;
+    color: transparent;
+
+    animation: Animation 2s linear infinite;
+  }
+
+  @keyframes Animation {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 100% 0;
+    }
+  }
 }

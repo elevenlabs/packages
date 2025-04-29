@@ -1,0 +1,162 @@
+import { Conversation, Mode, SessionConfig, Status } from "@11labs/client";
+import { computed, signal, useSignalEffect } from "@preact/signals";
+import { ComponentChildren } from "preact";
+import { createContext, useMemo } from "preact/compat";
+import { useEffect, useRef } from "react";
+import { useMicConfig } from "./mic-config";
+import { useSessionConfig } from "./session-config";
+
+import { useContextSafely } from "../utils/useContextSafely";
+
+type ConversationSetup = ReturnType<typeof useConversationSetup>;
+
+const ConversationContext = createContext<ConversationSetup | null>(null);
+
+interface ConversationProviderProps {
+  children: ComponentChildren;
+}
+
+export function ConversationProvider({ children }: ConversationProviderProps) {
+  const value = useConversationSetup();
+  return (
+    <ConversationContext.Provider value={value}>
+      {children}
+    </ConversationContext.Provider>
+  );
+}
+
+export function useConversation() {
+  return useContextSafely(ConversationContext);
+}
+
+function useConversationSetup() {
+  const conversationRef = useRef<Conversation | null>(null);
+  const lockRef = useRef<Promise<Conversation> | null>(null);
+
+  const config = useSessionConfig();
+  const { isMuted } = useMicConfig();
+
+  useSignalEffect(() => {
+    if (isMuted.value) {
+      conversationRef?.current?.setMicMuted(isMuted.value);
+    }
+  });
+
+  // Stop the conversation when the component unmounts.
+  // This can happen when the widget is used inside another framework.
+  useEffect(() => {
+    return () => {
+      conversationRef.current?.endSession();
+    };
+  }, []);
+
+  return useMemo(() => {
+    const status = signal<Status>("disconnected");
+    const isDisconnected = computed(() => status.value === "disconnected");
+
+    const mode = signal<Mode>("listening");
+    const isSpeaking = computed(() => mode.value === "speaking");
+
+    const error = signal<string | null>(null);
+    const lastId = signal<string | null>(null);
+    const canSendFeedback = signal(false);
+
+    return {
+      status,
+      isSpeaking,
+      mode,
+      isDisconnected,
+      lastId,
+      error,
+      canSendFeedback,
+      startSession: async (element: HTMLElement) => {
+        if (conversationRef.current?.isOpen()) {
+          return conversationRef.current.getId();
+        }
+
+        if (lockRef.current) {
+          const conversation = await lockRef.current;
+          return conversation.getId();
+        }
+
+        try {
+          lockRef.current = Conversation.startSession({
+            ...triggerCallEvent(element, config.peek()),
+            onModeChange: props => {
+              mode.value = props.mode;
+            },
+            onStatusChange: props => {
+              status.value = props.status;
+            },
+            onCanSendFeedbackChange: props => {
+              canSendFeedback.value = props.canSendFeedback;
+            },
+            onDisconnect: details => {
+              if (details.reason === "error") {
+                error.value = details.message;
+                console.error(
+                  "[ConversationalAI] Disconnected due to an error:",
+                  details.message
+                );
+              }
+            },
+          });
+
+          conversationRef.current = await lockRef.current;
+          if (isMuted.peek() !== undefined) {
+            conversationRef.current.setMicMuted(isMuted.peek());
+          }
+
+          const id = conversationRef.current.getId();
+          lastId.value = id;
+          error.value = null;
+          return id;
+        } catch (e) {
+          let message = "Could not start a conversation.";
+          if (e instanceof CloseEvent) {
+            message = e.reason || message;
+          } else if (e instanceof Error) {
+            message = e.message || message;
+          }
+          error.value = message;
+        } finally {
+          lockRef.current = null;
+        }
+      },
+      endSession: async () => {
+        const conversation = conversationRef.current;
+        conversationRef.current = null;
+        await conversation?.endSession();
+      },
+      getInputVolume: () => {
+        return conversationRef.current?.getInputVolume() ?? 0;
+      },
+      getOutputVolume: () => {
+        return conversationRef.current?.getOutputVolume() ?? 0;
+      },
+      sendFeedback: (like: boolean) => {
+        conversationRef.current?.sendFeedback(like);
+      },
+    };
+  }, [config, isMuted]);
+}
+
+function triggerCallEvent(
+  element: HTMLElement,
+  config: SessionConfig
+): SessionConfig {
+  try {
+    const event = new CustomEvent("elevenlabs-convai:call", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        config: structuredClone(config),
+      },
+    });
+    element.dispatchEvent(event);
+    return event.detail.config;
+  } catch (e) {
+    console.error("[ConversationalAI] Could not trigger call event:", e);
+    return config;
+  }
+}
