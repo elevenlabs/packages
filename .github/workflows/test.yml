@@ -33,15 +33,15 @@ jobs:
       - name: Install dependencies
         run: pnpm i
 
+      - name: Run build
+        run: pnpm run build
+
       - name: Install pulseaudio
         run: |
           apt-get update
           apt-get install -y pulseaudio
           apt-get install sudo
           sudo pulseaudio --start
-
-      - name: Run build
-        run: pnpm run build
 
       - name: Run tests
         run: pnpm run test
