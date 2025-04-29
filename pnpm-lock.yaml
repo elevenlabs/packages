@@ -87,9 +87,6 @@ importers:
       eslint:
         specifier: ^9.8.0
         version: 9.8.0
-      mock-socket:
-        specifier: ^9.3.1
-        version: 9.3.1
       msw:
         specifier: ^2.7.5
         version: 2.7.5(@types/node@22.5.0)(typescript@5.5.4)
