@@ -79,7 +79,7 @@ export class Input {
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly inputStream: MediaStream
+    public inputStream: MediaStream
   ) {}
 
   public async close() {
@@ -89,5 +89,42 @@ export class Input {
 
   public setMuted(isMuted: boolean) {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
+  }
+
+  public async setInputDevice(deviceId: string): Promise<boolean> {
+    try {
+      this.inputStream.getTracks().forEach(track => track.stop());
+
+      await this.context.suspend();
+
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+        },
+      });
+
+      this.analyser.disconnect();
+      const newSource = this.context.createMediaStreamSource(newStream);
+      newSource.connect(this.analyser);
+      this.analyser.connect(this.worklet);
+
+      this.inputStream = newStream;
+
+      await this.context.resume();
+
+      return true;
+    } catch (error) {
+      try {
+        await this.context.resume();
+      } catch (resumeError) {
+        console.error("Error resuming audio context:", resumeError);
+        return false;
+      }
+
+      console.error("Error switching input device:", error);
+      return false;
+    }
   }
 }
