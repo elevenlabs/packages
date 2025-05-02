@@ -222,6 +222,70 @@ sendContextualUpdate(
 );
 ```
 
+##### sendUserMessage
+
+Sends a text messages to the agent.
+
+Can be used to let the user type in the message instead of using the microphone.
+Unlike `sendContextualUpdate`, this will be treated as a user message and will prompt the agent to take its turn in the conversation.
+
+```js
+const { sendUserMessage, sendUserActivity } = useConversation();
+const [value, setValue] = useState("");
+
+return (
+  <>
+    <input
+      value={value}
+      onChange={e => {
+        setValue(e.target.value);
+        sendUserActivity();
+      }}
+    />
+    <button
+      onClick={() => {
+        sendUserMessage(value);
+        setValue(value);
+      }}
+    >
+      SEND
+    </button>
+  </>
+);
+```
+
+##### sendUserActivity
+
+Notifies the agent about user activity.
+
+The agent will not attempt to speak for at least 2 seconds after the user activity is detected.
+This can be used to prevent the agent from interrupting the user when they are typing.
+
+```js
+const { sendUserMessage, sendUserActivity } = useConversation();
+const [value, setValue] = useState("");
+
+return (
+  <>
+    <input
+      value={value}
+      onChange={e => {
+        setValue(e.target.value);
+        sendUserActivity();
+      }}
+    />
+    <button
+      onClick={() => {
+        sendUserMessage(value);
+        setValue(value);
+      }}
+    >
+      SEND
+    </button>
+  </>
+);
+```
+
 ##### setVolume
 
 A method to set the output volume of the conversation. Accepts object with volume field between 0 and 1.

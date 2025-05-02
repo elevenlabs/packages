@@ -137,6 +137,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
     sendContextualUpdate: (text: string) => {
       conversationRef.current?.sendContextualUpdate(text);
     },
+    sendUserMessage: (text: string) => {
+      conversationRef.current?.sendUserMessage(text);
+    },
+    sendUserActivity: () => {
+      conversationRef.current?.sendUserActivity();
+    },
     status,
     canSendFeedback,
     micMuted,

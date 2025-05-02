@@ -475,6 +475,19 @@ export class Conversation {
       text,
     });
   };
+
+  public sendUserMessage = (text: string) => {
+    this.connection.sendMessage({
+      type: "user_message",
+      text,
+    });
+  };
+
+  public sendUserActivity = () => {
+    this.connection.sendMessage({
+      type: "user_activity",
+    });
+  };
 }
 
 export function postOverallFeedback(

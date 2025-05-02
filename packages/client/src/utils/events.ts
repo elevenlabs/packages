@@ -102,13 +102,22 @@ export type ContextualUpdateEvent = {
   type: "contextual_update";
   text: string;
 };
+export type UserMessageEvent = {
+  type: "user_message";
+  text: string;
+};
+export type UserActivityEvent = {
+  type: "user_activity";
+};
 export type OutgoingSocketEvent =
   | PongEvent
   | UserAudioEvent
   | InitiationClientDataEvent
   | UserFeedbackEvent
   | ClientToolResultEvent
-  | ContextualUpdateEvent;
+  | ContextualUpdateEvent
+  | UserMessageEvent
+  | UserActivityEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
   return !!event.type;

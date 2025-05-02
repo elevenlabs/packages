@@ -187,7 +187,7 @@ const conversation = await Conversation.startSession({
 
 #### Acquiring a Wake Lock
 
-By default, the conversation will attempt to acquire a [wake lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device from going to sleep during the conversation. 
+By default, the conversation will attempt to acquire a [wake lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device from going to sleep during the conversation.
 This can be disabled by setting the `useWakeLock` option to `false`:
 
 ```ts
@@ -230,6 +230,33 @@ This can be used to inform the agent about user actions that are not directly re
 conversation.sendContextualUpdate(
   "User navigated to another page. Consider it for next response, but don't react to this contextual update."
 );
+```
+
+##### sendUserMessage
+
+Sends a text messages to the agent.
+
+Can be used to let the user type in the message instead of using the microphone.
+Unlike `sendContextualUpdate`, this will be treated as a user message and will prompt the agent to take its turn in the conversation.
+
+```js
+sendButton.addEventListener("click", e => {
+  conversation.sendUserMessage(textInput.value);
+  textInput.value = "";
+});
+```
+
+##### sendUserActivity
+
+Notifies the agent about user activity.
+
+The agent will not attempt to speak for at least 2 seconds after the user activity is detected.
+This can be used to prevent the agent from interrupting the user when they are typing.
+
+```js
+textInput.addEventListener("input", () => {
+  conversation.sendUserActivity();
+});
 ```
 
 ##### getId
