@@ -19,7 +19,7 @@ interface AvatarProps {
 export function Avatar({ size = "sm", className }: AvatarProps) {
   const { getInputVolume, getOutputVolume, isSpeaking, isDisconnected } =
     useConversation();
-  const config = useAvatarConfig();
+  const { config } = useAvatarConfig();
   const backgroundRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -36,8 +36,8 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
       const inputVolume = getInputVolume();
       const outputVolume = getOutputVolume();
 
-      const inputScale = isSpeaking.peek() ? 1 : 1 - inputVolume * 0.6;
-      const outputScale = !isSpeaking.peek() ? 1 : 1 + outputVolume * 0.6;
+      const inputScale = isSpeaking.peek() ? 1 : 1 - inputVolume * 0.4;
+      const outputScale = !isSpeaking.peek() ? 1 : 1 + outputVolume * 0.4;
 
       backgroundRef.current!.style.transform = `scale(${outputScale})`;
       imageRef.current!.style.transform = `scale(${inputScale})`;
@@ -61,13 +61,7 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
   }));
 
   return (
-    <div
-      className={clsx(
-        "relative shrink-0 bg-background",
-        SIZE_CLASSES[size],
-        className
-      )}
-    >
+    <div className={clsx("relative shrink-0", SIZE_CLASSES[size], className)}>
       <div
         ref={backgroundRef}
         className="absolute inset-0 rounded-full bg-gray-200"
@@ -75,7 +69,7 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
       <div
         ref={imageRef}
         style={style}
-        className="absolute inset-0 rounded-full overflow-hidden"
+        className="absolute inset-0 rounded-full overflow-hidden bg-background"
       >
         {config.value.type === "orb" && (
           <OrbCanvas
@@ -89,9 +83,14 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
 }
 
 function OrbCanvas({ color1, color2 }: { color1: string; color2: string }) {
+  const { canvasUrl } = useAvatarConfig();
   const [orb, setOrb] = useState<Orb | null>(null);
   useEffect(() => {
-    orb?.updateColors(color1, color2);
+    if (orb) {
+      orb.updateColors(color1, color2);
+      orb.render();
+      canvasUrl.value = orb.toDataURL();
+    }
   }, [orb, color1, color2]);
 
   const setupOrb = useCallback(

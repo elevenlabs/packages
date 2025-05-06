@@ -10,13 +10,13 @@ interface CallButtonProps extends BaseButtonProps {
 export function CallButton({
   iconOnly,
   isDisconnected,
+  children,
   ...props
 }: CallButtonProps) {
   const { endSession, startSession } = useConversation();
   const text = useTextContents();
   return (
     <Button
-      className="w-full"
       variant={isDisconnected ? "primary" : "secondary"}
       icon={isDisconnected ? "phone" : "phone-off"}
       onClick={isDisconnected ? e => startSession(e.currentTarget) : endSession}
@@ -24,9 +24,8 @@ export function CallButton({
       {...props}
     >
       {!iconOnly
-        ? isDisconnected
-          ? text.start_call_text
-          : text.end_call_text
+        ? (children ??
+          (isDisconnected ? text.start_call_text : text.end_call_text))
         : undefined}
     </Button>
   );

@@ -1,13 +1,32 @@
-interface FlagProps {
+import { ImgHTMLAttributes } from "preact/compat";
+import { clsx } from "clsx";
+
+const SIZE_CLASSES = {
+  sm: "w-4 h-4",
+  md: "w-6 h-6",
+};
+
+interface FlagProps extends ImgHTMLAttributes<HTMLImageElement> {
+  size?: keyof typeof SIZE_CLASSES;
   flagCode: string;
 }
 
-export function Flag({ flagCode }: FlagProps) {
+export function Flag({
+  size = "md",
+  flagCode,
+  className,
+  ...props
+}: FlagProps) {
   return (
     <img
-      className="w-6 h-6 rounded-full object-cover"
+      className={clsx(
+        "rounded-full object-cover",
+        SIZE_CLASSES[size],
+        className
+      )}
       src={`https://purecatamphetamine.github.io/country-flag-icons/1x1/${flagCode.toUpperCase()}.svg`}
       alt={`${flagCode.toUpperCase()} flag`}
+      {...props}
     />
   );
 }

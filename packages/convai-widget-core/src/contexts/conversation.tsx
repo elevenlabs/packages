@@ -1,4 +1,10 @@
-import { Conversation, Mode, SessionConfig, Status } from "@11labs/client";
+import {
+  Conversation,
+  Mode,
+  Role,
+  SessionConfig,
+  Status,
+} from "@11labs/client";
 import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
@@ -15,6 +21,22 @@ const ConversationContext = createContext<ConversationSetup | null>(null);
 interface ConversationProviderProps {
   children: ComponentChildren;
 }
+
+export type TranscriptEntry =
+  | {
+      type: "message";
+      role: Role;
+      message: string;
+    }
+  | {
+      type: "disconnection";
+      role: Role;
+      message?: undefined;
+    }
+  | {
+      type: "error";
+      message: string;
+    };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
@@ -60,6 +82,7 @@ function useConversationSetup() {
     const error = signal<string | null>(null);
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
+    const transcript = signal<TranscriptEntry[]>([]);
 
     return {
       status,
@@ -69,7 +92,8 @@ function useConversationSetup() {
       lastId,
       error,
       canSendFeedback,
-      startSession: async (element: HTMLElement) => {
+      transcript,
+      startSession: async (element: HTMLElement, initialMessage?: string) => {
         if (conversationRef.current?.isOpen()) {
           return conversationRef.current.getId();
         }
@@ -78,6 +102,10 @@ function useConversationSetup() {
           const conversation = await lockRef.current;
           return conversation.getId();
         }
+
+        transcript.value = initialMessage
+          ? [{ type: "message", role: "user", message: initialMessage }]
+          : [];
 
         try {
           lockRef.current = Conversation.startSession({
@@ -91,7 +119,26 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
+            onMessage: ({ source, message }) => {
+              transcript.value = [
+                ...transcript.value,
+                {
+                  type: "message",
+                  role: source,
+                  message,
+                },
+              ];
+            },
             onDisconnect: details => {
+              transcript.value = [
+                ...transcript.value,
+                details.reason === "error"
+                  ? { type: "error", message: details.message }
+                  : {
+                      type: "disconnection",
+                      role: details.reason === "user" ? "user" : "ai",
+                    },
+              ];
               if (details.reason === "error") {
                 error.value = details.message;
                 console.error(
@@ -106,6 +153,9 @@ function useConversationSetup() {
           if (isMuted.peek() !== undefined) {
             conversationRef.current.setMicMuted(isMuted.peek());
           }
+          if (initialMessage) {
+            conversationRef.current.sendUserMessage(initialMessage);
+          }
 
           const id = conversationRef.current.getId();
           lastId.value = id;
@@ -119,6 +169,7 @@ function useConversationSetup() {
             message = e.message || message;
           }
           error.value = message;
+          transcript.value = [...transcript.value, { type: "error", message }];
         } finally {
           lockRef.current = null;
         }
@@ -136,6 +187,20 @@ function useConversationSetup() {
       },
       sendFeedback: (like: boolean) => {
         conversationRef.current?.sendFeedback(like);
+      },
+      sendUserMessage: (text: string) => {
+        conversationRef.current?.sendUserMessage(text);
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "message",
+            role: "user",
+            message: text,
+          },
+        ];
+      },
+      sendUserActivity: () => {
+        conversationRef.current?.sendUserActivity();
       },
     };
   }, [config, isMuted]);

@@ -216,7 +216,11 @@ export class Orb {
     this.gl.generateMipmap(this.gl.TEXTURE_2D);
   };
 
-  private render = () => {
+  public toDataURL = () => {
+    return (this.gl.canvas as HTMLCanvasElement).toDataURL("image/png");
+  };
+
+  public render = () => {
     if (!this.gl) {
       this.rafId = null;
       return;

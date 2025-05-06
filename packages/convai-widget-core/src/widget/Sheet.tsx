@@ -1,4 +1,4 @@
-import { Signal } from "@preact/signals";
+import { Signal, useSignal } from "@preact/signals";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
@@ -7,6 +7,9 @@ import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { StatusLabel } from "./StatusLabel";
 import { Placement } from "../types/config";
+import { SheetLanguageSelect } from "./SheetLanguageSelect";
+import { SheetActions } from "./SheetActions";
+import { Transcript } from "./Transcript";
 
 interface SheetProps {
   open: Signal<boolean>;
@@ -23,41 +26,62 @@ const ORIGIN_CLASSES: Record<Placement, string> = {
 
 export function Sheet({ open }: SheetProps) {
   const placement = useWidgetConfig().value.placement;
-  const { isDisconnected, startSession } = useConversation();
+  const { isDisconnected, startSession, transcript } = useConversation();
+
+  const transcriptEnabled = true;
+  const showTranscript =
+    transcript.value.length > 0 || (!isDisconnected.value && transcriptEnabled);
+  const scrollPinned = useSignal(true);
 
   return (
     <InOutTransition active={open}>
       <div
         className={clsx(
-          "absolute bg-background shadow-md pointer-events-auto p-4 rounded-3xl min-w-[400px] min-h-[550px]",
+          "flex flex-col overflow-hidden absolute bg-background shadow-md pointer-events-auto rounded-3xl w-[400px] h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top") ? "top-20" : "bottom-20"
         )}
       >
-        <InOutTransition active={!isDisconnected.value}>
-          <div className="flex gap-2 items-start transition-opacity duration-200 data-hidden:opacity-0">
-            <div className="w-16 h-16" />
-            <StatusLabel className="rounded-bl-md" />
+        <div className="bg-background shrink-0 flex gap-2 p-4 items-start">
+          <div className="relative w-16 h-16" />
+          <InOutTransition active={showTranscript && !isDisconnected.value}>
+            <StatusLabel className="rounded-bl-md transition-opacity data-hidden:opacity-0" />
+          </InOutTransition>
+        </div>
+        <Transcript scrollPinned={scrollPinned} />
+        <SheetActions
+          scrollPinned={scrollPinned}
+          showTranscript={showTranscript}
+        />
+        <InOutTransition active={!showTranscript || isDisconnected.value}>
+          <div className="absolute top-0 left-0 right-0 p-4 flex justify-center transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
+            <SheetLanguageSelect />
           </div>
         </InOutTransition>
         <div
           className={clsx(
-            "absolute origin-top-left transition-[transform,left,top] duration-200",
-            isDisconnected.value
-              ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
-              : "top-0 left-0 translate-x-4 translate-y-4 scale-[0.33333]"
+            "absolute origin-top-left transition-[transform,left,top] duration-200 z-1",
+            showTranscript
+              ? "top-4 left-4 scale-[0.333]"
+              : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
           )}
         >
           <Avatar size="lg" />
-          <InOutTransition active={isDisconnected.value}>
-            <Button
-              aria-label="Start call"
-              variant="primary"
-              icon="phone"
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 data-hidden:opacity-0"
-              onClick={e => startSession(e.currentTarget)}
-            />
+          <InOutTransition active={!showTranscript && isDisconnected.value}>
+            <div className="absolute bottom-0 p-1 rounded-full bg-background left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
+              <Button
+                aria-label="Start call"
+                variant="primary"
+                icon="phone"
+                onClick={e => startSession(e.currentTarget)}
+              />
+            </div>
+          </InOutTransition>
+          <InOutTransition active={!showTranscript && !isDisconnected.value}>
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
+              <StatusLabel />
+            </div>
           </InOutTransition>
         </div>
       </div>

@@ -1,0 +1,36 @@
+import * as Select from "@radix-ui/react-select";
+import { Icon } from "../components/Icon";
+import { useLanguageConfig } from "../contexts/language-config";
+import { Flag } from "../components/Flag";
+import { SelectTriggerProps } from "@radix-ui/react-select";
+import { clsx } from "clsx";
+import { LanguageSelect } from "./LanguageSelect";
+
+export function SheetLanguageSelect({
+  className,
+  ...rest
+}: SelectTriggerProps) {
+  const { language, showPicker } = useLanguageConfig();
+  if (!showPicker.value) {
+    return null;
+  }
+
+  return (
+    <LanguageSelect align="center">
+      <Select.Trigger
+        className={clsx(
+          "h-9 min-w-max rounded-full focus-ring px-2 flex gap-2 items-center hover:bg-gray-50 font-medium text-md",
+          className
+        )}
+        aria-label="Food"
+        {...rest}
+      >
+        <Flag size="sm" flagCode={language.value.flagCode} />
+        {language.value.name}
+        <Select.Icon className="text-subtle" asChild>
+          <Icon size="sm" name="chevron-down" />
+        </Select.Icon>
+      </Select.Trigger>
+    </LanguageSelect>
+  );
+}

@@ -1,14 +1,21 @@
-import { ReadonlySignal, useComputed } from "@preact/signals";
+import {
+  ReadonlySignal,
+  Signal,
+  useComputed,
+  useSignal,
+} from "@preact/signals";
 import { ComponentChildren } from "preact";
-import { createContext } from "preact/compat";
+import { createContext, useMemo } from "preact/compat";
 import { AvatarConfig } from "../types/config";
 import { useAttribute } from "./attributes";
 import { useWidgetConfig } from "./widget-config";
 import { useContextSafely } from "../utils/useContextSafely";
 
-const AvatarConfigContext = createContext<ReadonlySignal<AvatarConfig> | null>(
-  null
-);
+const AvatarConfigContext = createContext<{
+  config: ReadonlySignal<AvatarConfig>;
+  previewUrl: ReadonlySignal<string>;
+  canvasUrl: Signal<string>;
+} | null>(null);
 
 interface AvatarConfigProviderProps {
   children: ComponentChildren;
@@ -20,7 +27,9 @@ export function AvatarConfigProvider({ children }: AvatarConfigProviderProps) {
   const orbColor1 = useAttribute("avatar-orb-color-1");
   const orbColor2 = useAttribute("avatar-orb-color-2");
 
-  const value = useComputed<AvatarConfig>(() => {
+  const canvasUrl = useSignal("");
+
+  const config = useComputed<AvatarConfig>(() => {
     if (imageUrl.value) {
       return {
         type: "image",
@@ -37,6 +46,19 @@ export function AvatarConfigProvider({ children }: AvatarConfigProviderProps) {
 
     return widgetConfig.value.avatar;
   });
+
+  const previewUrl = useComputed(() => {
+    switch (config.value.type) {
+      case "url":
+        return config.value.custom_url;
+      case "orb":
+        return canvasUrl.value;
+      case "image":
+        return config.value.url;
+    }
+  });
+
+  const value = useMemo(() => ({ config, previewUrl, canvasUrl }), []);
 
   return (
     <AvatarConfigContext.Provider value={value}>

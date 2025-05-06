@@ -6,12 +6,13 @@ import { useLanguageConfig } from "../contexts/language-config";
 import { Flag } from "../components/Flag";
 import { useRootPortal } from "../contexts/root-portal";
 import { ComponentChildren } from "preact";
+import { SelectContentProps } from "@radix-ui/react-select";
 
-interface LanguageSelectProps {
+interface LanguageSelectProps extends SelectContentProps {
   children: ComponentChildren;
 }
 
-export function LanguageSelect({ children }: LanguageSelectProps) {
+export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
   const [open, setOpen] = useState(false);
   const { language, setLanguage, options } = useLanguageConfig();
   const portal = useRootPortal();
@@ -39,6 +40,7 @@ export function LanguageSelect({ children }: LanguageSelectProps) {
           onPointerDownOutside={() => setOpen(false)}
           onCloseAutoFocus={() => setOpen(false)}
           onEscapeKeyDown={() => setOpen(false)}
+          {...rest}
         >
           <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-background text-subtle cursor-default">
             <Icon size="sm" name="chevron-up" />
