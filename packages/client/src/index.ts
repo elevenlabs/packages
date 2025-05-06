@@ -44,6 +44,7 @@ export type Callbacks = {
   onError: (message: string, context?: any) => void;
   onMessage: (props: { message: string; source: Role }) => void;
   onAudio: (base64Audio: string) => void;
+  onInterruption: () => void;
   onModeChange: (prop: { mode: Mode }) => void;
   onStatusChange: (prop: { status: Status }) => void;
   onCanSendFeedbackChange: (prop: { canSendFeedback: boolean }) => void;
@@ -60,6 +61,7 @@ const defaultCallbacks: Callbacks = {
   onError: () => {},
   onMessage: () => {},
   onAudio: () => {},
+  onInterruption: () => {},
   onModeChange: () => {},
   onStatusChange: () => {},
   onCanSendFeedbackChange: () => {},
@@ -221,6 +223,7 @@ export class Conversation {
         if (parsedEvent.interruption_event) {
           this.lastInterruptTimestamp = parsedEvent.interruption_event.event_id;
         }
+        this.options.onInterruption();
         this.fadeOutAudio();
         return;
       }
