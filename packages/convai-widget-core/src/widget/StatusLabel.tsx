@@ -3,20 +3,22 @@ import { HTMLAttributes, useState } from "preact/compat";
 import { useConversation } from "../contexts/conversation";
 import { useSignalEffect } from "@preact/signals";
 import { InOutTransition } from "../components/InOutTransition";
+import { useTextContents } from "../contexts/text-contents";
 
 export function StatusLabel({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   const { status, isSpeaking } = useConversation();
-  const [label, setLabel] = useState("Connecting");
+  const text = useTextContents();
+  const [label, setLabel] = useState(text.connecting_status.peek());
   useSignalEffect(() => {
     const label =
       status.value !== "connected"
-        ? "Connecting"
+        ? text.connecting_status.value
         : isSpeaking.value
-          ? "Speak to interrupt"
-          : "Listening";
+          ? text.speaking_status.value
+          : text.listening_status.value;
 
     if (status.value === "connected" && isSpeaking.value) {
       setLabel(label);

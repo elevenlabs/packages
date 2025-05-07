@@ -11,6 +11,7 @@ import { useAttribute } from "./attributes";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
+import { parseBoolAttribute } from "../types/attributes";
 
 const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
@@ -70,6 +71,9 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const variant = useAttribute("variant");
   const placement = useAttribute("placement");
   const termsKey = useAttribute("terms-key");
+  const micMuting = useAttribute("mic-muting");
+  const transcript = useAttribute("transcript");
+  const textInput = useAttribute("text-input");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -78,12 +82,25 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
 
     const patchedVariant = variant.value ?? fetchedConfig.value.variant;
     const patchedPlacement = placement.value ?? fetchedConfig.value.placement;
+    const patchedTermsKey = termsKey.value ?? fetchedConfig.value.terms_key;
+    const patchedMicMuting =
+      parseBoolAttribute(micMuting.value) ??
+      fetchedConfig.value.mic_muting_enabled;
+    const patchedTranscript =
+      parseBoolAttribute(transcript.value) ??
+      fetchedConfig.value.transcript_enabled;
+    const patchedTextInput =
+      parseBoolAttribute(textInput.value) ??
+      fetchedConfig.value.text_input_enabled;
 
     return {
       ...fetchedConfig.value,
       variant: parseVariant(patchedVariant),
       placement: parsePlacement(patchedPlacement),
-      termsKey: termsKey.value ?? fetchedConfig.value.terms_key,
+      terms_key: patchedTermsKey,
+      mic_muting_enabled: patchedMicMuting,
+      transcript_enabled: patchedTranscript,
+      text_input_enabled: patchedTextInput,
     };
   });
 

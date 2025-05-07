@@ -1,17 +1,18 @@
-import { computed, ReadonlySignal } from "@preact/signals";
+import { computed, ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
-import { DefaultTextContents } from "../types/config";
-import { useAttributes } from "./attributes";
+import { DefaultTextContents, TextContents, TextKeys } from "../types/config";
+import { useAttribute } from "./attributes";
 import { useWidgetConfig } from "./widget-config";
-import { TextAttributeList, TextKeyList } from "../types/attributes";
-import { useContextSafely } from "../utils/useContextSafely";
 
-export type TextContents = {
-  [key in (typeof TextKeyList)[number]]: ReadonlySignal<string>;
+import { useContextSafely } from "../utils/useContextSafely";
+import { useLanguageConfig } from "./language-config";
+
+type TextContentsType = {
+  [key in keyof TextContents]: ReadonlySignal<string>;
 };
 
-const TextContentsContext = createContext<TextContents | null>(null);
+const TextContentsContext = createContext<TextContentsType | null>(null);
 
 interface TextContentsProviderProps {
   children: ComponentChildren;
@@ -19,20 +20,35 @@ interface TextContentsProviderProps {
 
 export function TextContentsProvider({ children }: TextContentsProviderProps) {
   const config = useWidgetConfig();
-  const attributes = useAttributes();
+  const { language } = useLanguageConfig();
+  const textContents = useAttribute("text-contents");
+  const parsedTextContents = useComputed(() => {
+    try {
+      if (textContents.value) {
+        const parsed = JSON.parse(textContents.value);
+        if (typeof parsed === "object") {
+          return parsed as Partial<TextContents>;
+        }
+      }
+    } catch (e) {
+      console.error("[ConversationalAI] Cannot parse text-contents:", e);
+    }
+
+    return {};
+  });
 
   const value = useMemo(() => {
     return Object.fromEntries(
-      TextKeyList.map((key, index) => [
+      TextKeys.map(key => [
         key,
         computed(
           () =>
-            attributes[TextAttributeList[index]].value ??
-            config.value[key] ??
+            parsedTextContents.value[key] ??
+            config.value.text_contents?.[language.value.languageCode]?.[key] ??
             DefaultTextContents[key]
         ),
       ])
-    ) as TextContents;
+    ) as TextContentsType;
   }, []);
 
   return (

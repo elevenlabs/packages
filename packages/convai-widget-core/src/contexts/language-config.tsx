@@ -29,10 +29,10 @@ export function LanguageConfigProvider({
   children,
 }: LanguageConfigProviderProps) {
   const widgetConfig = useWidgetConfig();
-  const langaugeAttribute = useAttribute("language");
+  const languageAttribute = useAttribute("language");
   const overrideLanguageAttribute = useAttribute("override-language");
   const languageCode = useSignal(
-    langaugeAttribute.peek() ?? widgetConfig.peek().language
+    languageAttribute.peek() ?? widgetConfig.peek().language
   );
   const supportedOverrides = useComputed(() =>
     (widgetConfig.value.supported_language_overrides ?? []).filter(

@@ -50,7 +50,7 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
           }
         >
           {!expanded.value && isDisconnected.value && variant !== "tiny"
-            ? text.start_call_text
+            ? text.start_call
             : undefined}
         </Button>
       </SizeTransition>

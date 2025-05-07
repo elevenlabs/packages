@@ -1,6 +1,5 @@
 import { memo } from "preact/compat";
 import { useComputed, useSignal } from "@preact/signals";
-import { useAttribute } from "../contexts/attributes";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
 import { Root } from "../contexts/root-portal";
@@ -30,8 +29,10 @@ const PLACEMENT_CLASSES: Record<Placement, string> = {
 
 export const Wrapper = memo(function Wrapper() {
   const expanded = useSignal(false);
-  const expandable = useAttribute("_dev-expandable");
   const config = useWidgetConfig();
+  const expandable = useComputed(
+    () => config.value.transcript_enabled || config.value.text_input_enabled
+  );
   const className = useComputed(() =>
     clsx(
       "convai-widget-root absolute inset-8 flex",
@@ -42,7 +43,7 @@ export const Wrapper = memo(function Wrapper() {
   return (
     <Root className={className}>
       {expandable.value && <Sheet open={expanded} />}
-      <Trigger expandable={!!expandable.value} expanded={expanded} />
+      <Trigger expandable={expandable.value} expanded={expanded} />
     </Root>
   );
 });

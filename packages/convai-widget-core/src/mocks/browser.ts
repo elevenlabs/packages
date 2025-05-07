@@ -10,11 +10,12 @@ const BASIC_CONFIG: WidgetConfig = {
     color_1: "#000000",
     color_2: "#ffffff",
   },
-  show_avatar_when_collapsed: false,
   feedback_mode: "end",
   language: "en",
-  disable_banner: false,
   mic_muting_enabled: false,
+  transcript_enabled: false,
+  text_input_enabled: false,
+  text_contents: {},
 };
 
 export const AGENTS = {

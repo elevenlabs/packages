@@ -1,14 +1,14 @@
-import { Signal, useSignalEffect } from "@preact/signals";
-import { useConversation } from "../contexts/conversation";
+import { ReadonlySignal, Signal, useSignalEffect } from "@preact/signals";
+import { TranscriptEntry } from "../contexts/conversation";
 import { useEffect, useRef } from "preact/compat";
 import { TranscriptMessage } from "./TranscriptMessage";
 
 interface TranscriptProps {
   scrollPinned: Signal<boolean>;
+  transcript: ReadonlySignal<TranscriptEntry[]>;
 }
 
-export function Transcript({ scrollPinned }: TranscriptProps) {
-  const { transcript } = useConversation();
+export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   const scrollContainer = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     scrollContainer.current?.scrollTo(0, scrollContainer.current.scrollHeight);

@@ -28,7 +28,7 @@ export function FullTrigger({
               !isDisconnected.value && "opacity-0 scale-90"
             )}
           >
-            {text.action_text}
+            {text.main_label}
           </span>
           <InOutTransition active={!isDisconnected.value}>
             <StatusLabel className="absolute top-1/2 -translate-y-1/2 transition-[transform,opacity] duration-200 data-hidden:opacity-0 data-hidden:scale-90" />

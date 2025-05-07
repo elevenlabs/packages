@@ -11,11 +11,16 @@ const ICON_MAP = {
   "chevron-up": ChevronUpIcon,
 };
 
+const SIZE_CLASSES = {
+  sm: "text-xs",
+  md: "text-lg",
+};
+
 export type IconName = keyof typeof ICON_MAP;
 
 interface IconProps {
   name: IconName;
-  size?: "sm" | "md";
+  size?: keyof typeof SIZE_CLASSES;
   className?: string;
 }
 
@@ -24,7 +29,7 @@ export function Icon({ name, size = "md", className }: IconProps) {
   return (
     <slot
       name={`icon-${name}`}
-      className={clsx("flex", size === "md" ? "text-lg" : "text-xs", className)}
+      className={clsx("flex", SIZE_CLASSES[size], className)}
       aria-hidden={true}
     >
       <DefaultIcon />

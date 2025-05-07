@@ -1,4 +1,4 @@
-import { Signal, useSignal } from "@preact/signals";
+import { Signal, useComputed, useSignal } from "@preact/signals";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
@@ -10,6 +10,7 @@ import { Placement } from "../types/config";
 import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { SheetActions } from "./SheetActions";
 import { Transcript } from "./Transcript";
+import { useTextContents } from "../contexts/text-contents";
 
 interface SheetProps {
   open: Signal<boolean>;
@@ -25,12 +26,21 @@ const ORIGIN_CLASSES: Record<Placement, string> = {
 };
 
 export function Sheet({ open }: SheetProps) {
-  const placement = useWidgetConfig().value.placement;
+  const text = useTextContents();
+  const config = useWidgetConfig();
+  const placement = config.value.placement;
   const { isDisconnected, startSession, transcript } = useConversation();
+  const filteredTranscript = useComputed(() => {
+    return config.value.transcript_enabled
+      ? transcript.value
+      : transcript.value.filter(
+          entry => entry.type !== "message" || entry.isText
+        );
+  });
 
-  const transcriptEnabled = true;
   const showTranscript =
-    transcript.value.length > 0 || (!isDisconnected.value && transcriptEnabled);
+    filteredTranscript.value.length > 0 ||
+    (!isDisconnected.value && config.value.transcript_enabled);
   const scrollPinned = useSignal(true);
 
   return (
@@ -49,7 +59,10 @@ export function Sheet({ open }: SheetProps) {
             <StatusLabel className="rounded-bl-md transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
-        <Transcript scrollPinned={scrollPinned} />
+        <Transcript
+          transcript={filteredTranscript}
+          scrollPinned={scrollPinned}
+        />
         <SheetActions
           scrollPinned={scrollPinned}
           showTranscript={showTranscript}
@@ -71,7 +84,7 @@ export function Sheet({ open }: SheetProps) {
           <InOutTransition active={!showTranscript && isDisconnected.value}>
             <div className="absolute bottom-0 p-1 rounded-full bg-background left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
               <Button
-                aria-label="Start call"
+                aria-label={text.start_call}
                 variant="primary"
                 icon="phone"
                 onClick={e => startSession(e.currentTarget)}

@@ -27,6 +27,7 @@ export type TranscriptEntry =
       type: "message";
       role: Role;
       message: string;
+      isText: boolean;
     }
   | {
       type: "disconnection";
@@ -104,7 +105,14 @@ function useConversationSetup() {
         }
 
         transcript.value = initialMessage
-          ? [{ type: "message", role: "user", message: initialMessage }]
+          ? [
+              {
+                type: "message",
+                role: "user",
+                message: initialMessage,
+                isText: true,
+              },
+            ]
           : [];
 
         try {
@@ -126,6 +134,7 @@ function useConversationSetup() {
                   type: "message",
                   role: source,
                   message,
+                  isText: false,
                 },
               ];
             },
@@ -196,6 +205,7 @@ function useConversationSetup() {
             type: "message",
             role: "user",
             message: text,
+            isText: true,
           },
         ];
       },

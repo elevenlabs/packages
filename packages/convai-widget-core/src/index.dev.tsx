@@ -17,7 +17,9 @@ import { useState } from "preact/compat";
 function Playground() {
   const [variant, setVariant] = useState<Variant>("compact");
   const [placement, setPlacement] = useState<Placement>("bottom-right");
-  const [expandable, setExpandable] = useState(false);
+  const [micMuting, setMicMuting] = useState(false);
+  const [transcript, setTranscript] = useState(false);
+  const [textInput, setTextInput] = useState(false);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center">
@@ -49,10 +51,26 @@ function Playground() {
         <label>
           <input
             type="checkbox"
-            checked={expandable}
-            onChange={e => setExpandable(e.currentTarget.checked)}
+            checked={micMuting}
+            onChange={e => setMicMuting(e.currentTarget.checked)}
           />{" "}
-          Expandable
+          Mic muting
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={transcript}
+            onChange={e => setTranscript(e.currentTarget.checked)}
+          />{" "}
+          Transcript
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={textInput}
+            onChange={e => setTextInput(e.currentTarget.checked)}
+          />{" "}
+          Text input
         </label>
       </div>
       <div className="dev-host">
@@ -60,7 +78,9 @@ function Playground() {
           agent-id={import.meta.env.VITE_AGENT_ID}
           variant={variant}
           placement={placement}
-          _dev-expandable={expandable ? "true" : undefined}
+          transcript={JSON.stringify(transcript)}
+          text-input={JSON.stringify(textInput)}
+          mic-muting={JSON.stringify(micMuting)}
         />
       </div>
     </div>
