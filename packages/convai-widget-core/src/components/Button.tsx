@@ -6,8 +6,8 @@ import { ComponentChildren } from "preact";
 import { Signalish } from "../utils/signalish";
 
 const VARIANT_CLASSES = {
-  primary: "bg-foreground text-background border border-foreground px-2.5",
-  secondary: "bg-background text-foreground border px-2.5",
+  primary: "text-accent-primary border border-accent bg-accent hover:border-accent-hover hover:bg-accent-hover active:border-accent-active active:bg-accent-active",
+  secondary: "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active",
 };
 
 export interface BaseButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -42,7 +42,7 @@ export function Button({
   return (
     <button
       className={clsx(
-        "h-9 flex items-center transition-colors text-sm justify-center rounded-full duration-200 focus-ring overflow-hidden select-none",
+        "h-9 flex px-2.5 text-sm items-center transition-colors justify-center rounded-full duration-200 focus-ring overflow-hidden select-none",
         VARIANT_CLASSES[variant],
         iconOnly && "min-w-9",
         className

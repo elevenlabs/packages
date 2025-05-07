@@ -1,3 +1,14 @@
+const colors = ["base", "accent"];
+const shades = [
+  null,
+  "hover",
+  "active",
+  "border",
+  "subtle",
+  "primary",
+  "error",
+];
+
 export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
@@ -8,12 +19,15 @@ export default {
       shown: 'shown="true"',
       hidden: 'shown="false"',
     },
+    colors: Object.fromEntries(
+      colors.flatMap(color =>
+        shades.map(shade => {
+          const key = shade ? `${color}-${shade}` : color;
+          return [key, `var(--${key})`];
+        })
+      )
+    ),
     extend: {
-      colors: {
-        background: "#ffffff",
-        foreground: "#000000",
-        subtle: "#6b7280",
-      },
       zIndex: {
         1: "1",
       },

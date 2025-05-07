@@ -64,12 +64,12 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
     <div className={clsx("relative shrink-0", SIZE_CLASSES[size], className)}>
       <div
         ref={backgroundRef}
-        className="absolute inset-0 rounded-full bg-gray-200"
+        className="absolute inset-0 rounded-full bg-base-border"
       />
       <div
         ref={imageRef}
         style={style}
-        className="absolute inset-0 rounded-full overflow-hidden bg-background"
+        className="absolute inset-0 rounded-full overflow-hidden bg-base"
       >
         {config.value.type === "orb" && (
           <OrbCanvas

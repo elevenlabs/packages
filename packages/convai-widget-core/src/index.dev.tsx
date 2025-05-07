@@ -22,14 +22,14 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
+    <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
       <div className="flex flex-col gap-2 w-64">
         <label className="flex flex-col">
           Variant
           <select
             value={variant}
             onChange={e => setVariant(parseVariant(e.currentTarget.value))}
-            className="p-1 border rounded-lg"
+            className="p-1 bg-base border border-base-border rounded-lg"
           >
             {Variants.map(variant => (
               <option value={variant}>{variant}</option>
@@ -41,7 +41,7 @@ function Playground() {
           <select
             value={placement}
             onChange={e => setPlacement(parsePlacement(e.currentTarget.value))}
-            className="p-1 border rounded-lg"
+            className="p-1 bg-base border border-base-border rounded-lg"
           >
             {Placements.map(placement => (
               <option value={placement}>{placement}</option>

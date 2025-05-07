@@ -47,13 +47,13 @@ export function Sheet({ open }: SheetProps) {
     <InOutTransition active={open}>
       <div
         className={clsx(
-          "flex flex-col overflow-hidden absolute bg-background shadow-md pointer-events-auto rounded-3xl w-[400px] h-[550px]",
+          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-3xl w-[400px] h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top") ? "top-20" : "bottom-20"
         )}
       >
-        <div className="bg-background shrink-0 flex gap-2 p-4 items-start">
+        <div className="bg-base shrink-0 flex gap-2 p-4 items-start">
           <div className="relative w-16 h-16" />
           <InOutTransition active={showTranscript && !isDisconnected.value}>
             <StatusLabel className="rounded-bl-md transition-opacity data-hidden:opacity-0" />
@@ -82,7 +82,7 @@ export function Sheet({ open }: SheetProps) {
         >
           <Avatar size="lg" />
           <InOutTransition active={!showTranscript && isDisconnected.value}>
-            <div className="absolute bottom-0 p-1 rounded-full bg-background left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
+            <div className="absolute bottom-0 p-1 rounded-full bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
               <Button
                 aria-label={text.start_call}
                 variant="primary"

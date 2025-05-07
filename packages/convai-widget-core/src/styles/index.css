@@ -4,6 +4,24 @@
 @tailwind components;
 @tailwind utilities;
 
+:host,
+:root {
+  --base: #ffffff;
+  --base-hover: #f9fafb;
+  --base-active: #f3f4f6;
+  --base-border: #e5e7eb;
+  --base-subtle: #6b7280;
+  --base-primary: #000000;
+  --base-error: #ef4444;
+
+  --accent: #000000;
+  --accent-hover: #1f2937;
+  --accent-active: #374151;
+  --accent-border: #4b5563;
+  --accent-subtle: #6b7280;
+  --accent-primary: #ffffff;
+}
+
 .dev-host,
 :host {
   pointer-events: none;
@@ -11,6 +29,7 @@
   inset: 0;
   z-index: 1000;
 
+  color: var(--base-primary);
   font-family:
     Inter,
     -apple-system,
@@ -30,16 +49,16 @@
 
 @layer utilities {
   .focus-ring {
-    @apply ring-foreground ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
+    @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
   }
 
   .animate-text {
     background-image: linear-gradient(
       75deg,
-      #030712,
-      #9ca3af,
-      #030712,
-      #9ca3af
+      var(--base-primary),
+      var(--base-subtle),
+      var(--base-primary),
+      var(--base-subtle)
     );
     background-size: 300% 100%;
     background-clip: text;

@@ -24,14 +24,14 @@ export function TriggerLanguageSelect({ visible, className, ...rest }: Props) {
       <LanguageSelect>
         <Select.Trigger
           className={clsx(
-            "h-9 min-w-max border rounded-full focus-ring px-1.5 flex gap-1 items-center",
+            "h-9 min-w-max border border-base-border rounded-full focus-ring px-1.5 flex gap-1 items-center transition-colors duration-200 hover:bg-base-hover active:bg-base-active",
             className
           )}
           aria-label={text.change_language}
           {...rest}
         >
           <Flag flagCode={language.value.flagCode} />
-          <Select.Icon className="px-1 text-subtle" asChild>
+          <Select.Icon className="px-1 text-base-subtle" asChild>
             <Icon size="sm" name="chevron-down" />
           </Select.Icon>
         </Select.Trigger>

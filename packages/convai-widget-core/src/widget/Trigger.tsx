@@ -31,7 +31,7 @@ export function Trigger({ expandable, expanded }: TriggerProps) {
       <Layout
         expanded={expanded}
         className={clsx(
-          "bg-background shadow-md pointer-events-auto overflow-hidden",
+          "bg-base shadow-md pointer-events-auto overflow-hidden",
           (isDisconnected.value || expanded.value) && "cursor-pointer"
         )}
         onClick={
@@ -43,6 +43,6 @@ export function Trigger({ expandable, expanded }: TriggerProps) {
 
   const Layout = isFull ? FullTrigger : CompactTrigger;
   return (
-    <Layout className="bg-background shadow-md pointer-events-auto overflow-hidden" />
+    <Layout className="bg-base shadow-md pointer-events-auto overflow-hidden" />
   );
 }

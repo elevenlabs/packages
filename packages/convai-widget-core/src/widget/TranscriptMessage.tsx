@@ -31,22 +31,22 @@ export function TranscriptMessage({
             <img
               src={previewUrl}
               alt="AI agent avatar"
-              className="bg-gray-200 shrink-0 w-5 h-5 rounded-full"
+              className="bg-base-border shrink-0 w-5 h-5 rounded-full"
             />
           )}
           <div
             className={clsx(
               "px-3 py-2.5 rounded-2xl text-sm",
               entry.role === "user"
-                ? "bg-foreground text-background"
-                : "bg-gray-100 text-foreground"
+                ? "bg-accent text-accent-primary"
+                : "bg-base-active text-base-primary"
             )}
           >
             {entry.message}
           </div>
         </div>
       ) : entry.type === "disconnection" ? (
-        <div className="mt-2 px-8 text-xs text-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
+        <div className="mt-2 px-8 text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
           {entry.role === "user"
             ? text.user_ended_conversation
             : text.agent_ended_conversation}
@@ -58,14 +58,14 @@ export function TranscriptMessage({
           )}
         </div>
       ) : (
-        <div className="mt-2 px-8 text-xs text-red-500 text-center transition-opacity duration-200 data-hidden:opacity-0">
+        <div className="mt-2 px-8 text-xs text-base-error text-center transition-opacity duration-200 data-hidden:opacity-0">
           {text.error_occurred}
           <br />
           {entry.message}
           {lastId.value && (
             <>
               <br />
-              <span className="text-subtle">
+              <span className="text-base-subtle">
                 {text.conversation_id}: {lastId.value}
               </span>
             </>
