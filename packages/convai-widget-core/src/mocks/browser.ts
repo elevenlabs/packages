@@ -43,7 +43,7 @@ export const Worker = setupWorker(
   ),
   ws
     .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
-    .addEventListener("connection", ({ client }) => {
+    .addEventListener("connection", async ({ client }) => {
       const agentId = client.url.searchParams.get("agent_id");
       const conversationId = Math.random().toString(36).substring(7);
       client.send(
@@ -54,6 +54,19 @@ export const Worker = setupWorker(
             agent_output_audio_format: "pcm_16000",
             user_input_audio_format: "pcm_16000",
           },
+        })
+      );
+      await new Promise(resolve => setTimeout(resolve, 0));
+      client.send(
+        JSON.stringify({
+          type: "agent_response",
+          agent_response_event: { agent_response: "Agent response" },
+        })
+      );
+      client.send(
+        JSON.stringify({
+          type: "user_transcript",
+          user_transcription_event: { user_transcript: "User transcript" },
         })
       );
       if (agentId === "fail") {

@@ -20,14 +20,20 @@ export function SheetActions({
   const [userMessage, setUserMessage] = useState("");
   const { text_input_enabled } = useWidgetConfig().value;
   const text = useTextContents();
-  const { isDisconnected, startSession, sendUserMessage, sendUserActivity } =
-    useConversation();
+  const {
+    isDisconnected,
+    status,
+    startSession,
+    sendUserMessage,
+    sendUserActivity,
+  } = useConversation();
 
   return (
     <div className="shrink-0 overflow-hidden flex p-3 items-end justify-end">
       {text_input_enabled && (
         <TextArea
           rows={1}
+          aria-label={text.input_label}
           value={userMessage}
           onInput={sendUserActivity}
           onChange={e => setUserMessage(e.currentTarget.value)}
@@ -58,6 +64,9 @@ export function SheetActions({
           <CallButton
             iconOnly={!isDisconnected.value}
             isDisconnected={isDisconnected.value}
+            disabled={
+              status.value === "disconnecting" || status.value === "connecting"
+            }
           >
             {text.new_call}
           </CallButton>

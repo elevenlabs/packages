@@ -63,11 +63,14 @@ export const DefaultTextContents = {
   end_call: "End",
   mute_microphone: "Mute microphone",
   change_language: "Change language",
+  collapse: "Collapse",
+  expand: "Expand",
 
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",
   connecting_status: "Connecting",
 
+  input_label: "Text message input",
   input_placeholder: "Or send a message",
 
   user_ended_conversation: "You ended the conversation",

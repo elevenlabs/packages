@@ -43,6 +43,13 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
                 ? "phone"
                 : "chevron-up"
           }
+          aria-label={
+            expanded.value
+              ? text.collapse
+              : isDisconnected.value
+                ? text.start_call
+                : text.expand
+          }
           onClick={
             !expanded.value && !isDisconnected.value
               ? toggleExpanded
