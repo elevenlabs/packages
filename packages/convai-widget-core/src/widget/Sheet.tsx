@@ -47,7 +47,7 @@ export function Sheet({ open }: SheetProps) {
     <InOutTransition active={open}>
       <div
         className={clsx(
-          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-3xl w-[400px] h-[550px]",
+          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-6 w-[400px] h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top") ? "top-20" : "bottom-20"
@@ -56,7 +56,7 @@ export function Sheet({ open }: SheetProps) {
         <div className="bg-base shrink-0 flex gap-2 p-4 items-start">
           <div className="relative w-16 h-16" />
           <InOutTransition active={showTranscript && !isDisconnected.value}>
-            <StatusLabel className="rounded-bl-md transition-opacity data-hidden:opacity-0" />
+            <StatusLabel className="rounded-bl-1 transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
         <Transcript

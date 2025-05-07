@@ -11,7 +11,7 @@ export function CompactExpandableTrigger({
 }: ExpandableProps) {
   return (
     <div
-      className={clsx("rounded-[30px] flex items-center p-2", className)}
+      className={clsx("rounded-7.5 flex items-center p-2", className)}
       {...rest}
     >
       <SizeTransition visible={!expanded.value} className="p-1">

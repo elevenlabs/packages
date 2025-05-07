@@ -32,7 +32,7 @@ export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
       {children}
       <Select.Portal container={portal}>
         <Select.Content
-          className="overflow-hidden bg-base border border-base-border rounded-3xl max-h-[min(384px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] z-10"
+          className="overflow-hidden bg-base border border-base-border rounded-6 max-h-[min(384px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] z-10"
           position="popper"
           sideOffset={8}
           align="end"

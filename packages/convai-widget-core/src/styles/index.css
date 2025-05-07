@@ -29,7 +29,7 @@
   inset: 0;
   z-index: 1000;
 
-  color: var(--base-primary);
+  @apply text-base-primary text-md;
   font-family:
     Inter,
     -apple-system,

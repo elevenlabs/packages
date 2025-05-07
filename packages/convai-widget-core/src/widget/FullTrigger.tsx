@@ -16,7 +16,7 @@ export function FullTrigger({
 
   return (
     <div
-      className={clsx("flex flex-col p-2 rounded-3xl min-w-[250px]", className)}
+      className={clsx("flex flex-col p-2 rounded-6 min-w-[250px]", className)}
       {...rest}
     >
       <div className="flex items-center p-1 gap-2">
