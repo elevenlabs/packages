@@ -1,10 +1,78 @@
+@import url(https://fonts.googleapis.com/css2?family=Inter:wght@400,500&display=swap);
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:host,
+:root {
+  --base: #ffffff;
+  --base-hover: #f9fafb;
+  --base-active: #f3f4f6;
+  --base-border: #e5e7eb;
+  --base-subtle: #6b7280;
+  --base-primary: #000000;
+  --base-error: #ef4444;
+
+  --accent: #000000;
+  --accent-hover: #1f2937;
+  --accent-active: #374151;
+  --accent-border: #4b5563;
+  --accent-subtle: #6b7280;
+  --accent-primary: #ffffff;
+}
+
+.dev-host,
 :host {
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  @apply text-base-primary text-md;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
+    sans-serif;
+
+  scrollbar-color: #e5e7eb transparent;
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
+  }
+
+  .animate-text {
+    background-image: linear-gradient(
+      75deg,
+      var(--base-primary),
+      var(--base-subtle),
+      var(--base-primary),
+      var(--base-subtle)
+    );
+    background-size: 300% 100%;
+    background-clip: text;
+    color: transparent;
+
+    animation: Animation 2s linear infinite;
+  }
+
+  @keyframes Animation {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 100% 0;
+    }
+  }
 }

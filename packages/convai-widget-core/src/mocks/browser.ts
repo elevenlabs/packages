@@ -4,16 +4,18 @@ import { WidgetConfig } from "../types/config";
 
 const BASIC_CONFIG: WidgetConfig = {
   variant: "full",
+  placement: "bottom-right",
   avatar: {
     type: "orb",
-    color_1: "#000",
-    color_2: "#fff",
+    color_1: "#000000",
+    color_2: "#ffffff",
   },
-  show_avatar_when_collapsed: false,
   feedback_mode: "end",
   language: "en",
-  disable_banner: false,
   mic_muting_enabled: false,
+  transcript_enabled: false,
+  text_input_enabled: false,
+  text_contents: {},
 };
 
 export const AGENTS = {
@@ -27,7 +29,7 @@ function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
 
 export const Worker = setupWorker(
   http.get<{ agentId: string }>(
-    `${import.meta.env.VITE_SERVER_URL}/v1/convai/agents/:agentId/widget`,
+    `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
     ({ params }) => {
       if (isValidAgentId(params.agentId)) {
         return HttpResponse.json({
@@ -40,8 +42,8 @@ export const Worker = setupWorker(
     }
   ),
   ws
-    .link(`${import.meta.env.VITE_WEBSOCKET_URL}/v1/convai/conversation`)
-    .addEventListener("connection", ({ client }) => {
+    .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
+    .addEventListener("connection", async ({ client }) => {
       const agentId = client.url.searchParams.get("agent_id");
       const conversationId = Math.random().toString(36).substring(7);
       client.send(
@@ -52,6 +54,19 @@ export const Worker = setupWorker(
             agent_output_audio_format: "pcm_16000",
             user_input_audio_format: "pcm_16000",
           },
+        })
+      );
+      await new Promise(resolve => setTimeout(resolve, 0));
+      client.send(
+        JSON.stringify({
+          type: "agent_response",
+          agent_response_event: { agent_response: "Agent response" },
+        })
+      );
+      client.send(
+        JSON.stringify({
+          type: "user_transcript",
+          user_transcription_event: { user_transcript: "User transcript" },
         })
       );
       if (agentId === "fail") {

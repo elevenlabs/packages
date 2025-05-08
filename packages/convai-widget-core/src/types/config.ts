@@ -1,27 +1,44 @@
 import { Language } from "@11labs/client";
 
-export type Variant = "full" | "compact";
+export const Variants = ["tiny", "compact", "full"] as const;
+export type Variant = (typeof Variants)[number];
+
+export function parseVariant(variant: string | undefined): Variant {
+  return Variants.includes(variant as Variant)
+    ? (variant as Variant)
+    : Variants[0];
+}
+
+export const Placements = [
+  "top-left",
+  "top",
+  "top-right",
+  "bottom-left",
+  "bottom",
+  "bottom-right",
+] as const;
+export type Placement = (typeof Placements)[number];
+export function parsePlacement(placement: string | undefined): Placement {
+  return Placements.includes(placement as Placement)
+    ? (placement as Placement)
+    : "bottom-right";
+}
+
 export type FeedbackMode = "none" | "during" | "end";
 
-export interface WidgetConfig extends Partial<TextContents> {
+export interface WidgetConfig {
   variant: Variant;
+  placement: Placement;
   avatar: AvatarConfig;
-  show_avatar_when_collapsed: boolean;
   feedback_mode: FeedbackMode;
   language: Language;
   supported_language_overrides?: Language[];
-  bg_color?: string;
-  text_color?: string;
-  btn_color?: string;
-  btn_text_color?: string;
-  border_radius?: number;
-  border_color?: string;
-  focus_color?: string;
-  btn_radius?: number;
   terms_html?: string;
   terms_key?: string;
-  disable_banner: boolean;
   mic_muting_enabled: boolean;
+  transcript_enabled: boolean;
+  text_input_enabled: boolean;
+  text_contents: Partial<Record<Language, Partial<TextContents>>>;
 }
 
 export type AvatarConfig =
@@ -40,12 +57,30 @@ export type AvatarConfig =
     };
 
 export const DefaultTextContents = {
-  start_call_text: "Start a call",
-  end_call_text: "End",
-  action_text: "Need help?",
-  expand_text: "Chat with AI",
-  listening_text: "Listening",
-  speaking_text: "Talk to interrupt",
+  main_label: "Need help?",
+  start_call: "Start a call",
+  new_call: "New call",
+  end_call: "End",
+  mute_microphone: "Mute microphone",
+  change_language: "Change language",
+  collapse: "Collapse",
+  expand: "Expand",
+
+  listening_status: "Listening",
+  speaking_status: "Talk to interrupt",
+  connecting_status: "Connecting",
+
+  input_label: "Text message input",
+  input_placeholder: "Or send a message",
+
+  user_ended_conversation: "You ended the conversation",
+  agent_ended_conversation: "The agent ended the conversation",
+  conversation_id: "Conversation ID",
+  error_occurred: "An error occurred",
 };
+
+export const TextKeys = Object.keys(
+  DefaultTextContents
+) as (keyof typeof DefaultTextContents)[];
 
 export type TextContents = typeof DefaultTextContents;

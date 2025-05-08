@@ -1,16 +1,24 @@
-import { DefaultTextContents } from "./config";
+export function parseBoolAttribute(value: string | undefined): boolean | null {
+  if (!value) {
+    return null;
+  }
 
-type SnakeToKebab<S extends string> = S extends `${infer Head}_${infer Tail}`
-  ? `${Head}-${SnakeToKebab<Tail>}`
-  : S;
+  const lowerCaseValue = value.toLowerCase();
+  if (["true", "yes", "on", "1"].includes(lowerCaseValue)) {
+    return true;
+  }
+  if (
+    ["false", "no", "off", "0", "null", "undefined"].includes(lowerCaseValue)
+  ) {
+    return false;
+  }
 
-function snakeToKebab<S extends string>(str: S): SnakeToKebab<S> {
-  return str.replace(/_/g, "-") as SnakeToKebab<S>;
+  return null;
 }
 
-const MainAttributeList = [
+export const CustomAttributeList = [
   "variant",
-  "expandable",
+  "placement",
   "override-config",
   "avatar-image-url",
   "avatar-orb-color-1",
@@ -26,17 +34,11 @@ const MainAttributeList = [
   "override-first-message",
   "override-language",
   "override-voice-id",
+  "mic-muting",
+  "transcript",
+  "text-input",
+  "text-contents",
 ] as const;
-
-export const TextKeyList = Object.keys(
-  DefaultTextContents
-) as (keyof typeof DefaultTextContents)[];
-
-export const TextAttributeList = TextKeyList.map(snakeToKebab) as SnakeToKebab<
-  keyof typeof DefaultTextContents
->[];
-
-export const CustomAttributeList = [...MainAttributeList, ...TextAttributeList];
 
 export type CustomAttributes = {
   [key in (typeof CustomAttributeList)[number]]?: string;

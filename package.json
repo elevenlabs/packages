@@ -5,7 +5,7 @@
   "scripts": {
     "create": "node scripts/create",
     "lint": "pnpm recursive run lint",
-    "test": "pnpm recursive run test",
+    "test": "pnpm recursive run --workspace-concurrency 1 test",
     "build": "pnpm recursive run build",
     "prepare": "husky install"
   },
