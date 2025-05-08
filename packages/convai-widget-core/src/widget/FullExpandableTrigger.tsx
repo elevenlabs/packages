@@ -18,18 +18,16 @@ export function FullExpandableTrigger({
     <div
       className={clsx(
         "transition-[border-radius] flex flex-col p-2",
-        !expanded.value && isDisconnected.value
-          ? "rounded-6"
-          : "rounded-7.5",
+        !expanded.value && isDisconnected.value ? "rounded-6" : "rounded-7.5",
         className
       )}
       {...rest}
     >
       <SizeTransition
         visible={!expanded.value && isDisconnected.value}
-        className="p-1"
+        className="p-1 min-w-60"
       >
-        <div className="flex items-center px-1 gap-2">
+        <div className="flex items-center gap-2">
           <Avatar />
           <div className="text-sm max-w-64">{text.main_label}</div>
         </div>
