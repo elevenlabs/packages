@@ -13,6 +13,7 @@ import { useMicConfig } from "./mic-config";
 import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
+import { useTerms } from "./terms";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -56,6 +57,7 @@ function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
 
+  const terms = useTerms();
   const config = useSessionConfig();
   const { isMuted } = useMicConfig();
 
@@ -95,6 +97,8 @@ function useConversationSetup() {
       canSendFeedback,
       transcript,
       startSession: async (element: HTMLElement, initialMessage?: string) => {
+        await terms.requestTerms();
+
         if (conversationRef.current?.isOpen()) {
           return conversationRef.current.getId();
         }

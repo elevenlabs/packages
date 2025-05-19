@@ -8,6 +8,7 @@ import { SessionConfigProvider } from "../contexts/session-config";
 import { ConversationProvider } from "../contexts/conversation";
 import { TextContentsProvider } from "../contexts/text-contents";
 import { AvatarConfigProvider } from "../contexts/avatar-config";
+import { TermsProvider } from "../contexts/terms";
 import { CustomAttributes } from "../types/attributes";
 import { Wrapper } from "./Wrapper";
 
@@ -16,20 +17,22 @@ export function ConvAIWidget(attributes: CustomAttributes) {
     <AttributesProvider value={attributes}>
       <ServerLocationProvider>
         <WidgetConfigProvider>
-          <LanguageConfigProvider>
-            <MicConfigProvider>
-              <SessionConfigProvider>
-                <ConversationProvider>
-                  <TextContentsProvider>
-                    <AvatarConfigProvider>
-                      <Style />
-                      <Wrapper />
-                    </AvatarConfigProvider>
-                  </TextContentsProvider>
-                </ConversationProvider>
-              </SessionConfigProvider>
-            </MicConfigProvider>
-          </LanguageConfigProvider>
+          <TermsProvider>
+            <LanguageConfigProvider>
+              <MicConfigProvider>
+                <SessionConfigProvider>
+                  <ConversationProvider>
+                    <TextContentsProvider>
+                      <AvatarConfigProvider>
+                        <Style />
+                        <Wrapper />
+                      </AvatarConfigProvider>
+                    </TextContentsProvider>
+                  </ConversationProvider>
+                </SessionConfigProvider>
+              </MicConfigProvider>
+            </LanguageConfigProvider>
+          </TermsProvider>
         </WidgetConfigProvider>
       </ServerLocationProvider>
     </AttributesProvider>

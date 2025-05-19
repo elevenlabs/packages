@@ -64,15 +64,39 @@
     background-clip: text;
     color: transparent;
 
-    animation: Animation 2s linear infinite;
+    animation: TextAnimation 2s linear infinite;
   }
 
-  @keyframes Animation {
+  @keyframes TextAnimation {
     0% {
       background-position: 0 0;
     }
     100% {
       background-position: 100% 0;
     }
+  }
+
+  .terms h6 {
+    @apply text-base-primary font-medium text-xs;
+  }
+
+  .terms h5 {
+    @apply text-base-primary font-medium text-sm;
+  }
+
+  .terms h4 {
+    @apply text-base-primary font-medium text-md;
+  }
+
+  .terms h3 {
+    @apply text-base-primary font-medium text-lg;
+  }
+
+  .terms h2 {
+    @apply text-base-primary font-medium text-xl;
+  }
+
+  .terms h2 {
+    @apply text-base-primary font-medium text-2xl;
   }
 }

@@ -7,6 +7,7 @@ import { CompactExpandableTrigger } from "./CompactExpandableTrigger";
 import { clsx } from "clsx";
 import { FullTrigger } from "./FullTrigger";
 import { CompactTrigger } from "./CompactTrigger";
+import { useTerms } from "../contexts/terms";
 
 export interface ExpandableProps extends HTMLAttributes<HTMLDivElement> {
   expanded: Signal<boolean>;
@@ -19,8 +20,10 @@ interface TriggerProps {
 
 export function Trigger({ expandable, expanded }: TriggerProps) {
   const variant = useWidgetConfig().value.variant;
+  const terms = useTerms();
   const { isDisconnected } = useConversation();
-  const toggleExpanded = useCallback(() => {
+  const toggleExpanded = useCallback(async () => {
+    await terms.requestTerms();
     expanded.value = !expanded.peek();
   }, [expanded]);
 

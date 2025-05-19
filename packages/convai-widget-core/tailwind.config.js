@@ -40,7 +40,9 @@ export default {
       xs: ["12px", "16px"],
       sm: ["14px", "20px"],
       md: ["16px", "24px"],
-      lg: ["18px", "28px"],
+      lg: ["18px", "26px"],
+      xl: ["20px", "28px"],
+      "2xl": ["24px", "30px"],
     },
     borderRadius: {
       ...Object.fromEntries(radius.map(i => [i, `${i * 4}px`])),

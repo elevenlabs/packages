@@ -52,7 +52,7 @@ export function TranscriptMessage({
             : text.agent_ended_conversation}
           <br />
           {lastId.value && (
-            <span>
+            <span className="break-all">
               {text.conversation_id}: {lastId.value}
             </span>
           )}
@@ -65,7 +65,7 @@ export function TranscriptMessage({
           {lastId.value && (
             <>
               <br />
-              <span className="text-base-subtle">
+              <span className="text-base-subtle break-all">
                 {text.conversation_id}: {lastId.value}
               </span>
             </>

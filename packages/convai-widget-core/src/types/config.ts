@@ -65,6 +65,9 @@ export const DefaultTextContents = {
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
+  copied: "Copied!",
+  accept_terms: "Accept",
+  dismiss_terms: "Cancel",
 
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",
@@ -77,6 +80,7 @@ export const DefaultTextContents = {
   agent_ended_conversation: "The agent ended the conversation",
   conversation_id: "Conversation ID",
   error_occurred: "An error occurred",
+  copy_id: "Copy ID",
 };
 
 export const TextKeys = Object.keys(

@@ -47,7 +47,7 @@ export function Sheet({ open }: SheetProps) {
     <InOutTransition active={open}>
       <div
         className={clsx(
-          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-6 w-[400px] h-[550px]",
+          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-6 w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top") ? "top-20" : "bottom-20"
