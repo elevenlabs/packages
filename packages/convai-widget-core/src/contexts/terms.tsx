@@ -1,4 +1,4 @@
-import { ReadonlySignal, signal } from "@preact/signals";
+import { computed, ReadonlySignal, signal } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
@@ -28,8 +28,11 @@ export function TermsProvider({ children }: TermsProviderProps) {
   const value = useMemo(() => {
     const key = config.peek().terms_key;
     const termsAlreadyAccepted = key ? !!localStorage.getItem(key) : false;
-    const termsAccepted = signal(termsAlreadyAccepted);
     const termsShown = signal(false);
+    const termsAcceptedState = signal(termsAlreadyAccepted);
+    const termsAccepted = computed(
+      () => !config.value.terms_html || termsAcceptedState.value
+    );
     let termsPromises: StoredPromise[] = [];
 
     return {
@@ -41,7 +44,7 @@ export function TermsProvider({ children }: TermsProviderProps) {
         termsPromises = [];
       },
       acceptTerms: () => {
-        termsAccepted.value = true;
+        termsAcceptedState.value = true;
         termsShown.value = false;
         const key = config.peek().terms_key;
         if (key) {

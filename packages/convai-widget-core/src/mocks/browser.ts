@@ -16,6 +16,7 @@ const BASIC_CONFIG: WidgetConfig = {
   transcript_enabled: false,
   text_input_enabled: false,
   text_contents: {},
+  terms_html: "Test terms",
 };
 
 export const AGENTS = {
