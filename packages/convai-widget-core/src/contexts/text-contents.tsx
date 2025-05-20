@@ -44,7 +44,9 @@ export function TextContentsProvider({ children }: TextContentsProviderProps) {
         computed(
           () =>
             parsedTextContents.value[key] ??
-            config.value.text_contents?.[language.value.languageCode]?.[key] ??
+            config.value.language_presets?.[language.value.languageCode]
+              ?.text_contents?.[key] ??
+            config.value.text_contents?.[key] ??
             DefaultTextContents[key]
         ),
       ])

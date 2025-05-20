@@ -38,7 +38,10 @@ export interface WidgetConfig {
   mic_muting_enabled: boolean;
   transcript_enabled: boolean;
   text_input_enabled: boolean;
-  text_contents: Partial<Record<Language, Partial<TextContents>>>;
+  text_contents: Partial<TextContents>;
+  language_presets: Partial<
+    Record<Language, { text_contents?: Partial<TextContents> }>
+  >;
 }
 
 export type AvatarConfig =
