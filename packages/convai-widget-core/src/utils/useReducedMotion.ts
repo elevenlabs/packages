@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect } from "preact/compat";
 import { useSignal } from "@preact/signals";
 
 const MediaQuery = window.matchMedia(`(prefers-reduced-motion: reduce)`);

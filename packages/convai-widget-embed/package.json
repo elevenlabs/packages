@@ -1,24 +1,13 @@
 {
   "name": "@11labs/convai-widget-embed",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The Conversational AI Widget bundled with all dependencies for easy embedding.",
-  "main": "./dist/lib.umd.js",
-  "module": "./dist/lib.module.js",
+  "main": "./dist/index.js",
+  "unpkg": "./dist/index.js",
   "source": "src/index.ts",
   "type": "module",
-  "unpkg": "./dist/lib.umd.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/lib.modern.js",
-      "require": "./dist/lib.cjs"
-    }
-  },
   "scripts": {
-    "build": "BROWSERSLIST_ENV=modern microbundle src/index.ts",
-    "clean": "rm -rf ./dist",
-    "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle src/index.ts -w -f modern",
+    "build": "vite build",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",
@@ -32,7 +21,8 @@
     "@11labs/convai-widget-core": "workspace:*",
     "eslint": "^9.8.0",
     "microbundle": "^0.15.1",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vite": "^6.3.2"
   },
   "repository": {
     "type": "git",

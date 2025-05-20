@@ -19,7 +19,10 @@ export default defineConfig({
     outDir: "dist",
     rollupOptions: {
       external: id =>
-        !id.startsWith(".") && !id.startsWith("/") && !id.includes("\0"),
+        id.startsWith("preact") ||
+        id.startsWith("@preact") ||
+        id.startsWith("@11labs") ||
+        id === "clsx",
     },
   },
   plugins: [preact()],
