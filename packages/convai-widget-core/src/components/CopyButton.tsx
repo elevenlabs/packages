@@ -22,9 +22,9 @@ export function CopyButton({ copyText, children }: CopyButtonProps) {
   }, [copied]);
 
   const handleClick = useCallback(() => {
-    const text = getSignalish(copyText);
-    if (text) {
-      navigator.clipboard.writeText(text);
+    const value = getSignalish(copyText);
+    if (value) {
+      navigator.clipboard.writeText(value);
       setCopied(true);
     }
   }, []);

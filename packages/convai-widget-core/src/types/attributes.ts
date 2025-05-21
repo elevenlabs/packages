@@ -2,14 +2,10 @@ export function parseBoolAttribute(value: string | undefined): boolean | null {
   if (!value) {
     return null;
   }
-
-  const lowerCaseValue = value.toLowerCase();
-  if (["true", "yes", "on", "1"].includes(lowerCaseValue)) {
+  if (value === "true") {
     return true;
   }
-  if (
-    ["false", "no", "off", "0", "null", "undefined"].includes(lowerCaseValue)
-  ) {
+  if (value === "false") {
     return false;
   }
 

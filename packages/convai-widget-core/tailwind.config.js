@@ -28,7 +28,7 @@ export default {
       colors.flatMap(color =>
         shades.map(shade => {
           const key = shade ? `${color}-${shade}` : color;
-          return [key, `var(--${key})`];
+          return [key, `var(--el-${key})`];
         })
       )
     ),

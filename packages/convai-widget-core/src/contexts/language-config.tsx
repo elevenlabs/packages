@@ -60,12 +60,7 @@ export function LanguageConfigProvider({
         languageCode.value = value;
       },
       options,
-      showPicker: computed(
-        () =>
-          // Hide the language picker if the language is overridden
-          !isValidLanguage(overrideLanguageAttribute.value) &&
-          options.value.length > 0
-      ),
+      showPicker: computed(() => options.value.length > 0),
     }),
     []
   );

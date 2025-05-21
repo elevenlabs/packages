@@ -1,4 +1,4 @@
-import { TransitionEvent, useRef } from "preact/compat";
+import { TransitionEvent, useCallback, useRef } from "preact/compat";
 import { useSignal } from "@preact/signals";
 
 interface CSSTransitionOptions {
@@ -16,17 +16,20 @@ export function useCSSTransition({ onStart, onEnd }: CSSTransitionOptions) {
 
   const transitioning = useSignal(false);
 
-  const handleTransitionStart = (e: TransitionEvent<HTMLElement>) => {
-    if (e.target === e.currentTarget) {
-      transitionProperties.current?.add(e.propertyName);
-      if (!transitioning.peek()) {
-        transitioning.value = true;
-        onStartRef.current?.();
+  const handleTransitionStart = useCallback(
+    (e: TransitionEvent<HTMLElement>) => {
+      if (e.target === e.currentTarget) {
+        transitionProperties.current?.add(e.propertyName);
+        if (!transitioning.peek()) {
+          transitioning.value = true;
+          onStartRef.current?.();
+        }
       }
-    }
-  };
+    },
+    []
+  );
 
-  const handleTransitionEnd = (e: TransitionEvent<HTMLElement>) => {
+  const handleTransitionEnd = useCallback((e: TransitionEvent<HTMLElement>) => {
     if (e.target === e.currentTarget) {
       transitionProperties.current?.delete(e.propertyName);
       if (!transitionProperties.current?.size) {
@@ -34,7 +37,7 @@ export function useCSSTransition({ onStart, onEnd }: CSSTransitionOptions) {
         onEndRef.current?.();
       }
     }
-  };
+  }, []);
 
   return {
     transitioning,

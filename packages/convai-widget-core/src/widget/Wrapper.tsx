@@ -43,7 +43,7 @@ export const Wrapper = memo(function Wrapper() {
   );
   const className = useComputed(() =>
     clsx(
-      "convai-widget-root absolute inset-8 flex transition-opacity duration-200 data-hidden:opacity-0",
+      "overlay flex transition-opacity duration-200 data-hidden:opacity-0",
       PLACEMENT_CLASSES[config.value.placement]
     )
   );
@@ -75,18 +75,18 @@ export const Wrapper = memo(function Wrapper() {
 
   return (
     <>
-      <InOutTransition active={isConversation}>
+      <InOutTransition initial={false} active={isConversation}>
         <Root className={className}>
           {expandable.value && <Sheet open={expanded} />}
           <Trigger expandable={expandable.value} expanded={expanded} />
         </Root>
       </InOutTransition>
-      <InOutTransition active={isTerms}>
+      <InOutTransition initial={false} active={isTerms}>
         <Root className={className}>
           <TermsModal />
         </Root>
       </InOutTransition>
-      <InOutTransition active={isError}>
+      <InOutTransition initial={false} active={isError}>
         <Root className={className}>
           <ErrorModal sawError={sawError} />
         </Root>

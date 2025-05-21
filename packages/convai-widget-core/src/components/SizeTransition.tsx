@@ -89,13 +89,19 @@ function Animated({
     }
   }, [dep]);
 
+  // 1. Take the snapshot of the size right before layout changes are applied
   useMemo(() => {
     if (node) {
       node.style.width = `${node.offsetWidth}px`;
       node.style.height = `${node.offsetHeight}px`;
     }
-  }, [node, visible, dep]);
+  }, [
+    node,
+    visible, // node's visibility changed
+    dep, // node's content changed
+  ]);
 
+  // 2. Start the size animation right after layout changes are applied
   useEffect(() => {
     if (!node || !wrapper) return;
     if (visible) {
@@ -109,7 +115,12 @@ function Animated({
       !visible || node.offsetWidth !== targetWidth ? `${targetWidth}px` : "";
     node.style.height =
       !visible || node.offsetHeight !== targetHeight ? `${targetHeight}px` : "";
-  }, [visible, dep, node, wrapper]);
+  }, [
+    node,
+    wrapper,
+    visible, // node's visibility changed
+    dep, // node's content changed
+  ]);
 
   const { transitioning, handlers } = useCSSTransition({
     onEnd: () => {

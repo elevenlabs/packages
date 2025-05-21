@@ -6,20 +6,22 @@
 
 :host,
 :root {
-  --base: #ffffff;
-  --base-hover: #f9fafb;
-  --base-active: #f3f4f6;
-  --base-border: #e5e7eb;
-  --base-subtle: #6b7280;
-  --base-primary: #000000;
-  --base-error: #ef4444;
+  --el-base: #ffffff;
+  --el-base-hover: #f9fafb;
+  --el-base-active: #f3f4f6;
+  --el-base-border: #e5e7eb;
+  --el-base-subtle: #6b7280;
+  --el-base-primary: #000000;
+  --el-base-error: #ef4444;
 
-  --accent: #000000;
-  --accent-hover: #1f2937;
-  --accent-active: #374151;
-  --accent-border: #4b5563;
-  --accent-subtle: #6b7280;
-  --accent-primary: #ffffff;
+  --el-accent: #000000;
+  --el-accent-hover: #1f2937;
+  --el-accent-active: #374151;
+  --el-accent-border: #4b5563;
+  --el-accent-subtle: #6b7280;
+  --el-accent-primary: #ffffff;
+
+  --el-overlay-padding: 32px;
 }
 
 .dev-host,
@@ -48,6 +50,13 @@
 }
 
 @layer utilities {
+  .overlay {
+    position: absolute;
+    inset: var(--el-overlay-padding);
+    /* Make sure the widget doesn't shift when opening dropdowns */
+    right: calc(var(--el-overlay-padding) + var(--removed-body-scroll-bar-size, 0px));
+  }
+
   .focus-ring {
     @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
   }
@@ -55,10 +64,10 @@
   .animate-text {
     background-image: linear-gradient(
       75deg,
-      var(--base-primary),
-      var(--base-subtle),
-      var(--base-primary),
-      var(--base-subtle)
+      var(--el-base-primary),
+      var(--el-base-subtle),
+      var(--el-base-primary),
+      var(--el-base-subtle)
     );
     background-size: 300% 100%;
     background-clip: text;

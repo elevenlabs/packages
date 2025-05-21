@@ -10,20 +10,23 @@ interface TranscriptProps {
 
 export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   const scrollContainer = useRef<HTMLDivElement>(null);
-  const scrollToBottom = () => {
-    scrollContainer.current?.scrollTo(0, scrollContainer.current.scrollHeight);
+  const scrollToBottom = (smooth: boolean) => {
+    scrollContainer.current?.scrollTo({
+      top: scrollContainer.current.scrollHeight,
+      behavior: smooth ? "smooth" : "instant",
+    });
   };
 
   const firstRender = useRef(true);
   useEffect(() => {
     firstRender.current = false;
-    scrollToBottom();
+    scrollToBottom(false);
   }, []);
 
   useSignalEffect(() => {
     transcript.value;
     if (scrollPinned.peek()) {
-      scrollToBottom();
+      scrollToBottom(true);
     }
   });
 
