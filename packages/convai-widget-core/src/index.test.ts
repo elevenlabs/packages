@@ -76,9 +76,7 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByText("You ended the conversation"))
         .toBeInTheDocument();
-      await expect
-        .element(page.getByText("Conversation ID"))
-        .toBeInTheDocument();
+      await expect.element(page.getByText("ID")).toBeInTheDocument();
       await expect.element(startButton).toBeInTheDocument();
     }
   );
@@ -129,9 +127,7 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("An error occurred"))
         .toBeInTheDocument();
       await expect.element(page.getByText("Test reason")).toBeInTheDocument();
-      await expect
-        .element(page.getByText("Conversation ID"))
-        .toBeInTheDocument();
+      await expect.element(page.getByText("ID")).toBeInTheDocument();
       await expect.element(startButton).toBeInTheDocument();
     }
   );
