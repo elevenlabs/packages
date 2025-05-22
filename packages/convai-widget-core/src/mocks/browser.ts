@@ -15,13 +15,22 @@ const BASIC_CONFIG: WidgetConfig = {
   mic_muting_enabled: false,
   transcript_enabled: false,
   text_input_enabled: false,
-  text_contents: {},
+  text_contents: {
+    start_chat: "Start a call",
+  },
   terms_html: "Test terms",
   language_presets: {},
+  text_only: false,
+  supports_text_only: true,
+  first_message: "Agent response",
 };
 
 export const AGENTS = {
   basic: BASIC_CONFIG,
+  text_only: {
+    ...BASIC_CONFIG,
+    text_only: true,
+  },
   fail: BASIC_CONFIG,
 } as const satisfies Record<string, WidgetConfig>;
 
@@ -46,7 +55,10 @@ export const Worker = setupWorker(
   ws
     .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
     .addEventListener("connection", async ({ client }) => {
-      const agentId = client.url.searchParams.get("agent_id");
+      const agentId = client.url.searchParams.get(
+        "agent_id"
+      ) as keyof typeof AGENTS;
+      const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
       client.send(
         JSON.stringify({
@@ -62,15 +74,28 @@ export const Worker = setupWorker(
       client.send(
         JSON.stringify({
           type: "agent_response",
-          agent_response_event: { agent_response: "Agent response" },
+          agent_response_event: { agent_response: config.first_message },
         })
       );
-      client.send(
-        JSON.stringify({
-          type: "user_transcript",
-          user_transcription_event: { user_transcript: "User transcript" },
-        })
-      );
+      if (config.text_only) {
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response: "Another agent response",
+            },
+          })
+        );
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        client.close();
+      } else {
+        client.send(
+          JSON.stringify({
+            type: "user_transcript",
+            user_transcription_event: { user_transcript: "User transcript" },
+          })
+        );
+      }
       if (agentId === "fail") {
         client.addEventListener("message", () => {
           client.close(3000, "Test reason");

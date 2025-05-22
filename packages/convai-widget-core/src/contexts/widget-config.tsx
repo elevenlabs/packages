@@ -12,6 +12,8 @@ import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
+import { useLanguageConfig } from "./language-config";
+import { useConversation } from "./conversation";
 
 const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
@@ -74,6 +76,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const micMuting = useAttribute("mic-muting");
   const transcript = useAttribute("transcript");
   const textInput = useAttribute("text-input");
+  const overrideTextOnly = useAttribute("override-text-only");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -83,6 +86,12 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     const patchedVariant = variant.value ?? fetchedConfig.value.variant;
     const patchedPlacement = placement.value ?? fetchedConfig.value.placement;
     const patchedTermsKey = termsKey.value ?? fetchedConfig.value.terms_key;
+
+    const textOnly =
+      parseBoolAttribute(overrideTextOnly.value) ??
+      fetchedConfig.value.text_only ??
+      false;
+
     const patchedMicMuting =
       parseBoolAttribute(micMuting.value) ??
       fetchedConfig.value.mic_muting_enabled;
@@ -98,9 +107,9 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       variant: parseVariant(patchedVariant),
       placement: parsePlacement(patchedPlacement),
       terms_key: patchedTermsKey,
-      mic_muting_enabled: patchedMicMuting,
-      transcript_enabled: patchedTranscript,
-      text_input_enabled: patchedTextInput,
+      mic_muting_enabled: !textOnly && patchedMicMuting,
+      transcript_enabled: textOnly || patchedTranscript,
+      text_input_enabled: textOnly || patchedTextInput,
     };
   });
 
@@ -117,6 +126,36 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
 
 export function useWidgetConfig() {
   return useContextSafely(WidgetConfigContext);
+}
+
+export function useTextOnly() {
+  const override = useAttribute("override-text-only");
+  const config = useWidgetConfig();
+
+  return useComputed(
+    () => parseBoolAttribute(override.value) ?? config.value.text_only ?? false
+  );
+}
+
+export function useIsConversationTextOnly() {
+  const textOnly = useTextOnly();
+  const { conversationTextOnly } = useConversation();
+
+  return useComputed(() => conversationTextOnly.value ?? textOnly.value);
+}
+
+export function useFirstMessage() {
+  const override = useAttribute("override-first-message");
+  const config = useWidgetConfig();
+  const { language } = useLanguageConfig();
+  return useComputed(
+    () =>
+      override.value ??
+      config.value.language_presets?.[language.value.languageCode]
+        ?.first_message ??
+      config.value.first_message ??
+      null
+  );
 }
 
 async function fetchConfig(

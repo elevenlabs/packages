@@ -40,8 +40,17 @@ export interface WidgetConfig {
   text_input_enabled: boolean;
   text_contents: Partial<TextContents>;
   language_presets: Partial<
-    Record<Language, { text_contents?: Partial<TextContents> }>
+    Record<
+      Language,
+      {
+        text_contents?: Partial<TextContents>;
+        first_message?: string;
+      }
+    >
   >;
+  text_only: boolean;
+  supports_text_only: boolean;
+  first_message?: string;
 }
 
 export type AvatarConfig =
@@ -62,6 +71,7 @@ export type AvatarConfig =
 export const DefaultTextContents = {
   main_label: "Need help?",
   start_call: "Start a call",
+  start_chat: "Start a chat",
   new_call: "New call",
   end_call: "End",
   mute_microphone: "Mute microphone",
@@ -75,9 +85,12 @@ export const DefaultTextContents = {
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",
   connecting_status: "Connecting",
+  chatting_status: "Chatting with AI Agent",
 
   input_label: "Text message input",
   input_placeholder: "Send a message",
+  input_placeholder_text_only: "Send a message",
+  input_placeholder_new_conversation: "Start a new conversation",
 
   user_ended_conversation: "You ended the conversation",
   agent_ended_conversation: "The agent ended the conversation",

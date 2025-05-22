@@ -14,6 +14,7 @@ import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
+import { useFirstMessage, useWidgetConfig } from "./widget-config";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -29,19 +30,39 @@ export type TranscriptEntry =
       role: Role;
       message: string;
       isText: boolean;
+      conversationIndex: number;
     }
   | {
       type: "disconnection";
       role: Role;
       message?: undefined;
+      conversationIndex: number;
     }
   | {
       type: "error";
       message: string;
+      conversationIndex: number;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
+
+  // Automatically disconnect the conversation after 10 minutes of no messages
+  useSignalEffect(() => {
+    if (value.conversationTextOnly.value === true) {
+      value.transcript.value;
+      const id = setTimeout(
+        () => {
+          value.endSession();
+        },
+        10 * 60 * 1000 // 10 minutes
+      );
+      return () => {
+        clearTimeout(id);
+      };
+    }
+  });
+
   return (
     <ConversationContext.Provider value={value}>
       {children}
@@ -57,6 +78,8 @@ function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
 
+  const widgetConfig = useWidgetConfig();
+  const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
   const { isMuted } = useMicConfig();
@@ -86,6 +109,8 @@ function useConversationSetup() {
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
     const transcript = signal<TranscriptEntry[]>([]);
+    const conversationIndex = signal(0);
+    const conversationTextOnly = signal<boolean | null>(null);
 
     return {
       status,
@@ -95,6 +120,8 @@ function useConversationSetup() {
       lastId,
       error,
       canSendFeedback,
+      conversationIndex,
+      conversationTextOnly,
       transcript,
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
@@ -108,6 +135,28 @@ function useConversationSetup() {
           return conversation.getId();
         }
 
+        let processedConfig = structuredClone(config.peek());
+        // If the user started the conversation with a text message, and the
+        // agent supports it, switch to text-only mode.
+        if (initialMessage && widgetConfig.value.supports_text_only) {
+          processedConfig.textOnly = true;
+          if (!widgetConfig.value.text_only) {
+            processedConfig.overrides ??= {};
+            processedConfig.overrides.conversation ??= {};
+            processedConfig.overrides.conversation.textOnly = true;
+          }
+        }
+
+        try {
+          processedConfig = triggerCallEvent(element, processedConfig);
+        } catch (error) {
+          console.error(
+            "[ConversationalAI] Error triggering call event:",
+            error
+          );
+        }
+
+        conversationTextOnly.value = processedConfig.textOnly ?? false;
         transcript.value = initialMessage
           ? [
               {
@@ -115,13 +164,14 @@ function useConversationSetup() {
                 role: "user",
                 message: initialMessage,
                 isText: true,
+                conversationIndex: conversationIndex.peek(),
               },
             ]
           : [];
 
         try {
           lockRef.current = Conversation.startSession({
-            ...triggerCallEvent(element, config.peek()),
+            ...processedConfig,
             onModeChange: props => {
               mode.value = props.mode;
             },
@@ -132,6 +182,17 @@ function useConversationSetup() {
               canSendFeedback.value = props.canSendFeedback;
             },
             onMessage: ({ source, message }) => {
+              if (
+                conversationTextOnly.peek() === true &&
+                source === "ai" &&
+                message === firstMessage.peek()
+              ) {
+                // Text mode is always started by the user sending a text message.
+                // We need to ignore the first agent message as it is immediately
+                // interrupted by the user input.
+                return;
+              }
+
               transcript.value = [
                 ...transcript.value,
                 {
@@ -139,19 +200,27 @@ function useConversationSetup() {
                   role: source,
                   message,
                   isText: false,
+                  conversationIndex: conversationIndex.peek(),
                 },
               ];
             },
             onDisconnect: details => {
+              conversationTextOnly.value = null;
               transcript.value = [
                 ...transcript.value,
                 details.reason === "error"
-                  ? { type: "error", message: details.message }
+                  ? {
+                      type: "error",
+                      message: details.message,
+                      conversationIndex: conversationIndex.peek(),
+                    }
                   : {
                       type: "disconnection",
                       role: details.reason === "user" ? "user" : "ai",
+                      conversationIndex: conversationIndex.peek(),
                     },
               ];
+              conversationIndex.value++;
               if (details.reason === "error") {
                 error.value = details.message;
                 console.error(
@@ -167,7 +236,9 @@ function useConversationSetup() {
             conversationRef.current.setMicMuted(isMuted.peek());
           }
           if (initialMessage) {
-            conversationRef.current.sendUserMessage(initialMessage);
+            const instance = conversationRef.current;
+            // TODO: Remove the delay once BE can handle it
+            setTimeout(() => instance.sendUserMessage(initialMessage), 100);
           }
 
           const id = conversationRef.current.getId();
@@ -182,7 +253,14 @@ function useConversationSetup() {
             message = e.message || message;
           }
           error.value = message;
-          transcript.value = [...transcript.value, { type: "error", message }];
+          transcript.value = [
+            ...transcript.value,
+            {
+              type: "error",
+              message,
+              conversationIndex: conversationIndex.peek(),
+            },
+          ];
         } finally {
           lockRef.current = null;
         }
@@ -210,6 +288,7 @@ function useConversationSetup() {
             role: "user",
             message: text,
             isText: true,
+            conversationIndex: conversationIndex.peek(),
           },
         ];
       },
@@ -228,9 +307,7 @@ function triggerCallEvent(
     const event = new CustomEvent("elevenlabs-convai:call", {
       bubbles: true,
       composed: true,
-      detail: {
-        config: structuredClone(config),
-      },
+      detail: { config },
     });
     element.dispatchEvent(event);
     return event.detail.config;

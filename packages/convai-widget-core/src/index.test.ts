@@ -78,6 +78,65 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
       await expect.element(page.getByText("ID")).toBeInTheDocument();
       await expect.element(startButton).toBeInTheDocument();
+
+      // Restarting via text-input
+      await textInput.fill("New text message");
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("New text message"))
+        .toBeInTheDocument();
+
+      // Established connection
+      await expect
+        .element(page.getByText("Chatting with AI agent"))
+        .toBeInTheDocument();
+    }
+  );
+
+  it.each(Variants)(
+    "$0 expandable variant should go through a happy path (text-only)",
+    async variant => {
+      setupWebComponent({
+        "agent-id": "text_only",
+        variant,
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      // Displayed first message
+      await expect
+        .element(page.getByText("Agent response"))
+        .toBeInTheDocument();
+
+      // Text input
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Text message");
+      await userEvent.keyboard("{Enter}");
+      await expect.element(page.getByText("Text message")).toBeInTheDocument();
+
+      // Established connection
+      await expect.element(page.getByText("Connecting")).toBeInTheDocument();
+      await expect
+        .element(page.getByText("Chatting with AI agent"))
+        .toBeInTheDocument();
+
+      // Received another agent message
+      await expect
+        .element(page.getByText("Another agent response"))
+        .toBeInTheDocument();
+
+      // Agent closed the connection
+      await expect
+        .element(page.getByText("The agent ended the conversation"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText("ID")).toBeInTheDocument();
     }
   );
 

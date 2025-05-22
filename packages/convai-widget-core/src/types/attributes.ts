@@ -30,6 +30,7 @@ export const CustomAttributeList = [
   "override-first-message",
   "override-language",
   "override-voice-id",
+  "override-text-only",
   "mic-muting",
   "transcript",
   "text-input",

@@ -7,6 +7,8 @@ import { useLanguageConfig } from "./language-config";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
+import { parseBoolAttribute } from "../types/attributes";
+import { useTextOnly } from "./widget-config";
 
 type DynamicVariables = Record<string, string | number | boolean>;
 
@@ -24,6 +26,7 @@ export function SessionConfigProvider({
   const overridePrompt = useAttribute("override-prompt");
   const overrideFirstMessage = useAttribute("override-first-message");
   const overrideVoiceId = useAttribute("override-voice-id");
+  const overrideTextOnly = useAttribute("override-text-only");
   const overrides = useComputed<SessionConfig["overrides"]>(() => ({
     agent: {
       prompt: {
@@ -34,6 +37,9 @@ export function SessionConfigProvider({
     },
     tts: {
       voiceId: overrideVoiceId.value,
+    },
+    conversation: {
+      textOnly: parseBoolAttribute(overrideTextOnly.value) ?? undefined,
     },
   }));
 
@@ -55,11 +61,13 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
+  const textOnly = useTextOnly();
   const value = useComputed<SessionConfig | null>(() => {
     const commonConfig = {
       dynamicVariables: dynamicVariables.value,
       overrides: overrides.value,
       connectionDelay: { default: 300 },
+      textOnly: textOnly.value,
     };
 
     if (agentId.value) {

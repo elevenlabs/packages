@@ -94,6 +94,9 @@ export type InitiationClientDataEvent = {
     tts?: {
       voice_id?: string;
     };
+    conversation?: {
+      text_only?: boolean;
+    };
   };
   custom_llm_extra_body?: any;
   dynamic_variables?: Record<string, string | number | boolean>;

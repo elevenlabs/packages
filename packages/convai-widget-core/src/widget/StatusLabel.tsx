@@ -4,19 +4,23 @@ import { useConversation } from "../contexts/conversation";
 import { useComputed, useSignalEffect } from "@preact/signals";
 import { InOutTransition } from "../components/InOutTransition";
 import { useTextContents } from "../contexts/text-contents";
+import { useIsConversationTextOnly } from "../contexts/widget-config";
 
 export function StatusLabel({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   const { status, isSpeaking } = useConversation();
+  const textOnly = useIsConversationTextOnly();
   const text = useTextContents();
   const currentLabel = useComputed(() =>
     status.value !== "connected"
       ? text.connecting_status.value
-      : isSpeaking.value
-        ? text.speaking_status.value
-        : text.listening_status.value
+      : textOnly.value
+        ? text.chatting_status.value
+        : isSpeaking.value
+          ? text.speaking_status.value
+          : text.listening_status.value
   );
 
   const [label, setLabel] = useState(currentLabel.peek());
