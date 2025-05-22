@@ -8,6 +8,7 @@ import { TriggerMuteButton } from "./TriggerMuteButton";
 import { Button } from "../components/Button";
 import { clsx } from "clsx";
 import { ExpandableProps } from "./Trigger";
+import { Avatar } from "../components/Avatar";
 
 export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
   const variant = useWidgetConfig().value.variant;
@@ -19,6 +20,14 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
 
   return (
     <>
+      {variant === "full" && (
+        <SizeTransition
+          visible={!expanded.value && !isDisconnected.value}
+          className="p-1"
+        >
+          <Avatar />
+        </SizeTransition>
+      )}
       <SizeTransition
         grow={variant !== "tiny"}
         visible={!expanded.value && !isDisconnected.value}

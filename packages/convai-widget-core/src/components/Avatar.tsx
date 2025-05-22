@@ -69,7 +69,7 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
       <div
         ref={imageRef}
         style={style}
-        className="absolute inset-0 rounded-full overflow-hidden bg-base"
+        className="absolute inset-0 rounded-full overflow-hidden bg-base bg-cover"
       >
         {config.value.type === "orb" && (
           <OrbCanvas

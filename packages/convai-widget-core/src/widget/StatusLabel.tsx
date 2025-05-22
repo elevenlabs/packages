@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { HTMLAttributes, useState } from "preact/compat";
 import { useConversation } from "../contexts/conversation";
-import { useSignalEffect } from "@preact/signals";
+import { useComputed, useSignalEffect } from "@preact/signals";
 import { InOutTransition } from "../components/InOutTransition";
 import { useTextContents } from "../contexts/text-contents";
 
@@ -11,15 +11,17 @@ export function StatusLabel({
 }: HTMLAttributes<HTMLDivElement>) {
   const { status, isSpeaking } = useConversation();
   const text = useTextContents();
-  const [label, setLabel] = useState(text.connecting_status.peek());
-  useSignalEffect(() => {
-    const label =
-      status.value !== "connected"
-        ? text.connecting_status.value
-        : isSpeaking.value
-          ? text.speaking_status.value
-          : text.listening_status.value;
+  const currentLabel = useComputed(() =>
+    status.value !== "connected"
+      ? text.connecting_status.value
+      : isSpeaking.value
+        ? text.speaking_status.value
+        : text.listening_status.value
+  );
 
+  const [label, setLabel] = useState(currentLabel.peek());
+  useSignalEffect(() => {
+    const label = currentLabel.value;
     if (status.value === "connected" && isSpeaking.value) {
       setLabel(label);
     } else {

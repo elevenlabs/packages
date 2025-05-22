@@ -11,7 +11,7 @@ export function TermsModal() {
   return (
     <div className="max-w-[400px] flex flex-col gap-2 bg-base shadow-md pointer-events-auto rounded-6 p-3 text-sm">
       <div
-        className="flex flex-col gap-1 terms pb-1"
+        className="flex flex-col gap-1 terms p-2 pt-1"
         dangerouslySetInnerHTML={{ __html: config.value.terms_html ?? "" }}
       />
       <div className="flex justify-end gap-2">

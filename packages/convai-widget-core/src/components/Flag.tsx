@@ -24,7 +24,7 @@ export function Flag({
         SIZE_CLASSES[size],
         className
       )}
-      src={`https://purecatamphetamine.github.io/country-flag-icons/1x1/${flagCode.toUpperCase()}.svg`}
+      src={`https://storage.googleapis.com/eleven-public-cdn/images/flags/circle-flags/${flagCode}.svg`}
       alt={`${flagCode.toUpperCase()} flag`}
       {...props}
     />
