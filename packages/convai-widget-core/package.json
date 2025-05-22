@@ -1,6 +1,6 @@
 {
   "name": "@11labs/convai-widget-core",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The common library for the Conversational AI Widget.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
