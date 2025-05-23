@@ -112,7 +112,9 @@ export function Sheet({ open }: SheetProps) {
           )}
         >
           <Avatar size="lg" />
-          <InOutTransition active={!showTranscript && isDisconnected.value}>
+          <InOutTransition
+            active={!showTranscript && isDisconnected.value && !textOnly.value}
+          >
             <div className="absolute bottom-0 p-1 rounded-full bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
               <Button
                 aria-label={text.start_call}
