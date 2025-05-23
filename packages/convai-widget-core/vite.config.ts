@@ -21,7 +21,7 @@ export default defineConfig({
       external: id =>
         id.startsWith("preact") ||
         id.startsWith("@preact") ||
-        id.startsWith("@11labs") ||
+        id.startsWith("@elevenlabs") ||
         id === "clsx",
     },
   },

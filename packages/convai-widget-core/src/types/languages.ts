@@ -1,4 +1,4 @@
-import type { Language } from "@11labs/client";
+import type { Language } from "@elevenlabs/convai-client";
 
 export interface LanguageInfo {
   name: string;

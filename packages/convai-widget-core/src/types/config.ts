@@ -1,4 +1,4 @@
-import { Language } from "@11labs/client";
+import { Language } from "@elevenlabs/convai-client";
 
 export const Variants = ["tiny", "compact", "full"] as const;
 export type Variant = (typeof Variants)[number];

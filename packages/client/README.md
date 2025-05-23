@@ -1,4 +1,4 @@
-# ElevenLabs JavaScript Client Library
+# ElevenLabs Conversational AI JavaScript Library
 
 An SDK library for using ElevenLabs in browser based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
 
@@ -13,11 +13,11 @@ An SDK library for using ElevenLabs in browser based applications. If you're loo
 Install the package in your project through package manager.
 
 ```shell
-npm install @11labs/client
+npm install @elevenlabs/convai-client
 # or
-yarn add @11labs/client
+yarn add @elevenlabs/convai-client
 # or
-pnpm install @11labs/client
+pnpm install @elevenlabs/convai-client
 ```
 
 ## Usage
