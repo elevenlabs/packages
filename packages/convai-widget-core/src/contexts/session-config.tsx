@@ -1,4 +1,4 @@
-import { SessionConfig } from "@11labs/client";
+import { SessionConfig } from "@elevenlabs/client";
 import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";

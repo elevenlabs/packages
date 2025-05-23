@@ -13,11 +13,11 @@ An SDK library for using ElevenLabs in React based applications. If you're looki
 Install the package in your project through package manager.
 
 ```shell
-npm install @11labs/react
+npm install @elevenlabs/react
 # or
-yarn add @11labs/react
+yarn add @elevenlabs/react
 # or
-pnpm install @11labs/react
+pnpm install @elevenlabs/react
 ```
 
 ## Usage

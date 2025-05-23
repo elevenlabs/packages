@@ -1,5 +1,5 @@
 {
-  "name": "@11labs/react",
+  "name": "@elevenlabs/react",
   "version": "0.1.4",
   "description": "ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
@@ -30,7 +30,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "dependencies": {
-    "@11labs/client": "workspace:*"
+    "@elevenlabs/client": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=16.8.0"

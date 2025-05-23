@@ -4,7 +4,7 @@ import {
   Role,
   SessionConfig,
   Status,
-} from "@11labs/client";
+} from "@elevenlabs/client";
 import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
