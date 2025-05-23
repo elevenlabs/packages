@@ -18,6 +18,7 @@ const BASIC_CONFIG: WidgetConfig = {
   text_contents: {},
   terms_html: "Test terms",
   language_presets: {},
+  disable_banner: false,
 };
 
 export const AGENTS = {

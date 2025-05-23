@@ -42,6 +42,8 @@ export interface WidgetConfig {
   language_presets: Partial<
     Record<Language, { text_contents?: Partial<TextContents> }>
   >;
+  disable_banner: boolean;
+  override_link?: string;
 }
 
 export type AvatarConfig =
