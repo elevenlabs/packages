@@ -1,6 +1,11 @@
 import { Signal, useComputed, useSignal } from "@preact/signals";
-import { useWidgetConfig } from "../contexts/widget-config";
-import { useConversation } from "../contexts/conversation";
+import {
+  useFirstMessage,
+  useIsConversationTextOnly,
+  useTextOnly,
+  useWidgetConfig,
+} from "../contexts/widget-config";
+import { TranscriptEntry, useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
 import { clsx } from "clsx";
 import { Avatar } from "../components/Avatar";
@@ -27,10 +32,36 @@ const ORIGIN_CLASSES: Record<Placement, string> = {
 
 export function Sheet({ open }: SheetProps) {
   const text = useTextContents();
+  const textOnly = useTextOnly();
+  const isConversationTextOnly = useIsConversationTextOnly();
   const config = useWidgetConfig();
   const placement = config.value.placement;
-  const { isDisconnected, startSession, transcript } = useConversation();
-  const filteredTranscript = useComputed(() => {
+  const { isDisconnected, startSession, transcript, conversationIndex } =
+    useConversation();
+  const firstMessage = useFirstMessage();
+
+  const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
+    if (textOnly.value || isConversationTextOnly.value) {
+      if (!firstMessage.value || !textOnly.value) {
+        return transcript.value;
+      }
+
+      // We only show the first message if the widget does not support voice
+      // altogether. If the widget supports voice but switched to text-only
+      // mode due to user input, we don't show the first message again.
+      return [
+        {
+          type: "message",
+          role: "ai",
+          message: firstMessage.value,
+          isText: true,
+          conversationIndex:
+            transcript.value[0]?.conversationIndex ?? conversationIndex.peek(),
+        },
+        ...transcript.value,
+      ];
+    }
+
     return config.value.transcript_enabled
       ? transcript.value
       : transcript.value.filter(
@@ -44,7 +75,7 @@ export function Sheet({ open }: SheetProps) {
   const scrollPinned = useSignal(true);
 
   return (
-    <InOutTransition active={open}>
+    <InOutTransition initial={false} active={open}>
       <div
         className={clsx(
           "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
@@ -81,8 +112,10 @@ export function Sheet({ open }: SheetProps) {
           )}
         >
           <Avatar size="lg" />
-          <InOutTransition active={!showTranscript && isDisconnected.value}>
-            <div className="absolute bottom-0 p-1 rounded-[calc(var(--button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
+          <InOutTransition
+            active={!showTranscript && isDisconnected.value && !textOnly.value}
+          >
+            <div className="absolute bottom-0 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
               <Button
                 aria-label={text.start_call}
                 variant="primary"

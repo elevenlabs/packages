@@ -20,6 +20,7 @@ function Playground() {
   const [micMuting, setMicMuting] = useState(false);
   const [transcript, setTranscript] = useState(false);
   const [textInput, setTextInput] = useState(false);
+  const [textOnly, setTextOnly] = useState(false);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -72,6 +73,14 @@ function Playground() {
           />{" "}
           Text input
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={textOnly}
+            onChange={e => setTextOnly(e.currentTarget.checked)}
+          />{" "}
+          Text only
+        </label>
       </div>
       <div className="dev-host">
         <ConvAIWidget
@@ -81,6 +90,7 @@ function Playground() {
           transcript={JSON.stringify(transcript)}
           text-input={JSON.stringify(textInput)}
           mic-muting={JSON.stringify(micMuting)}
+          override-text-only={JSON.stringify(textOnly)}
         />
       </div>
     </div>

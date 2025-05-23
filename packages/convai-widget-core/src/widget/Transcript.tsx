@@ -42,7 +42,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     >
       {transcript.value.map((entry, index) => (
         <TranscriptMessage
-          key={`${entry.message}-${index}`}
+          key={`${entry.message}-${index}-${entry.conversationIndex}`}
           entry={entry}
           animateIn={!firstRender.current}
         />

@@ -5,7 +5,10 @@ import { TriggerMuteButton } from "./TriggerMuteButton";
 import { SizeTransition } from "../components/SizeTransition";
 import { CallButton } from "./CallButton";
 import { Signal } from "@preact/signals";
-import { useWidgetConfig } from "../contexts/widget-config";
+import {
+  useIsConversationTextOnly,
+  useWidgetConfig,
+} from "../contexts/widget-config";
 import { useTextContents } from "../contexts/text-contents";
 
 interface SheetActionsProps {
@@ -18,6 +21,7 @@ export function SheetActions({
   scrollPinned,
 }: SheetActionsProps) {
   const [userMessage, setUserMessage] = useState("");
+  const textOnly = useIsConversationTextOnly();
   const { text_input_enabled } = useWidgetConfig().value;
   const text = useTextContents();
   const {
@@ -26,6 +30,7 @@ export function SheetActions({
     startSession,
     sendUserMessage,
     sendUserActivity,
+    conversationIndex,
   } = useConversation();
 
   return (
@@ -52,13 +57,19 @@ export function SheetActions({
             }
           }}
           className="m-1 grow z-1 max-h-[8lh]"
-          placeholder={text.input_placeholder}
+          placeholder={
+            textOnly.value
+              ? isDisconnected.value && conversationIndex.value > 0
+                ? text.input_placeholder_new_conversation
+                : text.input_placeholder_text_only
+              : text.input_placeholder
+          }
         />
       )}
       <div className="flex h-11 items-center">
-        <TriggerMuteButton visible={!isDisconnected.value} />
+        <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
         <SizeTransition
-          visible={!isDisconnected.value || showTranscript}
+          visible={!textOnly.value && (!isDisconnected.value || showTranscript)}
           className="p-1"
         >
           <CallButton

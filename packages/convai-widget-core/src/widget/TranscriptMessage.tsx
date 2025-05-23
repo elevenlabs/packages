@@ -35,6 +35,7 @@ export function TranscriptMessage({
             />
           )}
           <div
+            dir="auto"
             className={clsx(
               "px-3 py-2.5 rounded-bubble text-sm",
               entry.role === "user"

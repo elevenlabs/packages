@@ -1,4 +1,7 @@
-import { useWidgetConfig } from "../contexts/widget-config";
+import {
+  useIsConversationTextOnly,
+  useWidgetConfig,
+} from "../contexts/widget-config";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { useCallback } from "preact/compat";
@@ -11,6 +14,7 @@ import { ExpandableProps } from "./Trigger";
 import { Avatar } from "../components/Avatar";
 
 export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
+  const textOnly = useIsConversationTextOnly();
   const variant = useWidgetConfig().value.variant;
   const { isDisconnected } = useConversation();
   const text = useTextContents();
@@ -30,12 +34,14 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
       )}
       <SizeTransition
         grow={variant !== "tiny"}
-        visible={!expanded.value && !isDisconnected.value}
+        visible={!textOnly.value && !expanded.value && !isDisconnected.value}
         className="p-1"
       >
         <CallButton iconOnly isDisconnected={false} />
       </SizeTransition>
-      <TriggerMuteButton visible={!expanded.value && !isDisconnected.value} />
+      <TriggerMuteButton
+        visible={!textOnly.value && !expanded.value && !isDisconnected.value}
+      />
       <SizeTransition grow={isDisconnected.value} visible className="p-1">
         <Button
           className="w-full"
@@ -49,14 +55,18 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
             expanded.value
               ? "chevron-up"
               : isDisconnected.value
-                ? "phone"
+                ? textOnly.value
+                  ? "chat"
+                  : "phone"
                 : "chevron-up"
           }
           aria-label={
             expanded.value
               ? text.collapse
               : isDisconnected.value
-                ? text.start_call
+                ? textOnly.value
+                  ? text.start_chat
+                  : text.start_call
                 : text.expand
           }
           onClick={
@@ -66,7 +76,9 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
           }
         >
           {!expanded.value && isDisconnected.value && variant !== "tiny"
-            ? text.start_call
+            ? textOnly.value
+              ? text.start_chat
+              : text.start_call
             : undefined}
         </Button>
       </SizeTransition>

@@ -41,6 +41,11 @@ export type Language =
   | "sk"
   | "no"
   | "vi";
+export type DelayConfig = {
+  default: number;
+  android?: number;
+  ios?: number;
+};
 export type SessionConfig = {
   origin?: string;
   authorization?: string;
@@ -55,15 +60,15 @@ export type SessionConfig = {
     tts?: {
       voiceId?: string;
     };
+    conversation?: {
+      textOnly?: boolean;
+    };
   };
   customLlmExtraBody?: any;
   dynamicVariables?: Record<string, string | number | boolean>;
   useWakeLock?: boolean;
-  connectionDelay?: {
-    default: number;
-    android?: number;
-    ios?: number;
-  };
+  connectionDelay?: DelayConfig;
+  textOnly?: boolean;
 } & (
   | { signedUrl: string; agentId?: undefined }
   | { agentId: string; signedUrl?: undefined }
@@ -125,6 +130,9 @@ export class Connection {
                 },
                 tts: {
                   voice_id: config.overrides.tts?.voiceId,
+                },
+                conversation: {
+                  text_only: config.overrides.conversation?.textOnly,
                 },
               };
             }
