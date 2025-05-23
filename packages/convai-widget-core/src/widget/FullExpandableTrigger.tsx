@@ -18,7 +18,7 @@ export function FullExpandableTrigger({
     <div
       className={clsx(
         "transition-[border-radius] flex flex-col p-2",
-        !expanded.value && isDisconnected.value ? "rounded-6" : "rounded-7.5",
+        !expanded.value && isDisconnected.value ? "rounded-sheet" : "rounded-compact-sheet",
         className
       )}
       {...rest}

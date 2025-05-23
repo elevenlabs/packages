@@ -20,6 +20,7 @@ const BASIC_CONFIG: WidgetConfig = {
   },
   terms_html: "Test terms",
   language_presets: {},
+  disable_banner: false,
   text_only: false,
   supports_text_only: true,
   first_message: "Agent response",

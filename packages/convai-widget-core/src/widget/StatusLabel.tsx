@@ -39,7 +39,7 @@ export function StatusLabel({
   return (
     <div
       className={clsx(
-        "py-1.5 px-3 bg-base-active overflow-hidden rounded-4 text-sm",
+        "py-1.5 px-3 bg-base-active overflow-hidden rounded-bubble text-sm",
         className
       )}
       {...props}

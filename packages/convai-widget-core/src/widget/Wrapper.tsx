@@ -11,6 +11,7 @@ import { InOutTransition } from "../components/InOutTransition";
 import { useTerms } from "../contexts/terms";
 import { TermsModal } from "./TermsModal";
 import { ErrorModal } from "./ErrorModal";
+import { PoweredBy } from "./PoweredBy";
 
 const HORIZONTAL = {
   left: "items-start",
@@ -91,6 +92,9 @@ export const Wrapper = memo(function Wrapper() {
           <ErrorModal sawError={sawError} />
         </Root>
       </InOutTransition>
+      <Root className={className}>
+        <PoweredBy />
+      </Root>
     </>
   );
 });

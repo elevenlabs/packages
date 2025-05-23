@@ -37,7 +37,7 @@ export function TranscriptMessage({
           <div
             dir="auto"
             className={clsx(
-              "px-3 py-2.5 rounded-4 text-sm",
+              "px-3 py-2.5 rounded-bubble text-sm",
               entry.role === "user"
                 ? "bg-accent text-accent-primary"
                 : "bg-base-active text-base-primary"

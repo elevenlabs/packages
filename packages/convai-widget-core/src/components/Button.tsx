@@ -50,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={clsx(
-          "h-9 flex px-2.5 text-sm items-center transition-colors justify-center rounded-full duration-200 focus-ring overflow-hidden select-none",
+          "h-9 flex px-2.5 text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
           VARIANT_CLASSES[variant],
           iconOnly && "min-w-9",
           className

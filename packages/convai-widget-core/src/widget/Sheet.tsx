@@ -78,7 +78,7 @@ export function Sheet({ open }: SheetProps) {
     <InOutTransition initial={false} active={open}>
       <div
         className={clsx(
-          "flex flex-col overflow-hidden absolute bg-base shadow-md pointer-events-auto rounded-6 w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
+          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top") ? "top-20" : "bottom-20"
@@ -87,7 +87,7 @@ export function Sheet({ open }: SheetProps) {
         <div className="bg-base shrink-0 flex gap-2 p-4 items-start">
           <div className="relative w-16 h-16" />
           <InOutTransition active={showTranscript && !isDisconnected.value}>
-            <StatusLabel className="rounded-bl-1 transition-opacity data-hidden:opacity-0" />
+            <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
         <Transcript
@@ -115,7 +115,7 @@ export function Sheet({ open }: SheetProps) {
           <InOutTransition
             active={!showTranscript && isDisconnected.value && !textOnly.value}
           >
-            <div className="absolute bottom-0 p-1 rounded-full bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
+            <div className="absolute bottom-0 p-1 rounded-[calc(var(--button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
               <Button
                 aria-label={text.start_call}
                 variant="primary"

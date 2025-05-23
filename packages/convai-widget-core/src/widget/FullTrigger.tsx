@@ -15,7 +15,7 @@ export function FullTrigger({
   const text = useTextContents();
 
   return (
-    <div className={clsx("flex flex-col p-2 rounded-6", className)} {...rest}>
+    <div className={clsx("flex flex-col p-2 rounded-sheet", className)} {...rest}>
       <div className="flex items-center p-1 gap-2 min-w-60">
         <Avatar />
         <div className="relative text-sm max-w-64">

@@ -48,6 +48,8 @@ export interface WidgetConfig {
       }
     >
   >;
+  disable_banner: boolean;
+  override_link?: string;
   text_only: boolean;
   supports_text_only: boolean;
   first_message?: string;
