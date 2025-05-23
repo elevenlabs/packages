@@ -29,7 +29,7 @@ function Playground() {
           <select
             value={variant}
             onChange={e => setVariant(parseVariant(e.currentTarget.value))}
-            className="p-1 bg-base border border-base-border rounded-2"
+            className="p-1 bg-base border border-base-border"
           >
             {Variants.map(variant => (
               <option value={variant}>{variant}</option>
@@ -41,7 +41,7 @@ function Playground() {
           <select
             value={placement}
             onChange={e => setPlacement(parsePlacement(e.currentTarget.value))}
-            className="p-1 bg-base border border-base-border rounded-2"
+            className="p-1 bg-base border border-base-border"
           >
             {Placements.map(placement => (
               <option value={placement}>{placement}</option>

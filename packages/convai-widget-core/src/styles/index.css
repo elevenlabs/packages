@@ -22,6 +22,13 @@
   --el-accent-primary: #ffffff;
 
   --el-overlay-padding: 32px;
+
+  --el-button-radius: 18px;
+  --el-input-radius: 10px;
+  --el-bubble-radius: 15px;
+  --el-sheet-radius: calc(var(--el-button-radius) + 6px);
+  --el-compact-sheet-radius: calc(var(--el-button-radius) + 12px);
+  --el-dropdown-sheet-radius: calc(var(--el-input-radius) + 6px);
 }
 
 .dev-host,
@@ -54,7 +61,9 @@
     position: absolute;
     inset: var(--el-overlay-padding);
     /* Make sure the widget doesn't shift when opening dropdowns */
-    right: calc(var(--el-overlay-padding) + var(--removed-body-scroll-bar-size, 0px));
+    right: calc(
+      var(--el-overlay-padding) + var(--removed-body-scroll-bar-size, 0px)
+    );
   }
 
   .focus-ring {

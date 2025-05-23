@@ -24,7 +24,7 @@ export function TriggerLanguageSelect({ visible, className, ...rest }: Props) {
       <LanguageSelect>
         <Select.Trigger
           className={clsx(
-            "h-9 min-w-max border border-base-border rounded-full focus-ring px-1.5 flex gap-1 items-center transition-colors duration-200 hover:bg-base-hover active:bg-base-active",
+            "h-9 min-w-max border border-base-border rounded-button focus-ring px-1.5 flex gap-1 items-center transition-colors duration-200 hover:bg-base-hover active:bg-base-active",
             className
           )}
           aria-label={text.change_language}

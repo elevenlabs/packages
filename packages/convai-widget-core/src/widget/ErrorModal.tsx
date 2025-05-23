@@ -18,7 +18,7 @@ export function ErrorModal({ sawError }: ErrorModalProps) {
   }, []);
 
   return (
-    <div className="max-w-[400px] flex flex-col gap-2 bg-base shadow-md pointer-events-auto rounded-6 p-3 text-sm">
+    <div className="max-w-[400px] flex flex-col gap-2 bg-base shadow-md pointer-events-auto rounded-sheet p-3 text-sm">
       <div className="p-2 pt-1">
         <h1 className="text-md font-medium pb-1">{text.error_occurred}</h1>
         {error.value}

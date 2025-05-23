@@ -32,7 +32,7 @@ export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
       {children}
       <Select.Portal container={portal}>
         <Select.Content
-          className="overflow-hidden bg-base border border-base-border rounded-6 max-h-[min(384px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] z-10"
+          className="overflow-hidden bg-base border border-base-border rounded-dropdown-sheet max-h-[min(384px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] z-10"
           position="popper"
           sideOffset={8}
           align="end"
@@ -45,16 +45,16 @@ export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
           <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-base text-base-subtle cursor-default">
             <Icon size="sm" name="chevron-up" />
           </Select.ScrollUpButton>
-          <Select.Viewport className="p-1">
+          <Select.Viewport className="p-1.5">
             {options.value.map(language => (
               <Select.Item
                 key={language.languageCode}
                 value={language.languageCode}
-                className="flex select-none items-center p-1.5 gap-2 cursor-pointer rounded-full relative focus-visible:outline-none data-[highlighted]:bg-base-active text-sm"
+                className="flex select-none items-center p-1.5 pr-3 gap-2 cursor-pointer rounded-input relative focus-visible:outline-none data-[highlighted]:bg-base-active text-sm"
               >
                 <Flag flagCode={language.flagCode} />
                 <Select.ItemText>{language.name}</Select.ItemText>
-                <Select.ItemIndicator className="text-base-primary p-1.5 ml-auto">
+                <Select.ItemIndicator className="text-base-primary p-1.5 -mr-1.5 ml-auto">
                   <Icon size="sm" name="check" />
                 </Select.ItemIndicator>
               </Select.Item>
