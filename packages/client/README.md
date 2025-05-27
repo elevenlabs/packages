@@ -155,7 +155,22 @@ const conversation = await Conversation.startSession({
     tts: {
       voiceId: "custom voice id",
     },
+    conversation: {
+      textOnly: true,
+    },
   },
+});
+```
+
+#### Text only
+
+If your agent is configured to run in text-only mode, i.e. it does not send or receive audio messages,
+you can use this flag to use a lighter version of the conversation. In that case, the
+user will not be asked for microphone permissions and no audio context will be created.
+
+```ts
+const conversation = await Conversation.startSession({
+  textOnly: true,
 });
 ```
 

@@ -59,6 +59,7 @@ const conversation = useConversation({
 
 - **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
 - **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
+- **textOnly** - whether the conversation should run in text-only mode. [See below](#text-only) for details.
 - **onConnect** - handler called when the conversation websocket connection is established.
 - **onDisconnect** - handler called when the conversation websocket connection is ended.
 - **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
@@ -105,7 +106,22 @@ const conversation = useConversation({
     tts: {
       voiceId: "custom voice id",
     },
+    conversation: {
+      textOnly: true,
+    }
   },
+});
+```
+
+#### Text only
+
+If your agent is configured to run in text-only mode, i.e. it does not send or receive audio messages,
+you can use this flag to use a lighter version of the conversation. In that case, the
+user will not be asked for microphone permissions and no audio context will be created.
+
+```ts
+const conversation = useConversation({
+  textOnly: true,
 });
 ```
 
