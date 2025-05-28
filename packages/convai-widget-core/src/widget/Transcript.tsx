@@ -3,6 +3,8 @@ import { TranscriptEntry } from "../contexts/conversation";
 import { useEffect, useRef } from "preact/compat";
 import { TranscriptMessage } from "./TranscriptMessage";
 
+const SCROLL_PIN_PADDING = 16;
+
 interface TranscriptProps {
   scrollPinned: Signal<boolean>;
   transcript: ReadonlySignal<TranscriptEntry[]>;
@@ -36,7 +38,9 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
       onScroll={e => {
         scrollPinned.value =
           e.currentTarget.scrollTop >=
-          e.currentTarget.scrollHeight - e.currentTarget.clientHeight;
+          e.currentTarget.scrollHeight -
+            e.currentTarget.clientHeight -
+            SCROLL_PIN_PADDING;
       }}
       className="px-4 pb-3 grow flex flex-col gap-3 overflow-y-auto"
     >
