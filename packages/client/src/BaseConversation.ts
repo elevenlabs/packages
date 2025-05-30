@@ -92,8 +92,8 @@ export class BaseConversation {
     protected readonly connection: Connection
   ) {
     this.options.onConnect({ conversationId: connection.conversationId });
-    this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onMessage(this.onMessage);
+    this.connection.onDisconnect(this.endSessionWithDetails);
     this.updateStatus("connected");
   }
 

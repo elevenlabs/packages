@@ -266,7 +266,7 @@ export class Connection {
       // Make sure the queue is flushed after the constructors finishes and
       // classes are initialized.
       queueMicrotask(() => {
-        this.queue.forEach(callback);
+        queue.forEach(callback);
       });
     }
   }
