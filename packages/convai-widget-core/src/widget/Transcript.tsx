@@ -42,7 +42,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
             e.currentTarget.clientHeight -
             SCROLL_PIN_PADDING;
       }}
-      className="px-4 pb-3 grow flex flex-col gap-3 overflow-y-auto"
+      className="px-4 pb-3 grow flex flex-col gap-3 overflow-x-hidden overflow-y-auto"
     >
       {transcript.value.map((entry, index) => (
         <TranscriptMessage
