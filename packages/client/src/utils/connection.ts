@@ -259,14 +259,27 @@ export class Connection {
 
   public onMessage(callback: OnMessageCallback) {
     this.onMessageCallback = callback;
-    this.queue.forEach(callback);
+    const queue = this.queue;
     this.queue = [];
+
+    if (queue.length > 0) {
+      // Make sure the queue is flushed after the constructors finishes and
+      // classes are initialized.
+      queueMicrotask(() => {
+        this.queue.forEach(callback);
+      });
+    }
   }
 
   public onDisconnect(callback: OnDisconnectCallback) {
     this.onDisconnectCallback = callback;
-    if (this.disconnectionDetails) {
-      callback(this.disconnectionDetails);
+    const details = this.disconnectionDetails;
+    if (details) {
+      // Make sure the event is triggered after the constructors finishes and
+      // classes are initialized.
+      queueMicrotask(() => {
+        callback(details);
+      });
     }
   }
 
