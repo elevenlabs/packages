@@ -1,17 +1,28 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor";
 import { FormatConfig } from "./connection";
 
+export type OutputConfig = {
+  outputDeviceId?: string;
+};
+
 export class Output {
   public static async create({
     sampleRate,
     format,
-  }: FormatConfig): Promise<Output> {
+    outputDeviceId,
+  }: FormatConfig & OutputConfig): Promise<Output> {
     let context: AudioContext | null = null;
     try {
       context = new AudioContext({ sampleRate });
       const analyser = context.createAnalyser();
       const gain = context.createGain();
       gain.connect(analyser);
+
+      // Try to set the output device if specified and supported
+      if (outputDeviceId && "setSinkId" in AudioContext.prototype) {
+        await (context as any).setSinkId(outputDeviceId);
+      }
+
       analyser.connect(context.destination);
       await loadAudioConcatProcessor(context.audioWorklet);
       const worklet = new AudioWorkletNode(context, "audio-concat-processor");
