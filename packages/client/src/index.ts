@@ -1,6 +1,6 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input, InputConfig } from "./utils/input";
-import { Output } from "./utils/output";
+import { Output, OutputConfig } from "./utils/output";
 import {
   Connection,
   DisconnectionDetails,
@@ -11,6 +11,7 @@ import { ClientToolCallEvent, IncomingSocketEvent } from "./utils/events";
 import { isAndroidDevice, isIosDevice } from "./utils/compatibility";
 
 export type { InputConfig } from "./utils/input";
+export type { OutputConfig } from "./utils/output";
 export type { IncomingSocketEvent } from "./utils/events";
 export type {
   SessionConfig,
@@ -27,7 +28,8 @@ export type Status =
 export type Options = SessionConfig &
   Callbacks &
   ClientToolsConfig &
-  InputConfig;
+  InputConfig &
+  OutputConfig;
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
@@ -72,8 +74,10 @@ export class Conversation {
     options: SessionConfig &
       Partial<Callbacks> &
       Partial<ClientToolsConfig> &
-      Partial<InputConfig>
+      Partial<InputConfig> &
+      Partial<OutputConfig>
   ): Promise<Conversation> {
+    console.log("nirosta", options);
     const fullOptions: Options = {
       ...defaultClientTools,
       ...defaultCallbacks,
@@ -101,7 +105,7 @@ export class Conversation {
       // some browsers won't allow calling getSupportedConstraints or enumerateDevices
       // before getting approval for microphone access
       preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: fullOptions.deviceId ? { deviceId: fullOptions.deviceId } : true,
       });
 
       const delayConfig = options.connectionDelay ?? {
@@ -120,13 +124,19 @@ export class Conversation {
         await new Promise(resolve => setTimeout(resolve, delay));
       }
 
+      console.log("Nirosta 3", fullOptions.outputDeviceId);
       connection = await Connection.create(options);
       [input, output] = await Promise.all([
         Input.create({
           ...connection.inputFormat,
-          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+          preferHeadphonesForIosDevices:
+            fullOptions.preferHeadphonesForIosDevices,
+          deviceId: fullOptions.deviceId,
         }),
-        Output.create(connection.outputFormat),
+        Output.create({
+          ...connection.outputFormat,
+          outputDeviceId: fullOptions.outputDeviceId,
+        }),
       ]);
 
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
