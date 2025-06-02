@@ -85,9 +85,8 @@ function useConversationSetup() {
   const { isMuted } = useMicConfig();
 
   useSignalEffect(() => {
-    if (isMuted.value) {
-      conversationRef?.current?.setMicMuted(isMuted.value);
-    }
+    const muted = isMuted.value;
+    conversationRef?.current?.setMicMuted(muted);
   });
 
   // Stop the conversation when the component unmounts.
@@ -232,9 +231,7 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          if (isMuted.peek() !== undefined) {
-            conversationRef.current.setMicMuted(isMuted.peek());
-          }
+          conversationRef.current.setMicMuted(isMuted.peek());
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
