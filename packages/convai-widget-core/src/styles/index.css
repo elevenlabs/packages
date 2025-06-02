@@ -4,33 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:host,
-:root {
-  --el-base: #ffffff;
-  --el-base-hover: #f9fafb;
-  --el-base-active: #f3f4f6;
-  --el-base-border: #e5e7eb;
-  --el-base-subtle: #6b7280;
-  --el-base-primary: #000000;
-  --el-base-error: #ef4444;
-
-  --el-accent: #000000;
-  --el-accent-hover: #1f2937;
-  --el-accent-active: #374151;
-  --el-accent-border: #4b5563;
-  --el-accent-subtle: #6b7280;
-  --el-accent-primary: #ffffff;
-
-  --el-overlay-padding: 32px;
-
-  --el-button-radius: 18px;
-  --el-input-radius: 10px;
-  --el-bubble-radius: 15px;
-  --el-sheet-radius: calc(var(--el-button-radius) + 6px);
-  --el-compact-sheet-radius: calc(var(--el-button-radius) + 12px);
-  --el-dropdown-sheet-radius: calc(var(--el-input-radius) + 6px);
-}
-
 .dev-host,
 :host {
   pointer-events: none;

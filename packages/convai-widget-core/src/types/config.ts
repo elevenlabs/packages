@@ -39,6 +39,7 @@ export interface WidgetConfig {
   transcript_enabled: boolean;
   text_input_enabled: boolean;
   text_contents: Partial<TextContents>;
+  styles?: Partial<Styles>;
   language_presets: Partial<
     Record<
       Language,
@@ -106,3 +107,32 @@ export const TextKeys = Object.keys(
 ) as (keyof typeof DefaultTextContents)[];
 
 export type TextContents = typeof DefaultTextContents;
+
+export const DefaultStyles = {
+  base: "#ffffff",
+  base_hover: "#f9fafb",
+  base_active: "#f3f4f6",
+  base_border: "#e5e7eb",
+  base_subtle: "#6b7280",
+  base_primary: "#000000",
+  base_error: "#ef4444",
+  accent: "#000000",
+  accent_hover: "#1f2937",
+  accent_active: "#374151",
+  accent_border: "#4b5563",
+  accent_subtle: "#6b7280",
+  accent_primary: "#ffffff",
+  overlay_padding: 32,
+  button_radius: 18,
+  input_radius: 10,
+  bubble_radius: 15,
+  sheet_radius: "calc(var(--el-button-radius) + 6px)",
+  compact_sheet_radius: "calc(var(--el-button-radius) + 12px)",
+  dropdown_sheet_radius: "calc(var(--el-input-radius) + 6px)",
+};
+
+export const StyleKeys = Object.keys(
+  DefaultStyles
+) as (keyof typeof DefaultStyles)[];
+
+export type Styles = typeof DefaultStyles;
