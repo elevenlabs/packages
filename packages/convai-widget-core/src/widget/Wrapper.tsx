@@ -33,6 +33,12 @@ const PLACEMENT_CLASSES: Record<Placement, string> = {
   "bottom-right": `${VERTICAL.bottom} ${HORIZONTAL.right}`,
 };
 
+// Keep the contents hidden initially to avoid FOUC in Safari
+// Once styles are loaded they will override this
+const HIDDEN_STYLE = {
+  display: "none",
+};
+
 export const Wrapper = memo(function Wrapper() {
   const expanded = useSignal(false);
   const config = useWidgetConfig();
@@ -44,7 +50,7 @@ export const Wrapper = memo(function Wrapper() {
   );
   const className = useComputed(() =>
     clsx(
-      "overlay flex transition-opacity duration-200 data-hidden:opacity-0",
+      "overlay !flex transition-opacity duration-200 data-hidden:opacity-0",
       PLACEMENT_CLASSES[config.value.placement]
     )
   );
@@ -77,22 +83,22 @@ export const Wrapper = memo(function Wrapper() {
   return (
     <>
       <InOutTransition initial={false} active={isConversation}>
-        <Root className={className}>
+        <Root className={className} style={HIDDEN_STYLE}>
           {expandable.value && <Sheet open={expanded} />}
           <Trigger expandable={expandable.value} expanded={expanded} />
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={isTerms}>
-        <Root className={className}>
+        <Root className={className} style={HIDDEN_STYLE}>
           <TermsModal />
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={isError}>
-        <Root className={className}>
+        <Root className={className} style={HIDDEN_STYLE}>
           <ErrorModal sawError={sawError} />
         </Root>
       </InOutTransition>
-      <Root className={className}>
+      <Root className={className} style={HIDDEN_STYLE}>
         <PoweredBy />
       </Root>
     </>
