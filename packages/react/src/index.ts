@@ -143,6 +143,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
     sendUserActivity: () => {
       conversationRef.current?.sendUserActivity();
     },
+    sendMCPToolApprovalResult: (toolCallId: string, isApproved: boolean) => {
+      conversationRef.current?.sendMCPToolApprovalResult(
+        toolCallId,
+        isApproved
+      );
+    },
     status,
     canSendFeedback,
     micMuted,

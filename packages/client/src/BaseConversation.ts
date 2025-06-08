@@ -342,4 +342,12 @@ export class BaseConversation {
       type: "user_activity",
     });
   }
+
+  public sendMCPToolApprovalResult(toolCallId: string, isApproved: boolean) {
+    this.connection.sendMessage({
+      type: "mcp_tool_approval_result",
+      tool_call_id: toolCallId,
+      is_approved: isApproved,
+    });
+  }
 }

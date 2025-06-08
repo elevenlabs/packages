@@ -112,6 +112,11 @@ export type UserMessageEvent = {
 export type UserActivityEvent = {
   type: "user_activity";
 };
+export type MCPToolApprovalResultEvent = {
+  type: "mcp_tool_approval_result";
+  tool_call_id: string;
+  is_approved: boolean;
+};
 export type OutgoingSocketEvent =
   | PongEvent
   | UserAudioEvent
@@ -120,7 +125,8 @@ export type OutgoingSocketEvent =
   | ClientToolResultEvent
   | ContextualUpdateEvent
   | UserMessageEvent
-  | UserActivityEvent;
+  | UserActivityEvent
+  | MCPToolApprovalResultEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
   return !!event.type;
