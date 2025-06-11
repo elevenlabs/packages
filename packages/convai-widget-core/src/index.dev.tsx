@@ -8,6 +8,8 @@ import {
   Placements,
   Variant,
   Variants,
+  Location,
+  parseLocation
 } from "./types/config";
 import { useState } from "preact/compat";
 
@@ -17,6 +19,7 @@ import { useState } from "preact/compat";
 function Playground() {
   const [variant, setVariant] = useState<Variant>("compact");
   const [placement, setPlacement] = useState<Placement>("bottom-right");
+  const [location, setLocation] = useState<Location>("us");
   const [micMuting, setMicMuting] = useState(false);
   const [transcript, setTranscript] = useState(false);
   const [textInput, setTextInput] = useState(false);
@@ -81,6 +84,18 @@ function Playground() {
           />{" "}
           Text only
         </label>
+        <label className="flex flex-col">
+          Server Location
+          <select
+            value={location}
+            onChange={e => setLocation(parseLocation(e.currentTarget.value))}
+            className="p-1 bg-base border border-base-border"
+          >
+            {(["us", "global", "eu-residency"]).map(location => (
+              <option value={location}>{location}</option>
+            ))}
+          </select>
+        </label>
       </div>
       <div className="dev-host">
         <ConvAIWidget
@@ -91,6 +106,7 @@ function Playground() {
           text-input={JSON.stringify(textInput)}
           mic-muting={JSON.stringify(micMuting)}
           override-text-only={JSON.stringify(textOnly)}
+          server-location={location}
         />
       </div>
     </div>

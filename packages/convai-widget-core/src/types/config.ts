@@ -136,3 +136,18 @@ export const StyleKeys = Object.keys(
 ) as (keyof typeof DefaultStyles)[];
 
 export type Styles = typeof DefaultStyles;
+
+export function parseLocation(location: string = "us"): Location {
+  switch (location) {
+    case "eu-residency":
+    case "us":
+    case "global":
+      return location;
+    default:
+      console.warn(
+        `[ConversationalAI] Invalid server-location: ${location}. Defaulting to "us"`
+      );
+      return "us";
+  }
+}
+export type Location = "us" | "global" | "eu-residency";

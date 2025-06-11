@@ -4,8 +4,8 @@ import { createContext, useMemo } from "preact/compat";
 import { useAttribute } from "./attributes";
 
 import { useContextSafely } from "../utils/useContextSafely";
+import { Location, parseLocation } from "../types/config"
 
-export type Location = "us" | "global";
 
 const ServerLocationContext = createContext<{
   location: ReadonlySignal<Location>;
@@ -24,18 +24,22 @@ export function ServerLocationProvider({
   const value = useMemo(() => {
     const location = computed(() => parseLocation(serverLocation.value));
 
+    const serverUrlMap: Record<Location, string> = {
+      'us': import.meta.env.VITE_SERVER_URL_US,
+      'eu-residency': import.meta.env.VITE_SERVER_URL_EU_RESIDENCY,
+      'global': import.meta.env.VITE_SERVER_URL,
+    };
+    
+    const websocketUrlMap: Record<Location, string> = {
+      'us': import.meta.env.VITE_WEBSOCKET_URL_US,
+      'eu-residency': import.meta.env.VITE_WEBSOCKET_URL_EU_RESIDENCY,
+      'global': import.meta.env.VITE_WEBSOCKET_URL,
+    };
+    
     return {
       location,
-      serverUrl: computed(() =>
-        location.value === "us"
-          ? import.meta.env.VITE_SERVER_URL_US
-          : import.meta.env.VITE_SERVER_URL
-      ),
-      webSocketUrl: computed(() =>
-        location.value === "us"
-          ? import.meta.env.VITE_WEBSOCKET_URL_US
-          : import.meta.env.VITE_WEBSOCKET_URL
-      ),
+      serverUrl: computed(() => serverUrlMap[location.value]),
+      webSocketUrl: computed(() => websocketUrlMap[location.value]),
     };
   }, []);
 
@@ -48,17 +52,4 @@ export function ServerLocationProvider({
 
 export function useServerLocation() {
   return useContextSafely(ServerLocationContext);
-}
-
-export function parseLocation(location: string = "us"): Location {
-  switch (location) {
-    case "us":
-    case "global":
-      return location;
-    default:
-      console.warn(
-        `[ConversationalAI] Invalid server-location: ${location}. Defaulting to "us"`
-      );
-      return "us";
-  }
 }
