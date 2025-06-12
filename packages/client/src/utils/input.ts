@@ -4,6 +4,7 @@ import { isIosDevice } from "./compatibility";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
+  deviceId?: string;
 };
 
 const LIBSAMPLERATE_JS =
@@ -14,6 +15,7 @@ export class Input {
     sampleRate,
     format,
     preferHeadphonesForIosDevices,
+    deviceId,
   }: FormatConfig & InputConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
@@ -25,7 +27,9 @@ export class Input {
         noiseSuppression: { ideal: true },
       };
 
-      if (isIosDevice() && preferHeadphonesForIosDevices) {
+      if (deviceId) {
+        options.deviceId = deviceId;
+      } else if (isIosDevice() && preferHeadphonesForIosDevices) {
         const availableDevices =
           await window.navigator.mediaDevices.enumerateDevices();
         const idealDevice = availableDevices.find(
