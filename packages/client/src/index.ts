@@ -17,7 +17,11 @@ export type {
   SessionConfig,
   DisconnectionDetails,
   Language,
-} from "./utils/connection";
+  ConnectionType,
+} from "./utils/BaseConnection";
+export { ConnectionFactory } from "./utils/ConnectionFactory";
+export { WebSocketConnection } from "./utils/WebSocketConnection";
+export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 
 export class Conversation extends BaseConversation {

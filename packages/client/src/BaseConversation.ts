@@ -1,9 +1,9 @@
 import {
-  Connection,
+  BaseConnection,
   DisconnectionDetails,
   type OnDisconnectCallback,
   type SessionConfig,
-} from "./utils/connection";
+} from "./utils/BaseConnection";
 import {
   AgentAudioEvent,
   AgentResponseEvent,
@@ -89,7 +89,7 @@ export class BaseConversation {
 
   protected constructor(
     protected readonly options: Options,
-    protected readonly connection: Connection
+    protected readonly connection: BaseConnection
   ) {
     this.options.onConnect({ conversationId: connection.conversationId });
     this.connection.onMessage(this.onMessage);

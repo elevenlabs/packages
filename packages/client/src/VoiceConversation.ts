@@ -1,7 +1,8 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input } from "./utils/input";
 import { Output } from "./utils/output";
-import { Connection } from "./utils/connection";
+import { ConnectionFactory } from "./utils/ConnectionFactory";
+import { BaseConnection } from "./utils/BaseConnection";
 import { AgentAudioEvent, InterruptionEvent } from "./utils/events";
 import { applyDelay } from "./utils/applyDelay";
 import { BaseConversation, Options, PartialOptions } from "./BaseConversation";
@@ -16,7 +17,7 @@ export class VoiceConversation extends BaseConversation {
     fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
 
     let input: Input | null = null;
-    let connection: Connection | null = null;
+    let connection: BaseConnection | null = null;
     let output: Output | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
@@ -37,7 +38,7 @@ export class VoiceConversation extends BaseConversation {
       });
 
       await applyDelay(fullOptions.connectionDelay);
-      connection = await Connection.create(options);
+      connection = await ConnectionFactory.create(options);
       [input, output] = await Promise.all([
         Input.create({
           ...connection.inputFormat,
@@ -75,7 +76,7 @@ export class VoiceConversation extends BaseConversation {
 
   protected constructor(
     options: Options,
-    connection: Connection,
+    connection: BaseConnection,
     public readonly input: Input,
     public readonly output: Output,
     public wakeLock: WakeLockSentinel | null
