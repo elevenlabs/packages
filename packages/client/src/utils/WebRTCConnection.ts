@@ -56,8 +56,8 @@ export class WebRTCConnection extends BaseConnection {
     try {
       // Create connection instance first to set up event listeners
       const conversationId = `webrtc-${Date.now()}`;
-      const inputFormat = parseFormat("pcm_16000");
-      const outputFormat = parseFormat("pcm_16000");
+      const inputFormat = parseFormat("pcm_48000");
+      const outputFormat = parseFormat("pcm_48000");
       const connection = new WebRTCConnection(
         room,
         conversationId,
@@ -228,6 +228,16 @@ export class WebRTCConnection extends BaseConnection {
           participant.identity.includes("agent")
         ) {
           console.log("Agent audio track detected!");
+          
+          // Play the audio track
+          const remoteAudioTrack = track as RemoteAudioTrack;
+          const audioElement = remoteAudioTrack.attach();
+          audioElement.autoplay = true;
+          audioElement.controls = false;
+          
+          // Add to DOM (hidden) to ensure it plays
+          audioElement.style.display = 'none';
+          document.body.appendChild(audioElement);          
         }
       }
     );
