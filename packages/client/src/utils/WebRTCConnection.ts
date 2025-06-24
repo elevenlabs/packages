@@ -181,15 +181,15 @@ export class WebRTCConnection extends BaseConnection {
 
     // Handle incoming data messages
     this.room.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
-      console.log(
-        "Data received from participant:",
-        participant?.identity,
-        "payload size:",
-        payload.length
-      );
       try {
         const message = JSON.parse(new TextDecoder().decode(payload));
-        console.log("Parsed message:", message);
+
+        // Filter out audio messages for WebRTC - they're handled via audio tracks
+        if (message.type === "audio") {
+          console.log("Ignoring audio data message - handled via WebRTC track");
+          return;
+        }
+
         if (isValidSocketEvent(message)) {
           this.handleMessage(message);
         } else {
