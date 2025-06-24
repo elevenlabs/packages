@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC LiveKit Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .logs {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.connecting { background: #fff3cd; }
+        .status.connected { background: #d4edda; }
+        .status.disconnected { background: #f8d7da; }
+        input, select {
+            margin: 5px;
+            padding: 8px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebRTC LiveKit Test</h1>
+    
+    <div class="controls">
+        <h2>Configuration</h2>
+        <div>
+            <label>Agent ID:</label><br>
+            <input type="text" id="agentId" placeholder="Enter your agent ID" value="your-agent-id-here">
+        </div>
+        <div>
+            <label>LiveKit Token:</label><br>
+            <input type="text" id="livekitToken" placeholder="Enter LiveKit access token">
+        </div>
+        <div>
+            <label>Override Prompt (optional):</label><br>
+            <input type="text" id="customPrompt" placeholder="Custom prompt for the agent">
+        </div>
+        <div>
+            <label>Voice ID (optional):</label><br>
+            <input type="text" id="voiceId" placeholder="Voice ID">
+        </div>
+    </div>
+
+    <div class="controls">
+        <h2>Controls</h2>
+        <button id="startBtn">Start Conversation</button>
+        <button id="endBtn" disabled>End Conversation</button>
+        <button id="muteBtn" disabled>Mute/Unmute</button>
+        <button id="clearLogsBtn">Clear Logs</button>
+    </div>
+
+    <div id="status" class="status disconnected">Status: Disconnected</div>
+    
+    <h2>Logs</h2>
+    <div id="logs" class="logs"></div>
+
+    <!-- Load livekit-client from CDN first -->
+    <script src="https://unpkg.com/livekit-client@2.11.4/dist/livekit-client.umd.js"></script>
+    <script>
+        // Debug: Check what global variables livekit-client creates
+        console.log('Available globals after livekit-client load:', Object.keys(window).filter(k => k.toLowerCase().includes('livekit')));
+        console.log('window.LiveKit:', typeof window.LiveKit);
+        console.log('window.LivekitClient:', typeof window.LivekitClient);
+        console.log('window.livekitClient:', typeof window.livekitClient);
+        console.log('window.livekit:', typeof window.livekit);
+        
+        // Try to access Room class directly from the correct global
+        if (window.LivekitClient) {
+            console.log('LivekitClient.Room:', typeof window.LivekitClient.Room);
+            console.log('LivekitClient keys:', Object.keys(window.LivekitClient));
+        }
+        
+        // Make LiveKit globally available for the client library (the client expects window.LiveKit)
+        if (window.LivekitClient && !window.LiveKit) {
+            window.LiveKit = window.LivekitClient;
+        }
+    </script>
+    <!-- Load the client library from the built dist -->
+    <script src="./dist/lib.umd.js"></script>
+    <script>        
+        const { Conversation } = window.client;
+
+        let conversation = null;
+        let isMuted = false;
+
+        const agentIdInput = document.getElementById('agentId');
+        const livekitTokenInput = document.getElementById('livekitToken');
+        const customPromptInput = document.getElementById('customPrompt');
+        const voiceIdInput = document.getElementById('voiceId');
+        const startBtn = document.getElementById('startBtn');
+        const endBtn = document.getElementById('endBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const clearLogsBtn = document.getElementById('clearLogsBtn');
+        const statusEl = document.getElementById('status');
+        const logsEl = document.getElementById('logs');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logsEl.textContent += `[${timestamp}] ${message}\n`;
+            logsEl.scrollTop = logsEl.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(status, message = '') {
+            statusEl.textContent = `Status: ${status}${message ? ' - ' + message : ''}`;
+            statusEl.className = `status ${status.toLowerCase()}`;
+        }
+
+        startBtn.addEventListener('click', async () => {
+            const agentId = agentIdInput.value.trim();
+            const conversationToken = livekitTokenInput.value.trim();
+            
+            if (!agentId) {
+                alert('Please enter an Agent ID');
+                return;
+            }
+            
+            if (!conversationToken) {
+                alert('Please enter a LiveKit Token');
+                return;
+            }
+
+            try {
+                log('Starting WebRTC conversation...');
+                updateStatus('Connecting');
+                
+                startBtn.disabled = true;
+                
+                const config = {
+                    conversationToken,
+                    connectionType: 'webrtc',
+                    onConnect: (event) => {
+                        log(`Connected! Conversation ID: ${event.conversationId}`);
+                        updateStatus('Connected', event.conversationId);
+                        endBtn.disabled = false;
+                        muteBtn.disabled = false;
+                    },
+                    onDisconnect: (event) => {
+                        log(`Disconnected: ${event.reason} - ${event.message || 'No message'}`);
+                        updateStatus('Disconnected');
+                        startBtn.disabled = false;
+                        endBtn.disabled = true;
+                        muteBtn.disabled = true;
+                        conversation = null;
+                    },
+                    onMessage: (event) => {
+                        log(`Message from ${event.source}: ${event.message}`);
+                    },
+                    onStatusChange: (event) => {
+                        log(`Status changed: ${event.status}`);
+                        updateStatus(event.status);
+                    },
+                    onModeChange: (event) => {
+                        log(`Mode changed: ${event.mode}`);
+                    },
+                    onError: (error) => {
+                        log(`Error: ${error.message}`);
+                        console.error('Conversation error:', error);
+                    }
+                };
+
+                // Add overrides if provided
+                if (customPromptInput.value.trim() || voiceIdInput.value.trim()) {
+                    config.overrides = {};
+                    
+                    if (customPromptInput.value.trim()) {
+                        config.overrides.agent = {
+                            prompt: { prompt: customPromptInput.value.trim() }
+                        };
+                    }
+                    
+                    if (voiceIdInput.value.trim()) {
+                        config.overrides.tts = {
+                            voiceId: voiceIdInput.value.trim()
+                        };
+                    }
+                }
+
+                conversation = await Conversation.startSession(config);
+                log('Conversation object created successfully');
+                
+            } catch (error) {
+                log(`Failed to start conversation: ${error.message}`);
+                console.error('Start conversation error:', error);
+                updateStatus('Disconnected');
+                startBtn.disabled = false;
+            }
+        });
+
+        endBtn.addEventListener('click', async () => {
+            if (conversation) {
+                try {
+                    log('Ending conversation...');
+                    await conversation.endSession();
+                    log('Conversation ended successfully');
+                } catch (error) {
+                    log(`Error ending conversation: ${error.message}`);
+                    console.error('End conversation error:', error);
+                }
+            }
+        });
+
+        muteBtn.addEventListener('click', () => {
+            if (conversation) {
+                isMuted = !isMuted;
+                conversation.setMicMuted(isMuted);
+                muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+                log(`Microphone ${isMuted ? 'muted' : 'unmuted'}`);
+            }
+        });
+
+        clearLogsBtn.addEventListener('click', () => {
+            logsEl.textContent = '';
+        });
+
+        // Initialize
+        log('WebRTC test page loaded. Configure settings and click "Start Conversation"');
+        
+        // Check if we're running from a local server
+        if (location.protocol === 'file:') {
+            log('WARNING: You may need to serve this from a local HTTP server for WebRTC to work properly');
+            log('Try running: python -m http.server 8000');
+        }
+    </script>
+</body>
+</html>

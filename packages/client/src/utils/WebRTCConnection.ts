@@ -85,7 +85,6 @@ export class WebRTCConnection extends BaseConnection {
       if (room.name) {
         (connection as any).conversationId = room.name;
       }
-
       console.log("Sending initial configuration...");
       const overridesEvent: InitiationClientDataEvent = {
         type: "conversation_initiation_client_data",
@@ -135,8 +134,6 @@ export class WebRTCConnection extends BaseConnection {
       this.isConnected = true;
 
       console.log(this.room);
-
-      // await this.publishAudioTrack();
     });
 
     this.room.on(RoomEvent.Disconnected, reason => {
@@ -197,6 +194,11 @@ export class WebRTCConnection extends BaseConnection {
         const message = JSON.parse(new TextDecoder().decode(payload));
         console.log("Parsed message:", message);
         if (isValidSocketEvent(message)) {
+          // Filter out audio messages for WebRTC - they're handled via audio tracks
+          if (message.type === "audio") {
+            console.log("Ignoring audio data message - handled via WebRTC track");
+            return; 
+          }
           this.handleMessage(message);
         } else {
           console.warn("Invalid socket event received:", message);
@@ -226,52 +228,10 @@ export class WebRTCConnection extends BaseConnection {
           participant.identity.includes("agent")
         ) {
           console.log("Agent audio track detected!");
-
-          if (track instanceof RemoteAudioTrack) {
-            const audioElement = track.attach();
-            console.log("Audio element created and attached to DOM");
-            document.body.appendChild(audioElement);
-            // await this.handleAudioTrack(track);
-          }
         }
       }
     );
   }
-
-  private async handleAudioTrack(track: RemoteAudioTrack) {
-    const mediaStream = new MediaStream([track.mediaStreamTrack]);
-    const audioContext = new AudioContext({
-      sampleRate: this.outputFormat.sampleRate,
-    });
-    const source = audioContext.createMediaStreamSource(mediaStream);
-
-    // Load and create the PCM extractor worklet
-    await loadPcmExtractorProcessor(audioContext.audioWorklet);
-    const pcmExtractor = new AudioWorkletNode(
-      audioContext,
-      "pcm-extractor-processor"
-    );
-
-    source.connect(pcmExtractor);
-    pcmExtractor.connect(audioContext.destination);
-
-    let eventId = 1;
-    pcmExtractor.port.onmessage = event => {
-      const pcm = event.data as Int16Array;
-      // Convert to base64
-      const base64 = btoa(
-        String.fromCharCode.apply(null, Array.from(new Uint8Array(pcm.buffer)))
-      );
-      this.handleMessage({
-        type: "audio",
-        audio_event: {
-          audio_base_64: base64,
-          event_id: eventId++,
-        },
-      });
-    };
-  }
-
   public close() {
     if (this.isConnected) {
       console.log(this.room);

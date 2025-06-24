@@ -50,3 +50,5 @@ venv
 
 # formatters
 .ruff_cache
+
+packages/client/.env

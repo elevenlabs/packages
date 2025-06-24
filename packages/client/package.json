@@ -16,7 +16,7 @@
     }
   },
   "scripts": {
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react --external livekit-client --globals livekit-client=LiveKit src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
