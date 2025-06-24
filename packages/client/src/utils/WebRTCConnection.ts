@@ -13,13 +13,11 @@ import {
   Room,
   RoomEvent,
   Track,
-  TrackEvent,
   RemoteAudioTrack,
   ConnectionState,
   type Participant,
   type TrackPublication,
 } from "livekit-client";
-import { loadPcmExtractorProcessor } from "./pcmExtractorProcessor";
 
 const LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 
@@ -29,7 +27,7 @@ export class WebRTCConnection extends BaseConnection {
   public readonly outputFormat: FormatConfig;
 
   private room: Room;
-  private isConnected: boolean = false;
+  private isConnected = false;
 
   private constructor(
     room: Room,
@@ -56,8 +54,8 @@ export class WebRTCConnection extends BaseConnection {
     try {
       // Create connection instance first to set up event listeners
       const conversationId = `webrtc-${Date.now()}`;
-      const inputFormat = parseFormat("pcm_16000");
-      const outputFormat = parseFormat("pcm_16000");
+      const inputFormat = parseFormat("pcm_48000");
+      const outputFormat = parseFormat("pcm_48000");
       const connection = new WebRTCConnection(
         room,
         conversationId,
@@ -86,6 +84,11 @@ export class WebRTCConnection extends BaseConnection {
         (connection as any).conversationId = room.name;
       }
 
+      // Step 2: Publish local audio track
+      console.log("Enabling microphone and publishing audio track");
+      await room.localParticipant.setMicrophoneEnabled(true);
+
+      // Step 3: Send one-off conversation_initiation_client_data message
       console.log("Sending initial configuration...");
       const overridesEvent: InitiationClientDataEvent = {
         type: "conversation_initiation_client_data",
@@ -117,12 +120,6 @@ export class WebRTCConnection extends BaseConnection {
 
       await connection.sendMessage(overridesEvent);
 
-      // Wait before enabling microphone
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      console.log("Enabling microphone and publishing audio track");
-      await room.localParticipant.setMicrophoneEnabled(true);
-
       return connection;
     } catch (error) {
       await room.disconnect();
@@ -133,10 +130,7 @@ export class WebRTCConnection extends BaseConnection {
   private setupRoomEventListeners() {
     this.room.on(RoomEvent.Connected, async () => {
       this.isConnected = true;
-
-      console.log(this.room);
-
-      // await this.publishAudioTrack();
+      console.log("WebRTC room connected");
     });
 
     this.room.on(RoomEvent.Disconnected, reason => {
@@ -207,10 +201,10 @@ export class WebRTCConnection extends BaseConnection {
       }
     });
 
-    // Handle agent audio tracks
+    // Step 4: Handle agent audio tracks and play them
     this.room.on(
       RoomEvent.TrackSubscribed,
-      async (
+      (
         track: Track,
         publication: TrackPublication,
         participant: Participant
@@ -221,60 +215,24 @@ export class WebRTCConnection extends BaseConnection {
           "participant:",
           participant.identity
         );
+
         if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
         ) {
-          console.log("Agent audio track detected!");
+          console.log("Agent audio track detected - playing audio");
 
           if (track instanceof RemoteAudioTrack) {
             const audioElement = track.attach();
-            console.log("Audio element created and attached to DOM");
             document.body.appendChild(audioElement);
-            // await this.handleAudioTrack(track);
           }
         }
       }
     );
   }
 
-  private async handleAudioTrack(track: RemoteAudioTrack) {
-    const mediaStream = new MediaStream([track.mediaStreamTrack]);
-    const audioContext = new AudioContext({
-      sampleRate: this.outputFormat.sampleRate,
-    });
-    const source = audioContext.createMediaStreamSource(mediaStream);
-
-    // Load and create the PCM extractor worklet
-    await loadPcmExtractorProcessor(audioContext.audioWorklet);
-    const pcmExtractor = new AudioWorkletNode(
-      audioContext,
-      "pcm-extractor-processor"
-    );
-
-    source.connect(pcmExtractor);
-    pcmExtractor.connect(audioContext.destination);
-
-    let eventId = 1;
-    pcmExtractor.port.onmessage = event => {
-      const pcm = event.data as Int16Array;
-      // Convert to base64
-      const base64 = btoa(
-        String.fromCharCode.apply(null, Array.from(new Uint8Array(pcm.buffer)))
-      );
-      this.handleMessage({
-        type: "audio",
-        audio_event: {
-          audio_base_64: base64,
-          event_id: eventId++,
-        },
-      });
-    };
-  }
-
   public close() {
     if (this.isConnected) {
-      console.log(this.room);
       this.room.disconnect();
     }
   }
@@ -287,48 +245,22 @@ export class WebRTCConnection extends BaseConnection {
       return;
     }
 
-    try {
-      console.log("sending message", message);
+    // In WebRTC mode, audio is sent via published tracks, not data messages
+    if ("user_audio_chunk" in message) {
+      // Ignore audio data messages - audio flows through WebRTC tracks
+      return;
+    }
 
+    try {
       const encoder = new TextEncoder();
       const data = encoder.encode(JSON.stringify(message));
 
-      await this.room.localParticipant.publishData(data);
-      console.log("Message sent successfully");
+      console.log("Sending message:", message);
+
+      await this.room.localParticipant.publishData(data, { reliable: true });
     } catch (error) {
       console.error("Failed to send message via WebRTC:", error);
       console.error("Error details:", error);
-    }
-  }
-
-  public async publishAudioTrack(track?: MediaStreamTrack) {
-    if (!this.room.localParticipant) {
-      throw new Error("No local participant available");
-    }
-
-    try {
-      if (track) {
-        console.log("Publishing provided audio track");
-        await this.room.localParticipant.publishTrack(track);
-      } else {
-        console.log("Requesting microphone access...");
-        // Create audio track from microphone
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        const audioTrack = stream.getAudioTracks()[0];
-        console.log(
-          "Audio track created:",
-          audioTrack.label,
-          "enabled:",
-          audioTrack.enabled
-        );
-        await this.room.localParticipant.publishTrack(audioTrack);
-        console.log("Audio track published successfully");
-      }
-    } catch (error) {
-      console.error("Failed to publish audio track:", error);
-      throw error;
     }
   }
 
