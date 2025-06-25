@@ -27,12 +27,14 @@ export function ServerLocationProvider({
     const serverUrlMap: Record<Location, string> = {
       'us': import.meta.env.VITE_SERVER_URL_US,
       'eu-residency': import.meta.env.VITE_SERVER_URL_EU_RESIDENCY,
+      'in-residency': import.meta.env.VITE_SERVER_URL_IN_RESIDENCY,
       'global': import.meta.env.VITE_SERVER_URL,
     };
     
     const websocketUrlMap: Record<Location, string> = {
       'us': import.meta.env.VITE_WEBSOCKET_URL_US,
       'eu-residency': import.meta.env.VITE_WEBSOCKET_URL_EU_RESIDENCY,
+      'in-residency': import.meta.env.VITE_WEBSOCKET_URL_IN_RESIDENCY,
       'global': import.meta.env.VITE_WEBSOCKET_URL,
     };
     

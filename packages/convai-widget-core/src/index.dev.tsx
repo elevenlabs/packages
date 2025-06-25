@@ -91,7 +91,7 @@ function Playground() {
             onChange={e => setLocation(parseLocation(e.currentTarget.value))}
             className="p-1 bg-base border border-base-border"
           >
-            {(["us", "global", "eu-residency"]).map(location => (
+            {(["us", "global", "eu-residency", "in-residency"]).map(location => (
               <option value={location}>{location}</option>
             ))}
           </select>

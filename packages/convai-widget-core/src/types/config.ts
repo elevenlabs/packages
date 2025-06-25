@@ -140,6 +140,7 @@ export type Styles = typeof DefaultStyles;
 export function parseLocation(location: string = "us"): Location {
   switch (location) {
     case "eu-residency":
+    case "in-residency":
     case "us":
     case "global":
       return location;
@@ -150,4 +151,4 @@ export function parseLocation(location: string = "us"): Location {
       return "us";
   }
 }
-export type Location = "us" | "global" | "eu-residency";
+export type Location = "us" | "global" | "eu-residency" | "in-residency";
