@@ -1,11 +1,15 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input } from "./utils/input";
 import { Output } from "./utils/output";
-import { ConnectionFactory } from "./utils/ConnectionFactory";
-import { BaseConnection } from "./utils/BaseConnection";
-import { AgentAudioEvent, InterruptionEvent } from "./utils/events";
+import { createConnection } from "./utils/ConnectionFactory";
+import type { BaseConnection } from "./utils/BaseConnection";
+import type { AgentAudioEvent, InterruptionEvent } from "./utils/events";
 import { applyDelay } from "./utils/applyDelay";
-import { BaseConversation, Options, PartialOptions } from "./BaseConversation";
+import {
+  BaseConversation,
+  type Options,
+  type PartialOptions,
+} from "./BaseConversation";
 
 export class VoiceConversation extends BaseConversation {
   public static async startSession(
@@ -38,7 +42,7 @@ export class VoiceConversation extends BaseConversation {
       });
 
       await applyDelay(fullOptions.connectionDelay);
-      connection = await ConnectionFactory.create(options);
+      connection = await createConnection(options);
       [input, output] = await Promise.all([
         Input.create({
           ...connection.inputFormat,

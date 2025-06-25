@@ -10,17 +10,16 @@ export {
   parseFormat,
 } from "./BaseConnection";
 
-export { ConnectionFactory } from "./ConnectionFactory";
+import { createConnection } from "./ConnectionFactory";
+export { createConnection };
 export { WebSocketConnection } from "./WebSocketConnection";
 export { WebRTCConnection } from "./WebRTCConnection";
 export { BaseConnection } from "./BaseConnection";
-
-import { ConnectionFactory } from "./ConnectionFactory";
 import type { SessionConfig } from "./BaseConnection";
 
 // Legacy Connection class that uses the factory
 export class Connection {
   public static async create(config: SessionConfig) {
-    return ConnectionFactory.create(config);
+    return createConnection(config);
   }
 }

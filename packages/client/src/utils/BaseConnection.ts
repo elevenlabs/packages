@@ -1,4 +1,4 @@
-import { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
+import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
 
 export type Language =
   | "en"
@@ -158,8 +158,8 @@ export function parseFormat(format: string): FormatConfig {
     throw new Error(`Invalid format: ${format}`);
   }
 
-  const sampleRate = parseInt(sampleRatePart);
-  if (isNaN(sampleRate)) {
+  const sampleRate = Number.parseInt(sampleRatePart);
+  if (Number.isNaN(sampleRate)) {
     throw new Error(`Invalid sample rate: ${sampleRatePart}`);
   }
 

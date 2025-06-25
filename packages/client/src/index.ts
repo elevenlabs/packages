@@ -1,4 +1,4 @@
-import { BaseConversation, PartialOptions } from "./BaseConversation";
+import { BaseConversation, type PartialOptions } from "./BaseConversation";
 import { TextConversation } from "./TextConversation";
 import { VoiceConversation } from "./VoiceConversation";
 
@@ -19,7 +19,7 @@ export type {
   Language,
   ConnectionType,
 } from "./utils/BaseConnection";
-export { ConnectionFactory } from "./utils/ConnectionFactory";
+export { createConnection } from "./utils/ConnectionFactory";
 export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";

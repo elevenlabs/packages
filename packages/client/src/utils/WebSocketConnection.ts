@@ -1,14 +1,14 @@
 import {
   BaseConnection,
-  SessionConfig,
-  FormatConfig,
+  type SessionConfig,
+  type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
 import {
-  InitiationClientDataEvent,
-  ConfigEvent,
+  type InitiationClientDataEvent,
+  type ConfigEvent,
   isValidSocketEvent,
-  OutgoingSocketEvent,
+  type OutgoingSocketEvent,
 } from "./events";
 
 const MAIN_PROTOCOL = "convai";

@@ -1,10 +1,10 @@
-import {
+import type {
   BaseConnection,
   DisconnectionDetails,
-  type OnDisconnectCallback,
-  type SessionConfig,
+  OnDisconnectCallback,
+  SessionConfig,
 } from "./utils/BaseConnection";
-import {
+import type {
   AgentAudioEvent,
   AgentResponseEvent,
   ClientToolCallEvent,
@@ -63,13 +63,13 @@ export type Callbacks = {
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
 export class BaseConversation {
-  protected lastInterruptTimestamp: number = 0;
+  protected lastInterruptTimestamp = 0;
   protected mode: Mode = "listening";
   protected status: Status = "connecting";
-  protected volume: number = 1;
-  protected currentEventId: number = 1;
-  protected lastFeedbackEventId: number = 1;
-  protected canSendFeedback: boolean = false;
+  protected volume = 1;
+  protected currentEventId = 1;
+  protected lastFeedbackEventId = 1;
+  protected canSendFeedback = false;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     return {
@@ -167,7 +167,10 @@ export class BaseConversation {
 
   protected async handleClientToolCall(event: ClientToolCallEvent) {
     if (
-      this.options.clientTools.hasOwnProperty(event.client_tool_call.tool_name)
+      Object.prototype.hasOwnProperty.call(
+        this.options.clientTools,
+        event.client_tool_call.tool_name
+      )
     ) {
       try {
         const result =
@@ -187,8 +190,7 @@ export class BaseConversation {
         });
       } catch (e) {
         this.onError(
-          "Client tool execution failed with following error: " +
-            (e as Error)?.message,
+          `Client tool execution failed with following error: ${(e as Error)?.message}`,
           {
             clientToolName: event.client_tool_call.tool_name,
           }
@@ -196,7 +198,7 @@ export class BaseConversation {
         this.connection.sendMessage({
           type: "client_tool_result",
           tool_call_id: event.client_tool_call.tool_call_id,
-          result: "Client tool execution failed: " + (e as Error)?.message,
+          result: `Client tool execution failed: ${(e as Error)?.message}`,
           is_error: true,
         });
       }

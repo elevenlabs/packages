@@ -1,13 +1,13 @@
 import {
   BaseConnection,
-  SessionConfig,
-  FormatConfig,
+  type SessionConfig,
+  type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
 import {
-  InitiationClientDataEvent,
+  type InitiationClientDataEvent,
   isValidSocketEvent,
-  OutgoingSocketEvent,
+  type OutgoingSocketEvent,
 } from "./events";
 import {
   Room,
@@ -220,12 +220,15 @@ export class WebRTCConnection extends BaseConnection {
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
         ) {
-          console.log("Agent audio track detected - playing audio");
+          // Play the audio track
+          const remoteAudioTrack = track as RemoteAudioTrack;
+          const audioElement = remoteAudioTrack.attach();
+          audioElement.autoplay = true;
+          audioElement.controls = false;
 
-          if (track instanceof RemoteAudioTrack) {
-            const audioElement = track.attach();
-            document.body.appendChild(audioElement);
-          }
+          // Add to DOM (hidden) to ensure it plays
+          audioElement.style.display = "none";
+          document.body.appendChild(audioElement);
         }
       }
     );

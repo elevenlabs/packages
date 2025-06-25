@@ -1,5 +1,5 @@
 import { isAndroidDevice, isIosDevice } from "./compatibility";
-import { DelayConfig } from "./connection";
+import type { DelayConfig } from "./connection";
 
 export async function applyDelay(
   delayConfig: DelayConfig = {
