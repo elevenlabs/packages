@@ -33,7 +33,7 @@ export class VoiceConversation extends BaseConversation {
       // some browsers won't allow calling getSupportedConstraints or enumerateDevices
       // before getting approval for microphone access
       preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: fullOptions.deviceId ? { deviceId: fullOptions.deviceId } : true,
       });
 
       await applyDelay(fullOptions.connectionDelay);
@@ -41,9 +41,14 @@ export class VoiceConversation extends BaseConversation {
       [input, output] = await Promise.all([
         Input.create({
           ...connection.inputFormat,
-          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+          preferHeadphonesForIosDevices:
+            fullOptions.preferHeadphonesForIosDevices,
+          deviceId: fullOptions.deviceId,
         }),
-        Output.create(connection.outputFormat),
+        Output.create({
+          ...connection.outputFormat,
+          outputDeviceId: fullOptions.outputDeviceId,
+        }),
       ]);
 
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
