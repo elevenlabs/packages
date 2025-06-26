@@ -161,6 +161,8 @@ export class Connection {
           (event: MessageEvent) => {
             const message = JSON.parse(event.data);
 
+            console.log("message", message);
+
             if (!isValidSocketEvent(message)) {
               return;
             }

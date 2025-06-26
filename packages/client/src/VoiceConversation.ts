@@ -72,6 +72,7 @@ export class VoiceConversation extends BaseConversation {
 
   private inputFrequencyData?: Uint8Array;
   private outputFrequencyData?: Uint8Array;
+  private isMuted: boolean = false;
 
   protected constructor(
     options: Options,
@@ -131,7 +132,7 @@ export class VoiceConversation extends BaseConversation {
   };
 
   private addAudioBase64Chunk = (chunk: string) => {
-    this.output.gain.gain.value = this.volume;
+    this.output.gain.gain.value = this.isMuted ? 0 : this.volume;
     this.output.worklet.port.postMessage({ type: "clearInterrupted" });
     this.output.worklet.port.postMessage({
       type: "buffer",
@@ -150,7 +151,7 @@ export class VoiceConversation extends BaseConversation {
 
     // reset volume back
     setTimeout(() => {
-      this.output.gain.gain.value = this.volume;
+      this.output.gain.gain.value = this.isMuted ? 0 : this.volume;
       this.output.worklet.port.postMessage({ type: "clearInterrupted" });
     }, 2000); // Adjust the duration as needed
   };
@@ -197,5 +198,31 @@ export class VoiceConversation extends BaseConversation {
 
   public getOutputVolume() {
     return this.calculateVolume(this.getOutputByteFrequencyData());
+  }
+
+  public setOutputMuted(isMuted: boolean) {
+    this.isMuted = isMuted;
+    // Immediately apply mute/unmute
+    this.output.gain.gain.setValueAtTime(
+      this.isMuted ? 0 : this.volume,
+      this.output.context.currentTime
+    );
+  }
+
+  public interrupt() {
+    // Stop current audio playback and clear buffers
+    this.updateMode("listening");
+    this.output.worklet.port.postMessage({ type: "interrupt" });
+    this.output.gain.gain.setValueAtTime(0, this.output.context.currentTime);
+    // Clear the interrupted audio buffers
+    this.output.worklet.port.postMessage({ type: "clearInterrupted" });
+
+    // Restore volume after stopping (unless muted)
+    setTimeout(() => {
+      this.output.gain.gain.setValueAtTime(
+        this.isMuted ? 0 : this.volume,
+        this.output.context.currentTime
+      );
+    }, 100); // Short delay to ensure interrupt is processed
   }
 }
