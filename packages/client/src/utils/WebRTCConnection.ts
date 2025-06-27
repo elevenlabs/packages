@@ -9,20 +9,17 @@ import {
   isValidSocketEvent,
   type OutgoingSocketEvent,
 } from "./events";
-import {
-  Room,
-  RoomEvent,
-  Track,
+import { Room, RoomEvent, Track, ConnectionState } from "livekit-client";
+import type {
   RemoteAudioTrack,
-  ConnectionState,
-  type Participant,
-  type TrackPublication,
+  Participant,
+  TrackPublication,
 } from "livekit-client";
 
 const LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 
 export class WebRTCConnection extends BaseConnection {
-  public readonly conversationId: string;
+  public conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;
 
@@ -81,12 +78,14 @@ export class WebRTCConnection extends BaseConnection {
 
       // Update conversation ID with actual room name if available
       if (room.name) {
-        (connection as any).conversationId = room.name;
+        connection.conversationId = room.name;
       }
 
       // Step 2: Publish local audio track
       console.log("Enabling microphone and publishing audio track");
       await room.localParticipant.setMicrophoneEnabled(true);
+
+      // await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Step 3: Send one-off conversation_initiation_client_data message
       console.log("Sending initial configuration...");
@@ -141,6 +140,18 @@ export class WebRTCConnection extends BaseConnection {
       });
     });
 
+    this.room.on(
+      RoomEvent.TrackSubscriptionStatusChanged,
+      (track, publication, participant) => {
+        console.log(
+          "Track subscription status changed:",
+          track.kind,
+          publication,
+          participant.identity
+        );
+      }
+    );
+
     this.room.on(RoomEvent.ConnectionStateChanged, state => {
       console.log("Connection state changed to:", state);
       if (state === ConnectionState.Disconnected) {
@@ -153,36 +164,12 @@ export class WebRTCConnection extends BaseConnection {
       }
     });
 
-    // Add error handling for the room
-    this.room.on(RoomEvent.RoomMetadataChanged, metadata => {
-      console.log("Room metadata changed:", metadata);
-    });
-
-    this.room.on(RoomEvent.Reconnecting, () => {
-      console.log("Room reconnecting...");
-    });
-
-    this.room.on(RoomEvent.Reconnected, () => {
-      console.log("Room reconnected");
-    });
-
-    // Handle participant connections
-    this.room.on(RoomEvent.ParticipantConnected, participant => {
-      console.log(
-        "Participant connected:",
-        participant.identity,
-        participant.name
-      );
-    });
-
-    this.room.on(RoomEvent.ParticipantDisconnected, participant => {
-      console.log("Participant disconnected:", participant.identity);
-    });
-
     // Handle incoming data messages
     this.room.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
       try {
         const message = JSON.parse(new TextDecoder().decode(payload));
+
+        console.log("Data received:", message);
 
         // Filter out audio messages for WebRTC - they're handled via audio tracks
         if (message.type === "audio") {
@@ -204,7 +191,7 @@ export class WebRTCConnection extends BaseConnection {
     // Step 4: Handle agent audio tracks and play them
     this.room.on(
       RoomEvent.TrackSubscribed,
-      (
+      async (
         track: Track,
         publication: TrackPublication,
         participant: Participant
