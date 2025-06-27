@@ -26,6 +26,10 @@ This library is primarily meant for development in vanilla JavaScript projects, 
 It is recommended to check whether your specific framework has it's own library.
 However, you can use this library in any JavaScript-based project.
 
+### Connection types
+
+A conversation can be started via one of two connection types: WebSockets (the default) or WebRTC.
+
 ### Initialize conversation
 
 First, initialize the Conversation instance:
@@ -48,7 +52,7 @@ try {
 
 #### Session configuration
 
-The options passed to `startSession` specifiy how the session is established. There are two ways to start a session:
+The options passed to `startSession` specifiy how the session is established. There are three ways to start a session:
 
 ##### Using Agent ID
 
@@ -79,7 +83,7 @@ app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
       headers: {
         // Requesting a signed url requires your ElevenLabs API key
         // Do NOT expose your API key to the client!
-        "xi-api-key": process.env.XI_API_KEY,
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
       },
     }
   );
@@ -100,6 +104,45 @@ const response = await fetch("/signed-url", yourAuthHeaders);
 const signedUrl = await response.text();
 
 const conversation = await Conversation.startSession({ signedUrl });
+```
+
+#### Using a WebRTC token
+
+To use the SDK in WebRTC mode, first you need to generate a conversation token. This is done by calling the ElevenLabs API directly.
+
+```js
+// Node.js server
+
+app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${process.env.AGENT_ID}`,
+    {
+      headers: {
+        // Requesting a conversation token requires your ElevenLabs API key
+        // Do NOT expose your API key to the client!
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+      }
+    }
+  );
+
+  if (!response.ok) {
+    return res.status(500).send("Failed to get conversation token");
+  }
+
+  const body = await response.json();
+  res.send(body.token);
+);
+```
+
+Once you have the token, providing it to `startSession` will initiate the conversation using WebRTC.
+
+```js
+// Client
+
+const response = await fetch("/conversation-token", yourAuthHeaders);
+const conversationToken = await response.text();
+
+const conversation = await Conversation.startSession({ conversationToken });
 ```
 
 #### Optional callbacks

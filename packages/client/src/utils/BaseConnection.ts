@@ -85,13 +85,13 @@ export type BaseSessionConfig = {
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
+  connectionType?: ConnectionType;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
 
-export type SessionConfig = BaseSessionConfig & {
-  connectionType?: ConnectionType;
-} & (
+export type SessionConfig = BaseSessionConfig &
+  (
     | { signedUrl: string; agentId?: undefined }
     | { agentId: string; signedUrl?: undefined }
     | { conversationToken: string; agentId?: undefined; signedUrl?: undefined }

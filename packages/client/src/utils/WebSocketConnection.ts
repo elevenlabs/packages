@@ -5,11 +5,11 @@ import {
   parseFormat,
 } from "./BaseConnection";
 import {
-  type InitiationClientDataEvent,
   type ConfigEvent,
   isValidSocketEvent,
   type OutgoingSocketEvent,
 } from "./events";
+import { constructOverrides } from "./overrides";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
@@ -96,33 +96,7 @@ export class WebSocketConnection extends BaseConnection {
         socket!.addEventListener(
           "open",
           () => {
-            const overridesEvent: InitiationClientDataEvent = {
-              type: "conversation_initiation_client_data",
-            };
-
-            if (config.overrides) {
-              overridesEvent.conversation_config_override = {
-                agent: {
-                  prompt: config.overrides.agent?.prompt,
-                  first_message: config.overrides.agent?.firstMessage,
-                  language: config.overrides.agent?.language,
-                },
-                tts: {
-                  voice_id: config.overrides.tts?.voiceId,
-                },
-                conversation: {
-                  text_only: config.overrides.conversation?.textOnly,
-                },
-              };
-            }
-
-            if (config.customLlmExtraBody) {
-              overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
-            }
-
-            if (config.dynamicVariables) {
-              overridesEvent.dynamic_variables = config.dynamicVariables;
-            }
+            const overridesEvent = constructOverrides(config);
 
             socket?.send(JSON.stringify(overridesEvent));
           },

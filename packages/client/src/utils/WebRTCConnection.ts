@@ -4,17 +4,14 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
-import {
-  type InitiationClientDataEvent,
-  isValidSocketEvent,
-  type OutgoingSocketEvent,
-} from "./events";
+import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
 import { Room, RoomEvent, Track, ConnectionState } from "livekit-client";
 import type {
   RemoteAudioTrack,
   Participant,
   TrackPublication,
 } from "livekit-client";
+import { constructOverrides } from "./overrides";
 
 const LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 
@@ -81,41 +78,10 @@ export class WebRTCConnection extends BaseConnection {
         connection.conversationId = room.name;
       }
 
-      // Step 2: Publish local audio track
-      console.log("Enabling microphone and publishing audio track");
+      // Enable microphone and send overrides
       await room.localParticipant.setMicrophoneEnabled(true);
 
-      // await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Step 3: Send one-off conversation_initiation_client_data message
-      console.log("Sending initial configuration...");
-      const overridesEvent: InitiationClientDataEvent = {
-        type: "conversation_initiation_client_data",
-      };
-
-      if (config.overrides) {
-        overridesEvent.conversation_config_override = {
-          agent: {
-            prompt: config.overrides.agent?.prompt,
-            first_message: config.overrides.agent?.firstMessage,
-            language: config.overrides.agent?.language,
-          },
-          tts: {
-            voice_id: config.overrides.tts?.voiceId,
-          },
-          conversation: {
-            text_only: config.overrides.conversation?.textOnly,
-          },
-        };
-      }
-
-      if (config.customLlmExtraBody) {
-        overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
-      }
-
-      if (config.dynamicVariables) {
-        overridesEvent.dynamic_variables = config.dynamicVariables;
-      }
+      const overridesEvent = constructOverrides(config);
 
       await connection.sendMessage(overridesEvent);
 
@@ -129,7 +95,7 @@ export class WebRTCConnection extends BaseConnection {
   private setupRoomEventListeners() {
     this.room.on(RoomEvent.Connected, async () => {
       this.isConnected = true;
-      console.log("WebRTC room connected");
+      console.info("WebRTC room connected");
     });
 
     this.room.on(RoomEvent.Disconnected, reason => {
@@ -140,20 +106,7 @@ export class WebRTCConnection extends BaseConnection {
       });
     });
 
-    this.room.on(
-      RoomEvent.TrackSubscriptionStatusChanged,
-      (track, publication, participant) => {
-        console.log(
-          "Track subscription status changed:",
-          track.kind,
-          publication,
-          participant.identity
-        );
-      }
-    );
-
     this.room.on(RoomEvent.ConnectionStateChanged, state => {
-      console.log("Connection state changed to:", state);
       if (state === ConnectionState.Disconnected) {
         this.isConnected = false;
         this.disconnect({
@@ -169,11 +122,8 @@ export class WebRTCConnection extends BaseConnection {
       try {
         const message = JSON.parse(new TextDecoder().decode(payload));
 
-        console.log("Data received:", message);
-
         // Filter out audio messages for WebRTC - they're handled via audio tracks
         if (message.type === "audio") {
-          console.log("Ignoring audio data message - handled via WebRTC track");
           return;
         }
 
@@ -188,7 +138,6 @@ export class WebRTCConnection extends BaseConnection {
       }
     });
 
-    // Step 4: Handle agent audio tracks and play them
     this.room.on(
       RoomEvent.TrackSubscribed,
       async (
@@ -196,13 +145,6 @@ export class WebRTCConnection extends BaseConnection {
         publication: TrackPublication,
         participant: Participant
       ) => {
-        console.log(
-          "TrackSubscribed - track:",
-          track.kind,
-          "participant:",
-          participant.identity
-        );
-
         if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
@@ -244,8 +186,6 @@ export class WebRTCConnection extends BaseConnection {
     try {
       const encoder = new TextEncoder();
       const data = encoder.encode(JSON.stringify(message));
-
-      console.log("Sending message:", message);
 
       await this.room.localParticipant.publishData(data, { reliable: true });
     } catch (error) {
