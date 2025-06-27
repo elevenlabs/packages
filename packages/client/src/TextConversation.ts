@@ -1,6 +1,7 @@
-import { Connection } from "./utils/connection";
+import { createConnection } from "./utils/ConnectionFactory";
+import type { BaseConnection } from "./utils/BaseConnection";
 import { applyDelay } from "./utils/applyDelay";
-import { BaseConversation, PartialOptions } from "./BaseConversation";
+import { BaseConversation, type PartialOptions } from "./BaseConversation";
 
 export class TextConversation extends BaseConversation {
   public static async startSession(
@@ -11,10 +12,10 @@ export class TextConversation extends BaseConversation {
     fullOptions.onStatusChange({ status: "connecting" });
     fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
 
-    let connection: Connection | null = null;
+    let connection: BaseConnection | null = null;
     try {
       await applyDelay(fullOptions.connectionDelay);
-      connection = await Connection.create(options);
+      connection = await createConnection(options);
       return new TextConversation(fullOptions, connection);
     } catch (error) {
       fullOptions.onStatusChange({ status: "disconnected" });

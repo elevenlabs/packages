@@ -1,4 +1,4 @@
-import { Language } from "./connection";
+import type { Language } from "./connection";
 
 export type UserTranscriptionEvent = {
   type: "user_transcript";

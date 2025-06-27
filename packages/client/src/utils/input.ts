@@ -1,5 +1,5 @@
 import { loadRawAudioProcessor } from "./rawAudioProcessor";
-import { FormatConfig } from "./connection";
+import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 
 export type InputConfig = {

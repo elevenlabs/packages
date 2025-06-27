@@ -1,4 +1,4 @@
-import { BaseConversation, PartialOptions } from "./BaseConversation";
+import { BaseConversation, type PartialOptions } from "./BaseConversation";
 import { TextConversation } from "./TextConversation";
 import { VoiceConversation } from "./VoiceConversation";
 
@@ -17,7 +17,11 @@ export type {
   SessionConfig,
   DisconnectionDetails,
   Language,
-} from "./utils/connection";
+  ConnectionType,
+} from "./utils/BaseConnection";
+export { createConnection } from "./utils/ConnectionFactory";
+export { WebSocketConnection } from "./utils/WebSocketConnection";
+export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 
 export class Conversation extends BaseConversation {

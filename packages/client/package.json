@@ -44,5 +44,8 @@
     "type": "git",
     "url": "git+https://github.com/elevenlabs/packages.git",
     "directory": "packages/client"
+  },
+  "dependencies": {
+    "livekit-client": "^2.11.4"
   }
 }
