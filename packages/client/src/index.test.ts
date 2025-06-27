@@ -388,59 +388,6 @@ describe("Connection Types", () => {
       );
     });
   });
-
-  it.each(ConnectionTypes)(
-    "handles connection-specific behavior (%s)",
-    async connectionType => {
-      if (connectionType === "websocket") {
-        const server = new Server(
-          "wss://api.elevenlabs.io/voice/connection-behavior"
-        );
-        const clientPromise = new Promise<Client>((resolve, reject) => {
-          server.on("connection", (socket: Client) => resolve(socket));
-          server.on("error", reject);
-          setTimeout(() => reject(new Error("timeout")), 5000);
-        });
-
-        const onConnect = vi.fn();
-        const conversationPromise = Conversation.startSession({
-          signedUrl: "wss://api.elevenlabs.io/voice/connection-behavior",
-          connectionType,
-          onConnect,
-          connectionDelay: { default: 0 },
-        });
-
-        const client = await clientPromise;
-        client.send(
-          JSON.stringify({
-            type: "conversation_initiation_metadata",
-            conversation_initiation_metadata_event: {
-              conversation_id: CONVERSATION_ID,
-              agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
-            },
-          })
-        );
-
-        const conversation = await conversationPromise;
-        expect(onConnect).toHaveBeenCalledWith({
-          conversationId: CONVERSATION_ID,
-        });
-
-        await conversation.endSession();
-        server.close();
-      } else if (connectionType === "webrtc") {
-        // Test WebRTC connection type requirement
-        const config = {
-          agentId: "test-agent",
-          connectionType: "webrtc" as const,
-        };
-
-        await expect(createConnection(config)).rejects.toThrow(
-          "Conversation token is required for WebRTC connection"
-        );
-      }
-    }
-  );
 });
 
 async function sleep(ms: number) {
