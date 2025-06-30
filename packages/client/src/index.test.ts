@@ -3,9 +3,7 @@ import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk";
 import { Mode, Status, Conversation } from "./index";
 import { createConnection } from "./utils/ConnectionFactory";
-import { WebSocketConnection } from "./utils/WebSocketConnection";
-import { WebRTCConnection } from "./utils/WebRTCConnection";
-import type { BaseConnection } from "./utils/BaseConnection";
+import type { SessionConfig } from "./utils/BaseConnection";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
@@ -18,7 +16,6 @@ const CUSTOM_PROMPT = "CUSTOM_PROMPT";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
 
 const ConversationTypes = ["voice", "text"] as const;
-const ConnectionTypes = ["websocket", "webrtc"] as const;
 
 describe("Conversation", () => {
   it.each(ConversationTypes)(
@@ -377,14 +374,132 @@ describe("Connection Types", () => {
   });
 
   describe("WebRTC Connection", () => {
-    it("requires conversation token for webrtc connection", async () => {
+    it("works with conversation token", async () => {
+      const config = {
+        conversationToken: "test-token",
+        connectionType: "webrtc" as const,
+      };
+
+      // Mock the Room.connect method to avoid actual connection
+      const mockConnect = vi.fn().mockResolvedValue(void 0);
+      const mockRoom = {
+        connect: mockConnect,
+        on: vi.fn(),
+        off: vi.fn(),
+        localParticipant: {
+          setMicrophoneEnabled: vi.fn().mockResolvedValue(void 0),
+          publishData: vi.fn().mockResolvedValue(void 0),
+        },
+        name: "test-room",
+        disconnect: vi.fn().mockResolvedValue(void 0),
+      };
+
+      // Mock the Room constructor
+      vi.doMock("livekit-client", () => ({
+        Room: vi.fn(() => mockRoom),
+        RoomEvent: {
+          Connected: "connected",
+          Disconnected: "disconnected",
+          ConnectionStateChanged: "connectionStateChanged",
+          DataReceived: "dataReceived",
+          TrackSubscribed: "trackSubscribed",
+        },
+        ConnectionState: {
+          Disconnected: "disconnected",
+        },
+        Track: {
+          Kind: {
+            Audio: "audio",
+          },
+        },
+      }));
+
+      // This should not throw since we now support conversationToken
+      await expect(createConnection(config)).resolves.toBeTruthy();
+    });
+
+    it("works with agent id by fetching token", async () => {
       const config = {
         agentId: "test-agent",
         connectionType: "webrtc" as const,
       };
 
+      // Mock fetch to return a token
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ token: "fetched-token" }),
+      });
+      global.fetch = mockFetch;
+
+      // Mock the Room.connect method to avoid actual connection
+      const mockConnect = vi.fn().mockResolvedValue(void 0);
+      const mockRoom = {
+        connect: mockConnect,
+        on: vi.fn(),
+        off: vi.fn(),
+        localParticipant: {
+          setMicrophoneEnabled: vi.fn().mockResolvedValue(void 0),
+          publishData: vi.fn().mockResolvedValue(void 0),
+        },
+        name: "test-room",
+        disconnect: vi.fn().mockResolvedValue(void 0),
+      };
+
+      // Mock the Room constructor
+      vi.doMock("livekit-client", () => ({
+        Room: vi.fn(() => mockRoom),
+        RoomEvent: {
+          Connected: "connected",
+          Disconnected: "disconnected",
+          ConnectionStateChanged: "connectionStateChanged",
+          DataReceived: "dataReceived",
+          TrackSubscribed: "trackSubscribed",
+        },
+        ConnectionState: {
+          Disconnected: "disconnected",
+        },
+        Track: {
+          Kind: {
+            Audio: "audio",
+          },
+        },
+      }));
+
+      // This should now work since we support agentId
+      await expect(createConnection(config)).resolves.toBeTruthy();
+
+      // Verify fetch was called with correct URL
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=test-agent"
+      );
+    });
+
+    it("fails when fetch returns error", async () => {
+      const config = {
+        agentId: "test-agent",
+        connectionType: "webrtc" as const,
+      };
+
+      // Mock fetch to return an error
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      global.fetch = mockFetch;
+
       await expect(createConnection(config)).rejects.toThrow(
-        "Conversation token is required for WebRTC connection"
+        "Failed to fetch conversation token for agent test-agent"
+      );
+    });
+
+    it("requires either conversation token or agent id for webrtc connection", async () => {
+      const config = {
+        connectionType: "webrtc" as const,
+      } as SessionConfig; // Type assertion to test runtime behavior with invalid config
+
+      await expect(createConnection(config)).rejects.toThrow(
+        "Either conversationToken or agentId is required for WebRTC connection"
       );
     });
   });
