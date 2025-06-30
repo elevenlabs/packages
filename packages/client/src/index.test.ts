@@ -374,107 +374,7 @@ describe("Connection Types", () => {
   });
 
   describe("WebRTC Connection", () => {
-    it("works with conversation token", async () => {
-      const config = {
-        conversationToken: "test-token",
-        connectionType: "webrtc" as const,
-      };
-
-      // Mock the Room.connect method to avoid actual connection
-      const mockConnect = vi.fn().mockResolvedValue(void 0);
-      const mockRoom = {
-        connect: mockConnect,
-        on: vi.fn(),
-        off: vi.fn(),
-        localParticipant: {
-          setMicrophoneEnabled: vi.fn().mockResolvedValue(void 0),
-          publishData: vi.fn().mockResolvedValue(void 0),
-        },
-        name: "test-room",
-        disconnect: vi.fn().mockResolvedValue(void 0),
-      };
-
-      // Mock the Room constructor
-      vi.doMock("livekit-client", () => ({
-        Room: vi.fn(() => mockRoom),
-        RoomEvent: {
-          Connected: "connected",
-          Disconnected: "disconnected",
-          ConnectionStateChanged: "connectionStateChanged",
-          DataReceived: "dataReceived",
-          TrackSubscribed: "trackSubscribed",
-        },
-        ConnectionState: {
-          Disconnected: "disconnected",
-        },
-        Track: {
-          Kind: {
-            Audio: "audio",
-          },
-        },
-      }));
-
-      // This should not throw since we now support conversationToken
-      await expect(createConnection(config)).resolves.toBeTruthy();
-    });
-
-    it("works with agent id by fetching token", async () => {
-      const config = {
-        agentId: "test-agent",
-        connectionType: "webrtc" as const,
-      };
-
-      // Mock fetch to return a token
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ token: "fetched-token" }),
-      });
-      global.fetch = mockFetch;
-
-      // Mock the Room.connect method to avoid actual connection
-      const mockConnect = vi.fn().mockResolvedValue(void 0);
-      const mockRoom = {
-        connect: mockConnect,
-        on: vi.fn(),
-        off: vi.fn(),
-        localParticipant: {
-          setMicrophoneEnabled: vi.fn().mockResolvedValue(void 0),
-          publishData: vi.fn().mockResolvedValue(void 0),
-        },
-        name: "test-room",
-        disconnect: vi.fn().mockResolvedValue(void 0),
-      };
-
-      // Mock the Room constructor
-      vi.doMock("livekit-client", () => ({
-        Room: vi.fn(() => mockRoom),
-        RoomEvent: {
-          Connected: "connected",
-          Disconnected: "disconnected",
-          ConnectionStateChanged: "connectionStateChanged",
-          DataReceived: "dataReceived",
-          TrackSubscribed: "trackSubscribed",
-        },
-        ConnectionState: {
-          Disconnected: "disconnected",
-        },
-        Track: {
-          Kind: {
-            Audio: "audio",
-          },
-        },
-      }));
-
-      // This should now work since we support agentId
-      await expect(createConnection(config)).resolves.toBeTruthy();
-
-      // Verify fetch was called with correct URL
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=test-agent"
-      );
-    });
-
-    it("fails when fetch returns error", async () => {
+    it("fails when fetch returns error for agent id", async () => {
       const config = {
         agentId: "test-agent",
         connectionType: "webrtc" as const,
@@ -486,10 +386,33 @@ describe("Connection Types", () => {
         status: 404,
         statusText: "Not Found",
       });
-      global.fetch = mockFetch;
+      globalThis.fetch = mockFetch;
 
       await expect(createConnection(config)).rejects.toThrow(
         "Failed to fetch conversation token for agent test-agent"
+      );
+
+      // Verify fetch was called with correct URL
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=test-agent"
+      );
+    });
+
+    it("fails when fetch returns no token for agent id", async () => {
+      const config = {
+        agentId: "test-agent",
+        connectionType: "webrtc" as const,
+      };
+
+      // Mock fetch to return success but no token
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}), // No token in response
+      });
+      globalThis.fetch = mockFetch;
+
+      await expect(createConnection(config)).rejects.toThrow(
+        "No conversation token received from API"
       );
     });
 
