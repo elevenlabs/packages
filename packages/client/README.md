@@ -54,23 +54,24 @@ try {
 
 The options passed to `startSession` specifiy how the session is established. There are three ways to start a session:
 
-##### Using Agent ID
+##### Public agents
 
-Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai).
+Agents that don't require any authentication can be used to start a conversation by using the agent ID and the connection type. The agent ID can be acquired through the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai).
+
 For public agents, you can use the ID directly:
 
 ```js
 const conversation = await Conversation.startSession({
   agentId: "<your-agent-id>",
+  connectionType: 'webrtc' // 'websocket' is also accepted
 });
 ```
 
-##### Using a signed URL
+##### Private agents
 
-If the conversation requires authorization, you will need to add a dedicated endpoint to your server that
-will request a signed url using the [ElevenLabs API](https://elevenlabs.io/docs/introduction) and pass it back to the client.
+If the conversation requires authorization, you will need to add a dedicated endpoint to your server that will either request a signed url (if using the WebSockets connection type) or a conversation token (if using WebRTC) using the [ElevenLabs API](https://elevenlabs.io/docs/introduction) and pass it back to the client.
 
-Here's an example of how it could be set up:
+Here's an example for a WebSocket connection:
 
 ```js
 // Node.js server
@@ -106,9 +107,7 @@ const signedUrl = await response.text();
 const conversation = await Conversation.startSession({ signedUrl });
 ```
 
-#### Using a WebRTC token
-
-To use the SDK in WebRTC mode, first you need to generate a conversation token. This is done by calling the ElevenLabs API directly.
+Here's an example for WebRTC:
 
 ```js
 // Node.js server

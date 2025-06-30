@@ -39,8 +39,40 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   public static async create(config: SessionConfig): Promise<WebRTCConnection> {
-    if (!("conversationToken" in config) || !config.conversationToken) {
-      throw new Error("Conversation token is required for WebRTC connection");
+    let conversationToken: string;
+
+    // Handle different authentication scenarios
+    if ("conversationToken" in config && config.conversationToken) {
+      // Direct token provided
+      conversationToken = config.conversationToken;
+    } else if ("agentId" in config && config.agentId) {
+      // Agent ID provided - fetch token from API
+      try {
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}`
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `ElevenLabs API returned ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        conversationToken = data.token;
+
+        if (!conversationToken) {
+          throw new Error("No conversation token received from API");
+        }
+      } catch (error) {
+        throw new Error(
+          `Failed to fetch conversation token for agent ${config.agentId}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    } else {
+      throw new Error(
+        "Either conversationToken or agentId is required for WebRTC connection"
+      );
     }
 
     const room = new Room();
@@ -58,7 +90,7 @@ export class WebRTCConnection extends BaseConnection {
       );
 
       // Connect to the LiveKit room and wait for the Connected event
-      await room.connect(LIVEKIT_WS_URL, config.conversationToken);
+      await room.connect(LIVEKIT_WS_URL, conversationToken);
 
       // Wait for the Connected event to ensure isConnected is true
       await new Promise<void>(resolve => {
