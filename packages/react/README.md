@@ -24,7 +24,7 @@ pnpm install @elevenlabs/react
 
 ### useConversation
 
-React hook for managing websocket connection and audio usage for ElevenLabs Conversational AI.
+React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Conversational AI.
 
 #### Initialize conversation
 
@@ -60,8 +60,8 @@ const conversation = useConversation({
 - **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
 - **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
 - **textOnly** - whether the conversation should run in text-only mode. [See below](#text-only) for details.
-- **onConnect** - handler called when the conversation websocket connection is established.
-- **onDisconnect** - handler called when the conversation websocket connection is ended.
+- **onConnect** - handler called when the conversation connection is established.
+- **onDisconnect** - handler called when the conversation connection has ended.
 - **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
 - **onError** - handler called when a error is encountered.
 
@@ -83,7 +83,7 @@ const conversation = useConversation({
 });
 ```
 
-In case function returns a value, it will be passed back to the agent as a response.  
+In case function returns a value, it will be passed back to the agent as a response.
 Note that the tool needs to be explicitly set to be blocking conversation in ElevenLabs UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
 
 #### Conversation overrides
@@ -166,41 +166,100 @@ const conversation = useConversation({
 
 ##### startConversation
 
-`startConversation` method kick off the websocket connection and starts using microphone to communicate with the ElevenLabs Conversational AI agent.  
-The method accepts options object, with the `url` or `agentId` option being required.
+`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
 
 Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) and is always necessary.
 
 ```js
 const conversation = useConversation();
-const conversationId = await conversation.startSession({ url });
+
+// For public agents, pass in the agent ID and the connection type
+const conversationId = await conversation.startSession({
+  agentId: '<your-agent-id>',
+  connectionType: 'webrtc', // either 'webrtc' or 'websocket'
+});
 ```
 
-For the public agents, define `agentId` - no signed link generation necessary.
+For public agents (i.e. agents that don't have authentication enabled), define `agentId` - no signed link generation necessary.
 
-In case the conversation requires authorization, use the REST API to generate signed links. Use the signed link as a `url` parameter.
+In case the conversation requires authorization, use the REST API to generate signed links for a WebSocket connection or a conversation token for a WebRTC connection.
 
 `startSession` returns promise resolving to `conversationId`. The value is a globally unique conversation ID you can use to identify separate conversations.
 
+For WebSocket connections:
+
 ```js
-// your server
-const requestHeaders: HeadersInit = new Headers();
-requestHeaders.set("xi-api-key", process.env.XI_API_KEY); // use your ElevenLabs API key
+// Node.js server
 
-const response = await fetch(
-    "https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id={{agent id created through ElevenLabs UI}}",
+app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
     {
-      method: "GET",
-      headers: requestHeaders,
+      headers: {
+        // Requesting a signed url requires your ElevenLabs API key
+        // Do NOT expose your API key to the client!
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      },
     }
+  );
+
+  if (!response.ok) {
+    return res.status(500).send("Failed to get signed URL");
+  }
+
+  const body = await response.json();
+  res.send(body.signed_url);
+});
+```
+
+```js
+// Client
+
+const response = await fetch("/signed-url", yourAuthHeaders);
+const signedUrl = await response.text();
+
+const conversation = await Conversation.startSession({
+  signedUrl,
+  connectionType: 'websocket',
+});
+```
+
+For WebRTC connections:
+
+```js
+// Node.js server
+
+app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${process.env.AGENT_ID}`,
+    {
+      headers: {
+        // Requesting a conversation token requires your ElevenLabs API key
+        // Do NOT expose your API key to the client!
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+      }
+    }
+  );
+
+  if (!response.ok) {
+    return res.status(500).send("Failed to get conversation token");
+  }
+
+  const body = await response.json();
+  res.send(body.token);
 );
+```
 
-if (!response.ok) {
-    return Response.error();
-}
+```js
+// Client
 
-const body = await response.json();
-const url = body.signed_url; // use this URL for startConversation method.
+const response = await fetch("/conversation-token", yourAuthHeaders);
+const conversationToken = await response.text();
+
+const conversation = await Conversation.startSession({
+  conversationToken,
+  connectionType: 'webrtc',
+});
 ```
 
 ##### endSession
