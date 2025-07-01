@@ -90,12 +90,11 @@ export type BaseSessionConfig = {
 
 export type ConnectionType = "websocket" | "webrtc";
 
-export type SessionConfig = BaseSessionConfig &
-  (
-    | { signedUrl: string; agentId?: undefined }
-    | { agentId: string; signedUrl?: undefined }
-    | { conversationToken: string; agentId?: undefined; signedUrl?: undefined }
-  );
+export type SessionConfig = BaseSessionConfig & {
+  agentId?: string;
+  signedUrl?: string;
+  conversationToken?: string;
+};
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;

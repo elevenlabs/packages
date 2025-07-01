@@ -65,8 +65,14 @@ export class WebRTCConnection extends BaseConnection {
           throw new Error("No conversation token received from API");
         }
       } catch (error) {
+        let msg = error instanceof Error ? error.message : String(error);
+        if (error instanceof Error && error.message.includes("401")) {
+          msg =
+            "Your agent has authentication enabled, but no signed URL or conversation token was provided.";
+        }
+
         throw new Error(
-          `Failed to fetch conversation token for agent ${config.agentId}: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to fetch conversation token for agent ${config.agentId}: ${msg}`
         );
       }
     } else {

@@ -78,9 +78,8 @@ Here's an example for a WebSocket connection:
 
 app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${process.env.AGENT_ID}`,
+    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
     {
-      method: "GET",
       headers: {
         // Requesting a signed url requires your ElevenLabs API key
         // Do NOT expose your API key to the client!
@@ -104,7 +103,10 @@ app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
 const response = await fetch("/signed-url", yourAuthHeaders);
 const signedUrl = await response.text();
 
-const conversation = await Conversation.startSession({ signedUrl });
+const conversation = await Conversation.startSession({
+  signedUrl,
+  connectionType: 'websocket',
+});
 ```
 
 Here's an example for WebRTC:
@@ -141,7 +143,10 @@ Once you have the token, providing it to `startSession` will initiate the conver
 const response = await fetch("/conversation-token", yourAuthHeaders);
 const conversationToken = await response.text();
 
-const conversation = await Conversation.startSession({ conversationToken });
+const conversation = await Conversation.startSession({
+  conversationToken,
+  connectionType: 'webrtc',
+});
 ```
 
 #### Optional callbacks
