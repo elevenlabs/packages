@@ -65,6 +65,7 @@ export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
+  livekitUrl?: string;
   overrides?: {
     agent?: {
       prompt?: {

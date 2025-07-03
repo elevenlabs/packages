@@ -13,7 +13,7 @@ import type {
 } from "livekit-client";
 import { constructOverrides } from "./overrides";
 
-const LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
+const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 
 export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
@@ -95,8 +95,11 @@ export class WebRTCConnection extends BaseConnection {
         outputFormat
       );
 
+      // Use configurable LiveKit URL or default if not provided
+      let livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
+
       // Connect to the LiveKit room and wait for the Connected event
-      await room.connect(LIVEKIT_WS_URL, conversationToken);
+      await room.connect(livekitUrl, conversationToken);
 
       // Wait for the Connected event to ensure isConnected is true
       await new Promise<void>(resolve => {
