@@ -14,6 +14,7 @@ import type {
   UserTranscriptionEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
+import { WebRTCConnection } from "./utils/WebRTCConnection";
 
 export type Role = "user" | "ai";
 
@@ -351,5 +352,18 @@ export class BaseConversation {
       tool_call_id: toolCallId,
       is_approved: isApproved,
     });
+  }
+
+  /**
+   * Returns the underlying LiveKit `Room` instance when the conversation is
+   * using a WebRTC transport.
+   * Consumers should cast the return value to `Room` from `livekit-client`
+   * if they need strong typing.
+   */
+  public getRoom(): unknown | undefined {
+    if (this.connection instanceof WebRTCConnection) {
+      return this.connection.getRoom();
+    }
+    return undefined;
   }
 }

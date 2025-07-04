@@ -8,6 +8,7 @@ import {
   Status,
   ClientToolsConfig,
   InputConfig,
+  BaseConversation,
 } from "@elevenlabs/client";
 
 export type {
@@ -42,8 +43,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
   props: T = {} as T
 ) {
   const { micMuted, volume, ...defaultOptions } = props;
-  const conversationRef = useRef<Conversation | null>(null);
-  const lockRef = useRef<Promise<Conversation> | null>(null);
+  const conversationRef = useRef<BaseConversation | null>(null);
+  const lockRef = useRef<Promise<BaseConversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");

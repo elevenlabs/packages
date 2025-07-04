@@ -1,4 +1,5 @@
 import { BaseConversation, type PartialOptions } from "./BaseConversation";
+export { BaseConversation };
 import { TextConversation } from "./TextConversation";
 import { VoiceConversation } from "./VoiceConversation";
 
@@ -25,17 +26,9 @@ export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 
 export class Conversation extends BaseConversation {
-  public static startSession(options: PartialOptions): Promise<Conversation> {
+  public static startSession(options: PartialOptions): Promise<BaseConversation> {
     return options.textOnly
       ? TextConversation.startSession(options)
       : VoiceConversation.startSession(options);
-  }
-
-  public getRoom() {
-    // Expose underlying LiveKit Room only when conversation is running over WebRTC
-    if (this.connection instanceof WebRTCConnection) {
-      return this.connection.getRoom();
-    }
-    return undefined;
   }
 }
