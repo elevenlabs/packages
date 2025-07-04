@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-widget-embed",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "The Conversational AI Widget bundled with all dependencies for easy embedding.",
   "main": "./dist/index.js",
   "unpkg": "./dist/index.js",
