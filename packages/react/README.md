@@ -1,429 +1,705 @@
-# ElevenLabs React Library
+# @elevenlabs/react
 
-An SDK library for using ElevenLabs in React based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
+React hooks and components for ElevenLabs [Conversational AI](https://elevenlabs.io/conversational-ai).
 
-> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.
+<div align="center">
+  <img src="https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683" alt="ElevenLabs Logo" width="150">
+  
+  [![npm version](https://img.shields.io/npm/v/@elevenlabs/react.svg?style=flat-square)](https://www.npmjs.com/package/@elevenlabs/react)
+  [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
+  [![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+</div>
 
-![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
-[![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
-[![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+> **Looking for vanilla JavaScript?** Check out [@elevenlabs/client](https://www.npmjs.com/package/@elevenlabs/client) for non-React applications.
 
-## Installation
+> **Looking for Node.js?** Check out the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs) for server-side speech synthesis.
 
-Install the package in your project through package manager.
+## 🚀 Quick Start
 
-```shell
+```bash
 npm install @elevenlabs/react
-# or
-yarn add @elevenlabs/react
-# or
-pnpm install @elevenlabs/react
 ```
 
-## Usage
+```jsx
+import { useConversation } from '@elevenlabs/react';
 
-### useConversation
-
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Conversational AI.
-
-#### Initialize conversation
-
-First, initialize the Conversation instance.
-
-```tsx
-const conversation = useConversation();
-```
-
-Note that Conversational AI requires microphone access.
-Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
-
-```js
-// call after explaning to the user why the microphone access is needed
-// handle errors and show appropriate message to the user
-try {
-  await navigator.mediaDevices.getUserMedia();
-} catch {
-  // handle error
+function VoiceChat() {
+  const conversation = useConversation();
+  
+  const startChat = async () => {
+    await conversation.startSession({
+      agentId: 'your-agent-id',
+      connectionType: 'webrtc' // or 'websocket'
+    });
+  };
+  
+  return (
+    <>
+      <button onClick={startChat}>
+        {conversation.status === 'connected' ? 'End Chat' : 'Start Chat'}
+      </button>
+      {conversation.isSpeaking && <p>Agent is speaking...</p>}
+    </>
+  );
 }
 ```
 
-#### Options
+## 📖 Table of Contents
 
-The Conversation can be initialized with certain options. Those are all optional.
+- [Features](#-features)
+- [Installation](#-installation)
+- [Basic Usage](#-basic-usage)
+- [Connection Types](#-connection-types)
+- [Authentication](#-authentication)
+- [React Hook API](#-react-hook-api)
+- [Advanced Features](#-advanced-features)
+- [Examples](#-examples)
+- [Troubleshooting](#-troubleshooting)
 
-```tsx
-const conversation = useConversation({
-  /* options object */
-});
+## ✨ Features
+
+- 🪝 **React Hooks** - Simple, declarative API for React applications
+- 🎯 **Full TypeScript Support** - Complete type safety and IntelliSense
+- 🚀 **WebRTC & WebSocket** - Choose your connection type based on latency needs
+- 🔐 **Secure Authentication** - Support for both public and private agents
+- 🛠️ **Client Tools** - Let agents interact with your React app
+- 📊 **Real-time State** - Track conversation status, speaking state, and more
+- 🎮 **Full Control** - Mute, unmute, adjust volume, send text messages
+
+## 📦 Installation
+
+```bash
+# Using npm
+npm install @elevenlabs/react
+
+# Using yarn
+yarn add @elevenlabs/react
+
+# Using pnpm
+pnpm add @elevenlabs/react
 ```
 
-- **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
-- **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
-- **textOnly** - whether the conversation should run in text-only mode. [See below](#text-only) for details.
-- **onConnect** - handler called when the conversation connection is established.
-- **onDisconnect** - handler called when the conversation connection has ended.
-- **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
-- **onError** - handler called when a error is encountered.
+## 🎯 Basic Usage
 
-##### Client Tools
+### Simple Voice Chat Component
 
-Client tools are a way to enabled agent to invoke client-side functionality. This can be used to trigger actions in the client, such as opening a modal or doing an API call on behalf of the user.
+```jsx
+import { useConversation } from '@elevenlabs/react';
 
-Client tools definition is an object of functions, and needs to be identical with your configuration within the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
+function VoiceAssistant() {
+  const {
+    status,
+    isSpeaking,
+    startSession,
+    endSession,
+    sendUserMessage,
+  } = useConversation();
 
-```ts
-const conversation = useConversation({
-  clientTools: {
-    displayMessage: (parameters: { text: string }) => {
-      alert(text);
-
-      return "Message displayed";
-    },
-  },
-});
-```
-
-In case function returns a value, it will be passed back to the agent as a response.
-Note that the tool needs to be explicitly set to be blocking conversation in ElevenLabs UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
-
-#### Conversation overrides
-
-You may choose to override various settings of the conversation and set them dynamically based other user interactions.
-We support overriding various settings.
-These settings are optional and can be used to customize the conversation experience.
-The following settings are available:
-
-```ts
-const conversation = useConversation({
-  overrides: {
-    agent: {
-      prompt: {
-        prompt: "My custom prompt",
-      },
-      firstMessage: "My custom first message",
-      language: "en",
-    },
-    tts: {
-      voiceId: "custom voice id",
-    },
-    conversation: {
-      textOnly: true,
+  const handleStart = async () => {
+    try {
+      // Request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Start conversation
+      await startSession({
+        agentId: 'your-agent-id',
+        connectionType: 'webrtc',
+      });
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
     }
-  },
+  };
+
+  return (
+    <div>
+      <h2>Voice Assistant</h2>
+      <p>Status: {status}</p>
+      {isSpeaking && <p>🔊 Agent is speaking...</p>}
+      
+      {status === 'connected' ? (
+        <button onClick={endSession}>End Conversation</button>
+      ) : (
+        <button onClick={handleStart}>Start Conversation</button>
+      )}
+    </div>
+  );
+}
+```
+
+## 🔌 Connection Types
+
+The SDK supports two connection types, each optimized for different use cases:
+
+### WebSocket Connection (Default)
+- **Latency**: ~300-500ms round trip
+- **Reliability**: Excellent, with automatic reconnection
+- **Best for**: Most conversational AI applications
+
+### WebRTC Connection
+- **Latency**: ~100-200ms round trip
+- **Reliability**: Good, peer-to-peer when possible
+- **Best for**: Real-time applications requiring minimal delay
+
+```jsx
+// WebSocket connection
+await startSession({
+  agentId: 'agent-id',
+  connectionType: 'websocket'
+});
+
+// WebRTC connection  
+await startSession({
+  agentId: 'agent-id',
+  connectionType: 'webrtc'
 });
 ```
 
-#### Text only
+## 🔐 Authentication
 
-If your agent is configured to run in text-only mode, i.e. it does not send or receive audio messages,
-you can use this flag to use a lighter version of the conversation. In that case, the
-user will not be asked for microphone permissions and no audio context will be created.
+### Public Agents
 
-```ts
-const conversation = useConversation({
-  textOnly: true,
-});
-```
+For public agents, simply provide the agent ID:
 
-#### Prefer Headphones for iOS Devices
-
-While this SDK leaves the choice of audio input/output device to the browser/system, iOS Safari seem to prefer the built-in speaker over headphones even when bluetooth device is in use. If you want to "force" the use of headphones on iOS devices when available, you can use the following option. Please, keep in mind that this is not guaranteed, since this functionality is not provided by the browser. System audio should be the default choice.
-
-```ts
-const conversation = useConversation({
-  preferHeadphonesForIosDevices: true,
-});
-```
-
-#### Connection delay
-
-You can configure additional delay between when the microphone is activated and when the connection is established.
-On Android, the delay is set to 3 seconds by default to make sure the device has time to switch to the correct audio mode.
-Without it, you may experience issues with the beginning of the first message being cut off.
-
-```ts
-const conversation = useConversation({
-  connectionDelay: {
-    android: 3_000,
-    ios: 0,
-    default: 0,
-  },
-});
-```
-
-#### Acquiring a Wake Lock
-
-By default, the conversation will attempt to acquire a [wake lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device from going to sleep during the conversation.
-This can be disabled by setting the `useWakeLock` option to `false`:
-
-```ts
-const conversation = useConversation({
-  useWakeLock: false,
-});
-```
-
-#### Methods
-
-##### startConversation
-
-`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
-
-Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) and is always necessary.
-
-```js
+```jsx
 const conversation = useConversation();
 
-// For public agents, pass in the agent ID and the connection type
-const conversationId = await conversation.startSession({
-  agentId: '<your-agent-id>',
-  connectionType: 'webrtc', // either 'webrtc' or 'websocket'
+await conversation.startSession({
+  agentId: 'your-public-agent-id'
 });
 ```
 
-For public agents (i.e. agents that don't have authentication enabled), define `agentId` - no signed link generation necessary.
+### Private Agents
 
-In case the conversation requires authorization, use the REST API to generate signed links for a WebSocket connection or a conversation token for a WebRTC connection.
+#### WebSocket Authentication
 
-`startSession` returns promise resolving to `conversationId`. The value is a globally unique conversation ID you can use to identify separate conversations.
-
-For WebSocket connections:
-
-```js
-// Node.js server
-
-app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
+```jsx
+// Server-side: Generate signed URL
+app.get('/api/signed-url', authenticate, async (req, res) => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
+    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${AGENT_ID}`,
     {
       headers: {
-        // Requesting a signed url requires your ElevenLabs API key
-        // Do NOT expose your API key to the client!
-        "xi-api-key": process.env.ELEVENLABS_API_KEY,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    return res.status(500).send("Failed to get signed URL");
-  }
-
-  const body = await response.json();
-  res.send(body.signed_url);
-});
-```
-
-```js
-// Client
-
-const response = await fetch("/signed-url", yourAuthHeaders);
-const signedUrl = await response.text();
-
-const conversation = await Conversation.startSession({
-  signedUrl,
-  connectionType: 'websocket',
-});
-```
-
-For WebRTC connections:
-
-```js
-// Node.js server
-
-app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${process.env.AGENT_ID}`,
-    {
-      headers: {
-        // Requesting a conversation token requires your ElevenLabs API key
-        // Do NOT expose your API key to the client!
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'xi-api-key': process.env.ELEVENLABS_API_KEY
       }
     }
   );
-
-  if (!response.ok) {
-    return res.status(500).send("Failed to get conversation token");
-  }
-
-  const body = await response.json();
-  res.send(body.token);
-);
-```
-
-```js
-// Client
-
-const response = await fetch("/conversation-token", yourAuthHeaders);
-const conversationToken = await response.text();
-
-const conversation = await Conversation.startSession({
-  conversationToken,
-  connectionType: 'webrtc',
+  
+  const data = await response.json();
+  res.json({ signedUrl: data.signed_url });
 });
+
+// React component
+function PrivateVoiceChat() {
+  const conversation = useConversation();
+  
+  const startPrivateChat = async () => {
+    const { signedUrl } = await fetch('/api/signed-url').then(r => r.json());
+    
+    await conversation.startSession({
+      signedUrl,
+      connectionType: 'websocket'
+    });
+  };
+  
+  return <button onClick={startPrivateChat}>Start Private Chat</button>;
+}
 ```
 
-##### endSession
+#### WebRTC Authentication
 
-A method to manually end the conversation. The method will end the conversation and disconnect from websocket.
+```jsx
+// Server-side: Generate conversation token
+app.get('/api/conversation-token', authenticate, async (req, res) => {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${AGENT_ID}`,
+    {
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY
+      }
+    }
+  );
+  
+  const data = await response.json();
+  res.json({ token: data.token });
+});
 
-```js
-await conversation.endSession();
+// React component
+function SecureWebRTCChat() {
+  const conversation = useConversation();
+  
+  const startSecureChat = async () => {
+    const { token } = await fetch('/api/conversation-token').then(r => r.json());
+    
+    await conversation.startSession({
+      conversationToken: token,
+      connectionType: 'webrtc'
+    });
+  };
+  
+  return <button onClick={startSecureChat}>Start Secure Chat</button>;
+}
 ```
 
-##### sendFeedback
+## 🪝 React Hook API
 
-A method for sending binary feedback to the agent.
-The method accepts a boolean value, where `true` represents positive feedback and `false` negative feedback.
-Feedback is always correlated to the most recent agent response and can be sent only once per response.
-Check `canSendFeedback` state to see if feedback can be sent in the given moment.
+### `useConversation(options?)`
 
-```js
-const { sendFeedback } = useConversation();
+The main React hook for managing conversations.
 
-sendFeedback(true); // positive feedback
-sendFeedback(false); // negative feedback
+#### Options
+
+```typescript
+interface ConversationOptions {
+  // Client-side functions the agent can call
+  clientTools?: ClientTools;
+  
+  // Override agent configuration
+  overrides?: {
+    agent?: {
+      prompt?: { prompt?: string };
+      firstMessage?: string;
+      language?: string;
+    };
+    tts?: {
+      voiceId?: string;
+    };
+    conversation?: {
+      textOnly?: boolean;
+    };
+  };
+  
+  // Text-only mode (no audio)
+  textOnly?: boolean;
+  
+  // Platform-specific settings
+  preferHeadphonesForIosDevices?: boolean;
+  connectionDelay?: {
+    android?: number;
+    ios?: number;
+    default?: number;
+  };
+  useWakeLock?: boolean;
+  
+  // Event callbacks
+  onConnect?: () => void;
+  onDisconnect?: (details: DisconnectionDetails) => void;
+  onMessage?: (message: Message) => void;
+  onError?: (error: Error) => void;
+}
 ```
 
-##### sendContextualUpdate
+#### Return Value
 
-A method to send contextual updates to the agent.
-This can be used to inform the agent about user actions that are not directly related to the conversation, but may influence the agent's responses.
-
-```js
-const { sendContextualUpdate } = useConversation();
-
-sendContextualUpdate(
-  "User navigated to another page. Consider it for next response, but don't react to this contextual update."
-);
+```typescript
+interface ConversationReturn {
+  // State
+  status: 'connected' | 'connecting' | 'disconnected';
+  isSpeaking: boolean;
+  canSendFeedback: boolean;
+  
+  // Methods
+  startSession: (options: SessionOptions) => Promise<string>;
+  endSession: () => Promise<void>;
+  sendUserMessage: (text: string) => void;
+  sendFeedback: (isPositive: boolean) => void;
+  sendContextualUpdate: (text: string) => void;
+  sendUserActivity: () => void;
+  setVolume: ({ volume: number }) => void;
+  getInputVolume: () => number;
+  getOutputVolume: () => number;
+  getId: () => string | undefined;
+}
 ```
 
-##### sendUserMessage
+## 🛠️ Advanced Features
 
-Sends a text messages to the agent.
+### Client Tools
 
-Can be used to let the user type in the message instead of using the microphone.
-Unlike `sendContextualUpdate`, this will be treated as a user message and will prompt the agent to take its turn in the conversation.
+Enable your agent to interact with your React application:
 
-```js
-const { sendUserMessage, sendUserActivity } = useConversation();
-const [value, setValue] = useState("");
+```jsx
+function InteractiveChat() {
+  const [cartItems, setCartItems] = useState([]);
+  
+  const conversation = useConversation({
+    clientTools: {
+      addToCart: async ({ productId, quantity }) => {
+        // Update React state
+        setCartItems(prev => [...prev, { productId, quantity }]);
+        return { success: true, cartSize: cartItems.length + 1 };
+      },
+      
+      showProductDetails: async ({ productId }) => {
+        // Navigate or update UI
+        window.location.hash = `#product/${productId}`;
+        return "Product details displayed";
+      },
+      
+      searchProducts: async ({ query }) => {
+        const results = await api.searchProducts(query);
+        return { products: results };
+      }
+    }
+  });
+  
+  // ... rest of component
+}
+```
 
-return (
-  <>
-    <input
-      value={value}
-      onChange={e => {
-        setValue(e.target.value);
-        sendUserActivity();
-      }}
-    />
-    <button
-      onClick={() => {
-        sendUserMessage(value);
-        setValue(value);
-      }}
-    >
-      SEND
+### Real-time Feedback
+
+```jsx
+function FeedbackExample() {
+  const { canSendFeedback, sendFeedback } = useConversation();
+  
+  return (
+    <div>
+      {canSendFeedback && (
+        <div>
+          <button onClick={() => sendFeedback(true)}>👍</button>
+          <button onClick={() => sendFeedback(false)}>👎</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Text Input with Voice
+
+```jsx
+function HybridChat() {
+  const [message, setMessage] = useState('');
+  const { 
+    status,
+    sendUserMessage,
+    sendUserActivity,
+    isSpeaking 
+  } = useConversation();
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (message.trim() && status === 'connected') {
+      sendUserMessage(message);
+      setMessage('');
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => {
+          setMessage(e.target.value);
+          sendUserActivity(); // Prevents agent interruption
+        }}
+        placeholder="Type a message..."
+        disabled={status !== 'connected'}
+      />
+      <button type="submit" disabled={status !== 'connected' || isSpeaking}>
+        Send
+      </button>
+    </form>
+  );
+}
+```
+
+### Volume Control
+
+```jsx
+function VolumeControl() {
+  const [volume, setVolumeState] = useState(0.8);
+  const { setVolume } = useConversation();
+  
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolumeState(newVolume);
+    setVolume({ volume: newVolume });
+  };
+  
+  return (
+    <div>
+      <label>
+        Volume: {Math.round(volume * 100)}%
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.1"
+          value={volume}
+          onChange={handleVolumeChange}
+        />
+      </label>
+    </div>
+  );
+}
+```
+
+### Mute Control
+
+```jsx
+function MuteButton() {
+  const [isMuted, setIsMuted] = useState(false);
+  const conversation = useConversation({ micMuted: isMuted });
+  
+  const toggleMute = () => {
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+  };
+  
+  return (
+    <button onClick={toggleMute}>
+      {isMuted ? '🔇 Unmute' : '🎤 Mute'}
     </button>
-  </>
-);
+  );
+}
 ```
 
-##### sendUserActivity
+## 💡 Examples
 
-Notifies the agent about user activity.
+### Complete Voice Assistant
 
-The agent will not attempt to speak for at least 2 seconds after the user activity is detected.
-This can be used to prevent the agent from interrupting the user when they are typing.
+```jsx
+import { useState, useEffect } from 'react';
+import { useConversation } from '@elevenlabs/react';
 
-```js
-const { sendUserMessage, sendUserActivity } = useConversation();
-const [value, setValue] = useState("");
-
-return (
-  <>
-    <input
-      value={value}
-      onChange={e => {
-        setValue(e.target.value);
-        sendUserActivity();
-      }}
-    />
-    <button
-      onClick={() => {
-        sendUserMessage(value);
-        setValue(value);
-      }}
-    >
-      SEND
-    </button>
-  </>
-);
+function VoiceAssistant() {
+  const [messages, setMessages] = useState([]);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  
+  const conversation = useConversation({
+    onMessage: (message) => {
+      setMessages(prev => [...prev, message]);
+    },
+    onError: (error) => {
+      console.error('Conversation error:', error);
+    },
+    clientTools: {
+      updateUI: async ({ component, data }) => {
+        // Update specific UI components based on agent instructions
+        console.log('Updating', component, 'with', data);
+        return "UI updated successfully";
+      }
+    }
+  });
+  
+  useEffect(() => {
+    // Check microphone permission on mount
+    navigator.permissions.query({ name: 'microphone' }).then(result => {
+      setIsPermissionGranted(result.state === 'granted');
+    });
+  }, []);
+  
+  const requestPermission = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setIsPermissionGranted(true);
+    } catch (error) {
+      alert('Microphone permission is required for voice chat');
+    }
+  };
+  
+  const handleStart = async () => {
+    if (!isPermissionGranted) {
+      await requestPermission();
+    }
+    
+    await conversation.startSession({
+      agentId: 'your-agent-id',
+      connectionType: 'webrtc',
+      overrides: {
+        agent: {
+          firstMessage: "Hello! How can I assist you today?"
+        }
+      }
+    });
+  };
+  
+  return (
+    <div className="voice-assistant">
+      <div className="status-bar">
+        <span>Status: {conversation.status}</span>
+        {conversation.isSpeaking && <span className="speaking-indicator">🔊</span>}
+      </div>
+      
+      <div className="messages">
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`message ${msg.role}`}>
+            {msg.text}
+          </div>
+        ))}
+      </div>
+      
+      <div className="controls">
+        {conversation.status === 'connected' ? (
+          <>
+            <MuteButton />
+            <VolumeControl />
+            <button onClick={conversation.endSession}>End Chat</button>
+          </>
+        ) : (
+          <button onClick={handleStart}>Start Voice Chat</button>
+        )}
+      </div>
+      
+      {conversation.canSendFeedback && <FeedbackButtons />}
+    </div>
+  );
+}
 ```
 
-##### setVolume
+### Customer Support Widget
 
-A method to set the output volume of the conversation. Accepts object with volume field between 0 and 1.
-
-```js
-const [volume, setVolume] = useState(0.5);
-const conversation = useConversation({ volume });
-
-// Set the volume
-setVolume(0.5);
+```jsx
+function CustomerSupportWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [orderInfo, setOrderInfo] = useState(null);
+  
+  const conversation = useConversation({
+    clientTools: {
+      lookupOrder: async ({ orderId }) => {
+        const order = await api.getOrder(orderId);
+        setOrderInfo(order);
+        return order;
+      },
+      
+      processRefund: async ({ orderId, amount, reason }) => {
+        const refund = await api.createRefund({ orderId, amount, reason });
+        return { 
+          success: true, 
+          refundId: refund.id,
+          message: `Refund of $${amount} processed successfully`
+        };
+      }
+    },
+    overrides: {
+      agent: {
+        prompt: {
+          prompt: "You are a helpful customer support agent. Be empathetic and solution-oriented."
+        }
+      }
+    }
+  });
+  
+  return (
+    <div className={`support-widget ${isOpen ? 'open' : 'closed'}`}>
+      {isOpen ? (
+        <div className="chat-window">
+          <header>
+            <h3>Customer Support</h3>
+            <button onClick={() => setIsOpen(false)}>×</button>
+          </header>
+          
+          <div className="chat-content">
+            {conversation.status === 'disconnected' ? (
+              <button onClick={() => conversation.startSession({ agentId: 'support-agent' })}>
+                Start Support Chat
+              </button>
+            ) : (
+              <>
+                <div className="status">
+                  {conversation.isSpeaking ? 'Agent is speaking...' : 'Listening...'}
+                </div>
+                {orderInfo && (
+                  <div className="order-info">
+                    <h4>Order #{orderInfo.id}</h4>
+                    <p>Status: {orderInfo.status}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <button className="widget-trigger" onClick={() => setIsOpen(true)}>
+          💬 Need Help?
+        </button>
+      )}
+    </div>
+  );
+}
 ```
 
-##### muteMic
+## 🔧 Troubleshooting
 
-A method to mute/unmute the microphone.
+### Common Issues
 
-```js
-const [micMuted, setMicMuted] = useState(false);
-const conversation = useConversation({ micMuted });
+#### Hooks Must Be Called Consistently
+Remember that `useConversation` is a React hook and must follow the [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks):
 
-// Mute the microphone
-setMicMuted(true);
+```jsx
+// ❌ Wrong - conditional hook call
+function MyComponent({ enabled }) {
+  if (enabled) {
+    const conversation = useConversation(); // Error!
+  }
+}
 
-// Unmute the microphone
-setMicMuted(false);
+// ✅ Correct - hook at top level
+function MyComponent({ enabled }) {
+  const conversation = useConversation();
+  
+  if (enabled) {
+    // Use conversation here
+  }
+}
 ```
 
-##### status
+#### Microphone Permission Handling
 
-A React state containing the current status of the conversation.
-
-```js
-const { status } = useConversation();
-console.log(status); // "connected" or "disconnected"
+```jsx
+function MicrophonePermissionHandler() {
+  const [permissionState, setPermissionState] = useState('prompt');
+  
+  useEffect(() => {
+    // Monitor permission changes
+    navigator.permissions.query({ name: 'microphone' }).then(permission => {
+      setPermissionState(permission.state);
+      
+      permission.addEventListener('change', () => {
+        setPermissionState(permission.state);
+      });
+    });
+  }, []);
+  
+  if (permissionState === 'denied') {
+    return (
+      <div className="permission-denied">
+        <p>Microphone access is blocked. Please enable it in your browser settings.</p>
+      </div>
+    );
+  }
+  
+  // ... rest of component
+}
 ```
 
-##### isSpeaking
+#### Cleanup on Unmount
 
-A React state containing the information of whether the agent is currently speaking.
-This is helpful for indicating the mode in your UI.
+The hook automatically cleans up when the component unmounts, but ensure you handle any ongoing operations:
 
-```js
-const { isSpeaking } = useConversation();
-console.log(isSpeaking); // boolean
+```jsx
+function ChatComponent() {
+  const conversation = useConversation();
+  
+  useEffect(() => {
+    return () => {
+      // Any additional cleanup if needed
+      if (conversation.status === 'connected') {
+        conversation.endSession();
+      }
+    };
+  }, [conversation.status]);
+  
+  // ... rest of component
+}
 ```
 
-##### canSendFeedback
+## 🤝 Contributing
 
-A React state representing whether the user can send feedback to the agent.
-When false, calls to `sendFeedback` will be ignored.
-This is helpful to conditionally show the feedback button in your UI.
+Please see the main [repository README](https://github.com/elevenlabs/elevenlabs-js) for contribution guidelines.
 
-```js
-const { canSendFeedback } = useConversation();
-console.log(canSendFeedback); // boolean
-```
+## 📄 License
 
-## Development
-
-Please, refer to the README.md file in the root of this repository.
-
-## Contributing
-
-Please, create an issue first to discuss the proposed changes. Any contributions are welcome!
-
-Remember, if merged, your code will be used as part of a MIT licensed project. By submitting a Pull Request, you are giving your consent for your code to be integrated into this library.
+MIT - see [LICENSE](LICENSE) for details.

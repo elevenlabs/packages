@@ -1,373 +1,546 @@
-# ElevenLabs JavaScript Client Library
+# @elevenlabs/client
 
-An SDK library for using ElevenLabs in browser based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
+The official JavaScript client library for ElevenLabs [Conversational AI](https://elevenlabs.io/conversational-ai).
 
-> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.
+<div align="center">
+  <img src="https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683" alt="ElevenLabs Logo" width="150">
+  
+  [![npm version](https://img.shields.io/npm/v/@elevenlabs/client.svg?style=flat-square)](https://www.npmjs.com/package/@elevenlabs/client)
+  [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
+  [![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+</div>
 
-![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
-[![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
-[![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+> **Looking for React?** Check out [@elevenlabs/react](https://www.npmjs.com/package/@elevenlabs/react) for React hooks and components.
 
-## Installation
+> **Looking for Node.js?** Check out the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs) for server-side speech synthesis.
 
-Install the package in your project through package manager.
+## 🚀 Quick Start
 
-```shell
+```bash
 npm install @elevenlabs/client
-# or
+```
+
+```javascript
+import { Conversation } from '@elevenlabs/client';
+
+// Start a conversation with a public agent
+const conversation = await Conversation.startSession({
+  agentId: 'your-agent-id',
+  connectionType: 'webrtc' // or 'websocket'
+});
+
+// The agent is now listening and will respond to your speech
+```
+
+## 📖 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Basic Usage](#-basic-usage)
+- [Connection Types](#-connection-types)
+- [Authentication](#-authentication)
+- [Advanced Features](#-advanced-features)
+- [API Reference](#-api-reference)
+- [Examples](#-examples)
+- [Troubleshooting](#-troubleshooting)
+
+## ✨ Features
+
+- 🎯 **Simple, intuitive API** - Get started in minutes
+- 🚀 **Two connection modes** - WebSocket for reliability, WebRTC for ultra-low latency
+- 🔐 **Flexible authentication** - Support for both public and private agents
+- 🛠️ **Client tools** - Let agents interact with your application
+- 🎮 **Full conversation control** - Mute, unmute, adjust volume, send text
+- 📊 **Real-time feedback** - Know when the agent is speaking or listening
+- 🌐 **Cross-platform** - Works in all modern browsers
+
+## 📦 Installation
+
+```bash
+# Using npm
+npm install @elevenlabs/client
+
+# Using yarn
 yarn add @elevenlabs/client
-# or
-pnpm install @elevenlabs/client
+
+# Using pnpm
+pnpm add @elevenlabs/client
 ```
 
-## Usage
+## 🎯 Basic Usage
 
-This library is primarily meant for development in vanilla JavaScript projects, or as a base for libraries tailored to specific frameworks.
-It is recommended to check whether your specific framework has it's own library.
-However, you can use this library in any JavaScript-based project.
+### Starting a Conversation
 
-### Connection types
+```javascript
+import { Conversation } from '@elevenlabs/client';
 
-A conversation can be started via one of two connection types: WebSockets (the default) or WebRTC.
+async function startVoiceChat() {
+  // Request microphone permission first
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (error) {
+    console.error('Microphone access denied');
+    return;
+  }
 
-### Initialize conversation
+  // Start the conversation
+  const conversation = await Conversation.startSession({
+    agentId: 'your-agent-id', // Get this from https://elevenlabs.io/app/conversational-ai
+    connectionType: 'webrtc', // 'websocket' or 'webrtc' (defaults to 'websocket')
+    
+    // Optional callbacks
+    onConnect: () => console.log('Connected!'),
+    onDisconnect: (reason) => console.log('Disconnected:', reason),
+    onMessage: (message) => console.log('Message:', message),
+    onError: (error) => console.error('Error:', error),
+    onStatusChange: (status) => console.log('Status:', status),
+    onModeChange: (mode) => console.log('Mode:', mode), // 'speaking' or 'listening'
+  });
 
-First, initialize the Conversation instance:
-
-```js
-const conversation = await Conversation.startSession(options);
-```
-
-This will kick off the websocket connection and start using microphone to communicate with the ElevenLabs Conversational AI agent. Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
-
-```js
-// call after explaning to the user why the microphone access is needed
-// handle errors and show appropriate message to the user
-try {
-  await navigator.mediaDevices.getUserMedia();
-} catch {
-  // handle error
+  // The conversation is now active!
+  // The agent is listening and will respond when you speak
+  
+  // End the conversation when done
+  // await conversation.endSession();
 }
 ```
 
-#### Session configuration
+## 🔌 Connection Types
 
-The options passed to `startSession` specifiy how the session is established. There are three ways to start a session:
+### WebSocket Connection (Default)
+- **Latency**: ~300-500ms round trip
+- **Reliability**: Excellent, with automatic reconnection
+- **Use cases**: Most conversational AI applications
+- **Audio format**: PCM 16000Hz or μ-law 8000Hz
 
-##### Public agents
+### WebRTC Connection
+- **Latency**: ~100-200ms round trip
+- **Reliability**: Good, peer-to-peer when possible  
+- **Use cases**: Real-time applications requiring minimal delay
+- **Audio format**: Opus codec with adaptive bitrate
 
-Agents that don't require any authentication can be used to start a conversation by using the agent ID and the connection type. The agent ID can be acquired through the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai).
+```javascript
+// WebSocket (default)
+const wsConversation = await Conversation.startSession({
+  agentId: 'agent-id',
+  connectionType: 'websocket'
+});
 
-For public agents, you can use the ID directly:
-
-```js
-const conversation = await Conversation.startSession({
-  agentId: "<your-agent-id>",
-  connectionType: 'webrtc' // 'websocket' is also accepted
+// WebRTC
+const rtcConversation = await Conversation.startSession({
+  agentId: 'agent-id',
+  connectionType: 'webrtc'
 });
 ```
 
-##### Private agents
+## 🔐 Authentication
 
-If the conversation requires authorization, you will need to add a dedicated endpoint to your server that will either request a signed url (if using the WebSockets connection type) or a conversation token (if using WebRTC) using the [ElevenLabs API](https://elevenlabs.io/docs/introduction) and pass it back to the client.
+### Public Agents
+No authentication required - perfect for demos and public-facing applications:
 
-Here's an example for a WebSocket connection:
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'your-public-agent-id'
+});
+```
 
-```js
-// Node.js server
+### Private Agents
 
-app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
+#### WebSocket Authentication
+Use signed URLs for secure WebSocket connections:
+
+```javascript
+// Server-side - Generate a signed URL
+app.get('/api/signed-url', authenticate, async (req, res) => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
+    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${AGENT_ID}`,
     {
       headers: {
-        // Requesting a signed url requires your ElevenLabs API key
-        // Do NOT expose your API key to the client!
-        "xi-api-key": process.env.ELEVENLABS_API_KEY,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    return res.status(500).send("Failed to get signed URL");
-  }
-
-  const body = await response.json();
-  res.send(body.signed_url);
-});
-```
-
-```js
-// Client
-
-const response = await fetch("/signed-url", yourAuthHeaders);
-const signedUrl = await response.text();
-
-const conversation = await Conversation.startSession({
-  signedUrl,
-  connectionType: 'websocket',
-});
-```
-
-Here's an example for WebRTC:
-
-```js
-// Node.js server
-
-app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${process.env.AGENT_ID}`,
-    {
-      headers: {
-        // Requesting a conversation token requires your ElevenLabs API key
-        // Do NOT expose your API key to the client!
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'xi-api-key': process.env.ELEVENLABS_API_KEY // Never expose this client-side!
       }
     }
   );
+  
+  const data = await response.json();
+  res.json({ signedUrl: data.signed_url });
+});
 
-  if (!response.ok) {
-    return res.status(500).send("Failed to get conversation token");
-  }
-
-  const body = await response.json();
-  res.send(body.token);
-);
-```
-
-Once you have the token, providing it to `startSession` will initiate the conversation using WebRTC.
-
-```js
-// Client
-
-const response = await fetch("/conversation-token", yourAuthHeaders);
-const conversationToken = await response.text();
+// Client-side - Use the signed URL
+const { signedUrl } = await fetch('/api/signed-url').then(r => r.json());
 
 const conversation = await Conversation.startSession({
-  conversationToken,
-  connectionType: 'webrtc',
+  signedUrl,
+  connectionType: 'websocket'
 });
 ```
 
-#### Optional callbacks
+#### WebRTC Authentication
+Use conversation tokens for secure WebRTC connections:
 
-The options passed to `startSession` can also be used to register optional callbacks:
+```javascript
+// Server-side - Generate a conversation token
+app.get('/api/conversation-token', authenticate, async (req, res) => {
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${AGENT_ID}`,
+    {
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY // Never expose this client-side!
+      }
+    }
+  );
+  
+  const data = await response.json();
+  res.json({ token: data.token });
+});
 
-- **onConnect** - handler called when the conversation websocket connection is established.
-- **onDisconnect** - handler called when the conversation websocket connection is ended.
-- **onMessage** - handler called when a new text message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM. Primarily used for handling conversation transcription.
-- **onError** - handler called when an error is encountered.
-- **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
-- **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
-- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
+// Client-side - Use the conversation token
+const { token } = await fetch('/api/conversation-token').then(r => r.json());
 
-#### Client Tools
-
-Client tools are a way to enabled agent to invoke client-side functionality. This can be used to trigger actions in the client, such as opening a modal or doing an API call on behalf of the user.
-
-Client tools definition is an object of functions, and needs to be identical with your configuration within the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
-
-```ts
 const conversation = await Conversation.startSession({
+  conversationToken: token,
+  connectionType: 'webrtc'
+});
+```
+
+## 🛠️ Advanced Features
+
+### Client Tools
+
+Enable your agent to trigger actions in your application:
+
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
   clientTools: {
-    displayMessage: async (parameters: { text: string }) => {
-      alert(text);
-
-      return "Message displayed";
+    displayMessage: async (parameters) => {
+      // Show a message to the user
+      alert(parameters.text);
+      return "Message displayed successfully";
     },
-  },
+    
+    updateShoppingCart: async (parameters) => {
+      // Add item to cart
+      const { itemId, quantity } = parameters;
+      await cart.addItem(itemId, quantity);
+      return { success: true, cartTotal: cart.getTotal() };
+    },
+    
+    searchProducts: async (parameters) => {
+      // Search your database
+      const results = await db.search(parameters.query);
+      return { products: results };
+    }
+  }
 });
 ```
 
-In case function returns a value, it will be passed back to the agent as a response.
-Note that the tool needs to be explicitly set to be blocking conversation in ElevenLabs UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
+> **Important**: Client tools must be configured in the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) with matching names and parameters.
 
-#### Conversation overrides
+### Conversation Overrides
 
-You may choose to override various settings of the conversation and set them dynamically based other user interactions.
-We support overriding various settings.
-These settings are optional and can be used to customize the conversation experience.
-The following settings are available:
+Dynamically customize agent behavior:
 
-```ts
+```javascript
 const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
   overrides: {
     agent: {
       prompt: {
-        prompt: "My custom prompt",
+        prompt: "You are a helpful assistant for a medical practice. Be professional and empathetic."
       },
-      firstMessage: "My custom first message",
-      language: "en",
+      firstMessage: "Hello! I'm here to help you schedule your appointment.",
+      language: "en"
     },
     tts: {
-      voiceId: "custom voice id",
+      voiceId: "custom-voice-id" // Optional: Use a specific voice
     },
     conversation: {
-      textOnly: true,
-    },
-  },
+      textOnly: false // Set to true for text-only mode
+    }
+  }
 });
 ```
 
-#### Text only
+### Text-Only Mode
 
-If your agent is configured to run in text-only mode, i.e. it does not send or receive audio messages,
-you can use this flag to use a lighter version of the conversation. In that case, the
-user will not be asked for microphone permissions and no audio context will be created.
+For chat-based interactions without voice:
 
-```ts
+```javascript
 const conversation = await Conversation.startSession({
-  textOnly: true,
+  agentId: 'agent-id',
+  textOnly: true // No microphone required
+});
+
+// Send text messages
+conversation.sendUserMessage("Hello, can you help me?");
+```
+
+### Platform-Specific Settings
+
+#### iOS Audio Optimization
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
+  preferHeadphonesForIosDevices: true // Prefer headphones over speaker on iOS
 });
 ```
 
-#### Prefer Headphones for iOS Devices
-
-While this SDK leaves the choice of audio input/output device to the browser/system, iOS Safari seem to prefer the built-in speaker over headphones even when bluetooth device is in use. If you want to "force" the use of headphones on iOS devices when available, you can use the following option. Please, keep in mind that this is not guaranteed, since this functionality is not provided by the browser. System audio should be the default choice.
-
-```ts
+#### Connection Delay (Android Audio Fix)
+```javascript
 const conversation = await Conversation.startSession({
-  preferHeadphonesForIosDevices: true,
-});
-```
-
-#### Connection delay
-
-You can configure additional delay between when the microphone is activated and when the connection is established.
-On Android, the delay is set to 3 seconds by default to make sure the device has time to switch to the correct audio mode.
-Without it, you may experience issues with the beginning of the first message being cut off.
-
-```ts
-const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
   connectionDelay: {
-    android: 3_000,
+    android: 3000, // 3-second delay on Android to ensure audio is ready
     ios: 0,
-    default: 0,
-  },
+    default: 0
+  }
 });
 ```
 
-#### Acquiring a Wake Lock
+#### Wake Lock
+Keep the screen on during conversations:
 
-By default, the conversation will attempt to acquire a [wake lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) to prevent the device from going to sleep during the conversation.
-This can be disabled by setting the `useWakeLock` option to `false`:
-
-```ts
+```javascript
 const conversation = await Conversation.startSession({
-  useWakeLock: false,
+  agentId: 'agent-id',
+  useWakeLock: true // Default: true
 });
 ```
 
-#### Return value
+## 📚 API Reference
 
-`startSession` returns a `Conversation` instance that can be used to control the session. The method will throw an error if the session cannot be established. This can happen if the user denies microphone access, or if the websocket connection
-fails.
+### `Conversation.startSession(options)`
 
-##### endSession
+Starts a new conversation session.
 
-A method to manually end the conversation. The method will end the conversation and disconnect from websocket.
-Afterwards the conversation instance will be unusable and can be safely discarded.
+#### Options
 
-```js
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `agentId` | string | Yes* | Your agent ID from ElevenLabs |
+| `signedUrl` | string | Yes* | Signed URL for WebSocket auth |
+| `conversationToken` | string | Yes* | Token for WebRTC auth |
+| `connectionType` | 'websocket' \| 'webrtc' | No | Connection type (default: 'websocket') |
+| `clientTools` | object | No | Client-side functions the agent can call |
+| `overrides` | object | No | Override agent configuration |
+| `textOnly` | boolean | No | Enable text-only mode |
+| `useWakeLock` | boolean | No | Keep screen on (default: true) |
+| `connectionDelay` | object | No | Platform-specific delays |
+| `preferHeadphonesForIosDevices` | boolean | No | iOS audio routing preference |
+| `onConnect` | function | No | Called when connected |
+| `onDisconnect` | function | No | Called when disconnected |
+| `onMessage` | function | No | Called for each message |
+| `onError` | function | No | Called on errors |
+| `onStatusChange` | function | No | Called on status changes |
+| `onModeChange` | function | No | Called when switching between listening/speaking |
+| `onCanSendFeedbackChange` | function | No | Called when feedback availability changes |
+
+*One of `agentId`, `signedUrl`, or `conversationToken` is required
+
+#### Returns
+
+Returns a `Promise<Conversation>` instance.
+
+### Conversation Methods
+
+#### `endSession()`
+Ends the current conversation and disconnects.
+
+```javascript
 await conversation.endSession();
 ```
 
-##### sendFeedback
+#### `sendUserMessage(text)`
+Sends a text message to the agent.
 
-A method for sending binary feedback to the agent.
-The method accepts a boolean value, where `true` represents positive feedback and `false` negative feedback.
-Feedback is always correlated to the most recent agent response and can be sent only once per response.
-You can listen to `onCanSendFeedbackChange` to know if feedback can be sent at the given moment.
-
-```js
-conversation.sendFeedback(true);
+```javascript
+conversation.sendUserMessage("What's the weather like?");
 ```
 
-##### sendContextualUpdate
+#### `sendFeedback(isPositive)`
+Provides feedback on the last agent response.
 
-A method to send contextual updates to the agent.
-This can be used to inform the agent about user actions that are not directly related to the conversation, but may influence the agent's responses.
-
-```js
-conversation.sendContextualUpdate(
-  "User navigated to another page. Consider it for next response, but don't react to this contextual update."
-);
+```javascript
+conversation.sendFeedback(true);  // 👍
+conversation.sendFeedback(false); // 👎
 ```
 
-##### sendUserMessage
+#### `setVolume({ volume })`
+Sets the output volume (0.0 to 1.0).
 
-Sends a text messages to the agent.
-
-Can be used to let the user type in the message instead of using the microphone.
-Unlike `sendContextualUpdate`, this will be treated as a user message and will prompt the agent to take its turn in the conversation.
-
-```js
-sendButton.addEventListener("click", e => {
-  conversation.sendUserMessage(textInput.value);
-  textInput.value = "";
-});
+```javascript
+await conversation.setVolume({ volume: 0.8 });
 ```
 
-##### sendUserActivity
+#### `setMicMuted(muted)`
+Mutes or unmutes the microphone.
 
-Notifies the agent about user activity.
+```javascript
+conversation.setMicMuted(true);  // Mute
+conversation.setMicMuted(false); // Unmute
+```
 
-The agent will not attempt to speak for at least 2 seconds after the user activity is detected.
-This can be used to prevent the agent from interrupting the user when they are typing.
+#### `sendContextualUpdate(text)`
+Sends contextual information without interrupting the conversation.
 
-```js
-textInput.addEventListener("input", () => {
+```javascript
+conversation.sendContextualUpdate("User navigated to checkout page");
+```
+
+#### `sendUserActivity()`
+Signals user activity to prevent agent interruption.
+
+```javascript
+// Call when user is typing
+input.addEventListener('input', () => {
   conversation.sendUserActivity();
 });
 ```
 
-##### getId
+#### `getId()`
+Gets the unique conversation ID.
 
-A method returning the conversation ID.
-
-```js
-const id = conversation.getId();
+```javascript
+const conversationId = conversation.getId();
 ```
 
-##### setVolume
+#### `getInputVolume()` / `getOutputVolume()`
+Gets current volume levels (0.0 to 1.0).
 
-A method to set the output volume of the conversation. Accepts object with volume field between 0 and 1.
-
-```js
-await conversation.setVolume({ volume: 0.5 });
-```
-
-##### muteMic
-
-A method to mute/unmute the microphone.
-
-```js
-// Mute the microphone
-conversation.setMicMuted(true);
-
-// Unmute the microphone
-conversation.setMicMuted(false);
-```
-
-##### getInputVolume / getOutputVolume
-
-Methods that return the current input/output volume on a scale from `0` to `1` where `0` is -100 dB and `1` is -30 dB.
-
-```js
+```javascript
 const inputVolume = await conversation.getInputVolume();
 const outputVolume = await conversation.getOutputVolume();
 ```
 
-##### getInputByteFrequencyData / getOutputByteFrequencyData
+#### `getInputByteFrequencyData()` / `getOutputByteFrequencyData()`
+Gets frequency data for visualizations.
 
-Methods that return `Uint8Array`s containg the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
+```javascript
+const inputFrequencies = await conversation.getInputByteFrequencyData();
+const outputFrequencies = await conversation.getOutputByteFrequencyData();
+```
 
-## Development
+## 💡 Examples
 
-Please, refer to the README.md file in the root of this repository.
+### Customer Support Agent
 
-## Contributing
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'support-agent-id',
+  connectionType: 'webrtc',
+  clientTools: {
+    // Look up order status
+    checkOrderStatus: async ({ orderId }) => {
+      const order = await database.getOrder(orderId);
+      return {
+        status: order.status,
+        trackingNumber: order.trackingNumber,
+        estimatedDelivery: order.estimatedDelivery
+      };
+    },
+    
+    // Create support ticket
+    createTicket: async ({ issue, priority }) => {
+      const ticket = await supportSystem.createTicket({
+        issue,
+        priority,
+        conversationId: conversation.getId()
+      });
+      return { ticketId: ticket.id };
+    }
+  },
+  overrides: {
+    agent: {
+      prompt: {
+        prompt: "You are a helpful customer support agent. Always be polite and professional."
+      },
+      firstMessage: "Hello! I'm here to help with your order. How can I assist you today?"
+    }
+  }
+});
+```
 
-Please, create an issue first to discuss the proposed changes. Any contributions are welcome!
+### Interactive Voice Menu
 
-Remember, if merged, your code will be used as part of a MIT licensed project. By submitting a Pull Request, you are giving your consent for your code to be integrated into this library.
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'ivr-agent-id',
+  connectionType: 'webrtc',
+  clientTools: {
+    navigateMenu: async ({ option }) => {
+      switch (option) {
+        case 'billing':
+          await showBillingInfo();
+          break;
+        case 'technical':
+          await connectToTechSupport();
+          break;
+        case 'sales':
+          await connectToSales();
+          break;
+      }
+      return `Navigated to ${option}`;
+    }
+  }
+});
+```
+
+### Multi-language Assistant
+
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'multilingual-agent-id',
+  overrides: {
+    agent: {
+      language: navigator.language.startsWith('es') ? 'es' : 'en'
+    }
+  }
+});
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Microphone Access Denied
+Always request microphone permission before starting a conversation:
+
+```javascript
+try {
+  await navigator.mediaDevices.getUserMedia({ audio: true });
+} catch (error) {
+  // Handle permission denied
+  alert('Microphone access is required for voice conversations');
+}
+```
+
+#### WebRTC Connection Failed
+WebRTC requires proper STUN/TURN server configuration. The SDK uses ElevenLabs' default servers, but you can specify custom ones:
+
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
+  connectionType: 'webrtc',
+  livekitUrl: 'wss://your-custom-livekit-server.com' // Optional
+});
+```
+
+#### Audio Cutting Out on Android
+Use the connection delay to ensure audio is ready:
+
+```javascript
+const conversation = await Conversation.startSession({
+  agentId: 'agent-id',
+  connectionDelay: {
+    android: 3000 // 3-second delay
+  }
+});
+```
+
+## 🤝 Contributing
+
+Please see the main [repository README](https://github.com/elevenlabs/elevenlabs-js) for contribution guidelines.
+
+## 📄 License
+
+MIT - see [LICENSE](LICENSE) for details.
