@@ -30,4 +30,12 @@ export class Conversation extends BaseConversation {
       ? TextConversation.startSession(options)
       : VoiceConversation.startSession(options);
   }
+
+  public getRoom() {
+    // Expose underlying LiveKit Room only when conversation is running over WebRTC
+    if (this.connection instanceof WebRTCConnection) {
+      return this.connection.getRoom();
+    }
+    return undefined;
+  }
 }
