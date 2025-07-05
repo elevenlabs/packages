@@ -1,5 +1,15 @@
-import { ElevenLabs, ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
+
+// Type guard for conversational config
+function isConversationalConfig(config: unknown): config is ConversationalConfig {
+  return typeof config === 'object' && config !== null;
+}
+
+// Type guard for platform settings
+function isPlatformSettings(settings: unknown): settings is AgentPlatformSettingsRequestModel {
+  return typeof settings === 'object' && settings !== null;
+}
 /**
  * Retrieves the ElevenLabs API key from environment variables and returns an API client.
  * 
@@ -27,12 +37,16 @@ export function getElevenLabsClient(): ElevenLabsClient {
 export async function createAgentApi(
   client: ElevenLabsClient,
   name: string,
-  conversationConfigDict: Record<string, any>,
-  platformSettingsDict?: Record<string, any>,
+  conversationConfigDict: Record<string, unknown>,
+  platformSettingsDict?: Record<string, unknown>,
   tags?: string[]
 ): Promise<string> {
-  const convConfig = conversationConfigDict as ConversationalConfig;
-  const platformSettings = platformSettingsDict ? (platformSettingsDict as AgentPlatformSettingsRequestModel) : undefined;
+  if (!isConversationalConfig(conversationConfigDict)) {
+    throw new Error('Invalid conversation config provided');
+  }
+  
+  const convConfig = conversationConfigDict;
+  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? platformSettingsDict : undefined;
   
   const response = await client.conversationalAi.agents.create({
     name,
@@ -59,12 +73,12 @@ export async function updateAgentApi(
   client: ElevenLabsClient,
   agentId: string,
   name?: string,
-  conversationConfigDict?: Record<string, any>,
-  platformSettingsDict?: Record<string, any>,
+  conversationConfigDict?: Record<string, unknown>,
+  platformSettingsDict?: Record<string, unknown>,
   tags?: string[]
 ): Promise<string> {
-  const convConfig = conversationConfigDict ? (conversationConfigDict as ConversationalConfig) : undefined;
-  const platformSettings = platformSettingsDict ? (platformSettingsDict as AgentPlatformSettingsRequestModel) : undefined;
+  const convConfig = conversationConfigDict && isConversationalConfig(conversationConfigDict) ? conversationConfigDict : undefined;
+  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? platformSettingsDict : undefined;
     
   const response = await client.conversationalAi.agents.update(agentId, {
     name,
@@ -88,12 +102,12 @@ export async function listAgentsApi(
   client: ElevenLabsClient,
   pageSize: number = 30,
   search?: string
-): Promise<any[]> {
-  const allAgents: any[] = [];
+): Promise<unknown[]> {
+  const allAgents: unknown[] = [];
   let cursor: string | undefined;
   
   while (true) {
-    const requestParams: any = {
+    const requestParams: Record<string, unknown> = {
       pageSize: Math.min(pageSize, 100)
     };
     
@@ -126,7 +140,7 @@ export async function listAgentsApi(
  * @param agentId - The ID of the agent to retrieve
  * @returns Promise that resolves to an object containing the full agent configuration
  */
-export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<any> {
+export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<unknown> {
   const response = await client.conversationalAi.agents.get(agentId);
   return response;
 } 

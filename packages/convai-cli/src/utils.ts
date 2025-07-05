@@ -19,9 +19,10 @@ export interface LockFileData {
  * @param config - The configuration object
  * @returns The hexadecimal representation of the MD5 hash
  */
-export function calculateConfigHash(config: Record<string, any>): string {
+export function calculateConfigHash(config: unknown): string {
   // Convert the object to a sorted JSON string to ensure consistent hashes
-  const configString = JSON.stringify(config, Object.keys(config).sort());
+  const configObj = config as Record<string, unknown>;
+  const configString = JSON.stringify(configObj, Object.keys(configObj).sort());
   
   // Calculate MD5 hash
   const hash = createHash('md5');
@@ -36,7 +37,7 @@ export function calculateConfigHash(config: Record<string, any>): string {
  * @returns A promise that resolves to the agent configuration object
  * @throws {Error} If the configuration file is not found or contains invalid JSON
  */
-export async function readAgentConfig(filePath: string): Promise<Record<string, any>> {
+export async function readAgentConfig<T = Record<string, unknown>>(filePath: string): Promise<T> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(data);
@@ -58,7 +59,7 @@ export async function readAgentConfig(filePath: string): Promise<Record<string, 
  * @param config - The object containing the agent configuration
  * @throws {Error} If there is an error writing the file
  */
-export async function writeAgentConfig(filePath: string, config: Record<string, any>): Promise<void> {
+export async function writeAgentConfig(filePath: string, config: unknown): Promise<void> {
   try {
     // Ensure the directory exists before writing
     const directory = path.dirname(filePath);

@@ -4,8 +4,49 @@
 
 export interface AgentConfig {
   name: string;
-  conversation_config: Record<string, any>;
-  platform_settings?: Record<string, any>;
+  conversation_config: {
+    agent: {
+      prompt: {
+        prompt: string;
+        temperature: number;
+        max_tokens?: number;
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    };
+    conversation: {
+      text_only: boolean;
+      max_duration_seconds?: number;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  platform_settings?: {
+    widget?: {
+      supports_text_only?: boolean;
+      text_input_enabled?: boolean;
+      [key: string]: unknown;
+    };
+    call_limits?: {
+      daily_limit?: number;
+      [key: string]: unknown;
+    };
+    evaluation?: {
+      criteria?: string[];
+      [key: string]: unknown;
+    };
+    overrides?: {
+      conversation_config_override?: {
+        conversation?: {
+          text_only?: boolean;
+          [key: string]: unknown;
+        };
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
   tags: string[];
 }
 
@@ -240,6 +281,9 @@ export function getMinimalAgentTemplate(name: string): AgentConfig {
         },
         language: "en"
       },
+      conversation: {
+        text_only: false
+      },
       tts: {
         model_id: "eleven_turbo_v2",
         voice_id: "cjVigY5qzO86Huf0OWal"
@@ -272,8 +316,10 @@ export function getTemplateOptions(): Record<string, string> {
 export function getVoiceOnlyTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
   template.conversation_config.conversation.text_only = false;
-  template.platform_settings!.widget.supports_text_only = false;
-  template.platform_settings!.widget.text_input_enabled = false;
+  if (template.platform_settings?.widget) {
+    template.platform_settings.widget.supports_text_only = false;
+    template.platform_settings.widget.text_input_enabled = false;
+  }
   return template;
 }
 
@@ -283,8 +329,12 @@ export function getVoiceOnlyTemplate(name: string): AgentConfig {
 export function getTextOnlyTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
   template.conversation_config.conversation.text_only = true;
-  template.platform_settings!.widget.supports_text_only = true;
-  template.platform_settings!.overrides.conversation_config_override.conversation.text_only = false;
+  if (template.platform_settings?.widget) {
+    template.platform_settings.widget.supports_text_only = true;
+  }
+  if (template.platform_settings?.overrides?.conversation_config_override?.conversation) {
+    template.platform_settings.overrides.conversation_config_override.conversation.text_only = false;
+  }
   return template;
 }
 
@@ -296,13 +346,17 @@ export function getCustomerServiceTemplate(name: string): AgentConfig {
   template.conversation_config.agent.prompt.prompt = `You are ${name}, a helpful customer service representative. You are professional, empathetic, and focused on solving customer problems efficiently.`;
   template.conversation_config.agent.prompt.temperature = 0.1; // More consistent responses
   template.conversation_config.conversation.max_duration_seconds = 1800; // 30 minutes
-  template.platform_settings!.call_limits.daily_limit = 10000;
-  template.platform_settings!.evaluation.criteria = [
-    "Helpfulness",
-    "Professionalism", 
-    "Problem Resolution",
-    "Response Time"
-  ];
+  if (template.platform_settings?.call_limits) {
+    template.platform_settings.call_limits.daily_limit = 10000;
+  }
+  if (template.platform_settings?.evaluation) {
+    template.platform_settings.evaluation.criteria = [
+      "Helpfulness",
+      "Professionalism", 
+      "Problem Resolution",
+      "Response Time"
+    ];
+  }
   template.tags = ["customer-service"];
   return template;
 }

@@ -11,8 +11,7 @@ import {
   loadLockFile, 
   saveLockFile, 
   getAgentFromLock, 
-  updateAgentInLock,
-  LockFileData 
+  updateAgentInLock
 } from './utils';
 import { 
   getTemplateByName, 
@@ -39,11 +38,51 @@ const LOCK_FILE = "convai.lock";
 interface AgentDefinition {
   name: string;
   environments?: Record<string, { config: string }>;
-  config?: string; // For backward compatibility
+  config?: string;
 }
 
 interface AgentsConfig {
   agents: AgentDefinition[];
+}
+
+interface AddOptions {
+  configPath?: string;
+  template: string;
+  skipUpload: boolean;
+  env: string;
+}
+
+interface SyncOptions {
+  agent?: string;
+  dryRun: boolean;
+  env?: string;
+}
+
+interface StatusOptions {
+  agent?: string;
+  env?: string;
+}
+
+interface WatchOptions {
+  agent?: string;
+  env: string;
+  interval: string;
+}
+
+interface FetchOptions {
+  agent?: string;
+  outputDir: string;
+  search?: string;
+  dryRun: boolean;
+  env: string;
+}
+
+interface WidgetOptions {
+  env: string;
+}
+
+interface TemplateShowOptions {
+  agentName: string;
 }
 
 program
@@ -67,7 +106,7 @@ program
   .option('--template <template>', 'Template type to use', 'default')
   .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--env <environment>', 'Environment to create agent for', 'prod')
-  .action(async (name: string, options: any) => {
+  .action(async (name: string, options: AddOptions) => {
     try {
       // Check if agents.json exists
       const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
@@ -77,7 +116,7 @@ program
       }
       
       // Load existing config
-      const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+      const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
       // Load lock file to check environment-specific agents
       const lockFilePath = path.resolve(LOCK_FILE);
@@ -230,7 +269,7 @@ program
   .description('Show the configuration for a specific template')
   .argument('<template>', 'Template name to show')
   .option('--agent-name <name>', 'Agent name to use in template', 'example_agent')
-  .action((templateName: string, options: any) => {
+  .action((templateName: string, options: TemplateShowOptions) => {
     try {
       const templateConfig = getTemplateByName(options.agentName, templateName);
       console.log(`Template: ${templateName}`);
@@ -248,7 +287,7 @@ program
   .option('--agent <name>', 'Specific agent name to sync (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--env <environment>', 'Target specific environment (defaults to all environments)')
-  .action(async (options: any) => {
+  .action(async (options: SyncOptions) => {
     try {
       await syncAgents(options.agent, options.dryRun, options.env);
     } catch (error) {
@@ -262,7 +301,7 @@ program
   .description('Show the status of agents')
   .option('--agent <name>', 'Specific agent name to check (defaults to all agents)')
   .option('--env <environment>', 'Environment to check status for (defaults to all environments)')
-  .action(async (options: any) => {
+  .action(async (options: StatusOptions) => {
     try {
       await showStatus(options.agent, options.env);
     } catch (error) {
@@ -277,7 +316,7 @@ program
   .option('--agent <name>', 'Specific agent name to watch (defaults to all agents)')
   .option('--env <environment>', 'Environment to watch', 'prod')
   .option('--interval <seconds>', 'Check interval in seconds', '5')
-  .action(async (options: any) => {
+  .action(async (options: WatchOptions) => {
     try {
       await watchForChanges(options.agent, options.env, parseInt(options.interval));
     } catch (error) {
@@ -306,7 +345,7 @@ program
   .option('--search <term>', 'Search agents by name')
   .option('--dry-run', 'Show what would be fetched without making changes', false)
   .option('--env <environment>', 'Environment to associate fetched agents with', 'prod')
-  .action(async (options: any) => {
+  .action(async (options: FetchOptions) => {
     try {
       await fetchAgents(options);
     } catch (error) {
@@ -320,7 +359,7 @@ program
   .description('Generate HTML widget snippet for an agent')
   .argument('<name>', 'Name of the agent to generate widget for')
   .option('--env <environment>', 'Environment to get agent ID from', 'prod')
-  .action(async (name: string, options: any) => {
+  .action(async (name: string, options: WidgetOptions) => {
     try {
       await generateWidget(name, options.env);
     } catch (error) {
@@ -338,7 +377,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
   
@@ -414,7 +453,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       // Load agent config
       let agentConfig: AgentConfig;
       try {
-        agentConfig = await readAgentConfig(configPath) as AgentConfig;
+        agentConfig = await readAgentConfig<AgentConfig>(configPath);
       } catch (error) {
         console.log(`❌ Error reading config for ${agentDefName}: ${error}`);
         continue;
@@ -510,7 +549,7 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const lockData = await loadLockFile(path.resolve(LOCK_FILE));
   
   if (agentsConfig.agents.length === 0) {
@@ -635,7 +674,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
     }
     
     try {
-      const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+      const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
       // Filter agents if specific agent name provided
       let agentsToWatch = agentsConfig.agents;
@@ -699,7 +738,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
       await new Promise(resolve => setTimeout(resolve, interval * 1000));
     }
   } catch (error) {
-    if ((error as any).code === 'SIGINT') {
+    if ((error as NodeJS.ErrnoException).code === 'SIGINT') {
       console.log('\n👋 Stopping watch mode');
     } else {
       throw error;
@@ -713,7 +752,7 @@ async function listConfiguredAgents(): Promise<void> {
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   
   if (agentsConfig.agents.length === 0) {
     console.log('No agents configured');
@@ -740,7 +779,7 @@ async function listConfiguredAgents(): Promise<void> {
   });
 }
 
-async function fetchAgents(options: any): Promise<void> {
+async function fetchAgents(options: FetchOptions): Promise<void> {
   // Check if agents.json exists
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -764,7 +803,7 @@ async function fetchAgents(options: any): Promise<void> {
   console.log(`Found ${agentsList.length} agent(s)`);
   
   // Load existing config
-  const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
   // Load lock file to check for existing agent IDs per environment
@@ -784,8 +823,13 @@ async function fetchAgents(options: any): Promise<void> {
   let newAgentsAdded = 0;
   
   for (const agentMeta of agentsList) {
-    const agentId = agentMeta.agentId || agentMeta.agent_id;
-    let agentNameRemote = agentMeta.name;
+    const agentMetaTyped = agentMeta as { agentId?: string; agent_id?: string; name: string };
+    const agentId = agentMetaTyped.agentId || agentMetaTyped.agent_id;
+    if (!agentId) {
+      console.log(`⚠️  Skipping agent '${agentMetaTyped.name}' - no agent ID found`);
+      continue;
+    }
+    let agentNameRemote = agentMetaTyped.name;
     
     // Skip if agent already exists by ID (in any environment)
     if (existingAgentIds.has(agentId)) {
@@ -815,14 +859,22 @@ async function fetchAgents(options: any): Promise<void> {
       const agentDetails = await getAgentApi(client, agentId);
       
       // Extract configuration components
-      const conversationConfig = agentDetails.conversationConfig || agentDetails.conversation_config || {};
-      const platformSettings = agentDetails.platformSettings || agentDetails.platform_settings || {};
-      const tags = agentDetails.tags || [];
+      const agentDetailsTyped = agentDetails as {
+        conversationConfig: Record<string, unknown>;
+        conversation_config: Record<string, unknown>;
+        platformSettings: Record<string, unknown>;
+        platform_settings: Record<string, unknown>;
+        tags: string[];
+      };
+
+      const conversationConfig = agentDetailsTyped.conversationConfig || agentDetailsTyped.conversation_config || {};
+      const platformSettings = agentDetailsTyped.platformSettings || agentDetailsTyped.platform_settings || {};
+      const tags = agentDetailsTyped.tags || [];
       
       // Create agent config structure
       const agentConfig: AgentConfig = {
         name: agentNameRemote,
-        conversation_config: conversationConfig,
+        conversation_config: conversationConfig as AgentConfig['conversation_config'],
         platform_settings: platformSettings,
         tags
       };
@@ -834,7 +886,7 @@ async function fetchAgents(options: any): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeAgentConfig(configFilePath, agentConfig);
+      await writeAgentConfig(configFilePath, agentDetailsTyped);
       
       // Create new agent entry for agents.json
       const newAgent: AgentDefinition = {
@@ -871,7 +923,11 @@ async function fetchAgents(options: any): Promise<void> {
   }
   
   if (options.dryRun) {
-    const newAgentsCount = agentsList.filter(a => !existingAgentIds.has(a.agentId || a.agent_id)).length;
+    const newAgentsCount = agentsList.filter((a: unknown) => {
+      const agent = a as { agentId?: string; agent_id?: string };
+      const id = agent.agentId || agent.agent_id;
+      return id && !existingAgentIds.has(id);
+    }).length;
     console.log(`[DRY RUN] Would add ${newAgentsCount} new agent(s) for environment: ${options.env}`);
   } else {
     console.log(`✅ Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
@@ -893,7 +949,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   const lockData = await loadLockFile(lockFilePath);
   
   // Check if agent exists in config
-  const agentsConfig = await readAgentConfig(agentsConfigPath) as AgentsConfig;
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const agentExists = agentsConfig.agents.some(agent => agent.name === name);
   
   if (!agentExists) {
