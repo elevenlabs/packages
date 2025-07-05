@@ -1,0 +1,62 @@
+{
+  "name": "convai-cli",
+  "version": "0.1.7",
+  "description": "CLI tool to manage ElevenLabs conversational AI agents",
+  "keywords": [
+    "elevenlabs",
+    "cli",
+    "ai",
+    "conversational-ai",
+    "agents",
+    "typescript"
+  ],
+  "author": "Angelo Giacco",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angelogiacco/convai-npm.git"
+  },
+  "homepage": "https://github.com/angelogiacco/convai-npm",
+  "bugs": {
+    "url": "https://github.com/angelogiacco/convai-npm/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "convai": "./bin/convai"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "2.2.0",
+    "commander": "^11.1.0",
+    "fs-extra": "^11.1.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/fs-extra": "^11.0.2",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^9.0.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.5",
+    "prettier": "^3.0.3",
+    "tsx": "^3.14.0",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 
