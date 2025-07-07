@@ -1,11 +1,14 @@
 import type { SessionConfig } from "./BaseConnection";
 import type { InitiationClientDataEvent } from "./events";
 
+export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
+  "conversation_initiation_client_data";
+
 export function constructOverrides(
   config: SessionConfig
 ): InitiationClientDataEvent {
   const overridesEvent: InitiationClientDataEvent = {
-    type: "conversation_initiation_client_data",
+    type: CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
   };
 
   if (config.overrides) {
