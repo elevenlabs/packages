@@ -63,7 +63,7 @@ For public agents, you can use the ID directly:
 ```js
 const conversation = await Conversation.startSession({
   agentId: "<your-agent-id>",
-  connectionType: 'webrtc' // 'websocket' is also accepted
+  connectionType: "webrtc", // 'websocket' is also accepted
 });
 ```
 
@@ -105,7 +105,7 @@ const signedUrl = await response.text();
 
 const conversation = await Conversation.startSession({
   signedUrl,
-  connectionType: 'websocket',
+  connectionType: "websocket",
 });
 ```
 
@@ -145,7 +145,7 @@ const conversationToken = await response.text();
 
 const conversation = await Conversation.startSession({
   conversationToken,
-  connectionType: 'webrtc',
+  connectionType: "webrtc",
 });
 ```
 
@@ -206,6 +206,18 @@ const conversation = await Conversation.startSession({
       textOnly: true,
     },
   },
+});
+```
+
+#### User identification
+
+You can optionally pass a user ID to identify the user in the conversation. This will be included in the conversation initiation data sent to the server:
+
+```ts
+const conversation = await Conversation.startSession({
+  agentId: "<your-agent-id>",
+  userId: "user-123", // Optional user identifier
+  connectionType: "webrtc",
 });
 ```
 

@@ -87,6 +87,7 @@ export type BaseSessionConfig = {
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
   connectionType?: ConnectionType;
+  userId?: string;
 };
 
 export type ConnectionType = "websocket" | "webrtc";

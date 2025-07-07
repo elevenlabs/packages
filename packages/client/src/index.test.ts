@@ -14,6 +14,7 @@ const CLIENT_TOOL_CALL_ID = "CLIENT_TOOL_CALL_ID";
 const CLIENT_TOOL_PARAMETERS = { some: "param" };
 const CUSTOM_PROMPT = "CUSTOM_PROMPT";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
+const TEST_USER_ID = "test-user-123";
 
 const ConversationTypes = ["voice", "text"] as const;
 
@@ -267,6 +268,111 @@ describe("Conversation", () => {
           message: "Test cancellation reason",
         })
       );
+    }
+  );
+
+  it.each(ConversationTypes)(
+    "includes userId in conversation initiation event (%s)",
+    async conversationType => {
+      const server = new Server(
+        `wss://api.elevenlabs.io/${conversationType}/user-id-test`
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => {
+          resolve(socket);
+        });
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const conversationPromise = Conversation.startSession({
+        signedUrl: `wss://api.elevenlabs.io/${conversationType}/user-id-test`,
+        userId: TEST_USER_ID,
+        connectionDelay: { default: 0 },
+        textOnly: conversationType === "text",
+      });
+
+      const client = await clientPromise;
+      const onMessageSend = vi.fn();
+      client.on("message", onMessageSend);
+
+      // Start session
+      client.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+          },
+        })
+      );
+
+      const conversation = await conversationPromise;
+      expect(conversation.getId()).toEqual(CONVERSATION_ID);
+
+      await sleep(100);
+
+      // Verify userId is included in the conversation initiation event
+      expect(onMessageSend).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: "conversation_initiation_client_data",
+          user_id: TEST_USER_ID,
+        })
+      );
+
+      await conversation.endSession();
+      server.close();
+    }
+  );
+
+  it.each(ConversationTypes)(
+    "excludes userId when not provided (%s)",
+    async conversationType => {
+      const server = new Server(
+        `wss://api.elevenlabs.io/${conversationType}/no-user-id-test`
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => {
+          resolve(socket);
+        });
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const conversationPromise = Conversation.startSession({
+        signedUrl: `wss://api.elevenlabs.io/${conversationType}/no-user-id-test`,
+        // No userId provided
+        connectionDelay: { default: 0 },
+        textOnly: conversationType === "text",
+      });
+
+      const client = await clientPromise;
+      const onMessageSend = vi.fn();
+      client.on("message", onMessageSend);
+
+      // Start session
+      client.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+          },
+        })
+      );
+
+      const conversation = await conversationPromise;
+      expect(conversation.getId()).toEqual(CONVERSATION_ID);
+
+      await sleep(100);
+
+      // Verify the sent message does not include user_id
+      const sentMessage = JSON.parse(onMessageSend.mock.calls[0][0]);
+      expect(sentMessage.type).toBe("conversation_initiation_client_data");
+      expect(sentMessage.user_id).toBeUndefined();
+
+      await conversation.endSession();
+      server.close();
     }
   );
 });
