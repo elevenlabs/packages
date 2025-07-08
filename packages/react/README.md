@@ -118,10 +118,6 @@ const conversation = useConversation({
 You can optionally pass a user ID to identify the user in the conversation. This will be included in the conversation initiation data sent to the server:
 
 ```ts
-const conversation = useConversation({
-  userId: "user-123", // Optional user identifier
-});
-
 // Or pass it when starting the session
 const conversationId = await conversation.startSession({
   agentId: "<your-agent-id>",
