@@ -1,11 +1,14 @@
 import type { SessionConfig } from "./BaseConnection";
 import type { InitiationClientDataEvent } from "./events";
 
+export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
+  "conversation_initiation_client_data";
+
 export function constructOverrides(
   config: SessionConfig
 ): InitiationClientDataEvent {
   const overridesEvent: InitiationClientDataEvent = {
-    type: "conversation_initiation_client_data",
+    type: CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
   };
 
   if (config.overrides) {
@@ -30,6 +33,10 @@ export function constructOverrides(
 
   if (config.dynamicVariables) {
     overridesEvent.dynamic_variables = config.dynamicVariables;
+  }
+
+  if (config.userId) {
+    overridesEvent.user_id = config.userId;
   }
 
   return overridesEvent;

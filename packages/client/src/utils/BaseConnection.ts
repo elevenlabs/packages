@@ -81,11 +81,12 @@ export type BaseSessionConfig = {
       textOnly?: boolean;
     };
   };
-  customLlmExtraBody?: any;
+  customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
+  userId?: string;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
@@ -126,6 +127,15 @@ export abstract class BaseConnection {
   protected disconnectionDetails: DisconnectionDetails | null = null;
   protected onDisconnectCallback: OnDisconnectCallback | null = null;
   protected onMessageCallback: OnMessageCallback | null = null;
+  protected onDebug?: (info: unknown) => void;
+
+  constructor(config: { onDebug?: (info: unknown) => void } = {}) {
+    this.onDebug = config.onDebug;
+  }
+
+  protected debug(info: unknown) {
+    if (this.onDebug) this.onDebug(info);
+  }
 
   public abstract close(): void;
   public abstract sendMessage(message: OutgoingSocketEvent): void;

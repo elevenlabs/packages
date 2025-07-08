@@ -27,6 +27,7 @@ export function SessionConfigProvider({
   const overrideFirstMessage = useAttribute("override-first-message");
   const overrideVoiceId = useAttribute("override-voice-id");
   const overrideTextOnly = useAttribute("override-text-only");
+  const userId = useAttribute("user-id");
   const overrides = useComputed<SessionConfig["overrides"]>(() => ({
     agent: {
       prompt: {
@@ -69,6 +70,7 @@ export function SessionConfigProvider({
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
       connectionType: "websocket" as const,
+      userId: userId.value || undefined,
     };
 
     if (agentId.value) {

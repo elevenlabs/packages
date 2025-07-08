@@ -108,8 +108,23 @@ const conversation = useConversation({
     },
     conversation: {
       textOnly: true,
-    }
+    },
   },
+});
+```
+
+#### User identification
+
+You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server:
+
+Tracking this ID can be helpful for filtering conversations, tracking analytics on a user level, etc.
+
+```ts
+// Or pass it when starting the session
+const conversationId = await conversation.startSession({
+  agentId: "<your-agent-id>",
+  userId: "user-123",
+  connectionType: "webrtc",
 });
 ```
 
@@ -175,8 +190,8 @@ const conversation = useConversation();
 
 // For public agents, pass in the agent ID and the connection type
 const conversationId = await conversation.startSession({
-  agentId: '<your-agent-id>',
-  connectionType: 'webrtc', // either 'webrtc' or 'websocket'
+  agentId: "<your-agent-id>",
+  connectionType: "webrtc", // either 'webrtc' or 'websocket'
 });
 ```
 
@@ -220,7 +235,7 @@ const signedUrl = await response.text();
 
 const conversation = await Conversation.startSession({
   signedUrl,
-  connectionType: 'websocket',
+  connectionType: "websocket",
 });
 ```
 
@@ -258,7 +273,7 @@ const conversationToken = await response.text();
 
 const conversation = await Conversation.startSession({
   conversationToken,
-  connectionType: 'webrtc',
+  connectionType: "webrtc",
 });
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
