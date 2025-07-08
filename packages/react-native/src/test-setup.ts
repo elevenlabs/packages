@@ -6,7 +6,10 @@ const originalConsoleWarn = console.warn;
 console.warn = (...args: any[]) => {
   // Suppress specific warnings during tests
   const message = args[0];
-  if (typeof message === 'string' && message.includes('Failed to parse received data')) {
+  if (
+    typeof message === "string" &&
+    message.includes("Failed to parse received data")
+  ) {
     return; // Suppress expected warnings in tests
   }
   originalConsoleWarn(...args);
