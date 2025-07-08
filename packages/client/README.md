@@ -211,7 +211,7 @@ const conversation = await Conversation.startSession({
 
 #### User identification
 
-You can optionally pass a user ID to identify the user in the conversation. This will be included in the conversation initiation data sent to the server:
+You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server:
 
 ```ts
 const conversation = await Conversation.startSession({
