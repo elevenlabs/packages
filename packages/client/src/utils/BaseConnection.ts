@@ -86,16 +86,36 @@ export type BaseSessionConfig = {
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
-  connectionType?: ConnectionType;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
 
-export type SessionConfig = BaseSessionConfig & {
-  agentId?: string;
-  signedUrl?: string;
-  conversationToken?: string;
+export type PublicSessionConfig = BaseSessionConfig & {
+  agentId: string;
+  connectionType: ConnectionType;
+  signedUrl?: never;
+  conversationToken?: never;
 };
+
+export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
+  signedUrl: string;
+  connectionType?: "websocket";
+  agentId?: never;
+  conversationToken?: never;
+};
+
+export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
+  conversationToken: string;
+  connectionType?: "webrtc";
+  agentId?: never;
+  signedUrl?: never;
+};
+
+// Union type for all possible session configurations
+export type SessionConfig =
+  | PublicSessionConfig
+  | PrivateWebSocketSessionConfig
+  | PrivateWebRTCSessionConfig;
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;

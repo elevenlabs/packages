@@ -68,6 +68,7 @@ export function SessionConfigProvider({
       overrides: overrides.value,
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
+      connectionType: "websocket" as const,
     };
 
     if (agentId.value) {
