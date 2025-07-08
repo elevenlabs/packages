@@ -117,7 +117,7 @@ const conversation = useConversation({
 
 You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server:
 
-Tracking this id can be helpful for filtering conversations, tracking analytics on a user level, etc.
+Tracking this ID can be helpful for filtering conversations, tracking analytics on a user level, etc.
 
 ```ts
 // Or pass it when starting the session
