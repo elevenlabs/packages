@@ -199,7 +199,7 @@ program
       }
       
       await setApiKey(apiKey);
-      console.log('Login successful! API key saved to config file.');
+      console.log('Login successful! API key saved securely.');
       
     } catch (error) {
       console.error(`Error during login: ${error}`);
@@ -219,7 +219,7 @@ program
       }
       
       await removeApiKey();
-      console.log('Logged out successfully. API key removed from config file.');
+      console.log('Logged out successfully. API key removed.');
       
     } catch (error) {
       console.error(`Error during logout: ${error}`);

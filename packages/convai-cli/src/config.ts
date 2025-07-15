@@ -1,10 +1,17 @@
 /**
  * Configuration management for CLI
+ * Simple credential storage with keychain support
  */
 
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
+import {
+  storeApiKey,
+  retrieveApiKey,
+  removeApiKey as removeStoredApiKey,
+  hasApiKey
+} from './auth';
 
 export interface CliConfig {
   apiKey?: string;
@@ -49,49 +56,42 @@ export async function saveConfig(config: CliConfig): Promise<void> {
   // Ensure config directory exists
   await fs.ensureDir(configDir);
   
-  // Save config with proper formatting
-  await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+  // Don't store API key in config file for security
+  const { apiKey, ...configWithoutKey } = config;
+  
+  // Save config with proper formatting and secure permissions
+  await fs.writeFile(configPath, JSON.stringify(configWithoutKey, null, 2), { 
+    mode: 0o600,
+    encoding: 'utf-8' 
+  });
 }
 
 /**
- * Get API key from config or environment variable
+ * Get API key from storage or environment variable
  */
 export async function getApiKey(): Promise<string | undefined> {
-  // First check environment variable (takes precedence)
-  const envApiKey = process.env.ELEVENLABS_API_KEY;
-  if (envApiKey) {
-    return envApiKey;
-  }
-  
-  // Then check config file
-  const config = await loadConfig();
-  return config.apiKey;
+  return await retrieveApiKey();
 }
 
 /**
- * Set API key in config file
+ * Set API key in secure storage
  */
 export async function setApiKey(apiKey: string): Promise<void> {
-  const config = await loadConfig();
-  config.apiKey = apiKey;
-  await saveConfig(config);
+  await storeApiKey(apiKey);
 }
 
 /**
- * Remove API key from config file
+ * Remove API key from storage
  */
 export async function removeApiKey(): Promise<void> {
-  const config = await loadConfig();
-  delete config.apiKey;
-  await saveConfig(config);
+  await removeStoredApiKey();
 }
 
 /**
  * Check if user is logged in (has API key)
  */
 export async function isLoggedIn(): Promise<boolean> {
-  const apiKey = await getApiKey();
-  return !!apiKey;
+  return await hasApiKey();
 }
 
 /**

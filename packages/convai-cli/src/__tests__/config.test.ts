@@ -104,6 +104,7 @@ describe('Config Management', () => {
       await removeApiKey();
       expect(await isLoggedIn()).toBe(false);
     });
+
   });
 
   describe('Default environment management', () => {

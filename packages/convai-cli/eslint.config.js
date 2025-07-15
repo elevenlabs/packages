@@ -17,6 +17,7 @@ module.exports = [
         process: 'readonly',
         setTimeout: 'readonly',
         NodeJS: 'readonly',
+        require: 'readonly',
       },
     },
     plugins: {

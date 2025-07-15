@@ -11,6 +11,7 @@ Manage ElevenLabs Conversational AI agents with local configuration files. This 
 - **Watch Mode**: Automatic sync on file changes
 - **Import/Export**: Fetch existing agents from workspace
 - **Widget Generation**: HTML widget snippets
+- **🔒 Secure Storage**: OS keychain integration with secure file fallback
 
 ## Installation
 
@@ -30,7 +31,7 @@ npx @elevenlabs/convai-cli init
 
 ### Authentication
 
-Login with your ElevenLabs API key (recommended):
+Login with your ElevenLabs API key (stored securely in OS keychain):
 ```bash
 convai login
 ```
@@ -40,12 +41,7 @@ Or set environment variable:
 export ELEVENLABS_API_KEY="your_api_key_here"
 ```
 
-Or create a `.env` file:
-```env
-ELEVENLABS_API_KEY=your_api_key_here
-```
-
-### Check login status
+### Check Status
 ```bash
 convai whoami
 ```
@@ -251,6 +247,13 @@ pnpm test
 # Lint
 pnpm run lint
 ```
+
+## Security
+
+The CLI stores your API key securely:
+- **OS Keychain**: Uses native credential store when available
+- **Secure File**: Falls back to file with restricted permissions (600)
+- **Environment**: `ELEVENLABS_API_KEY` takes precedence for CI/CD
 
 ## Support
 
