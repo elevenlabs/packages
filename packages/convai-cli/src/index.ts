@@ -12,4 +12,4 @@ export type { LockFileData, LockFileAgent } from './utils';
 export type { AgentConfig } from './templates';
 
 // Version
-export const version = '0.1.7'; 
+export { version } from '../package.json'; 
