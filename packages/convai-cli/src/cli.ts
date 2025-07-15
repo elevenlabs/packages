@@ -25,6 +25,7 @@ import {
   listAgentsApi, 
   getAgentApi 
 } from './elevenlabs-api';
+import { version } from '../package.json';
 
 // Load environment variables
 dotenv.config();
@@ -88,14 +89,72 @@ interface TemplateShowOptions {
 program
   .name('convai')
   .description('ElevenLabs Conversational AI Agent Manager CLI')
-  .version('0.1.7');
+  .version(version);
 
 program
   .command('init')
   .description('Initialize a new agent management project')
   .argument('[path]', 'Path to initialize the project in', '.')
   .action(async (projectPath: string) => {
-    console.log(`Initializing project in ${projectPath}`);
+    try {
+      const fullPath = path.resolve(projectPath);
+      console.log(`Initializing project in ${fullPath}`);
+      
+      // Create directory if it doesn't exist
+      await fs.ensureDir(fullPath);
+      
+      // Create agents.json file
+      const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
+      if (await fs.pathExists(agentsConfigPath)) {
+        console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+      } else {
+        const initialConfig: AgentsConfig = {
+          agents: []
+        };
+        await writeAgentConfig(agentsConfigPath, initialConfig);
+        console.log(`Created ${AGENTS_CONFIG_FILE}`);
+      }
+      
+      // Create agent_configs directory structure
+      const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod'];
+      for (const dir of configDirs) {
+        const dirPath = path.join(fullPath, dir);
+        await fs.ensureDir(dirPath);
+        console.log(`Created directory: ${dir}`);
+      }
+      
+      // Create initial lock file
+      const lockFilePath = path.join(fullPath, LOCK_FILE);
+      if (await fs.pathExists(lockFilePath)) {
+        console.log(`${LOCK_FILE} already exists, skipping creation`);
+      } else {
+        const initialLockData = {
+          agents: {}
+        };
+        await saveLockFile(lockFilePath, initialLockData);
+        console.log(`Created ${LOCK_FILE}`);
+      }
+      
+      // Create .env.example file
+      const envExamplePath = path.join(fullPath, '.env.example');
+      if (!(await fs.pathExists(envExamplePath))) {
+        const envExample = `# ElevenLabs API Key
+ELEVENLABS_API_KEY=your_api_key_here
+`;
+        await fs.writeFile(envExamplePath, envExample);
+        console.log('Created .env.example');
+      }
+      
+      console.log('\\nProject initialized successfully!');
+      console.log('Next steps:');
+      console.log('1. Set your ElevenLabs API key: export ELEVENLABS_API_KEY="your_key"');
+      console.log('2. Create an agent: convai add "My Agent" --template default');
+      console.log('3. Sync to ElevenLabs: convai sync');
+      
+    } catch (error) {
+      console.error(`Error initializing project: ${error}`);
+      process.exit(1);
+    }
   });
 
 program
@@ -111,7 +170,7 @@ program
       // Check if agents.json exists
       const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
       if (!(await fs.pathExists(agentsConfigPath))) {
-        console.error('❌ agents.json not found. Run \'convai init\' first.');
+        console.error('agents.json not found. Run \'convai init\' first.');
         process.exit(1);
       }
       
@@ -125,7 +184,7 @@ program
       // Check if agent already exists for this specific environment
       const lockedAgent = getAgentFromLock(lockData, name, options.env);
       if (lockedAgent?.id) {
-        console.error(`❌ Agent '${name}' already exists for environment '${options.env}'`);
+        console.error(`Agent '${name}' already exists for environment '${options.env}'`);
         process.exit(1);
       }
       
@@ -148,17 +207,17 @@ program
       try {
         agentConfig = getTemplateByName(name, options.template);
       } catch (error) {
-        console.error(`❌ ${error}`);
+        console.error(`${error}`);
         process.exit(1);
       }
       
       await writeAgentConfig(configFilePath, agentConfig);
-      console.log(`📝 Created config file: ${configPath} (template: ${options.template})`);
+      console.log(`Created config file: ${configPath} (template: ${options.template})`);
       
       if (existingAgent) {
-        console.log(`📋 Agent '${name}' exists, adding new environment '${options.env}'`);
+        console.log(`Agent '${name}' exists, adding new environment '${options.env}'`);
       } else {
-        console.log(`🆕 Creating new agent '${name}' for environment '${options.env}'`);
+        console.log(`Creating new agent '${name}' for environment '${options.env}'`);
       }
       
       if (options.skipUpload) {
@@ -170,7 +229,7 @@ program
             }
           };
           agentsConfig.agents.push(newAgent);
-          console.log(`✅ Added agent '${name}' to agents.json (local only)`);
+          console.log(`Added agent '${name}' to agents.json (local only)`);
         } else {
           if (!existingAgent.environments) {
             const oldConfig = existingAgent.config || '';
@@ -178,16 +237,16 @@ program
             delete existingAgent.config;
           }
           existingAgent.environments[options.env] = { config: configPath };
-          console.log(`✅ Added environment '${options.env}' to existing agent '${name}' (local only)`);
+          console.log(`Added environment '${options.env}' to existing agent '${name}' (local only)`);
         }
         
         await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`💡 Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to upload`);
+        console.log(`Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to upload`);
         return;
       }
       
       // Create agent in ElevenLabs
-      console.log(`🚀 Creating agent '${name}' in ElevenLabs (environment: ${options.env})...`);
+      console.log(`Creating agent '${name}' in ElevenLabs (environment: ${options.env})...`);
       
       const client = getElevenLabsClient();
       
@@ -210,7 +269,7 @@ program
         tags
       );
       
-      console.log(`✅ Created agent in ElevenLabs with ID: ${agentId}`);
+      console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
       if (!existingAgent) {
         const newAgent: AgentDefinition = {
@@ -220,7 +279,7 @@ program
           }
         };
         agentsConfig.agents.push(newAgent);
-        console.log(`✅ Added agent '${name}' to agents.json`);
+        console.log(`Added agent '${name}' to agents.json`);
       } else {
         if (!existingAgent.environments) {
           const oldConfig = existingAgent.config || '';
@@ -228,7 +287,7 @@ program
           delete existingAgent.config;
         }
         existingAgent.environments[options.env] = { config: configPath };
-        console.log(`✅ Added environment '${options.env}' to existing agent '${name}'`);
+        console.log(`Added environment '${options.env}' to existing agent '${name}'`);
       }
       
       // Save updated agents.json
@@ -239,16 +298,20 @@ program
       updateAgentInLock(lockData, name, options.env, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
-      console.log(`💡 Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to update`);
+      console.log(`Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to update`);
       
     } catch (error) {
-      console.error(`❌ Error creating agent: ${error}`);
+      console.error(`Error creating agent: ${error}`);
       process.exit(1);
     }
   });
 
-program
-  .command('templates-list')
+const templatesCommand = program
+  .command('templates')
+  .description('Manage agent templates');
+
+templatesCommand
+  .command('list')
   .description('List available agent templates')
   .action(() => {
     const templateOptions = getTemplateOptions();
@@ -257,15 +320,15 @@ program
     console.log('='.repeat(40));
     
     for (const [templateName, description] of Object.entries(templateOptions)) {
-      console.log(`\n🎯 ${templateName}`);
+      console.log(`\n${templateName}`);
       console.log(`   ${description}`);
     }
     
-    console.log('\n💡 Use \'convai add <name> --template <template_name>\' to create an agent with a specific template');
+    console.log('\nUse \'convai add <name> --template <template_name>\' to create an agent with a specific template');
   });
 
-program
-  .command('template-show')
+templatesCommand
+  .command('show')
   .description('Show the configuration for a specific template')
   .argument('<template>', 'Template name to show')
   .option('--agent-name <name>', 'Agent name to use in template', 'example_agent')
@@ -276,7 +339,7 @@ program
       console.log('='.repeat(40));
       console.log(JSON.stringify(templateConfig, null, 2));
     } catch (error) {
-      console.error(`❌ ${error}`);
+      console.error(`${error}`);
       process.exit(1);
     }
   });
@@ -291,7 +354,7 @@ program
     try {
       await syncAgents(options.agent, options.dryRun, options.env);
     } catch (error) {
-      console.error(`❌ Error during sync: ${error}`);
+      console.error(`Error during sync: ${error}`);
       process.exit(1);
     }
   });
@@ -305,7 +368,7 @@ program
     try {
       await showStatus(options.agent, options.env);
     } catch (error) {
-      console.error(`❌ Error showing status: ${error}`);
+      console.error(`Error showing status: ${error}`);
       process.exit(1);
     }
   });
@@ -320,7 +383,7 @@ program
     try {
       await watchForChanges(options.agent, options.env, parseInt(options.interval));
     } catch (error) {
-      console.error(`❌ Error in watch mode: ${error}`);
+      console.error(`Error in watch mode: ${error}`);
       process.exit(1);
     }
   });
@@ -332,7 +395,7 @@ program
     try {
       await listConfiguredAgents();
     } catch (error) {
-      console.error(`❌ Error listing agents: ${error}`);
+      console.error(`Error listing agents: ${error}`);
       process.exit(1);
     }
   });
@@ -349,7 +412,7 @@ program
     try {
       await fetchAgents(options);
     } catch (error) {
-      console.error(`❌ Error fetching agents: ${error}`);
+      console.error(`Error fetching agents: ${error}`);
       process.exit(1);
     }
   });
@@ -363,7 +426,7 @@ program
     try {
       await generateWidget(name, options.env);
     } catch (error) {
-      console.error(`❌ Error generating widget: ${error}`);
+      console.error(`Error generating widget: ${error}`);
       process.exit(1);
     }
   });
@@ -416,13 +479,13 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       return;
     }
     
-    console.log(`🔄 Syncing all environments: ${environmentsToSync.join(', ')}`);
+    console.log(`Syncing all environments: ${environmentsToSync.join(', ')}`);
   }
   
   let changesMade = false;
   
   for (const currentEnv of environmentsToSync) {
-    console.log(`\n📍 Processing environment: ${currentEnv}`);
+    console.log(`\nProcessing environment: ${currentEnv}`);
     
     for (const agentDef of agentsToProcess) {
       const agentDefName = agentDef.name;
@@ -433,20 +496,20 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
         if (currentEnv in agentDef.environments) {
           configPath = agentDef.environments[currentEnv].config;
         } else {
-          console.log(`⚠️  Agent '${agentDefName}' not configured for environment '${currentEnv}'`);
+          console.log(`Warning: Agent '${agentDefName}' not configured for environment '${currentEnv}'`);
           continue;
         }
       } else {
         configPath = agentDef.config;
         if (!configPath) {
-          console.log(`⚠️  No config path found for agent '${agentDefName}'`);
+          console.log(`Warning: No config path found for agent '${agentDefName}'`);
           continue;
         }
       }
       
       // Check if config file exists
       if (!(await fs.pathExists(configPath))) {
-        console.log(`⚠️  Config file not found for ${agentDefName}: ${configPath}`);
+        console.log(`Warning: Config file not found for ${agentDefName}: ${configPath}`);
         continue;
       }
       
@@ -455,7 +518,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       try {
         agentConfig = await readAgentConfig<AgentConfig>(configPath);
       } catch (error) {
-        console.log(`❌ Error reading config for ${agentDefName}: ${error}`);
+        console.log(`Error reading config for ${agentDefName}: ${error}`);
         continue;
       }
       
@@ -470,12 +533,12 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       if (lockedAgent) {
         if (lockedAgent.hash === configHash) {
           needsUpdate = false;
-          console.log(`✅ ${agentDefName}: No changes (environment: ${currentEnv})`);
+          console.log(`${agentDefName}: No changes (environment: ${currentEnv})`);
         } else {
-          console.log(`🔄 ${agentDefName}: Config changed, will update (environment: ${currentEnv})`);
+          console.log(`${agentDefName}: Config changed, will update (environment: ${currentEnv})`);
         }
       } else {
-        console.log(`🆕 ${agentDefName}: New environment detected, will create/update (environment: ${currentEnv})`);
+        console.log(`${agentDefName}: New environment detected, will create/update (environment: ${currentEnv})`);
       }
       
       if (!needsUpdate) {
@@ -512,7 +575,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
             platformSettings,
             tags
           );
-          console.log(`✅ Created agent ${agentDefName} for environment '${currentEnv}' (ID: ${newAgentId})`);
+          console.log(`Created agent ${agentDefName} for environment '${currentEnv}' (ID: ${newAgentId})`);
           updateAgentInLock(lockData, agentDefName, currentEnv, newAgentId, configHash);
         } else {
           // Update existing environment-specific agent
@@ -524,14 +587,14 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
             platformSettings,
             tags
           );
-          console.log(`✅ Updated agent ${agentDefName} for environment '${currentEnv}' (ID: ${agentId})`);
+          console.log(`Updated agent ${agentDefName} for environment '${currentEnv}' (ID: ${agentId})`);
           updateAgentInLock(lockData, agentDefName, currentEnv, agentId, configHash);
         }
         
         changesMade = true;
         
       } catch (error) {
-        console.log(`❌ Error processing ${agentDefName}: ${error}`);
+        console.log(`Error processing ${agentDefName}: ${error}`);
       }
     }
   }
@@ -539,7 +602,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
   // Save lock file if changes were made
   if (changesMade && !dryRun) {
     await saveLockFile(lockFilePath, lockData);
-    console.log('💾 Updated lock file');
+    console.log('Updated lock file');
   }
 }
 
@@ -609,7 +672,7 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
       const lockedAgent = getAgentFromLock(lockData, agentNameCurrent, currentEnv);
       const agentId = lockedAgent?.id || 'Not created for this environment';
       
-      console.log(`\n📋 ${agentNameCurrent}`);
+      console.log(`\n${agentNameCurrent}`);
       console.log(`   Environment: ${currentEnv}`);
       console.log(`   Agent ID: ${agentId}`);
       console.log(`   Config: ${configPath}`);
@@ -624,26 +687,26 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
           // Check lock status for specified environment
           if (lockedAgent) {
             if (lockedAgent.hash === configHash) {
-              console.log(`   Status: ✅ Synced (${currentEnv})`);
+              console.log(`   Status: Synced (${currentEnv})`);
             } else {
-              console.log(`   Status: 🔄 Config changed (needs sync for ${currentEnv})`);
+              console.log(`   Status: Config changed (needs sync for ${currentEnv})`);
             }
           } else {
-            console.log(`   Status: 🆕 New (needs sync for ${currentEnv})`);
+            console.log(`   Status: New (needs sync for ${currentEnv})`);
           }
           
         } catch (error) {
-          console.log(`   Status: ❌ Config error: ${error}`);
+          console.log(`   Status: Config error: ${error}`);
         }
       } else {
-        console.log('   Status: ❌ Config file not found');
+        console.log('   Status: Config file not found');
       }
     }
   }
 }
 
 async function watchForChanges(agentName?: string, environment = 'prod', interval = 5): Promise<void> {
-  console.log(`👀 Watching for config changes (checking every ${interval}s)...`);
+  console.log(`Watching for config changes (checking every ${interval}s)...`);
   if (agentName) {
     console.log(`Agent: ${agentName}`);
   } else {
@@ -686,7 +749,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
       const agentsMtime = await getFileMtime(agentsConfigPath);
       if (fileTimestamps.get(agentsConfigPath) !== agentsMtime) {
         fileTimestamps.set(agentsConfigPath, agentsMtime);
-        console.log(`📝 Detected change in ${AGENTS_CONFIG_FILE}`);
+        console.log(`Detected change in ${AGENTS_CONFIG_FILE}`);
         return true;
       }
       
@@ -708,7 +771,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
             const configMtime = await getFileMtime(configPath);
             if (fileTimestamps.get(configPath) !== configMtime) {
               fileTimestamps.set(configPath, configMtime);
-              console.log(`📝 Detected change in ${configPath}`);
+              console.log(`Detected change in ${configPath}`);
               return true;
             }
           }
@@ -727,11 +790,11 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
   try {
     while (true) {
       if (await checkForChanges()) {
-        console.log('🔄 Running sync...');
+        console.log('Running sync...');
         try {
           await syncAgents(agentName, false, environment);
         } catch (error) {
-          console.log(`❌ Error during sync: ${error}`);
+          console.log(`Error during sync: ${error}`);
         }
       }
       
@@ -739,7 +802,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'SIGINT') {
-      console.log('\n👋 Stopping watch mode');
+      console.log('\nStopping watch mode');
     } else {
       throw error;
     }
@@ -792,7 +855,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   const searchTerm = options.agent || options.search;
   
   // Fetch all agents from ElevenLabs
-  console.log('🔍 Fetching agents from ElevenLabs...');
+  console.log('Fetching agents from ElevenLabs...');
   const agentsList = await listAgentsApi(client, 30, searchTerm);
   
   if (agentsList.length === 0) {
@@ -826,14 +889,14 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     const agentMetaTyped = agentMeta as { agentId?: string; agent_id?: string; name: string };
     const agentId = agentMetaTyped.agentId || agentMetaTyped.agent_id;
     if (!agentId) {
-      console.log(`⚠️  Skipping agent '${agentMetaTyped.name}' - no agent ID found`);
+      console.log(`Warning: Skipping agent '${agentMetaTyped.name}' - no agent ID found`);
       continue;
     }
     let agentNameRemote = agentMetaTyped.name;
     
     // Skip if agent already exists by ID (in any environment)
     if (existingAgentIds.has(agentId)) {
-      console.log(`⏭️  Skipping '${agentNameRemote}' - already exists (ID: ${agentId})`);
+      console.log(`Skipping '${agentNameRemote}' - already exists (ID: ${agentId})`);
       continue;
     }
     
@@ -845,7 +908,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
         agentNameRemote = `${originalName}_${counter}`;
         counter++;
       }
-      console.log(`⚠️  Name conflict: renamed '${originalName}' to '${agentNameRemote}'`);
+      console.log(`Warning: Name conflict: renamed '${originalName}' to '${agentNameRemote}'`);
     }
     
     if (options.dryRun) {
@@ -855,7 +918,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     
     try {
       // Fetch detailed agent configuration
-      console.log(`📥 Fetching config for '${agentNameRemote}'...`);
+      console.log(`Fetching config for '${agentNameRemote}'...`);
       const agentDetails = await getAgentApi(client, agentId);
       
       // Extract configuration components
@@ -903,11 +966,11 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       const configHash = calculateConfigHash(agentConfig);
       updateAgentInLock(lockData, agentNameRemote, options.env, agentId, configHash);
       
-      console.log(`✅ Added '${agentNameRemote}' (config: ${configPath}) for environment: ${options.env}`);
+      console.log(`Added '${agentNameRemote}' (config: ${configPath}) for environment: ${options.env}`);
       newAgentsAdded++;
       
     } catch (error) {
-      console.log(`❌ Error fetching agent '${agentNameRemote}': ${error}`);
+      console.log(`Error fetching agent '${agentNameRemote}': ${error}`);
       continue;
     }
   }
@@ -919,7 +982,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     // Save updated lock file
     await saveLockFile(lockFilePath, lockData);
     
-    console.log(`💾 Updated ${AGENTS_CONFIG_FILE} and ${LOCK_FILE}`);
+    console.log(`Updated ${AGENTS_CONFIG_FILE} and ${LOCK_FILE}`);
   }
   
   if (options.dryRun) {
@@ -930,9 +993,9 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     }).length;
     console.log(`[DRY RUN] Would add ${newAgentsCount} new agent(s) for environment: ${options.env}`);
   } else {
-    console.log(`✅ Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
+    console.log(`Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
     if (newAgentsAdded > 0) {
-      console.log(`💡 You can now edit the config files in '${options.outputDir}/' and run 'convai sync --env ${options.env}' to update`);
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'convai sync --env ${options.env}' to update`);
     }
   }
 }
@@ -969,7 +1032,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   const htmlSnippet = `<elevenlabs-convai agent-id="${agentId}"></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
   
-  console.log(`🎯 HTML Widget for '${name}' (environment: ${environment}):`);
+  console.log(`HTML Widget for '${name}' (environment: ${environment}):`);
   console.log('='.repeat(60));
   console.log(htmlSnippet);
   console.log('='.repeat(60));
@@ -978,7 +1041,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
 
 // Handle SIGINT (Ctrl+C)
 process.on('SIGINT', () => {
-  console.log('\n👋 Exiting...');
+  console.log('\nExiting...');
   process.exit(0);
 });
 
