@@ -25,6 +25,12 @@ import {
   listAgentsApi, 
   getAgentApi 
 } from './elevenlabs-api';
+import { 
+  getApiKey, 
+  setApiKey, 
+  removeApiKey, 
+  isLoggedIn
+} from './config';
 import { version } from '../package.json';
 
 // Load environment variables
@@ -147,12 +153,105 @@ ELEVENLABS_API_KEY=your_api_key_here
       
       console.log('\\nProject initialized successfully!');
       console.log('Next steps:');
-      console.log('1. Set your ElevenLabs API key: export ELEVENLABS_API_KEY="your_key"');
+      console.log('1. Set your ElevenLabs API key: convai login');
       console.log('2. Create an agent: convai add "My Agent" --template default');
       console.log('3. Sync to ElevenLabs: convai sync');
       
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('login')
+  .description('Login with your ElevenLabs API key')
+  .action(async () => {
+    try {
+      const readline = await import('readline');
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      const apiKey = await new Promise<string>((resolve) => {
+        rl.question('Enter your ElevenLabs API key: ', (answer) => {
+          resolve(answer.trim());
+        });
+      });
+      
+      rl.close();
+      
+      if (!apiKey) {
+        console.error('API key is required');
+        process.exit(1);
+      }
+      
+      // Test the API key by making a simple request
+      process.env.ELEVENLABS_API_KEY = apiKey;
+      const client = await getElevenLabsClient();
+      try {
+        await listAgentsApi(client, 1);
+        console.log('API key verified successfully');
+      } catch (error) {
+        console.error('Invalid API key or network error');
+        process.exit(1);
+      }
+      
+      await setApiKey(apiKey);
+      console.log('Login successful! API key saved to config file.');
+      
+    } catch (error) {
+      console.error(`Error during login: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('logout')
+  .description('Logout and remove stored API key')
+  .action(async () => {
+    try {
+      const loggedIn = await isLoggedIn();
+      if (!loggedIn) {
+        console.log('You are not logged in');
+        return;
+      }
+      
+      await removeApiKey();
+      console.log('Logged out successfully. API key removed from config file.');
+      
+    } catch (error) {
+      console.error(`Error during logout: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('whoami')
+  .description('Show current login status')
+  .action(async () => {
+    try {
+      const loggedIn = await isLoggedIn();
+      const apiKey = await getApiKey();
+      
+      if (loggedIn && apiKey) {
+        const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+        console.log(`Logged in with API key: ${maskedKey}`);
+        
+        // Show source of API key
+        if (process.env.ELEVENLABS_API_KEY) {
+          console.log('Source: Environment variable');
+        } else {
+          console.log('Source: Config file');
+        }
+      } else {
+        console.log('Not logged in');
+        console.log('Use "convai login" to authenticate');
+      }
+      
+    } catch (error) {
+      console.error(`Error checking login status: ${error}`);
       process.exit(1);
     }
   });
@@ -248,7 +347,7 @@ program
       // Create agent in ElevenLabs
       console.log(`Creating agent '${name}' in ElevenLabs (environment: ${options.env})...`);
       
-      const client = getElevenLabsClient();
+      const client = await getElevenLabsClient();
       
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
@@ -447,7 +546,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
   // Initialize ElevenLabs client
   let client;
   if (!dryRun) {
-    client = getElevenLabsClient();
+    client = await getElevenLabsClient();
   }
   
   // Filter agents if specific agent name provided
@@ -849,7 +948,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     throw new Error('agents.json not found. Run \'convai init\' first.');
   }
   
-  const client = getElevenLabsClient();
+  const client = await getElevenLabsClient();
   
   // Use agent option as search term if provided, otherwise use search parameter
   const searchTerm = options.agent || options.search;

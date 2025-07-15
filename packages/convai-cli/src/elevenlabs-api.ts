@@ -1,5 +1,6 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
+import { getApiKey } from './config';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {
@@ -11,15 +12,15 @@ function isPlatformSettings(settings: unknown): settings is AgentPlatformSetting
   return typeof settings === 'object' && settings !== null;
 }
 /**
- * Retrieves the ElevenLabs API key from environment variables and returns an API client.
+ * Retrieves the ElevenLabs API key from config or environment variables and returns an API client.
  * 
- * @throws {Error} If the ELEVENLABS_API_KEY environment variable is not set
+ * @throws {Error} If no API key is found
  * @returns An instance of the ElevenLabs client
  */
-export function getElevenLabsClient(): ElevenLabsClient {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+export async function getElevenLabsClient(): Promise<ElevenLabsClient> {
+  const apiKey = await getApiKey();
   if (!apiKey) {
-    throw new Error("ELEVENLABS_API_KEY environment variable not set.");
+    throw new Error("No API key found. Use 'convai login' to authenticate or set ELEVENLABS_API_KEY environment variable.");
   }
   return new ElevenLabsClient({ apiKey });
 }
