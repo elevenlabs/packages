@@ -1,5 +1,5 @@
 {
-  "name": "convai-cli",
+  "name": "@elevenlabs/convai-cli",
   "version": "0.1.0",
   "description": "CLI tool to manage ElevenLabs conversational AI agents",
   "keywords": [
@@ -14,11 +14,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/angelogiacco/convai-npm.git"
+    "url": "https://github.com/elevenlabs/packages.git",
+    "directory": "convai-cli"
   },
-  "homepage": "https://github.com/angelogiacco/convai-npm",
+  "homepage": "https://github.com/elevenlabs/packages/tree/main/convai-cli",
   "bugs": {
-    "url": "https://github.com/angelogiacco/convai-npm/issues"
+    "url": "https://github.com/elevenlabs/packages/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

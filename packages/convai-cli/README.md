@@ -1,6 +1,6 @@
-# ElevenLabs ConvAI CLI
+# ElevenLabs ConvAI CLI - Agent as Code
 
-Manage ElevenLabs Conversational AI agents with local configuration files. Features templates, multi-environment support, and automatic syncing.
+Manage ElevenLabs Conversational AI agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, multi-environment support, and automatic syncing.
 
 ## Features
 
@@ -16,14 +16,14 @@ Manage ElevenLabs Conversational AI agents with local configuration files. Featu
 
 ```bash
 # Global installation
-pnpm install -g convai-cli
+pnpm install -g @elevenlabs/convai-cli
 # OR
-npm install -g convai-cli
+npm install -g @elevenlabs/convai-cli
 
 # One-time usage
-pnpm dlx convai-cli init
+pnpm dlx @elevenlabs/convai-cli init
 # OR  
-npx convai-cli init
+npx @elevenlabs/convai-cli init
 ```
 
 ## Setup
