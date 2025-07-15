@@ -100,13 +100,31 @@ convai list-agents
 ### Templates
 ```bash
 # List available templates
-convai templates-list
+convai templates list
 
 # Show template details
-convai template-show customer-service
+convai templates show customer-service
 ```
 
-Available templates: `default`, `minimal`, `voice-only`, `text-only`, `customer-service`, `assistant`
+## Available Templates
+
+### `default`
+Complete configuration with all available fields and sensible defaults. Includes full voice and text support, widget customization, evaluation criteria, and platform settings. Best for production deployments requiring comprehensive configuration.
+
+### `minimal` 
+Minimal configuration with only essential fields. Contains basic agent prompt, language settings, TTS configuration, and conversation settings. Perfect for quick prototyping and simple use cases.
+
+### `voice-only`
+Optimized for voice-only conversations. Disables text input and focuses on voice interaction features. Includes advanced voice settings, turn management, and audio processing optimizations.
+
+### `text-only`
+Optimized for text-only conversations. Disables voice features and focuses on text-based interactions. 
+
+### `customer-service`
+Pre-configured for customer service scenarios. Features professional, empathetic prompts with consistent responses (low temperature). Includes extended conversation duration (30 minutes), evaluation criteria for service quality, and customer-service tags.
+
+### `assistant`
+General purpose AI assistant configuration. Balanced creativity settings with helpful, knowledgeable prompts. Supports both voice and text interactions for versatile use cases like Q&A, explanations, and analysis tasks.
 
 ## Configuration Example
 
