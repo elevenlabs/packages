@@ -28,7 +28,14 @@ npx @elevenlabs/convai-cli init
 
 ## Setup
 
-Set your ElevenLabs API key:
+### Authentication
+
+Login with your ElevenLabs API key (recommended):
+```bash
+convai login
+```
+
+Or set environment variable:
 ```bash
 export ELEVENLABS_API_KEY="your_api_key_here"
 ```
@@ -38,21 +45,34 @@ Or create a `.env` file:
 ELEVENLABS_API_KEY=your_api_key_here
 ```
 
+### Check login status
+```bash
+convai whoami
+```
+
+### Logout
+```bash
+convai logout
+```
+
 ## Quick Start
 
 ```bash
 # 1. Initialize project
 convai init
 
-# 2. Create agent with template
+# 2. Login with API key
+convai login
+
+# 3. Create agent with template
 convai add "Support Bot" --template customer-service
 
-# 3. Edit configuration (agent_configs/prod/support_bot.json)
+# 4. Edit configuration (agent_configs/prod/support_bot.json)
 
-# 4. Sync to ElevenLabs
+# 5. Sync to ElevenLabs
 convai sync
 
-# 5. Watch for changes (optional)
+# 6. Watch for changes (optional)
 convai watch
 ```
 
@@ -74,6 +94,11 @@ your_project/
 ```bash
 # Initialize project
 convai init
+
+# Authentication
+convai login
+convai logout
+convai whoami
 
 # Create agent
 convai add "Agent Name" [--template customer-service] [--env dev]
@@ -154,6 +179,7 @@ General purpose AI assistant configuration. Balanced creativity settings with he
 **New Project:**
 ```bash
 convai init
+convai login
 convai add "My Agent" --template assistant
 convai sync
 ```
@@ -169,6 +195,7 @@ convai sync --env prod
 **Import Existing:**
 ```bash
 convai init
+convai login
 convai fetch --env prod
 convai sync
 ```
@@ -181,10 +208,16 @@ convai watch --env dev --interval 5
 
 ## Troubleshooting
 
-**API Key Issues:**
+**Authentication Issues:**
 ```bash
+# Check login status
+convai whoami
+
+# Login again
+convai login
+
+# Or use environment variable
 export ELEVENLABS_API_KEY="your_api_key_here"
-# Or add to .env file
 ```
 
 **Agent Not Found:**
@@ -199,6 +232,7 @@ export ELEVENLABS_API_KEY="your_api_key_here"
 ```bash
 rm convai.lock
 convai init
+convai login
 convai sync
 ```
 
