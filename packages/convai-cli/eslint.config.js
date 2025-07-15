@@ -30,7 +30,7 @@ module.exports = [
     },
   },
   {
-    files: ['src/**/*.test.ts'],
+    files: ['src/**/*.test.ts', 'src/**/__tests__/**/*.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -43,6 +43,10 @@ module.exports = [
         expect: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
+        __dirname: 'readonly',
       },
     },
     plugins: {
