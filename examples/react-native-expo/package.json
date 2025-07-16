@@ -1,0 +1,31 @@
+{
+  "name": "elevenlabs-react-native-example",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build:android": "expo build:android",
+    "build:ios": "expo build:ios"
+  },
+  "dependencies": {
+    "expo": "~53.0.18",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "@livekit/react-native": "^2.7.6",
+    "@livekit/react-native-webrtc": "^125.0.0",
+    "@livekit/react-native-expo-plugin": "^1.0.1",
+    "@config-plugins/react-native-webrtc": "^12.0.0",
+    "expo-dev-client": "~5.2.4",
+    "@elevenlabs/react-native": "workspace:*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "^19.0.0",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.5.4"
+  },
+
+  "private": true
+}

@@ -2,23 +2,22 @@
   "name": "@elevenlabs/react-native",
   "version": "0.1.0",
   "description": "ElevenLabs React Native SDK for Conversational AI",
-  "main": "./dist/lib.umd.js",
+  "main": "./dist/lib.js",
   "module": "./dist/lib.module.js",
   "source": "src/index.ts",
-  "type": "module",
   "unpkg": "./dist/lib.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/lib.modern.js",
-      "require": "./dist/lib.cjs"
+      "require": "./dist/lib.js"
     }
   },
   "scripts": {
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
-    "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
+    "dev": "npm run clean && BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w --no-compress",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",
@@ -38,8 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "@livekit/react-native": "^2.7.6",
-    "@livekit/react-native-webrtc": "^125.0.0",
-    "livekit-client": "^2.11.4"
+    "@livekit/react-native-webrtc": "^125.0.0"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
@@ -47,7 +45,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/react": "^18.3.3",
+    "@types/react": "^19.0.0",
     "@types/react-native": "^0.73.0",
     "eslint": "^9.8.0",
     "jest": "^29.7.0",

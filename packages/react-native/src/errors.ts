@@ -1,8 +1,3 @@
-// ElevenLabs React Native SDK Error Classes
-
-/**
- * Base error class for conversation errors
- */
 export class ConversationError extends Error {
   public readonly code: string;
   public readonly details?: Record<string, unknown>;
