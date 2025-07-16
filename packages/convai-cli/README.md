@@ -1,4 +1,4 @@
-# ElevenLabs ConvAI CLI - Agent as Code
+# ElevenLabs ConvAI CLI - Agents as Code
 
 Manage ElevenLabs Conversational AI agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, multi-environment support, and automatic syncing.
 
@@ -11,7 +11,7 @@ Manage ElevenLabs Conversational AI agents with local configuration files. This 
 - **Watch Mode**: Automatic sync on file changes
 - **Import/Export**: Fetch existing agents from workspace
 - **Widget Generation**: HTML widget snippets
-- **🔒 Secure Storage**: OS keychain integration with secure file fallback
+- **Secure Storage**: OS keychain integration with secure file fallback
 
 ## Installation
 
@@ -250,10 +250,12 @@ pnpm run lint
 
 ## Security
 
-The CLI stores your API key securely:
-- **OS Keychain**: Uses native credential store when available
-- **Secure File**: Falls back to file with restricted permissions (600)
-- **Environment**: `ELEVENLABS_API_KEY` takes precedence for CI/CD
+The CLI stores your API key securely with multiple fallback options:
+- **Environment Variable**: `ELEVENLABS_API_KEY` takes highest priority for CI/CD
+- **OS Keychain**: Uses native credential store (keytar) when available
+- **Secure File**: Falls back to `~/.convai/api_key` with restricted permissions (600)
+
+Configuration files are stored in `~/.convai/` with secure directory permissions (700 on Unix-like systems).
 
 ## Support
 
