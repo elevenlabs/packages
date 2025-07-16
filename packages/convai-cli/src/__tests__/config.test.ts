@@ -50,7 +50,10 @@ describe('Config Management', () => {
       await saveConfig(config);
       const loaded = await loadConfig();
 
-      expect(loaded).toEqual(config);
+      // API key is not saved to config file for security
+      expect(loaded).toEqual({
+        defaultEnvironment: 'dev'
+      });
     });
 
     it('should return empty config if file does not exist', async () => {
