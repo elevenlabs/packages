@@ -31,7 +31,7 @@ npx @elevenlabs/convai-cli init
 
 ### Authentication
 
-Login with your ElevenLabs API key (stored securely in OS keychain):
+Login with your ElevenLabs API key (stored securely across all platforms):
 ```bash
 convai login
 ```
