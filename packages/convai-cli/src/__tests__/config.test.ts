@@ -15,10 +15,12 @@ import {
   getDefaultEnvironment,
   setDefaultEnvironment
 } from '../config';
+import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals';
 
 // Mock os module
+const originalOs = jest.requireActual('os') as typeof os;
 jest.mock('os', () => ({
-  ...jest.requireActual('os'),
+  ...originalOs,
   homedir: jest.fn()
 }));
 
