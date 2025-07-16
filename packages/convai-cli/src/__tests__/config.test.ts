@@ -18,9 +18,8 @@ import {
 import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals';
 
 // Mock os module
-const originalOs = jest.requireActual('os') as typeof os;
 jest.mock('os', () => ({
-  ...originalOs,
+  ...(jest.requireActual('os') as typeof import('os')),
   homedir: jest.fn()
 }));
 
