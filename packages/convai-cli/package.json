@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI tool to manage ElevenLabs conversational AI agents",
   "keywords": [
     "elevenlabs",
@@ -45,13 +45,15 @@
     "commander": "^11.1.0",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
-    "keytar": "^7.9.0"
+    "keytar": "^7.9.0",
+    "read": "^4.1.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.2",
     "@types/jest": "^29.5.5",
     "@types/keytar": "^4.4.2",
     "@types/node": "^20.8.0",
+    "@types/read": "^0.0.32",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^9.0.0",

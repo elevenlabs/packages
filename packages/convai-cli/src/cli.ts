@@ -151,7 +151,7 @@ ELEVENLABS_API_KEY=your_api_key_here
         console.log('Created .env.example');
       }
       
-      console.log('\\nProject initialized successfully!');
+      console.log('\nProject initialized successfully!');
       console.log('Next steps:');
       console.log('1. Set your ElevenLabs API key: convai login');
       console.log('2. Create an agent: convai add "My Agent" --template default');
@@ -168,27 +168,21 @@ program
   .description('Login with your ElevenLabs API key')
   .action(async () => {
     try {
-      const readline = await import('readline');
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
+      const { read } = await import('read');
+      
+      const apiKey = await read({
+        prompt: 'Enter your ElevenLabs API key: ',
+        silent: true,
+        replace: '*'
       });
       
-      const apiKey = await new Promise<string>((resolve) => {
-        rl.question('Enter your ElevenLabs API key: ', (answer) => {
-          resolve(answer.trim());
-        });
-      });
-      
-      rl.close();
-      
-      if (!apiKey) {
+      if (!apiKey || apiKey.trim() === '') {
         console.error('API key is required');
         process.exit(1);
       }
       
       // Test the API key by making a simple request
-      process.env.ELEVENLABS_API_KEY = apiKey;
+      process.env.ELEVENLABS_API_KEY = apiKey.trim();
       const client = await getElevenLabsClient();
       try {
         await listAgentsApi(client, 1);
@@ -198,7 +192,7 @@ program
         process.exit(1);
       }
       
-      await setApiKey(apiKey);
+      await setApiKey(apiKey.trim());
       console.log('Login successful! API key saved securely.');
       
     } catch (error) {
