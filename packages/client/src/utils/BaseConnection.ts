@@ -81,21 +81,42 @@ export type BaseSessionConfig = {
       textOnly?: boolean;
     };
   };
-  customLlmExtraBody?: any;
+  customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
-  connectionType?: ConnectionType;
+  userId?: string;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
 
-export type SessionConfig = BaseSessionConfig & {
-  agentId?: string;
-  signedUrl?: string;
-  conversationToken?: string;
+export type PublicSessionConfig = BaseSessionConfig & {
+  agentId: string;
+  connectionType: ConnectionType;
+  signedUrl?: never;
+  conversationToken?: never;
 };
+
+export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
+  signedUrl: string;
+  connectionType?: "websocket";
+  agentId?: never;
+  conversationToken?: never;
+};
+
+export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
+  conversationToken: string;
+  connectionType?: "webrtc";
+  agentId?: never;
+  signedUrl?: never;
+};
+
+// Union type for all possible session configurations
+export type SessionConfig =
+  | PublicSessionConfig
+  | PrivateWebSocketSessionConfig
+  | PrivateWebRTCSessionConfig;
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;
@@ -106,6 +127,15 @@ export abstract class BaseConnection {
   protected disconnectionDetails: DisconnectionDetails | null = null;
   protected onDisconnectCallback: OnDisconnectCallback | null = null;
   protected onMessageCallback: OnMessageCallback | null = null;
+  protected onDebug?: (info: unknown) => void;
+
+  constructor(config: { onDebug?: (info: unknown) => void } = {}) {
+    this.onDebug = config.onDebug;
+  }
+
+  protected debug(info: unknown) {
+    if (this.onDebug) this.onDebug(info);
+  }
 
   public abstract close(): void;
   public abstract sendMessage(message: OutgoingSocketEvent): void;
