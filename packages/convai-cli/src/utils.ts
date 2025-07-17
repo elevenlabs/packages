@@ -11,6 +11,7 @@ export interface LockFileAgent {
 
 export interface LockFileData {
   agents: Record<string, Record<string, LockFileAgent>>;
+  tools: Record<string, LockFileAgent>;
 }
 
 /**
@@ -83,7 +84,7 @@ export async function loadLockFile(lockFilePath: string): Promise<LockFileData> 
   try {
     const exists = await fs.pathExists(lockFilePath);
     if (!exists) {
-      return { [LOCK_FILE_AGENTS_KEY]: {} };
+      return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {} };
     }
 
     const data = await fs.readFile(lockFilePath, 'utf-8');
@@ -91,17 +92,21 @@ export async function loadLockFile(lockFilePath: string): Promise<LockFileData> 
     
     if (!parsed[LOCK_FILE_AGENTS_KEY] || typeof parsed[LOCK_FILE_AGENTS_KEY] !== 'object') {
       console.warn(`Warning: Lock file ${lockFilePath} is malformed or missing '${LOCK_FILE_AGENTS_KEY}' key. Initializing with empty agent list.`);
-      return { [LOCK_FILE_AGENTS_KEY]: {} };
+      parsed[LOCK_FILE_AGENTS_KEY] = {};
+    }
+    
+    if (!parsed.tools || typeof parsed.tools !== 'object') {
+      parsed.tools = {};
     }
     
     return parsed;
   } catch (error) {
     if (error instanceof SyntaxError) {
-      console.warn(`Warning: Could not decode JSON from lock file ${lockFilePath}. Initializing with empty agent list.`);
+      console.warn(`Warning: Could not decode JSON from lock file ${lockFilePath}. Initializing with empty lists.`);
     } else {
-      console.warn(`Warning: Could not read lock file ${lockFilePath}. Initializing with empty agent list.`);
+      console.warn(`Warning: Could not read lock file ${lockFilePath}. Initializing with empty lists.`);
     }
-    return { [LOCK_FILE_AGENTS_KEY]: {} };
+    return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {} };
   }
 }
 
@@ -167,4 +172,39 @@ export function updateAgentInLock(
     id: agentId,
     hash: configHash
   };
+}
+
+/**
+ * Updates or adds a tool's ID and hash in the lock data.
+ * 
+ * @param lockData - The lock file data to update
+ * @param toolName - The tool name
+ * @param toolId - The tool ID
+ * @param configHash - The configuration hash
+ */
+export function updateToolInLock(
+  lockData: LockFileData,
+  toolName: string,
+  toolId: string,
+  configHash: string
+): void {
+  if (!lockData.tools || typeof lockData.tools !== 'object') {
+    lockData.tools = {};
+  }
+  
+  lockData.tools[toolName] = {
+    id: toolId,
+    hash: configHash
+  };
+}
+
+/**
+ * Retrieves tool ID and hash from lock data by tool name.
+ * 
+ * @param lockData - The lock file data
+ * @param toolName - The tool name
+ * @returns The tool data if found, undefined otherwise
+ */
+export function getToolFromLock(lockData: LockFileData, toolName: string): LockFileAgent | undefined {
+  return lockData.tools?.[toolName];
 } 

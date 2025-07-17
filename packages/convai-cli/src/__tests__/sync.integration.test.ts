@@ -104,7 +104,8 @@ describe('Sync Integration Tests', () => {
               hash: 'old_hash_that_will_not_match'
             }
           }
-        }
+        },
+        tools: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -178,7 +179,8 @@ describe('Sync Integration Tests', () => {
               hash: configHash
             }
           }
-        }
+        },
+        tools: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -227,7 +229,8 @@ describe('Sync Integration Tests', () => {
               hash: 'old_hash_value'
             }
           }
-        }
+        },
+        tools: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -282,7 +285,8 @@ describe('Sync Integration Tests', () => {
               hash: 'old_hash'
             }
           }
-        }
+        },
+        tools: {}
       };
       await saveLockFile(lockFilePath, lockData);
 

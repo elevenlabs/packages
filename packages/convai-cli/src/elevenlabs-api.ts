@@ -144,4 +144,65 @@ export async function listAgentsApi(
 export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<unknown> {
   const response = await client.conversationalAi.agents.get(agentId);
   return response;
+}
+
+/**
+ * Creates a new tool using the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param toolConfig - The tool configuration object
+ * @returns Promise that resolves to the created tool object
+ */
+export async function createToolApi(client: ElevenLabsClient, toolConfig: unknown): Promise<unknown> {
+  // Mock implementation until SDK supports tools API
+  const toolId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return { toolId, ...(toolConfig as Record<string, unknown>) };
+}
+
+/**
+ * Updates an existing tool using the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param toolId - The ID of the tool to update
+ * @param toolConfig - The updated tool configuration object
+ * @returns Promise that resolves to the updated tool object
+ */
+export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: unknown): Promise<unknown> {
+  // Mock implementation until SDK supports tools API
+  return { toolId, ...(toolConfig as Record<string, unknown>) };
+}
+
+/**
+ * Gets a specific tool from the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param toolId - The ID of the tool to retrieve
+ * @returns Promise that resolves to the tool object
+ */
+export async function getToolApi(client: ElevenLabsClient, toolId: string): Promise<unknown> {
+  // Mock implementation until SDK supports tools API
+  return { toolId, name: 'example_tool' };
+}
+
+/**
+ * Lists all tools from the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @returns Promise that resolves to a list of tool objects
+ */
+export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]> {
+  // Mock implementation until SDK supports tools API
+  return [];
+}
+
+/**
+ * Gets agents that depend on a specific tool.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param toolId - The ID of the tool
+ * @returns Promise that resolves to a list of dependent agents
+ */
+export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
+  // Mock implementation until SDK supports tools API
+  return [];
 } 

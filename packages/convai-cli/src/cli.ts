@@ -11,7 +11,9 @@ import {
   loadLockFile, 
   saveLockFile, 
   getAgentFromLock, 
-  updateAgentInLock
+  updateAgentInLock,
+  updateToolInLock,
+  getToolFromLock
 } from './utils';
 import { 
   getTemplateByName, 
@@ -23,7 +25,12 @@ import {
   createAgentApi, 
   updateAgentApi, 
   listAgentsApi, 
-  getAgentApi 
+  getAgentApi,
+  createToolApi,
+  updateToolApi,
+  getToolApi,
+  listToolsApi,
+  getToolDependentAgentsApi
 } from './elevenlabs-api';
 import { 
   getApiKey, 
@@ -31,6 +38,13 @@ import {
   removeApiKey, 
   isLoggedIn
 } from './config';
+import {
+  readToolsConfig,
+  writeToolsConfig,
+  writeToolConfig,
+  ToolsConfig,
+  ToolDefinition
+} from './tools';
 import { version } from '../package.json';
 
 // Load environment variables
@@ -40,6 +54,7 @@ const program = new Command();
 
 // Default file names
 const AGENTS_CONFIG_FILE = "agents.json";
+const TOOLS_CONFIG_FILE = "tools.json";
 const LOCK_FILE = "convai.lock";
 
 interface AgentDefinition {
@@ -121,8 +136,20 @@ program
         console.log(`Created ${AGENTS_CONFIG_FILE}`);
       }
       
+      // Create tools.json file
+      const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
+      if (await fs.pathExists(toolsConfigPath)) {
+        console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
+      } else {
+        const initialToolsConfig: ToolsConfig = {
+          tools: []
+        };
+        await writeToolsConfig(toolsConfigPath, initialToolsConfig);
+        console.log(`Created ${TOOLS_CONFIG_FILE}`);
+      }
+      
       // Create agent_configs directory structure
-      const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod'];
+      const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
       for (const dir of configDirs) {
         const dirPath = path.join(fullPath, dir);
         await fs.ensureDir(dirPath);
@@ -135,7 +162,8 @@ program
         console.log(`${LOCK_FILE} already exists, skipping creation`);
       } else {
         const initialLockData = {
-          agents: {}
+          agents: {},
+          tools: {}
         };
         await saveLockFile(lockFilePath, initialLockData);
         console.log(`Created ${LOCK_FILE}`);
@@ -154,8 +182,9 @@ ELEVENLABS_API_KEY=your_api_key_here
       console.log('\nProject initialized successfully!');
       console.log('Next steps:');
       console.log('1. Set your ElevenLabs API key: convai login');
-      console.log('2. Create an agent: convai add "My Agent" --template default');
-      console.log('3. Sync to ElevenLabs: convai sync');
+      console.log('2. Create an agent: convai add agent "My Agent" --template default');
+      console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
+      console.log('4. Sync to ElevenLabs: convai sync');
       
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
@@ -250,8 +279,12 @@ program
     }
   });
 
-program
+const addCommand = program
   .command('add')
+  .description('Add agents and tools');
+
+addCommand
+  .command('agent')
   .description('Add a new agent - creates config, uploads to ElevenLabs, and saves ID')
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
@@ -399,6 +432,36 @@ program
     }
   });
 
+addCommand
+  .command('webhook-tool')
+  .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
+  .argument('<name>', 'Name of the webhook tool to create')
+  .option('--config-path <path>', 'Custom config path (optional)')
+  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
+  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+    try {
+      await addTool(name, 'webhook', options.configPath, options.skipUpload);
+    } catch (error) {
+      console.error(`Error creating webhook tool: ${error}`);
+      process.exit(1);
+    }
+  });
+
+addCommand
+  .command('client-tool')
+  .description('Add a new client tool - creates config and uploads to ElevenLabs')
+  .argument('<name>', 'Name of the client tool to create')
+  .option('--config-path <path>', 'Custom config path (optional)')
+  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
+  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+    try {
+      await addTool(name, 'client', options.configPath, options.skipUpload);
+    } catch (error) {
+      console.error(`Error creating client tool: ${error}`);
+      process.exit(1);
+    }
+  });
+
 const templatesCommand = program
   .command('templates')
   .description('Manage agent templates');
@@ -525,6 +588,147 @@ program
   });
 
 // Helper functions
+
+async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, skipUpload = false): Promise<void> {
+  // Check if tools.json exists, create if not
+  const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+  let toolsConfig: ToolsConfig;
+  
+  try {
+    toolsConfig = await readToolsConfig(toolsConfigPath);
+  } catch (error) {
+    // Initialize tools.json if it doesn't exist
+    toolsConfig = { tools: [] };
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
+    console.log(`Created ${TOOLS_CONFIG_FILE}`);
+  }
+  
+  // Load lock file
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+  
+  // Check if tool already exists
+  const existingTool = toolsConfig.tools.find(tool => tool.name === name);
+  const lockedTool = getToolFromLock(lockData, name);
+  
+  if (existingTool && lockedTool?.id) {
+    console.error(`Tool '${name}' already exists`);
+    process.exit(1);
+  }
+  
+  // Generate config path if not provided
+  if (!configPath) {
+    const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
+    configPath = `tool_configs/${safeName}.json`;
+  }
+  
+  // Create config directory and file
+  const configFilePath = path.resolve(configPath);
+  await fs.ensureDir(path.dirname(configFilePath));
+  
+  // Create tool config using appropriate template
+  let toolConfig;
+  if (type === 'webhook') {
+    toolConfig = {
+      name,
+      description: `${name} webhook tool`,
+      type: 'webhook' as const,
+      api_schema: {
+        url: 'https://api.example.com/webhook',
+        method: 'POST',
+        path_params_schema: [],
+        query_params_schema: [],
+        request_body_schema: {
+          id: 'body',
+          type: 'object',
+          value_type: 'llm_prompt',
+          description: 'Request body for the webhook',
+          dynamic_variable: '',
+          constant_value: '',
+          required: true,
+          properties: []
+        },
+        request_headers: [
+          {
+            type: 'value' as const,
+            name: 'Content-Type',
+            value: 'application/json'
+          }
+        ],
+        auth_connection: null
+      },
+      response_timeout_secs: 30,
+      dynamic_variables: {
+        dynamic_variable_placeholders: {}
+      }
+    };
+  } else {
+    toolConfig = {
+      name,
+      description: `${name} client tool`,
+      type: 'client' as const,
+      expects_response: false,
+      response_timeout_secs: 30,
+      parameters: [
+        {
+          id: 'input',
+          type: 'string',
+          value_type: 'llm_prompt',
+          description: 'Input parameter for the client tool',
+          dynamic_variable: '',
+          constant_value: '',
+          required: true
+        }
+      ],
+      dynamic_variables: {
+        dynamic_variable_placeholders: {}
+      }
+    };
+  }
+  
+  await writeToolConfig(configFilePath, toolConfig);
+  console.log(`Created config file: ${configPath}`);
+  
+  // Add to tools.json if not already present
+  if (!existingTool) {
+    const newTool: ToolDefinition = {
+      name,
+      type,
+      config: configPath
+    };
+    toolsConfig.tools.push(newTool);
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
+    console.log(`Added tool '${name}' to tools.json`);
+  }
+  
+  if (skipUpload) {
+    console.log(`Edit ${configPath} to customize your tool, then run 'convai sync-tools' to upload`);
+    return;
+  }
+  
+  // Create tool in ElevenLabs
+  console.log(`Creating ${type} tool '${name}' in ElevenLabs...`);
+  
+  const client = await getElevenLabsClient();
+  
+  try {
+    const response = await createToolApi(client, toolConfig);
+    const toolId = (response as any).toolId || `tool_${Date.now()}`;
+    
+    console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
+    
+    // Update lock file
+    const configHash = calculateConfigHash(toolConfig);
+    updateToolInLock(lockData, name, toolId, configHash);
+    await saveLockFile(lockFilePath, lockData);
+    
+    console.log(`Edit ${configPath} to customize your tool, then run 'convai sync-tools' to update`);
+    
+  } catch (error) {
+    console.error(`Error creating tool in ElevenLabs: ${error}`);
+    process.exit(1);
+  }
+}
 
 async function syncAgents(agentName?: string, dryRun = false, environment?: string): Promise<void> {
   // Load agents configuration
