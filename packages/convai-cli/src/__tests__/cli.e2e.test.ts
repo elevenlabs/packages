@@ -176,7 +176,7 @@ describe('CLI End-to-End Tests', () => {
       expect(result.exitCode).toBe(0);
       
       // Try to add agent without API key (should work with skip-upload)
-      result = await runCli(['add', 'Test Agent', '--skip-upload']);
+      result = await runCli(['add', 'agent', 'Test Agent', '--skip-upload']);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Created config file');
       
@@ -199,7 +199,7 @@ describe('CLI End-to-End Tests', () => {
       const result = await runCli(['add']); // missing required argument
       
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('missing required argument');
+      expect(result.stdout).toContain('Usage: convai add');
     });
   });
 
@@ -225,7 +225,7 @@ describe('CLI End-to-End Tests', () => {
       const content = await fs.readFile(lockFilePath, 'utf-8');
       const parsed = JSON.parse(content);
       
-      expect(parsed).toEqual({ agents: {} });
+      expect(parsed).toEqual({ agents: {}, tools: {} });
     });
   });
 });
