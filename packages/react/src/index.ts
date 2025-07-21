@@ -10,6 +10,8 @@ import {
   InputConfig,
 } from "@elevenlabs/client";
 
+import { PACKAGE_VERSION } from "./version";
+
 export type {
   Role,
   Mode,
@@ -81,6 +83,16 @@ export function useConversation<T extends HookOptions & ControlledState>(
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
+          overrides: {
+            ...(defaultOptions?.overrides ?? {}),
+            ...(options?.overrides ?? {}),
+            client: {
+              ...(defaultOptions?.overrides?.client ?? {}),
+              ...(options?.overrides?.client ?? {}),
+              source: options?.overrides?.client?.source || defaultOptions?.overrides?.client?.source || "react_sdk",
+              version: options?.overrides?.client?.version || defaultOptions?.overrides?.client?.version || PACKAGE_VERSION,
+            },
+          },
           onModeChange: ({ mode }) => {
             setMode(mode);
           },
