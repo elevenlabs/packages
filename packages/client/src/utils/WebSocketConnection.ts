@@ -80,9 +80,16 @@ export class WebSocketConnection extends BaseConnection {
 
     try {
       const origin = config.origin ?? WSS_API_ORIGIN;
-      const url = config.signedUrl
-        ? config.signedUrl
-        : origin + WSS_API_PATHNAME + config.agentId;
+      let url: string;
+
+      const version = process.env.npm_package_version || "0.3.0";
+
+      if (config.signedUrl) {
+        const separator = config.signedUrl.includes("?") ? "&" : "?";
+        url = `${config.signedUrl}${separator}source=react_sdk&version=${version}`;
+      } else {
+        url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=react_sdk&version=${version}`;
+      }
 
       const protocols = [MAIN_PROTOCOL];
       if (config.authorization) {

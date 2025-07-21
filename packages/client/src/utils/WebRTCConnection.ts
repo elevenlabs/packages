@@ -58,9 +58,15 @@ export class WebRTCConnection extends BaseConnection {
     } else if ("agentId" in config && config.agentId) {
       // Agent ID provided - fetch token from API
       try {
-        const response = await fetch(
-          `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}`
-        );
+        const version = process.env.npm_package_version || "0.3.0";
+        const url = `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}&source=react_sdk&version=${version}`;
+
+        const headers: HeadersInit = {};
+        if (config.authorization) {
+          headers["Authorization"] = `Bearer ${config.authorization}`;
+        }
+
+        const response = await fetch(url, { headers });
 
         if (!response.ok) {
           throw new Error(
