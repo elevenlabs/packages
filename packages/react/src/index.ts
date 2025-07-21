@@ -89,8 +89,14 @@ export function useConversation<T extends HookOptions & ControlledState>(
             client: {
               ...(defaultOptions?.overrides?.client ?? {}),
               ...(options?.overrides?.client ?? {}),
-              source: options?.overrides?.client?.source || defaultOptions?.overrides?.client?.source || "react_sdk",
-              version: options?.overrides?.client?.version || defaultOptions?.overrides?.client?.version || PACKAGE_VERSION,
+              source:
+                options?.overrides?.client?.source ||
+                defaultOptions?.overrides?.client?.source ||
+                "react_sdk",
+              version:
+                options?.overrides?.client?.version ||
+                defaultOptions?.overrides?.client?.version ||
+                PACKAGE_VERSION,
             },
           },
           onModeChange: ({ mode }) => {
