@@ -15,6 +15,7 @@ export type { InputConfig } from "./utils/input";
 export type { IncomingSocketEvent } from "./utils/events";
 export type {
   SessionConfig,
+  BaseSessionConfig,
   DisconnectionDetails,
   Language,
   ConnectionType,
