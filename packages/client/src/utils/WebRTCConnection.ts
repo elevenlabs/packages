@@ -60,13 +60,7 @@ export class WebRTCConnection extends BaseConnection {
       try {
         const version = process.env.npm_package_version || "0.3.0";
         const url = `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}&source=react_sdk&version=${version}`;
-
-        const headers: HeadersInit = {};
-        if (config.authorization) {
-          headers["Authorization"] = `Bearer ${config.authorization}`;
-        }
-
-        const response = await fetch(url, { headers });
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(
