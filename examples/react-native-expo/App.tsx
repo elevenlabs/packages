@@ -8,18 +8,18 @@ const ConversationScreen: React.FC = () => {
   const conversation = useConversation({
     onConnect: () => {
       console.log('✅ Connected to conversation');
-      Alert.alert('Connected', 'Conversation started successfully!');
     },
     onDisconnect: () => {
       console.log('👋 Disconnected from conversation');
-      Alert.alert('Disconnected', 'Conversation ended');
     },
     onError: (error) => {
       console.error('❌ Conversation error:', error);
-      Alert.alert('Error', `Conversation error: ${error}`);
     },
     onDebug: (debug) => {
       console.log('🐛 Debug:', debug);
+    },
+    onMessage: (message) => {
+      console.log('💬 Message:', message);
     },
   });
 
@@ -58,12 +58,7 @@ const ConversationScreen: React.FC = () => {
   };
 
   const getStatusText = (status: ConversationStatus): string => {
-    switch (status) {
-      case 'connected': return 'Connected';
-      case 'connecting': return 'Connecting...';
-      case 'disconnected': return 'Disconnected';
-      default: return 'Unknown';
-    }
+    return status[0].toUpperCase() + status.slice(1);
   };
 
   const canStart = conversation.status === 'disconnected' && !isStarting;

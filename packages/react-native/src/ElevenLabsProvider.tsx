@@ -1,11 +1,8 @@
 import React from 'react';
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { ConversationStatus } from './types';
-
-interface ConversationConfig {
-  agentId?: string;
-  conversationToken?: string;
-}
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import type { ConversationConfig, ConversationStatus } from './types';
+import { constructOverrides } from './overrides';
+import { registerGlobals } from '@livekit/react-native';
 
 interface ConversationCallbacks {
   onConnect?: () => void;
@@ -27,8 +24,10 @@ interface Conversation {
 
 interface ElevenLabsContextType {
   conversation: Conversation;
-  callbacks: ConversationCallbacks;
+  callbacksRef: React.MutableRefObject<ConversationCallbacks>;
   serverUrl: string;
+  setCallbacks: (callbacks: ConversationCallbacks) => void;
+  setServerUrl: (url: string) => void;
 }
 
 const DEFAULT_SERVER_URL = 'wss://livekit.rtc.elevenlabs.io';
@@ -44,11 +43,17 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
   // Extract serverUrl and callbacks from options
   const { serverUrl, ...callbacks } = options;
 
-  // Store callbacks and serverUrl in context for provider to use
-  context.callbacks = callbacks;
-  if (serverUrl) {
-    context.serverUrl = serverUrl;
-  }
+  // Update serverUrl when it changes
+  useEffect(() => {
+    if (serverUrl) {
+      context.setServerUrl(serverUrl);
+    }
+  }, [context, serverUrl]);
+
+  // Update callbacks - now uses ref so no re-render issues
+  useEffect(() => {
+    context.setCallbacks(callbacks);
+  });
 
   return context.conversation;
 };
@@ -59,8 +64,11 @@ interface ElevenLabsProviderProps {
 }
 
 // MessageHandler component to access LiveKit hooks inside room context
-const MessageHandler: React.FC<{ LiveKit: any; onReady: (participant: any) => void; isConnected: boolean }> = ({ LiveKit, onReady, isConnected }) => {
+const MessageHandler: React.FC<{ LiveKit: any; onReady: (participant: any) => void; isConnected: boolean; callbacks: ConversationCallbacks }> = ({ LiveKit, onReady, isConnected, callbacks }) => {
   const { localParticipant } = LiveKit.useLocalParticipant();
+  const _ = LiveKit.useDataChannel((msg: string) => {
+    callbacks.onMessage?.(msg);
+  });
 
   useEffect(() => {
     if (isConnected && localParticipant) {
@@ -75,11 +83,15 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [token, setToken] = useState('');
   const [connect, setConnect] = useState(false);
   const [status, setStatus] = useState<ConversationStatus>('disconnected');
-  const [callbacks, setCallbacks] = useState<ConversationCallbacks>({});
+  const callbacksRef = useRef<ConversationCallbacks>({});
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
   const [roomConnected, setRoomConnected] = useState(false);
+  const [overrides, setOverrides] = useState<ConversationConfig['overrides']>({});
+  const [customLlmExtraBody, setCustomLlmExtraBody] = useState<ConversationConfig['customLlmExtraBody']>(null);
+  const [dynamicVariables, setDynamicVariables] = useState<ConversationConfig['dynamicVariables']>({});
 
   LiveKit.registerGlobals();
+  // registerGlobals();
 
   const [localParticipant, setLocalParticipant] = useState<typeof LiveKit.localParticipant | null>(null);
 
@@ -123,8 +135,6 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
       const encoder = new TextEncoder();
       const data = encoder.encode(JSON.stringify(message));
 
-      console.log('Sending message:', message);
-
       await localParticipant.publishData(data, { reliable: true });
     } catch (error) {
       console.error("Failed to send message via WebRTC:", error);
@@ -135,6 +145,10 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const startSession = useCallback(async (config: ConversationConfig) => {
     try {
       setStatus('connecting');
+      setOverrides(config.overrides || {});
+      setCustomLlmExtraBody(config.customLlmExtraBody || null);
+      setDynamicVariables(config.dynamicVariables || {});
+      callbacksRef.current.onDebug?.('Starting session');
 
       let conversationToken: string;
 
@@ -152,56 +166,67 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
 
     } catch (error) {
       setStatus('disconnected');
-      callbacks.onError?.(error);
+      callbacksRef.current.onError?.(error);
       throw error;
     }
-  }, [getConversationToken, callbacks]);
+  }, [getConversationToken]);
 
   const endConversation = useCallback(async () => {
     try {
       setConnect(false);
       setToken('');
       setStatus('disconnected');
-      callbacks.onDisconnect?.();
+      callbacksRef.current.onDisconnect?.();
+      callbacksRef.current.onDebug?.('Conversation ended');
 
       console.log('Ending conversation');
     } catch (error) {
-      callbacks.onError?.(error);
+      callbacksRef.current.onError?.(error);
       throw error;
     }
-  }, [callbacks]);
+  }, []);
 
     const handleParticipantReady = useCallback((participant: any) => {
     setLocalParticipant(participant);
 
     if (localParticipant) {
-      console.log('mic enabled', localParticipant.isMicrophoneEnabled);
       // Send initial message
-      sendMessage({
-        type: 'conversation_initiation_client_data',
+      const overridesEvent = constructOverrides({
+        overrides,
+        customLlmExtraBody,
+        dynamicVariables,
       });
+
+      sendMessage(overridesEvent);
     }
-  }, [sendMessage, localParticipant]);
+  }, [
+    sendMessage,
+    localParticipant,
+    overrides,
+    customLlmExtraBody,
+    dynamicVariables
+  ]);
 
   const handleConnected = useCallback(() => {
-    console.log('Connected to LiveKit');
     setRoomConnected(true);
     setStatus('connected');
-    callbacks.onConnect?.();
-  }, [callbacks]);
+    callbacksRef.current.onConnect?.();
+    callbacksRef.current.onDebug?.('Connected to LiveKit room');
+  }, []);
 
   const handleDisconnected = useCallback(() => {
     console.info('Disconnected from LiveKit');
     setRoomConnected(false);
     setStatus('disconnected');
     setLocalParticipant(null);
-    callbacks.onDisconnect?.();
-  }, [callbacks]);
+    callbacksRef.current.onDisconnect?.();
+    callbacksRef.current.onDebug?.('Disconnected from LiveKit room');
+  }, []);
 
   const handleError = useCallback((error: unknown) => {
     console.error('LiveKit error:', error);
-    callbacks.onError?.(error);
-  }, [callbacks]);
+    callbacksRef.current.onError?.(error);
+  }, []);
 
   const conversation: Conversation = {
     startSession,
@@ -209,10 +234,16 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     status,
   };
 
+  const setCallbacks = useCallback((callbacks: ConversationCallbacks) => {
+    callbacksRef.current = callbacks;
+  }, []);
+
   const contextValue: ElevenLabsContextType = {
     conversation,
-    callbacks,
+    callbacksRef,
     serverUrl,
+    setCallbacks,
+    setServerUrl,
   };
 
   return (
@@ -230,7 +261,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         onDisconnected={handleDisconnected}
         onError={handleError}
       >
-        <MessageHandler LiveKit={LiveKit} onReady={handleParticipantReady} isConnected={roomConnected} />
+        <MessageHandler LiveKit={LiveKit} onReady={handleParticipantReady} isConnected={roomConnected} callbacks={callbacksRef.current} />
         {children}
       </LiveKit.LiveKitRoom>
     </ElevenLabsContext.Provider>

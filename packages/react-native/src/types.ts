@@ -77,3 +77,46 @@ export type Callbacks = {
   onPermissionGranted?: () => void;
   onPermissionDenied?: () => void;
 };
+
+export type ConversationConfig = {
+  agentId?: string;
+  conversationToken?: string;
+  overrides?: {
+    agent?: {
+      prompt?: {
+        prompt?: string;
+      };
+      firstMessage?: string;
+      language?: Language;
+    };
+    tts?: {
+      voiceId?: string;
+    };
+    conversation?: {
+      textOnly?: boolean;
+    };
+  };
+  customLlmExtraBody?: unknown;
+  dynamicVariables?: Record<string, string | number | boolean>;
+};
+
+export type InitiationClientDataEvent = {
+  type: "conversation_initiation_client_data";
+  conversation_config_override?: {
+    agent?: {
+      prompt?: {
+        prompt?: string;
+      };
+      first_message?: string;
+      language?: Language;
+    };
+    tts?: {
+      voice_id?: string;
+    };
+    conversation?: {
+      text_only?: boolean;
+    };
+  };
+  custom_llm_extra_body?: unknown;
+  dynamic_variables?: Record<string, string | number | boolean>;
+};

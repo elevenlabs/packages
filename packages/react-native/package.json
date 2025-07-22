@@ -37,7 +37,7 @@
   "license": "MIT",
   "dependencies": {
     "@livekit/react-native": "^2.7.6",
-    "@livekit/react-native-webrtc": "^125.0.0"
+    "@livekit/react-native-webrtc": "^125.0.11"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
