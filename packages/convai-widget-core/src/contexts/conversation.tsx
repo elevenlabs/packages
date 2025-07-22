@@ -176,7 +176,7 @@ function useConversationSetup() {
               ...processedConfig.overrides,
               client: {
                 ...processedConfig.overrides?.client,
-                source: processedConfig.overrides?.client?.source || "widget_sdk",
+                source: processedConfig.overrides?.client?.source || "widget",
                 version: processedConfig.overrides?.client?.version || PACKAGE_VERSION,
               },
             },
