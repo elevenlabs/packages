@@ -1,4 +1,4 @@
-package com.paul.asjes.elevenlabsrnexample
+package io.elevenlabs.rnexample
 
 import android.os.Build
 import android.os.Bundle

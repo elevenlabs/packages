@@ -1,4 +1,4 @@
-package com.paul.asjes.elevenlabsrnexample
+package io.elevenlabs.rnexample
 
 import android.app.Application
 import android.content.res.Configuration

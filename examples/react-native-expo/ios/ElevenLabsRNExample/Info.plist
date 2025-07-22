@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.paul.asjes.elevenlabsrnexample</string>
+          <string>cio.elevenlabs.rnexample</string>
         </array>
       </dict>
       <dict>
