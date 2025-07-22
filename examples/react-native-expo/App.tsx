@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as LiveKit from '@livekit/react-native';
 import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
 import type { ConversationStatus } from '@elevenlabs/react-native';
@@ -31,7 +31,7 @@ const ConversationScreen: React.FC = () => {
     setIsStarting(true);
     try {
       await conversation.startSession({
-        agentId: 'J3Pbu5gP6NNKBscdCdwA', // Replace with your actual agent ID
+        agentId: '<your-agent-id>', // Replace with your actual agent ID
       });
     } catch (error) {
       console.error('Failed to start conversation:', error);

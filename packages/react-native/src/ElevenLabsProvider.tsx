@@ -2,7 +2,6 @@ import React from 'react';
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ConversationConfig, ConversationStatus } from './types';
 import { constructOverrides } from './overrides';
-import { registerGlobals } from '@livekit/react-native';
 
 interface ConversationCallbacks {
   onConnect?: () => void;
@@ -50,7 +49,6 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
     }
   }, [context, serverUrl]);
 
-  // Update callbacks - now uses ref so no re-render issues
   useEffect(() => {
     context.setCallbacks(callbacks);
   });
@@ -91,7 +89,6 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [dynamicVariables, setDynamicVariables] = useState<ConversationConfig['dynamicVariables']>({});
 
   LiveKit.registerGlobals();
-  // registerGlobals();
 
   const [localParticipant, setLocalParticipant] = useState<typeof LiveKit.localParticipant | null>(null);
 
