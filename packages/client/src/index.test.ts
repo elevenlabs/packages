@@ -397,7 +397,9 @@ describe("Connection Types", () => {
 
       // Verify fetch was called with correct URL base (version may vary)
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/^https:\/\/api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/)
+        expect.stringMatching(
+          /^https:\/\/api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+        )
       );
     });
 
