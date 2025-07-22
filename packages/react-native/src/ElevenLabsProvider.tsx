@@ -109,11 +109,12 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
       `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`
     );
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`Failed to get conversation token: ${response.statusText}`);
+      throw new Error(`Failed to get conversation token: ${data.detail.message}`);
     }
 
-    const data = await response.json();
     if (!data.token) {
       throw new Error('No conversation token received from API');
     }
