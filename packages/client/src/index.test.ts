@@ -395,9 +395,9 @@ describe("Connection Types", () => {
         "Failed to fetch conversation token for agent test-agent"
       );
 
-      // Verify fetch was called with correct URL
+      // Verify fetch was called with correct URL base (version may vary)
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=test-agent"
+        expect.stringMatching(/^https:\/\/api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/)
       );
     });
 
