@@ -10,7 +10,10 @@ import * as os from 'os';
 // Optional keychain import - graceful fallback if not available
 let keytar: any;
 try {
-  keytar = require('keytar');
+  // Skip keytar in CI environments where it might cause permission issues
+  if (!process.env.CI && !process.env.GITHUB_ACTIONS && !process.env.DOCKER_CONTAINER) {
+    keytar = require('keytar');
+  }
 } catch (error) {
   // Keychain not available, will use file storage
 }
