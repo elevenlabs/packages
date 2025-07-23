@@ -1,17 +1,17 @@
 import React from 'react';
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import type { ConversationConfig, ConversationStatus } from './types';
+import { createContext, useContext, useState } from 'react';
+import { registerGlobals } from '@livekit/react-native';
+import type { LocalParticipant } from 'livekit-client';
+import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig } from './types';
 import { constructOverrides } from './overrides';
+import { DEFAULT_SERVER_URL } from './utils/constants';
+import { useConversationCallbacks } from './hooks/useConversationCallbacks';
+import { useConversationSession } from './hooks/useConversationSession';
+import { useLiveKitRoom } from './hooks/useLiveKitRoom';
+import { useMessageSending } from './hooks/useMessageSending';
+import { LiveKitRoomWrapper } from './components/LiveKitRoomWrapper';
 
-interface ConversationCallbacks {
-  onConnect?: () => void;
-  onDisconnect?: (details?: unknown) => void;
-  onMessage?: (message: unknown) => void;
-  onError?: (error: unknown) => void;
-  onDebug?: (debug: unknown) => void;
-}
-
-interface ConversationOptions extends ConversationCallbacks {
+interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
   serverUrl?: string;
 }
 
@@ -23,13 +23,13 @@ interface Conversation {
 
 interface ElevenLabsContextType {
   conversation: Conversation;
-  callbacksRef: React.MutableRefObject<ConversationCallbacks>;
+  callbacksRef: { current: Callbacks };
   serverUrl: string;
-  setCallbacks: (callbacks: ConversationCallbacks) => void;
+  clientTools: ClientToolsConfig['clientTools'];
+  setCallbacks: (callbacks: Callbacks) => void;
   setServerUrl: (url: string) => void;
+  setClientTools: (tools: ClientToolsConfig['clientTools']) => void;
 }
-
-const DEFAULT_SERVER_URL = 'wss://livekit.rtc.elevenlabs.io';
 
 const ElevenLabsContext = createContext<ElevenLabsContextType | null>(null);
 
@@ -39,192 +39,76 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
     throw new Error('useConversation must be used within ElevenLabsProvider');
   }
 
-  // Extract serverUrl and callbacks from options
-  const { serverUrl, ...callbacks } = options;
+  const { serverUrl, clientTools, ...callbacks } = options;
 
-  // Update serverUrl when it changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (serverUrl) {
       context.setServerUrl(serverUrl);
     }
   }, [context, serverUrl]);
 
-  useEffect(() => {
-    context.setCallbacks(callbacks);
-  });
+  if (clientTools) {
+    context.setClientTools(clientTools);
+  }
+
+  context.setCallbacks(callbacks);
 
   return context.conversation;
 };
 
 interface ElevenLabsProviderProps {
   children: React.ReactNode;
-  LiveKit: any;
 }
 
-// MessageHandler component to access LiveKit hooks inside room context
-const MessageHandler: React.FC<{ LiveKit: any; onReady: (participant: any) => void; isConnected: boolean; callbacks: ConversationCallbacks }> = ({ LiveKit, onReady, isConnected, callbacks }) => {
-  const { localParticipant } = LiveKit.useLocalParticipant();
-  const _ = LiveKit.useDataChannel((msg: string) => {
-    callbacks.onMessage?.(msg);
-  });
+export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children }) => {
+  // Initialize globals on mount
+  registerGlobals();
 
-  useEffect(() => {
-    if (isConnected && localParticipant) {
-      onReady(localParticipant);
-    }
-  }, [isConnected, localParticipant, onReady]);
-
-  return null;
-};
-
-export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, LiveKit }) => {
+  // State management
   const [token, setToken] = useState('');
   const [connect, setConnect] = useState(false);
   const [status, setStatus] = useState<ConversationStatus>('disconnected');
-  const callbacksRef = useRef<ConversationCallbacks>({});
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
-  const [roomConnected, setRoomConnected] = useState(false);
-  const [overrides, setOverrides] = useState<ConversationConfig['overrides']>({});
-  const [customLlmExtraBody, setCustomLlmExtraBody] = useState<ConversationConfig['customLlmExtraBody']>(null);
-  const [dynamicVariables, setDynamicVariables] = useState<ConversationConfig['dynamicVariables']>({});
+  const [roomId, setRoomId] = useState<string>('');
 
-  LiveKit.registerGlobals();
+  // Use ref for clientTools to avoid re-renders (like callbacks)
+  const clientToolsRef = React.useRef<ClientToolsConfig['clientTools']>({});
 
-  const [localParticipant, setLocalParticipant] = useState<typeof LiveKit.localParticipant | null>(null);
+  // Custom hooks
+  const { callbacksRef, setCallbacks } = useConversationCallbacks();
 
-  useEffect(() => {
-    const start = async () => {
-      await LiveKit.AudioSession.startAudioSession();
-    };
+  const {
+    startSession,
+    endConversation,
+    overrides,
+    customLlmExtraBody,
+    dynamicVariables,
+  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setRoomId);
 
-    start();
-    return () => {
-      LiveKit.AudioSession.stopAudioSession();
-    };
-  }, [LiveKit]);
+  const {
+    roomConnected,
+    localParticipant,
+    handleParticipantReady,
+    handleConnected,
+    handleDisconnected,
+    handleError,
+  } = useLiveKitRoom(callbacksRef, setStatus, roomId);
 
-  // Get conversation token from ElevenLabs API
-  const getConversationToken = useCallback(async (agentId: string): Promise<string> => {
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`
-    );
+  const { sendMessage } = useMessageSending(status, localParticipant, callbacksRef);
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(`Failed to get conversation token: ${data.detail.message}`);
-    }
-
-    if (!data.token) {
-      throw new Error('No conversation token received from API');
-    }
-
-    return data.token;
-  }, []);
-
-  // TODO: Import event types from client package
-  const sendMessage = useCallback(async (message: unknown) => {
-    console.log('status', status);
-    if (status !== 'connected' || !localParticipant) {
-      console.warn('Cannot send message: room not connected or no local participant');
-      return;
-    }
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(JSON.stringify(message));
-
-      await localParticipant.publishData(data, { reliable: true });
-    } catch (error) {
-      console.error("Failed to send message via WebRTC:", error);
-      console.error("Error details:", error);
-    }
-  }, [status, localParticipant]);
-
-  const startSession = useCallback(async (config: ConversationConfig) => {
-    try {
-      setStatus('connecting');
-      setOverrides(config.overrides || {});
-      setCustomLlmExtraBody(config.customLlmExtraBody || null);
-      setDynamicVariables(config.dynamicVariables || {});
-      callbacksRef.current.onDebug?.('Starting session');
-
-      let conversationToken: string;
-
-      if (config.conversationToken) {
-        conversationToken = config.conversationToken;
-      } else if (config.agentId) {
-        console.log('Getting conversation token for agentId:', config.agentId);
-        conversationToken = await getConversationToken(config.agentId);
-      } else {
-        throw new Error('Either conversationToken or agentId is required');
-      }
-
-      setToken(conversationToken);
-      setConnect(true);
-
-    } catch (error) {
-      setStatus('disconnected');
-      callbacksRef.current.onError?.(error);
-      throw error;
-    }
-  }, [getConversationToken]);
-
-  const endConversation = useCallback(async () => {
-    try {
-      setConnect(false);
-      setToken('');
-      setStatus('disconnected');
-      callbacksRef.current.onDisconnect?.();
-      callbacksRef.current.onDebug?.('Conversation ended');
-
-      console.log('Ending conversation');
-    } catch (error) {
-      callbacksRef.current.onError?.(error);
-      throw error;
-    }
-  }, []);
-
-    const handleParticipantReady = useCallback((participant: any) => {
-    setLocalParticipant(participant);
+  // Handle participant ready with overrides
+  const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
+    handleParticipantReady(participant);
 
     if (localParticipant) {
-      // Send initial message
       const overridesEvent = constructOverrides({
         overrides,
         customLlmExtraBody,
         dynamicVariables,
       });
-
       sendMessage(overridesEvent);
     }
-  }, [
-    sendMessage,
-    localParticipant,
-    overrides,
-    customLlmExtraBody,
-    dynamicVariables
-  ]);
-
-  const handleConnected = useCallback(() => {
-    setRoomConnected(true);
-    setStatus('connected');
-    callbacksRef.current.onConnect?.();
-    callbacksRef.current.onDebug?.('Connected to LiveKit room');
-  }, []);
-
-  const handleDisconnected = useCallback(() => {
-    console.info('Disconnected from LiveKit');
-    setRoomConnected(false);
-    setStatus('disconnected');
-    setLocalParticipant(null);
-    callbacksRef.current.onDisconnect?.();
-    callbacksRef.current.onDebug?.('Disconnected from LiveKit room');
-  }, []);
-
-  const handleError = useCallback((error: unknown) => {
-    console.error('LiveKit error:', error);
-    callbacksRef.current.onError?.(error);
-  }, []);
+  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, sendMessage]);
 
   const conversation: Conversation = {
     startSession,
@@ -232,36 +116,38 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     status,
   };
 
-  const setCallbacks = useCallback((callbacks: ConversationCallbacks) => {
-    callbacksRef.current = callbacks;
+  // Create setClientTools function that only updates ref (like setCallbacks)
+  const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {
+    clientToolsRef.current = tools;
   }, []);
 
   const contextValue: ElevenLabsContextType = {
     conversation,
     callbacksRef,
     serverUrl,
+    clientTools: clientToolsRef.current,
     setCallbacks,
     setServerUrl,
+    setClientTools,
   };
 
   return (
     <ElevenLabsContext.Provider value={contextValue}>
-      <LiveKit.LiveKitRoom
+      <LiveKitRoomWrapper
         serverUrl={serverUrl}
         token={token}
         connect={connect}
-        audio={true}
-        video={false}
-        options={{
-          adaptiveStream: { pixelDensity: 'screen' },
-        }}
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
         onError={handleError}
+        roomConnected={roomConnected}
+        callbacks={callbacksRef.current}
+        onParticipantReady={handleParticipantReadyWithOverrides}
+        sendMessage={sendMessage}
+        clientTools={clientToolsRef.current}
       >
-        <MessageHandler LiveKit={LiveKit} onReady={handleParticipantReady} isConnected={roomConnected} callbacks={callbacksRef.current} />
         {children}
-      </LiveKit.LiveKitRoom>
+      </LiveKitRoomWrapper>
     </ElevenLabsContext.Provider>
   );
 };

@@ -1,26 +1,42 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import * as LiveKit from '@livekit/react-native';
 import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
-import type { ConversationStatus } from '@elevenlabs/react-native';
+import type { ConversationStatus, Callbacks } from '@elevenlabs/react-native';
 
-const ConversationScreen: React.FC = () => {
+const ConversationScreen = () => {
   const conversation = useConversation({
-    onConnect: () => {
-      console.log('✅ Connected to conversation');
+    // Example client tools
+    clientTools: {
+      logMessage: (message: string) => {
+        console.log('logMessage:', message);
+
+        return 'Message logged successfully';
+      }
     },
-    onDisconnect: () => {
-      console.log('👋 Disconnected from conversation');
+    onConnect: ({ conversationId }: Callbacks['onConnect']) => {
+      console.log('✅ Connected to conversation', conversationId);
     },
-    onError: (error) => {
-      console.error('❌ Conversation error:', error);
+    onDisconnect: (details: string) => {
+      console.log('👋 Disconnected from conversation', details);
     },
-    onDebug: (debug) => {
-      console.log('🐛 Debug:', debug);
+    onError: ({ message, context }: Callbacks['onError']) => {
+      console.error('❌ Conversation error:', message, context);
     },
-    onMessage: (message) => {
-      console.log('💬 Message:', message);
+    onMessage: ({ message, source }: Callbacks['onMessage']) => {
+      console.log('💬 Message:', message, 'from:', source);
     },
+    onModeChange: ({ mode }: Callbacks['onModeChange']) => {
+      console.log('🔊 Mode:', mode);
+    },
+    onStatusChange: ({ status }: Callbacks['onStatusChange']) => {
+      console.log('🔊 Status:', status);
+    },
+    onCanSendFeedbackChange: ({ canSendFeedback }: Callbacks['onCanSendFeedbackChange']) => {
+      console.log('🔊 Can send feedback:', canSendFeedback);
+    },
+    onUnhandledClientToolCall: (params: Callbacks['onUnhandledClientToolCall']) => {
+      console.log('🔊 Unhandled client tool call:', params);
+    }
   });
 
   const [isStarting, setIsStarting] = useState(false);
@@ -31,7 +47,7 @@ const ConversationScreen: React.FC = () => {
     setIsStarting(true);
     try {
       await conversation.startSession({
-        agentId: '<your-agent-id>', // Replace with your actual agent ID
+        agentId: 'J3Pbu5gP6NNKBscdCdwA', // Replace with your actual agent ID
       });
     } catch (error) {
       console.error('Failed to start conversation:', error);
@@ -67,6 +83,7 @@ const ConversationScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ElevenLabs Conversation</Text>
+      <Text style={styles.subtitle}>With Client Tools Support</Text>
 
       <View style={styles.statusContainer}>
         <View style={[styles.statusDot, { backgroundColor: getStatusColor(conversation.status) }]} />
@@ -92,17 +109,13 @@ const ConversationScreen: React.FC = () => {
           <Text style={styles.buttonText}>End Conversation</Text>
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.instructions}>
-        Make sure to replace 'your-agent-id' with your actual ElevenLabs agent ID
-      </Text>
     </View>
   );
 };
 
 export default function App() {
   return (
-    <ElevenLabsProvider LiveKit={LiveKit}>
+    <ElevenLabsProvider>
       <ConversationScreen />
     </ElevenLabsProvider>
   );
@@ -119,13 +132,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 40,
+    marginBottom: 8,
     color: '#1F2937',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 32,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 24,
   },
   statusDot: {
     width: 12,
@@ -137,6 +155,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#374151',
+  },
+  toolsContainer: {
+    backgroundColor: '#E5E7EB',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    width: '100%',
+  },
+  toolsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  toolItem: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontFamily: 'monospace',
+    marginBottom: 4,
   },
   buttonContainer: {
     width: '100%',
@@ -164,7 +201,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   instructions: {
-    marginTop: 40,
+    marginTop: 24,
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',

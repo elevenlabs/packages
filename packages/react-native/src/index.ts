@@ -1,17 +1,12 @@
-// Simplified ElevenLabs React Native SDK
 export { ElevenLabsProvider, useConversation } from "./ElevenLabsProvider";
 
-// Core types
 export type {
-  Role,
-  Mode,
-  ConversationStatus,
-  Language,
   Callbacks,
+  ConversationConfig,
+  ConversationStatus,
+  Mode,
+  Role,
+  Language,
   ClientToolsConfig,
+  ClientToolCallEvent,
 } from "./types";
-
-export {
-  ConversationError as ConversationErrorClass,
-  ErrorCodes,
-} from "./errors";

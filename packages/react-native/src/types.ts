@@ -1,17 +1,17 @@
 /**
- * Role in the conversation - consistent with client SDK
+ * Role in the conversation
  */
 export type Role = "user" | "ai";
 
 /**
- * Current mode of the conversation - consistent with client SDK
+ * Current mode of the conversation
  */
 export type Mode = "speaking" | "listening";
 
 export type ConversationStatus = "disconnected" | "connecting" | "connected";
 
 /**
- * Language support - aligned with client SDK
+ * Language support
  */
 export type Language =
   | "en"
@@ -48,34 +48,41 @@ export type Language =
   | "vi";
 
 /**
- * Client tools configuration - consistent with client SDK
+ * Client tool call event structure
+ */
+export type ClientToolCallEvent = {
+  tool_name: string;
+  tool_call_id: string;
+  parameters: unknown;
+  expects_response: boolean;
+};
+
+/**
+ * Client tools configuration
  */
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
     (
-      parameters: Record<string, unknown>
+      parameters: unknown
     ) => Promise<string | number | undefined> | string | number | undefined
   >;
 };
 
 /**
- * Callbacks configuration - aligned with client SDK but adapted for React Native
+ * Callbacks configuration
  */
 export type Callbacks = {
-  onConnect: (props: { conversationId: string }) => void;
-  onDisconnect: (details: string) => void;
-  onError: (message: string, context?: Record<string, unknown>) => void;
-  onMessage: (props: { message: string; source: Role }) => void;
-  onAudio: (base64Audio: string) => void;
-  onModeChange: (prop: { mode: Mode }) => void;
-  onStatusChange: (prop: { status: ConversationStatus }) => void;
-  onCanSendFeedbackChange: (prop: { canSendFeedback: boolean }) => void;
-  onUnhandledClientToolCall?: (params: string) => void;
-  // React Native specific callbacks
-  onPermissionRequested?: () => void;
-  onPermissionGranted?: () => void;
-  onPermissionDenied?: () => void;
+  onConnect?: (props: { conversationId: string }) => void;
+  // internal debug events, not to be used
+  onDebug?: (props: unknown) => void;
+  onDisconnect?: (details: string) => void;
+  onError?: (message: string, context?: Record<string, unknown>) => void;
+  onMessage?: (props: { message: string; source: Role }) => void;
+  onModeChange?: (prop: { mode: Mode }) => void;
+  onStatusChange?: (prop: { status: ConversationStatus }) => void;
+  onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
+  onUnhandledClientToolCall?: (params: ClientToolCallEvent) => void;
 };
 
 export type ConversationConfig = {
