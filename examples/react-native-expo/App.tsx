@@ -38,7 +38,7 @@ const ConversationScreen = () => {
     setIsStarting(true);
     try {
       await conversation.startSession({
-        agentId: 'J3Pbu5gP6NNKBscdCdwA', // Replace with your actual agent ID
+        agentId: '<your-agent-id>', // Replace with your actual agent ID
       });
     } catch (error) {
       console.error('Failed to start conversation:', error);
