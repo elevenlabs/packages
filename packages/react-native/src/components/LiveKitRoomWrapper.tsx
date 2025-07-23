@@ -16,7 +16,8 @@ interface LiveKitRoomWrapperProps {
   callbacks: Callbacks;
   onParticipantReady: (participant: LocalParticipant) => void;
   sendMessage: (message: unknown) => void;
-  clientTools?: ClientToolsConfig['clientTools'];
+  clientTools: ClientToolsConfig['clientTools'];
+  updateCurrentEventId?: (eventId: number) => void;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -32,6 +33,7 @@ export const LiveKitRoomWrapper = ({
   onParticipantReady,
   sendMessage,
   clientTools,
+  updateCurrentEventId,
 }: LiveKitRoomWrapperProps) => {
   return (
     <LiveKitRoom
@@ -53,6 +55,7 @@ export const LiveKitRoomWrapper = ({
         callbacks={callbacks}
         sendMessage={sendMessage}
         clientTools={clientTools}
+        updateCurrentEventId={updateCurrentEventId}
       />
       {children}
     </LiveKitRoom>

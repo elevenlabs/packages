@@ -1,45 +1,36 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { TextInput } from 'react-native';
 import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
-import type { ConversationStatus, Callbacks } from '@elevenlabs/react-native';
+import type { ConversationStatus, Callbacks, ConversationOptions } from '@elevenlabs/react-native';
 
 const ConversationScreen = () => {
   const conversation = useConversation({
-    // Example client tools
-    clientTools: {
-      logMessage: (message: string) => {
-        console.log('logMessage:', message);
-
-        return 'Message logged successfully';
-      }
-    },
-    onConnect: ({ conversationId }: Callbacks['onConnect']) => {
+    onConnect: ({ conversationId }: { conversationId: string }) => {
       console.log('✅ Connected to conversation', conversationId);
     },
     onDisconnect: (details: string) => {
-      console.log('👋 Disconnected from conversation', details);
+      console.log('❌ Disconnected from conversation', details);
     },
-    onError: ({ message, context }: Callbacks['onError']) => {
+    onError: (message: string, context?: Record<string, unknown>) => {
       console.error('❌ Conversation error:', message, context);
     },
-    onMessage: ({ message, source }: Callbacks['onMessage']) => {
-      console.log('💬 Message:', message, 'from:', source);
+    onMessage: ({ message, source }: { message: string; source: 'user' | 'ai' }) => {
+      console.log(`💬 Message from ${source}:`, message);
     },
-    onModeChange: ({ mode }: Callbacks['onModeChange']) => {
-      console.log('🔊 Mode:', mode);
+    onModeChange: ({ mode }: { mode: 'speaking' | 'listening' }) => {
+      console.log(`🔊 Mode: ${mode}`);
     },
-    onStatusChange: ({ status }: Callbacks['onStatusChange']) => {
-      console.log('🔊 Status:', status);
+    onStatusChange: ({ status }: { status: ConversationStatus }) => {
+      console.log(`📡 Status: ${status}`);
     },
-    onCanSendFeedbackChange: ({ canSendFeedback }: Callbacks['onCanSendFeedbackChange']) => {
-      console.log('🔊 Can send feedback:', canSendFeedback);
+    onCanSendFeedbackChange: ({ canSendFeedback }: { canSendFeedback: boolean }) => {
+      console.log(`🔊 Can send feedback: ${canSendFeedback}`);
     },
-    onUnhandledClientToolCall: (params: Callbacks['onUnhandledClientToolCall']) => {
-      console.log('🔊 Unhandled client tool call:', params);
-    }
   });
 
   const [isStarting, setIsStarting] = useState(false);
+  const [textInput, setTextInput] = useState('');
 
   const startConversation = async () => {
     if (isStarting) return;
@@ -58,7 +49,7 @@ const ConversationScreen = () => {
 
   const endConversation = async () => {
     try {
-      await conversation.endConversation();
+      await conversation.endSession();
     } catch (error) {
       console.error('Failed to end conversation:', error);
     }
@@ -125,6 +116,73 @@ const ConversationScreen = () => {
           <Text style={styles.buttonText}>End Conversation</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Feedback Buttons */}
+      {conversation.status === 'connected' && conversation.canSendFeedback && (
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>How was that response?</Text>
+          <View style={styles.feedbackButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.likeButton]}
+              onPress={() => conversation.sendFeedback(true)}
+            >
+              <Text style={styles.buttonText}>👍 Like</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.dislikeButton]}
+              onPress={() => conversation.sendFeedback(false)}
+            >
+              <Text style={styles.buttonText}>👎 Dislike</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Text Input and Messaging */}
+      {conversation.status === 'connected' && (
+        <View style={styles.messagingContainer}>
+          <Text style={styles.messagingLabel}>Send Text Message</Text>
+          <TextInput
+            style={styles.textInput}
+            value={textInput}
+            onChangeText={(text) => {
+              setTextInput(text);
+              // Prevent agent from interrupting while user is typing
+              if (text.length > 0) {
+                conversation.sendUserActivity();
+              }
+            }}
+            placeholder="Type your message or context..."
+            multiline
+          />
+          <View style={styles.messageButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.messageButton]}
+              onPress={() => {
+                if (textInput.trim()) {
+                  conversation.sendUserMessage(textInput.trim());
+                  setTextInput('');
+                }
+              }}
+              disabled={!textInput.trim()}
+            >
+              <Text style={styles.buttonText}>💬 Send Message</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.contextButton]}
+              onPress={() => {
+                if (textInput.trim()) {
+                  conversation.sendContextualUpdate(textInput.trim());
+                  setTextInput('');
+                }
+              }}
+              disabled={!textInput.trim()}
+            >
+              <Text style={styles.buttonText}>📝 Send Context</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -237,5 +295,70 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  feedbackContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  feedbackLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  feedbackButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  likeButton: {
+    backgroundColor: '#10B981',
+  },
+  dislikeButton: {
+    backgroundColor: '#EF4444',
+  },
+  messagingContainer: {
+    marginTop: 24,
+    width: '100%',
+  },
+  messagingLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginBottom: 16,
+  },
+  messageButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  messageButton: {
+    backgroundColor: '#3B82F6',
+    flex: 1,
+  },
+  contextButton: {
+    backgroundColor: '#4F46E5',
+    flex: 1,
+  },
+  activityContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  activityLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  activityButton: {
+    backgroundColor: '#F59E0B',
   },
 });

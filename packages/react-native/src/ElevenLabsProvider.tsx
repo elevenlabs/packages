@@ -17,9 +17,16 @@ interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
 
 interface Conversation {
   startSession: (config: ConversationConfig) => Promise<void>;
-  endConversation: () => Promise<void>;
+  endSession: () => Promise<void>;
   status: ConversationStatus;
   isSpeaking: boolean;
+  // TODO: Implement setVolume when LiveKit React Native supports it
+  // setVolume: (volume: number) => void;
+  canSendFeedback: boolean;
+  sendFeedback: (like: boolean) => void;
+  sendContextualUpdate: (text: string) => void;
+  sendUserMessage: (text: string) => void;
+  sendUserActivity: () => void;
 }
 
 interface ElevenLabsContextType {
@@ -72,6 +79,11 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
   const [roomId, setRoomId] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [canSendFeedback, setCanSendFeedback] = useState(false);
+
+  // Feedback state tracking (similar to BaseConversation)
+  const currentEventIdRef = React.useRef(1);
+  const lastFeedbackEventIdRef = React.useRef(1);
 
   // Use ref for clientTools to avoid re-renders (like callbacks)
   const clientToolsRef = React.useRef<ClientToolsConfig['clientTools']>({});
@@ -93,7 +105,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
 
   const {
     startSession,
-    endConversation,
+    endSession,
     overrides,
     customLlmExtraBody,
     dynamicVariables,
@@ -108,7 +120,66 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleError,
   } = useLiveKitRoom(callbacksRef, setStatus, roomId);
 
+  // Enhanced connection handler to initialize feedback state
+  const handleConnectedWithFeedback = React.useCallback(() => {
+    // Reset feedback state when connecting
+    currentEventIdRef.current = 1;
+    lastFeedbackEventIdRef.current = 1;
+    setCanSendFeedback(false);
+    callbacksRef.current.onCanSendFeedbackChange?.({ canSendFeedback: false });
+
+    handleConnected();
+  }, [handleConnected, callbacksRef]);
+
+  // Enhanced disconnection handler to reset feedback state
+  const handleDisconnectedWithFeedback = React.useCallback(() => {
+    setCanSendFeedback(false);
+    handleDisconnected();
+  }, [handleDisconnected]);
+
   const { sendMessage } = useMessageSending(status, localParticipant, callbacksRef);
+
+  const updateCanSendFeedback = React.useCallback(() => {
+    const newCanSendFeedback = currentEventIdRef.current !== lastFeedbackEventIdRef.current;
+
+    if (canSendFeedback !== newCanSendFeedback) {
+      setCanSendFeedback(newCanSendFeedback);
+      callbacksRef.current.onCanSendFeedbackChange?.({ canSendFeedback: newCanSendFeedback });
+    }
+  }, [canSendFeedback, callbacksRef]);
+
+  const sendFeedback = React.useCallback((like: boolean) => {
+    if (!canSendFeedback) {
+      console.warn(
+        lastFeedbackEventIdRef.current === 0
+          ? "Cannot send feedback: the conversation has not started yet."
+          : "Cannot send feedback: feedback has already been sent for the current response."
+      );
+      return;
+    }
+
+    const feedbackMessage = {
+      type: "feedback",
+      score: like ? "like" : "dislike",
+      event_id: currentEventIdRef.current,
+    };
+
+    sendMessage(feedbackMessage);
+    lastFeedbackEventIdRef.current = currentEventIdRef.current;
+    updateCanSendFeedback();
+  }, [canSendFeedback, sendMessage, updateCanSendFeedback]);
+
+  // setVolume placeholder (to be implemented when LiveKit supports it)
+  const setVolume = React.useCallback((volume: number) => {
+    console.warn('setVolume is not yet implemented in React Native SDK');
+    // TODO: Implement volume control when LiveKit React Native supports it
+  }, []);
+
+  // Update current event ID for feedback tracking
+  const updateCurrentEventId = React.useCallback((eventId: number) => {
+    currentEventIdRef.current = eventId;
+    updateCanSendFeedback();
+  }, [updateCanSendFeedback]);
 
   // Handle participant ready with overrides
   const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
@@ -126,9 +197,29 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
 
   const conversation: Conversation = {
     startSession,
-    endConversation,
+    endSession,
     status,
     isSpeaking,
+    // setVolume,
+    canSendFeedback,
+    sendFeedback,
+    sendContextualUpdate: (text: string) => {
+      sendMessage({
+        type: "contextual_update",
+        text,
+      });
+    },
+    sendUserMessage: (text: string) => {
+      sendMessage({
+        type: "user_message",
+        text,
+      });
+    },
+    sendUserActivity: () => {
+      sendMessage({
+        type: "user_activity",
+      });
+    },
   };
 
   // Create setClientTools function that only updates ref (like setCallbacks)
@@ -152,14 +243,15 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         serverUrl={serverUrl}
         token={token}
         connect={connect}
-        onConnected={handleConnected}
-        onDisconnected={handleDisconnected}
+        onConnected={handleConnectedWithFeedback}
+        onDisconnected={handleDisconnectedWithFeedback}
         onError={handleError}
         roomConnected={roomConnected}
         callbacks={callbacksRef.current}
         onParticipantReady={handleParticipantReadyWithOverrides}
         sendMessage={sendMessage}
         clientTools={clientToolsRef.current}
+        updateCurrentEventId={updateCurrentEventId}
       >
         {children}
       </LiveKitRoomWrapper>

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocalParticipant, useDataChannel } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
 import type { Callbacks, ClientToolsConfig, ClientToolCallEvent } from '../types';
+import React from 'react';
 
 interface MessageHandlerProps {
   onReady: (participant: LocalParticipant) => void;
@@ -9,6 +10,7 @@ interface MessageHandlerProps {
   callbacks: Callbacks;
   sendMessage: (message: unknown) => void;
   clientTools?: ClientToolsConfig['clientTools'];
+  updateCurrentEventId?: (eventId: number) => void;
 }
 
 export const MessageHandler = ({
@@ -16,9 +18,13 @@ export const MessageHandler = ({
   isConnected,
   callbacks,
   sendMessage,
-  clientTools = {}
+  clientTools = {},
+  updateCurrentEventId
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
+
+  // Track agent response count for synthetic event IDs (WebRTC mode)
+  const agentResponseCountRef = React.useRef(1);
 
   useEffect(() => {
     if (isConnected && localParticipant) {
@@ -93,6 +99,12 @@ export const MessageHandler = ({
       callbacks.onModeChange?.({
         mode: msg.from?.isSpeaking ? 'speaking' : 'listening'
       });
+
+      // Track agent responses for feedback (WebRTC mode needs synthetic event IDs)
+      if (message.type === "agent_response" && updateCurrentEventId) {
+        const eventId = agentResponseCountRef.current++;
+        updateCurrentEventId(eventId);
+      }
     }
 
     switch (message.type) {

@@ -70,6 +70,19 @@ export type ClientToolsConfig = {
 };
 
 /**
+ * Options for useConversation hook
+ */
+export type ConversationOptions = {
+  serverUrl?: string;
+  clientTools?: Record<
+    string,
+    (
+      parameters: unknown
+    ) => Promise<string | number | undefined> | string | number | undefined
+  >;
+} & Partial<Callbacks>;
+
+/**
  * Callbacks configuration
  */
 export type Callbacks = {

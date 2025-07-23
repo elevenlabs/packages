@@ -65,7 +65,7 @@ export const useConversationSession = (
     [callbacksRef, setStatus, setConnect, setToken, setRoomId]
   );
 
-  const endConversation = useCallback(async () => {
+  const endSession = useCallback(async () => {
     try {
       setConnect(false);
       setToken("");
@@ -80,7 +80,7 @@ export const useConversationSession = (
 
   return {
     startSession,
-    endConversation,
+    endSession,
     overrides,
     customLlmExtraBody,
     dynamicVariables,
