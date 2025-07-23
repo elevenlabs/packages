@@ -76,16 +76,15 @@ export function SessionConfigProvider({
     if (agentId.value) {
       return {
         agentId: agentId.value,
-        connectionType: "webrtc",
         origin: webSocketUrl.value,
         ...commonConfig,
+        connectionType: "webrtc",
       };
     }
 
     if (signedUrl.value) {
       return {
         signedUrl: signedUrl.value,
-        connectionType: "websocket",
         ...commonConfig,
       };
     }
