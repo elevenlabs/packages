@@ -5,9 +5,7 @@ A minimal React Native Expo app demonstrating the ElevenLabs React Native SDK fo
 ## Prerequisites
 
 - Node.js 20+
-- Expo CLI (`npm install -g @expo/cli`)
-- iOS Simulator (for iOS testing) or Xcode for device testing
-- Android Studio or Android device (for Android testing)
+- Physical iOS or Android device for testing
 
 ## Installation
 
@@ -23,7 +21,7 @@ A minimal React Native Expo app demonstrating the ElevenLabs React Native SDK fo
 
 ## Running the App
 
-⚠️ **Important**: This app requires a development build and cannot run in Expo Go due to WebRTC native dependencies.
+**Important**: This app requires a development build and cannot run in Expo Go due to WebRTC native dependencies.
 
 ### iOS
 ```bash
@@ -40,9 +38,14 @@ npm run android
 npm start
 ```
 
+## Simulators
+
+Due to the app requiring microphone access, it will not function correctly in app simulators, either iOS or Android. Instead run the example app on a physical device to have a full conversation with your agent.
+
 ## Troubleshooting
 
 - Make sure you're using development builds, not Expo Go
 - Ensure all dependencies are installed with `npm install`
 - For iOS, run `cd ios && pod install` if needed
 - Check that your development environment is set up correctly for React Native
+- Use a physical device rather than simulators
