@@ -4,6 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
+import { PACKAGE_VERSION } from "../version";
 import {
   type ConfigEvent,
   isValidSocketEvent,
@@ -80,9 +81,17 @@ export class WebSocketConnection extends BaseConnection {
 
     try {
       const origin = config.origin ?? WSS_API_ORIGIN;
-      const url = config.signedUrl
-        ? config.signedUrl
-        : origin + WSS_API_PATHNAME + config.agentId;
+      let url: string;
+
+      const version = config.overrides?.client?.version || PACKAGE_VERSION;
+      const source = config.overrides?.client?.source || "js_sdk";
+
+      if (config.signedUrl) {
+        const separator = config.signedUrl.includes("?") ? "&" : "?";
+        url = `${config.signedUrl}${separator}source=${source}&version=${version}`;
+      } else {
+        url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=${source}&version=${version}`;
+      }
 
       const protocols = [MAIN_PROTOCOL];
       if (config.authorization) {

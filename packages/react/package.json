@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "description": "ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -16,9 +16,11 @@
     }
   },
   "scripts": {
+    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "prebuild": "npm run generate-version",
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
-    "dev": "npm run clean && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
+    "dev": "npm run clean && npm run generate-version && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",

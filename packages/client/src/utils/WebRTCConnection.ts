@@ -4,6 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
+import { PACKAGE_VERSION } from "../version";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
 import { Room, RoomEvent, Track, ConnectionState } from "livekit-client";
 import type {
@@ -11,9 +12,16 @@ import type {
   Participant,
   TrackPublication,
 } from "livekit-client";
-import { constructOverrides } from "./overrides";
+import {
+  constructOverrides,
+  CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
+} from "./overrides";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
+
+export type ConnectionConfig = SessionConfig & {
+  onDebug?: (info: unknown) => void;
+};
 
 export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
@@ -27,9 +35,10 @@ export class WebRTCConnection extends BaseConnection {
     room: Room,
     conversationId: string,
     inputFormat: FormatConfig,
-    outputFormat: FormatConfig
+    outputFormat: FormatConfig,
+    config: { onDebug?: (info: unknown) => void } = {}
   ) {
-    super();
+    super(config);
     this.room = room;
     this.conversationId = conversationId;
     this.inputFormat = inputFormat;
@@ -38,7 +47,9 @@ export class WebRTCConnection extends BaseConnection {
     this.setupRoomEventListeners();
   }
 
-  public static async create(config: SessionConfig): Promise<WebRTCConnection> {
+  public static async create(
+    config: ConnectionConfig
+  ): Promise<WebRTCConnection> {
     let conversationToken: string;
 
     // Handle different authentication scenarios
@@ -48,9 +59,10 @@ export class WebRTCConnection extends BaseConnection {
     } else if ("agentId" in config && config.agentId) {
       // Agent ID provided - fetch token from API
       try {
-        const response = await fetch(
-          `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}`
-        );
+        const version = config.overrides?.client?.version || PACKAGE_VERSION;
+        const source = config.overrides?.client?.source || "js_sdk";
+        const url = `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(
@@ -92,11 +104,12 @@ export class WebRTCConnection extends BaseConnection {
         room,
         conversationId,
         inputFormat,
-        outputFormat
+        outputFormat,
+        config
       );
 
       // Use configurable LiveKit URL or default if not provided
-      let livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
+      const livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
 
       // Connect to the LiveKit room and wait for the Connected event
       await room.connect(livekitUrl, conversationToken);
@@ -123,6 +136,11 @@ export class WebRTCConnection extends BaseConnection {
       await room.localParticipant.setMicrophoneEnabled(true);
 
       const overridesEvent = constructOverrides(config);
+
+      connection.debug({
+        type: CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
+        message: overridesEvent,
+      });
 
       await connection.sendMessage(overridesEvent);
 
@@ -230,8 +248,14 @@ export class WebRTCConnection extends BaseConnection {
 
       await this.room.localParticipant.publishData(data, { reliable: true });
     } catch (error) {
+      this.debug({
+        type: "send_message_error",
+        message: {
+          message,
+          error,
+        },
+      });
       console.error("Failed to send message via WebRTC:", error);
-      console.error("Error details:", error);
     }
   }
 

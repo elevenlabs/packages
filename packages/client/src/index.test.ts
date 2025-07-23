@@ -14,6 +14,7 @@ const CLIENT_TOOL_CALL_ID = "CLIENT_TOOL_CALL_ID";
 const CLIENT_TOOL_PARAMETERS = { some: "param" };
 const CUSTOM_PROMPT = "CUSTOM_PROMPT";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
+const TEST_USER_ID = "test-user-123";
 
 const ConversationTypes = ["voice", "text"] as const;
 
@@ -42,6 +43,7 @@ describe("Conversation", () => {
 
       const conversationPromise = Conversation.startSession({
         signedUrl: `wss://api.elevenlabs.io/${conversationType}/1`,
+        userId: TEST_USER_ID,
         overrides: {
           agent: {
             prompt: {
@@ -101,6 +103,7 @@ describe("Conversation", () => {
             conversation: {},
           },
           custom_llm_extra_body: CUSTOM_LLM_EXTRA_BODY,
+          user_id: TEST_USER_ID,
         })
       );
 
@@ -392,9 +395,11 @@ describe("Connection Types", () => {
         "Failed to fetch conversation token for agent test-agent"
       );
 
-      // Verify fetch was called with correct URL
+      // Verify fetch was called with correct URL base (version may vary)
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=test-agent"
+        expect.stringMatching(
+          /^https:\/\/api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+        )
       );
     });
 

@@ -1,14 +1,16 @@
 {
   "name": "@elevenlabs/convai-widget-core",
-  "version": "0.0.12",
+  "version": "0.1.0",
   "description": "The common library for the Conversational AI Widget.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "source": "./src/index.ts",
   "type": "module",
   "scripts": {
+    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "prebuild": "npm run generate-version",
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
-    "dev": "vite",
+    "dev": "npm run generate-version && vite",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "npx eslint .",

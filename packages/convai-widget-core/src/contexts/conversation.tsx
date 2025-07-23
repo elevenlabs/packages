@@ -5,6 +5,7 @@ import {
   SessionConfig,
   Status,
 } from "@elevenlabs/client";
+import { PACKAGE_VERSION } from "../version";
 import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
@@ -171,6 +172,14 @@ function useConversationSetup() {
         try {
           lockRef.current = Conversation.startSession({
             ...processedConfig,
+            overrides: {
+              ...processedConfig.overrides,
+              client: {
+                ...processedConfig.overrides?.client,
+                source: processedConfig.overrides?.client?.source || "widget",
+                version: processedConfig.overrides?.client?.version || PACKAGE_VERSION,
+              },
+            },
             onModeChange: props => {
               mode.value = props.mode;
             },
