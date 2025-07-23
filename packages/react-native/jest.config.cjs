@@ -52,35 +52,17 @@ module.exports = {
     'native.tsx',
   ],
 
-  // Module name mapping for React Native modules
-  moduleNameMapping: {
-    // React Native core modules
-    '^react-native$': '<rootDir>/src/test-setup.ts',
-    '^react-native/(.*)$': '<rootDir>/src/test-setup.ts',
-
-    // LiveKit modules (already mocked in test-setup)
-    '^@livekit/react-native$': '<rootDir>/src/test-setup.ts',
-    '^livekit-client$': '<rootDir>/src/test-setup.ts',
-
-    // Common React Native libraries that might be used
-    '^@react-native-async-storage/async-storage$': 'jest-transform-stub',
-    '^@react-native-community/netinfo$': 'jest-transform-stub',
-    '^react-native-permissions$': 'jest-transform-stub',
-
-    // Asset mocking
-    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 'jest-transform-stub',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  // Minimal module mapping for React Native modules
+  moduleNameMapper: {
+    '^react-native$': '<rootDir>/jest.rn-mock.js',
+    '^react-native/(.*)$': '<rootDir>/jest.rn-mock.js',
   },
 
   // Setup files
-  setupFiles: [
-    '<rootDir>/src/test-setup.ts',
-  ],
+  setupFiles: [],
 
   // Setup files after environment is set up
-  setupFilesAfterEnv: [
-    '<rootDir>/src/test-setup.ts',
-  ],
+  setupFilesAfterEnv: [],
 
   // Coverage configuration
   collectCoverage: false, // Enable manually with --coverage
@@ -90,7 +72,6 @@ module.exports = {
     '!src/**/*.test.{ts,tsx}',
     '!src/**/*.spec.{ts,tsx}',
     '!src/**/test-*.{ts,tsx}',
-    '!src/test-setup.ts',
     '!src/**/__tests__/**',
     '!src/**/__mocks__/**',
     '!**/node_modules/**',
@@ -141,7 +122,6 @@ module.exports = {
     '\\.d\\.ts$',
     '\\.test\\.ts$',
     '\\.spec\\.ts$',
-    '/test-setup\\.ts$',
   ],
 
   // Test timeout (increased for React Native)
@@ -242,7 +222,7 @@ module.exports = {
   bail: 0, // Run all tests
 
   // Collect coverage from untested files
-  collectCoverageOnlyFrom: undefined,
+  // collectCoverageOnlyFrom removed - replaced by collectCoverageFrom
 
   // Coverage provider
   coverageProvider: 'v8', // Faster than babel
@@ -273,10 +253,11 @@ module.exports = {
 
   // Watch plugins
   watchPlugins: [
-    'jest-watch-typeahead/filename',
-    'jest-watch-typeahead/testname',
+    // Removed jest-watch-typeahead plugins - not installed
   ],
 
   // Timezone
-  timers: 'real', // Use real timers by default
+  fakeTimers: {
+    enableGlobally: false // Use real timers by default
+  },
 };
