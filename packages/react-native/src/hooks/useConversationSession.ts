@@ -4,7 +4,6 @@ import type {
   ConversationStatus,
   Callbacks,
 } from "../types";
-import { constructOverrides } from "../overrides";
 import {
   getConversationToken,
   extractRoomIdFromToken,

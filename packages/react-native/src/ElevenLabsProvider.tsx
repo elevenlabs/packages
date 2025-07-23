@@ -19,6 +19,7 @@ interface Conversation {
   startSession: (config: ConversationConfig) => Promise<void>;
   endConversation: () => Promise<void>;
   status: ConversationStatus;
+  isSpeaking: boolean;
 }
 
 interface ElevenLabsContextType {
@@ -70,12 +71,25 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [status, setStatus] = useState<ConversationStatus>('disconnected');
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
   const [roomId, setRoomId] = useState<string>('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Use ref for clientTools to avoid re-renders (like callbacks)
   const clientToolsRef = React.useRef<ClientToolsConfig['clientTools']>({});
 
   // Custom hooks
-  const { callbacksRef, setCallbacks } = useConversationCallbacks();
+  const { callbacksRef, setCallbacks: setCallbacksBase } = useConversationCallbacks();
+
+  // Enhanced setCallbacks that wraps onModeChange to update isSpeaking state
+  const setCallbacks = React.useCallback((callbacks: Callbacks) => {
+    const wrappedCallbacks = {
+      ...callbacks,
+      onModeChange: (event: { mode: 'speaking' | 'listening' }) => {
+        setIsSpeaking(event.mode === 'speaking');
+        callbacks.onModeChange?.(event);
+      }
+    };
+    setCallbacksBase(wrappedCallbacks);
+  }, [setCallbacksBase]);
 
   const {
     startSession,
@@ -114,6 +128,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     startSession,
     endConversation,
     status,
+    isSpeaking,
   };
 
   // Create setClientTools function that only updates ref (like setCallbacks)

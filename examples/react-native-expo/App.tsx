@@ -82,13 +82,29 @@ const ConversationScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ElevenLabs Conversation</Text>
-      <Text style={styles.subtitle}>With Client Tools Support</Text>
+      <Text style={styles.title}>ElevenLabs React Native Example</Text>
+      <Text style={styles.subtitle}>Remember to set the agentId in the code</Text>
 
       <View style={styles.statusContainer}>
         <View style={[styles.statusDot, { backgroundColor: getStatusColor(conversation.status) }]} />
         <Text style={styles.statusText}>{getStatusText(conversation.status)}</Text>
       </View>
+
+      {/* Speaking Indicator */}
+      {conversation.status === 'connected' && (
+        <View style={styles.speakingContainer}>
+          <View style={[
+            styles.speakingDot,
+            { backgroundColor: conversation.isSpeaking ? '#8B5CF6' : '#D1D5DB' }
+          ]} />
+          <Text style={[
+            styles.speakingText,
+            { color: conversation.isSpeaking ? '#8B5CF6' : '#9CA3AF' }
+          ]}>
+            {conversation.isSpeaking ? '🎤 AI Speaking' : '👂 AI Listening'}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -155,6 +171,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#374151',
+  },
+  speakingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  speakingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  speakingText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   toolsContainer: {
     backgroundColor: '#E5E7EB',
