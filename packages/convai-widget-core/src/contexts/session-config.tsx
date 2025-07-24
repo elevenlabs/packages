@@ -78,7 +78,6 @@ export function SessionConfigProvider({
         agentId: agentId.value,
         origin: webSocketUrl.value,
         ...commonConfig,
-        connectionType: "webrtc",
       };
     }
 
