@@ -5,7 +5,7 @@ A minimal React Native Expo app demonstrating the ElevenLabs React Native SDK fo
 ## Prerequisites
 
 - Node.js 20+
-- Physical iOS or Android device for testing
+- iOS and Android simulators
 
 ## Setup
 
@@ -62,7 +62,19 @@ npx expo run:android
 
 ## Simulators
 
-Due to the app requiring microphone access, it will not function correctly in app simulators, either iOS or Android. Instead run the example app on a physical device to have a full conversation with your agent.
+When running on a simulator, make sure to adjust the audio settings so the agent can correctly hear you.
+
+## iOS
+
+In the I/O menu, make sure you've set the correct audio input and output devices. Also increase the volume as it defaults to 0.
+
+![iOS Settings](assets/ios-settings.png)
+
+## Android
+
+In the Extended Controls panel, enable "Virtual microphone uses host audio input".
+
+![Android Settings](assets/android-settings.png)
 
 ## Troubleshooting
 

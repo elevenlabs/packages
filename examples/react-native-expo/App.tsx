@@ -4,8 +4,6 @@ import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
 import type {
   ConversationStatus,
-  Callbacks,
-  ConversationOptions,
 } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
