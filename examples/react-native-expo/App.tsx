@@ -50,8 +50,7 @@ const ConversationScreen = () => {
     setIsStarting(true);
     try {
       await conversation.startSession({
-        agentId: process.env.EXPO_PUBLIC_AGENT_ID,
-        connectionType: "webrtc",
+        agentId: process.env.EXPO_PUBLIC_AGENT_ID
       });
     } catch (error) {
       console.error("Failed to start conversation:", error);
