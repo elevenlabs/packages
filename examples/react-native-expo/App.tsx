@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import { Platform } from "react-native";
 import type {
   ConversationStatus,
   Callbacks,
@@ -55,9 +54,6 @@ const ConversationScreen = () => {
       await conversation.startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
         connectionType: "webrtc",
-        dynamicVariables: {
-          platform: Platform.OS,
-        },
       });
     } catch (error) {
       console.error("Failed to start conversation:", error);
