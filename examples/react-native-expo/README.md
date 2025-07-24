@@ -7,35 +7,57 @@ A minimal React Native Expo app demonstrating the ElevenLabs React Native SDK fo
 - Node.js 20+
 - Physical iOS or Android device for testing
 
+## Setup
+
+```bash
+# Create a .env file in the root of the project
+cp .env.example .env
+```
+
+Follow the ElevenLabs Conversational AI [quickstart guide](https://elevenlabs.io/docs/conversational-ai/quickstart) to create an agent and set your agent ID in the `.env` file.
+
+### Security consideration
+
+This example uses a public agent ID for demonstration purposes. In a production app, you should generate a short lived signed URL in a secure server-side environment, see our [docs](https://elevenlabs.io/docs/conversational-ai/customization/authentication).
+
 ## Installation
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+Install dependencies:
 
-2. Install iOS CocoaPods (iOS only):
-   ```bash
-   cd ios && pod install && cd ..
-   ```
+```bash
+npm install
+```
+
+## Development Build
+
+Prebuild, required for native dependencies:
+
+```bash
+npx expo prebuild
+```
 
 ## Running the App
 
 **Important**: This app requires a development build and cannot run in Expo Go due to WebRTC native dependencies.
 
-### iOS
+### Start the Expo server in tunnel mode
+
 ```bash
-npm run ios
+npx expo start --tunnel
+```
+
+### iOS
+
+```bash
+## Build your native iOS project (this will install CocoaPods)
+npx expo run:ios --device
 ```
 
 ### Android
-```bash
-npm run android
-```
 
-### Development Build
 ```bash
-npm start
+## Build your native Android project
+npx expo run:android
 ```
 
 ## Simulators
