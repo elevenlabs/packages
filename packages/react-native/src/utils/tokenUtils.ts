@@ -8,11 +8,13 @@ export const extractRoomIdFromToken = (token: string): string => {
   }
 };
 
+import { PACKAGE_VERSION } from "../version";
+
 export const getConversationToken = async (
   agentId: string
 ): Promise<string> => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`
+    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}&source=react_native_sdk&version=${PACKAGE_VERSION}`
   );
 
   const data = await response.json();
