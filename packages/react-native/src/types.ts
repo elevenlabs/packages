@@ -115,6 +115,10 @@ export type ConversationConfig = {
     conversation?: {
       textOnly?: boolean;
     };
+    client?: {
+      source?: string;
+      version?: string;
+    };
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
@@ -135,6 +139,10 @@ export type InitiationClientDataEvent = {
     };
     conversation?: {
       text_only?: boolean;
+    };
+    client?: {
+      source?: string;
+      version?: string;
     };
   };
   custom_llm_extra_body?: unknown;

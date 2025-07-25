@@ -40,6 +40,12 @@ npx expo prebuild
 
 **Important**: This app requires a development build and cannot run in Expo Go due to WebRTC native dependencies.
 
+### Build the React Native SDK
+
+```bash
+cd ../packages/packages/react-native && pnpm build
+```
+
 ### Start the Expo server in tunnel mode
 
 ```bash

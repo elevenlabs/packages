@@ -1,3 +1,5 @@
+import { PACKAGE_VERSION } from "../version";
+
 export const extractRoomIdFromToken = (token: string): string => {
   try {
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
@@ -7,8 +9,6 @@ export const extractRoomIdFromToken = (token: string): string => {
     return "";
   }
 };
-
-import { PACKAGE_VERSION } from "../version";
 
 export const getConversationToken = async (
   agentId: string

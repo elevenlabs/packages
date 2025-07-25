@@ -3,7 +3,7 @@ import { createContext, useContext, useState } from 'react';
 import { registerGlobals } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
 import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig } from './types';
-import { constructOverrides } from './overrides';
+import { constructOverrides } from './utils/overrides';
 import { DEFAULT_SERVER_URL } from './utils/constants';
 import { useConversationCallbacks } from './hooks/useConversationCallbacks';
 import { useConversationSession } from './hooks/useConversationSession';
@@ -81,7 +81,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [canSendFeedback, setCanSendFeedback] = useState(false);
 
-  // Feedback state tracking (similar to BaseConversation)
+  // Feedback state tracking
   const currentEventIdRef = React.useRef(1);
   const lastFeedbackEventIdRef = React.useRef(1);
 
@@ -172,7 +172,6 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   // setVolume placeholder (to be implemented when LiveKit supports it)
   const setVolume = React.useCallback((volume: number) => {
     console.warn('setVolume is not yet implemented in React Native SDK');
-    // TODO: Implement volume control when LiveKit React Native supports it
   }, []);
 
   // Update current event ID for feedback tracking
@@ -222,7 +221,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     },
   };
 
-  // Create setClientTools function that only updates ref (like setCallbacks)
+  // Create setClientTools function that only updates ref
   const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {
     clientToolsRef.current = tools;
   }, []);

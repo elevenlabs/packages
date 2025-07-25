@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start --dev-client --tunnel",
+    "start": "expo start",
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && npm start",
     "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && npm start",
     "build:android": "expo build:android",

@@ -1,4 +1,5 @@
-import type { ConversationConfig, InitiationClientDataEvent } from "./types";
+import type { ConversationConfig, InitiationClientDataEvent } from "../types";
+import { PACKAGE_VERSION } from "../version";
 
 export function constructOverrides(
   config: ConversationConfig
@@ -19,6 +20,10 @@ export function constructOverrides(
       },
       conversation: {
         text_only: config.overrides.conversation?.textOnly,
+      },
+      client: {
+        source: config.overrides?.client?.source || "react_native_sdk",
+        version: config.overrides?.client?.version || PACKAGE_VERSION,
       },
     };
   }
