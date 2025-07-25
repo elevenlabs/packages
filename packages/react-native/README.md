@@ -95,6 +95,7 @@ Starts a new conversation session.
 **Parameters:**
 - `config.agentId`: ElevenLabs agent ID, not needed if you provide a conversationToken.
 - `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your ElevenLabs API key.
+- `config.userId`: You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server.
 
 ```typescript
 await conversation.startSession({
