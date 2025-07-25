@@ -1,4 +1,5 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
+import type { Mode } from "../BaseConversation";
 
 export type Language =
   | "en"
@@ -131,6 +132,7 @@ export abstract class BaseConnection {
   protected disconnectionDetails: DisconnectionDetails | null = null;
   protected onDisconnectCallback: OnDisconnectCallback | null = null;
   protected onMessageCallback: OnMessageCallback | null = null;
+  protected onModeChangeCallback: ((mode: Mode) => void) | null = null;
   protected onDebug?: (info: unknown) => void;
 
   constructor(config: { onDebug?: (info: unknown) => void } = {}) {
@@ -143,6 +145,7 @@ export abstract class BaseConnection {
 
   public abstract close(): void;
   public abstract sendMessage(message: OutgoingSocketEvent): void;
+  public abstract setMicMuted(isMuted: boolean): Promise<void>;
 
   public onMessage(callback: OnMessageCallback) {
     this.onMessageCallback = callback;
@@ -168,6 +171,14 @@ export abstract class BaseConnection {
         callback(details);
       });
     }
+  }
+
+  public onModeChange(callback: (mode: Mode) => void) {
+    this.onModeChangeCallback = callback;
+  }
+
+  protected updateMode(mode: Mode) {
+    this.onModeChangeCallback?.(mode);
   }
 
   protected disconnect(details: DisconnectionDetails) {

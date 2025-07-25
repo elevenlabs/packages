@@ -220,6 +220,20 @@ export class WebRTCConnection extends BaseConnection {
         }
       }
     );
+
+    this.room.on(
+      RoomEvent.ActiveSpeakersChanged,
+      async (speakers: Participant[]) => {
+        if (speakers.length > 0) {
+          const participant = speakers[0];
+          if (participant.identity.includes("agent")) {
+            this.updateMode("speaking");
+          }
+        } else {
+          this.updateMode("listening");
+        }
+      }
+    );
   }
 
   public close() {
@@ -262,5 +276,36 @@ export class WebRTCConnection extends BaseConnection {
   // Get the room instance for advanced usage
   public getRoom(): Room {
     return this.room;
+  }
+
+  public async setMicMuted(isMuted: boolean): Promise<void> {
+    if (!this.isConnected || !this.room.localParticipant) {
+      console.warn(
+        "Cannot set microphone muted: room not connected or no local participant"
+      );
+      return;
+    }
+
+    // Get the microphone track publication
+    const micTrackPublication = this.room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    );
+
+    if (micTrackPublication?.track) {
+      try {
+        // Use LiveKit's built-in track muting
+        if (isMuted) {
+          await micTrackPublication.track.mute();
+        } else {
+          await micTrackPublication.track.unmute();
+        }
+      } catch (error) {
+        // If track muting fails, fall back to participant-level control
+        await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+      }
+    } else {
+      // No track found, use participant-level control directly
+      await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+    }
   }
 }

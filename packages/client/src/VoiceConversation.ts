@@ -3,6 +3,7 @@ import { Input } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection } from "./utils/BaseConnection";
+import { WebRTCConnection } from "./utils/WebRTCConnection";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events";
 import { applyDelay } from "./utils/applyDelay";
 import {
@@ -177,7 +178,13 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    this.input.setMuted(isMuted);
+    // Use LiveKit track muting for WebRTC connections
+    if (this.connection instanceof WebRTCConnection) {
+      this.connection.setMicMuted(isMuted);
+    } else {
+      // Use input muting for WebSocket connections
+      this.input.setMuted(isMuted);
+    }
   }
 
   public getInputByteFrequencyData() {

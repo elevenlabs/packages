@@ -94,6 +94,7 @@ export class BaseConversation {
     this.options.onConnect({ conversationId: connection.conversationId });
     this.connection.onMessage(this.onMessage);
     this.connection.onDisconnect(this.endSessionWithDetails);
+    this.connection.onModeChange(mode => this.updateMode(mode));
     this.updateStatus("connected");
   }
 
@@ -288,7 +289,9 @@ export class BaseConversation {
     this.volume = volume;
   };
 
-  public setMicMuted(isMuted: boolean) {}
+  public setMicMuted(isMuted: boolean) {
+    this.connection.setMicMuted(isMuted);
+  }
 
   public getInputByteFrequencyData() {
     return EMPTY_FREQUENCY_DATA;
