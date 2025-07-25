@@ -1,6 +1,10 @@
-import { ReadonlySignal, Signal, signal } from "@preact/signals";
+import { ReadonlySignal, Signal, signal, useComputed } from "@preact/signals";
 import { createContext, useMemo } from "preact/compat";
-import { CustomAttributeList, CustomAttributes } from "../types/attributes";
+import {
+  CustomAttributeList,
+  CustomAttributes,
+  parseBoolAttribute,
+} from "../types/attributes";
 import type { JSX } from "preact";
 import { useContextSafely } from "../utils/useContextSafely";
 

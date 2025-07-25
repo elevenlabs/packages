@@ -76,6 +76,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const micMuting = useAttribute("mic-muting");
   const transcript = useAttribute("transcript");
   const textInput = useAttribute("text-input");
+  const defaultExpanded = useAttribute("default-expanded");
+  const alwaysExpanded = useAttribute("always-expanded");
   const overrideTextOnly = useAttribute("override-text-only");
 
   const value = useComputed<WidgetConfig | null>(() => {
@@ -101,6 +103,14 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     const patchedTextInput =
       parseBoolAttribute(textInput.value) ??
       fetchedConfig.value.text_input_enabled;
+    const patchedAlwaysExpanded =
+      parseBoolAttribute(alwaysExpanded.value) ??
+      fetchedConfig.value.always_expanded ??
+      false;
+    const patchedDefaultExpanded =
+      parseBoolAttribute(defaultExpanded.value) ??
+      fetchedConfig.value.default_expanded ??
+      false;
 
     return {
       ...fetchedConfig.value,
@@ -110,6 +120,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       mic_muting_enabled: !textOnly && patchedMicMuting,
       transcript_enabled: textOnly || patchedTranscript,
       text_input_enabled: textOnly || patchedTextInput,
+      always_expanded: patchedAlwaysExpanded,
+      default_expanded: patchedDefaultExpanded,
     };
   });
 

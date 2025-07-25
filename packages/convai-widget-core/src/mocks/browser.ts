@@ -15,6 +15,8 @@ const BASIC_CONFIG: WidgetConfig = {
   mic_muting_enabled: false,
   transcript_enabled: false,
   text_input_enabled: false,
+  default_expanded: false,
+  always_expanded: false,
   text_contents: {
     start_chat: "Start a call",
   },

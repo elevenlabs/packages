@@ -1,4 +1,4 @@
-import { Signal, useComputed, useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -16,9 +16,10 @@ import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { SheetActions } from "./SheetActions";
 import { Transcript } from "./Transcript";
 import { useTextContents } from "../contexts/text-contents";
+import { Signalish } from "../utils/signalish";
 
 interface SheetProps {
-  open: Signal<boolean>;
+  open: Signalish<boolean>;
 }
 
 const ORIGIN_CLASSES: Record<Placement, string> = {
@@ -81,7 +82,13 @@ export function Sheet({ open }: SheetProps) {
           "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
           "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
-          placement.startsWith("top") ? "top-20" : "bottom-20"
+          placement.startsWith("top")
+            ? config.value.always_expanded
+              ? "top-0"
+              : "top-20"
+            : config.value.always_expanded
+              ? "bottom-0"
+              : "bottom-20"
         )}
       >
         <div className="bg-base shrink-0 flex gap-2 p-4 items-start">

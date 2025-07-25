@@ -38,6 +38,8 @@ export interface WidgetConfig {
   mic_muting_enabled: boolean;
   transcript_enabled: boolean;
   text_input_enabled: boolean;
+  default_expanded: boolean;
+  always_expanded: boolean;
   text_contents: Partial<TextContents>;
   styles?: Partial<Styles>;
   language_presets: Partial<

@@ -9,7 +9,7 @@ import {
   Variant,
   Variants,
   Location,
-  parseLocation
+  parseLocation,
 } from "./types/config";
 import { useState } from "preact/compat";
 
@@ -24,6 +24,7 @@ function Playground() {
   const [transcript, setTranscript] = useState(false);
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
+  const [alwaysExpanded, setAlwaysExpanded] = useState(false);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -84,6 +85,14 @@ function Playground() {
           />{" "}
           Text only
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={alwaysExpanded}
+            onChange={e => setAlwaysExpanded(e.currentTarget.checked)}
+          />{" "}
+          Always expanded
+        </label>
         <label className="flex flex-col">
           Server Location
           <select
@@ -91,7 +100,7 @@ function Playground() {
             onChange={e => setLocation(parseLocation(e.currentTarget.value))}
             className="p-1 bg-base border border-base-border"
           >
-            {(["us", "global", "eu-residency", "in-residency"]).map(location => (
+            {["us", "global", "eu-residency", "in-residency"].map(location => (
               <option value={location}>{location}</option>
             ))}
           </select>
@@ -106,6 +115,7 @@ function Playground() {
           text-input={JSON.stringify(textInput)}
           mic-muting={JSON.stringify(micMuting)}
           override-text-only={JSON.stringify(textOnly)}
+          always-expanded={JSON.stringify(alwaysExpanded)}
           server-location={location}
         />
       </div>
