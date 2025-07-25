@@ -140,9 +140,9 @@ export type InitiationClientDataEvent = {
     conversation?: {
       text_only?: boolean;
     };
-    client?: {
-      source?: string;
-      version?: string;
+    source_info?: {
+      source?: string | null;
+      version?: string | null;
     };
   };
   custom_llm_extra_body?: unknown;

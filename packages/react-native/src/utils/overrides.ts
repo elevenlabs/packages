@@ -21,7 +21,7 @@ export function constructOverrides(
       conversation: {
         text_only: config.overrides.conversation?.textOnly,
       },
-      client: {
+      source_info: {
         source: config.overrides?.client?.source || "react_native_sdk",
         version: config.overrides?.client?.version || PACKAGE_VERSION,
       },
