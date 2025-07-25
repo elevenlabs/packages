@@ -53,7 +53,6 @@ function ConversationComponent() {
     onDisconnect: () => console.log('Disconnected'),
     onMessage: (message) => console.log('Message:', message),
     onError: (error) => console.error('Error:', error),
-    onDebug: (debug) => console.log('Debug:', debug),
   });
 
   const startSession = async () => {
@@ -94,8 +93,8 @@ Returns a conversation object with the following methods and properties:
 Starts a new conversation session.
 
 **Parameters:**
-- `config.agentId`: ElevenLabs agent ID
-- `config.conversationToken`: Optional pre-generated token
+- `config.agentId`: ElevenLabs agent ID, not needed if you provide a conversationToken.
+- `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your ElevenLabs API key.
 
 ```typescript
 await conversation.startSession({
