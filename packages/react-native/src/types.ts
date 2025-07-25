@@ -98,6 +98,19 @@ export type Callbacks = {
   onUnhandledClientToolCall?: (params: ClientToolCallEvent) => void;
 };
 
+/**
+ * Source for conversation initiation in React Native SDK
+ */
+type ConversationInitiationSource = "react_native_sdk";
+
+/**
+ * Information about the source of conversation initiation
+ */
+export type ConversationInitiationSourceInfo = {
+  source?: ConversationInitiationSource | null;
+  version?: string | null;
+};
+
 export type ConversationConfig = {
   agentId?: string;
   conversationToken?: string;
@@ -138,5 +151,7 @@ export type InitiationClientDataEvent = {
     };
   };
   custom_llm_extra_body?: unknown;
-  dynamic_variables?: Record<string, string | number | boolean>;
+  user_id?: string | null;
+  source_info?: ConversationInitiationSourceInfo;
+  dynamic_variables?: Record<string, string | number | boolean | null>;
 };

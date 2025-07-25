@@ -1,10 +1,15 @@
 import type { ConversationConfig, InitiationClientDataEvent } from "./types";
+import { PACKAGE_VERSION } from "./version";
 
 export function constructOverrides(
   config: ConversationConfig
 ): InitiationClientDataEvent {
   const overridesEvent: InitiationClientDataEvent = {
     type: "conversation_initiation_client_data",
+    source_info: {
+      source: "react_native_sdk",
+      version: PACKAGE_VERSION,
+    },
   };
 
   if (config.overrides) {
