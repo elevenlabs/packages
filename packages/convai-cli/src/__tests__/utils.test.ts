@@ -32,7 +32,6 @@ describe('Utils', () => {
     });
 
     it('should generate same hash for nested objects regardless of key order', () => {
-      // This test will FAIL with the current implementation
       const config1 = {
         name: 'test',
         api_schema: {
