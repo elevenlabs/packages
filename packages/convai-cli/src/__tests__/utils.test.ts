@@ -30,5 +30,44 @@ describe('Utils', () => {
       
       expect(hash1).toBe(hash2);
     });
+
+    it('should generate same hash for nested objects regardless of key order', () => {
+      // This test will FAIL with the current implementation
+      const config1 = {
+        name: 'test',
+        api_schema: {
+          url: 'https://example.com',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer token' }
+        },
+        dynamic_variables: {
+          dynamic_variable_placeholders: {
+            var1: 'value1',
+            var2: 'value2'
+          }
+        }
+      };
+
+      const config2 = {
+        name: 'test',
+        api_schema: {
+          method: 'POST',  // Different order
+          url: 'https://example.com',
+          headers: { 'Authorization': 'Bearer token', 'Content-Type': 'application/json' }  // Different order
+        },
+        dynamic_variables: {
+          dynamic_variable_placeholders: {
+            var2: 'value2',  // Different order
+            var1: 'value1'
+          }
+        }
+      };
+
+      const hash1 = calculateConfigHash(config1);
+      const hash2 = calculateConfigHash(config2);
+
+      // This assertion will fail with current implementation
+      expect(hash1).toBe(hash2);
+    });
   });
 }); 
