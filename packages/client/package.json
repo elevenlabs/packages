@@ -38,7 +38,7 @@
     "microbundle": "^0.15.1",
     "mock-socket": "^9.3.1",
     "node-wav": "^0.0.2",
-    "playwright": "^1.46.1",
+    "playwright": "^1.54.1",
     "typescript": "^5.5.4",
     "vitest": "^3.0.5"
   },
