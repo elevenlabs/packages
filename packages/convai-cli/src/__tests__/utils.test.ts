@@ -131,6 +131,106 @@ describe('Utils', () => {
       expect(hash1).toBe(hash2);
     });
 
+    it('should generate different hashes when deeply nested properties change', () => {
+      const config1 = {
+        name: 'agent',
+        platform_settings: {
+          widget: {
+            color_scheme: 'light',
+            position: {
+              vertical: 'bottom',
+              horizontal: 'right',
+              offset: {
+                x: 20,
+                y: 20
+              }
+            }
+          }
+        },
+        conversation_config: {
+          tts: {
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.5,
+              similarity: 0.75,
+              style: 0.0,
+              use_speaker_boost: true
+            }
+          }
+        }
+      };
+
+      // Same structure but with different deeply nested values
+      const config2 = {
+        name: 'agent',
+        platform_settings: {
+          widget: {
+            color_scheme: 'light',
+            position: {
+              vertical: 'bottom',
+              horizontal: 'right',
+              offset: {
+                x: 20,
+                y: 25  // Changed from 20 to 25
+              }
+            }
+          }
+        },
+        conversation_config: {
+          tts: {
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.5,
+              similarity: 0.75,
+              style: 0.0,
+              use_speaker_boost: true
+            }
+          }
+        }
+      };
+
+      const hash1 = calculateConfigHash(config1);
+      const hash2 = calculateConfigHash(config2);
+
+      // Even a small change in a deeply nested property should produce a different hash
+      expect(hash1).not.toBe(hash2);
+      
+      // Also test another deeply nested change
+      const config3 = {
+        name: 'agent',
+        platform_settings: {
+          widget: {
+            color_scheme: 'light',
+            position: {
+              vertical: 'bottom',
+              horizontal: 'right',
+              offset: {
+                x: 20,
+                y: 20
+              }
+            }
+          }
+        },
+        conversation_config: {
+          tts: {
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.6,  // Changed from 0.5 to 0.6
+              similarity: 0.75,
+              style: 0.0,
+              use_speaker_boost: true
+            }
+          }
+        }
+      };
+
+      const hash3 = calculateConfigHash(config3);
+      
+      // Different nested changes should produce different hashes
+      expect(hash1).not.toBe(hash3);
+      expect(hash2).not.toBe(hash3);
+    });
+
     it('should handle null, undefined, and edge cases', () => {
       const config1 = { a: null, b: undefined, c: 0, d: '', e: false };
       const config2 = { e: false, d: '', c: 0, b: undefined, a: null };
