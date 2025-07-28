@@ -43,6 +43,7 @@ export const Languages = {
   hu: { name: "Magyar", flagCode: "hu", languageCode: "hu" },
   no: { name: "Norsk", flagCode: "no", languageCode: "no" },
   vi: { name: "Tiếng Việt", flagCode: "vn", languageCode: "vi" },
+  tl: { name: "Filipino", flagCode: "ph", languageCode: "tl" },
 } as const satisfies {
   [K in Language]: {
     name: string;

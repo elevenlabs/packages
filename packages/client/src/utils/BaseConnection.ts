@@ -33,7 +33,8 @@ export type Language =
   | "hr"
   | "sk"
   | "no"
-  | "vi";
+  | "vi"
+  | "tl";
 
 export type DelayConfig = {
   default: number;
