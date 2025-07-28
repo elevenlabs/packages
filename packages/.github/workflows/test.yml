@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+
+permissions:
+  checks: write
+  contents: write
+
+jobs:
+  run-linters:
+    name: Run tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.46.1-jammy
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install PNPM
+        run: npm i pnpm -g
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run build
+        run: pnpm run build
+
+      - name: Install pulseaudio
+        run: |
+          apt-get update
+          apt-get install -y pulseaudio
+          apt-get install sudo
+          sudo pulseaudio --start
+
+      - name: Run tests
+        run: pnpm run test
+        env:
+          HOME: /root
