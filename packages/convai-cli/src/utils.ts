@@ -21,9 +21,35 @@ export interface LockFileData {
  * @returns The hexadecimal representation of the MD5 hash
  */
 export function calculateConfigHash(config: unknown): string {
-  // Convert the object to a sorted JSON string to ensure consistent hashes
-  const configObj = config as Record<string, unknown>;
-  const configString = JSON.stringify(configObj, Object.keys(configObj).sort());
+  // Recursively sort all keys in nested objects to ensure consistent hashes
+  const sortObjectKeys = (obj: any): any => {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(sortObjectKeys);
+    }
+    
+    if (typeof obj === 'object' && obj.constructor === Object) {
+      const sortedObj: Record<string, any> = {};
+      const sortedKeys = Object.keys(obj).sort();
+      
+      for (const key of sortedKeys) {
+        sortedObj[key] = sortObjectKeys(obj[key]);
+      }
+      
+      return sortedObj;
+    }
+    
+    return obj;
+  };
+  
+  // Sort the object recursively
+  const sortedConfig = sortObjectKeys(config);
+  
+  // Convert to JSON string (all keys are now sorted at every level)
+  const configString = JSON.stringify(sortedConfig);
   
   // Calculate MD5 hash
   const hash = createHash('md5');

@@ -69,5 +69,76 @@ describe('Utils', () => {
       // This assertion will fail with current implementation
       expect(hash1).toBe(hash2);
     });
+
+    it('should generate different hashes for different nested content', () => {
+      const config1 = {
+        name: 'test',
+        api_schema: {
+          url: 'https://example.com',
+          method: 'POST'
+        }
+      };
+
+      const config2 = {
+        name: 'test',
+        api_schema: {
+          url: 'https://totally-different.com',
+          method: 'DELETE',
+          extra_field: 'this should change the hash!'
+        }
+      };
+
+      const hash1 = calculateConfigHash(config1);
+      const hash2 = calculateConfigHash(config2);
+
+      expect(hash1).not.toBe(hash2);
+    });
+
+    it('should handle deeply nested objects and arrays', () => {
+      const config1 = {
+        tools: [
+          { name: 'tool1', params: { a: 1, b: 2 } },
+          { name: 'tool2', params: { x: 3, y: 4 } }
+        ],
+        settings: {
+          nested: {
+            deeply: {
+              value: 'test',
+              array: [3, 1, 2]
+            }
+          }
+        }
+      };
+
+      const config2 = {
+        settings: {  // Different order
+          nested: {
+            deeply: {
+              array: [3, 1, 2],  // Same array, different position
+              value: 'test'
+            }
+          }
+        },
+        tools: [
+          { params: { b: 2, a: 1 }, name: 'tool1' },  // Different key order
+          { params: { y: 4, x: 3 }, name: 'tool2' }   // Different key order
+        ]
+      };
+
+      const hash1 = calculateConfigHash(config1);
+      const hash2 = calculateConfigHash(config2);
+
+      expect(hash1).toBe(hash2);
+    });
+
+    it('should handle null, undefined, and edge cases', () => {
+      const config1 = { a: null, b: undefined, c: 0, d: '', e: false };
+      const config2 = { e: false, d: '', c: 0, b: undefined, a: null };
+      
+      const hash1 = calculateConfigHash(config1);
+      const hash2 = calculateConfigHash(config2);
+      
+      expect(hash1).toBe(hash2);
+    });
   });
 }); 
