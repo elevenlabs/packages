@@ -102,6 +102,10 @@ export type InitiationClientDataEvent = {
   custom_llm_extra_body?: any;
   dynamic_variables?: Record<string, string | number | boolean>;
   user_id?: string;
+  source_info?: {
+    source?: string;
+    version?: string;
+  };
 };
 export type ContextualUpdateEvent = {
   type: "contextual_update";

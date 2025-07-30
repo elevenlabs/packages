@@ -39,5 +39,12 @@ export function constructOverrides(
     overridesEvent.user_id = config.userId;
   }
 
+  if (config.overrides?.client) {
+    overridesEvent.source_info = {
+      source: config.overrides.client.source,
+      version: config.overrides.client.version,
+    };
+  }
+
   return overridesEvent;
 }
