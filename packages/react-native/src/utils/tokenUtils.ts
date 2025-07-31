@@ -11,10 +11,13 @@ export const extractRoomIdFromToken = (token: string): string => {
 };
 
 export const getConversationToken = async (
-  agentId: string
+  agentId: string,
+  tokenFetchUrl?: string
 ): Promise<string> => {
+  const baseUrl =
+    tokenFetchUrl || "https://api.elevenlabs.io/v1/convai/conversation/token";
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}&source=react_native_sdk&version=${PACKAGE_VERSION}`
+    `${baseUrl}?agent_id=${agentId}&source=react_native_sdk&version=${PACKAGE_VERSION}`
   );
 
   const data = await response.json();

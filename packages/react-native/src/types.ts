@@ -74,6 +74,7 @@ export type ClientToolsConfig = {
  */
 export type ConversationOptions = {
   serverUrl?: string;
+  tokenFetchUrl?: string;
   clientTools?: Record<
     string,
     (
@@ -101,6 +102,7 @@ export type Callbacks = {
 export type ConversationConfig = {
   agentId?: string;
   conversationToken?: string;
+  tokenFetchUrl?: string;
   overrides?: {
     agent?: {
       prompt?: {

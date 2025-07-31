@@ -6,4 +6,5 @@ export type {
   Role,
   Callbacks,
   ConversationOptions,
+  ConversationConfig,
 } from "./types";
