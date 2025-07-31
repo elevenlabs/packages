@@ -13,6 +13,7 @@ import { LiveKitRoomWrapper } from './components/LiveKitRoomWrapper';
 
 interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
   serverUrl?: string;
+  tokenFetchUrl?: string;
 }
 
 interface Conversation {
@@ -33,9 +34,11 @@ interface ElevenLabsContextType {
   conversation: Conversation;
   callbacksRef: { current: Callbacks };
   serverUrl: string;
+  tokenFetchUrl?: string;
   clientTools: ClientToolsConfig['clientTools'];
   setCallbacks: (callbacks: Callbacks) => void;
   setServerUrl: (url: string) => void;
+  setTokenFetchUrl: (url: string) => void;
   setClientTools: (tools: ClientToolsConfig['clientTools']) => void;
 }
 
@@ -47,13 +50,19 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
     throw new Error('useConversation must be used within ElevenLabsProvider');
   }
 
-  const { serverUrl, clientTools, ...callbacks } = options;
+  const { serverUrl, tokenFetchUrl, clientTools, ...callbacks } = options;
 
   React.useEffect(() => {
     if (serverUrl) {
       context.setServerUrl(serverUrl);
     }
   }, [context, serverUrl]);
+
+  React.useEffect(() => {
+    if (tokenFetchUrl) {
+      context.setTokenFetchUrl(tokenFetchUrl);
+    }
+  }, [context, tokenFetchUrl]);
 
   if (clientTools) {
     context.setClientTools(clientTools);
@@ -77,6 +86,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [connect, setConnect] = useState(false);
   const [status, setStatus] = useState<ConversationStatus>('disconnected');
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
+  const [tokenFetchUrl, setTokenFetchUrl] = useState<string | undefined>(undefined);
   const [roomId, setRoomId] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [canSendFeedback, setCanSendFeedback] = useState(false);
@@ -109,7 +119,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     overrides,
     customLlmExtraBody,
     dynamicVariables,
-  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setRoomId);
+  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setRoomId, tokenFetchUrl);
 
   const {
     roomConnected,
@@ -230,9 +240,11 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     conversation,
     callbacksRef,
     serverUrl,
+    tokenFetchUrl,
     clientTools: clientToolsRef.current,
     setCallbacks,
     setServerUrl,
+    setTokenFetchUrl: setTokenFetchUrl,
     setClientTools,
   };
 

@@ -175,6 +175,50 @@ console.log(conversation.isSpeaking);
 console.log(conversation.canSendFeedback);
 ```
 
+### Configuration Options
+
+Pass to `useConversation` hook to customize SDK behavior:
+
+#### Server URL Override
+
+Override the WebRTC server URL (defaults to ElevenLabs' LiveKit server):
+
+```typescript
+const conversation = useConversation({
+  serverUrl: 'wss://your-custom-livekit-server.com'
+});
+```
+
+#### Token Fetch URL Override  
+
+Override the token fetch endpoint (defaults to ElevenLabs' token API):
+
+```typescript
+const conversation = useConversation({
+  tokenFetchUrl: 'https://your-api.com/v1/conversation/token'
+});
+```
+
+You can also override the token fetch URL on a per-session basis:
+
+```typescript
+await conversation.startSession({
+  agentId: 'your-agent-id',
+  tokenFetchUrl: 'https://your-api.com/v1/conversation/token'
+});
+```
+
+#### Combined Configuration
+
+```typescript
+const conversation = useConversation({
+  serverUrl: 'wss://your-custom-livekit-server.com',
+  tokenFetchUrl: 'https://your-api.com/v1/conversation/token',
+  onConnect: () => console.log('Connected!'),
+  onError: (error) => console.error('Error:', error)
+});
+```
+
 ### Callback Options
 
 Pass to `useConversation` hook:

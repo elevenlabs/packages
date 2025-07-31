@@ -14,7 +14,8 @@ export const useConversationSession = (
   setStatus: (status: ConversationStatus) => void,
   setConnect: (connect: boolean) => void,
   setToken: (token: string) => void,
-  setRoomId: (roomId: string) => void
+  setRoomId: (roomId: string) => void,
+  tokenFetchUrl?: string
 ) => {
   const [overrides, setOverrides] = useState<ConversationConfig["overrides"]>(
     {}
@@ -44,7 +45,12 @@ export const useConversationSession = (
             "Getting conversation token for agentId:",
             config.agentId
           );
-          conversationToken = await getConversationToken(config.agentId);
+          // Use tokenFetchUrl from config first, then from hook parameter, then default
+          const urlToUse = config.tokenFetchUrl || tokenFetchUrl;
+          conversationToken = await getConversationToken(
+            config.agentId,
+            urlToUse
+          );
         } else {
           throw new Error("Either conversationToken or agentId is required");
         }
@@ -62,7 +68,7 @@ export const useConversationSession = (
         throw error;
       }
     },
-    [callbacksRef, setStatus, setConnect, setToken, setRoomId]
+    [callbacksRef, setStatus, setConnect, setToken, setRoomId, tokenFetchUrl]
   );
 
   const endSession = useCallback(async () => {
