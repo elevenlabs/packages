@@ -99,6 +99,16 @@ export function useConversation<T extends HookOptions & ControlledState>(
                 PACKAGE_VERSION,
             },
           },
+          // Pass through user-provided callbacks
+          onConnect: options?.onConnect || defaultOptions?.onConnect,
+          onDisconnect: options?.onDisconnect || defaultOptions?.onDisconnect,
+          onError: options?.onError || defaultOptions?.onError,
+          onMessage: options?.onMessage || defaultOptions?.onMessage,
+          onAudio: options?.onAudio || defaultOptions?.onAudio,
+          onDebug: options?.onDebug || defaultOptions?.onDebug,
+          onUnhandledClientToolCall:
+            options?.onUnhandledClientToolCall ||
+            defaultOptions?.onUnhandledClientToolCall,
           onModeChange: ({ mode }) => {
             setMode(mode);
           },
