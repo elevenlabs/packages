@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type {
-  ConversationStatus,
-} from "@elevenlabs/react-native";
+import type { ConversationStatus } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
   const conversation = useConversation({
@@ -44,13 +50,21 @@ const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
 
+  const handleSubmitText = () => {
+    if (textInput.trim()) {
+      conversation.sendUserMessage(textInput.trim());
+      setTextInput("");
+      Keyboard.dismiss();
+    }
+  };
+
   const startConversation = async () => {
     if (isStarting) return;
 
     setIsStarting(true);
     try {
       await conversation.startSession({
-        agentId: process.env.EXPO_PUBLIC_AGENT_ID
+        agentId: process.env.EXPO_PUBLIC_AGENT_ID,
       });
     } catch (error) {
       console.error("Failed to start conversation:", error);
@@ -88,143 +102,145 @@ const ConversationScreen = () => {
   const canEnd = conversation.status === "connected";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>ElevenLabs React Native Example</Text>
-      <Text style={styles.subtitle}>
-        Remember to set the agentId in the code
-      </Text>
-
-      <View style={styles.statusContainer}>
-        <View
-          style={[
-            styles.statusDot,
-            { backgroundColor: getStatusColor(conversation.status) },
-          ]}
-        />
-        <Text style={styles.statusText}>
-          {getStatusText(conversation.status)}
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <View style={styles.container}>
+        <Text style={styles.title}>ElevenLabs React Native Example</Text>
+        <Text style={styles.subtitle}>
+          Remember to set the agentId in the code
         </Text>
-      </View>
 
-      {/* Speaking Indicator */}
-      {conversation.status === "connected" && (
-        <View style={styles.speakingContainer}>
+        <View style={styles.statusContainer}>
           <View
             style={[
-              styles.speakingDot,
-              {
-                backgroundColor: conversation.isSpeaking
-                  ? "#8B5CF6"
-                  : "#D1D5DB",
-              },
+              styles.statusDot,
+              { backgroundColor: getStatusColor(conversation.status) },
             ]}
           />
-          <Text
+          <Text style={styles.statusText}>
+            {getStatusText(conversation.status)}
+          </Text>
+        </View>
+
+        {/* Speaking Indicator */}
+        {conversation.status === "connected" && (
+          <View style={styles.speakingContainer}>
+            <View
+              style={[
+                styles.speakingDot,
+                {
+                  backgroundColor: conversation.isSpeaking
+                    ? "#8B5CF6"
+                    : "#D1D5DB",
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.speakingText,
+                { color: conversation.isSpeaking ? "#8B5CF6" : "#9CA3AF" },
+              ]}
+            >
+              {conversation.isSpeaking ? "🎤 AI Speaking" : "👂 AI Listening"}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
             style={[
-              styles.speakingText,
-              { color: conversation.isSpeaking ? "#8B5CF6" : "#9CA3AF" },
+              styles.button,
+              styles.startButton,
+              !canStart && styles.disabledButton,
             ]}
+            onPress={startConversation}
+            disabled={!canStart}
           >
-            {conversation.isSpeaking ? "🎤 AI Speaking" : "👂 AI Listening"}
-          </Text>
+            <Text style={styles.buttonText}>
+              {isStarting ? "Starting..." : "Start Conversation"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.endButton,
+              !canEnd && styles.disabledButton,
+            ]}
+            onPress={endConversation}
+            disabled={!canEnd}
+          >
+            <Text style={styles.buttonText}>End Conversation</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            styles.startButton,
-            !canStart && styles.disabledButton,
-          ]}
-          onPress={startConversation}
-          disabled={!canStart}
-        >
-          <Text style={styles.buttonText}>
-            {isStarting ? "Starting..." : "Start Conversation"}
-          </Text>
-        </TouchableOpacity>
+        {/* Feedback Buttons */}
+        {conversation.status === "connected" &&
+          conversation.canSendFeedback && (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackLabel}>How was that response?</Text>
+              <View style={styles.feedbackButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.likeButton]}
+                  onPress={() => conversation.sendFeedback(true)}
+                >
+                  <Text style={styles.buttonText}>👍 Like</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.dislikeButton]}
+                  onPress={() => conversation.sendFeedback(false)}
+                >
+                  <Text style={styles.buttonText}>👎 Dislike</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={[
-            styles.button,
-            styles.endButton,
-            !canEnd && styles.disabledButton,
-          ]}
-          onPress={endConversation}
-          disabled={!canEnd}
-        >
-          <Text style={styles.buttonText}>End Conversation</Text>
-        </TouchableOpacity>
+        {/* Text Input and Messaging */}
+        {conversation.status === "connected" && (
+          <View style={styles.messagingContainer}>
+            <Text style={styles.messagingLabel}>Send Text Message</Text>
+            <TextInput
+              style={styles.textInput}
+              value={textInput}
+              onChangeText={text => {
+                setTextInput(text);
+                // Prevent agent from interrupting while user is typing
+                if (text.length > 0) {
+                  conversation.sendUserActivity();
+                }
+              }}
+              placeholder="Type your message or context... (Press Enter to send)"
+              multiline
+              onSubmitEditing={handleSubmitText}
+              returnKeyType="send"
+              blurOnSubmit={true}
+            />
+            <View style={styles.messageButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.messageButton]}
+                onPress={handleSubmitText}
+                disabled={!textInput.trim()}
+              >
+                <Text style={styles.buttonText}>💬 Send Message</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.contextButton]}
+                onPress={() => {
+                  if (textInput.trim()) {
+                    conversation.sendContextualUpdate(textInput.trim());
+                    setTextInput("");
+                    Keyboard.dismiss();
+                  }
+                }}
+                disabled={!textInput.trim()}
+              >
+                <Text style={styles.buttonText}>📝 Send Context</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
-
-      {/* Feedback Buttons */}
-      {conversation.status === "connected" && conversation.canSendFeedback && (
-        <View style={styles.feedbackContainer}>
-          <Text style={styles.feedbackLabel}>How was that response?</Text>
-          <View style={styles.feedbackButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.likeButton]}
-              onPress={() => conversation.sendFeedback(true)}
-            >
-              <Text style={styles.buttonText}>👍 Like</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.dislikeButton]}
-              onPress={() => conversation.sendFeedback(false)}
-            >
-              <Text style={styles.buttonText}>👎 Dislike</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Text Input and Messaging */}
-      {conversation.status === "connected" && (
-        <View style={styles.messagingContainer}>
-          <Text style={styles.messagingLabel}>Send Text Message</Text>
-          <TextInput
-            style={styles.textInput}
-            value={textInput}
-            onChangeText={text => {
-              setTextInput(text);
-              // Prevent agent from interrupting while user is typing
-              if (text.length > 0) {
-                conversation.sendUserActivity();
-              }
-            }}
-            placeholder="Type your message or context..."
-            multiline
-          />
-          <View style={styles.messageButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.messageButton]}
-              onPress={() => {
-                if (textInput.trim()) {
-                  conversation.sendUserMessage(textInput.trim());
-                  setTextInput("");
-                }
-              }}
-              disabled={!textInput.trim()}
-            >
-              <Text style={styles.buttonText}>💬 Send Message</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.contextButton]}
-              onPress={() => {
-                if (textInput.trim()) {
-                  conversation.sendContextualUpdate(textInput.trim());
-                  setTextInput("");
-                }
-              }}
-              disabled={!textInput.trim()}
-            >
-              <Text style={styles.buttonText}>📝 Send Context</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

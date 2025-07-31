@@ -1,4 +1,4 @@
-package io.elevenlabs.rnexample
+package io.elevenlabs.convaiexample
 
 import android.app.Application
 import android.content.res.Configuration

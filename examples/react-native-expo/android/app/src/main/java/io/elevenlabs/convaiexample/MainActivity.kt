@@ -1,4 +1,4 @@
-package io.elevenlabs.rnexample
+package io.elevenlabs.convaiexample
 
 import android.os.Build
 import android.os.Bundle
