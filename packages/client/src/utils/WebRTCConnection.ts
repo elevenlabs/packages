@@ -18,6 +18,12 @@ import {
 } from "./overrides";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
+const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+
+// Convert WSS origin to HTTPS for API calls
+function convertWssToHttps(origin: string): string {
+  return origin.replace(/^wss:\/\//, 'https://');
+}
 
 export type ConnectionConfig = SessionConfig & {
   onDebug?: (info: unknown) => void;
@@ -61,7 +67,9 @@ export class WebRTCConnection extends BaseConnection {
       try {
         const version = config.overrides?.client?.version || PACKAGE_VERSION;
         const source = config.overrides?.client?.source || "js_sdk";
-        const url = `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
+        const configOrigin = config.origin ?? HTTPS_API_ORIGIN;
+        const origin = convertWssToHttps(configOrigin); //origin is wss, not https
+        const url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
         const response = await fetch(url);
 
         if (!response.ok) {
