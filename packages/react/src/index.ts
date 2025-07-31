@@ -145,7 +145,9 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onMessage: options?.onMessage || defaultOptions?.onMessage,
           onAudio: options?.onAudio || defaultOptions?.onAudio,
           onDebug: options?.onDebug || defaultOptions?.onDebug,
-          onUnhandledClientToolCall: options?.onUnhandledClientToolCall || defaultOptions?.onUnhandledClientToolCall,
+          onUnhandledClientToolCall:
+            options?.onUnhandledClientToolCall ||
+            defaultOptions?.onUnhandledClientToolCall,
           onModeChange: ({ mode }) => {
             setMode(mode);
           },
