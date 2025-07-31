@@ -12,6 +12,34 @@ import {
 
 import { PACKAGE_VERSION } from "./version";
 
+export type Location = "us" | "global" | "eu-residency" | "in-residency";
+
+export function parseLocation(location: string = "us"): Location {
+  switch (location) {
+    case "eu-residency":
+    case "in-residency":
+    case "us":
+    case "global":
+      return location;
+    default:
+      console.warn(
+        `[ConversationalAI] Invalid server-location: ${location}. Defaulting to "us"`
+      );
+      return "us";
+  }
+}
+
+function getOriginForLocation(location: Location): string {
+  const originMap: Record<Location, string> = {
+    'us': 'wss://api.elevenlabs.io',
+    'eu-residency': 'wss://api.eu.residency.elevenlabs.io',
+    'in-residency': 'wss://api.in.residency.elevenlabs.io',
+    'global': 'wss://api.elevenlabs.io',
+  };
+  
+  return originMap[location];
+}
+
 export type {
   Role,
   Mode,
@@ -23,7 +51,9 @@ export type {
 export { postOverallFeedback } from "@elevenlabs/client";
 
 export type HookOptions = Partial<
-  SessionConfig & HookCallbacks & ClientToolsConfig & InputConfig
+  SessionConfig & HookCallbacks & ClientToolsConfig & InputConfig & {
+    serverLocation?: Location | string;
+  }
 >;
 export type ControlledState = {
   micMuted?: boolean;
@@ -43,7 +73,7 @@ export type HookCallbacks = Pick<
 export function useConversation<T extends HookOptions & ControlledState>(
   props: T = {} as T
 ) {
-  const { micMuted, volume, ...defaultOptions } = props;
+  const { micMuted, volume, serverLocation, ...defaultOptions } = props;
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const [status, setStatus] = useState<Status>("disconnected");
@@ -80,9 +110,15 @@ export function useConversation<T extends HookOptions & ControlledState>(
       }
 
       try {
+        const resolvedServerLocation = parseLocation(
+          options?.serverLocation || serverLocation
+        );
+        const origin = getOriginForLocation(resolvedServerLocation);
+
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
+          origin,
           overrides: {
             ...(defaultOptions?.overrides ?? {}),
             ...(options?.overrides ?? {}),
