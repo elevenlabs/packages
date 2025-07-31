@@ -100,15 +100,13 @@ export function useConversation<T extends HookOptions & ControlledState>(
             },
           },
           // Pass through user-provided callbacks
-          onConnect: options?.onConnect || defaultOptions?.onConnect,
-          onDisconnect: options?.onDisconnect || defaultOptions?.onDisconnect,
-          onError: options?.onError || defaultOptions?.onError,
-          onMessage: options?.onMessage || defaultOptions?.onMessage,
-          onAudio: options?.onAudio || defaultOptions?.onAudio,
-          onDebug: options?.onDebug || defaultOptions?.onDebug,
-          onUnhandledClientToolCall:
-            options?.onUnhandledClientToolCall ||
-            defaultOptions?.onUnhandledClientToolCall,
+          onConnect: options?.onConnect,
+          onDisconnect: options?.onDisconnect,
+          onError: options?.onError,
+          onMessage: options?.onMessage,
+          onAudio: options?.onAudio,
+          onDebug: options?.onDebug,
+          onUnhandledClientToolCall: options?.onUnhandledClientToolCall,
           onModeChange: ({ mode }) => {
             setMode(mode);
           },
