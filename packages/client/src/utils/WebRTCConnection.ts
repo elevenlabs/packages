@@ -22,7 +22,7 @@ const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
-  return origin.replace(/^wss:\/\//, 'https://');
+  return origin.replace(/^wss:\/\//, "https://");
 }
 
 export type ConnectionConfig = SessionConfig & {
