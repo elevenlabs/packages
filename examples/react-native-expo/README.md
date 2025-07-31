@@ -82,6 +82,10 @@ In the Extended Controls panel, enable "Virtual microphone uses host audio input
 
 ![Android Settings](assets/android-settings.png)
 
+## Web
+
+Note that React Native Web is currently not supported. For web implementations please use the [ElevenLabs React SDK](https://elevenlabs.io/docs/conversational-ai/libraries/react).
+
 ## Troubleshooting
 
 - Make sure you're using development builds, not Expo Go
