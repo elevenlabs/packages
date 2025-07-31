@@ -403,6 +403,60 @@ describe("Connection Types", () => {
       );
     });
 
+    it("uses custom origin when provided in config", async () => {
+      const config = {
+        agentId: "test-agent",
+        connectionType: "webrtc" as const,
+        origin: "wss://custom.api.elevenlabs.io",
+      };
+
+      // Mock fetch to return an error so we can test the URL
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      globalThis.fetch = mockFetch;
+
+      await expect(createConnection(config)).rejects.toThrow(
+        "Failed to fetch conversation token for agent test-agent"
+      );
+
+      // Verify fetch was called with custom origin converted from WSS to HTTPS
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^https:\/\/custom\.api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+        )
+      );
+    });
+
+    it("converts WSS origin to HTTPS for API calls", async () => {
+      const config = {
+        agentId: "test-agent",
+        connectionType: "webrtc" as const,
+        origin: "wss://eu.api.elevenlabs.io",
+      };
+
+      // Mock fetch to return an error so we can test the URL
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      globalThis.fetch = mockFetch;
+
+      await expect(createConnection(config)).rejects.toThrow(
+        "Failed to fetch conversation token for agent test-agent"
+      );
+
+      // Verify WSS was converted to HTTPS
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^https:\/\/eu\.api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+        )
+      );
+    });
+
     it("fails when fetch returns no token for agent id", async () => {
       const config = {
         agentId: "test-agent",

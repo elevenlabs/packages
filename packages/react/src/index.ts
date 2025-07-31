@@ -29,7 +29,7 @@ export function parseLocation(location: string = "us"): Location {
   }
 }
 
-function getOriginForLocation(location: Location): string {
+export function getOriginForLocation(location: Location): string {
   const originMap: Record<Location, string> = {
     'us': 'wss://api.elevenlabs.io',
     'eu-residency': 'wss://api.eu.residency.elevenlabs.io',
