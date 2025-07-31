@@ -31,12 +31,12 @@ export function parseLocation(location: string = "us"): Location {
 
 export function getOriginForLocation(location: Location): string {
   const originMap: Record<Location, string> = {
-    'us': 'wss://api.elevenlabs.io',
-    'eu-residency': 'wss://api.eu.residency.elevenlabs.io',
-    'in-residency': 'wss://api.in.residency.elevenlabs.io',
-    'global': 'wss://api.elevenlabs.io',
+    us: "wss://api.elevenlabs.io",
+    "eu-residency": "wss://api.eu.residency.elevenlabs.io",
+    "in-residency": "wss://api.in.residency.elevenlabs.io",
+    global: "wss://api.elevenlabs.io",
   };
-  
+
   return originMap[location];
 }
 
@@ -51,9 +51,12 @@ export type {
 export { postOverallFeedback } from "@elevenlabs/client";
 
 export type HookOptions = Partial<
-  SessionConfig & HookCallbacks & ClientToolsConfig & InputConfig & {
-    serverLocation?: Location | string;
-  }
+  SessionConfig &
+    HookCallbacks &
+    ClientToolsConfig &
+    InputConfig & {
+      serverLocation?: Location | string;
+    }
 >;
 export type ControlledState = {
   micMuted?: boolean;
