@@ -43,13 +43,7 @@ const ConversationScreen = () => {
       canSendFeedback: boolean;
     }) => {
       console.log(`🔊 Can send feedback: ${canSendFeedback}`);
-    },
-    clientTools: {
-      logMessage: async (parameters: unknown) => {
-        console.log("🔍 Log message:", parameters);
-        return "Log message";
-      },
-    },
+    }
   });
 
   const [isStarting, setIsStarting] = useState(false);
