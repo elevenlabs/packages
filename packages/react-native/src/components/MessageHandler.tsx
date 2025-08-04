@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocalParticipant, useDataChannel } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig, ClientToolCallEvent } from '../types';
+import type { Callbacks, ClientToolsConfig, ClientToolCallEvent, ConversationEvent } from '../types';
 import React from 'react';
 
 interface MessageHandlerProps {
@@ -11,6 +11,10 @@ interface MessageHandlerProps {
   sendMessage: (message: unknown) => void;
   clientTools?: ClientToolsConfig['clientTools'];
   updateCurrentEventId?: (eventId: number) => void;
+}
+
+export function isValidEvent(event: any): event is ConversationEvent {
+  return !!event.type;
 }
 
 export const MessageHandler = ({
@@ -36,13 +40,13 @@ export const MessageHandler = ({
     if (
       Object.prototype.hasOwnProperty.call(
         clientTools,
-        clientToolCall.tool_name
+        clientToolCall.client_tool_call.tool_name
       )
     ) {
       try {
         const result =
-          (await clientTools[clientToolCall.tool_name](
-            clientToolCall.parameters
+          (await clientTools[clientToolCall.client_tool_call.tool_name](
+            clientToolCall.client_tool_call.parameters
           )) ?? "Client tool execution successful."; // default client-tool call response
 
         // The API expects result to be a string, so we need to convert it if it's not already a string
@@ -51,18 +55,18 @@ export const MessageHandler = ({
 
         sendMessage({
           type: "client_tool_result",
-          tool_call_id: clientToolCall.tool_call_id,
+          tool_call_id: clientToolCall.client_tool_call.tool_call_id,
           result: formattedResult,
           is_error: false,
         });
       } catch (e) {
         const errorMessage = `Client tool execution failed with following error: ${(e as Error)?.message}`;
         callbacks.onError?.(errorMessage, {
-          clientToolName: clientToolCall.tool_name,
+          clientToolName: clientToolCall.client_tool_call.tool_name,
         });
         sendMessage({
           type: "client_tool_result",
-          tool_call_id: clientToolCall.tool_call_id,
+          tool_call_id: clientToolCall.client_tool_call.tool_call_id,
           result: `Client tool execution failed: ${(e as Error)?.message}`,
           is_error: true,
         });
@@ -73,13 +77,13 @@ export const MessageHandler = ({
         return;
       }
 
-      const errorMessage = `Client tool with name ${clientToolCall.tool_name} is not defined on client`;
+      const errorMessage = `Client tool with name ${clientToolCall.client_tool_call.tool_name} is not defined on client`;
       callbacks.onError?.(errorMessage, {
-        clientToolName: clientToolCall.tool_name,
+        clientToolName: clientToolCall.client_tool_call.tool_name,
       });
       sendMessage({
         type: "client_tool_result",
-        tool_call_id: clientToolCall.tool_call_id,
+        tool_call_id: clientToolCall.client_tool_call.tool_call_id,
         result: errorMessage,
         is_error: true,
       });
@@ -89,6 +93,14 @@ export const MessageHandler = ({
   const _ = useDataChannel((msg) => {
     const decoder = new TextDecoder();
     const message = JSON.parse(decoder.decode(msg.payload));
+
+    if (!isValidEvent(message)) {
+      callbacks.onDebug?.({
+        type: "invalid_event",
+        message,
+      });
+      return;
+    }
 
     callbacks.onMessage?.({
       message,
@@ -115,7 +127,7 @@ export const MessageHandler = ({
         });
         break;
       case "client_tool_call":
-        handleClientToolCall(message.client_tool_call);
+        handleClientToolCall(message);
         break;
       default:
         callbacks.onDebug?.(message);

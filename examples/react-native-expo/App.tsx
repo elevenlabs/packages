@@ -4,13 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
 import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type { ConversationStatus } from "@elevenlabs/react-native";
+import type { ConversationStatus, ConversationEvent, Role } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
   const conversation = useConversation({
@@ -27,8 +26,8 @@ const ConversationScreen = () => {
       message,
       source,
     }: {
-      message: string;
-      source: "user" | "ai";
+      message: ConversationEvent;
+      source: Role;
     }) => {
       console.log(`💬 Message from ${source}:`, message);
     },
@@ -44,6 +43,12 @@ const ConversationScreen = () => {
       canSendFeedback: boolean;
     }) => {
       console.log(`🔊 Can send feedback: ${canSendFeedback}`);
+    },
+    clientTools: {
+      logMessage: async (parameters: unknown) => {
+        console.log("🔍 Log message:", parameters);
+        return "Log message";
+      },
     },
   });
 

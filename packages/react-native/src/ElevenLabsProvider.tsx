@@ -16,7 +16,7 @@ interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
   tokenFetchUrl?: string;
 }
 
-interface Conversation {
+export interface Conversation {
   startSession: (config: ConversationConfig) => Promise<void>;
   endSession: () => Promise<void>;
   status: ConversationStatus;

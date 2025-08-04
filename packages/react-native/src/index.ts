@@ -1,4 +1,8 @@
-export { ElevenLabsProvider, useConversation } from "./ElevenLabsProvider";
+export {
+  ElevenLabsProvider,
+  useConversation,
+  type Conversation,
+} from "./ElevenLabsProvider";
 
 export type {
   ConversationStatus,
@@ -7,4 +11,5 @@ export type {
   Callbacks,
   ConversationOptions,
   ConversationConfig,
+  ConversationEvent,
 } from "./types";
