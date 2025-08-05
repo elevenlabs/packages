@@ -81,17 +81,18 @@ describe('AgentGenerator', () => {
     it('should generate complete agent configuration', async () => {
       const result = await generator.generateAgentConfig('dev')
 
-      expect(result.name).toBe('Test Project Assistant (dev)')
-      expect(result.conversation_config.agent.prompt).toContain('Test Project')
-      expect(result.conversation_config.agent.prompt).toContain('3 main pages')
-      expect(result.conversation_config.agent.tools).toHaveLength(4)
-      expect(result.platform_settings.widget.conversation_starters).toHaveLength(4)
+      expect(result.name).toBe('Test Project_assistant_dev')
+      expect(result.conversation_config.agent.prompt.prompt).toContain('Test Project')
+      expect(result.conversation_config.agent.prompt.prompt).toContain('3 main pages')
+      expect(result.conversation_config.agent.prompt.tools).toHaveLength(4)
+      expect(result.conversation_config.asr.provider).toBe('elevenlabs')
+      expect(result.conversation_config.agent.prompt.llm).toBe('gemini-2.0-flash')
     })
 
     it('should include navigation tools with correct routes', async () => {
       const result = await generator.generateAgentConfig('prod')
 
-      const goToRouteTool = result.conversation_config.agent.tools.find(
+      const goToRouteTool = result.conversation_config.agent.prompt.tools.find(
         tool => tool.name === 'go_to_route'
       )
       
@@ -99,39 +100,39 @@ describe('AgentGenerator', () => {
       expect(goToRouteTool?.parameters.properties.path.enum).toEqual(['/', '/about', '/contact'])
     })
 
-    it('should generate context-aware conversation starters', async () => {
+    it('should configure platform settings correctly', async () => {
       const result = await generator.generateAgentConfig('staging')
-
-      const starters = result.platform_settings.widget.conversation_starters
       
-      // Should contain default starters and at least the about starter (contact may be cut off due to 4-limit)
-      expect(starters).toContain('Want to learn more about us? I can tell you about our company.')
-      expect(starters.length).toBeLessThanOrEqual(4)
-      expect(starters.length).toBeGreaterThan(3)
+      expect(result.platform_settings.auth.enable_auth).toBe(false)
+      expect(result.platform_settings.widget.variant).toBe('full')
+      expect(result.platform_settings.widget.placement).toBe('bottom-right')
+      expect(result.platform_settings.call_limits.daily_limit).toBe(100000)
     })
 
     it('should configure LLM settings correctly', async () => {
       const result = await generator.generateAgentConfig('dev')
 
-      expect(result.conversation_config.agent.llm.model).toBe('eleven-multilingual-v1')
-      expect(result.conversation_config.agent.llm.temperature).toBe(0.3)
+      expect(result.conversation_config.agent.prompt.llm).toBe('gemini-2.0-flash')
+      expect(result.conversation_config.agent.prompt.temperature).toBe(0.0)
       expect(result.conversation_config.agent.language).toBe('en')
     })
 
     it('should configure TTS and ASR settings', async () => {
       const result = await generator.generateAgentConfig('dev')
 
-      expect(result.conversation_config.tts.model).toBe('eleven-multilingual-v1')
-      expect(result.conversation_config.tts.voice_id).toBe('pNInz6obpgDQGcFmaJgB')
-      expect(result.conversation_config.asr.model).toBe('nova-2-general')
-      expect(result.conversation_config.asr.language).toBe('auto')
+      expect(result.conversation_config.tts.model_id).toBe('eleven_turbo_v2')
+      expect(result.conversation_config.tts.voice_id).toBe('cjVigY5qzO86Huf0OWal')
+      expect(result.conversation_config.tts.agent_output_audio_format).toBe('pcm_48000')
+      expect(result.conversation_config.asr.provider).toBe('elevenlabs')
+      expect(result.conversation_config.asr.user_input_audio_format).toBe('pcm_48000')
     })
 
     it('should set conversation limits', async () => {
       const result = await generator.generateAgentConfig('dev')
 
-      expect(result.conversation_config.conversation.max_duration_seconds).toBe(1800)
+      expect(result.conversation_config.conversation.max_duration_seconds).toBe(600)
       expect(result.conversation_config.conversation.text_only).toBe(false)
+      expect(result.conversation_config.conversation.client_events).toEqual(['audio', 'interruption'])
     })
   })
 
@@ -208,48 +209,4 @@ describe('AgentGenerator', () => {
     })
   })
 
-  describe('generateConversationStarters', () => {
-    it('should include default conversation starters', () => {
-      const starters = (generator as any).generateConversationStarters(mockSiteAnalysis)
-
-      expect(starters).toContain('Hi! I can help you navigate this website. What are you looking for?')
-      expect(starters).toContain('Welcome! I know all about this site\'s pages and content. How can I assist you?')
-      expect(starters).toContain('Hello! Need help finding something specific on this website?')
-    })
-
-    it('should add page-specific starters based on common pages', () => {
-      const starters = (generator as any).generateConversationStarters(mockSiteAnalysis)
-
-      expect(starters).toContain('Want to learn more about us? I can tell you about our company.')
-      // Contact starter should be present initially but may be limited to 4 total
-      expect(starters.length).toBeLessThanOrEqual(4)
-      expect(starters.length).toBeGreaterThan(3)
-    })
-
-    it('should limit starters to 4 items', () => {
-      const starters = (generator as any).generateConversationStarters(mockSiteAnalysis)
-      expect(starters.length).toBeLessThanOrEqual(4)
-    })
-
-    it('should handle sites without common pages', () => {
-      const minimalAnalysis = {
-        ...mockSiteAnalysis,
-        pages: [
-          {
-            filePath: 'pages/dashboard.tsx',
-            route: '/dashboard',
-            type: 'page' as const,
-            metadata: { title: 'Dashboard' },
-            exports: ['default']
-          }
-        ]
-      }
-
-      const starters = (generator as any).generateConversationStarters(minimalAnalysis)
-      
-      // Should still have default starters
-      expect(starters.length).toBeGreaterThanOrEqual(3)
-      expect(starters[0]).toContain('Hi! I can help you navigate')
-    })
-  })
 })
