@@ -39,7 +39,8 @@ import {
   isLoggedIn,
   getResidency,
   setResidency,
-  Location
+  Location,
+  LOCATIONS
 } from './config';
 import {
   readToolsConfig,
@@ -288,20 +289,20 @@ program
 program
   .command('residency')
   .description('Set the API residency location')
-  .argument('<residency>', 'Residency location (us, eu-residency, in-residency, global)')
+  .argument('<residency>', `Residency location (${LOCATIONS.join(', ')})`)
   .action(async (residency: string) => {
     try {
       function isValidLocation(value: string): value is Location {
-        return ['us', 'eu-residency', 'in-residency', 'global'].includes(value as Location);
+        return LOCATIONS.includes(value as Location);
       }
       
       if (!isValidLocation(residency)) {
         console.error(`Invalid residency: ${residency}`);
-        console.error(`Valid options: us, eu-residency, in-residency, global`);
+        console.error(`Valid options: ${LOCATIONS.join(', ')}`);
         process.exit(1);
       }
       
-      await setResidency(residency as Location);
+      await setResidency(residency);
       console.log(`Residency set to: ${residency}`);
       
     } catch (error) {

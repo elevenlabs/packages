@@ -12,8 +12,8 @@ import {
   removeApiKey as removeStoredApiKey,
   hasApiKey
 } from './auth';
-export const Locations = ["us", "global", "eu-residency", "in-residency"] as const;
-export type Location = (typeof Locations)[number];
+export const LOCATIONS = ["us", "global", "eu-residency", "in-residency"] as const;
+export type Location = (typeof LOCATIONS)[number];
 
 export interface CliConfig {
   apiKey?: string;
