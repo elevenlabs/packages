@@ -12,11 +12,13 @@ import {
   removeApiKey as removeStoredApiKey,
   hasApiKey
 } from './auth';
+export const Locations = ["us", "global", "eu-residency", "in-residency"] as const;
+export type Location = (typeof Locations)[number];
 
 export interface CliConfig {
   apiKey?: string;
   defaultEnvironment?: string;
-  residency?: 'us' | 'eu-residency' | 'in-residency' | 'global';
+  residency?: Location;
   [key: string]: unknown;
 }
 
@@ -123,7 +125,7 @@ export async function getResidency(): Promise<string> {
 /**
  * Set residency in config
  */
-export async function setResidency(residency: 'us' | 'eu-residency' | 'in-residency' | 'global'): Promise<void> {
+export async function setResidency(residency: Location): Promise<void> {
   const config = await loadConfig();
   config.residency = residency;
   await saveConfig(config);

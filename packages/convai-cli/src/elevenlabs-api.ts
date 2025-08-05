@@ -1,6 +1,6 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
-import { getApiKey, loadConfig } from './config';
+import { getApiKey, loadConfig, Location } from './config';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {
@@ -14,7 +14,7 @@ function isPlatformSettings(settings: unknown): settings is AgentPlatformSetting
 /**
  * Gets the API base URL based on residency configuration
  */
-function getApiBaseUrl(residency?: string): string {
+function getApiBaseUrl(residency?: Location): string {
   switch (residency) {
     case 'eu-residency':
       return 'https://api.eu.elevenlabs.io';
