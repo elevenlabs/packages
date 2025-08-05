@@ -1,0 +1,51 @@
+{
+  "name": "Website Navigator Assistant",
+  "conversation_config": {
+    "agent": {
+      "prompt": "You are an intelligent website assistant. You have complete knowledge of the website's structure and can help users navigate and find information. When users ask to go somewhere or need help finding content, use the go_to_route tool to navigate them to the appropriate page. Always explain what they'll find on each page before directing them there.",
+      "llm": {
+        "model": "eleven-multilingual-v1",
+        "temperature": 0.3
+      },
+      "language": "en",
+      "tools": [
+        {
+          "type": "client",
+          "name": "go_to_route",
+          "description": "Navigate the user to a specific page on the website"
+        }
+      ]
+    },
+    "tts": {
+      "model": "eleven-multilingual-v1",
+      "voice_id": "pNInz6obpgDQGcFmaJgB",
+      "audio_format": {
+        "format": "pcm",
+        "sample_rate": 44100
+      }
+    },
+    "asr": {
+      "model": "nova-2-general",
+      "language": "auto"
+    },
+    "conversation": {
+      "max_duration_seconds": 1800,
+      "text_only": false,
+      "client_events": []
+    }
+  },
+  "platform_settings": {
+    "widget": {
+      "conversation_starters": [
+        "Hi! I can help you navigate this website. What are you looking for?",
+        "Welcome! How can I help you find what you need?",
+        "Hello! Need help getting around the site?",
+        "What can I help you find today?"
+      ],
+      "branding": {
+        "primary_color": "#007bff",
+        "secondary_color": "#6c757d"
+      }
+    }
+  }
+}

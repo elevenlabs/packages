@@ -1,0 +1,24 @@
+{
+  "name": "go_to_route",
+  "description": "Navigate the user to a specific page on the website. Use this when users ask to go to a particular page or section.",
+  "disable_interruptions": false,
+  "force_pre_tool_speech": "auto",
+  "assignments": [],
+  "type": "client",
+  "expects_response": false,
+  "response_timeout_secs": 1,
+  "parameters": [
+    {
+      "id": "path",
+      "type": "string",
+      "value_type": "llm_prompt",
+      "description": "The route/path to navigate to (without domain). Examples: '/', '/about', '/contact', '/products/123'",
+      "dynamic_variable": "",
+      "constant_value": "",
+      "required": true
+    }
+  ],
+  "dynamic_variables": {
+    "dynamic_variable_placeholders": {}
+  }
+}

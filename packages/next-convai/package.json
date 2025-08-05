@@ -1,0 +1,61 @@
+{
+  "name": "next-convai",
+  "version": "0.1.0",
+  "description": "Auto-generating Next.js integration for ElevenLabs ConvAI with page navigation and metadata understanding",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "next-convai": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "echo 'No linting configured yet'",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "nextjs",
+    "elevenlabs",
+    "convai",
+    "conversational-ai",
+    "react",
+    "auto-generation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "next": ">=11.1.0",
+    "react": ">=16.8.0"
+  },
+  "dependencies": {
+    "@elevenlabs/convai-cli": "^0.1.2",
+    "commander": "^11.0.0",
+    "glob": "^10.0.0",
+    "gray-matter": "^4.0.3",
+    "cheerio": "^1.0.0-rc.12",
+    "fs-extra": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/node": "^18.0.0",
+    "@types/fs-extra": "^11.0.0",
+    "@types/jest": "^29.0.0",
+    "@testing-library/react": "^13.0.0",
+    "@testing-library/jest-dom": "^5.16.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0",
+    "next": "^13.0.0",
+    "react": "^18.0.0"
+  }
+}
