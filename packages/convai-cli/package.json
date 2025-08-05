@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "CLI tool to manage ElevenLabs conversational AI agents",
   "keywords": [
     "elevenlabs",

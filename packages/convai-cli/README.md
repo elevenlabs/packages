@@ -48,6 +48,20 @@ export ELEVENLABS_API_KEY="your_api_key_here"
 convai whoami
 ```
 
+### Set Residency Location
+
+Configure the API residency for isolated regions:
+```bash
+# Set to EU residency (uses api.eu.elevenlabs.io)
+convai residency eu-residency
+
+# Set to India residency (uses api.in.elevenlabs.io)
+convai residency in-residency
+
+# Set to US/Global (uses api.elevenlabs.io or api.us.elevenlabs.io)
+convai residency global  # or 'us'
+```
+
 ### Logout
 ```bash
 convai logout
@@ -113,7 +127,7 @@ convai watch [--agent "Agent Name"] [--env dev] [--interval 5]
 # Import from ElevenLabs
 convai fetch [--search "term"] [--env staging] [--dry-run]
 
-# Generate widget HTML
+# Generate widget HTML (includes server-location for isolated regions)
 convai widget "Agent Name" [--env production]
 
 # List agents
