@@ -16,6 +16,7 @@ import {
 export interface CliConfig {
   apiKey?: string;
   defaultEnvironment?: string;
+  residency?: 'us' | 'eu-residency' | 'in-residency' | 'global';
   [key: string]: unknown;
 }
 
@@ -108,5 +109,22 @@ export async function getDefaultEnvironment(): Promise<string> {
 export async function setDefaultEnvironment(environment: string): Promise<void> {
   const config = await loadConfig();
   config.defaultEnvironment = environment;
+  await saveConfig(config);
+}
+
+/**
+ * Get residency from config
+ */
+export async function getResidency(): Promise<string> {
+  const config = await loadConfig();
+  return config.residency || 'global';
+}
+
+/**
+ * Set residency in config
+ */
+export async function setResidency(residency: 'us' | 'eu-residency' | 'in-residency' | 'global'): Promise<void> {
+  const config = await loadConfig();
+  config.residency = residency;
   await saveConfig(config);
 }

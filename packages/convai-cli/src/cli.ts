@@ -36,7 +36,9 @@ import {
   getApiKey, 
   setApiKey, 
   removeApiKey, 
-  isLoggedIn
+  isLoggedIn,
+  getResidency,
+  setResidency
 } from './config';
 import {
   readToolsConfig,
@@ -257,6 +259,7 @@ program
     try {
       const loggedIn = await isLoggedIn();
       const apiKey = await getApiKey();
+      const residency = await getResidency();
       
       if (loggedIn && apiKey) {
         const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
@@ -268,6 +271,8 @@ program
         } else {
           console.log('Source: Config file');
         }
+        
+        console.log(`Residency: ${residency}`);
       } else {
         console.log('Not logged in');
         console.log('Use "convai login" to authenticate');
@@ -275,6 +280,29 @@ program
       
     } catch (error) {
       console.error(`Error checking login status: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('residency')
+  .description('Set the API residency location')
+  .argument('<residency>', 'Residency location (us, eu-residency, in-residency, global)')
+  .action(async (residency: string) => {
+    try {
+      const validResidencies = ['us', 'eu-residency', 'in-residency', 'global'];
+      
+      if (!validResidencies.includes(residency)) {
+        console.error(`Invalid residency: ${residency}`);
+        console.error(`Valid options: ${validResidencies.join(', ')}`);
+        process.exit(1);
+      }
+      
+      await setResidency(residency as 'us' | 'eu-residency' | 'in-residency' | 'global');
+      console.log(`Residency set to: ${residency}`);
+      
+    } catch (error) {
+      console.error(`Error setting residency: ${error}`);
       process.exit(1);
     }
   });
@@ -1325,11 +1353,20 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   
   const agentId = lockedAgent.id;
   
-  // Generate HTML widget snippet
-  const htmlSnippet = `<elevenlabs-convai agent-id="${agentId}"></elevenlabs-convai>
+  const residency = await getResidency();
+  
+  // Generate HTML widget snippet with server-location attribute
+  let htmlSnippet = `<elevenlabs-convai agent-id="${agentId}"`;
+  
+  // Add server-location attribute for isolated regions
+  if (residency !== 'global' && residency !== 'us') {
+    htmlSnippet += ` server-location="${residency}"`;
+  }
+  
+  htmlSnippet += `></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
   
-  console.log(`HTML Widget for '${name}' (environment: ${environment}):`);
+  console.log(`HTML Widget for '${name}' (environment: ${environment}, residency: ${residency}):`);
   console.log('='.repeat(60));
   console.log(htmlSnippet);
   console.log('='.repeat(60));

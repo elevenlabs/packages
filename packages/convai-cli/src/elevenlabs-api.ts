@@ -1,6 +1,6 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
-import { getApiKey } from './config';
+import { getApiKey, loadConfig } from './config';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {
@@ -12,6 +12,23 @@ function isPlatformSettings(settings: unknown): settings is AgentPlatformSetting
   return typeof settings === 'object' && settings !== null;
 }
 /**
+ * Gets the API base URL based on residency configuration
+ */
+function getApiBaseUrl(residency?: string): string {
+  switch (residency) {
+    case 'eu-residency':
+      return 'https://api.eu.elevenlabs.io';
+    case 'in-residency':
+      return 'https://api.in.elevenlabs.io';
+    case 'us':
+      return 'https://api.us.elevenlabs.io';
+    case 'global':
+    default:
+      return 'https://api.elevenlabs.io';
+  }
+}
+
+/**
  * Retrieves the ElevenLabs API key from config or environment variables and returns an API client.
  * 
  * @throws {Error} If no API key is found
@@ -22,7 +39,14 @@ export async function getElevenLabsClient(): Promise<ElevenLabsClient> {
   if (!apiKey) {
     throw new Error("No API key found. Use 'convai login' to authenticate or set ELEVENLABS_API_KEY environment variable.");
   }
-  return new ElevenLabsClient({ apiKey });
+  
+  const config = await loadConfig();
+  const baseURL = getApiBaseUrl(config.residency);
+  
+  return new ElevenLabsClient({ 
+    apiKey,
+    baseUrl: baseURL
+  });
 }
 
 /**
