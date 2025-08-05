@@ -13,7 +13,9 @@ import {
   removeApiKey,
   isLoggedIn,
   getDefaultEnvironment,
-  setDefaultEnvironment
+  setDefaultEnvironment,
+  getResidency,
+  setResidency
 } from '../config';
 import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals';
 
@@ -121,6 +123,49 @@ describe('Config Management', () => {
       await setDefaultEnvironment('dev');
       const env = await getDefaultEnvironment();
       expect(env).toBe('dev');
+    });
+  });
+
+  describe('Residency management', () => {
+    it('should return global as default residency', async () => {
+      const residency = await getResidency();
+      expect(residency).toBe('global');
+    });
+
+    it('should set and get residency', async () => {
+      await setResidency('eu-residency');
+      const residency = await getResidency();
+      expect(residency).toBe('eu-residency');
+    });
+
+    it('should handle all valid residency values', async () => {
+      const validResidencies = ['us', 'eu-residency', 'in-residency', 'global'] as const;
+      
+      for (const residencyValue of validResidencies) {
+        await setResidency(residencyValue);
+        const residency = await getResidency();
+        expect(residency).toBe(residencyValue);
+      }
+    });
+
+    it('should persist residency across config loads', async () => {
+      await setResidency('in-residency');
+      
+      // Load config again to ensure persistence
+      const config = await loadConfig();
+      expect(config.residency).toBe('in-residency');
+      
+      const residency = await getResidency();
+      expect(residency).toBe('in-residency');
+    });
+
+    it('should save residency along with other config', async () => {
+      await setDefaultEnvironment('staging');
+      await setResidency('eu-residency');
+      
+      const config = await loadConfig();
+      expect(config.defaultEnvironment).toBe('staging');
+      expect(config.residency).toBe('eu-residency');
     });
   });
 });
