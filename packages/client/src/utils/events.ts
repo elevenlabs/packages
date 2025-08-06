@@ -52,6 +52,12 @@ export type ClientToolCallEvent = {
     expects_response: boolean;
   };
 };
+export type VadScoreEvent = {
+  type: "vad_score";
+  vad_score_event: {
+    vad_score: number;
+  };
+};
 
 // TODO correction missing
 export type IncomingSocketEvent =
@@ -62,7 +68,8 @@ export type IncomingSocketEvent =
   | InternalTentativeAgentResponseEvent
   | ConfigEvent
   | PingEvent
-  | ClientToolCallEvent;
+  | ClientToolCallEvent
+  | VadScoreEvent;
 
 export type PongEvent = {
   type: "pong";

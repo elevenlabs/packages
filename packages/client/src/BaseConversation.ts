@@ -12,6 +12,7 @@ import type {
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
   UserTranscriptionEvent,
+  VadScoreEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 
@@ -58,6 +59,7 @@ export type Callbacks = {
   onUnhandledClientToolCall?: (
     params: ClientToolCallEvent["client_tool_call"]
   ) => void;
+  onVadScore?: (props: { vadScore: number }) => void;
 };
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
@@ -166,6 +168,14 @@ export class BaseConversation {
     });
   }
 
+  protected handleVadScore(event: VadScoreEvent) {
+    if (this.options.onVadScore) {
+      this.options.onVadScore({
+        vadScore: event.vad_score_event.vad_score,
+      });
+    }
+  }
+
   protected async handleClientToolCall(event: ClientToolCallEvent) {
     if (
       Object.prototype.hasOwnProperty.call(
@@ -251,6 +261,11 @@ export class BaseConversation {
       }
       case "audio": {
         this.handleAudio(parsedEvent);
+        return;
+      }
+
+      case "vad_score": {
+        this.handleVadScore(parsedEvent);
         return;
       }
 

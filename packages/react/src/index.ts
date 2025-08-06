@@ -8,6 +8,7 @@ import {
   Status,
   ClientToolsConfig,
   InputConfig,
+  VadScoreEvent,
 } from "@elevenlabs/client";
 
 import { PACKAGE_VERSION } from "./version";
@@ -47,6 +48,7 @@ export type {
   SessionConfig,
   DisconnectionDetails,
   Language,
+  VadScoreEvent,
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 
@@ -71,6 +73,7 @@ export type HookCallbacks = Pick<
   | "onAudio"
   | "onDebug"
   | "onUnhandledClientToolCall"
+  | "onVadScore"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -148,6 +151,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onUnhandledClientToolCall:
             options?.onUnhandledClientToolCall ||
             defaultOptions?.onUnhandledClientToolCall,
+          onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
           onModeChange: ({ mode }) => {
             setMode(mode);
           },

@@ -12,7 +12,7 @@ export type {
   Status,
 } from "./BaseConversation";
 export type { InputConfig } from "./utils/input";
-export type { IncomingSocketEvent } from "./utils/events";
+export type { IncomingSocketEvent, VadScoreEvent } from "./utils/events";
 export type {
   SessionConfig,
   BaseSessionConfig,
