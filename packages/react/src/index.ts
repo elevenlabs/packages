@@ -71,6 +71,9 @@ export type HookCallbacks = Pick<
   | "onError"
   | "onMessage"
   | "onAudio"
+  | "onModeChange"
+  | "onStatusChange"
+  | "onCanSendFeedbackChange"
   | "onDebug"
   | "onUnhandledClientToolCall"
   | "onVadScore"
@@ -154,12 +157,20 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
           onModeChange: ({ mode }) => {
             setMode(mode);
+            (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });
           },
           onStatusChange: ({ status }) => {
             setStatus(status);
+            (options?.onStatusChange || defaultOptions?.onStatusChange)?.({
+              status,
+            });
           },
           onCanSendFeedbackChange: ({ canSendFeedback }) => {
             setCanSendFeedback(canSendFeedback);
+            (
+              options?.onCanSendFeedbackChange ||
+              defaultOptions?.onCanSendFeedbackChange
+            )?.({ canSendFeedback });
           },
         } as Options);
 

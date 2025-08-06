@@ -16,6 +16,8 @@ import {
   constructOverrides,
   CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
 } from "./overrides";
+import { arrayBufferToBase64 } from "./audio";
+import { loadRawAudioProcessor } from "./rawAudioProcessor";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -36,6 +38,8 @@ export class WebRTCConnection extends BaseConnection {
 
   private room: Room;
   private isConnected = false;
+  private audioEventId = 1;
+  private audioCaptureContext: AudioContext | null = null;
 
   private constructor(
     room: Room,
@@ -105,7 +109,7 @@ export class WebRTCConnection extends BaseConnection {
 
     try {
       // Create connection instance first to set up event listeners
-      const conversationId = `webrtc-${Date.now()}`;
+      const conversationId = `room_${Date.now()}`;
       const inputFormat = parseFormat("pcm_48000");
       const outputFormat = parseFormat("pcm_48000");
       const connection = new WebRTCConnection(
@@ -135,9 +139,9 @@ export class WebRTCConnection extends BaseConnection {
         }
       });
 
-      // Update conversation ID with actual room name if available
       if (room.name) {
-        connection.conversationId = room.name;
+        connection.conversationId =
+          room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
       // Enable microphone and send overrides
@@ -185,31 +189,34 @@ export class WebRTCConnection extends BaseConnection {
     });
 
     // Handle incoming data messages
-    this.room.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
-      try {
-        const message = JSON.parse(new TextDecoder().decode(payload));
+    this.room.on(
+      RoomEvent.DataReceived,
+      (payload: Uint8Array, _participant) => {
+        try {
+          const message = JSON.parse(new TextDecoder().decode(payload));
 
-        // Filter out audio messages for WebRTC - they're handled via audio tracks
-        if (message.type === "audio") {
-          return;
-        }
+          // Filter out audio messages for WebRTC - they're handled via audio tracks
+          if (message.type === "audio") {
+            return;
+          }
 
-        if (isValidSocketEvent(message)) {
-          this.handleMessage(message);
-        } else {
-          console.warn("Invalid socket event received:", message);
+          if (isValidSocketEvent(message)) {
+            this.handleMessage(message);
+          } else {
+            console.warn("Invalid socket event received:", message);
+          }
+        } catch (error) {
+          console.warn("Failed to parse incoming data message:", error);
+          console.warn("Raw payload:", new TextDecoder().decode(payload));
         }
-      } catch (error) {
-        console.warn("Failed to parse incoming data message:", error);
-        console.warn("Raw payload:", new TextDecoder().decode(payload));
       }
-    });
+    );
 
     this.room.on(
       RoomEvent.TrackSubscribed,
       async (
         track: Track,
-        publication: TrackPublication,
+        _publication: TrackPublication,
         participant: Participant
       ) => {
         if (
@@ -225,6 +232,9 @@ export class WebRTCConnection extends BaseConnection {
           // Add to DOM (hidden) to ensure it plays
           audioElement.style.display = "none";
           document.body.appendChild(audioElement);
+
+          // Set up audio capture for onAudio callback
+          await this.setupAudioCapture(remoteAudioTrack);
         }
       }
     );
@@ -246,6 +256,27 @@ export class WebRTCConnection extends BaseConnection {
 
   public close() {
     if (this.isConnected) {
+      try {
+        // Explicitly stop all local tracks before disconnecting to ensure microphone is released
+        this.room.localParticipant.audioTrackPublications.forEach(
+          publication => {
+            if (publication.track) {
+              publication.track.stop();
+            }
+          }
+        );
+      } catch (error) {
+        console.warn("Error stopping local tracks:", error);
+      }
+
+      // Clean up audio capture context (non-blocking)
+      if (this.audioCaptureContext) {
+        this.audioCaptureContext.close().catch(error => {
+          console.warn("Error closing audio capture context:", error);
+        });
+        this.audioCaptureContext = null;
+      }
+
       this.room.disconnect();
     }
   }
@@ -307,13 +338,70 @@ export class WebRTCConnection extends BaseConnection {
         } else {
           await micTrackPublication.track.unmute();
         }
-      } catch (error) {
+      } catch (_error) {
         // If track muting fails, fall back to participant-level control
         await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
       }
     } else {
       // No track found, use participant-level control directly
       await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+    }
+  }
+
+  private async setupAudioCapture(track: RemoteAudioTrack) {
+    try {
+      // Create audio context for processing
+      const audioContext = new AudioContext();
+      this.audioCaptureContext = audioContext;
+
+      // Create MediaStream from the track
+      const mediaStream = new MediaStream([track.mediaStreamTrack]);
+
+      // Create audio source from the stream
+      const source = audioContext.createMediaStreamSource(mediaStream);
+
+      // Load the raw audio processor worklet (reuse existing processor)
+      await loadRawAudioProcessor(audioContext.audioWorklet);
+
+      // Create worklet node for audio processing
+      const worklet = new AudioWorkletNode(audioContext, "raw-audio-processor");
+
+      // Configure the processor for the output format
+      worklet.port.postMessage({
+        type: "setFormat",
+        format: this.outputFormat.format,
+        sampleRate: this.outputFormat.sampleRate,
+      });
+
+      // Handle processed audio data
+      worklet.port.onmessage = (event: MessageEvent) => {
+        const [audioData, maxVolume] = event.data;
+
+        // Only send audio if there's significant volume (not just silence)
+        const volumeThreshold = 0.01;
+
+        if (maxVolume > volumeThreshold) {
+          // Convert to base64
+          const base64Audio = arrayBufferToBase64(audioData.buffer);
+
+          // Use sequential event ID for proper feedback tracking
+          const eventId = this.audioEventId++;
+
+          // Trigger the onAudio callback by simulating an audio event
+          this.handleMessage({
+            type: "audio",
+            audio_event: {
+              audio_base_64: base64Audio,
+              event_id: eventId,
+            },
+          });
+        }
+      };
+
+      // Connect the audio processing chain
+      source.connect(worklet);
+    } catch (error) {
+      console.warn("Failed to set up audio capture:", error);
     }
   }
 }

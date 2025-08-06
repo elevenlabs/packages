@@ -52,7 +52,7 @@ export type Callbacks = {
   onDisconnect: OnDisconnectCallback;
   onError: (message: string, context?: any) => void;
   onMessage: (props: { message: string; source: Role }) => void;
-  onAudio: (base64Audio: string) => void;
+  onAudio?: (base64Audio: string) => void;
   onModeChange: (prop: { mode: Mode }) => void;
   onStatusChange: (prop: { status: Status }) => void;
   onCanSendFeedbackChange: (prop: { canSendFeedback: boolean }) => void;
@@ -70,7 +70,7 @@ export class BaseConversation {
   protected status: Status = "connecting";
   protected volume = 1;
   protected currentEventId = 1;
-  protected lastFeedbackEventId = 1;
+  protected lastFeedbackEventId = 0;
   protected canSendFeedback = false;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
