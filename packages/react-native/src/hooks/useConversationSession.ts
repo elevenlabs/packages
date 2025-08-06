@@ -6,7 +6,7 @@ import type {
 } from "../types";
 import {
   getConversationToken,
-  extractRoomIdFromToken,
+  extractConversationIdFromToken,
 } from "../utils/tokenUtils";
 
 export const useConversationSession = (
@@ -14,7 +14,7 @@ export const useConversationSession = (
   setStatus: (status: ConversationStatus) => void,
   setConnect: (connect: boolean) => void,
   setToken: (token: string) => void,
-  setRoomId: (roomId: string) => void,
+  setConversationId: (conversationId: string) => void,
   tokenFetchUrl?: string
 ) => {
   const [overrides, setOverrides] = useState<ConversationConfig["overrides"]>(
@@ -55,9 +55,9 @@ export const useConversationSession = (
           throw new Error("Either conversationToken or agentId is required");
         }
 
-        // Extract room ID from token
-        const extractedRoomId = extractRoomIdFromToken(conversationToken);
-        setRoomId(extractedRoomId);
+        const extractedConversationId =
+          extractConversationIdFromToken(conversationToken);
+        setConversationId(extractedConversationId);
 
         setToken(conversationToken);
         setConnect(true);
@@ -68,7 +68,14 @@ export const useConversationSession = (
         throw error;
       }
     },
-    [callbacksRef, setStatus, setConnect, setToken, setRoomId, tokenFetchUrl]
+    [
+      callbacksRef,
+      setStatus,
+      setConnect,
+      setToken,
+      setConversationId,
+      tokenFetchUrl,
+    ]
   );
 
   const endSession = useCallback(async () => {

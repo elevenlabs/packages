@@ -1,11 +1,13 @@
 import { PACKAGE_VERSION } from "../version";
 
-export const extractRoomIdFromToken = (token: string): string => {
+export const extractConversationIdFromToken = (token: string): string => {
   try {
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-    return tokenPayload.video?.room || "";
+    const roomId = tokenPayload.video?.room || "";
+
+    return roomId.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || "";
   } catch (error) {
-    console.warn("Could not extract room ID from token");
+    console.warn("Could not extract conversation ID from token");
     return "";
   }
 };

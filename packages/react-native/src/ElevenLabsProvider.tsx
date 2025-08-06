@@ -24,6 +24,7 @@ export interface Conversation {
   // TODO: Implement setVolume when LiveKit React Native supports it
   // setVolume: (volume: number) => void;
   canSendFeedback: boolean;
+  getId: () => string;
   sendFeedback: (like: boolean) => void;
   sendContextualUpdate: (text: string) => void;
   sendUserMessage: (text: string) => void;
@@ -87,7 +88,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const [status, setStatus] = useState<ConversationStatus>('disconnected');
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
   const [tokenFetchUrl, setTokenFetchUrl] = useState<string | undefined>(undefined);
-  const [roomId, setRoomId] = useState<string>('');
+  const [conversationId, setConversationId] = useState<string>('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [canSendFeedback, setCanSendFeedback] = useState(false);
 
@@ -119,7 +120,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     overrides,
     customLlmExtraBody,
     dynamicVariables,
-  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setRoomId, tokenFetchUrl);
+  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
 
   const {
     roomConnected,
@@ -128,7 +129,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleConnected,
     handleDisconnected,
     handleError,
-  } = useLiveKitRoom(callbacksRef, setStatus, roomId);
+  } = useLiveKitRoom(callbacksRef, setStatus, conversationId);
 
   // Enhanced connection handler to initialize feedback state
   const handleConnectedWithFeedback = React.useCallback(() => {
@@ -184,6 +185,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     console.warn('setVolume is not yet implemented in React Native SDK');
   }, []);
 
+  const getId = () => conversationId;
+
   // Update current event ID for feedback tracking
   const updateCurrentEventId = React.useCallback((eventId: number) => {
     currentEventIdRef.current = eventId;
@@ -211,6 +214,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     isSpeaking,
     // setVolume,
     canSendFeedback,
+    getId,
     sendFeedback,
     sendContextualUpdate: (text: string) => {
       sendMessage({

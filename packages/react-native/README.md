@@ -49,7 +49,7 @@ function App() {
 
 function ConversationComponent() {
   const conversation = useConversation({
-    onConnect: () => console.log('Connected'),
+    onConnect: ({ conversationId }) => console.log(`Connected to ${conversationId}`),
     onDisconnect: () => console.log('Disconnected'),
     onMessage: (message) => console.log('Message:', message),
     onError: (error) => console.error('Error:', error),
@@ -163,6 +163,16 @@ textInput.addEventListener('input', () => {
 });
 ```
 
+#### `getId(): string`
+
+Retrieves the conversation ID.
+
+```typescript
+const id = conversation.getId();
+// conv_9001k1zph3fkeh5s8xg9z90swaqa
+console.log(id);
+```
+
 #### Properties
 
 - `status: ConversationStatus` - Current conversation status ('connecting' | 'connected' | 'disconnected')
@@ -189,7 +199,7 @@ const conversation = useConversation({
 });
 ```
 
-#### Token Fetch URL Override  
+#### Token Fetch URL Override
 
 Override the token fetch endpoint (defaults to ElevenLabs' token API):
 

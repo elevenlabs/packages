@@ -6,7 +6,7 @@ import type { ConversationStatus, Callbacks } from "../types";
 export const useLiveKitRoom = (
   callbacksRef: { current: Callbacks },
   setStatus: (status: ConversationStatus) => void,
-  roomId: string
+  conversationId: string
 ) => {
   const [roomConnected, setRoomConnected] = useState(false);
   const [localParticipant, setLocalParticipant] =
@@ -33,8 +33,8 @@ export const useLiveKitRoom = (
   const handleConnected = useCallback(() => {
     setRoomConnected(true);
     setStatus("connected");
-    callbacksRef.current.onConnect?.({ conversationId: roomId });
-  }, [roomId, callbacksRef, setStatus]);
+    callbacksRef.current.onConnect?.({ conversationId });
+  }, [conversationId, callbacksRef, setStatus]);
 
   const handleDisconnected = useCallback(() => {
     setRoomConnected(false);

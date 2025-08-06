@@ -15,9 +15,11 @@ const ConversationScreen = () => {
   const conversation = useConversation({
     onConnect: ({ conversationId }: { conversationId: string }) => {
       console.log("✅ Connected to conversation", conversationId);
+      setCurrentConversationId(conversationId);
     },
     onDisconnect: (details: string) => {
       console.log("❌ Disconnected from conversation", details);
+      setCurrentConversationId(null);
     },
     onError: (message: string, context?: Record<string, unknown>) => {
       console.error("❌ Conversation error:", message, context);
@@ -48,6 +50,7 @@ const ConversationScreen = () => {
 
   const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -119,6 +122,16 @@ const ConversationScreen = () => {
             {getStatusText(conversation.status)}
           </Text>
         </View>
+
+        {/* Conversation ID Display */}
+        {conversation.status === "connected" && (
+          <View style={styles.conversationIdContainer}>
+            <Text style={styles.conversationIdLabel}>Conversation ID:</Text>
+            <Text style={styles.conversationIdText}>
+              {conversation.getId() || currentConversationId || "N/A"}
+            </Text>
+          </View>
+        )}
 
         {/* Speaking Indicator */}
         {conversation.status === "connected" && (
@@ -285,6 +298,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#374151",
+  },
+  conversationIdContainer: {
+    backgroundColor: "#F9FAFB",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    width: "100%",
+  },
+  conversationIdLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  conversationIdText: {
+    fontSize: 14,
+    fontFamily: "monospace",
+    color: "#374151",
+    backgroundColor: "#FFFFFF",
+    padding: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
   },
   speakingContainer: {
     flexDirection: "row",
