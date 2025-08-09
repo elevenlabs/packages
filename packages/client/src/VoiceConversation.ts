@@ -221,7 +221,6 @@ export class VoiceConversation extends BaseConversation {
     return this.calculateVolume(this.getOutputByteFrequencyData());
   }
 
-  // Method to change the input device (microphone)
   public async changeInputDevice({
     sampleRate,
     format,
