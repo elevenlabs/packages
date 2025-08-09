@@ -3,6 +3,7 @@ import type {
   DisconnectionDetails,
   OnDisconnectCallback,
   SessionConfig,
+  FormatConfig,
 } from "./utils/BaseConnection";
 import type {
   AgentAudioEvent,
@@ -14,7 +15,7 @@ import type {
   UserTranscriptionEvent,
   VadScoreEvent,
 } from "./utils/events";
-import type { InputConfig } from "./utils/input";
+import type { Input, InputConfig } from "./utils/input";
 
 export type Role = "user" | "ai";
 
@@ -34,7 +35,8 @@ export type Options = SessionConfig &
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   Partial<ClientToolsConfig> &
-  Partial<InputConfig>;
+  Partial<InputConfig> &
+  Partial<FormatConfig>;
 
 export type ClientToolsConfig = {
   clientTools: Record<

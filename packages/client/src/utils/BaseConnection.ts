@@ -45,6 +45,7 @@ export type DelayConfig = {
 export type FormatConfig = {
   format: "pcm" | "ulaw";
   sampleRate: number;
+  outputDeviceId?: string;
 };
 
 export type DisconnectionDetails =
