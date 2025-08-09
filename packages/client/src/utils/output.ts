@@ -9,6 +9,7 @@ export class Output {
   }: FormatConfig): Promise<Output> {
     let context: AudioContext | null = null;
     let audioElement: HTMLAudioElement | null = null;
+    let audioSource: MediaElementAudioSourceNode | null = null;
     try {
       context = new AudioContext({ sampleRate });
       const analyser = context.createAnalyser();
@@ -16,12 +17,14 @@ export class Output {
       gain.connect(analyser);
       analyser.connect(context.destination);
 
-      audioElement = new Audio();
-      audioElement.src = "";
-      audioElement.load();
+      if (outputDeviceId) {
+        audioElement = new Audio();
+        audioElement.src = "";
+        audioElement.load();
 
-      const newSource = context.createMediaElementSource(audioElement);
-      newSource.connect(gain);
+        audioSource = context.createMediaElementSource(audioElement);
+        audioSource.connect(gain);
+      }
 
       await loadAudioConcatProcessor(context.audioWorklet);
       const worklet = new AudioWorkletNode(context, "audio-concat-processor");
@@ -30,7 +33,7 @@ export class Output {
 
       await context.resume();
 
-      if (outputDeviceId && audioElement.setSinkId) {
+      if (outputDeviceId && audioElement?.setSinkId) {
         await audioElement.setSinkId(outputDeviceId);
       }
 
@@ -39,13 +42,16 @@ export class Output {
         analyser,
         gain,
         worklet,
-        audioElement
+        audioElement,
+        audioSource
       );
 
       return newOutput;
     } catch (error) {
-      context?.close();
+      audioSource?.disconnect();
       audioElement?.pause();
+      await context?.close();
+      
       throw error;
     }
   }
@@ -55,10 +61,13 @@ export class Output {
     public readonly analyser: AnalyserNode,
     public readonly gain: GainNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly audioElement: HTMLAudioElement
+    public readonly audioElement: HTMLAudioElement | null,
+    public readonly audioSource: MediaElementAudioSourceNode | null
   ) {}
 
   public async close() {
+    this.audioSource?.disconnect();
+    this.audioElement?.pause();
     await this.context.close();
   }
 }
