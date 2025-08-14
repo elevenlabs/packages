@@ -1,6 +1,7 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
 import { getApiKey, loadConfig, Location } from './config';
+import { toCamelCaseKeys, toSnakeCaseKeys } from './utils';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {
@@ -70,8 +71,9 @@ export async function createAgentApi(
     throw new Error('Invalid conversation config provided');
   }
   
-  const convConfig = conversationConfigDict;
-  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? platformSettingsDict : undefined;
+  // Normalize to camelCase for API
+  const convConfig = toCamelCaseKeys(conversationConfigDict) as ConversationalConfig;
+  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? toCamelCaseKeys(platformSettingsDict) as AgentPlatformSettingsRequestModel : undefined;
   
   const response = await client.conversationalAi.agents.create({
     name,
@@ -102,8 +104,8 @@ export async function updateAgentApi(
   platformSettingsDict?: Record<string, unknown>,
   tags?: string[]
 ): Promise<string> {
-  const convConfig = conversationConfigDict && isConversationalConfig(conversationConfigDict) ? conversationConfigDict : undefined;
-  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? platformSettingsDict : undefined;
+  const convConfig = conversationConfigDict && isConversationalConfig(conversationConfigDict) ? toCamelCaseKeys(conversationConfigDict) as ConversationalConfig : undefined;
+  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? toCamelCaseKeys(platformSettingsDict) as AgentPlatformSettingsRequestModel : undefined;
     
   const response = await client.conversationalAi.agents.update(agentId, {
     name,
@@ -167,7 +169,8 @@ export async function listAgentsApi(
  */
 export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<unknown> {
   const response = await client.conversationalAi.agents.get(agentId);
-  return response;
+  // Normalize response to snake_case for downstream writing
+  return toSnakeCaseKeys(response);
 }
 
 /**

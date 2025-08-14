@@ -13,7 +13,8 @@ import {
   getAgentFromLock, 
   updateAgentInLock,
   updateToolInLock,
-  getToolFromLock
+  getToolFromLock,
+  toSnakeCaseKeys
 } from './utils';
 import { 
   getTemplateByName, 
@@ -452,7 +453,7 @@ addCommand
       await writeAgentConfig(agentsConfigPath, agentsConfig);
       
       // Update lock file with environment-specific agent ID
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       updateAgentInLock(lockData, name, options.env, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
@@ -750,7 +751,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
     // Update lock file
-    const configHash = calculateConfigHash(toolConfig);
+    const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
     updateToolInLock(lockData, name, toolId, configHash);
     await saveLockFile(lockFilePath, lockData);
     
@@ -852,7 +853,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       }
       
       // Calculate config hash
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       
       // Get environment-specific agent data from lock file
       const lockedAgent = getAgentFromLock(lockData, agentDefName, currentEnv);
@@ -1010,7 +1011,7 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
       if (await fs.pathExists(configPath)) {
         try {
           const agentConfig = await readAgentConfig(configPath);
-          const configHash = calculateConfigHash(agentConfig);
+          const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
           console.log(`   Config Hash: ${configHash.substring(0, 8)}...`);
           
           // Check lock status for specified environment
@@ -1278,7 +1279,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeAgentConfig(configFilePath, agentDetailsTyped);
+      await writeAgentConfig(configFilePath, agentConfig);
       
       // Create new agent entry for agents.json
       const newAgent: AgentDefinition = {
@@ -1292,7 +1293,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       existingAgentIds.add(agentId);
       
       // Update lock file with environment-specific agent ID
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       updateAgentInLock(lockData, agentNameRemote, options.env, agentId, configHash);
       
       console.log(`Added '${agentNameRemote}' (config: ${configPath}) for environment: ${options.env}`);

@@ -270,3 +270,53 @@ export function getToolFromLock(
 ): LockFileAgent | undefined {
   return lockData.tools?.[toolName];
 }
+
+// Deep key normalization utilities
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Object.prototype.toString.call(value) === "[object Object]"
+  );
+}
+
+function toCamelCaseKey(key: string): string {
+  return key.replace(/[_-]([a-zA-Z0-9])/g, (_, c: string) => c.toUpperCase());
+}
+
+function toSnakeCaseKey(key: string): string {
+  // Convert camelCase or PascalCase to snake_case; keep existing underscores
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
+export function toCamelCaseKeys<T = unknown>(value: T): T {
+  if (Array.isArray(value)) {
+    return (value.map((v) => toCamelCaseKeys(v)) as unknown) as T;
+  }
+  if (isPlainObject(value)) {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[toCamelCaseKey(k)] = toCamelCaseKeys(v);
+    }
+    return (result as unknown) as T;
+  }
+  return value;
+}
+
+export function toSnakeCaseKeys<T = unknown>(value: T): T {
+  if (Array.isArray(value)) {
+    return (value.map((v) => toSnakeCaseKeys(v)) as unknown) as T;
+  }
+  if (isPlainObject(value)) {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[toSnakeCaseKey(k)] = toSnakeCaseKeys(v);
+    }
+    return (result as unknown) as T;
+  }
+  return value;
+}
