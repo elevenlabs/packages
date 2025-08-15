@@ -170,6 +170,11 @@ export function useFirstMessage() {
   );
 }
 
+export function useWebRTC() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.use_rtc ?? false);
+}
+
 async function fetchConfig(
   agentId: string,
   serverUrl: string,
