@@ -96,6 +96,7 @@ export function SessionConfigProvider({
       // signedUrl only supports websocket connections
       return {
         signedUrl: signedUrl.value,
+        connectionType: "websocket" as const,
         ...baseConfig,
       };
     }
