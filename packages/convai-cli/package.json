@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "CLI tool to manage ElevenLabs conversational AI agents",
   "keywords": [
     "elevenlabs",
@@ -40,7 +40,7 @@
     "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "2.2.0",
+    "@elevenlabs/elevenlabs-js": "2.9.0",
     "@jest/globals": "^30.0.4",
     "@types/read": "^0.0.32",
     "commander": "^11.1.0",
