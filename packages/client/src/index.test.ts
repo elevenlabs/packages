@@ -4,6 +4,7 @@ import chunk from "./__tests__/chunk";
 import { Mode, Status, Conversation } from "./index";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { SessionConfig } from "./utils/BaseConnection";
+import { VoiceConversation } from "./VoiceConversation";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
@@ -91,6 +92,38 @@ describe("Conversation", () => {
       expect(onConnect).toHaveBeenCalledWith({
         conversationId: CONVERSATION_ID,
       });
+
+      if (conversationType === "voice") {
+        const newInputDeviceId = "new-microphone-id";
+        await (conversation as VoiceConversation).changeInputDevice({
+          sampleRate: 16000,
+          format: "pcm",
+          preferHeadphonesForIosDevices: true,
+          inputDeviceId: newInputDeviceId,
+        });
+
+        expect(
+          (conversation as VoiceConversation).input.inputStream
+        ).toBeDefined();
+        expect(
+          (conversation as VoiceConversation).input.inputStream?.getTracks()[0]
+            .label
+        ).toContain(newInputDeviceId);
+
+        const newOutputDeviceId = "new-speaker-id";
+        await (conversation as VoiceConversation).changeOutputDevice({
+          sampleRate: 16000,
+          format: "pcm",
+          outputDeviceId: newOutputDeviceId,
+        });
+
+        expect(
+          (conversation as VoiceConversation).output.audioElement
+        ).toBeDefined();
+        expect(
+          (conversation as VoiceConversation).output.audioElement?.sinkId
+        ).toEqual(newOutputDeviceId);
+      }
 
       await sleep(100);
 
