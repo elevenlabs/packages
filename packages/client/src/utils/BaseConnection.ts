@@ -47,6 +47,12 @@ export type FormatConfig = {
   sampleRate: number;
 };
 
+export type WebSocketConnectionConfig = {
+  reconnect: boolean;
+  maxReconnectAttempts?: number;
+  reconnectDelayMs?: number;
+}
+
 export type DisconnectionDetails =
   | {
       reason: "error";
@@ -93,6 +99,7 @@ export type BaseSessionConfig = {
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
   userId?: string;
+  webSocketConnectionConfig?: WebSocketConnectionConfig;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
