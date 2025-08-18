@@ -351,6 +351,27 @@ A method to set the output volume of the conversation. Accepts object with volum
 await conversation.setVolume({ volume: 0.5 });
 ```
 
+##### setOutputMuted
+
+A method to mute/unmute the audio output. This immediately affects both currently playing audio and future audio.
+
+```js
+// Mute the audio output
+conversation.setOutputMuted(true);
+
+// Unmute the audio output
+conversation.setOutputMuted(false);
+```
+
+##### interrupt
+
+A method to interrupt and stop the current audio playback. This completely stops the audio and clears any buffered audio.
+
+```js
+// Interrupt current audio playback
+conversation.interrupt();
+```
+
 ##### muteMic
 
 A method to mute/unmute the microphone.
