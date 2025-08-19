@@ -146,7 +146,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Agent Status"
       showOverlay={false}
     >

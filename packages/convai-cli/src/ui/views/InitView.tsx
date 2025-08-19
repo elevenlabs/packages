@@ -160,7 +160,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Initializing project"
       showOverlay={!complete}
     >

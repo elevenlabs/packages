@@ -64,7 +64,7 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Configured Agents"
       showOverlay={false}
     >

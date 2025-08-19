@@ -55,7 +55,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Account Status"
       showOverlay={false}
     >

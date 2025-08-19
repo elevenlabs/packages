@@ -54,7 +54,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Login with your ElevenLabs API key"
       showOverlay={!success}
     >

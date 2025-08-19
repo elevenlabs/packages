@@ -70,7 +70,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Logout"
       showOverlay={!success && !notLoggedIn}
     >

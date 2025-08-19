@@ -71,7 +71,7 @@ export const ResidencyView: React.FC<ResidencyViewProps> = ({
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="API Residency Configuration"
       showOverlay={!success}
     >

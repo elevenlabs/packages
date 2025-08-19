@@ -165,7 +165,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
 
   return (
     <App 
-      title="ConvAI" 
+      title="ElevenLabs Conversational AI"
       subtitle="Create New Agent"
       showOverlay={!success}
     >
