@@ -52,6 +52,9 @@ import { render } from 'ink';
 import React from 'react';
 import InitView from './ui/views/InitView.js';
 import SyncView from './ui/views/SyncView.js';
+import LoginView from './ui/views/LoginView.js';
+import AddAgentView from './ui/views/AddAgentView.js';
+import StatusView from './ui/views/StatusView.js';
 
 // Load environment variables
 dotenv.config();
@@ -210,35 +213,44 @@ ELEVENLABS_API_KEY=your_api_key_here
 program
   .command('login')
   .description('Login with your ElevenLabs API key')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const { read } = await import('read');
-      
-      const apiKey = await read({
-        prompt: 'Enter your ElevenLabs API key: ',
-        silent: true,
-        replace: '*'
-      });
-      
-      if (!apiKey || apiKey.trim() === '') {
-        console.error('API key is required');
-        process.exit(1);
+      if (options.ui !== false) {
+        // Use Ink UI for login
+        const { waitUntilExit } = render(
+          React.createElement(LoginView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based login
+        const { read } = await import('read');
+        
+        const apiKey = await read({
+          prompt: 'Enter your ElevenLabs API key: ',
+          silent: true,
+          replace: '*'
+        });
+        
+        if (!apiKey || apiKey.trim() === '') {
+          console.error('API key is required');
+          process.exit(1);
+        }
+        
+        // Test the API key by making a simple request
+        process.env.ELEVENLABS_API_KEY = apiKey.trim();
+        const client = await getElevenLabsClient();
+        try {
+          await listAgentsApi(client, 1);
+          console.log('API key verified successfully');
+        } catch (error) {
+          console.error('Invalid API key or network error');
+          process.exit(1);
+        }
+        
+        await setApiKey(apiKey.trim());
+        console.log('Login successful! API key saved securely.');
       }
-      
-      // Test the API key by making a simple request
-      process.env.ELEVENLABS_API_KEY = apiKey.trim();
-      const client = await getElevenLabsClient();
-      try {
-        await listAgentsApi(client, 1);
-        console.log('API key verified successfully');
-      } catch (error) {
-        console.error('Invalid API key or network error');
-        process.exit(1);
-      }
-      
-      await setApiKey(apiKey.trim());
-      console.log('Login successful! API key saved securely.');
-      
     } catch (error) {
       console.error(`Error during login: ${error}`);
       process.exit(1);
@@ -334,8 +346,22 @@ addCommand
   .option('--template <template>', 'Template type to use', 'default')
   .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--env <environment>', 'Environment to create agent for', 'prod')
-  .action(async (name: string, options: AddOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
+      if (options.ui !== false && !options.configPath) {
+        // Use Ink UI for agent creation
+        const { waitUntilExit } = render(
+          React.createElement(AddAgentView, {
+            initialName: name,
+            environment: options.env,
+            template: options.template,
+            skipUpload: options.skipUpload
+          })
+        );
+        await waitUntilExit();
+        return;
+      }
       // Check if agents.json exists
       const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
       if (!(await fs.pathExists(agentsConfigPath))) {
@@ -600,9 +626,21 @@ program
   .description('Show the status of agents')
   .option('--agent <name>', 'Specific agent name to check (defaults to all agents)')
   .option('--env <environment>', 'Environment to check status for (defaults to all environments)')
-  .action(async (options: StatusOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: StatusOptions & { ui: boolean }) => {
     try {
-      await showStatus(options.agent, options.env);
+      if (options.ui !== false) {
+        // Use Ink UI for status display
+        const { waitUntilExit } = render(
+          React.createElement(StatusView, {
+            agentName: options.agent,
+            environment: options.env
+          })
+        );
+        await waitUntilExit();
+      } else {
+        await showStatus(options.agent, options.env);
+      }
     } catch (error) {
       console.error(`Error showing status: ${error}`);
       process.exit(1);
