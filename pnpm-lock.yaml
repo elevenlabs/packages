@@ -164,6 +164,9 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.0.0
+        version: 9.31.0
       '@types/fs-extra':
         specifier: ^11.0.2
         version: 11.0.4
@@ -316,9 +319,6 @@ importers:
       livekit-client:
         specifier: ^2.11.0
         version: 2.15.3(@types/dom-mediacapture-record@1.0.22)
-      react:
-        specifier: 19.0.0
-        version: 19.0.0
       react-native:
         specifier: '>=0.70.0'
         version: 0.79.5(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.0.0)
@@ -347,6 +347,9 @@ importers:
       microbundle:
         specifier: ^0.15.1
         version: 0.15.1(@types/babel__core@7.20.5)
+      react:
+        specifier: 19.0.0
+        version: 19.0.0
       react-test-renderer:
         specifier: 19.0.0
         version: 19.0.0(react@19.0.0)

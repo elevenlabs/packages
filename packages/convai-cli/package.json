@@ -61,6 +61,7 @@
     "read": "^4.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/fs-extra": "^11.0.2",
     "@types/jest": "^29.5.5",
     "@types/keytar": "^4.4.2",
