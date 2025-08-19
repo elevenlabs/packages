@@ -25,6 +25,7 @@ export const useConversationSession = (
   const [dynamicVariables, setDynamicVariables] = useState<
     ConversationConfig["dynamicVariables"]
   >({});
+  const [userId, setUserId] = useState<ConversationConfig["userId"]>(undefined);
 
   const startSession = useCallback(
     async (config: ConversationConfig) => {
@@ -35,6 +36,7 @@ export const useConversationSession = (
         setOverrides(config.overrides || {});
         setCustomLlmExtraBody(config.customLlmExtraBody || null);
         setDynamicVariables(config.dynamicVariables || {});
+        setUserId(config.userId);
 
         let conversationToken: string;
 
@@ -97,5 +99,6 @@ export const useConversationSession = (
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    userId,
   };
 };
