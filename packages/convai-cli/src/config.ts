@@ -5,7 +5,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import * as os from 'os';
+import os from 'os';
 import {
   storeApiKey,
   retrieveApiKey,
