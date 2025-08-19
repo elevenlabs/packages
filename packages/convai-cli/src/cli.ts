@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs-extra';
+import dotenv from 'dotenv';
 import { 
   calculateConfigHash, 
   readAgentConfig, 
@@ -15,24 +15,20 @@ import {
   updateToolInLock,
   getToolFromLock,
   toSnakeCaseKeys
-} from './utils';
+} from './utils.js';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
-} from './templates';
+} from './templates.js';
 import { 
   getElevenLabsClient, 
   createAgentApi, 
   updateAgentApi, 
   listAgentsApi, 
   getAgentApi,
-  createToolApi,
-  updateToolApi,
-  getToolApi,
-  listToolsApi,
-  getToolDependentAgentsApi
-} from './elevenlabs-api';
+  createToolApi
+} from './elevenlabs-api.js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -42,15 +38,20 @@ import {
   setResidency,
   Location,
   LOCATIONS
-} from './config';
+} from './config.js';
 import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
   ToolsConfig,
   ToolDefinition
-} from './tools';
-import { version } from '../package.json';
+} from './tools.js';
+import packageJson from '../package.json' with { type: 'json' };
+const { version } = packageJson;
+import { render } from 'ink';
+import React from 'react';
+import InitView from './ui/views/InitView.js';
+import SyncView from './ui/views/SyncView.js';
 
 // Load environment variables
 dotenv.config();
@@ -121,76 +122,85 @@ program
   .command('init')
   .description('Initialize a new agent management project')
   .argument('[path]', 'Path to initialize the project in', '.')
-  .action(async (projectPath: string) => {
+  .option('--no-ui', 'Disable interactive UI', false)
+  .action(async (projectPath: string, options: { ui: boolean }) => {
     try {
-      const fullPath = path.resolve(projectPath);
-      console.log(`Initializing project in ${fullPath}`);
-      
-      // Create directory if it doesn't exist
-      await fs.ensureDir(fullPath);
-      
-      // Create agents.json file
-      const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
-      if (await fs.pathExists(agentsConfigPath)) {
-        console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+      if (options.ui !== false) {
+        // Use Ink UI for initialization
+        const { waitUntilExit } = render(
+          React.createElement(InitView, { projectPath })
+        );
+        await waitUntilExit();
       } else {
-        const initialConfig: AgentsConfig = {
-          agents: []
-        };
-        await writeAgentConfig(agentsConfigPath, initialConfig);
-        console.log(`Created ${AGENTS_CONFIG_FILE}`);
-      }
-      
-      // Create tools.json file
-      const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
-      if (await fs.pathExists(toolsConfigPath)) {
-        console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
-      } else {
-        const initialToolsConfig: ToolsConfig = {
-          tools: []
-        };
-        await writeToolsConfig(toolsConfigPath, initialToolsConfig);
-        console.log(`Created ${TOOLS_CONFIG_FILE}`);
-      }
-      
-      // Create agent_configs directory structure
-      const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
-      for (const dir of configDirs) {
-        const dirPath = path.join(fullPath, dir);
-        await fs.ensureDir(dirPath);
-        console.log(`Created directory: ${dir}`);
-      }
-      
-      // Create initial lock file
-      const lockFilePath = path.join(fullPath, LOCK_FILE);
-      if (await fs.pathExists(lockFilePath)) {
-        console.log(`${LOCK_FILE} already exists, skipping creation`);
-      } else {
-        const initialLockData = {
-          agents: {},
-          tools: {}
-        };
-        await saveLockFile(lockFilePath, initialLockData);
-        console.log(`Created ${LOCK_FILE}`);
-      }
-      
-      // Create .env.example file
-      const envExamplePath = path.join(fullPath, '.env.example');
-      if (!(await fs.pathExists(envExamplePath))) {
-        const envExample = `# ElevenLabs API Key
+        // Fallback to original implementation
+        const fullPath = path.resolve(projectPath);
+        console.log(`Initializing project in ${fullPath}`);
+        
+        // Create directory if it doesn't exist
+        await fs.ensureDir(fullPath);
+        
+        // Create agents.json file
+        const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
+        if (await fs.pathExists(agentsConfigPath)) {
+          console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+        } else {
+          const initialConfig: AgentsConfig = {
+            agents: []
+          };
+          await writeAgentConfig(agentsConfigPath, initialConfig);
+          console.log(`Created ${AGENTS_CONFIG_FILE}`);
+        }
+        
+        // Create tools.json file
+        const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
+        if (await fs.pathExists(toolsConfigPath)) {
+          console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
+        } else {
+          const initialToolsConfig: ToolsConfig = {
+            tools: []
+          };
+          await writeToolsConfig(toolsConfigPath, initialToolsConfig);
+          console.log(`Created ${TOOLS_CONFIG_FILE}`);
+        }
+        
+        // Create agent_configs directory structure
+        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
+        for (const dir of configDirs) {
+          const dirPath = path.join(fullPath, dir);
+          await fs.ensureDir(dirPath);
+          console.log(`Created directory: ${dir}`);
+        }
+        
+        // Create initial lock file
+        const lockFilePath = path.join(fullPath, LOCK_FILE);
+        if (await fs.pathExists(lockFilePath)) {
+          console.log(`${LOCK_FILE} already exists, skipping creation`);
+        } else {
+          const initialLockData = {
+            agents: {},
+            tools: {}
+          };
+          await saveLockFile(lockFilePath, initialLockData);
+          console.log(`Created ${LOCK_FILE}`);
+        }
+        
+        // Create .env.example file
+        const envExamplePath = path.join(fullPath, '.env.example');
+        if (!(await fs.pathExists(envExamplePath))) {
+          const envExample = `# ElevenLabs API Key
 ELEVENLABS_API_KEY=your_api_key_here
 `;
-        await fs.writeFile(envExamplePath, envExample);
-        console.log('Created .env.example');
+          await fs.writeFile(envExamplePath, envExample);
+          console.log('Created .env.example');
+        }
+        
+        console.log('\nProject initialized successfully!');
+        console.log('Next steps:');
+        console.log('1. Set your ElevenLabs API key: convai login');
+        console.log('2. Create an agent: convai add agent "My Agent" --template default');
+        console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
+        console.log('4. Sync to ElevenLabs: convai sync');
       }
-      
-      console.log('\nProject initialized successfully!');
-      console.log('Next steps:');
-      console.log('1. Set your ElevenLabs API key: convai login');
-      console.log('2. Create an agent: convai add agent "My Agent" --template default');
-      console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
-      console.log('4. Sync to ElevenLabs: convai sync');
-      
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
       process.exit(1);
@@ -539,9 +549,46 @@ program
   .option('--agent <name>', 'Specific agent name to sync (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--env <environment>', 'Target specific environment (defaults to all environments)')
-  .action(async (options: SyncOptions) => {
+  .option('--no-ui', 'Disable interactive UI', false)
+  .action(async (options: SyncOptions & { ui: boolean }) => {
     try {
-      await syncAgents(options.agent, options.dryRun, options.env);
+      if (options.ui !== false) {
+        // Use new Ink UI for sync
+        const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+        if (!(await fs.pathExists(agentsConfigPath))) {
+          throw new Error('agents.json not found. Run \'init\' first.');
+        }
+        
+        const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+        
+        // Filter agents if specific agent name provided
+        let agentsToProcess = agentsConfig.agents;
+        if (options.agent) {
+          agentsToProcess = agentsConfig.agents.filter(agent => agent.name === options.agent);
+          if (agentsToProcess.length === 0) {
+            throw new Error(`Agent '${options.agent}' not found in configuration`);
+          }
+        }
+        
+        // Prepare agents for UI
+        const syncAgents = agentsToProcess.map(agent => ({
+          name: agent.name,
+          environment: options.env || 'all',
+          configPath: agent.config || `agent_configs/${agent.name}.json`,
+          status: 'pending' as const
+        }));
+        
+        const { waitUntilExit } = render(
+          React.createElement(SyncView, { 
+            agents: syncAgents,
+            dryRun: options.dryRun
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Use existing non-UI sync
+        await syncAgents(options.agent, options.dryRun, options.env);
+      }
     } catch (error) {
       console.error(`Error during sync: ${error}`);
       process.exit(1);

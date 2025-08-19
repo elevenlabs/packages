@@ -3,15 +3,15 @@
  * Simple credential storage with keychain support
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import fs from 'fs-extra';
+import path from 'path';
 import * as os from 'os';
 import {
   storeApiKey,
   retrieveApiKey,
   removeApiKey as removeStoredApiKey,
   hasApiKey
-} from './auth';
+} from './auth.js';
 export const LOCATIONS = ["us", "global", "eu-residency", "in-residency"] as const;
 export type Location = (typeof LOCATIONS)[number];
 

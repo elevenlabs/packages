@@ -2,9 +2,9 @@
  * Tool management for conversational AI agents
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import { calculateConfigHash } from './utils';
+import fs from 'fs-extra';
+import path from 'path';
+import { calculateConfigHash } from './utils.js';
 
 export interface WebhookToolSchema {
   id: string;
