@@ -122,7 +122,7 @@ program
   .command('init')
   .description('Initialize a new agent management project')
   .argument('[path]', 'Path to initialize the project in', '.')
-  .option('--no-ui', 'Disable interactive UI', false)
+  .option('--no-ui', 'Disable interactive UI')
   .action(async (projectPath: string, options: { ui: boolean }) => {
     try {
       if (options.ui !== false) {
@@ -549,7 +549,7 @@ program
   .option('--agent <name>', 'Specific agent name to sync (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--env <environment>', 'Target specific environment (defaults to all environments)')
-  .option('--no-ui', 'Disable interactive UI', false)
+  .option('--no-ui', 'Disable interactive UI')
   .action(async (options: SyncOptions & { ui: boolean }) => {
     try {
       if (options.ui !== false) {
