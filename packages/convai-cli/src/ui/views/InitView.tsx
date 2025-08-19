@@ -107,7 +107,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
 
   useEffect(() => {
     const runSteps = async () => {
-      if (currentStep >= steps.length || steps.length === 0) {
+      if (currentStep >= steps.length || steps.length === 0 || complete) {
         return;
       }
 
@@ -156,7 +156,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
     };
 
     runSteps();
-  }, [currentStep, steps]);
+  }, [currentStep, steps.length, complete]);
 
   return (
     <App 
