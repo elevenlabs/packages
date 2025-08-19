@@ -11,7 +11,7 @@ interface AppProps {
 }
 
 export const App: React.FC<AppProps> = ({ 
-  title = 'ConvAI',
+  title = 'ElevenLabs Conversational AI',
   subtitle,
   showOverlay = false,
   children 
