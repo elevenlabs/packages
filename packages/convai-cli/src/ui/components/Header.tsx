@@ -1,12 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import BigText from 'ink-big-text';
-import Gradient, { GradientName } from 'ink-gradient';
 import theme from '../themes/elevenlabs.js';
-
-// Type assertions for React 19 compatibility
-const GradientCompat = Gradient as any;
-const BigTextCompat = BigText as any;
 
 interface HeaderProps {
   title?: string;
@@ -20,26 +14,31 @@ export const Header: React.FC<HeaderProps> = ({
   showLogo = true 
 }) => {
   return (
-    <Box flexDirection="column" marginBottom={1}>
+    <Box flexDirection="column" marginBottom={2}>
       {showLogo && (
-        <Box>
-          <GradientCompat name={theme.gradients.elevenlabs as GradientName}>
-            <BigTextCompat text={title} font={theme.typography.fonts.header} />
-          </GradientCompat>
+        <Box flexDirection="column" gap={1}>
+          <Box flexDirection="column">
+            {/* Clean, minimalist ElevenLabs header */}
+            <Box>
+              <Text color={theme.colors.text.primary} bold>
+                ║║ {title}
+              </Text>
+            </Box>
+            {subtitle && (
+              <Box>
+                <Text color={theme.colors.text.muted} dimColor>
+                  {subtitle}
+                </Text>
+              </Box>
+            )}
+          </Box>
+          <Box>
+            <Text color={theme.colors.border} dimColor>
+              {'━'.repeat(40)}
+            </Text>
+          </Box>
         </Box>
       )}
-      {subtitle && (
-        <Box marginLeft={2}>
-          <Text color={theme.colors.text.secondary}>
-            {subtitle}
-          </Text>
-        </Box>
-      )}
-      <Box marginTop={1}>
-        <Text color={theme.colors.border}>
-          {'─'.repeat(60)}
-        </Text>
-      </Box>
     </Box>
   );
 };

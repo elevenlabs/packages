@@ -84,11 +84,39 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       
       // Step 3: Write config file
       setStatusMessage('Writing configuration file...');
-      setProgress(60);
+      setProgress(50);
       const configPath = path.join(configDir, `${agentName}.json`);
       await writeAgentConfig(configPath, agentConfig);
       
-      // Step 4: Upload to ElevenLabs (if not skipped)
+      // Step 4: Update agents.json
+      setStatusMessage('Updating agents.json...');
+      setProgress(60);
+      const agentsConfigPath = path.resolve('agents.json');
+      const agentsConfig = await fs.readJson(agentsConfigPath);
+      
+      // Check if agent already exists
+      let existingAgent = agentsConfig.agents.find((agent: any) => agent.name === agentName);
+      const relativeConfigPath = `agent_configs/${selectedEnvironment}/${agentName}.json`;
+      
+      if (existingAgent) {
+        // Update existing agent with new environment
+        if (!existingAgent.environments) {
+          existingAgent.environments = {};
+        }
+        existingAgent.environments[selectedEnvironment] = { config: relativeConfigPath };
+      } else {
+        // Add new agent
+        agentsConfig.agents.push({
+          name: agentName,
+          environments: {
+            [selectedEnvironment]: { config: relativeConfigPath }
+          }
+        });
+      }
+      
+      await fs.writeJson(agentsConfigPath, agentsConfig, { spaces: 2 });
+      
+      // Step 5: Upload to ElevenLabs (if not skipped)
       if (!skipUpload) {
         setStatusMessage('Uploading to ElevenLabs...');
         setProgress(80);

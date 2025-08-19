@@ -55,6 +55,10 @@ import SyncView from './ui/views/SyncView.js';
 import LoginView from './ui/views/LoginView.js';
 import AddAgentView from './ui/views/AddAgentView.js';
 import StatusView from './ui/views/StatusView.js';
+import WhoamiView from './ui/views/WhoamiView.js';
+import ListAgentsView from './ui/views/ListAgentsView.js';
+import LogoutView from './ui/views/LogoutView.js';
+import ResidencyView from './ui/views/ResidencyView.js';
 
 // Load environment variables
 dotenv.config();
@@ -260,17 +264,26 @@ program
 program
   .command('logout')
   .description('Logout and remove stored API key')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const loggedIn = await isLoggedIn();
-      if (!loggedIn) {
-        console.log('You are not logged in');
-        return;
+      if (options.ui !== false) {
+        // Use Ink UI for logout
+        const { waitUntilExit } = render(
+          React.createElement(LogoutView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based logout
+        const loggedIn = await isLoggedIn();
+        if (!loggedIn) {
+          console.log('You are not logged in');
+          return;
+        }
+        
+        await removeApiKey();
+        console.log('Logged out successfully. API key removed.');
       }
-      
-      await removeApiKey();
-      console.log('Logged out successfully. API key removed.');
-      
     } catch (error) {
       console.error(`Error during logout: ${error}`);
       process.exit(1);
@@ -280,29 +293,38 @@ program
 program
   .command('whoami')
   .description('Show current login status')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const loggedIn = await isLoggedIn();
-      const apiKey = await getApiKey();
-      const residency = await getResidency();
-      
-      if (loggedIn && apiKey) {
-        const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
-        console.log(`Logged in with API key: ${maskedKey}`);
-        
-        // Show source of API key
-        if (process.env.ELEVENLABS_API_KEY) {
-          console.log('Source: Environment variable');
-        } else {
-          console.log('Source: Config file');
-        }
-        
-        console.log(`Residency: ${residency}`);
+      if (options.ui !== false) {
+        // Use Ink UI for whoami
+        const { waitUntilExit } = render(
+          React.createElement(WhoamiView)
+        );
+        await waitUntilExit();
       } else {
-        console.log('Not logged in');
-        console.log('Use "convai login" to authenticate');
+        // Fallback to text-based output
+        const loggedIn = await isLoggedIn();
+        const apiKey = await getApiKey();
+        const residency = await getResidency();
+        
+        if (loggedIn && apiKey) {
+          const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+          console.log(`Logged in with API key: ${maskedKey}`);
+          
+          // Show source of API key
+          if (process.env.ELEVENLABS_API_KEY) {
+            console.log('Source: Environment variable');
+          } else {
+            console.log('Source: Config file');
+          }
+          
+          console.log(`Residency: ${residency}`);
+        } else {
+          console.log('Not logged in');
+          console.log('Use "convai login" to authenticate');
+        }
       }
-      
     } catch (error) {
       console.error(`Error checking login status: ${error}`);
       process.exit(1);
@@ -312,22 +334,45 @@ program
 program
   .command('residency')
   .description('Set the API residency location')
-  .argument('<residency>', `Residency location (${LOCATIONS.join(', ')})`)
-  .action(async (residency: string) => {
+  .argument('[residency]', `Residency location (${LOCATIONS.join(', ')})`)
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (residency: string | undefined, options: { ui: boolean }) => {
     try {
-      function isValidLocation(value: string): value is Location {
-        return LOCATIONS.includes(value as Location);
+      if (options.ui !== false && !residency) {
+        // Use Ink UI for interactive residency selection
+        const { waitUntilExit } = render(
+          React.createElement(ResidencyView)
+        );
+        await waitUntilExit();
+      } else if (residency) {
+        // Direct residency setting (with or without UI)
+        function isValidLocation(value: string): value is Location {
+          return LOCATIONS.includes(value as Location);
+        }
+        
+        if (!isValidLocation(residency)) {
+          console.error(`Invalid residency: ${residency}`);
+          console.error(`Valid options: ${LOCATIONS.join(', ')}`);
+          process.exit(1);
+        }
+        
+        if (options.ui !== false) {
+          // Use UI even with direct argument
+          const { waitUntilExit } = render(
+            React.createElement(ResidencyView, { initialResidency: residency })
+          );
+          await waitUntilExit();
+        } else {
+          // Fallback to text-based
+          await setResidency(residency);
+          console.log(`Residency set to: ${residency}`);
+        }
+      } else {
+        // No residency provided and UI disabled - show current residency
+        const currentResidency = await getResidency();
+        console.log(`Current residency: ${currentResidency || 'Not set (using default)'}`);
+        console.log(`To set residency, use: convai residency <${LOCATIONS.join('|')}>`);
       }
-      
-      if (!isValidLocation(residency)) {
-        console.error(`Invalid residency: ${residency}`);
-        console.error(`Valid options: ${LOCATIONS.join(', ')}`);
-        process.exit(1);
-      }
-      
-      await setResidency(residency);
-      console.log(`Residency set to: ${residency}`);
-      
     } catch (error) {
       console.error(`Error setting residency: ${error}`);
       process.exit(1);
@@ -665,9 +710,19 @@ program
 program
   .command('list-agents')
   .description('List all configured agents')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      await listConfiguredAgents();
+      if (options.ui !== false) {
+        // Use Ink UI for list-agents
+        const { waitUntilExit } = render(
+          React.createElement(ListAgentsView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based listing
+        await listConfiguredAgents();
+      }
     } catch (error) {
       console.error(`Error listing agents: ${error}`);
       process.exit(1);
