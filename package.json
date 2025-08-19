@@ -24,7 +24,8 @@
       "msw"
     ],
     "overrides": {
-      "react": "19.0.0"
+      "@elevenlabs/react-native>react": "19.0.0",
+      "@elevenlabs/convai-cli>react": "18.2.0"
     }
   },
   "packageManager": "pnpm@10.13.1"
