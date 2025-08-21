@@ -10,6 +10,7 @@ const originalError = console.error;
 beforeAll(() => {
   console.warn = (...args) => {
     if (args[0]?.includes?.('react-test-renderer is deprecated')) return;
+    if (args[0]?.includes?.('Cannot send feedback')) return;
     originalWarn(...args);
   };
   console.error = (...args) => {
