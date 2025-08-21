@@ -19,7 +19,6 @@ module.exports = {
   // TypeScript and JavaScript transformation
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      isolatedModules: true,
       useESM: false,
       tsconfig: {
         target: 'ES2020',
@@ -31,6 +30,7 @@ module.exports = {
         skipLibCheck: true,
         strict: false, // Relaxed for testing
         resolveJsonModule: true,
+        isolatedModules: true,
       },
     }],
     '^.+\\.(js|jsx)$': 'babel-jest',
