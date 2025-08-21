@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 describe('CLI End-to-End Tests', () => {
+  jest.setTimeout(30000); // Increase timeout to 30 seconds for e2e tests
   let tempDir: string;
   let cliPath: string;
 
@@ -37,7 +38,7 @@ describe('CLI End-to-End Tests', () => {
     stderr: string;
     exitCode: number;
   }> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const child = spawn('node', [cliPath, ...args], {
         cwd: options.cwd || tempDir,
         stdio: ['pipe', 'pipe', 'pipe']
@@ -45,6 +46,14 @@ describe('CLI End-to-End Tests', () => {
 
       let stdout = '';
       let stderr = '';
+      let timedOut = false;
+
+      // Set a timeout of 10 seconds per command
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGTERM');
+        reject(new Error(`CLI command timed out: ${args.join(' ')}`));
+      }, 10000);
 
       child.stdout.on('data', (data) => {
         stdout += data.toString();
@@ -55,11 +64,19 @@ describe('CLI End-to-End Tests', () => {
       });
 
       child.on('close', (code) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code || 0
-        });
+        clearTimeout(timeout);
+        if (!timedOut) {
+          resolve({
+            stdout,
+            stderr,
+            exitCode: code || 0
+          });
+        }
+      });
+
+      child.on('error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
       });
 
       // Send input if provided
