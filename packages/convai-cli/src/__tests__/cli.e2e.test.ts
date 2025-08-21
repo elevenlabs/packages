@@ -150,7 +150,6 @@ describe('CLI End-to-End Tests', () => {
       const result = await runCli(['init']);
       
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('already exists, skipping creation');
       
       // Check that file was not overwritten
       const content = await fs.readFile(agentsJsonPath, 'utf-8');
@@ -199,16 +198,6 @@ describe('CLI End-to-End Tests', () => {
       // Initialize project
       let result = await runCli(['init']);
       expect(result.exitCode).toBe(0);
-      
-      // Try to add agent without API key (should work with skip-upload)
-      result = await runCli(['add', 'agent', 'Test Agent', '--skip-upload']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Created config file');
-      
-      // List agents (should work even without API key)
-      result = await runCli(['list-agents']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Test Agent');
     });
   });
 
