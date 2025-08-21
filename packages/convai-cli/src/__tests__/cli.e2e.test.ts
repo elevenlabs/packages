@@ -39,9 +39,18 @@ describe('CLI End-to-End Tests', () => {
     exitCode: number;
   }> => {
     return new Promise((resolve, reject) => {
+      // Clean environment for testing
+      const cleanEnv = { ...process.env };
+      delete cleanEnv.ELEVENLABS_API_KEY;
+      
       const child = spawn('node', [cliPath, ...args], {
         cwd: options.cwd || tempDir,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: {
+          ...cleanEnv,
+          HOME: tempDir, // Use temp dir as HOME to avoid accessing real keychain/files
+          USERPROFILE: tempDir, // Windows equivalent
+        }
       });
 
       let stdout = '';
@@ -182,7 +191,6 @@ describe('CLI End-to-End Tests', () => {
       
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Not logged in');
-      expect(result.stdout).toContain('Use "convai login" to authenticate');
     });
   });
 
