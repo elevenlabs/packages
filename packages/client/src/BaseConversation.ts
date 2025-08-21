@@ -308,11 +308,11 @@ export class BaseConversation {
     this.connection.setMicMuted(isMuted);
   }
 
-  public getInputByteFrequencyData() {
+  public getInputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
   }
 
-  public getOutputByteFrequencyData() {
+  public getOutputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
   }
 

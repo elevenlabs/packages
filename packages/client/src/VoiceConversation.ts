@@ -193,19 +193,19 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
-  public getInputByteFrequencyData() {
+  public getInputByteFrequencyData(): Uint8Array {
     this.inputFrequencyData ??= new Uint8Array(
       this.input.analyser.frequencyBinCount
     );
-    this.input.analyser.getByteFrequencyData(this.inputFrequencyData);
+    this.input.analyser.getByteFrequencyData(this.inputFrequencyData as any);
     return this.inputFrequencyData;
   }
 
-  public getOutputByteFrequencyData() {
+  public getOutputByteFrequencyData(): Uint8Array {
     this.outputFrequencyData ??= new Uint8Array(
       this.output.analyser.frequencyBinCount
     );
-    this.output.analyser.getByteFrequencyData(this.outputFrequencyData);
+    this.output.analyser.getByteFrequencyData(this.outputFrequencyData as any);
     return this.outputFrequencyData;
   }
 
