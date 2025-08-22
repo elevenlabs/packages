@@ -65,6 +65,7 @@ import WhoamiView from './ui/views/WhoamiView.js';
 import ListAgentsView from './ui/views/ListAgentsView.js';
 import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
+import HelpView from './ui/views/HelpView.js';
 
 // Load environment variables
 dotenv.config();
@@ -129,7 +130,21 @@ interface TemplateShowOptions {
 program
   .name('convai')
   .description('ElevenLabs Conversational AI Agent Manager CLI')
-  .version(version);
+  .version(version)
+  .configureHelp({
+    // Override the default help to use our Ink UI
+    formatHelp: () => {
+      // Return empty string but show Ink UI asynchronously
+      setImmediate(async () => {
+        const { waitUntilExit } = render(
+          React.createElement(HelpView)
+        );
+        await waitUntilExit();
+        process.exit(0);
+      });
+      return '';
+    }
+  });
 
 program
   .command('init')
@@ -1536,4 +1551,15 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-program.parse(); 
+// Show help if no arguments provided
+if (process.argv.length === 2) {
+  (async () => {
+    const { waitUntilExit } = render(
+      React.createElement(HelpView)
+    );
+    await waitUntilExit();
+    process.exit(0);
+  })();
+} else {
+  program.parse();
+} 
