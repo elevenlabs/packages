@@ -253,8 +253,14 @@ program
         try {
           await listAgentsApi(client, 1);
           console.log('API key verified successfully');
-        } catch (error) {
-          console.error('Invalid API key or network error');
+        } catch (error: any) {
+          if (error?.statusCode === 401 || error?.message?.includes('401')) {
+            console.error('Invalid API key');
+          } else if (error?.code === 'ENOTFOUND' || error?.code === 'ETIMEDOUT' || error?.message?.includes('network')) {
+            console.error('Network error: Unable to connect to ElevenLabs API');
+          } else {
+            console.error('Error verifying API key:', error?.message || error);
+          }
           process.exit(1);
         }
         
