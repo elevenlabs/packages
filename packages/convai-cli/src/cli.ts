@@ -133,17 +133,17 @@ program
   .version(version)
   .configureHelp({
     // Override the default help to use our Ink UI
-    formatHelp: () => {
-      // Return empty string but show Ink UI asynchronously
-      setImmediate(async () => {
-        const { waitUntilExit } = render(
-          React.createElement(HelpView)
-        );
-        await waitUntilExit();
-        process.exit(0);
-      });
-      return '';
-    }
+    formatHelp: () => ''
+  })
+  .helpOption('-h, --help', 'Display help information')
+  .on('option:help', async () => {
+    // Show Ink-based help view
+    const { waitUntilExit } = render(
+      React.createElement(HelpView)
+    );
+    await waitUntilExit();
+    process.exit(0);
+
   });
 
 program
@@ -1551,8 +1551,9 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Show help if no arguments provided
-if (process.argv.length === 2) {
+// Show help if no arguments provided or if --help is used
+const args = process.argv.slice(2);
+if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
   (async () => {
     const { waitUntilExit } = render(
       React.createElement(HelpView)
