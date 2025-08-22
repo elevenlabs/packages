@@ -132,6 +132,10 @@ describe('ElevenLabsProvider', () => {
       const TestComponent = () => {
         const conversation = useConversation();
 
+        // Suppress console.warn for sendFeedback test since canSendFeedback is false by default
+        const originalWarn = console.warn;
+        console.warn = jest.fn();
+
         // Test that all methods can be called safely
         expect(() => conversation.startSession({ agentId: 'test' })).not.toThrow();
         expect(() => conversation.endSession()).not.toThrow();
@@ -139,6 +143,9 @@ describe('ElevenLabsProvider', () => {
         expect(() => conversation.sendContextualUpdate('test context')).not.toThrow();
         expect(() => conversation.sendUserMessage('test message')).not.toThrow();
         expect(() => conversation.sendUserActivity()).not.toThrow();
+
+        // Restore console.warn
+        console.warn = originalWarn;
 
         return <TestText>Method tests passed</TestText>;
       };
