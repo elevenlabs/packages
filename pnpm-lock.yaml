@@ -112,8 +112,8 @@ importers:
   packages/convai-cli:
     dependencies:
       '@elevenlabs/elevenlabs-js':
-        specifier: 2.9.0
-        version: 2.9.0
+        specifier: 2.12.0
+        version: 2.12.0
       '@inkjs/ui':
         specifier: ^2.0.0
         version: 2.0.0(ink@4.4.1(@types/react@18.2.0)(react@18.2.0))
@@ -1104,8 +1104,8 @@ packages:
     peerDependencies:
       expo: ^53
 
-  '@elevenlabs/elevenlabs-js@2.9.0':
-    resolution: {integrity: sha512-kPccEQfShzSUR0ZtgTiTuzkMFs//Gw6VyKZD6oAeAKBLmuYpS4ecG1/FfB3G0X0RWb5Z8VUy0UMgPCQKQQt7qA==}
+  '@elevenlabs/elevenlabs-js@2.12.0':
+    resolution: {integrity: sha512-piFYrsszUocvf187sCPfzztX0KOjPEY5TsVISUDZb46Y69vZcRJ51U9/2C5SN3EiR4BYZaER+yGVW6rwfFVNEg==}
     engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.25.9':
@@ -7827,7 +7827,7 @@ snapshots:
     dependencies:
       expo: 53.0.20(@babel/core@7.28.3)(graphql@16.11.0)(react-native@0.79.5(@babel/core@7.28.3)(@types/react@18.2.0)(react@18.2.0))(react@18.2.0)
 
-  '@elevenlabs/elevenlabs-js@2.9.0':
+  '@elevenlabs/elevenlabs-js@2.12.0':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0
