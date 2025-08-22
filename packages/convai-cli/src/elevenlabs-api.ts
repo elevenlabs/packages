@@ -217,6 +217,7 @@ export async function getToolApi(client: ElevenLabsClient, toolId: string): Prom
  * @param client - An initialized ElevenLabs client
  * @returns Promise that resolves to a list of tool objects
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]> {
   // Mock implementation until SDK supports tools API
   return [];
@@ -229,6 +230,7 @@ export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]>
  * @param toolId - The ID of the tool
  * @returns Promise that resolves to a list of dependent agents
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
   // Mock implementation until SDK supports tools API
   return [];

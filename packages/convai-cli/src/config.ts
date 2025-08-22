@@ -60,6 +60,7 @@ export async function saveConfig(config: CliConfig): Promise<void> {
   await fs.ensureDir(configDir);
   
   // Don't store API key in config file for security
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { apiKey, ...configWithoutKey } = config;
   
   // Save config with proper formatting and secure permissions

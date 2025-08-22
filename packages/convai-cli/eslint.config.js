@@ -48,6 +48,8 @@ export default [
         afterAll: 'readonly',
         jest: 'readonly',
         __dirname: 'readonly',
+        clearTimeout: 'readonly',
+        setTimeout: 'readonly',
       },
     },
     plugins: {
