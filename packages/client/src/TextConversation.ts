@@ -9,8 +9,18 @@ export class TextConversation extends BaseConversation {
   ): Promise<TextConversation> {
     const fullOptions = BaseConversation.getFullOptions(options);
 
-    fullOptions.onStatusChange({ status: "connecting" });
-    fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
+    if (fullOptions.onStatusChange) {
+      fullOptions.onStatusChange({ status: "connecting" });
+    }
+    if (fullOptions.onCanSendFeedbackChange) {
+      fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
+    }
+    if (fullOptions.onModeChange) {
+      fullOptions.onModeChange({ mode: "listening" });
+    }
+    if (fullOptions.onCanSendFeedbackChange) {
+      fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
+    }
 
     let connection: BaseConnection | null = null;
     try {
@@ -18,7 +28,9 @@ export class TextConversation extends BaseConversation {
       connection = await createConnection(options);
       return new TextConversation(fullOptions, connection);
     } catch (error) {
-      fullOptions.onStatusChange({ status: "disconnected" });
+      if (fullOptions.onStatusChange) {
+        fullOptions.onStatusChange({ status: "disconnected" });
+      }
       connection?.close();
       throw error;
     }

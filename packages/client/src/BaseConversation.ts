@@ -46,16 +46,16 @@ export type ClientToolsConfig = {
 };
 
 export type Callbacks = {
-  onConnect: (props: { conversationId: string }) => void;
+  onConnect?: (props: { conversationId: string }) => void;
   // internal debug events, not to be used
-  onDebug: (props: any) => void;
-  onDisconnect: OnDisconnectCallback;
-  onError: (message: string, context?: any) => void;
-  onMessage: (props: { message: string; source: Role }) => void;
+  onDebug?: (props: any) => void;
+  onDisconnect?: OnDisconnectCallback;
+  onError?: (message: string, context?: any) => void;
+  onMessage?: (props: { message: string; source: Role }) => void;
   onAudio?: (base64Audio: string) => void;
-  onModeChange: (prop: { mode: Mode }) => void;
-  onStatusChange: (prop: { status: Status }) => void;
-  onCanSendFeedbackChange: (prop: { canSendFeedback: boolean }) => void;
+  onModeChange?: (prop: { mode: Mode }) => void;
+  onStatusChange?: (prop: { status: Status }) => void;
+  onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
   onUnhandledClientToolCall?: (
     params: ClientToolCallEvent["client_tool_call"]
   ) => void;
@@ -93,7 +93,9 @@ export class BaseConversation {
     protected readonly options: Options,
     protected readonly connection: BaseConnection
   ) {
-    this.options.onConnect({ conversationId: connection.conversationId });
+    if (this.options.onConnect) {
+      this.options.onConnect({ conversationId: connection.conversationId });
+    }
     this.connection.onMessage(this.onMessage);
     this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onModeChange(mode => this.updateMode(mode));
@@ -109,7 +111,9 @@ export class BaseConversation {
     this.updateStatus("disconnecting");
     await this.handleEndSession();
     this.updateStatus("disconnected");
-    this.options.onDisconnect(details);
+    if (this.options.onDisconnect) {
+      this.options.onDisconnect(details);
+    }
   };
 
   protected async handleEndSession() {
@@ -119,14 +123,18 @@ export class BaseConversation {
   protected updateMode(mode: Mode) {
     if (mode !== this.mode) {
       this.mode = mode;
-      this.options.onModeChange({ mode });
+      if (this.options.onModeChange) {
+        this.options.onModeChange({ mode });
+      }
     }
   }
 
   protected updateStatus(status: Status) {
     if (status !== this.status) {
       this.status = status;
-      this.options.onStatusChange({ status });
+      if (this.options.onStatusChange) {
+        this.options.onStatusChange({ status });
+      }
     }
   }
 
@@ -134,7 +142,9 @@ export class BaseConversation {
     const canSendFeedback = this.currentEventId !== this.lastFeedbackEventId;
     if (this.canSendFeedback !== canSendFeedback) {
       this.canSendFeedback = canSendFeedback;
-      this.options.onCanSendFeedbackChange({ canSendFeedback });
+      if (this.options.onCanSendFeedbackChange) {
+        this.options.onCanSendFeedbackChange({ canSendFeedback });
+      }
     }
   }
 
@@ -145,27 +155,34 @@ export class BaseConversation {
   }
 
   protected handleAgentResponse(event: AgentResponseEvent) {
-    this.options.onMessage({
-      source: "ai",
-      message: event.agent_response_event.agent_response,
-    });
+    if (this.options.onMessage) {
+      this.options.onMessage({
+        source: "ai",
+        message: event.agent_response_event.agent_response,
+      });
+    }
   }
 
   protected handleUserTranscript(event: UserTranscriptionEvent) {
-    this.options.onMessage({
-      source: "user",
-      message: event.user_transcription_event.user_transcript,
-    });
+    if (this.options.onMessage) {
+      this.options.onMessage({
+        source: "user",
+        message: event.user_transcription_event.user_transcript,
+      });
+    }
   }
 
   protected handleTentativeAgentResponse(
     event: InternalTentativeAgentResponseEvent
   ) {
-    this.options.onDebug({
-      type: "tentative_agent_response",
-      response:
-        event.tentative_agent_response_internal_event.tentative_agent_response,
-    });
+    if (this.options.onDebug) {
+      this.options.onDebug({
+        type: "tentative_agent_response",
+        response:
+          event.tentative_agent_response_internal_event
+            .tentative_agent_response,
+      });
+    }
   }
 
   protected handleVadScore(event: VadScoreEvent) {
@@ -281,7 +298,9 @@ export class BaseConversation {
 
       // unhandled events are expected to be internal events
       default: {
-        this.options.onDebug(parsedEvent);
+        if (this.options.onDebug) {
+          this.options.onDebug(parsedEvent);
+        }
         return;
       }
     }
@@ -289,7 +308,9 @@ export class BaseConversation {
 
   private onError(message: string, context?: any) {
     console.error(message, context);
-    this.options.onError(message, context);
+    if (this.options.onError) {
+      this.options.onError(message, context);
+    }
   }
 
   public getId() {
