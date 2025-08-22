@@ -321,6 +321,9 @@ importers:
       livekit-client:
         specifier: ^2.11.0
         version: 2.15.5(@types/dom-mediacapture-record@1.0.22)
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
       react-native:
         specifier: '>=0.70.0'
         version: 0.79.5(@babel/core@7.28.3)(@types/react@18.2.0)(react@18.2.0)
@@ -349,9 +352,6 @@ importers:
       microbundle:
         specifier: ^0.15.1
         version: 0.15.1(@types/babel__core@7.20.5)
-      react:
-        specifier: 18.2.0
-        version: 18.2.0
       react-test-renderer:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
