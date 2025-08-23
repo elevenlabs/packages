@@ -1562,5 +1562,16 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     process.exit(0);
   })();
 } else {
+  // Special handling for 'add' command without subcommand
+  if (args[0] === 'add' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required subcommand');
+    console.error('Usage: convai add <agent|webhook-tool|client-tool> [options]');
+    console.error('');
+    console.error('Available subcommands:');
+    console.error('  agent          Add a new agent');
+    console.error('  webhook-tool   Add a new webhook tool');
+    console.error('  client-tool    Add a new client tool');
+    process.exit(1);
+  }
   program.parse();
 } 
