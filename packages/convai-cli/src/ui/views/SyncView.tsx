@@ -117,7 +117,7 @@ export const SyncView: React.FC<SyncViewProps> = ({
 
   return (
     <App 
-      title="ConvAI Sync" 
+      title="ElevenLabs Conversational AI Sync" 
       subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Synchronizing agents'}
       showOverlay={!complete}
     >
