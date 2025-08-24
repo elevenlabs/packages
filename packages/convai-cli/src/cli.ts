@@ -27,7 +27,9 @@ import {
   updateAgentApi, 
   listAgentsApi, 
   getAgentApi,
-  createToolApi
+  createToolApi,
+  runAgentTestsApi,
+  getTestInvocationApi
 } from './elevenlabs-api.js';
 import { 
   getApiKey, 
@@ -65,6 +67,8 @@ import WhoamiView from './ui/views/WhoamiView.js';
 import ListAgentsView from './ui/views/ListAgentsView.js';
 import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
+import TestView from './ui/views/TestView.js';
+import TestAgentView from './ui/views/TestAgentView.js';
 
 // Load environment variables
 dotenv.config();
@@ -768,6 +772,309 @@ program
       await generateWidget(name, options.env);
     } catch (error) {
       console.error(`Error generating widget: ${error}`);
+      process.exit(1);
+    }
+  });
+
+const testCommand = program
+  .command('test')
+  .description('Run tests for agents');
+
+testCommand
+  .command('agent')
+  .description('Run tests for a specific agent')
+  .argument('<name>', 'Name of the agent to test')
+  .option('--env <environment>', 'Environment to test', 'prod')
+  .option('--test-ids <ids...>', 'Specific test IDs to run (space-separated)')
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (name: string, options: { env: string; testIds?: string[]; ui: boolean }) => {
+    try {
+      // Check if agents.json exists
+      const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+      if (!(await fs.pathExists(agentsConfigPath))) {
+        console.error('agents.json not found. Run \'convai init\' first.');
+        process.exit(1);
+      }
+      
+      // Load agents config
+      const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+      
+      // Find the agent
+      const agent = agentsConfig.agents.find(a => a.name === name);
+      if (!agent) {
+        console.error(`Agent '${name}' not found in configuration`);
+        process.exit(1);
+      }
+      
+      // Get config path for the environment
+      let configPath: string | undefined;
+      if (agent.environments && options.env in agent.environments) {
+        configPath = agent.environments[options.env].config;
+      } else if (agent.config) {
+        configPath = agent.config;
+      }
+      
+      if (!configPath) {
+        console.error(`Agent '${name}' has no configuration for environment '${options.env}'`);
+        process.exit(1);
+      }
+      
+      // Load lock file to get agent ID
+      const lockFilePath = path.resolve(LOCK_FILE);
+      const lockData = await loadLockFile(lockFilePath);
+      const lockedAgent = getAgentFromLock(lockData, name, options.env);
+      
+      if (!lockedAgent?.id) {
+        console.error(`Agent '${name}' not synced for environment '${options.env}'. Run 'convai sync --agent ${name} --env ${options.env}' first.`);
+        process.exit(1);
+      }
+      
+      if (options.ui !== false) {
+        // Use Ink UI for test execution
+        const { waitUntilExit } = render(
+          React.createElement(TestAgentView, {
+            agentName: name,
+            agentId: lockedAgent.id,
+            environment: options.env,
+            configPath,
+            testIds: options.testIds
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Non-UI mode - just run tests and output results
+        console.log(`Running tests for agent '${name}' (${options.env})...`);
+        console.log(`Agent ID: ${lockedAgent.id}`);
+        
+        const client = await getElevenLabsClient();
+        
+        // Get tests to run
+        let testsToRun = options.testIds;
+        
+        if (!testsToRun) {
+          // Check config for attached tests
+          const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+          if (agentConfig.platform_settings?.testing?.attached_tests) {
+            testsToRun = agentConfig.platform_settings.testing.attached_tests.map(t => t.test_id);
+          }
+        }
+        
+        if (!testsToRun || testsToRun.length === 0) {
+          console.error('No tests found for this agent');
+          process.exit(1);
+        }
+        
+        console.log(`Running ${testsToRun.length} test(s)...`);
+        
+        // Run tests
+        const response = await runAgentTestsApi(client, lockedAgent.id, testsToRun);
+        console.log(`Test invocation ID: ${response.testInvocationId}`);
+        
+        // Poll for results with adaptive intervals
+        let attempts = 0;
+        const maxAttempts = 120;
+        let lastCompletedCount = 0;
+        let stableIterations = 0;
+        
+        const calculatePollInterval = (completedCount: number, totalCount: number) => {
+          const progressRate = totalCount > 0 ? completedCount / totalCount : 0;
+          
+          if (completedCount > lastCompletedCount) {
+            stableIterations = 0;
+            return 1000; // 1 second when tests are actively completing
+          }
+          
+          stableIterations++;
+          
+          if (progressRate === 0) {
+            return Math.min(2000 + (stableIterations * 500), 5000); // 2s to 5s
+          } else if (progressRate < 0.5) {
+            return Math.min(1500 + (stableIterations * 300), 3000); // 1.5s to 3s
+          } else {
+            return Math.min(1000 + (stableIterations * 200), 2000); // 1s to 2s
+          }
+        };
+        
+        while (attempts < maxAttempts) {
+          attempts++;
+          
+          const invocation = await getTestInvocationApi(client, response.testInvocationId);
+          
+          const passedCount = invocation.testRuns.filter(r => r.status === 'passed').length;
+          const failedCount = invocation.testRuns.filter(r => r.status === 'failed').length;
+          const pendingCount = invocation.testRuns.filter(r => r.status === 'pending').length;
+          const completedCount = passedCount + failedCount;
+          const totalCount = invocation.testRuns.length;
+          
+          console.log(`Status: ${passedCount} passed, ${failedCount} failed, ${pendingCount} pending (attempt ${attempts})`);
+          
+          if (invocation.status === 'completed' || invocation.status === 'failed') {
+            const allPassed = invocation.testRuns.every(r => r.status === 'passed');
+            
+            if (allPassed) {
+              console.log('✓ All tests passed!');
+              process.exit(0);
+            } else {
+              console.log('✗ Some tests failed');
+              process.exit(1);
+            }
+          }
+          
+          // Calculate and wait for next interval
+          const nextInterval = calculatePollInterval(completedCount, totalCount);
+          lastCompletedCount = completedCount;
+          await new Promise(resolve => setTimeout(resolve, nextInterval));
+        }
+        
+        console.error('Test execution timed out');
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(`Error running tests: ${error}`);
+      process.exit(1);
+    }
+  });
+
+testCommand
+  .command('all')
+  .description('Run tests for all agents')
+  .option('--env <environment>', 'Environment to test', 'prod')
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { env: string; ui: boolean }) => {
+    try {
+      if (options.ui !== false) {
+        // Use Ink UI for test execution
+        const { waitUntilExit } = render(
+          React.createElement(TestView, {
+            environment: options.env
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Non-UI mode
+        console.log(`Running tests for all agents in environment '${options.env}'...`);
+        
+        // Check if agents.json exists
+        const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+        if (!(await fs.pathExists(agentsConfigPath))) {
+          console.error('agents.json not found. Run \'convai init\' first.');
+          process.exit(1);
+        }
+        
+        const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+        const lockFilePath = path.resolve(LOCK_FILE);
+        const lockData = await loadLockFile(lockFilePath);
+        const client = await getElevenLabsClient();
+        
+        let overallPassed = true;
+        
+        for (const agent of agentsConfig.agents) {
+          // Get config path for the environment
+          let configPath: string | undefined;
+          if (agent.environments && options.env in agent.environments) {
+            configPath = agent.environments[options.env].config;
+          } else if (agent.config) {
+            configPath = agent.config;
+          }
+          
+          if (!configPath) {
+            console.log(`Skipping ${agent.name}: No config for environment '${options.env}'`);
+            continue;
+          }
+          
+          const lockedAgent = getAgentFromLock(lockData, agent.name, options.env);
+          if (!lockedAgent?.id) {
+            console.log(`Skipping ${agent.name}: Not synced`);
+            continue;
+          }
+          
+          console.log(`\nTesting ${agent.name}...`);
+          
+          // Get tests to run
+          const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+          let testsToRun: string[] = [];
+          
+          if (agentConfig.platform_settings?.testing?.attached_tests) {
+            testsToRun = agentConfig.platform_settings.testing.attached_tests.map(t => t.test_id);
+          }
+          
+          if (testsToRun.length === 0) {
+            console.log(`No tests configured for ${agent.name}`);
+            continue;
+          }
+          
+          // Run tests
+          const response = await runAgentTestsApi(client, lockedAgent.id, testsToRun);
+          
+          // Poll for results with adaptive intervals
+          let attempts = 0;
+          const maxAttempts = 120;
+          let testPassed = false;
+          let lastCompletedCount = 0;
+          let stableIterations = 0;
+          
+          const calculatePollInterval = (completedCount: number, totalCount: number) => {
+            const progressRate = totalCount > 0 ? completedCount / totalCount : 0;
+            
+            if (completedCount > lastCompletedCount) {
+              stableIterations = 0;
+              return 1000;
+            }
+            
+            stableIterations++;
+            
+            if (progressRate === 0) {
+              return Math.min(2000 + (stableIterations * 500), 5000);
+            } else if (progressRate < 0.5) {
+              return Math.min(1500 + (stableIterations * 300), 3000);
+            } else {
+              return Math.min(1000 + (stableIterations * 200), 2000);
+            }
+          };
+          
+          while (attempts < maxAttempts) {
+            attempts++;
+            
+            const invocation = await getTestInvocationApi(client, response.testInvocationId);
+            const passedCount = invocation.testRuns.filter(r => r.status === 'passed').length;
+            const failedCount = invocation.testRuns.filter(r => r.status === 'failed').length;
+            const completedCount = passedCount + failedCount;
+            const totalCount = invocation.testRuns.length;
+            
+            if (invocation.status === 'completed' || invocation.status === 'failed') {
+              testPassed = invocation.testRuns.every(r => r.status === 'passed');
+              
+              console.log(`${agent.name}: ${passedCount} passed, ${failedCount} failed`);
+              
+              if (!testPassed) {
+                overallPassed = false;
+              }
+              break;
+            }
+            
+            // Calculate and wait for next interval
+            const nextInterval = calculatePollInterval(completedCount, totalCount);
+            lastCompletedCount = completedCount;
+            await new Promise(resolve => setTimeout(resolve, nextInterval));
+          }
+          
+          if (attempts >= maxAttempts) {
+            console.log(`${agent.name}: Test execution timed out`);
+            overallPassed = false;
+          }
+        }
+        
+        console.log('\n' + '='.repeat(50));
+        if (overallPassed) {
+          console.log('✓ All tests passed!');
+          process.exit(0);
+        } else {
+          console.log('✗ Some tests failed');
+          process.exit(1);
+        }
+      }
+    } catch (error) {
+      console.error(`Error running tests: ${error}`);
       process.exit(1);
     }
   });

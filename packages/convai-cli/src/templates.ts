@@ -45,6 +45,12 @@ export interface AgentConfig {
       };
       [key: string]: unknown;
     };
+    testing?: {
+      attached_tests?: Array<{
+        test_id: string;
+      }>;
+      [key: string]: unknown;
+    };
     [key: string]: unknown;
   };
   tags: string[];

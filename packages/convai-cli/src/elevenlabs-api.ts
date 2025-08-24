@@ -234,4 +234,114 @@ export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]>
 export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
   // Mock implementation until SDK supports tools API
   return [];
+}
+
+/**
+ * Runs test suite for an agent.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param agentId - The ID of the agent to test
+ * @param testIds - Optional array of specific test IDs to run, if not provided runs all attached tests
+ * @returns Promise that resolves to test invocation details including test_invocation_id
+ */
+export async function runAgentTestsApi(
+  client: ElevenLabsClient,
+  agentId: string,
+  testIds?: string[]
+): Promise<{ testInvocationId: string; testRuns: unknown[] }> {
+  const tests = testIds ? testIds.map(testId => ({ testId })) : undefined;
+  
+  // Call the ElevenLabs SDK method
+  // Using the correct method name from the SDK
+  const response = await (client as any).runAgentTestSuiteRoute(agentId, {
+    tests
+  });
+  
+  return {
+    testInvocationId: response.testInvocationId || response.test_invocation_id,
+    testRuns: response.testRuns || response.test_runs || []
+  };
+}
+
+/**
+ * Gets test invocation status and results.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param testInvocationId - The ID of the test invocation to check
+ * @returns Promise that resolves to test invocation details including test run statuses
+ */
+export async function getTestInvocationApi(
+  client: ElevenLabsClient,
+  testInvocationId: string
+): Promise<{
+  testInvocationId: string;
+  status: 'pending' | 'completed' | 'failed';
+  testRuns: Array<{
+    testRunId: string;
+    testId: string;
+    agentId: string;
+    status: 'pending' | 'passed' | 'failed';
+    conditionResult?: {
+      success: boolean;
+      message?: string;
+    };
+  }>;
+}> {
+  // Call the ElevenLabs SDK method
+  const response = await (client as any).getTestInvocationRoute(testInvocationId);
+  
+  // Normalize the response
+  const testRuns = (response.testRuns || response.test_runs || []).map((run: any) => ({
+    testRunId: run.testRunId || run.test_run_id,
+    testId: run.testId || run.test_id,
+    agentId: run.agentId || run.agent_id,
+    status: run.status,
+    conditionResult: run.conditionResult || run.condition_result
+  }));
+  
+  // Determine overall status based on test runs
+  const hasFailures = testRuns.some((run: any) => run.status === 'failed');
+  const allCompleted = testRuns.every((run: any) => run.status !== 'pending');
+  
+  let status: 'pending' | 'completed' | 'failed';
+  if (hasFailures) {
+    status = 'failed';
+  } else if (allCompleted) {
+    status = 'completed';
+  } else {
+    status = 'pending';
+  }
+  
+  return {
+    testInvocationId: response.testInvocationId || response.test_invocation_id || testInvocationId,
+    status,
+    testRuns
+  };
+}
+
+/**
+ * Gets details about a specific test.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param testId - The ID of the test to retrieve
+ * @returns Promise that resolves to test details
+ */
+export async function getTestDetailsApi(
+  client: ElevenLabsClient,
+  testId: string
+): Promise<{
+  id: string;
+  name: string;
+  successCondition?: string;
+  chatHistory?: unknown[];
+}> {
+  // Call the ElevenLabs SDK method
+  const response = await (client as any).getAgentResponseTestRoute(testId);
+  
+  return {
+    id: response.id || testId,
+    name: response.name || 'Unnamed Test',
+    successCondition: response.successCondition || response.success_condition,
+    chatHistory: response.chatHistory || response.chat_history || []
+  };
 } 
