@@ -249,17 +249,16 @@ export async function runAgentTestsApi(
   agentId: string,
   testIds?: string[]
 ): Promise<{ testInvocationId: string; testRuns: unknown[] }> {
-  const tests = testIds ? testIds.map(testId => ({ testId })) : undefined;
+  const tests = testIds ? testIds.map(testId => ({ testId })) : [];
   
   // Call the ElevenLabs SDK method
-  // Using the correct method name from the SDK
-  const response = await (client as any).runAgentTestSuiteRoute(agentId, {
+  const response = await client.conversationalAi.agents.runTests(agentId, {
     tests
   });
   
   return {
-    testInvocationId: response.testInvocationId || response.test_invocation_id,
-    testRuns: response.testRuns || response.test_runs || []
+    testInvocationId: (response as any).testInvocationId || (response as any).test_invocation_id || '',
+    testRuns: response.testRuns || (response as any).test_runs || []
   };
 }
 
@@ -288,10 +287,10 @@ export async function getTestInvocationApi(
   }>;
 }> {
   // Call the ElevenLabs SDK method
-  const response = await (client as any).getTestInvocationRoute(testInvocationId);
+  const response = await client.conversationalAi.tests.invocations.get(testInvocationId);
   
   // Normalize the response
-  const testRuns = (response.testRuns || response.test_runs || []).map((run: any) => ({
+  const testRuns = (response.testRuns || (response as any).test_runs || []).map((run: any) => ({
     testRunId: run.testRunId || run.test_run_id,
     testId: run.testId || run.test_id,
     agentId: run.agentId || run.agent_id,
@@ -313,7 +312,7 @@ export async function getTestInvocationApi(
   }
   
   return {
-    testInvocationId: response.testInvocationId || response.test_invocation_id || testInvocationId,
+    testInvocationId: (response as any).testInvocationId || (response as any).test_invocation_id || testInvocationId,
     status,
     testRuns
   };
@@ -336,12 +335,12 @@ export async function getTestDetailsApi(
   chatHistory?: unknown[];
 }> {
   // Call the ElevenLabs SDK method
-  const response = await (client as any).getAgentResponseTestRoute(testId);
+  const response = await client.conversationalAi.tests.get(testId);
   
   return {
     id: response.id || testId,
     name: response.name || 'Unnamed Test',
-    successCondition: response.successCondition || response.success_condition,
-    chatHistory: response.chatHistory || response.chat_history || []
+    successCondition: (response as any).successCondition || (response as any).success_condition,
+    chatHistory: (response as any).chatHistory || (response as any).chat_history || []
   };
 } 

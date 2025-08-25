@@ -1,0 +1,1 @@
+{"name":"Customer Service Agent (Dev)","conversation_config":{"agent":{"prompt":{"prompt":"You are a helpful customer service agent in development","temperature":0.8}},"conversation":{"text_only":true}},"platform_settings":{"testing":{"attached_tests":[{"test_id":"test_dev_001"}]}},"tags":["customer-service","development"]}

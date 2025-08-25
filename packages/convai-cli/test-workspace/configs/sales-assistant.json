@@ -1,0 +1,1 @@
+{"name":"Sales Assistant","conversation_config":{"agent":{"prompt":{"prompt":"You are a professional sales assistant","temperature":0.6}},"conversation":{"text_only":false}},"platform_settings":{},"tags":["sales","production"]}

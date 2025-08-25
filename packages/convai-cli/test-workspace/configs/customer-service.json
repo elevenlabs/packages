@@ -1,0 +1,1 @@
+{"name":"Customer Service Agent","conversation_config":{"agent":{"prompt":{"prompt":"You are a helpful customer service agent","temperature":0.7}},"conversation":{"text_only":false}},"platform_settings":{"testing":{"attached_tests":[{"test_id":"test_greeting_001"},{"test_id":"test_resolution_002"}]}},"tags":["customer-service","production"]}

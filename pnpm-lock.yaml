@@ -112,8 +112,8 @@ importers:
   packages/convai-cli:
     dependencies:
       '@elevenlabs/elevenlabs-js':
-        specifier: 2.9.0
-        version: 2.9.0
+        specifier: 2.12.2
+        version: 2.12.2
       '@inkjs/ui':
         specifier: ^2.0.0
         version: 2.0.0(ink@4.4.1(@types/react@18.2.0)(react@18.2.0))
@@ -193,6 +193,9 @@ importers:
       eslint:
         specifier: ^9.0.0
         version: 9.33.0(jiti@1.21.7)
+      ink-testing-library:
+        specifier: ^4.0.0
+        version: 4.0.0(@types/react@18.2.0)
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.19.11)(babel-plugin-macros@3.1.0)
@@ -1104,8 +1107,8 @@ packages:
     peerDependencies:
       expo: ^53
 
-  '@elevenlabs/elevenlabs-js@2.9.0':
-    resolution: {integrity: sha512-kPccEQfShzSUR0ZtgTiTuzkMFs//Gw6VyKZD6oAeAKBLmuYpS4ecG1/FfB3G0X0RWb5Z8VUy0UMgPCQKQQt7qA==}
+  '@elevenlabs/elevenlabs-js@2.12.2':
+    resolution: {integrity: sha512-P1OKIOie4LRYodvbiC6gRdLzg3RXsx1LAO6k5A94NPQvVZEgGq1wbWFcKbbhyBVCHP30RyUGtVl0c5tw3rByNg==}
     engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.25.9':
@@ -4146,6 +4149,15 @@ packages:
     peerDependencies:
       ink: '>=4.0.0'
       react: 18.2.0
+
+  ink-testing-library@4.0.0:
+    resolution: {integrity: sha512-yF92kj3pmBvk7oKbSq5vEALO//o7Z9Ck/OaLNlkzXNeYdwfpxMQkSowGTFUCS5MSu9bWfSZMewGpp7bFc66D7Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/react': 18.2.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   ink-text-input@5.0.1:
     resolution: {integrity: sha512-crnsYJalG4EhneOFnr/q+Kzw1RgmXI2KsBaLFE6mpiIKxAtJLUnvygOF2IUKO8z4nwkSkveGRBMd81RoYdRSag==}
@@ -7827,7 +7839,7 @@ snapshots:
     dependencies:
       expo: 53.0.20(@babel/core@7.28.3)(graphql@16.11.0)(react-native@0.79.5(@babel/core@7.28.3)(@types/react@18.2.0)(react@18.2.0))(react@18.2.0)
 
-  '@elevenlabs/elevenlabs-js@2.9.0':
+  '@elevenlabs/elevenlabs-js@2.12.2':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0
@@ -11328,6 +11340,10 @@ snapshots:
       cli-spinners: 2.9.2
       ink: 4.4.1(@types/react@18.2.0)(react@18.2.0)
       react: 18.2.0
+
+  ink-testing-library@4.0.0(@types/react@18.2.0):
+    optionalDependencies:
+      '@types/react': 18.2.0
 
   ink-text-input@5.0.1(ink@4.4.1(@types/react@18.2.0)(react@18.2.0))(react@18.2.0):
     dependencies:

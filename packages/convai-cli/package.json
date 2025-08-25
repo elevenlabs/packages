@@ -41,7 +41,7 @@
     "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "2.9.0",
+    "@elevenlabs/elevenlabs-js": "2.12.2",
     "@inkjs/ui": "^2.0.0",
     "@jest/globals": "^30.0.4",
     "@types/read": "^0.0.32",
@@ -70,6 +70,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^9.0.0",
+    "ink-testing-library": "^4.0.0",
     "jest": "^29.7.0",
     "prettier": "^3.0.3",
     "ts-jest": "^29.4.0",
