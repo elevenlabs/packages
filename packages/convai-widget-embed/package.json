@@ -8,11 +8,11 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
+    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
-    "lint:es": "npx eslint .",
+    "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts'",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [],
   "author": "ElevenLabs",

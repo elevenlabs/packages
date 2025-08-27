@@ -13,7 +13,7 @@
     "dev": "npm run generate-version && vite",
     "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
-    "lint:es": "npx eslint .",
+    "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
     "prepublishOnly": "npm run build",
     "test": "vitest"
