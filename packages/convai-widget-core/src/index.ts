@@ -7,6 +7,5 @@ export type { CustomAttributes } from "./types/attributes";
 export function registerWidget(tagName = "elevenlabs-convai") {
   register(ConvAIWidget, tagName, [...CustomAttributeList], {
     shadow: true,
-    mode: "open",
   });
 }
