@@ -273,7 +273,17 @@ export class BaseConversation {
         return;
       }
       case "client_tool_call": {
-        await this.handleClientToolCall(parsedEvent);
+        try {
+          await this.handleClientToolCall(parsedEvent);
+        } catch (error) {
+          this.onError(
+            `Unexpected error in client tool call handling: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              clientToolName: parsedEvent.client_tool_call.tool_name,
+              toolCallId: parsedEvent.client_tool_call.tool_call_id,
+            }
+          );
+        }
         return;
       }
       case "audio": {

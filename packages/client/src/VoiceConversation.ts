@@ -222,4 +222,16 @@ export class VoiceConversation extends BaseConversation {
   public getOutputVolume() {
     return this.calculateVolume(this.getOutputByteFrequencyData());
   }
+
+  public setVolume = ({ volume }: { volume: number }) => {
+    this.volume = volume;
+
+    if (this.connection instanceof WebRTCConnection) {
+      // For WebRTC connections, control volume via HTML audio elements
+      this.connection.setAudioVolume(volume);
+    } else {
+      // For WebSocket connections, control volume via gain node
+      this.output.gain.gain.value = volume;
+    }
+  };
 }
