@@ -51,6 +51,7 @@ const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [isMicMuted, setIsMicMuted] = useState(false);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -67,6 +68,7 @@ const ConversationScreen = () => {
     try {
       await conversation.startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+        userId: "demo-user",
       });
     } catch (error) {
       console.error("Failed to start conversation:", error);
@@ -81,6 +83,12 @@ const ConversationScreen = () => {
     } catch (error) {
       console.error("Failed to end conversation:", error);
     }
+  };
+
+  const toggleMicMute = () => {
+    const newMutedState = !isMicMuted;
+    setIsMicMuted(newMutedState);
+    conversation.setMicMuted(newMutedState);
   };
 
   const getStatusColor = (status: ConversationStatus): string => {
@@ -184,6 +192,24 @@ const ConversationScreen = () => {
             <Text style={styles.buttonText}>End Conversation</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Microphone Controls */}
+        {conversation.status === "connected" && (
+          <View style={styles.micControlContainer}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.micButton,
+                isMicMuted ? styles.mutedButton : styles.unmutedButton,
+              ]}
+              onPress={toggleMicMute}
+            >
+              <Text style={styles.buttonText}>
+                {isMicMuted ? "🔇 Unmute" : "🎤 Mute"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Feedback Buttons */}
         {conversation.status === "connected" &&
@@ -454,5 +480,18 @@ const styles = StyleSheet.create({
   },
   activityButton: {
     backgroundColor: "#F59E0B",
+  },
+  micControlContainer: {
+    marginTop: 24,
+    alignItems: "center",
+  },
+  micButton: {
+    paddingHorizontal: 24,
+  },
+  mutedButton: {
+    backgroundColor: "#EF4444",
+  },
+  unmutedButton: {
+    backgroundColor: "#059669",
   },
 });

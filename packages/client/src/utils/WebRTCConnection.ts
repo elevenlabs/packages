@@ -243,10 +243,9 @@ export class WebRTCConnection extends BaseConnection {
       RoomEvent.ActiveSpeakersChanged,
       async (speakers: Participant[]) => {
         if (speakers.length > 0) {
-          const participant = speakers[0];
-          if (participant.identity.includes("agent")) {
-            this.updateMode("speaking");
-          }
+          this.updateMode(
+            speakers[0].identity.startsWith("agent") ? "speaking" : "listening"
+          );
         } else {
           this.updateMode("listening");
         }

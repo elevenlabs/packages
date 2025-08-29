@@ -3,15 +3,15 @@
  * Simple credential storage with keychain support
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as os from 'os';
+import fs from 'fs-extra';
+import path from 'path';
+import os from 'os';
 import {
   storeApiKey,
   retrieveApiKey,
   removeApiKey as removeStoredApiKey,
   hasApiKey
-} from './auth';
+} from './auth.js';
 export const LOCATIONS = ["us", "global", "eu-residency", "in-residency"] as const;
 export type Location = (typeof LOCATIONS)[number];
 
@@ -60,6 +60,7 @@ export async function saveConfig(config: CliConfig): Promise<void> {
   await fs.ensureDir(configDir);
   
   // Don't store API key in config file for security
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { apiKey, ...configWithoutKey } = config;
   
   // Save config with proper formatting and secure permissions

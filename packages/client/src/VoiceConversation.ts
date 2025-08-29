@@ -18,8 +18,12 @@ export class VoiceConversation extends BaseConversation {
   ): Promise<VoiceConversation> {
     const fullOptions = BaseConversation.getFullOptions(options);
 
-    fullOptions.onStatusChange({ status: "connecting" });
-    fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
+    if (fullOptions.onStatusChange) {
+      fullOptions.onStatusChange({ status: "connecting" });
+    }
+    if (fullOptions.onCanSendFeedbackChange) {
+      fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
+    }
 
     let input: Input | null = null;
     let connection: BaseConnection | null = null;
@@ -67,7 +71,9 @@ export class VoiceConversation extends BaseConversation {
         wakeLock
       );
     } catch (error) {
-      fullOptions.onStatusChange({ status: "disconnected" });
+      if (fullOptions.onStatusChange) {
+        fullOptions.onStatusChange({ status: "disconnected" });
+      }
       preliminaryInputStream?.getTracks().forEach(track => track.stop());
       connection?.close();
       await input?.close();

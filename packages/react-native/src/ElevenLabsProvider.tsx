@@ -29,6 +29,7 @@ export interface Conversation {
   sendContextualUpdate: (text: string) => void;
   sendUserMessage: (text: string) => void;
   sendUserActivity: () => void;
+  setMicMuted: (muted: boolean) => void;
 }
 
 interface ElevenLabsContextType {
@@ -120,6 +121,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    userId,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
 
   const {
@@ -187,6 +189,12 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
 
   const getId = () => conversationId;
 
+  const setMicMuted = React.useCallback((muted: boolean) => {
+    if (localParticipant) {
+      localParticipant.setMicrophoneEnabled(!muted);
+    }
+  }, [localParticipant]);
+
   // Update current event ID for feedback tracking
   const updateCurrentEventId = React.useCallback((eventId: number) => {
     currentEventIdRef.current = eventId;
@@ -202,10 +210,11 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         overrides,
         customLlmExtraBody,
         dynamicVariables,
+        userId,
       });
       sendMessage(overridesEvent);
     }
-  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, sendMessage]);
+  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, userId, sendMessage]);
 
   const conversation: Conversation = {
     startSession,
@@ -215,6 +224,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     // setVolume,
     canSendFeedback,
     getId,
+    setMicMuted,
     sendFeedback,
     sendContextualUpdate: (text: string) => {
       sendMessage({

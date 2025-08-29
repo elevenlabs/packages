@@ -37,7 +37,7 @@ export function constructOverrides(
   }
 
   if (config.userId) {
-    overridesEvent.user_id = config.userId;
+    overridesEvent.user_id = String(config.userId);
   }
 
   return overridesEvent;

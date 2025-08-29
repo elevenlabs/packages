@@ -8,7 +8,7 @@ import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
-import { useTextOnly } from "./widget-config";
+import { useTextOnly, useWebRTC } from "./widget-config";
 
 type DynamicVariables = Record<string, string | number | boolean>;
 
@@ -63,28 +63,41 @@ export function SessionConfigProvider({
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
   const textOnly = useTextOnly();
+  const useWebRTCEnabled = useWebRTC();
   const value = useComputed<SessionConfig | null>(() => {
-    const commonConfig = {
+    const isWebRTC = useWebRTCEnabled.value;
+    const baseConfig = {
       dynamicVariables: dynamicVariables.value,
       overrides: overrides.value,
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
-      connectionType: "websocket" as const,
       userId: userId.value || undefined,
     };
 
     if (agentId.value) {
-      return {
-        agentId: agentId.value,
-        origin: webSocketUrl.value,
-        ...commonConfig,
-      };
+      if (isWebRTC) {
+        return {
+          agentId: agentId.value,
+          origin: webSocketUrl.value,
+          connectionType: "webrtc" as const,
+          ...baseConfig,
+        };
+      } else {
+        return {
+          agentId: agentId.value,
+          origin: webSocketUrl.value,
+          connectionType: "websocket" as const,
+          ...baseConfig,
+        };
+      }
     }
 
     if (signedUrl.value) {
+      // signedUrl only supports websocket connections
       return {
         signedUrl: signedUrl.value,
-        ...commonConfig,
+        connectionType: "websocket" as const,
+        ...baseConfig,
       };
     }
 

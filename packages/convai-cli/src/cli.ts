@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs-extra';
+import dotenv from 'dotenv';
 import { 
   calculateConfigHash, 
   readAgentConfig, 
@@ -13,25 +13,22 @@ import {
   getAgentFromLock, 
   updateAgentInLock,
   updateToolInLock,
-  getToolFromLock
-} from './utils';
+  getToolFromLock,
+  toSnakeCaseKeys
+} from './utils.js';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
-} from './templates';
+} from './templates.js';
 import { 
   getElevenLabsClient, 
   createAgentApi, 
   updateAgentApi, 
   listAgentsApi, 
   getAgentApi,
-  createToolApi,
-  updateToolApi,
-  getToolApi,
-  listToolsApi,
-  getToolDependentAgentsApi
-} from './elevenlabs-api';
+  createToolApi
+} from './elevenlabs-api.js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -41,15 +38,33 @@ import {
   setResidency,
   Location,
   LOCATIONS
-} from './config';
+} from './config.js';
 import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
   ToolsConfig,
   ToolDefinition
-} from './tools';
-import { version } from '../package.json';
+} from './tools.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+const { version } = packageJson;
+import { render } from 'ink';
+import React from 'react';
+import InitView from './ui/views/InitView.js';
+import SyncView from './ui/views/SyncView.js';
+import LoginView from './ui/views/LoginView.js';
+import AddAgentView from './ui/views/AddAgentView.js';
+import StatusView from './ui/views/StatusView.js';
+import WhoamiView from './ui/views/WhoamiView.js';
+import ListAgentsView from './ui/views/ListAgentsView.js';
+import LogoutView from './ui/views/LogoutView.js';
+import ResidencyView from './ui/views/ResidencyView.js';
 
 // Load environment variables
 dotenv.config();
@@ -120,76 +135,85 @@ program
   .command('init')
   .description('Initialize a new agent management project')
   .argument('[path]', 'Path to initialize the project in', '.')
-  .action(async (projectPath: string) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (projectPath: string, options: { ui: boolean }) => {
     try {
-      const fullPath = path.resolve(projectPath);
-      console.log(`Initializing project in ${fullPath}`);
-      
-      // Create directory if it doesn't exist
-      await fs.ensureDir(fullPath);
-      
-      // Create agents.json file
-      const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
-      if (await fs.pathExists(agentsConfigPath)) {
-        console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+      if (options.ui !== false) {
+        // Use Ink UI for initialization
+        const { waitUntilExit } = render(
+          React.createElement(InitView, { projectPath })
+        );
+        await waitUntilExit();
       } else {
-        const initialConfig: AgentsConfig = {
-          agents: []
-        };
-        await writeAgentConfig(agentsConfigPath, initialConfig);
-        console.log(`Created ${AGENTS_CONFIG_FILE}`);
-      }
-      
-      // Create tools.json file
-      const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
-      if (await fs.pathExists(toolsConfigPath)) {
-        console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
-      } else {
-        const initialToolsConfig: ToolsConfig = {
-          tools: []
-        };
-        await writeToolsConfig(toolsConfigPath, initialToolsConfig);
-        console.log(`Created ${TOOLS_CONFIG_FILE}`);
-      }
-      
-      // Create agent_configs directory structure
-      const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
-      for (const dir of configDirs) {
-        const dirPath = path.join(fullPath, dir);
-        await fs.ensureDir(dirPath);
-        console.log(`Created directory: ${dir}`);
-      }
-      
-      // Create initial lock file
-      const lockFilePath = path.join(fullPath, LOCK_FILE);
-      if (await fs.pathExists(lockFilePath)) {
-        console.log(`${LOCK_FILE} already exists, skipping creation`);
-      } else {
-        const initialLockData = {
-          agents: {},
-          tools: {}
-        };
-        await saveLockFile(lockFilePath, initialLockData);
-        console.log(`Created ${LOCK_FILE}`);
-      }
-      
-      // Create .env.example file
-      const envExamplePath = path.join(fullPath, '.env.example');
-      if (!(await fs.pathExists(envExamplePath))) {
-        const envExample = `# ElevenLabs API Key
+        // Fallback to original implementation
+        const fullPath = path.resolve(projectPath);
+        console.log(`Initializing project in ${fullPath}`);
+        
+        // Create directory if it doesn't exist
+        await fs.ensureDir(fullPath);
+        
+        // Create agents.json file
+        const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
+        if (await fs.pathExists(agentsConfigPath)) {
+          console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+        } else {
+          const initialConfig: AgentsConfig = {
+            agents: []
+          };
+          await writeAgentConfig(agentsConfigPath, initialConfig);
+          console.log(`Created ${AGENTS_CONFIG_FILE}`);
+        }
+        
+        // Create tools.json file
+        const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
+        if (await fs.pathExists(toolsConfigPath)) {
+          console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
+        } else {
+          const initialToolsConfig: ToolsConfig = {
+            tools: []
+          };
+          await writeToolsConfig(toolsConfigPath, initialToolsConfig);
+          console.log(`Created ${TOOLS_CONFIG_FILE}`);
+        }
+        
+        // Create agent_configs directory structure
+        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
+        for (const dir of configDirs) {
+          const dirPath = path.join(fullPath, dir);
+          await fs.ensureDir(dirPath);
+          console.log(`Created directory: ${dir}`);
+        }
+        
+        // Create initial lock file
+        const lockFilePath = path.join(fullPath, LOCK_FILE);
+        if (await fs.pathExists(lockFilePath)) {
+          console.log(`${LOCK_FILE} already exists, skipping creation`);
+        } else {
+          const initialLockData = {
+            agents: {},
+            tools: {}
+          };
+          await saveLockFile(lockFilePath, initialLockData);
+          console.log(`Created ${LOCK_FILE}`);
+        }
+        
+        // Create .env.example file
+        const envExamplePath = path.join(fullPath, '.env.example');
+        if (!(await fs.pathExists(envExamplePath))) {
+          const envExample = `# ElevenLabs API Key
 ELEVENLABS_API_KEY=your_api_key_here
 `;
-        await fs.writeFile(envExamplePath, envExample);
-        console.log('Created .env.example');
+          await fs.writeFile(envExamplePath, envExample);
+          console.log('Created .env.example');
+        }
+        
+        console.log('\nProject initialized successfully!');
+        console.log('Next steps:');
+        console.log('1. Set your ElevenLabs API key: convai login');
+        console.log('2. Create an agent: convai add agent "My Agent" --template default');
+        console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
+        console.log('4. Sync to ElevenLabs: convai sync');
       }
-      
-      console.log('\nProject initialized successfully!');
-      console.log('Next steps:');
-      console.log('1. Set your ElevenLabs API key: convai login');
-      console.log('2. Create an agent: convai add agent "My Agent" --template default');
-      console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
-      console.log('4. Sync to ElevenLabs: convai sync');
-      
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
       process.exit(1);
@@ -199,35 +223,50 @@ ELEVENLABS_API_KEY=your_api_key_here
 program
   .command('login')
   .description('Login with your ElevenLabs API key')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const { read } = await import('read');
-      
-      const apiKey = await read({
-        prompt: 'Enter your ElevenLabs API key: ',
-        silent: true,
-        replace: '*'
-      });
-      
-      if (!apiKey || apiKey.trim() === '') {
-        console.error('API key is required');
-        process.exit(1);
+      if (options.ui !== false) {
+        // Use Ink UI for login
+        const { waitUntilExit } = render(
+          React.createElement(LoginView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based login
+        const { read } = await import('read');
+        
+        const apiKey = await read({
+          prompt: 'Enter your ElevenLabs API key: ',
+          silent: true,
+          replace: '*'
+        });
+        
+        if (!apiKey || apiKey.trim() === '') {
+          console.error('API key is required');
+          process.exit(1);
+        }
+        
+        // Test the API key by making a simple request
+        process.env.ELEVENLABS_API_KEY = apiKey.trim();
+        const client = await getElevenLabsClient();
+        try {
+          await listAgentsApi(client, 1);
+          console.log('API key verified successfully');
+        } catch (error: any) {
+          if (error?.statusCode === 401 || error?.message?.includes('401')) {
+            console.error('Invalid API key');
+          } else if (error?.code === 'ENOTFOUND' || error?.code === 'ETIMEDOUT' || error?.message?.includes('network')) {
+            console.error('Network error: Unable to connect to ElevenLabs API');
+          } else {
+            console.error('Error verifying API key:', error?.message || error);
+          }
+          process.exit(1);
+        }
+        
+        await setApiKey(apiKey.trim());
+        console.log('Login successful! API key saved securely.');
       }
-      
-      // Test the API key by making a simple request
-      process.env.ELEVENLABS_API_KEY = apiKey.trim();
-      const client = await getElevenLabsClient();
-      try {
-        await listAgentsApi(client, 1);
-        console.log('API key verified successfully');
-      } catch (error) {
-        console.error('Invalid API key or network error');
-        process.exit(1);
-      }
-      
-      await setApiKey(apiKey.trim());
-      console.log('Login successful! API key saved securely.');
-      
     } catch (error) {
       console.error(`Error during login: ${error}`);
       process.exit(1);
@@ -237,17 +276,26 @@ program
 program
   .command('logout')
   .description('Logout and remove stored API key')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const loggedIn = await isLoggedIn();
-      if (!loggedIn) {
-        console.log('You are not logged in');
-        return;
+      if (options.ui !== false) {
+        // Use Ink UI for logout
+        const { waitUntilExit } = render(
+          React.createElement(LogoutView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based logout
+        const loggedIn = await isLoggedIn();
+        if (!loggedIn) {
+          console.log('You are not logged in');
+          return;
+        }
+        
+        await removeApiKey();
+        console.log('Logged out successfully. API key removed.');
       }
-      
-      await removeApiKey();
-      console.log('Logged out successfully. API key removed.');
-      
     } catch (error) {
       console.error(`Error during logout: ${error}`);
       process.exit(1);
@@ -257,29 +305,38 @@ program
 program
   .command('whoami')
   .description('Show current login status')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      const loggedIn = await isLoggedIn();
-      const apiKey = await getApiKey();
-      const residency = await getResidency();
-      
-      if (loggedIn && apiKey) {
-        const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
-        console.log(`Logged in with API key: ${maskedKey}`);
-        
-        // Show source of API key
-        if (process.env.ELEVENLABS_API_KEY) {
-          console.log('Source: Environment variable');
-        } else {
-          console.log('Source: Config file');
-        }
-        
-        console.log(`Residency: ${residency}`);
+      if (options.ui !== false) {
+        // Use Ink UI for whoami
+        const { waitUntilExit } = render(
+          React.createElement(WhoamiView)
+        );
+        await waitUntilExit();
       } else {
-        console.log('Not logged in');
-        console.log('Use "convai login" to authenticate');
+        // Fallback to text-based output
+        const loggedIn = await isLoggedIn();
+        const apiKey = await getApiKey();
+        const residency = await getResidency();
+        
+        if (loggedIn && apiKey) {
+          const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+          console.log(`Logged in with API key: ${maskedKey}`);
+          
+          // Show source of API key
+          if (process.env.ELEVENLABS_API_KEY) {
+            console.log('Source: Environment variable');
+          } else {
+            console.log('Source: Config file');
+          }
+          
+          console.log(`Residency: ${residency}`);
+        } else {
+          console.log('Not logged in');
+          console.log('Use "convai login" to authenticate');
+        }
       }
-      
     } catch (error) {
       console.error(`Error checking login status: ${error}`);
       process.exit(1);
@@ -289,22 +346,45 @@ program
 program
   .command('residency')
   .description('Set the API residency location')
-  .argument('<residency>', `Residency location (${LOCATIONS.join(', ')})`)
-  .action(async (residency: string) => {
+  .argument('[residency]', `Residency location (${LOCATIONS.join(', ')})`)
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (residency: string | undefined, options: { ui: boolean }) => {
     try {
-      function isValidLocation(value: string): value is Location {
-        return LOCATIONS.includes(value as Location);
+      if (options.ui !== false && !residency) {
+        // Use Ink UI for interactive residency selection
+        const { waitUntilExit } = render(
+          React.createElement(ResidencyView)
+        );
+        await waitUntilExit();
+      } else if (residency) {
+        // Direct residency setting (with or without UI)
+        function isValidLocation(value: string): value is Location {
+          return LOCATIONS.includes(value as Location);
+        }
+        
+        if (!isValidLocation(residency)) {
+          console.error(`Invalid residency: ${residency}`);
+          console.error(`Valid options: ${LOCATIONS.join(', ')}`);
+          process.exit(1);
+        }
+        
+        if (options.ui !== false) {
+          // Use UI even with direct argument
+          const { waitUntilExit } = render(
+            React.createElement(ResidencyView, { initialResidency: residency })
+          );
+          await waitUntilExit();
+        } else {
+          // Fallback to text-based
+          await setResidency(residency);
+          console.log(`Residency set to: ${residency}`);
+        }
+      } else {
+        // No residency provided and UI disabled - show current residency
+        const currentResidency = await getResidency();
+        console.log(`Current residency: ${currentResidency || 'Not set (using default)'}`);
+        console.log(`To set residency, use: convai residency <${LOCATIONS.join('|')}>`);
       }
-      
-      if (!isValidLocation(residency)) {
-        console.error(`Invalid residency: ${residency}`);
-        console.error(`Valid options: ${LOCATIONS.join(', ')}`);
-        process.exit(1);
-      }
-      
-      await setResidency(residency);
-      console.log(`Residency set to: ${residency}`);
-      
     } catch (error) {
       console.error(`Error setting residency: ${error}`);
       process.exit(1);
@@ -323,8 +403,22 @@ addCommand
   .option('--template <template>', 'Template type to use', 'default')
   .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--env <environment>', 'Environment to create agent for', 'prod')
-  .action(async (name: string, options: AddOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
+      if (options.ui !== false && !options.configPath) {
+        // Use Ink UI for agent creation
+        const { waitUntilExit } = render(
+          React.createElement(AddAgentView, {
+            initialName: name,
+            environment: options.env,
+            template: options.template,
+            skipUpload: options.skipUpload
+          })
+        );
+        await waitUntilExit();
+        return;
+      }
       // Check if agents.json exists
       const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
       if (!(await fs.pathExists(agentsConfigPath))) {
@@ -452,7 +546,7 @@ addCommand
       await writeAgentConfig(agentsConfigPath, agentsConfig);
       
       // Update lock file with environment-specific agent ID
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       updateAgentInLock(lockData, name, options.env, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
@@ -538,9 +632,46 @@ program
   .option('--agent <name>', 'Specific agent name to sync (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--env <environment>', 'Target specific environment (defaults to all environments)')
-  .action(async (options: SyncOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: SyncOptions & { ui: boolean }) => {
     try {
-      await syncAgents(options.agent, options.dryRun, options.env);
+      if (options.ui !== false) {
+        // Use new Ink UI for sync
+        const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+        if (!(await fs.pathExists(agentsConfigPath))) {
+          throw new Error('agents.json not found. Run \'init\' first.');
+        }
+        
+        const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+        
+        // Filter agents if specific agent name provided
+        let agentsToProcess = agentsConfig.agents;
+        if (options.agent) {
+          agentsToProcess = agentsConfig.agents.filter(agent => agent.name === options.agent);
+          if (agentsToProcess.length === 0) {
+            throw new Error(`Agent '${options.agent}' not found in configuration`);
+          }
+        }
+        
+        // Prepare agents for UI
+        const syncAgents = agentsToProcess.map(agent => ({
+          name: agent.name,
+          environment: options.env || 'all',
+          configPath: agent.config || `agent_configs/${agent.name}.json`,
+          status: 'pending' as const
+        }));
+        
+        const { waitUntilExit } = render(
+          React.createElement(SyncView, { 
+            agents: syncAgents,
+            dryRun: options.dryRun
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Use existing non-UI sync
+        await syncAgents(options.agent, options.dryRun, options.env);
+      }
     } catch (error) {
       console.error(`Error during sync: ${error}`);
       process.exit(1);
@@ -552,9 +683,21 @@ program
   .description('Show the status of agents')
   .option('--agent <name>', 'Specific agent name to check (defaults to all agents)')
   .option('--env <environment>', 'Environment to check status for (defaults to all environments)')
-  .action(async (options: StatusOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: StatusOptions & { ui: boolean }) => {
     try {
-      await showStatus(options.agent, options.env);
+      if (options.ui !== false) {
+        // Use Ink UI for status display
+        const { waitUntilExit } = render(
+          React.createElement(StatusView, {
+            agentName: options.agent,
+            environment: options.env
+          })
+        );
+        await waitUntilExit();
+      } else {
+        await showStatus(options.agent, options.env);
+      }
     } catch (error) {
       console.error(`Error showing status: ${error}`);
       process.exit(1);
@@ -579,9 +722,19 @@ program
 program
   .command('list-agents')
   .description('List all configured agents')
-  .action(async () => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { ui: boolean }) => {
     try {
-      await listConfiguredAgents();
+      if (options.ui !== false) {
+        // Use Ink UI for list-agents
+        const { waitUntilExit } = render(
+          React.createElement(ListAgentsView)
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based listing
+        await listConfiguredAgents();
+      }
     } catch (error) {
       console.error(`Error listing agents: ${error}`);
       process.exit(1);
@@ -750,7 +903,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
     // Update lock file
-    const configHash = calculateConfigHash(toolConfig);
+    const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
     updateToolInLock(lockData, name, toolId, configHash);
     await saveLockFile(lockFilePath, lockData);
     
@@ -852,7 +1005,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
       }
       
       // Calculate config hash
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       
       // Get environment-specific agent data from lock file
       const lockedAgent = getAgentFromLock(lockData, agentDefName, currentEnv);
@@ -1010,7 +1163,7 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
       if (await fs.pathExists(configPath)) {
         try {
           const agentConfig = await readAgentConfig(configPath);
-          const configHash = calculateConfigHash(agentConfig);
+          const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
           console.log(`   Config Hash: ${configHash.substring(0, 8)}...`);
           
           // Check lock status for specified environment
@@ -1278,7 +1431,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeAgentConfig(configFilePath, agentDetailsTyped);
+      await writeAgentConfig(configFilePath, agentConfig);
       
       // Create new agent entry for agents.json
       const newAgent: AgentDefinition = {
@@ -1292,7 +1445,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       existingAgentIds.add(agentId);
       
       // Update lock file with environment-specific agent ID
-      const configHash = calculateConfigHash(agentConfig);
+      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
       updateAgentInLock(lockData, agentNameRemote, options.env, agentId, configHash);
       
       console.log(`Added '${agentNameRemote}' (config: ${configPath}) for environment: ${options.env}`);

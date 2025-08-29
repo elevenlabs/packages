@@ -3,9 +3,9 @@
  * Just basic keychain storage + secure file permissions
  */
 
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as os from 'os';
+import fs from 'fs-extra';
+import path from 'path';
+import os from 'os';
 
 // Optional keychain import - graceful fallback if not available
 let keytar: any;

@@ -173,6 +173,18 @@ const id = conversation.getId();
 console.log(id);
 ```
 
+#### `setMicMuted(muted: boolean): void`
+
+Mutes/unmutes the microphone
+
+**Parameters:**
+- `muted`: Whether the mic should be muted or not
+
+```typescript
+conversation.setMicMuted(true); // mute
+conversation.setMicMuted(false) // unmute
+```
+
 #### Properties
 
 - `status: ConversationStatus` - Current conversation status ('connecting' | 'connected' | 'disconnected')

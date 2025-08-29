@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "ESNext",
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -13,8 +13,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "types": ["jest", "node"]
+    "moduleResolution": "bundler",
+    "types": ["jest", "node"],
+    "jsx": "react"
   },
   "include": [
     "src/**/*"

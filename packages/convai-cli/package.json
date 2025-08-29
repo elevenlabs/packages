@@ -1,7 +1,8 @@
 {
   "name": "@elevenlabs/convai-cli",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "CLI tool to manage ElevenLabs conversational AI agents",
+  "type": "module",
   "keywords": [
     "elevenlabs",
     "cli",
@@ -40,20 +41,32 @@
     "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "2.2.0",
+    "@elevenlabs/elevenlabs-js": "2.12.0",
+    "@inkjs/ui": "^2.0.0",
     "@jest/globals": "^30.0.4",
     "@types/read": "^0.0.32",
+    "chalk": "^5.3.0",
     "commander": "^11.1.0",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
+    "ink": "^4.4.1",
+    "ink-ascii": "^0.0.4",
+    "ink-big-text": "^2.0.0",
+    "ink-gradient": "^3.0.0",
+    "ink-select-input": "^5.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^5.0.1",
     "keytar": "^7.9.0",
+    "react": "18.2.0",
     "read": "^4.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/fs-extra": "^11.0.2",
     "@types/jest": "^29.5.5",
     "@types/keytar": "^4.4.2",
     "@types/node": "^20.8.0",
+    "@types/react": "18.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^9.0.0",
