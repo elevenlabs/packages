@@ -376,6 +376,45 @@ const outputVolume = await conversation.getOutputVolume();
 
 Methods that return `Uint8Array`s containg the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
 
+##### changeInputDevice
+
+Allows you to change the audio input device during an active voice conversation. This method is only available for voice conversations.
+
+```js
+import { VoiceConversation } from "@elevenlabs/client";
+
+// Start a voice conversation
+const conversation = await Conversation.startSession({
+  agentId: "<your-agent-id>",
+  textOnly: false, // Ensure this is a voice conversation
+});
+
+// Change to a specific input device
+await (conversation as VoiceConversation).changeInputDevice({
+  sampleRate: 16000,
+  format: "pcm",
+  preferHeadphonesForIosDevices: true,
+  inputDeviceId: "your-device-id", // Optional: specific device ID
+});
+```
+
+##### changeOutputDevice
+
+Allows you to change the audio output device during an active voice conversation. This method is only available for voice conversations.
+
+```js
+import { VoiceConversation } from "@elevenlabs/client";
+
+// Change to a specific output device
+await conversation.changeOutputDevice({
+  sampleRate: 16000,
+  format: "pcm",
+  outputDeviceId: "your-device-id", // Optional: specific device ID
+});
+```
+
+**Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
 ## Development
 
 Please, refer to the README.md file in the root of this repository.

@@ -403,6 +403,43 @@ setMicMuted(true);
 setMicMuted(false);
 ```
 
+##### changeInputDevice
+
+Switch the audio input device during an active voice conversation. This method is only available for voice conversations.
+
+```js
+import { useConversation } from "@elevenlabs/react";
+
+const { changeInputDevice } = useConversation();
+
+// Change to a specific input device
+await changeInputDevice({
+  sampleRate: 16000,
+  format: "pcm",
+  preferHeadphonesForIosDevices: true,
+  inputDeviceId: "your-device-id", // Optional: specific device ID
+});
+```
+
+##### changeOutputDevice
+
+Switch the audio output device during an active voice conversation. This method is only available for voice conversations.
+
+```js
+import { useConversation } from "@elevenlabs/react";
+
+const { changeOutputDevice } = useConversation();
+
+// Change to a specific output device
+await changeOutputDevice({
+  sampleRate: 16000,
+  format: "pcm",
+  outputDeviceId: "your-device-id", // Optional: specific device ID
+});
+```
+
+**Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
 ##### status
 
 A React state containing the current status of the conversation.

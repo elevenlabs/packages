@@ -247,6 +247,7 @@ export class VoiceConversation extends BaseConversation {
 
       return this.input;
     } catch (error) {
+      console.error("Error changing input device", error);
       throw error;
     }
   }
@@ -269,6 +270,7 @@ export class VoiceConversation extends BaseConversation {
 
       return this.output;
     } catch (error) {
+      console.error("Error changing output device", error);
       throw error;
     }
   }

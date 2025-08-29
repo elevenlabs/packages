@@ -50,8 +50,10 @@ export class Output {
     } catch (error) {
       audioSource?.disconnect();
       audioElement?.pause();
-      await context?.close();
-      
+      if (context && context.state !== "closed") {
+        await context.close();
+      }
+
       throw error;
     }
   }

@@ -1,15 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Conversation,
-  Mode,
   SessionConfig,
-  Callbacks,
   Options,
-  Status,
   ClientToolsConfig,
   InputConfig,
-  VadScoreEvent,
+  type Mode,
+  type Status,
+  type Callbacks,
+  type VadScoreEvent,
 } from "@elevenlabs/client";
+
+// Device configuration types for audio device switching
+export type DeviceFormatConfig = {
+  format: "pcm" | "ulaw";
+  sampleRate: number;
+  outputDeviceId?: string;
+};
+
+export type DeviceInputConfig = {
+  preferHeadphonesForIosDevices?: boolean;
+  inputDeviceId?: string;
+};
 
 import { PACKAGE_VERSION } from "./version";
 
@@ -49,6 +61,7 @@ export type {
   DisconnectionDetails,
   Language,
   VadScoreEvent,
+  InputConfig,
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 
@@ -229,6 +242,38 @@ export function useConversation<T extends HookOptions & ControlledState>(
       conversationRef.current?.sendMCPToolApprovalResult(
         toolCallId,
         isApproved
+      );
+    },
+    changeInputDevice: async (
+      config: DeviceFormatConfig & DeviceInputConfig
+    ) => {
+      if (
+        conversationRef.current &&
+        "changeInputDevice" in conversationRef.current
+      ) {
+        return await (
+          conversationRef.current as unknown as {
+            changeInputDevice: (config: any) => Promise<any>;
+          }
+        ).changeInputDevice(config);
+      }
+      throw new Error(
+        "Device switching is only available for voice conversations"
+      );
+    },
+    changeOutputDevice: async (config: DeviceFormatConfig) => {
+      if (
+        conversationRef.current &&
+        "changeOutputDevice" in conversationRef.current
+      ) {
+        return await (
+          conversationRef.current as unknown as {
+            changeOutputDevice: (config: any) => Promise<any>;
+          }
+        ).changeOutputDevice(config);
+      }
+      throw new Error(
+        "Device switching is only available for voice conversations"
       );
     },
     status,

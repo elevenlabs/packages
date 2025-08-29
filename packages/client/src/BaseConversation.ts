@@ -15,7 +15,7 @@ import type {
   UserTranscriptionEvent,
   VadScoreEvent,
 } from "./utils/events";
-import type { Input, InputConfig } from "./utils/input";
+import type { InputConfig } from "./utils/input";
 
 export type Role = "user" | "ai";
 
