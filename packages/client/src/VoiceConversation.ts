@@ -274,4 +274,20 @@ export class VoiceConversation extends BaseConversation {
       throw error;
     }
   }
+
+  public setVolume = ({ volume }: { volume: number }) => {
+    // clamp & coerce
+    const clampedVolume = Number.isFinite(volume)
+      ? Math.min(1, Math.max(0, volume))
+      : 1;
+    this.volume = clampedVolume;
+
+    if (this.connection instanceof WebRTCConnection) {
+      // For WebRTC connections, control volume via HTML audio elements
+      this.connection.setAudioVolume(clampedVolume);
+    } else {
+      // For WebSocket connections, control volume via gain node
+      this.output.gain.gain.value = clampedVolume;
+    }
+  };
 }

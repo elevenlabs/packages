@@ -67,10 +67,22 @@ export class WebSocketConnection extends BaseConnection {
       try {
         const parsedEvent = JSON.parse(event.data);
         if (!isValidSocketEvent(parsedEvent)) {
+          this.debug({
+            type: "invalid_event",
+            message: "Received invalid socket event",
+            data: event.data,
+          });
           return;
         }
         this.handleMessage(parsedEvent);
-      } catch (_) {}
+      } catch (error) {
+        this.debug({
+          type: "parsing_error",
+          message: "Failed to parse socket message",
+          error: error instanceof Error ? error.message : String(error),
+          data: event.data,
+        });
+      }
     });
   }
 
