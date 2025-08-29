@@ -224,14 +224,18 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public setVolume = ({ volume }: { volume: number }) => {
-    this.volume = volume;
+    // clamp & coerce
+    const clampedVolume = Number.isFinite(volume)
+      ? Math.min(1, Math.max(0, volume))
+      : 1;
+    this.volume = clampedVolume;
 
     if (this.connection instanceof WebRTCConnection) {
       // For WebRTC connections, control volume via HTML audio elements
-      this.connection.setAudioVolume(volume);
+      this.connection.setAudioVolume(clampedVolume);
     } else {
       // For WebSocket connections, control volume via gain node
-      this.output.gain.gain.value = volume;
+      this.output.gain.gain.value = clampedVolume;
     }
   };
 }
