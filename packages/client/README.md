@@ -161,6 +161,19 @@ The options passed to `startSession` can also be used to register optional callb
 - **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
 - **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
 
+#### Setting input/output devices
+
+You can provide a device ID to start the conversation using the input/output device of your choice. If the device ID is invalid, the default input and output devices will be used.
+
+```js
+const conversation = await Conversation.startSession({
+  agentId: '<your-agent-id>',
+  inputDeviceId: '<new-input-id>',
+  outputDeviceId: '<new-output-id>',
+});
+
+**Note:** Device switching only works for voice conversations. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
 #### Client Tools
 
 Client tools are a way to enabled agent to invoke client-side functionality. This can be used to trigger actions in the client, such as opening a modal or doing an API call on behalf of the user.

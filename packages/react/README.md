@@ -233,7 +233,9 @@ app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
 const response = await fetch("/signed-url", yourAuthHeaders);
 const signedUrl = await response.text();
 
-const conversation = await Conversation.startSession({
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
   signedUrl,
   connectionType: "websocket",
 });
@@ -271,11 +273,28 @@ app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
 const response = await fetch("/conversation-token", yourAuthHeaders);
 const conversationToken = await response.text();
 
-const conversation = await Conversation.startSession({
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
   conversationToken,
   connectionType: "webrtc",
 });
 ```
+
+You can provide a device ID to start the conversation using the input/output device of your choice. If the device ID is invalid, the default input and output devices will be used.
+
+```js
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
+  conversationToken,
+  connectionType: "webrtc",
+  inputDeviceId: '<new-input-device-id>',
+  outputDeviceId: '<new-input-device-id>',
+});
+```
+
+**Note:** Device switching only works for voice conversations. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
 ##### endSession
 

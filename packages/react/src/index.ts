@@ -5,6 +5,7 @@ import {
   type Options,
   type ClientToolsConfig,
   type InputConfig,
+  type FormatConfig,
   type Mode,
   type Status,
   type Callbacks,
@@ -61,6 +62,7 @@ export type {
   Language,
   VadScoreEvent,
   InputConfig,
+  FormatConfig,
   VoiceConversation,
   TextConversation,
 } from "@elevenlabs/client";
@@ -70,7 +72,8 @@ export type HookOptions = Partial<
   SessionConfig &
     HookCallbacks &
     ClientToolsConfig &
-    InputConfig & {
+    InputConfig &
+    FormatConfig & {
       serverLocation?: Location | string;
     }
 >;
