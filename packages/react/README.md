@@ -407,6 +407,8 @@ setMicMuted(false);
 
 Switch the audio input device during an active voice conversation. This method is only available for voice conversations.
 
+**Note:** In WebRTC mode the input format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the input device is a no-op.
+
 ```js
 import { useConversation } from "@elevenlabs/react";
 
@@ -424,6 +426,8 @@ await changeInputDevice({
 ##### changeOutputDevice
 
 Switch the audio output device during an active voice conversation. This method is only available for voice conversations.
+
+**Note:** In WebRTC mode the output format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the output device is a no-op.
 
 ```js
 import { useConversation } from "@elevenlabs/react";

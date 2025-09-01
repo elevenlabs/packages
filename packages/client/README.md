@@ -374,11 +374,15 @@ const outputVolume = await conversation.getOutputVolume();
 
 ##### getInputByteFrequencyData / getOutputByteFrequencyData
 
-Methods that return `Uint8Array`s containg the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
+Methods that return `Uint8Array`s containing the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
+
+**Note:** These methods are only available for voice conversations. In WebRTC mode the audio is hardcoded to use `pcm_48000`, meaning any visualization using the returned data might show different patterns to WebSocket connections.
 
 ##### changeInputDevice
 
 Allows you to change the audio input device during an active voice conversation. This method is only available for voice conversations.
+
+**Note:** In WebRTC mode the input format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the input device is a no-op.
 
 ```js
 import { VoiceConversation } from "@elevenlabs/client";
@@ -401,6 +405,8 @@ await (conversation as VoiceConversation).changeInputDevice({
 ##### changeOutputDevice
 
 Allows you to change the audio output device during an active voice conversation. This method is only available for voice conversations.
+
+**Note:** In WebRTC mode the output format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the output device is a no-op.
 
 ```js
 import { VoiceConversation } from "@elevenlabs/client";
