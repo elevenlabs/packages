@@ -410,12 +410,8 @@ Switch the audio input device during an active voice conversation. This method i
 **Note:** In WebRTC mode the input format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the input device is a no-op.
 
 ```js
-import { useConversation } from "@elevenlabs/react";
-
-const { changeInputDevice } = useConversation();
-
 // Change to a specific input device
-await changeInputDevice({
+await conversation.changeInputDevice({
   sampleRate: 16000,
   format: "pcm",
   preferHeadphonesForIosDevices: true,
@@ -430,12 +426,8 @@ Switch the audio output device during an active voice conversation. This method 
 **Note:** In WebRTC mode the output format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the output device is a no-op.
 
 ```js
-import { useConversation } from "@elevenlabs/react";
-
-const { changeOutputDevice } = useConversation();
-
 // Change to a specific output device
-await changeOutputDevice({
+await conversation.changeOutputDevice({
   sampleRate: 16000,
   format: "pcm",
   outputDeviceId: "your-device-id", // Optional: specific device ID
@@ -443,6 +435,12 @@ await changeOutputDevice({
 ```
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
+##### getInputByteFrequencyData / getOutputByteFrequencyData
+
+Methods that return `Uint8Array`s containing the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
+
+**Note:** These methods are only available for voice conversations. In WebRTC mode the audio is hardcoded to use `pcm_48000`, meaning any visualization using the returned data might show different patterns to WebSocket connections.
 
 ##### status
 
