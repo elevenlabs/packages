@@ -26,8 +26,7 @@ export class Input {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
-        // Enhanced constraints for better echo cancellation
-        channelCount: { ideal: 1 }, // Mono audio for voice
+        channelCount: { ideal: 1 }, // Mono audio for better echo cancellation
       };
 
       if (isIosDevice() && preferHeadphonesForIosDevices) {
@@ -91,7 +90,7 @@ export class Input {
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
     public readonly worklet: AudioWorkletNode,
-    public inputStream: MediaStream, // Remove readonly to allow device switching
+    public inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode
   ) {}
 
@@ -142,8 +141,6 @@ export class Input {
 
       // Reconnect the audio graph
       this.mediaStreamSource.connect(this.analyser);
-
-      console.log("Input device switched successfully to:", inputDeviceId);
     } catch (error) {
       console.error("Failed to switch input device:", error);
       throw error;

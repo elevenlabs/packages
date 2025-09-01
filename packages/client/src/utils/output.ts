@@ -21,14 +21,12 @@ export class Output {
       audioElement.autoplay = true;
       audioElement.style.display = "none";
 
-      // Add to DOM so it can play
       document.body.appendChild(audioElement);
 
       // Create media stream destination to route audio to the element
       const destination = context.createMediaStreamDestination();
       audioElement.srcObject = destination.stream;
 
-      // Create audio routing: worklet -> gain -> analyser -> destination (which feeds the audio element)
       gain.connect(analyser);
       analyser.connect(destination);
 

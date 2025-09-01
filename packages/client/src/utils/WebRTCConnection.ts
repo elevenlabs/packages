@@ -407,7 +407,6 @@ export class WebRTCConnection extends BaseConnection {
       // Connect source to analyser
       source.connect(this.outputAnalyser);
 
-      // Continue with existing worklet setup...
       await loadRawAudioProcessor(audioContext.audioWorklet);
       const worklet = new AudioWorkletNode(audioContext, "raw-audio-processor");
 
@@ -517,8 +516,6 @@ export class WebRTCConnection extends BaseConnection {
         name: "microphone",
         source: Track.Source.Microphone,
       });
-
-      console.log("Successfully switched to input device:", deviceId);
     } catch (error) {
       console.error("Failed to change input device:", error);
 
