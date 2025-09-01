@@ -6,7 +6,13 @@ import {
 } from "./BaseConnection";
 import { PACKAGE_VERSION } from "../version";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
-import { Room, RoomEvent, Track, ConnectionState } from "livekit-client";
+import {
+  Room,
+  RoomEvent,
+  Track,
+  ConnectionState,
+  createLocalAudioTrack,
+} from "livekit-client";
 import type {
   RemoteAudioTrack,
   Participant,
@@ -41,6 +47,10 @@ export class WebRTCConnection extends BaseConnection {
   private audioEventId = 1;
   private audioCaptureContext: AudioContext | null = null;
   private audioElements: HTMLAudioElement[] = [];
+  private outputDeviceId: string | null = null;
+
+  private outputAnalyser: AnalyserNode | null = null;
+  private outputFrequencyData: Uint8Array<ArrayBuffer> | null = null;
 
   private constructor(
     room: Room,
@@ -230,6 +240,18 @@ export class WebRTCConnection extends BaseConnection {
           audioElement.autoplay = true;
           audioElement.controls = false;
 
+          // Set output device if one was previously selected
+          if (this.outputDeviceId && audioElement.setSinkId) {
+            try {
+              await audioElement.setSinkId(this.outputDeviceId);
+            } catch (error) {
+              console.warn(
+                "Failed to set output device for new audio element:",
+                error
+              );
+            }
+          }
+
           // Add to DOM (hidden) to ensure it plays
           audioElement.style.display = "none";
           document.body.appendChild(audioElement);
@@ -371,17 +393,26 @@ export class WebRTCConnection extends BaseConnection {
       const audioContext = new AudioContext();
       this.audioCaptureContext = audioContext;
 
+      // Create analyser for frequency data
+      this.outputAnalyser = audioContext.createAnalyser();
+      this.outputAnalyser.fftSize = 2048;
+      this.outputAnalyser.smoothingTimeConstant = 0.8;
+
       // Create MediaStream from the track
       const mediaStream = new MediaStream([track.mediaStreamTrack]);
 
       // Create audio source from the stream
       const source = audioContext.createMediaStreamSource(mediaStream);
 
-      // Load the raw audio processor worklet (reuse existing processor)
-      await loadRawAudioProcessor(audioContext.audioWorklet);
+      // Connect source to analyser
+      source.connect(this.outputAnalyser);
 
-      // Create worklet node for audio processing
+      // Continue with existing worklet setup...
+      await loadRawAudioProcessor(audioContext.audioWorklet);
       const worklet = new AudioWorkletNode(audioContext, "raw-audio-processor");
+
+      // Connect analyser to worklet for processing
+      this.outputAnalyser.connect(worklet);
 
       // Configure the processor for the output format
       worklet.port.postMessage({
@@ -426,5 +457,92 @@ export class WebRTCConnection extends BaseConnection {
     this.audioElements.forEach(element => {
       element.volume = volume;
     });
+  }
+
+  public async setAudioOutputDevice(deviceId: string): Promise<void> {
+    if (!("setSinkId" in HTMLAudioElement.prototype)) {
+      throw new Error("setSinkId is not supported in this browser");
+    }
+
+    // Set output device for all existing audio elements
+    const promises = this.audioElements.map(async element => {
+      try {
+        await element.setSinkId(deviceId);
+      } catch (error) {
+        console.error("Failed to set sink ID for audio element:", error);
+        throw error;
+      }
+    });
+
+    await Promise.all(promises);
+
+    // Store the device ID for future audio elements
+    this.outputDeviceId = deviceId;
+  }
+
+  public async setAudioInputDevice(deviceId: string): Promise<void> {
+    if (!this.isConnected || !this.room.localParticipant) {
+      throw new Error(
+        "Cannot change input device: room not connected or no local participant"
+      );
+    }
+
+    try {
+      // Get the current microphone track publication
+      const currentMicTrackPublication =
+        this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
+
+      // Stop the current microphone track if it exists
+      if (currentMicTrackPublication?.track) {
+        await currentMicTrackPublication.track.stop();
+        await this.room.localParticipant.unpublishTrack(
+          currentMicTrackPublication.track
+        );
+      }
+
+      // Create constraints for the new input device
+      const audioConstraints: MediaTrackConstraints = {
+        deviceId: { exact: deviceId },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: { ideal: 1 },
+      };
+
+      // Create new audio track with the specified device
+      const audioTrack = await createLocalAudioTrack(audioConstraints);
+
+      // Publish the new microphone track
+      await this.room.localParticipant.publishTrack(audioTrack, {
+        name: "microphone",
+        source: Track.Source.Microphone,
+      });
+
+      console.log("Successfully switched to input device:", deviceId);
+    } catch (error) {
+      console.error("Failed to change input device:", error);
+
+      // Try to re-enable default microphone on failure
+      try {
+        await this.room.localParticipant.setMicrophoneEnabled(true);
+      } catch (recoveryError) {
+        console.error(
+          "Failed to recover microphone after device switch error:",
+          recoveryError
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  public getOutputByteFrequencyData(): Uint8Array<ArrayBuffer> | null {
+    if (!this.outputAnalyser) return null;
+
+    this.outputFrequencyData ??= new Uint8Array(
+      this.outputAnalyser.frequencyBinCount
+    ) as Uint8Array<ArrayBuffer>;
+    this.outputAnalyser.getByteFrequencyData(this.outputFrequencyData);
+    return this.outputFrequencyData;
   }
 }

@@ -28,6 +28,7 @@ export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { VoiceConversation } from "./VoiceConversation";
+export { TextConversation } from "./TextConversation";
 
 export class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {

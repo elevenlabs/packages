@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Conversation,
-  SessionConfig,
-  Options,
-  ClientToolsConfig,
-  InputConfig,
+  type SessionConfig,
+  type Options,
+  type ClientToolsConfig,
+  type InputConfig,
   type Mode,
   type Status,
   type Callbacks,
-  type VadScoreEvent,
 } from "@elevenlabs/client";
 
 // Device configuration types for audio device switching
@@ -62,6 +61,8 @@ export type {
   Language,
   VadScoreEvent,
   InputConfig,
+  VoiceConversation,
+  TextConversation,
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 

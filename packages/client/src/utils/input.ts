@@ -25,6 +25,9 @@ export class Input {
         sampleRate: { ideal: sampleRate },
         echoCancellation: true,
         noiseSuppression: true,
+        autoGainControl: true,
+        // Enhanced constraints for better echo cancellation
+        channelCount: { ideal: 1 }, // Mono audio for voice
       };
 
       if (isIosDevice() && preferHeadphonesForIosDevices) {
@@ -74,9 +77,11 @@ export class Input {
 
       await context.resume();
 
-      return new Input(context, analyser, worklet, inputStream);
+      return new Input(context, analyser, worklet, inputStream, source);
     } catch (error) {
-      inputStream?.getTracks().forEach(track => track.stop());
+      inputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
       context?.close();
       throw error;
     }
@@ -86,15 +91,62 @@ export class Input {
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly inputStream: MediaStream
+    public inputStream: MediaStream, // Remove readonly to allow device switching
+    private mediaStreamSource: MediaStreamAudioSourceNode
   ) {}
 
   public async close() {
-    this.inputStream.getTracks().forEach(track => track.stop());
+    this.inputStream.getTracks().forEach(track => {
+      track.stop();
+    });
+    this.mediaStreamSource.disconnect();
     await this.context.close();
   }
 
   public setMuted(isMuted: boolean) {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
+  }
+
+  public async setInputDevice(inputDeviceId: string): Promise<void> {
+    if (!inputDeviceId) {
+      throw new Error("Input device ID is required");
+    }
+
+    try {
+      // Create new constraints with the specified device
+      const options: MediaTrackConstraints = {
+        deviceId: { exact: inputDeviceId },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: { ideal: 1 },
+      };
+
+      const constraints = { voiceIsolation: true, ...options };
+
+      // Get new media stream with the specified device
+      const newInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: constraints,
+      });
+
+      // Stop old tracks and disconnect old source
+      this.inputStream.getTracks().forEach(track => {
+        track.stop();
+      });
+      this.mediaStreamSource.disconnect();
+
+      // Replace the stream and create new source
+      this.inputStream = newInputStream;
+      this.mediaStreamSource =
+        this.context.createMediaStreamSource(newInputStream);
+
+      // Reconnect the audio graph
+      this.mediaStreamSource.connect(this.analyser);
+
+      console.log("Input device switched successfully to:", inputDeviceId);
+    } catch (error) {
+      console.error("Failed to switch input device:", error);
+      throw error;
+    }
   }
 }
