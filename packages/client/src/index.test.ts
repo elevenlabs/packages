@@ -546,6 +546,11 @@ describe("Volume Control", () => {
       })),
       createMediaStreamSource: vi.fn(() => ({
         connect: vi.fn(),
+        disconnect: vi.fn(),
+      })),
+      createMediaStreamDestination: vi.fn(() => ({
+        stream: new MediaStream(),
+        connect: vi.fn(),
       })),
       destination: {},
       audioWorklet: {
@@ -619,6 +624,11 @@ describe("Volume Control", () => {
       })),
       createGain: createGainSpy,
       createMediaStreamSource: vi.fn(() => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+      })),
+      createMediaStreamDestination: vi.fn(() => ({
+        stream: new MediaStream(),
         connect: vi.fn(),
       })),
       destination: {},
@@ -729,6 +739,11 @@ describe("Volume Control", () => {
       })),
       createGain: createGainSpy,
       createMediaStreamSource: vi.fn(() => ({
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+      })),
+      createMediaStreamDestination: vi.fn(() => ({
+        stream: new MediaStream(),
         connect: vi.fn(),
       })),
       destination: {},
