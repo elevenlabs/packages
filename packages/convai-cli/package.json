@@ -18,7 +18,7 @@
     "url": "https://github.com/elevenlabs/packages.git",
     "directory": "convai-cli"
   },
-  "homepage": "https://github.com/elevenlabs/packages/tree/main/convai-cli",
+  "homepage": "https://github.com/elevenlabs/packages/tree/main/packages/convai-cli",
   "bugs": {
     "url": "https://github.com/elevenlabs/packages/issues"
   },
