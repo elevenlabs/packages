@@ -167,10 +167,11 @@ You can provide a device ID to start the conversation using the input/output dev
 
 ```js
 const conversation = await Conversation.startSession({
-  agentId: '<your-agent-id>',
-  inputDeviceId: '<new-input-id>',
-  outputDeviceId: '<new-output-id>',
+  agentId: "<your-agent-id>",
+  inputDeviceId: "<new-input-id>",
+  outputDeviceId: "<new-output-id>",
 });
+```
 
 **Note:** Device switching only works for voice conversations. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
@@ -398,20 +399,16 @@ Allows you to change the audio input device during an active voice conversation.
 **Note:** In WebRTC mode the input format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the input device is a no-op.
 
 ```js
-import { VoiceConversation } from "@elevenlabs/client";
-
-// Start a voice conversation
 const conversation = await Conversation.startSession({
   agentId: "<your-agent-id>",
-  textOnly: false, // Ensure this is a voice conversation
 });
 
 // Change to a specific input device
-await (conversation as VoiceConversation).changeInputDevice({
+await conversation.changeInputDevice({
   sampleRate: 16000,
   format: "pcm",
   preferHeadphonesForIosDevices: true,
-  inputDeviceId: "your-device-id", // Optional: specific device ID
+  inputDeviceId: "your-device-id",
 });
 ```
 
@@ -422,13 +419,11 @@ Allows you to change the audio output device during an active voice conversation
 **Note:** In WebRTC mode the output format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the output device is a no-op.
 
 ```js
-import { VoiceConversation } from "@elevenlabs/client";
-
 // Change to a specific output device
 await conversation.changeOutputDevice({
   sampleRate: 16000,
   format: "pcm",
-  outputDeviceId: "your-device-id", // Optional: specific device ID
+  outputDeviceId: "your-device-id",
 });
 ```
 
