@@ -341,6 +341,10 @@ export class BaseConversation {
     this.connection.setMicMuted(isMuted);
   }
 
+  public setOutputMuted(isMuted: boolean) {}
+
+  public interrupt() {}
+
   public getInputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
   }
