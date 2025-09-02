@@ -10,6 +10,15 @@ export type InputConfig = {
 const LIBSAMPLERATE_JS =
   "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
 
+const defaultConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  // Automatic gain control helps maintain a steady volume level with microphones: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackSettings/autoGainControl
+  autoGainControl: true,
+  // Mono audio for better echo cancellation
+  channelCount: { ideal: 1 },
+};
+
 export class Input {
   public static async create({
     sampleRate,
@@ -23,10 +32,7 @@ export class Input {
     try {
       const options: MediaTrackConstraints = {
         sampleRate: { ideal: sampleRate },
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        channelCount: { ideal: 1 }, // Mono audio for better echo cancellation
+        ...defaultConstraints,
       };
 
       if (isIosDevice() && preferHeadphonesForIosDevices) {
@@ -115,10 +121,7 @@ export class Input {
       // Create new constraints with the specified device
       const options: MediaTrackConstraints = {
         deviceId: { exact: inputDeviceId },
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        channelCount: { ideal: 1 },
+        ...defaultConstraints,
       };
 
       const constraints = { voiceIsolation: true, ...options };
