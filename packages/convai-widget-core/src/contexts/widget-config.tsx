@@ -44,20 +44,20 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
         );
       }
     }
-    let resolvedAgentId: string | undefined;
+    let currentAgentId: string | undefined;
     let conversationSignature: string | undefined;
     if (signedUrl.value) {
       const params = new URL(signedUrl.value).searchParams;
-      resolvedAgentId = params.get('agent_id') ?? agentId.value;
+      currentAgentId = params.get('agent_id') ?? agentId.value;
       conversationSignature = params.get('conversation_signature') ?? undefined;
     }
-    if (!resolvedAgentId) {
+    if (!currentAgentId) {
       fetchedConfig.value = null;
       return;
     }
 
     const abort = new AbortController();
-    fetchConfig(resolvedAgentId, serverUrl.value, abort.signal, conversationSignature)
+    fetchConfig(currentAgentId, serverUrl.value, abort.signal, conversationSignature)
       .then(config => {
         if (!abort.signal.aborted) {
           fetchedConfig.value = config;
