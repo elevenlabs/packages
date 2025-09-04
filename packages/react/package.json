@@ -35,11 +35,11 @@
     "@elevenlabs/client": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=16.8.0"
+    "react": ">=19.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/react": "^18.3.3",
+    "@types/react": "^19.0.0",
     "eslint": "^9.8.0",
     "jest": "^29.7.0",
     "microbundle": "^0.15.1",
