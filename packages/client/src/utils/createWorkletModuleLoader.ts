@@ -40,7 +40,7 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
       URLCache.set(name, moduleURL);
     } catch (error) {
       throw new Error(
-        `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets.`
+        `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets. If you are using a strict CSP, you may need to self-host the worklet files.`
       );
     }
   };

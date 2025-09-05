@@ -431,22 +431,45 @@ await conversation.changeOutputDevice({
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
-## CSP issues
+## CSP compilance
 
-If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src`, you self-host the needed files in the public folder.
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
 
 Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
 
-Add the worklet file code from
+Add the worklet files to your public folder eg `public/elevenlabs`.
 
 ```
-packages/client/src/utils/rawAudioProcessor.ts
-packages/client/src/utils/audioConcatProcessor.ts
+@elevenlabs/client/scripts/
 ```
 
-to your public/ folder, eg `public/elevenlabs/`.
+Then call start with values in options as workletPaths.
 
-Then call with input "workletPaths" set to your worklets.
+It is recommended to update the scripts with a build script like
+
+```js
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+export default {
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audio-concat-processor.js',
+          dest: 'dist',
+        },
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/raw-audio-processor.js',
+          dest: 'dist',
+        },
+      ],
+    }),
+  ],
+}
+```
 
 ## Development
 

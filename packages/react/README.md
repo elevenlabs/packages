@@ -511,20 +511,17 @@ const { canSendFeedback } = useConversation();
 console.log(canSendFeedback); // boolean
 ```
 
-## CSP issues
+## CSP compilance
 
-If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src`, you self-host the needed files in the public folder.
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
 
 Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
 
-Add the worklet file code from
+Add the worklet files to your public folder eg `public/elevenlabs`.
 
 ```
-packages/client/src/utils/rawAudioProcessor.ts
-packages/client/src/utils/audioConcatProcessor.ts
+@elevenlabs/client/scripts/
 ```
-
-to your public/ folder, eg `public/elevenlabs`.
 
 Then call start with
 
@@ -532,11 +529,37 @@ Then call start with
       await conversation.startSession({
 ...
         workletPaths: {
-          'raw-audio-processor': '/worklets/raw-audio-processor.worklet.js',
+          'raw-audio-processor': '/elevenlabs/raw-audio-processor.worklet.js',
           'audio-concat-processor':
-            '/worklets/audio-concat-processor.worklet.js',
+            '/elevenlabs/audio-concat-processor.worklet.js',
         },
       });
+```
+
+It is recommended to update the scripts with a build script like
+
+```js
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+export default {
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audio-concat-processor.js',
+          dest: 'dist',
+        },
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/raw-audio-processor.js',
+          dest: 'dist',
+        },
+      ],
+    }),
+  ],
+}
 ```
 
 ## Development
