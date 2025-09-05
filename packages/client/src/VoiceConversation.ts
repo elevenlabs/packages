@@ -54,10 +54,13 @@ export class VoiceConversation extends BaseConversation {
           ...connection.inputFormat,
           preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
           inputDeviceId: options.inputDeviceId,
+          workletPaths: options.workletPaths,
+          libsampleratePath: options.libsampleratePath,
         }),
         Output.create({
           ...connection.outputFormat,
           outputDeviceId: options.outputDeviceId,
+          workletPaths: options.workletPaths,
         }),
       ]);
 

@@ -289,8 +289,8 @@ const { conversation } = useConversation();
 const conversationId = await conversation.startSession({
   conversationToken,
   connectionType: "webrtc",
-  inputDeviceId: '<new-input-device-id>',
-  outputDeviceId: '<new-input-device-id>',
+  inputDeviceId: "<new-input-device-id>",
+  outputDeviceId: "<new-input-device-id>",
 });
 ```
 
@@ -489,6 +489,57 @@ This is helpful to conditionally show the feedback button in your UI.
 ```js
 const { canSendFeedback } = useConversation();
 console.log(canSendFeedback); // boolean
+```
+
+## CSP compilance
+
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
+
+Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
+
+Add the worklet files to your public folder eg `public/elevenlabs`.
+
+```
+@elevenlabs/client/scripts/
+```
+
+Then call start with
+
+```ts
+      await conversation.startSession({
+...
+        workletPaths: {
+          'raw-audio-processor': '/elevenlabs/raw-audio-processor.worklet.js',
+          'audio-concat-processor':
+            '/elevenlabs/audio-concat-processor.worklet.js',
+        },
+      });
+```
+
+It is recommended to update the scripts with a build script like
+
+```js
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+export default {
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: path.join(require.resolve('@elevenlabs/client'), 'dist/worklets/audio-concat-processor.js'),
+          dest: 'dist',
+        },
+        {
+          src: path.join(require.resolve('@elevenlabs/client'), 'dist/worklets/raw-audio-processor.js'),
+          dest: 'dist',
+        },
+      ],
+    }),
+  ],
+}
 ```
 
 ## Development
