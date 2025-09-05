@@ -429,6 +429,23 @@ await conversation.changeOutputDevice({
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
+## CSP issues
+
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src`, you self-host the needed files in the public folder.
+
+Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
+
+Add the worklet file code from
+
+```
+packages/client/src/utils/rawAudioProcessor.ts
+packages/client/src/utils/audioConcatProcessor.ts
+```
+
+to your public/ folder, eg `public/elevenlabs`.
+
+Then call with input "workletPaths" set to your worklets.
+
 ## Development
 
 Please, refer to the README.md file in the root of this repository.

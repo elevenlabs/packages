@@ -289,8 +289,8 @@ const { conversation } = useConversation();
 const conversationId = await conversation.startSession({
   conversationToken,
   connectionType: "webrtc",
-  inputDeviceId: '<new-input-device-id>',
-  outputDeviceId: '<new-input-device-id>',
+  inputDeviceId: "<new-input-device-id>",
+  outputDeviceId: "<new-input-device-id>",
 });
 ```
 
@@ -489,6 +489,34 @@ This is helpful to conditionally show the feedback button in your UI.
 ```js
 const { canSendFeedback } = useConversation();
 console.log(canSendFeedback); // boolean
+```
+
+## CSP issues
+
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src`, you self-host the needed files in the public folder.
+
+Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
+
+Add the worklet file code from
+
+```
+packages/client/src/utils/rawAudioProcessor.ts
+packages/client/src/utils/audioConcatProcessor.ts
+```
+
+to your public/ folder, eg `public/elevenlabs`.
+
+Then call start with
+
+```ts
+      await conversation.startSession({
+...
+        workletPaths: {
+          'raw-audio-processor': '/worklets/raw-audio-processor.worklet.js',
+          'audio-concat-processor':
+            '/worklets/audio-concat-processor.worklet.js',
+        },
+      });
 ```
 
 ## Development
