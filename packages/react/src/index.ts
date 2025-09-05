@@ -5,6 +5,7 @@ import {
   type Options,
   type ClientToolsConfig,
   type InputConfig,
+  type AudioWorkletConfig,
   type OutputConfig,
   type FormatConfig,
   type Mode,
@@ -86,6 +87,7 @@ export type HookOptions = Partial<
     ClientToolsConfig &
     InputConfig &
     OutputConfig &
+    AudioWorkletConfig &
     FormatConfig & {
       serverLocation?: Location | string;
     }

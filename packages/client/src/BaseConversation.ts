@@ -25,18 +25,29 @@ import type { OutputConfig } from "./utils/output";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
+/** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
+export type AudioWorkletConfig = {
+  workletPaths?: {
+    "raw-audio-processor"?: string;
+    "audio-concat-processor"?: string;
+  };
+  libsampleratePath?: string;
+};
+
 export type Options = SessionConfig &
   Callbacks &
   ClientToolsConfig &
   InputConfig &
-  OutputConfig;
+  OutputConfig &
+  AudioWorkletConfig;
 
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   Partial<ClientToolsConfig> &
   Partial<InputConfig> &
   Partial<OutputConfig> &
-  Partial<FormatConfig>;
+  Partial<FormatConfig> &
+  Partial<AudioWorkletConfig>;
 
 export type ClientToolsConfig = {
   clientTools: Record<

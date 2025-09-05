@@ -10,6 +10,7 @@ export type {
   ClientToolsConfig,
   Callbacks,
   Status,
+  AudioWorkletConfig,
 } from "./BaseConversation";
 export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
