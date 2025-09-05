@@ -5,6 +5,7 @@ import {
   type Options,
   type ClientToolsConfig,
   type InputConfig,
+  type OutputConfig,
   type FormatConfig,
   type Mode,
   type Status,
@@ -84,6 +85,7 @@ export type HookOptions = Partial<
     HookCallbacks &
     ClientToolsConfig &
     InputConfig &
+    OutputConfig &
     FormatConfig & {
       serverLocation?: Location | string;
     }

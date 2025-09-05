@@ -54,10 +54,12 @@ export class VoiceConversation extends BaseConversation {
           ...connection.inputFormat,
           preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
           inputDeviceId: options.inputDeviceId,
+          rawAudioProcessorPath: options.rawAudioProcessorPath,
         }),
         Output.create({
           ...connection.outputFormat,
           outputDeviceId: options.outputDeviceId,
+          audioConcatProcessorPath: options.audioConcatProcessorPath,
         }),
       ]);
 

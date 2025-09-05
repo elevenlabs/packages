@@ -5,6 +5,7 @@ import { isIosDevice } from "./compatibility";
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
   inputDeviceId?: string;
+  rawAudioProcessorPath?: string;
 };
 
 const LIBSAMPLERATE_JS =
@@ -25,6 +26,7 @@ export class Input {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
+    rawAudioProcessorPath,
   }: FormatConfig & InputConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
@@ -66,7 +68,7 @@ export class Input {
       if (!supportsSampleRateConstraint) {
         await context.audioWorklet.addModule(LIBSAMPLERATE_JS);
       }
-      await loadRawAudioProcessor(context.audioWorklet);
+      await loadRawAudioProcessor(context.audioWorklet, rawAudioProcessorPath);
 
       const constraints = { voiceIsolation: true, ...options };
       inputStream = await navigator.mediaDevices.getUserMedia({

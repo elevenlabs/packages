@@ -21,19 +21,21 @@ import type {
   MCPConnectionStatusEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
-import type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
+import type { OutputConfig } from "./utils/output";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
 export type Options = SessionConfig &
   Callbacks &
   ClientToolsConfig &
-  InputConfig;
+  InputConfig &
+  OutputConfig;
 
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   Partial<ClientToolsConfig> &
   Partial<InputConfig> &
+  Partial<OutputConfig> &
   Partial<FormatConfig>;
 
 export type ClientToolsConfig = {
