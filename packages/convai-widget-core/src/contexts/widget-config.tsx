@@ -44,13 +44,14 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
         );
       }
     }
-    let currentAgentId: string | undefined;
+    let currentAgentId: string | undefined = agentId.value;
     let conversationSignature: string | undefined;
     if (signedUrl.value) {
       const params = new URL(signedUrl.value).searchParams;
       currentAgentId = params.get('agent_id') ?? agentId.value;
       conversationSignature = params.get('conversation_signature') ?? undefined;
     }
+
     if (!currentAgentId) {
       fetchedConfig.value = null;
       return;
