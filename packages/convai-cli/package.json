@@ -41,7 +41,7 @@
     "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "2.12.0",
+    "@elevenlabs/elevenlabs-js": "2.15.0",
     "@inkjs/ui": "^2.0.0",
     "@jest/globals": "^30.0.4",
     "@types/read": "^0.0.32",
