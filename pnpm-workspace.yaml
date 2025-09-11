@@ -2,8 +2,3 @@ packages:
   - apps/*
   - packages/*
   - examples/*
-
-ignoredBuiltDependencies:
-  - esbuild
-  - keytar
-  - msw
