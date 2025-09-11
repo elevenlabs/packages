@@ -50,3 +50,18 @@ venv
 
 # formatters
 .ruff_cache
+
+# turbo
+.turbo
+*.turbo
+turbo-*.log
+.turbo-cookies
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
