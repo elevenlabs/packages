@@ -134,6 +134,7 @@ export type AgentResponseCorrectionEvent = {
     corrected_agent_response: string;
   };
 };
+
 export type AgentAudioEvent = {
   type: "audio";
   audio_event: {
@@ -225,6 +226,13 @@ export type MCPToolApprovalResultEvent = {
   is_approved: boolean;
 };
 
+export type VadScoreEvent = {
+  type: "vad_score";
+  vad_score_event: {
+    vad_score: number;
+  };
+};
+
 export type InitiationClientDataEvent = {
   type: "conversation_initiation_client_data";
   conversation_config_override?: {
@@ -251,6 +259,49 @@ export type InitiationClientDataEvent = {
   user_id?: string;
 };
 
+interface BaseMCPToolCallClientEventData {
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
+  parameters: Record<string, any>;
+  timestamp: string; // ISO string format
+}
+
+interface MCPToolCallClientEventLoadingData
+  extends BaseMCPToolCallClientEventData {
+  state: "loading";
+}
+
+interface MCPToolCallClientEventAwaitingApprovalData
+  extends BaseMCPToolCallClientEventData {
+  state: "awaiting_approval";
+  approval_timeout_secs: number;
+}
+
+interface MCPToolCallClientEventSuccessData
+  extends BaseMCPToolCallClientEventData {
+  state: "success";
+  result: any[];
+}
+
+interface MCPToolCallClientEventFailureData
+  extends BaseMCPToolCallClientEventData {
+  state: "failure";
+  error_message: string;
+}
+
+type MCPToolCallClientEventData =
+  | MCPToolCallClientEventLoadingData
+  | MCPToolCallClientEventAwaitingApprovalData
+  | MCPToolCallClientEventSuccessData
+  | MCPToolCallClientEventFailureData;
+
+export interface MCPToolCallClientEvent {
+  type: "mcp_tool_call";
+  mcp_tool_call: MCPToolCallClientEventData;
+}
+
 export type ConversationEvent =
   | UserTranscriptionEvent
   | AgentResponseEvent
@@ -260,4 +311,6 @@ export type ConversationEvent =
   | InternalTentativeAgentResponseEvent
   | ConfigEvent
   | PingEvent
-  | ClientToolCallEvent;
+  | ClientToolCallEvent
+  | VadScoreEvent
+  | MCPToolCallClientEvent;
