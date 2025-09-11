@@ -34,7 +34,13 @@
   "license": "MIT",
   "devDependencies": {
     "@elevenlabs/typescript-config": "workspace:*",
-    "mock-socket": "^9.3.1"
+    "@vitest/browser": "^3.0.5",
+    "eslint": "^9.8.0",
+    "mock-socket": "^9.3.1",
+    "node-wav": "^0.0.2",
+    "playwright": "^1.54.1",
+    "typescript": "^5.5.4",
+    "vitest": "^3.0.5"
   },
   "repository": {
     "type": "git",

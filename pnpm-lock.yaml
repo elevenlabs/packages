@@ -29,9 +29,6 @@ importers:
       microbundle:
         specifier: ^0.15.1
         version: 0.15.1(@types/babel__core@7.20.5)
-      playwright:
-        specifier: ^1.55.0
-        version: 1.55.0
       prettier:
         specifier: ^3.3.3
         version: 3.6.2
@@ -109,9 +106,27 @@ importers:
       '@elevenlabs/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@vitest/browser':
+        specifier: ^3.0.5
+        version: 3.2.4(msw@2.11.2(@types/node@20.19.13)(typescript@5.8.3))(playwright@1.55.0)(vite@6.3.6(@types/node@20.19.13)(jiti@1.21.7)(lightningcss@1.27.0)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4)
+      eslint:
+        specifier: ^9.8.0
+        version: 9.35.0(jiti@1.21.7)
       mock-socket:
         specifier: ^9.3.1
         version: 9.3.1
+      node-wav:
+        specifier: ^0.0.2
+        version: 0.0.2
+      playwright:
+        specifier: ^1.54.1
+        version: 1.55.0
+      typescript:
+        specifier: ^5.5.4
+        version: 5.8.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.4(@types/node@20.19.13)(@vitest/browser@3.2.4)(jiti@1.21.7)(lightningcss@1.27.0)(msw@2.11.2(@types/node@20.19.13)(typescript@5.8.3))(terser@5.44.0)(yaml@2.8.1)
 
   packages/convai-cli:
     dependencies:
@@ -5190,6 +5205,10 @@ packages:
 
   node-releases@2.0.20:
     resolution: {integrity: sha512-7gK6zSXEH6neM212JgfYFXe+GmZQM+fia5SsusuBIUgnPheLFBmIPhtFoAQRj8/7wASYQnbDlHPVwY0BefoFgA==}
+
+  node-wav@0.0.2:
+    resolution: {integrity: sha512-M6Rm/bbG6De/gKGxOpeOobx/dnGuP0dz40adqx38boqHhlWssBJZgLCPBNtb9NkrmnKYiV04xELq+R6PFOnoLA==}
+    engines: {node: '>=4.4.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -13070,6 +13089,8 @@ snapshots:
   node-int64@0.4.0: {}
 
   node-releases@2.0.20: {}
+
+  node-wav@0.0.2: {}
 
   normalize-path@3.0.0: {}
 
