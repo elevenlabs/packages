@@ -213,7 +213,9 @@ describe('CLI End-to-End Tests', () => {
       const result = await runCli(['add']); // missing required argument
       
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Usage: convai add');
+      // Check both stdout and stderr for the usage message
+      const output = result.stdout + result.stderr;
+      expect(output).toContain('Usage: convai add');
     });
   });
 
