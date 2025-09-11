@@ -36,6 +36,11 @@ jobs:
       - name: Install dependencies
         run: pnpm i
 
+      - name: Install Playwright browsers
+        run: |
+          # Install browsers for the exact version of playwright installed
+          npx playwright@1.55.0 install chromium firefox
+
       - name: Run build
         run: pnpm run build
 
