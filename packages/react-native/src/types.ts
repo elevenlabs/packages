@@ -297,10 +297,10 @@ type MCPToolCallClientEventData =
   | MCPToolCallClientEventSuccessData
   | MCPToolCallClientEventFailureData;
 
-export interface MCPToolCallClientEvent {
+export type MCPToolCallClientEvent = {
   type: "mcp_tool_call";
   mcp_tool_call: MCPToolCallClientEventData;
-}
+};
 
 export type ConversationEvent =
   | UserTranscriptionEvent
