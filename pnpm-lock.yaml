@@ -30,7 +30,7 @@ importers:
         specifier: ^0.15.1
         version: 0.15.1(@types/babel__core@7.20.5)
       playwright:
-        specifier: ^1.54.1
+        specifier: ^1.55.0
         version: 1.55.0
       prettier:
         specifier: ^3.3.3

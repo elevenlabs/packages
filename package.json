@@ -22,7 +22,7 @@
     "ts-jest": "^29.4.0",
     "vitest": "^3.1.2",
     "@vitest/browser": "^3.1.2",
-    "playwright": "^1.54.1",
+    "playwright": "^1.55.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.8.0"
   },
