@@ -59,17 +59,69 @@ export type VadScoreEvent = {
   };
 };
 
-// TODO correction missing
+interface BaseMCPToolCallClientEventData {
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
+  parameters: Record<string, any>;
+  timestamp: string; // ISO string format
+}
+
+interface MCPToolCallClientEventLoadingData
+  extends BaseMCPToolCallClientEventData {
+  state: "loading";
+}
+
+interface MCPToolCallClientEventAwaitingApprovalData
+  extends BaseMCPToolCallClientEventData {
+  state: "awaiting_approval";
+  approval_timeout_secs: number;
+}
+
+interface MCPToolCallClientEventSuccessData
+  extends BaseMCPToolCallClientEventData {
+  state: "success";
+  result: any[];
+}
+
+interface MCPToolCallClientEventFailureData
+  extends BaseMCPToolCallClientEventData {
+  state: "failure";
+  error_message: string;
+}
+
+type MCPToolCallClientEventData =
+  | MCPToolCallClientEventLoadingData
+  | MCPToolCallClientEventAwaitingApprovalData
+  | MCPToolCallClientEventSuccessData
+  | MCPToolCallClientEventFailureData;
+
+export type MCPToolCallClientEvent = {
+  type: "mcp_tool_call";
+  mcp_tool_call: MCPToolCallClientEventData;
+};
+
+export type AgentResponseCorrectionEvent = {
+  type: "agent_response_correction";
+  agent_response_correction_event: {
+    original_agent_response: string;
+    corrected_agent_response: string;
+  };
+};
+
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
   | AgentResponseEvent
+  | AgentResponseCorrectionEvent
   | AgentAudioEvent
   | InterruptionEvent
   | InternalTentativeAgentResponseEvent
   | ConfigEvent
   | PingEvent
   | ClientToolCallEvent
-  | VadScoreEvent;
+  | VadScoreEvent
+  | MCPToolCallClientEvent;
 
 export type PongEvent = {
   type: "pong";
