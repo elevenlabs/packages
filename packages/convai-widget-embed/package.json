@@ -18,11 +18,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "devDependencies": {
-    "@elevenlabs/convai-widget-core": "workspace:*",
-    "eslint": "^9.8.0",
-    "microbundle": "^0.15.1",
-    "typescript": "^5.5.4",
-    "vite": "^6.3.2"
+    "@elevenlabs/convai-widget-core": "workspace:*"
   },
   "repository": {
     "type": "git",

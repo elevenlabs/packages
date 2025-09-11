@@ -1,52 +1,56 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# compiled output
-dist
-tmp
-/out-tsc
-
-# Python files
-Pipfile
-__pycache__
-
-
-# dependencies
+# Dependencies
 node_modules
+.pnp
+.pnp.js
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
-.DS_Store
-Thumbs.db
-
-# env
+# Local env files
+.env
 .env.local
-.env.*.local
-venv
+.env.development.local
+.env.test.local
+.env.production.local
 
-# formatters
-.ruff_cache
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem
+
+.DS_Store
+.cache
+.env
+.envrc
+.next
+.turbo
+dist
+dist-ssr
+examples/*/build
+node_modules
+public/dist
+server/dist
+test-results
+tsconfig.vitest-temp.json
+*.log
+*.local
+*.tsbuildinfo

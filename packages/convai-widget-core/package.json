@@ -8,14 +8,14 @@
   "type": "module",
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "prebuild": "npm run generate-version",
+    "prebuild": "pnpm run generate-version",
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
-    "dev": "npm run generate-version && vite",
-    "lint": "npm run lint:ts && npm run lint:es && npm run lint:prettier",
+    "dev": "pnpm run generate-version && vite",
+    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm run build",
     "test": "vitest"
   },
   "files": [
@@ -29,14 +29,8 @@
     "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
     "@types/preact-custom-element": "^4.0.4",
-    "@vitest/browser": "^3.1.2",
-    "eslint": "^9.8.0",
     "msw": "^2.7.5",
-    "playwright": "^1.46.1",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.5.4",
-    "vite": "^6.3.2",
-    "vitest": "^3.1.2"
+    "tailwindcss": "^3.4.17"
   },
   "dependencies": {
     "@elevenlabs/client": "workspace:*",
