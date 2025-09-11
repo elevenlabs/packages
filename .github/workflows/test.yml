@@ -20,11 +20,6 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Fix Docker permissions
-        run: |
-          mkdir -p /root/.docker
-          chmod 700 /root/.docker
-
       - name: Set up node
         uses: actions/setup-node@v3
         with:

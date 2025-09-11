@@ -16,15 +16,7 @@
     "prettier": "^3.3.3",
     "microbundle": "^0.15.1",
     "typescript": "5.8.3",
-    "vite": "^6.3.2",
-    "eslint": "^9.8.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.4.0",
-    "vitest": "^3.1.2",
-    "@vitest/browser": "^3.1.2",
-    "playwright": "^1.55.0",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.8.0"
+    "eslint": "^9.8.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
