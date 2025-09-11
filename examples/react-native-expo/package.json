@@ -17,14 +17,14 @@
     "@livekit/react-native-webrtc": "125.0.11",
     "expo": "~53.0.18",
     "expo-dev-client": "~5.2.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-native": "0.79.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/node": "^20.8.0",
-    "@types/react": "^18.2.0",
+    "@types/react": "^19.0.0",
     "@types/react-native": "^0.73.0",
     "typescript": "^5.5.4"
   }

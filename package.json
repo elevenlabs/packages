@@ -27,5 +27,11 @@
     "@types/node": "^20.8.0",
     "react-test-renderer": "18.2.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msw"
+    ]
+  },
   "packageManager": "pnpm@10.15.1"
 }
