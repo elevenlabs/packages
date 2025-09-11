@@ -1,5 +1,5 @@
 // Re-export from the new connection architecture for backward compatibility
-export type {
+export {
   Language,
   DelayConfig,
   FormatConfig,
@@ -7,9 +7,8 @@ export type {
   OnDisconnectCallback,
   OnMessageCallback,
   SessionConfig,
+  parseFormat,
 } from "./BaseConnection";
-
-export { parseFormat } from "./BaseConnection";
 
 import { createConnection } from "./ConnectionFactory";
 export { createConnection };

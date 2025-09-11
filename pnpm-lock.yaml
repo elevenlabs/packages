@@ -106,15 +106,18 @@ importers:
         specifier: ^2.11.4
         version: 2.15.6(@types/dom-mediacapture-record@1.0.22)
     devDependencies:
-      '@elevenlabs/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
+      '@types/node-wav':
+        specifier: ^0.0.3
+        version: 0.0.3
       '@vitest/browser':
         specifier: ^3.0.5
         version: 3.2.4(msw@2.11.2(@types/node@20.19.13)(typescript@5.8.3))(playwright@1.55.0)(vite@6.3.6(@types/node@20.19.13)(jiti@1.21.7)(lightningcss@1.27.0)(terser@5.44.0)(yaml@2.8.1))(vitest@3.2.4)
       eslint:
         specifier: ^9.8.0
         version: 9.35.0(jiti@1.21.7)
+      microbundle:
+        specifier: ^0.15.1
+        version: 0.15.1(@types/babel__core@7.20.5)
       mock-socket:
         specifier: ^9.3.1
         version: 9.3.1
@@ -122,7 +125,7 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       playwright:
-        specifier: ^1.55.0
+        specifier: ^1.54.1
         version: 1.55.0
       typescript:
         specifier: ^5.5.4
@@ -249,6 +252,9 @@ importers:
         specifier: ^4.3.0
         version: 4.5.0(preact@10.27.1)
     devDependencies:
+      '@elevenlabs/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       '@preact/preset-vite':
         specifier: ^2.10.1
         version: 2.10.2(@babel/core@7.28.4)(preact@10.27.1)(vite@6.3.6(@types/node@20.19.13)(jiti@1.21.7)(lightningcss@1.27.0)(terser@5.44.0)(yaml@2.8.1))
@@ -2429,6 +2435,9 @@ packages:
   '@types/keytar@4.4.2':
     resolution: {integrity: sha512-xtQcDj9ruGnMwvSu1E2BH4SFa5Dv2PvSPd0CKEBLN5hEj/v5YpXJY+B6hAfuKIbvEomD7vJTc/P1s1xPNh2kRw==}
     deprecated: This is a stub types definition. keytar provides its own type definitions, so you do not need this installed.
+
+  '@types/node-wav@0.0.3':
+    resolution: {integrity: sha512-U53HwwM1qt/WAl+rZkxpM0nkOo7JdabgKs8HHt0h+wL/SkIw42pY38JRGd6x2tSE8XJyxk8Z71xYCfjjxfmE8A==}
 
   '@types/node@20.19.13':
     resolution: {integrity: sha512-yCAeZl7a0DxgNVteXFHt9+uyFbqXGy/ShC4BlcHkoE0AfGXYv/BUiplV72DjMYXHDBXFjhvr6DD1NiRVfB4j8g==}
@@ -9621,6 +9630,10 @@ snapshots:
   '@types/keytar@4.4.2':
     dependencies:
       keytar: 7.9.0
+
+  '@types/node-wav@0.0.3':
+    dependencies:
+      '@types/node': 20.19.13
 
   '@types/node@20.19.13':
     dependencies:

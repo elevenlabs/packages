@@ -25,6 +25,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "devDependencies": {
+    "@elevenlabs/typescript-config": "workspace:*",
     "@preact/preset-vite": "^2.10.1",
     "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
