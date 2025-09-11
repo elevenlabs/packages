@@ -34,12 +34,12 @@ jobs:
         run: npm i pnpm -g
 
       - name: Install dependencies
-        run: pnpm i
+        run: pnpm i --no-optional=false
 
-      - name: Install Playwright browsers
+      - name: Ensure esbuild binaries are installed
         run: |
-          # Install browsers for the exact version of playwright installed
-          npx playwright@1.55.0 install chromium firefox
+          # If esbuild binaries are still missing, install them explicitly
+          pnpm add -D @esbuild/linux-x64 || true
 
       - name: Run build
         run: pnpm run build
