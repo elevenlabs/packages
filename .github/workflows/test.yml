@@ -14,7 +14,7 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.54.1-jammy
+      image: mcr.microsoft.com/playwright:v1.55.0-jammy
 
     steps:
       - name: Check out repo
