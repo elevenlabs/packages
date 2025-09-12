@@ -16,6 +16,7 @@ import type {
   VadScoreEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
+import type { OutputConfig } from "./utils/output";
 
 export type Role = "user" | "ai";
 
@@ -27,16 +28,29 @@ export type Status =
   | "disconnecting"
   | "disconnected";
 
+/** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
+export type AudioWorkletConfig = {
+  workletPaths?: {
+    "raw-audio-processor"?: string;
+    "audio-concat-processor"?: string;
+  };
+  libsampleratePath?: string;
+};
+
 export type Options = SessionConfig &
   Callbacks &
   ClientToolsConfig &
-  InputConfig;
+  InputConfig &
+  OutputConfig &
+  AudioWorkletConfig;
 
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   Partial<ClientToolsConfig> &
   Partial<InputConfig> &
-  Partial<FormatConfig>;
+  Partial<OutputConfig> &
+  Partial<FormatConfig> &
+  Partial<AudioWorkletConfig>;
 
 export type ClientToolsConfig = {
   clientTools: Record<

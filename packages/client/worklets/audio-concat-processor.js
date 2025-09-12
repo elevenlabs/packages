@@ -1,9 +1,4 @@
-import { createWorkletModuleLoader } from "./createWorkletModuleLoader";
-
-export const loadAudioConcatProcessor = createWorkletModuleLoader(
-  "audio-concat-processor",
-  // language=JavaScript
-  `/*
+/*
  * ulaw decoding logic taken from the wavefile library
  * https://github.com/rochars/wavefile/blob/master/lib/codecs/mulaw.js
  */
@@ -94,5 +89,3 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor("audio-concat-processor", AudioConcatProcessor);
-`
-);
