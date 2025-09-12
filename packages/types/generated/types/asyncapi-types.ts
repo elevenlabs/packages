@@ -199,15 +199,32 @@ export type AnonymSchema1 =
   | "pcm_48000"
   | "ulaw_8000";
 
-export interface ClientToolCall {
+export interface ClientToolCallMessage {
   type: "client_tool_call";
   client_tool_call: ClientToolCall;
   additionalProperties?: Record<string, any>;
 }
 
-export interface AgentToolResponse {
+export interface ClientToolCall {
+  tool_name: string;
+  tool_call_id: string;
+  parameters: Record<string, any>;
+  event_id: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface AgentToolResponseMessage {
   type: "agent_tool_response";
   agent_tool_response: AgentToolResponse;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface AgentToolResponse {
+  tool_name: string;
+  tool_call_id: string;
+  tool_type: string;
+  is_error: boolean;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
@@ -264,9 +281,14 @@ export interface McpToolCallOneOf_3 {
   error_message: string;
 }
 
-export interface McpConnectionStatus {
+export interface McpConnectionStatusMessage {
   type: "mcp_connection_status";
   mcp_connection_status: McpConnectionStatus;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface McpConnectionStatus {
+  integrations: McpConnectionStatusIntegrationsItem[];
   additionalProperties?: Record<string, any>;
 }
 
