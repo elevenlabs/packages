@@ -112,6 +112,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
 
+  const micMutedRef = useRef<boolean | undefined>(micMuted);
+  const volumeRef = useRef<number | undefined>(volume);
+
+  micMutedRef.current = micMuted;
+  volumeRef.current = volume;
+
   useEffect(() => {
     if (micMuted !== undefined) {
       conversationRef?.current?.setMicMuted(micMuted);
@@ -213,12 +219,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
         } as Options);
 
         conversationRef.current = await lockRef.current;
-        // Persist controlled state between sessions
-        if (micMuted !== undefined) {
-          conversationRef.current.setMicMuted(micMuted);
+        // Persist controlled state between sessions using refs to get current values
+        if (micMutedRef.current !== undefined) {
+          conversationRef.current.setMicMuted(micMutedRef.current);
         }
-        if (volume !== undefined) {
-          conversationRef.current.setVolume({ volume });
+        if (volumeRef.current !== undefined) {
+          conversationRef.current.setVolume({ volume: volumeRef.current });
         }
 
         return conversationRef.current.getId();
