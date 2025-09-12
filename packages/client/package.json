@@ -48,6 +48,7 @@
     "directory": "packages/client"
   },
   "dependencies": {
+    "@elevenlabs/types": "workspace:*",
     "livekit-client": "^2.11.4"
   }
 }

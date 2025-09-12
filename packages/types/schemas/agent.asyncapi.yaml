@@ -53,10 +53,10 @@ channels:
           - $ref: "#/components/messages/AgentResponseCorrection"
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
-          - $ref: "#/components/messages/ClientToolCall"
-          - $ref: "#/components/messages/AgentToolResponse"
+          - $ref: "#/components/messages/ClientToolCallMessage"
+          - $ref: "#/components/messages/AgentToolResponseMessage"
           - $ref: "#/components/messages/MCPToolCall"
-          - $ref: "#/components/messages/MCPConnectionStatus"
+          - $ref: "#/components/messages/MCPConnectionStatusMessage"
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
     subscribe:
@@ -207,7 +207,7 @@ components:
       payload:
         $ref: "#/components/schemas/ConversationMetadataPayload"
 
-    ClientToolCall:
+    ClientToolCallMessage:
       name: ClientToolCallClientEvent
       title: Client Tool Call
       summary: Tool for client to execute
@@ -215,7 +215,7 @@ components:
       payload:
         $ref: "#/components/schemas/ClientToolCallPayload"
 
-    AgentToolResponse:
+    AgentToolResponseMessage:
       name: AgentToolResponseClientEvent
       title: Agent Tool Response
       summary: Result of agent tool execution
@@ -231,7 +231,7 @@ components:
       payload:
         $ref: "#/components/schemas/MCPToolCallPayload"
 
-    MCPConnectionStatus:
+    MCPConnectionStatusMessage:
       name: MCPConnectionStatusClientEvent
       title: MCP Connection Status
       summary: Status of MCP service connections
@@ -413,7 +413,7 @@ components:
 
     UserFeedbackPayload:
       type: object
-      required: [event_id, score]
+      required: [type, event_id, score]
       properties:
         type:
           type: string
@@ -468,7 +468,7 @@ components:
           type: string
           const: conversation_initiation_client_data
         conversation_config_override:
-          type: object
+          $ref: "#/components/schemas/ConversationConfigClientOverride"
         custom_llm_extra_body:
           type: object
           description: Additional parameters passed to the LLM provider
@@ -628,10 +628,12 @@ components:
 
     UserTranscriptionData:
       type: object
-      required: [user_transcript]
+      required: [user_transcript, event_id]
       properties:
         user_transcript:
           type: string
+        event_id:
+          type: integer
 
     TentativeTranscriptionData:
       type: object
@@ -644,19 +646,23 @@ components:
 
     AgentResponseData:
       type: object
-      required: [agent_response]
+      required: [agent_response, event_id]
       properties:
         agent_response:
           type: string
+        event_id:
+          type: integer
 
     AgentResponseCorrectionData:
       type: object
-      required: [original_agent_response, corrected_agent_response]
+      required: [original_agent_response, corrected_agent_response, event_id]
       properties:
         original_agent_response:
           type: string
         corrected_agent_response:
           type: string
+        event_id:
+          type: integer
 
     InterruptionData:
       type: object
@@ -679,7 +685,7 @@ components:
 
     ClientToolCallData:
       type: object
-      required: [tool_name, tool_call_id, parameters]
+      required: [tool_name, tool_call_id, parameters, event_id]
       properties:
         tool_name:
           type: string
@@ -687,10 +693,12 @@ components:
           type: string
         parameters:
           type: object
+        event_id:
+          type: integer
 
     AgentToolResponseData:
       type: object
-      required: [tool_name, tool_call_id, tool_type, is_error]
+      required: [tool_name, tool_call_id, tool_type, is_error, event_id]
       properties:
         tool_name:
           type: string
@@ -704,6 +712,8 @@ components:
         is_error:
           type: boolean
           description: Whether the tool execution resulted in an error
+        event_id:
+          type: integer
 
     MCPConnectionStatusData:
       type: object
@@ -751,3 +761,83 @@ components:
           type: integer
           nullable: true
           description: Estimated round-trip time in milliseconds
+
+    # ===== CONVERSATION CONFIG OVERRIDE SCHEMAS =====
+
+    ConversationConfigClientOverride:
+      type: object
+      description: Client-side overrides for conversation configuration
+      properties:
+        agent:
+          $ref: "#/components/schemas/AgentConfigOverride"
+        tts:
+          $ref: "#/components/schemas/TTSConversationalConfigOverride"
+        conversation:
+          $ref: "#/components/schemas/ConversationConfigOverride"
+
+    AgentConfigOverride:
+      type: object
+      description: Agent-specific configuration overrides
+      properties:
+        first_message:
+          type: string
+          nullable: true
+          description: Initial message the agent will say. If empty, agent waits for user to start
+        language:
+          type: string
+          nullable: true
+          description: Language code for ASR and TTS (e.g., 'en', 'es', 'de')
+        prompt:
+          $ref: "#/components/schemas/PromptAgentOverride"
+        native_mcp_server_ids:
+          type: array
+          nullable: true
+          maxItems: 10
+          items:
+            type: string
+          description: List of Native MCP server IDs to be used by the agent
+
+    PromptAgentOverride:
+      type: object
+      description: Agent prompt configuration override
+      properties:
+        prompt:
+          type: string
+          nullable: true
+          description: The system prompt that defines the agent's behavior
+
+    TTSConversationalConfigOverride:
+      type: object
+      description: Text-to-speech configuration overrides
+      properties:
+        voice_id:
+          type: string
+          nullable: true
+          description: ElevenLabs voice ID for speech synthesis
+        stability:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: Voice stability (0-1). Lower values = more variable intonation
+        speed:
+          type: number
+          nullable: true
+          minimum: 0.7
+          maximum: 5
+          description: Speech speed multiplier (0.7-5). 1.0 = normal speed
+        similarity_boost:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: Voice similarity boost (0-1). Higher values = more similar to original
+
+    ConversationConfigOverride:
+      type: object
+      description: Conversation-specific configuration overrides
+      properties:
+        text_only:
+          type: boolean
+          nullable: true
+          description: If true, disables audio processing and uses text-only mode

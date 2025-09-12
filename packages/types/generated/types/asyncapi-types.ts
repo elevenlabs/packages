@@ -4,30 +4,30 @@
  */
 
 export interface UserAudio {
-  userAudioChunk: string;
+  user_audio_chunk: string;
   additionalProperties?: Record<string, any>;
 }
 
 export interface Pong {
-  reservedType: "pong";
-  eventId: number;
+  type: "pong";
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserMessage {
-  reservedType: "user_message";
-  reservedText?: string;
+  type: "user_message";
+  text?: string;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserActivity {
-  reservedType: "user_activity";
+  type: "user_activity";
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserFeedback {
-  reservedType?: "feedback";
-  eventId: number;
+  type: "feedback";
+  event_id: number;
   score: Score;
   additionalProperties?: Record<string, any>;
 }
@@ -35,113 +35,149 @@ export interface UserFeedback {
 export type Score = "like" | "dislike";
 
 export interface ClientToolResult {
-  reservedType: "client_tool_result";
-  toolCallId: string;
+  type: "client_tool_result";
+  tool_call_id: string;
   result: string;
-  isError: boolean;
+  is_error: boolean;
   additionalProperties?: Record<string, any>;
 }
 
 export interface McpToolApprovalResult {
-  reservedType: "mcp_tool_approval_result";
-  toolCallId: string;
-  isApproved: boolean;
+  type: "mcp_tool_approval_result";
+  tool_call_id: string;
+  is_approved: boolean;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ContextualUpdate {
-  reservedType: "contextual_update";
-  reservedText: string;
+  type: "contextual_update";
+  text: string;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ConversationInitiation {
-  reservedType: "conversation_initiation_client_data";
-  conversationConfigOverride?: Record<string, any>;
-  customLlmExtraBody?: Record<string, any>;
-  dynamicVariables?: Record<string, any>;
+  type: "conversation_initiation_client_data";
+  conversation_config_override?: ConversationConfigOverride;
+  custom_llm_extra_body?: Record<string, any>;
+  dynamic_variables?: Record<string, any>;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface ConversationConfigOverride {
+  agent?: ConversationConfigOverrideAgent;
+  tts?: ConversationConfigOverrideTts;
+  conversation?: ConversationConfigOverrideConversation;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface ConversationConfigOverrideAgent {
+  first_message?: string;
+  language?: string;
+  prompt?: ConversationConfigOverrideAgentPrompt;
+  native_mcp_server_ids?: string[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface ConversationConfigOverrideAgentPrompt {
+  prompt?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface ConversationConfigOverrideTts {
+  voice_id?: string;
+  stability?: number;
+  speed?: number;
+  similarity_boost?: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface ConversationConfigOverrideConversation {
+  text_only?: boolean;
   additionalProperties?: Record<string, any>;
 }
 
 export interface Audio {
-  reservedType: "audio";
-  audioEvent: AudioEvent;
+  type: "audio";
+  audio_event: AudioEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AudioEvent {
-  audioBase_64: string;
-  eventId: number;
+  audio_base_64: string;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserTranscript {
-  reservedType: "user_transcript";
-  userTranscriptionEvent: UserTranscriptionEvent;
+  type: "user_transcript";
+  user_transcription_event: UserTranscriptionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserTranscriptionEvent {
-  userTranscript: string;
+  user_transcript: string;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface TentativeUserTranscript {
-  reservedType: "tentative_user_transcript";
-  tentativeUserTranscriptionEvent: TentativeUserTranscriptionEvent;
+  type: "tentative_user_transcript";
+  tentative_user_transcription_event: TentativeUserTranscriptionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface TentativeUserTranscriptionEvent {
-  userTranscript: string;
-  eventId: number;
+  user_transcript: string;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponse {
-  reservedType: "agent_response";
-  agentResponseEvent: AgentResponseEvent;
+  type: "agent_response";
+  agent_response_event: AgentResponseEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponseEvent {
-  agentResponse: string;
+  agent_response: string;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponseCorrection {
-  reservedType: "agent_response_correction";
-  agentResponseCorrectionEvent: AgentResponseCorrectionEvent;
+  type: "agent_response_correction";
+  agent_response_correction_event: AgentResponseCorrectionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponseCorrectionEvent {
-  originalAgentResponse: string;
-  correctedAgentResponse: string;
+  original_agent_response: string;
+  corrected_agent_response: string;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface Interruption {
-  reservedType: "interruption";
-  interruptionEvent: InterruptionEvent;
+  type: "interruption";
+  interruption_event: InterruptionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface InterruptionEvent {
-  eventId: number;
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ConversationMetadata {
-  reservedType: "conversation_initiation_metadata";
-  conversationInitiationMetadataEvent: ConversationInitiationMetadataEvent;
+  type: "conversation_initiation_metadata";
+  conversation_initiation_metadata_event: ConversationInitiationMetadataEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ConversationInitiationMetadataEvent {
-  conversationId: string;
-  agentOutputAudioFormat: ConversationInitiationMetadataEventAgentOutputAudioFormat;
-  userInputAudioFormat: AnonymSchema1;
+  conversation_id: string;
+  agent_output_audio_format: ConversationInitiationMetadataEventAgentOutputAudioFormat;
+  user_input_audio_format: AnonymSchema1;
   additionalProperties?: Record<string, any>;
 }
 
@@ -164,20 +200,20 @@ export type AnonymSchema1 =
   | "ulaw_8000";
 
 export interface ClientToolCall {
-  reservedType: "client_tool_call";
-  clientToolCall: ClientToolCall;
+  type: "client_tool_call";
+  client_tool_call: ClientToolCall;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentToolResponse {
-  reservedType: "agent_tool_response";
-  agentToolResponse: AgentToolResponse;
+  type: "agent_tool_response";
+  agent_tool_response: AgentToolResponse;
   additionalProperties?: Record<string, any>;
 }
 
 export interface McpToolCall {
-  reservedType: "mcp_tool_call";
-  mcpToolCall:
+  type: "mcp_tool_call";
+  mcp_tool_call:
     | McpToolCallOneOf_0
     | McpToolCallOneOf_1
     | McpToolCallOneOf_2
@@ -186,31 +222,31 @@ export interface McpToolCall {
 }
 
 export interface McpToolCallOneOf_0 {
-  serviceId: string;
-  toolCallId: string;
-  toolName: string;
-  toolDescription?: string;
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
   parameters: Record<string, any>;
   timestamp: string;
   state: "loading";
 }
 
 export interface McpToolCallOneOf_1 {
-  serviceId: string;
-  toolCallId: string;
-  toolName: string;
-  toolDescription?: string;
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
   parameters: Record<string, any>;
   timestamp: string;
   state: "awaiting_approval";
-  approvalTimeoutSecs: number;
+  approval_timeout_secs: number;
 }
 
 export interface McpToolCallOneOf_2 {
-  serviceId: string;
-  toolCallId: string;
-  toolName: string;
-  toolDescription?: string;
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
   parameters: Record<string, any>;
   timestamp: string;
   state: "success";
@@ -218,27 +254,27 @@ export interface McpToolCallOneOf_2 {
 }
 
 export interface McpToolCallOneOf_3 {
-  serviceId: string;
-  toolCallId: string;
-  toolName: string;
-  toolDescription?: string;
+  service_id: string;
+  tool_call_id: string;
+  tool_name: string;
+  tool_description?: string;
   parameters: Record<string, any>;
   timestamp: string;
   state: "failure";
-  errorMessage: string;
+  error_message: string;
 }
 
 export interface McpConnectionStatus {
-  reservedType: "mcp_connection_status";
-  mcpConnectionStatus: McpConnectionStatus;
+  type: "mcp_connection_status";
+  mcp_connection_status: McpConnectionStatus;
   additionalProperties?: Record<string, any>;
 }
 
 export interface McpConnectionStatusIntegrationsItem {
-  integrationId: string;
-  integrationType: McpConnectionStatusIntegrationsItemIntegrationType;
-  isConnected: boolean;
-  toolCount: number;
+  integration_id: string;
+  integration_type: McpConnectionStatusIntegrationsItemIntegrationType;
+  is_connected: boolean;
+  tool_count: number;
   additionalProperties?: Record<string, any>;
 }
 
@@ -247,73 +283,73 @@ export type McpConnectionStatusIntegrationsItemIntegrationType =
   | "mcp_integration";
 
 export interface VadScore {
-  reservedType: "vad_score";
-  vadScoreEvent: VadScoreEvent;
+  type: "vad_score";
+  vad_score_event: VadScoreEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface VadScoreEvent {
-  vadScore: number;
+  vad_score: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface Ping {
-  reservedType: "ping";
-  pingEvent: PingEvent;
+  type: "ping";
+  ping_event: PingEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface PingEvent {
-  eventId: number;
-  pingMs?: number;
+  event_id: number;
+  ping_ms?: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AudioClientEvent {
-  reservedType: "audio";
-  audioEvent: AudioEvent;
+  type: "audio";
+  audio_event: AudioEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserTranscriptionClientEvent {
-  reservedType: "user_transcript";
-  userTranscriptionEvent: UserTranscriptionEvent;
+  type: "user_transcript";
+  user_transcription_event: UserTranscriptionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface TentativeUserTranscriptionClientEvent {
-  reservedType: "tentative_user_transcript";
-  tentativeUserTranscriptionEvent: TentativeUserTranscriptionEvent;
+  type: "tentative_user_transcript";
+  tentative_user_transcription_event: TentativeUserTranscriptionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponseClientEvent {
-  reservedType: "agent_response";
-  agentResponseEvent: AgentResponseEvent;
+  type: "agent_response";
+  agent_response_event: AgentResponseEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentResponseCorrectionClientEvent {
-  reservedType: "agent_response_correction";
-  agentResponseCorrectionEvent: AgentResponseCorrectionEvent;
+  type: "agent_response_correction";
+  agent_response_correction_event: AgentResponseCorrectionEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ClientToolCallClientEvent {
-  reservedType: "client_tool_call";
-  clientToolCall: ClientToolCall;
+  type: "client_tool_call";
+  client_tool_call: ClientToolCall;
   additionalProperties?: Record<string, any>;
 }
 
 export interface AgentToolResponseClientEvent {
-  reservedType: "agent_tool_response";
-  agentToolResponse: AgentToolResponse;
+  type: "agent_tool_response";
+  agent_tool_response: AgentToolResponse;
   additionalProperties?: Record<string, any>;
 }
 
 export interface McpToolCallClientEvent {
-  reservedType: "mcp_tool_call";
-  mcpToolCall:
+  type: "mcp_tool_call";
+  mcp_tool_call:
     | McpToolCallOneOf_0
     | McpToolCallOneOf_1
     | McpToolCallOneOf_2
@@ -322,66 +358,66 @@ export interface McpToolCallClientEvent {
 }
 
 export interface McpConnectionStatusClientEvent {
-  reservedType: "mcp_connection_status";
-  mcpConnectionStatus: McpConnectionStatus;
+  type: "mcp_connection_status";
+  mcp_connection_status: McpConnectionStatus;
   additionalProperties?: Record<string, any>;
 }
 
 export interface VadScoreClientEvent {
-  reservedType: "vad_score";
-  vadScoreEvent: VadScoreEvent;
+  type: "vad_score";
+  vad_score_event: VadScoreEvent;
   additionalProperties?: Record<string, any>;
 }
 
 export interface PongClientToOrchestratorEvent {
-  reservedType: "pong";
-  eventId: number;
+  type: "pong";
+  event_id: number;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserMessageClientToOrchestratorEvent {
-  reservedType: "user_message";
-  reservedText?: string;
+  type: "user_message";
+  text?: string;
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserActivityClientToOrchestratorEvent {
-  reservedType: "user_activity";
+  type: "user_activity";
   additionalProperties?: Record<string, any>;
 }
 
 export interface UserFeedbackClientToOrchestratorEvent {
-  reservedType?: "feedback";
-  eventId: number;
+  type: "feedback";
+  event_id: number;
   score: Score;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ClientToolResultClientToOrchestratorEvent {
-  reservedType: "client_tool_result";
-  toolCallId: string;
+  type: "client_tool_result";
+  tool_call_id: string;
   result: string;
-  isError: boolean;
+  is_error: boolean;
   additionalProperties?: Record<string, any>;
 }
 
 export interface McpToolApprovalResultClientToOrchestratorEvent {
-  reservedType: "mcp_tool_approval_result";
-  toolCallId: string;
-  isApproved: boolean;
+  type: "mcp_tool_approval_result";
+  tool_call_id: string;
+  is_approved: boolean;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ContextualUpdateClientToOrchestratorEvent {
-  reservedType: "contextual_update";
-  reservedText: string;
+  type: "contextual_update";
+  text: string;
   additionalProperties?: Record<string, any>;
 }
 
 export interface ConversationInitiationClientToOrchestratorEvent {
-  reservedType: "conversation_initiation_client_data";
-  conversationConfigOverride?: Record<string, any>;
-  customLlmExtraBody?: Record<string, any>;
-  dynamicVariables?: Record<string, any>;
+  type: "conversation_initiation_client_data";
+  conversation_config_override?: ConversationConfigOverride;
+  custom_llm_extra_body?: Record<string, any>;
+  dynamic_variables?: Record<string, any>;
   additionalProperties?: Record<string, any>;
 }

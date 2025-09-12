@@ -24,7 +24,6 @@ const outIncomingPath = path.join(outDir, "incoming.ts");
 const outOutgoingPath = path.join(outDir, "outgoing.ts");
 
 function opKindToDir(op: "publish" | "subscribe", r: Role): Dir {
-  // Spec describes the SERVER surface; map relative to chosen role
   return r === "client"
     ? op === "publish"
       ? "incoming"
@@ -108,6 +107,7 @@ async function main() {
     modelType: "interface",
     enumType: "union",
     mapType: "record", // nicer than Map<...> for SDKs
+    rawPropertyNames: true,
   });
 
   const payloads = await collectPayloads(raw);
@@ -156,9 +156,9 @@ async function main() {
   writeFileSync(outIncomingPath, toBarrel(incomingNames, "incoming"), "utf8");
   writeFileSync(outOutgoingPath, toBarrel(outgoingNames, "outgoing"), "utf8");
 
-  console.log(`✅ Wrote ${outTypesPath}`);
-  console.log(`✅ Wrote ${outIncomingPath} (${incomingNames.size} types)`);
-  console.log(`✅ Wrote ${outOutgoingPath} (${outgoingNames.size} types)`);
+  console.log(`Wrote ${outTypesPath}`);
+  console.log(`Wrote ${outIncomingPath} (${incomingNames.size} types)`);
+  console.log(`Wrote ${outOutgoingPath} (${outgoingNames.size} types)`);
 }
 
 main().catch(err => {

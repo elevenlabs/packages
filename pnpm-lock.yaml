@@ -75,6 +75,9 @@ importers:
 
   packages/client:
     dependencies:
+      '@elevenlabs/types':
+        specifier: workspace:*
+        version: link:../types
       livekit-client:
         specifier: ^2.11.4
         version: 2.15.5(@types/dom-mediacapture-record@1.0.22)
