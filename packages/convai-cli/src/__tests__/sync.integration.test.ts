@@ -38,9 +38,9 @@ describe('Sync Integration Tests', () => {
 
   beforeEach(async () => {
     // Create a temporary directory
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'convai-sync-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-sync-test-'));
     agentsConfigPath = path.join(tempDir, 'agents.json');
-    lockFilePath = path.join(tempDir, 'convai.lock');
+    lockFilePath = path.join(tempDir, 'agents.lock');
 
     // Mock os.homedir for config
     mockedOs.homedir.mockReturnValue(tempDir);
@@ -316,7 +316,7 @@ async function createSyncFunction() {
     environment?: string
   ): Promise<void> {
     const AGENTS_CONFIG_FILE = "agents.json";
-    const LOCK_FILE = "convai.lock";
+    const LOCK_FILE = "agents.lock";
     
     // Load agents configuration
     const agentsConfigPath = path.join(projectPath, AGENTS_CONFIG_FILE);

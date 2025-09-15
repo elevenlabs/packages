@@ -39,7 +39,7 @@ describe('Widget Generation Logic', () => {
   
   beforeEach(async () => {
     // Create a temporary directory for config
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'convai-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     // Mock os.homedir to return our temp directory
     mockedOs.homedir.mockReturnValue(tempDir);
   });

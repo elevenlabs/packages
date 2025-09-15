@@ -32,7 +32,7 @@ describe('Config Management', () => {
 
   beforeEach(async () => {
     // Create a temporary directory for config
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'convai-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     // Mock os.homedir to return our temp directory
     mockedOs.homedir.mockReturnValue(tempDir);
   });
@@ -68,7 +68,7 @@ describe('Config Management', () => {
       const config = { apiKey: 'test' };
       await saveConfig(config);
 
-      const configPath = path.join(tempDir, '.convai', 'config.json');
+      const configPath = path.join(tempDir, '.agents', 'config.json');
       const exists = await fs.pathExists(configPath);
       expect(exists).toBe(true);
     });

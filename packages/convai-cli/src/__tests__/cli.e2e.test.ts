@@ -25,7 +25,7 @@ describe('CLI End-to-End Tests', () => {
 
   beforeEach(async () => {
     // Create a temporary directory for each test
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'convai-e2e-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-e2e-'));
   });
 
   afterEach(async () => {
@@ -121,7 +121,7 @@ describe('CLI End-to-End Tests', () => {
       
       // Check that files were created
       const agentsJsonExists = await fs.pathExists(path.join(tempDir, 'agents.json'));
-      const lockFileExists = await fs.pathExists(path.join(tempDir, 'convai.lock'));
+      const lockFileExists = await fs.pathExists(path.join(tempDir, 'agents.lock'));
       const envExampleExists = await fs.pathExists(path.join(tempDir, '.env.example'));
       
       expect(agentsJsonExists).toBe(true);
@@ -215,7 +215,7 @@ describe('CLI End-to-End Tests', () => {
       expect(result.exitCode).toBe(1);
       // Check both stdout and stderr for the usage message
       const output = result.stdout + result.stderr;
-      expect(output).toContain('Usage: convai add');
+      expect(output).toContain('Usage: agents add');
     });
   });
 
@@ -237,7 +237,7 @@ describe('CLI End-to-End Tests', () => {
       await runCli(['init']);
       
       // Check that lock file was created with correct structure
-      const lockFilePath = path.join(tempDir, 'convai.lock');
+      const lockFilePath = path.join(tempDir, 'agents.lock');
       const content = await fs.readFile(lockFilePath, 'utf-8');
       const parsed = JSON.parse(content);
       

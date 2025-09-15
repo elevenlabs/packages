@@ -30,7 +30,7 @@ describe('Residency-specific API Client', () => {
 
   beforeEach(async () => {
     // Create a temporary directory for config
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'convai-test-'));
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     // Mock os.homedir to return our temp directory
     mockedOs.homedir.mockReturnValue(tempDir);
     
@@ -104,9 +104,9 @@ describe('Residency-specific API Client', () => {
     
     // Clear the temp directory to remove any stored config
     await fs.remove(tempDir);
-    await fs.mkdtemp(path.join(os.tmpdir(), 'convai-test-'));
+    await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     mockedOs.homedir.mockReturnValue(tempDir);
 
-    await expect(getElevenLabsClient()).rejects.toThrow("No API key found. Use 'convai login' to authenticate or set ELEVENLABS_API_KEY environment variable.");
+    await expect(getElevenLabsClient()).rejects.toThrow("No API key found. Use 'agents login' to authenticate or set ELEVENLABS_API_KEY environment variable.");
   });
 });
