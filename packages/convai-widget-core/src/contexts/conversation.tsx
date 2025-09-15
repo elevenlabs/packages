@@ -177,7 +177,8 @@ function useConversationSetup() {
               client: {
                 ...processedConfig.overrides?.client,
                 source: processedConfig.overrides?.client?.source || "widget",
-                version: processedConfig.overrides?.client?.version || PACKAGE_VERSION,
+                version:
+                  processedConfig.overrides?.client?.version || PACKAGE_VERSION,
               },
             },
             onModeChange: props => {

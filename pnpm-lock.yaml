@@ -313,6 +313,9 @@ importers:
 
   packages/react-native:
     dependencies:
+      '@elevenlabs/types':
+        specifier: workspace:*
+        version: link:../types
       '@livekit/react-native':
         specifier: ^2.7.0
         version: 2.9.1(@livekit/react-native-webrtc@125.0.11(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.1.12)(react@19.0.0)))(livekit-client@2.15.5(@types/dom-mediacapture-record@1.0.22))(react-dom@19.0.0(react@19.0.0))(react-native@0.79.5(@babel/core@7.28.3)(@types/react@19.1.12)(react@19.0.0))(react@19.0.0)(tslib@2.8.1)

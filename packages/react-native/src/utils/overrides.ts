@@ -21,12 +21,13 @@ export function constructOverrides(
       conversation: {
         text_only: config.overrides.conversation?.textOnly,
       },
-      source_info: {
-        source: "react_native_sdk",
-        version: config.overrides?.client?.version || PACKAGE_VERSION,
-      },
     };
   }
+
+  overridesEvent.source_info = {
+    source: "react_native_sdk",
+    version: config.overrides?.client?.version || PACKAGE_VERSION,
+  };
 
   if (config.customLlmExtraBody) {
     overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;

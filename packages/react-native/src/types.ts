@@ -1,51 +1,33 @@
+import type * as Types from "@elevenlabs/types";
+import type {
+  Incoming,
+  Outgoing,
+  Interruption,
+  ConversationMetadata,
+  Ping,
+  Role as MessageRole,
+  Mode as ConversationMode,
+  Status,
+  Callbacks,
+} from "@elevenlabs/types";
+export type { Callbacks } from "@elevenlabs/types";
+
 /**
  * Role in the conversation
  */
-export type Role = "user" | "ai";
+export type Role = MessageRole;
 
 /**
  * Current mode of the conversation
  */
-export type Mode = "speaking" | "listening";
+export type Mode = ConversationMode;
 
-export type ConversationStatus = "disconnected" | "connecting" | "connected";
+export type ConversationStatus = Status;
 
 /**
  * Language support
  */
-export type Language =
-  | "en"
-  | "ja"
-  | "zh"
-  | "de"
-  | "hi"
-  | "fr"
-  | "ko"
-  | "pt"
-  | "pt-br"
-  | "it"
-  | "es"
-  | "id"
-  | "nl"
-  | "tr"
-  | "pl"
-  | "sv"
-  | "bg"
-  | "ro"
-  | "ar"
-  | "cs"
-  | "el"
-  | "fi"
-  | "ms"
-  | "da"
-  | "ta"
-  | "uk"
-  | "ru"
-  | "hu"
-  | "hr"
-  | "sk"
-  | "no"
-  | "vi";
+export type Language = Types.ConversationConfigOverrideAgentLanguage;
 
 /**
  * Client tools configuration
@@ -73,21 +55,34 @@ export type ConversationOptions = {
   >;
 } & Partial<Callbacks>;
 
-/**
- * Callbacks configuration
- */
-export type Callbacks = {
-  onConnect?: (props: { conversationId: string }) => void;
-  // internal debug events, not to be used
-  onDebug?: (props: unknown) => void;
-  onDisconnect?: (details: string) => void;
-  onError?: (message: string, context?: Record<string, unknown>) => void;
-  onMessage?: (props: { message: ConversationEvent; source: Role }) => void;
-  onModeChange?: (prop: { mode: Mode }) => void;
-  onStatusChange?: (prop: { status: ConversationStatus }) => void;
-  onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
-  onUnhandledClientToolCall?: (params: ClientToolCallEvent) => void;
-};
+// /**
+//  * Callbacks configuration
+//  */
+// export type Callbacks = {
+//   onConnect?: (props: { conversationId: string }) => void;
+//   // internal debug events, not to be used
+//   onDebug?: (props: unknown) => void;
+//   onDisconnect?: (details: string) => void;
+//   onError?: (message: string, context?: Record<string, unknown>) => void;
+//   onMessage?: (props: { message: ConversationEvent; source: Role }) => void;
+//   onModeChange?: (prop: { mode: Mode }) => void;
+//   onStatusChange?: (prop: { status: ConversationStatus }) => void;
+//   onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
+//   onUnhandledClientToolCall?: (params: ClientToolCallEvent) => void;
+//   onVadScore?: (props: { vadScore: number }) => void;
+//   onInterruption?: (props: InterruptionEvent) => void;
+//   onAgentToolResponse?: (
+//     props: Types.Incoming.AgentToolResponseClientEvent
+//   ) => void;
+//   onConversationMetadata?: (props: ConversationMetadata) => void;
+//   onMCPToolCall?: (props: MCPToolCallClientEvent) => void;
+//   onMCPConnectionStatus?: (
+//     props: Types.Incoming.McpConnectionStatusClientEvent
+//   ) => void;
+//   onAsrInitiationMetadata?: (
+//     props: Types.Incoming.AsrInitiationMetadataEvent
+//   ) => void;
+// };
 
 export type ConversationConfig = {
   agentId?: string;
@@ -117,190 +112,35 @@ export type ConversationConfig = {
   userId?: string;
 };
 
-export type UserTranscriptionEvent = {
-  type: "user_transcript";
-  user_transcription_event: { user_transcript: string };
-};
+// Incoming event types
+export type UserTranscriptionEvent = Incoming.UserTranscriptionClientEvent;
+export type AgentResponseEvent = Incoming.AgentResponseClientEvent;
+export type AgentResponseCorrectionEvent =
+  Incoming.AgentResponseCorrectionClientEvent;
+export type AgentAudioEvent = Incoming.AudioClientEvent;
+export type InterruptionEvent = Interruption;
+export type InternalTentativeAgentResponseEvent =
+  Incoming.TentativeAgentResponseInternalClientEvent;
+export type ConfigEvent = ConversationMetadata;
+export type PingEvent = Ping;
+export type ClientToolCallEvent = Incoming.ClientToolCallClientEvent;
+export type VadScoreEvent = Incoming.VadScoreClientEvent;
+export type MCPToolCallClientEvent = Incoming.McpToolCallClientEvent;
 
-export type AgentResponseEvent = {
-  type: "agent_response";
-  agent_response_event: { agent_response: string };
-};
-
-export type AgentResponseCorrectionEvent = {
-  type: "agent_response_correction";
-  agent_response_correction_event: {
-    original_agent_response: string;
-    corrected_agent_response: string;
-  };
-};
-
-export type AgentAudioEvent = {
-  type: "audio";
-  audio_event: {
-    audio_base_64: string;
-    event_id: number;
-  };
-};
-
-export type InterruptionEvent = {
-  type: "interruption";
-  interruption_event: {
-    event_id: number;
-  };
-};
-
-export type InternalTentativeAgentResponseEvent = {
-  type: "internal_tentative_agent_response";
-  tentative_agent_response_internal_event: {
-    tentative_agent_response: string;
-  };
-};
-
-export type ConfigEvent = {
-  type: "conversation_initiation_metadata";
-  conversation_initiation_metadata_event: {
-    conversation_id: string;
-    agent_output_audio_format: string;
-    user_input_audio_format?: string;
-  };
-};
-
-export type PingEvent = {
-  type: "ping";
-  ping_event: {
-    event_id: number;
-    ping_ms?: number;
-  };
-};
-
-export type ClientToolCallEvent = {
-  type: "client_tool_call";
-  client_tool_call: {
-    tool_name: string;
-    tool_call_id: string;
-    parameters: any;
-    expects_response: boolean;
-  };
-};
-
-export type PongEvent = {
-  type: "pong";
-  event_id: number;
-};
-
-export type UserAudioEvent = {
-  user_audio_chunk: string;
-};
-
-export type UserFeedbackEvent = {
-  type: "feedback";
-  score: "like" | "dislike";
-  event_id: number;
-};
-
-export type ClientToolResultEvent = {
-  type: "client_tool_result";
-  tool_call_id: string;
-  result: any;
-  is_error: boolean;
-};
-
-export type ContextualUpdateEvent = {
-  type: "contextual_update";
-  text: string;
-};
-
-export type UserMessageEvent = {
-  type: "user_message";
-  text: string;
-};
-
-export type UserActivityEvent = {
-  type: "user_activity";
-};
-
-export type MCPToolApprovalResultEvent = {
-  type: "mcp_tool_approval_result";
-  tool_call_id: string;
-  is_approved: boolean;
-};
-
-export type VadScoreEvent = {
-  type: "vad_score";
-  vad_score_event: {
-    vad_score: number;
-  };
-};
-
-export type InitiationClientDataEvent = {
-  type: "conversation_initiation_client_data";
-  conversation_config_override?: {
-    agent?: {
-      prompt?: {
-        prompt?: string;
-      };
-      first_message?: string;
-      language?: Language;
-    };
-    tts?: {
-      voice_id?: string;
-    };
-    conversation?: {
-      text_only?: boolean;
-    };
-    source_info?: {
-      source?: string | null;
-      version?: string | null;
-    };
-  };
-  custom_llm_extra_body?: unknown;
-  dynamic_variables?: Record<string, string | number | boolean>;
-  user_id?: string;
-};
-
-interface BaseMCPToolCallClientEventData {
-  service_id: string;
-  tool_call_id: string;
-  tool_name: string;
-  tool_description?: string;
-  parameters: Record<string, any>;
-  timestamp: string; // ISO string format
-}
-
-interface MCPToolCallClientEventLoadingData
-  extends BaseMCPToolCallClientEventData {
-  state: "loading";
-}
-
-interface MCPToolCallClientEventAwaitingApprovalData
-  extends BaseMCPToolCallClientEventData {
-  state: "awaiting_approval";
-  approval_timeout_secs: number;
-}
-
-interface MCPToolCallClientEventSuccessData
-  extends BaseMCPToolCallClientEventData {
-  state: "success";
-  result: any[];
-}
-
-interface MCPToolCallClientEventFailureData
-  extends BaseMCPToolCallClientEventData {
-  state: "failure";
-  error_message: string;
-}
-
-type MCPToolCallClientEventData =
-  | MCPToolCallClientEventLoadingData
-  | MCPToolCallClientEventAwaitingApprovalData
-  | MCPToolCallClientEventSuccessData
-  | MCPToolCallClientEventFailureData;
-
-export type MCPToolCallClientEvent = {
-  type: "mcp_tool_call";
-  mcp_tool_call: MCPToolCallClientEventData;
-};
+// Outgoing event types
+export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
+export type UserAudioEvent = Outgoing.UserAudio;
+export type UserFeedbackEvent = Outgoing.UserFeedbackClientToOrchestratorEvent;
+export type ClientToolResultEvent =
+  Outgoing.ClientToolResultClientToOrchestratorEvent;
+export type ContextualUpdateEvent =
+  Outgoing.ContextualUpdateClientToOrchestratorEvent;
+export type UserMessageEvent = Outgoing.UserMessageClientToOrchestratorEvent;
+export type UserActivityEvent = Outgoing.UserActivityClientToOrchestratorEvent;
+export type MCPToolApprovalResultEvent =
+  Outgoing.McpToolApprovalResultClientToOrchestratorEvent;
+export type InitiationClientDataEvent =
+  Outgoing.ConversationInitiationClientToOrchestratorEvent;
 
 export type ConversationEvent =
   | UserTranscriptionEvent

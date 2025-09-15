@@ -21,16 +21,9 @@ import type {
   MCPConnectionStatusEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
+import type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
-export type Role = "user" | "ai";
-
-export type Mode = "speaking" | "listening";
-
-export type Status =
-  | "connecting"
-  | "connected"
-  | "disconnecting"
-  | "disconnected";
+export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
 export type Options = SessionConfig &
   Callbacks &
@@ -50,37 +43,6 @@ export type ClientToolsConfig = {
       parameters: any
     ) => Promise<string | number | void> | string | number | void
   >;
-};
-
-export type Callbacks = {
-  onConnect?: (props: { conversationId: string }) => void;
-  // internal debug events, not to be used
-  onDebug?: (props: any) => void;
-  onDisconnect?: OnDisconnectCallback;
-  onError?: (message: string, context?: any) => void;
-  onMessage?: (props: { message: string; source: Role }) => void;
-  onAudio?: (base64Audio: string) => void;
-  onModeChange?: (prop: { mode: Mode }) => void;
-  onStatusChange?: (prop: { status: Status }) => void;
-  onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
-  onUnhandledClientToolCall?: (
-    params: ClientToolCallEvent["client_tool_call"]
-  ) => void;
-  onVadScore?: (props: { vadScore: number }) => void;
-  onMCPToolCall?: (props: MCPToolCallClientEvent["mcp_tool_call"]) => void;
-  onMCPConnectionStatus?: (
-    props: MCPConnectionStatusEvent["mcp_connection_status"]
-  ) => void;
-  onAgentToolResponse?: (
-    props: AgentToolResponseEvent["agent_tool_response"]
-  ) => void;
-  onConversationMetadata?: (
-    props: ConversationMetadataEvent["conversation_initiation_metadata_event"]
-  ) => void;
-  onAsrInitiationMetadata?: (
-    props: AsrInitiationMetadataEvent["asr_initiation_metadata_event"]
-  ) => void;
-  onInterruption?: (props: InterruptionEvent["interruption_event"]) => void;
 };
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);

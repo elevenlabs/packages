@@ -44,6 +44,9 @@
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
   },
+  "dependencies": {
+    "@elevenlabs/types": "workspace:*"
+  },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.2.0",
