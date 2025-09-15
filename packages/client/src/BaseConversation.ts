@@ -8,7 +8,6 @@ import type {
 import type {
   AgentAudioEvent,
   AgentResponseEvent,
-  AgentResponseCorrectionEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
