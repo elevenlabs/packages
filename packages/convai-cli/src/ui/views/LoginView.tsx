@@ -53,8 +53,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
   };
 
   return (
-    <App 
-      title="ElevenLabs Conversational AI"
+    <App
+      title="ElevenLabs Agents"
       subtitle="Login with your ElevenLabs API key"
       showOverlay={!success}
     >

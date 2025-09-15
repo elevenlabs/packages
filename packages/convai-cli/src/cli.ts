@@ -74,7 +74,7 @@ const program = new Command();
 // Default file names
 const AGENTS_CONFIG_FILE = "agents.json";
 const TOOLS_CONFIG_FILE = "tools.json";
-const LOCK_FILE = "convai.lock";
+const LOCK_FILE = "agents.lock";
 
 interface AgentDefinition {
   name: string;
@@ -127,8 +127,8 @@ interface TemplateShowOptions {
 }
 
 program
-  .name('convai')
-  .description('ElevenLabs Conversational AI Agent Manager CLI')
+  .name('agents')
+  .description('ElevenLabs Agents Manager CLI')
   .version(version);
 
 program
@@ -209,10 +209,10 @@ ELEVENLABS_API_KEY=your_api_key_here
         
         console.log('\nProject initialized successfully!');
         console.log('Next steps:');
-        console.log('1. Set your ElevenLabs API key: convai login');
-        console.log('2. Create an agent: convai add agent "My Agent" --template default');
-        console.log('3. Create tools: convai add webhook-tool "My Webhook" or convai add client-tool "My Client"');
-        console.log('4. Sync to ElevenLabs: convai sync');
+        console.log('1. Set your ElevenLabs API key: agents login');
+        console.log('2. Create an agent: agents add "My Agent" --template default');
+        console.log('3. Create tools: agents add-webhook-tool "My Webhook" or agents add-client-tool "My Client"');
+        console.log('4. Sync to ElevenLabs: agents sync');
       }
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
@@ -383,7 +383,7 @@ program
         // No residency provided and UI disabled - show current residency
         const currentResidency = await getResidency();
         console.log(`Current residency: ${currentResidency || 'Not set (using default)'}`);
-        console.log(`To set residency, use: convai residency <${LOCATIONS.join('|')}>`);
+        console.log(`To set residency, use: agents residency <${LOCATIONS.join('|')}>`);
       }
     } catch (error) {
       console.error(`Error setting residency: ${error}`);
@@ -391,12 +391,8 @@ program
     }
   });
 
-const addCommand = program
+program
   .command('add')
-  .description('Add agents and tools');
-
-addCommand
-  .command('agent')
   .description('Add a new agent - creates config, uploads to ElevenLabs, and saves ID')
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
@@ -422,7 +418,7 @@ addCommand
       // Check if agents.json exists
       const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
       if (!(await fs.pathExists(agentsConfigPath))) {
-        console.error('agents.json not found. Run \'convai init\' first.');
+        console.error('agents.json not found. Run \'agents init\' first.');
         process.exit(1);
       }
       
@@ -493,7 +489,7 @@ addCommand
         }
         
         await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to upload`);
+        console.log(`Edit ${configPath} to customize your agent, then run 'agents sync --env ${options.env}' to upload`);
         return;
       }
       
@@ -550,7 +546,7 @@ addCommand
       updateAgentInLock(lockData, name, options.env, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
-      console.log(`Edit ${configPath} to customize your agent, then run 'convai sync --env ${options.env}' to update`);
+      console.log(`Edit ${configPath} to customize your agent, then run 'agents sync --env ${options.env}' to update`);
       
     } catch (error) {
       console.error(`Error creating agent: ${error}`);
@@ -558,8 +554,8 @@ addCommand
     }
   });
 
-addCommand
-  .command('webhook-tool')
+program
+  .command('add-webhook-tool')
   .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the webhook tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
@@ -573,8 +569,8 @@ addCommand
     }
   });
 
-addCommand
-  .command('client-tool')
+program
+  .command('add-client-tool')
   .description('Add a new client tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the client tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
@@ -606,7 +602,7 @@ templatesCommand
       console.log(`   ${description}`);
     }
     
-    console.log('\nUse \'convai add <name> --template <template_name>\' to create an agent with a specific template');
+    console.log('\nUse \'agents add <name> --template <template_name>\' to create an agent with a specific template');
   });
 
 templatesCommand
@@ -720,7 +716,7 @@ program
   });
 
 program
-  .command('list-agents')
+  .command('list')
   .description('List all configured agents')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: { ui: boolean }) => {
@@ -887,7 +883,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   }
   
   if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your tool, then run 'convai sync-tools' to upload`);
+    console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to upload`);
     return;
   }
   
@@ -907,7 +903,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     updateToolInLock(lockData, name, toolId, configHash);
     await saveLockFile(lockFilePath, lockData);
     
-    console.log(`Edit ${configPath} to customize your tool, then run 'convai sync-tools' to update`);
+    console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to update`);
     
   } catch (error) {
     console.error(`Error creating tool in ElevenLabs: ${error}`);
@@ -1328,7 +1324,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   // Check if agents.json exists
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
-    throw new Error('agents.json not found. Run \'convai init\' first.');
+    throw new Error('agents.json not found. Run \'agents init\' first.');
   }
   
   const client = await getElevenLabsClient();
@@ -1477,7 +1473,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   } else {
     console.log(`Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
     if (newAgentsAdded > 0) {
-      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'convai sync --env ${options.env}' to update`);
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents sync --env ${options.env}' to update`);
     }
   }
 }
@@ -1486,7 +1482,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
-    throw new Error('agents.json not found. Run \'convai init\' first.');
+    throw new Error('agents.json not found. Run \'agents init\' first.');
   }
   
   // Load lock file to get agent ID
@@ -1505,7 +1501,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   const lockedAgent = getAgentFromLock(lockData, name, environment);
   
   if (!lockedAgent?.id) {
-    throw new Error(`Agent '${name}' not found for environment '${environment}' or not yet synced. Run 'convai sync --agent ${name} --env ${environment}' to create the agent first`);
+    throw new Error(`Agent '${name}' not found for environment '${environment}' or not yet synced. Run 'agents sync --agent ${name} --env ${environment}' to create the agent first`);
   }
   
   const agentId = lockedAgent.id;

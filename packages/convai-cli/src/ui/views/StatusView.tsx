@@ -41,11 +41,11 @@ export const StatusView: React.FC<StatusViewProps> = ({
         // Load agents configuration
         const agentsConfigPath = path.resolve('agents.json');
         if (!(await fs.pathExists(agentsConfigPath))) {
-          throw new Error('agents.json not found. Run "convai init" first.');
+          throw new Error('agents.json not found. Run "agents init" first.');
         }
 
         const agentsConfig = await readAgentConfig<any>(agentsConfigPath);
-        const lockFilePath = path.resolve('convai.lock');
+        const lockFilePath = path.resolve('agents.lock');
         const lockData = await loadLockFile(lockFilePath);
 
         const statusList: AgentStatus[] = [];
@@ -146,7 +146,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
 
   return (
     <App 
-      title="ElevenLabs Conversational AI"
+      title="ElevenLabs Agents"
       subtitle="Agent Status"
       showOverlay={false}
     >
@@ -205,12 +205,12 @@ export const StatusView: React.FC<StatusViewProps> = ({
                   case 'modified':
                     status = 'warning';
                     statusText = '⚠ Modified locally';
-                    details.push('Run "convai sync" to update');
+                    details.push('Run "agents sync" to update');
                     break;
                   case 'not-deployed':
                     status = 'idle';
                     statusText = '○ Not deployed';
-                    details.push('Run "convai sync" to deploy');
+                    details.push('Run "agents sync" to deploy');
                     break;
                   case 'missing':
                     status = 'error';

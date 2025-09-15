@@ -55,7 +55,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ElevenLabs Conversational AI"
+      title="ElevenLabs Agents"
       subtitle="Account Status"
       showOverlay={false}
     >
@@ -100,7 +100,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
 
             <Box marginTop={1}>
               <Text color={theme.colors.text.muted}>
-                Use 'convai logout' to sign out
+                Use 'agents logout' to sign out
               </Text>
             </Box>
           </>
@@ -123,7 +123,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
             
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                Run 'convai login' to authenticate with your API key
+                Run 'agents login' to authenticate with your API key
               </Text>
             </Box>
           </>

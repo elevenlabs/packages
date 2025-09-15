@@ -70,7 +70,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ElevenLabs Conversational AI"
+      title="ElevenLabs Agents"
       subtitle="Logout"
       showOverlay={!success && !notLoggedIn}
     >
@@ -128,7 +128,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
             
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                Run 'convai login' to authenticate again
+                Run 'agents login' to authenticate again
               </Text>
             </Box>
           </>

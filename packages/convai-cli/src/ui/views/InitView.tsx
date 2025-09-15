@@ -80,7 +80,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       name: 'Create lock file',
       description: 'Initializing version lock',
       action: async () => {
-        const lockFilePath = path.join(fullPath, 'convai.lock');
+        const lockFilePath = path.join(fullPath, 'agents.lock');
         if (!(await fs.pathExists(lockFilePath))) {
           await fs.writeJson(lockFilePath, { agents: {}, tools: {} }, { spaces: 2 });
         }
@@ -159,8 +159,8 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
   }, [currentStep, steps.length, complete]);
 
   return (
-    <App 
-      title="ElevenLabs Conversational AI"
+    <App
+      title="ElevenLabs Agents"
       subtitle="Initializing project"
       showOverlay={!complete}
     >
@@ -204,9 +204,9 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
             </Text>
             <Box marginTop={1} flexDirection="column">
               <Text color={theme.colors.text.secondary}>Next steps:</Text>
-              <Text color={theme.colors.text.secondary}>1. Set your API key: convai login</Text>
-              <Text color={theme.colors.text.secondary}>2. Create an agent: convai add agent "My Agent" --template default</Text>
-              <Text color={theme.colors.text.secondary}>3. Sync to ElevenLabs: convai sync</Text>
+              <Text color={theme.colors.text.secondary}>1. Set your API key: agents login</Text>
+              <Text color={theme.colors.text.secondary}>2. Create an agent: agents add "My Agent" --template default</Text>
+              <Text color={theme.colors.text.secondary}>3. Sync to ElevenLabs: agents sync</Text>
             </Box>
           </Box>
         )}
