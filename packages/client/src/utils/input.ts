@@ -1,6 +1,7 @@
 import { loadRawAudioProcessor } from "./rawAudioProcessor";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
+import type { AudioWorkletConfig } from "../BaseConversation";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
@@ -25,7 +26,9 @@ export class Input {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
-  }: FormatConfig & InputConfig): Promise<Input> {
+    workletPaths,
+    libsampleratePath,
+  }: FormatConfig & InputConfig & AudioWorkletConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -64,9 +67,14 @@ export class Input {
       );
       const analyser = context.createAnalyser();
       if (!supportsSampleRateConstraint) {
-        await context.audioWorklet.addModule(LIBSAMPLERATE_JS);
+        // Use custom libsamplerate path if provided, otherwise fallback to CDN
+        const libsamplerateUrl = libsampleratePath || LIBSAMPLERATE_JS;
+        await context.audioWorklet.addModule(libsamplerateUrl);
       }
-      await loadRawAudioProcessor(context.audioWorklet);
+      await loadRawAudioProcessor(
+        context.audioWorklet,
+        workletPaths?.["raw-audio-processor"]
+      );
 
       const constraints = { voiceIsolation: true, ...options };
       inputStream = await navigator.mediaDevices.getUserMedia({

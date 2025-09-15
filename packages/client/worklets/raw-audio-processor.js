@@ -1,9 +1,4 @@
-import { createWorkletModuleLoader } from "./createWorkletModuleLoader";
-
-export const loadRawAudioProcessor = createWorkletModuleLoader(
-  "raw-audio-processor",
-  // language=JavaScript
-  `/*
+/*
  * ulaw encoding logic taken from the wavefile library
  * https://github.com/rochars/wavefile/blob/master/lib/codecs/mulaw.js
  */
@@ -126,5 +121,3 @@ class RawAudioProcessor extends AudioWorkletProcessor {
   }
 }
 registerProcessor("raw-audio-processor", RawAudioProcessor);
-`
-);
