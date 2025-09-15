@@ -55,35 +55,6 @@ export type ConversationOptions = {
   >;
 } & Partial<Callbacks>;
 
-// /**
-//  * Callbacks configuration
-//  */
-// export type Callbacks = {
-//   onConnect?: (props: { conversationId: string }) => void;
-//   // internal debug events, not to be used
-//   onDebug?: (props: unknown) => void;
-//   onDisconnect?: (details: string) => void;
-//   onError?: (message: string, context?: Record<string, unknown>) => void;
-//   onMessage?: (props: { message: ConversationEvent; source: Role }) => void;
-//   onModeChange?: (prop: { mode: Mode }) => void;
-//   onStatusChange?: (prop: { status: ConversationStatus }) => void;
-//   onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
-//   onUnhandledClientToolCall?: (params: ClientToolCallEvent) => void;
-//   onVadScore?: (props: { vadScore: number }) => void;
-//   onInterruption?: (props: InterruptionEvent) => void;
-//   onAgentToolResponse?: (
-//     props: Types.Incoming.AgentToolResponseClientEvent
-//   ) => void;
-//   onConversationMetadata?: (props: ConversationMetadata) => void;
-//   onMCPToolCall?: (props: MCPToolCallClientEvent) => void;
-//   onMCPConnectionStatus?: (
-//     props: Types.Incoming.McpConnectionStatusClientEvent
-//   ) => void;
-//   onAsrInitiationMetadata?: (
-//     props: Types.Incoming.AsrInitiationMetadataEvent
-//   ) => void;
-// };
-
 export type ConversationConfig = {
   agentId?: string;
   conversationToken?: string;
