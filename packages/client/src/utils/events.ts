@@ -2,10 +2,13 @@ import { Outgoing } from "@elevenlabs/types";
 import {
   AgentResponse,
   AgentResponseCorrection,
+  AgentToolResponseClientEvent,
+  AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
   ClientToolCallMessage,
   ConversationMetadata,
   Interruption,
+  McpConnectionStatusClientEvent,
   McpToolCall,
   Ping,
   InternalTentativeAgentResponse as TentativeAgentResponseInternal,
@@ -26,6 +29,10 @@ export type ClientToolCallEvent = ClientToolCallMessage;
 export type VadScoreEvent = VadScore;
 export type MCPToolCallClientEvent = McpToolCall;
 export type AgentResponseCorrectionEvent = AgentResponseCorrection;
+export type AgentToolResponseEvent = AgentToolResponseClientEvent;
+export type ConversationMetadataEvent = ConversationMetadata;
+export type AsrInitiationMetadataEvent = AsrMetadataEvent;
+export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
@@ -38,7 +45,11 @@ export type IncomingSocketEvent =
   | PingEvent
   | ClientToolCallEvent
   | VadScoreEvent
-  | MCPToolCallClientEvent;
+  | MCPToolCallClientEvent
+  | AgentToolResponseEvent
+  | ConversationMetadataEvent
+  | AsrInitiationMetadataEvent
+  | MCPConnectionStatusEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
