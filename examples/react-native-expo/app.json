@@ -34,8 +34,8 @@
       "package": "io.elevenlabs.convaiexample"
     },
     "plugins": [
-      "@livekit/react-native-expo-plugin", "@config-plugins/react-native-webrtc"
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc"
     ]
-
   }
 }
