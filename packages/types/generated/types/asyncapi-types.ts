@@ -52,6 +52,8 @@ export interface ConversationInitiation {
   conversation_config_override?: ConversationConfigOverride;
   custom_llm_extra_body?: Record<string, any>;
   dynamic_variables?: Record<string, any>;
+  user_id?: string;
+  source_info?: SourceInfo;
 }
 
 export interface ConversationConfigOverride {
@@ -62,10 +64,45 @@ export interface ConversationConfigOverride {
 
 export interface ConversationConfigOverrideAgent {
   first_message?: string;
-  language?: string;
+  language?: ConversationConfigOverrideAgentLanguage;
   prompt?: ConversationConfigOverrideAgentPrompt;
   native_mcp_server_ids?: string[];
 }
+
+export type ConversationConfigOverrideAgentLanguage =
+  | "en"
+  | "ja"
+  | "zh"
+  | "de"
+  | "hi"
+  | "fr"
+  | "ko"
+  | "pt"
+  | "pt-br"
+  | "it"
+  | "es"
+  | "id"
+  | "nl"
+  | "tr"
+  | "pl"
+  | "sv"
+  | "bg"
+  | "ro"
+  | "ar"
+  | "cs"
+  | "el"
+  | "fi"
+  | "ms"
+  | "da"
+  | "ta"
+  | "uk"
+  | "ru"
+  | "hu"
+  | "hr"
+  | "sk"
+  | "no"
+  | "vi"
+  | "tl";
 
 export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
@@ -100,6 +137,11 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "asr_initiation_metadata"
   | "internal_turn_probability"
   | "internal_tentative_agent_response";
+
+export interface SourceInfo {
+  source?: string;
+  version?: string;
+}
 
 export interface Audio {
   type: "audio";
@@ -441,4 +483,6 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   conversation_config_override?: ConversationConfigOverride;
   custom_llm_extra_body?: Record<string, any>;
   dynamic_variables?: Record<string, any>;
+  user_id?: string;
+  source_info?: SourceInfo;
 }

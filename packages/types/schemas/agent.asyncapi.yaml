@@ -304,6 +304,44 @@ components:
         - internal_tentative_agent_response
       description: Types of events that can be sent from server to client
 
+    Language:
+      type: string
+      enum:
+        - en
+        - ja
+        - zh
+        - de
+        - hi
+        - fr
+        - ko
+        - pt
+        - pt-br
+        - it
+        - es
+        - id
+        - nl
+        - tr
+        - pl
+        - sv
+        - bg
+        - ro
+        - ar
+        - cs
+        - el
+        - fi
+        - ms
+        - da
+        - ta
+        - uk
+        - ru
+        - hu
+        - hr
+        - sk
+        - no
+        - vi
+        - tl
+      description: Language code for ASR and TTS
+
     AudioFormat:
       type: string
       enum:
@@ -535,6 +573,12 @@ components:
         dynamic_variables:
           type: object
           description: Dynamic variables available in the conversation context
+        user_id:
+          type: string
+          nullable: true
+          description: Unique identifier for the user
+        source_info:
+          $ref: "#/components/schemas/SourceInfo"
 
     # ===== SERVER MESSAGE PAYLOADS =====
 
@@ -871,6 +915,18 @@ components:
           type: string
           description: Tentative response from the agent (internal use)
 
+    SourceInfo:
+      type: object
+      properties:
+        source:
+          type: string
+          nullable: true
+          description: Identifier of the client application
+        version:
+          type: string
+          nullable: true
+          description: Version of the client application
+
     # ===== CONVERSATION CONFIG OVERRIDE SCHEMAS =====
 
     ConversationConfigClientOverride:
@@ -893,9 +949,7 @@ components:
           nullable: true
           description: Initial message the agent will say. If empty, agent waits for user to start
         language:
-          type: string
-          nullable: true
-          description: Language code for ASR and TTS (e.g., 'en', 'es', 'de')
+          $ref: "#/components/schemas/Language"
         prompt:
           $ref: "#/components/schemas/PromptAgentOverride"
         native_mcp_server_ids:
