@@ -7,6 +7,7 @@ export type {
   AudioClientEvent,
   ClientToolCallClientEvent,
   ConversationInitiationMetadataEvent,
+  ErrorClientEvent,
   InterruptionEvent,
   McpConnectionStatusClientEvent,
   McpToolCallClientEvent,

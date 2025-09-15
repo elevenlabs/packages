@@ -62,6 +62,7 @@ channels:
           - $ref: "#/components/messages/ASRInitiationMetadata"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
+          - $ref: "#/components/messages/ErrorMessage"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -281,6 +282,16 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/InternalTentativeAgentResponsePayload"
+
+    # ===== ERROR MESSAGES =====
+
+    ErrorMessage:
+      name: ErrorClientEvent
+      title: Error Message
+      summary: Error event sent when connection is closing due to an error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ErrorPayload"
 
   schemas:
     ClientEvent:
@@ -1014,3 +1025,110 @@ components:
             [audio, interruption, agent_response, user_transcript, tentative_user_transcript,
              conversation_initiation_metadata, ping]
           minItems: 1
+
+    # ===== ERROR MESSAGE SCHEMAS =====
+
+    ErrorPayload:
+      type: object
+      required: [type, error_event]
+      properties:
+        type:
+          type: string
+          const: error
+        error_event:
+          $ref: "#/components/schemas/ErrorData"
+
+    ErrorData:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          $ref: "#/components/schemas/WebSocketCloseCode"
+        message:
+          type: string
+          description: Human-readable error description
+        error_type:
+          $ref: "#/components/schemas/ErrorType"
+          nullable: true
+          description: Specific error type for programmatic handling
+        reason:
+          type: string
+          nullable: true
+          description: Generic reason without sensitive details (sent to all clients)
+        debug_message:
+          type: string
+          nullable: true
+          description: Detailed debug message (only sent based on error reporting access level)
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional error context
+
+    WebSocketCloseCode:
+      type: integer
+      enum: [1000, 1002, 1008, 1011]
+      description: |
+        WebSocket close codes used by the conversation API:
+        - 1000: Normal closure (agent ended conversation, max duration exceeded)
+        - 1002: Protocol error (timeout, LLM/TTS/ASR failures, HTTP exceptions)
+        - 1008: Policy violation (invalid messages, missing required fields, auth errors)
+        - 1011: Internal server error (unexpected errors)
+
+    ErrorType:
+      type: string
+      enum:
+        - unknown
+        - invalid_message
+        - telephony_agent_error
+        - mcp_tool_error
+        - mcp_https_error
+        - value_error
+        - missing_fields
+        - override_error
+        - missing_dynamic_variable_transfer
+        - missing_dynamic_variable
+        - websocket_disconnect
+        - safety_violation
+        - llm_timeout
+        - transport_receive_timeout
+        - asyncio_timeout
+        - http_exception
+        - max_duration_exceeded
+        - llm_error
+        - custom_llm_error
+        - cascade_brain_error
+        - asr_transcription_error
+        - vad_error
+        - turn_probability_error
+        - tts_cascade_error
+        - redis_timeout_error
+        - unknown_websocket_crash
+      description: |
+        Specific error types that can occur:
+        - unknown: Default/unknown error type
+        - invalid_message: Invalid JSON or WebSocket message format (code 1008)
+        - telephony_agent_error: ASR-only agents cannot handle telephony calls (code 1008)
+        - mcp_tool_error: Invalid MCP tool schema or conversion error (code 1008)
+        - mcp_https_error: MCP servers require HTTPS URLs (code 1008)
+        - value_error: ValueError in message processing (code 1008)
+        - missing_fields: Required fields missing from message (code 1008)
+        - override_error: Invalid override configuration (code 1008)
+        - missing_dynamic_variable_transfer: Missing dynamic variable after agent transfer (code 1008)
+        - missing_dynamic_variable: Required dynamic variable not provided (code 1008)
+        - websocket_disconnect: WebSocket disconnected
+        - safety_violation: Content policy violation detected (code 1002)
+        - llm_timeout: LLM response took over 20 seconds (code 1002)
+        - transport_receive_timeout: No user input for 60 seconds (code 1002)
+        - asyncio_timeout: Internal asyncio task timeout (code 1002)
+        - http_exception: HTTP exception converted to WebSocket error (code 1002)
+        - max_duration_exceeded: Max call duration exceeded (code 1000)
+        - llm_error: OpenAI or custom LLM error (code 1002)
+        - custom_llm_error: Custom LLM generation failed (code 1002)
+        - cascade_brain_error: All LLMs have failed (code 1002)
+        - asr_transcription_error: Audio transcription failed (code 1002)
+        - vad_error: Voice activity detection failed (code 1002)
+        - turn_probability_error: Turn detection failed (code 1002)
+        - tts_cascade_error: All TTS models have failed (code 1002)
+        - redis_timeout_error: Redis queries timed out (code 1002)
+        - unknown_websocket_crash: Unexpected server error (code 1011)
