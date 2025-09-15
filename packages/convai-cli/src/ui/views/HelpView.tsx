@@ -101,9 +101,9 @@ const commands: Command[] = [
   },
 ];
 
-export const HelpView = () => {
+export const HelpView: React.FC = () => {
   const { exit } = useApp();
-
+  
   useEffect(() => {
     // Auto-exit after a short delay to allow the UI to render
     const timer = setTimeout(() => {
