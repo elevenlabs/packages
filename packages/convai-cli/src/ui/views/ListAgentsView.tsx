@@ -28,7 +28,7 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
         const agentsConfigPath = path.resolve('agents.json');
         
         if (!(await fs.pathExists(agentsConfigPath))) {
-          setError('agents.json not found. Run "convai init" first.');
+          setError('agents.json not found. Run "agents init" first.');
           setLoading(false);
           return;
         }
@@ -64,7 +64,7 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
 
   return (
     <App 
-      title="ElevenLabs Conversational AI"
+      title="ElevenLabs Agents"
       subtitle="Configured Agents"
       showOverlay={false}
     >
@@ -90,7 +90,7 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
             />
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                Run 'convai add agent "agent-name"' to create your first agent
+                Run 'agents add "agent-name"' to create your first agent
               </Text>
             </Box>
           </>
@@ -143,13 +143,13 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
                 Commands:
               </Text>
               <Text color={theme.colors.text.muted}>
-                • 'convai status' - Check sync status
+                • 'agents status' - Check sync status
               </Text>
               <Text color={theme.colors.text.muted}>
-                • 'convai sync' - Deploy to ElevenLabs
+                • 'agents sync' - Deploy to ElevenLabs
               </Text>
               <Text color={theme.colors.text.muted}>
-                • 'convai add agent' - Add new agent
+                • 'agents add' - Add new agent
               </Text>
             </Box>
           </>

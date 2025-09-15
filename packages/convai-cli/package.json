@@ -1,13 +1,12 @@
 {
-  "name": "@elevenlabs/convai-cli",
+  "name": "@elevenlabs/agents-cli",
   "version": "0.3.1",
-  "description": "CLI tool to manage ElevenLabs conversational AI agents",
+  "description": "CLI tool to manage ElevenLabs agents",
   "type": "module",
   "keywords": [
     "elevenlabs",
     "cli",
     "ai",
-    "conversational-ai",
     "agents",
     "typescript"
   ],
@@ -16,16 +15,16 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/elevenlabs/packages.git",
-    "directory": "convai-cli"
+    "directory": "agents-cli"
   },
-  "homepage": "https://github.com/elevenlabs/packages/tree/main/packages/convai-cli",
+  "homepage": "https://github.com/elevenlabs/packages/tree/main/packages/agents-cli",
   "bugs": {
     "url": "https://github.com/elevenlabs/packages/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "convai": "./bin/convai"
+    "agents": "./bin/agents"
   },
   "files": [
     "dist",
