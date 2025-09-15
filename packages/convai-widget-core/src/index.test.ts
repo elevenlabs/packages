@@ -24,7 +24,7 @@ describe("elevenlabs-convai", () => {
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
 
-      const endButton = page.getByRole("button", { name: "End" });
+      const endButton = page.getByRole("button", { name: "End", exact: true });
       await endButton.click();
 
       await expect.element(startButton).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("elevenlabs-convai", () => {
       await userEvent.keyboard("{Enter}");
       await expect.element(page.getByText("Text message")).toBeInTheDocument();
 
-      const endButton = page.getByRole("button", { name: "End" });
+      const endButton = page.getByRole("button", { name: "End", exact: true });
       await endButton.click();
 
       await expect
