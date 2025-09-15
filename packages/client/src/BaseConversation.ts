@@ -80,6 +80,7 @@ export type Callbacks = {
   onAsrInitiationMetadata?: (
     props: AsrInitiationMetadataEvent["asr_initiation_metadata_event"]
   ) => void;
+  onInterruption?: (props: InterruptionEvent["interruption_event"]) => void;
 };
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
@@ -105,6 +106,7 @@ export class BaseConversation {
       onModeChange: () => {},
       onStatusChange: () => {},
       onCanSendFeedbackChange: () => {},
+      onInterruption: () => {},
       ...partialOptions,
     };
   }
@@ -171,6 +173,12 @@ export class BaseConversation {
   protected handleInterruption(event: InterruptionEvent) {
     if (event.interruption_event) {
       this.lastInterruptTimestamp = event.interruption_event.event_id;
+
+      if (this.options.onInterruption) {
+        this.options.onInterruption({
+          event_id: event.interruption_event.event_id,
+        });
+      }
     }
   }
 
