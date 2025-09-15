@@ -59,6 +59,9 @@ channels:
           - $ref: "#/components/messages/MCPConnectionStatusMessage"
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
+          - $ref: "#/components/messages/ASRInitiationMetadata"
+          - $ref: "#/components/messages/InternalTurnProbability"
+          - $ref: "#/components/messages/InternalTentativeAgentResponse"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -255,7 +258,52 @@ components:
       payload:
         $ref: "#/components/schemas/PingPayload"
 
+    ASRInitiationMetadata:
+      name: ASRInitiationMetadataEvent
+      title: ASR Initiation Metadata
+      summary: ASR initialization metadata
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ASRInitiationMetadataPayload"
+
+    InternalTurnProbability:
+      name: TurnProbabilityInternalClientEvent
+      title: Internal Turn Probability
+      summary: Internal turn probability score (not for public use)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/InternalTurnProbabilityPayload"
+
+    InternalTentativeAgentResponse:
+      name: TentativeAgentResponseInternalClientEvent
+      title: Internal Tentative Agent Response
+      summary: Internal tentative agent response (not for public use)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/InternalTentativeAgentResponsePayload"
+
   schemas:
+    ClientEvent:
+      type: string
+      enum:
+        - audio
+        - agent_response
+        - agent_response_correction
+        - interruption
+        - user_transcript
+        - tentative_user_transcript
+        - conversation_initiation_metadata
+        - client_tool_call
+        - agent_tool_response
+        - mcp_tool_call
+        - mcp_connection_status
+        - vad_score
+        - ping
+        - asr_initiation_metadata
+        - internal_turn_probability
+        - internal_tentative_agent_response
+      description: Types of events that can be sent from server to client
+
     AudioFormat:
       type: string
       enum:
@@ -267,6 +315,18 @@ components:
         - pcm_48000
         - ulaw_8000
       description: Audio encoding format
+
+    UserInputAudioFormat:
+      type: string
+      enum:
+        - pcm_8000
+        - pcm_16000
+        - pcm_22050
+        - pcm_24000
+        - pcm_44100
+        - pcm_48000
+        - ulaw_8000
+      description: Audio encoding format for user input
 
     FeedbackScore:
       type: string
@@ -681,7 +741,7 @@ components:
         agent_output_audio_format:
           $ref: "#/components/schemas/AudioFormat"
         user_input_audio_format:
-          $ref: "#/components/schemas/AudioFormat"
+          $ref: "#/components/schemas/UserInputAudioFormat"
 
     ClientToolCallData:
       type: object
@@ -762,6 +822,55 @@ components:
           nullable: true
           description: Estimated round-trip time in milliseconds
 
+    ASRInitiationMetadataPayload:
+      type: object
+      required: [asr_initiation_metadata_event, type]
+      properties:
+        type:
+          type: string
+          const: asr_initiation_metadata
+        asr_initiation_metadata_event:
+          type: object
+          description: ASR initialization metadata
+
+    InternalTurnProbabilityPayload:
+      type: object
+      required: [turn_probability_internal_event, type]
+      properties:
+        type:
+          type: string
+          const: internal_turn_probability
+        turn_probability_internal_event:
+          $ref: "#/components/schemas/InternalTurnProbabilityData"
+
+    InternalTurnProbabilityData:
+      type: object
+      required: [turn_probability]
+      properties:
+        turn_probability:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Probability of turn-taking (0-1)
+
+    InternalTentativeAgentResponsePayload:
+      type: object
+      required: [tentative_agent_response_internal_event, type]
+      properties:
+        type:
+          type: string
+          const: internal_tentative_agent_response
+        tentative_agent_response_internal_event:
+          $ref: "#/components/schemas/InternalTentativeAgentResponseData"
+
+    InternalTentativeAgentResponseData:
+      type: object
+      required: [tentative_agent_response]
+      properties:
+        tentative_agent_response:
+          type: string
+          description: Tentative response from the agent (internal use)
+
     # ===== CONVERSATION CONFIG OVERRIDE SCHEMAS =====
 
     ConversationConfigClientOverride:
@@ -841,3 +950,13 @@ components:
           type: boolean
           nullable: true
           description: If true, disables audio processing and uses text-only mode
+        client_events:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ClientEvent"
+          description: |
+            List of events to send to the client. If not specified, defaults to:
+            [audio, interruption, agent_response, user_transcript, tentative_user_transcript,
+             conversation_initiation_metadata, ping]
+          minItems: 1

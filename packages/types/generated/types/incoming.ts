@@ -3,6 +3,7 @@ export type {
   AgentResponseClientEvent,
   AgentResponseCorrectionClientEvent,
   AgentToolResponseClientEvent,
+  AsrInitiationMetadataEvent,
   AudioClientEvent,
   ClientToolCallClientEvent,
   ConversationInitiationMetadataEvent,
@@ -10,7 +11,9 @@ export type {
   McpConnectionStatusClientEvent,
   McpToolCallClientEvent,
   PingEvent,
+  TentativeAgentResponseInternalClientEvent,
   TentativeUserTranscriptionClientEvent,
+  TurnProbabilityInternalClientEvent,
   UserTranscriptionClientEvent,
   VadScoreClientEvent,
 } from "./asyncapi-types";

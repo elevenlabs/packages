@@ -1,8 +1,3 @@
-// scripts/gen-asyncapi-types.ts
-// Usage:
-//   tsx scripts/gen-asyncapi-types.ts --role client   # default
-//   tsx scripts/gen-asyncapi-types.ts --role server
-
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import path from "path";
 import { TypeScriptGenerator } from "@asyncapi/modelina";
@@ -106,8 +101,13 @@ async function main() {
   const generator = new TypeScriptGenerator({
     modelType: "interface",
     enumType: "union",
-    mapType: "record", // nicer than Map<...> for SDKs
+    mapType: "record",
     rawPropertyNames: true,
+    processorOptions: {
+      interpreter: {
+        ignoreAdditionalProperties: true,
+      },
+    },
   });
 
   const payloads = await collectPayloads(raw);
