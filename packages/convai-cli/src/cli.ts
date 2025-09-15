@@ -65,6 +65,7 @@ import WhoamiView from './ui/views/WhoamiView.js';
 import ListAgentsView from './ui/views/ListAgentsView.js';
 import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
+import HelpView from './ui/views/HelpView.js';
 
 // Load environment variables
 dotenv.config();
@@ -129,7 +130,21 @@ interface TemplateShowOptions {
 program
   .name('convai')
   .description('ElevenLabs Conversational AI Agent Manager CLI')
-  .version(version);
+  .version(version)
+  .configureHelp({
+    // Override the default help to use our Ink UI
+    formatHelp: () => ''
+  })
+  .helpOption('-h, --help', 'Display help information')
+  .on('option:help', async () => {
+    // Show Ink-based help view
+    const { waitUntilExit } = render(
+      React.createElement(HelpView)
+    );
+    await waitUntilExit();
+    process.exit(0);
+
+  });
 
 program
   .command('init')
@@ -1536,4 +1551,27 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-program.parse(); 
+// Show help if no arguments provided or if --help is used
+const args = process.argv.slice(2);
+if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+  (async () => {
+    const { waitUntilExit } = render(
+      React.createElement(HelpView)
+    );
+    await waitUntilExit();
+    process.exit(0);
+  })();
+} else {
+  // Special handling for 'add' command without subcommand
+  if (args[0] === 'add' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required subcommand');
+    console.error('Usage: convai add <agent|webhook-tool|client-tool> [options]');
+    console.error('');
+    console.error('Available subcommands:');
+    console.error('  agent          Add a new agent');
+    console.error('  webhook-tool   Add a new webhook tool');
+    console.error('  client-tool    Add a new client tool');
+    process.exit(1);
+  }
+  program.parse();
+} 
