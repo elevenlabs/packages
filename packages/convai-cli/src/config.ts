@@ -26,7 +26,7 @@ export interface CliConfig {
  * Get the path to the CLI config file
  */
 export function getConfigPath(): string {
-  const configDir = path.join(os.homedir(), '.convai');
+  const configDir = path.join(os.homedir(), '.agents');
   return path.join(configDir, 'config.json');
 }
 

@@ -118,13 +118,13 @@ export const HelpView: React.FC = () => {
       <Box flexDirection="column" marginBottom={1}>
         <Box marginBottom={1}>
           <Gradient name="passion">
-            <BigText text="convai" font="chrome" />
+            <BigText text="agents" font="chrome" />
           </Gradient>
         </Box>
 
         <Box marginBottom={1}>
           <Text color={theme.colors.text.secondary}>
-            ElevenLabs Conversational AI Agent Manager CLI v{version}
+            ElevenLabs Agents Manager CLI v{version}
           </Text>
         </Box>
       </Box>
@@ -137,7 +137,7 @@ export const HelpView: React.FC = () => {
         </Box>
         <Box marginLeft={2}>
           <Text color={theme.colors.text.primary}>
-            convai [command] [options]
+            agents [command] [options]
           </Text>
         </Box>
       </Box>
@@ -182,28 +182,28 @@ export const HelpView: React.FC = () => {
         <Box flexDirection="column" marginLeft={2}>
           <Text color={theme.colors.text.secondary}>
             1. Initialize a project:{" "}
-            <Text color={theme.colors.success}>convai init</Text>
+            <Text color={theme.colors.success}>agents init</Text>
           </Text>
           <Text color={theme.colors.text.secondary}>
             2. Login with API key:{" "}
-            <Text color={theme.colors.success}>convai login</Text>
+            <Text color={theme.colors.success}>agents login</Text>
           </Text>
           <Text color={theme.colors.text.secondary}>
             3. Create an agent:{" "}
             <Text color={theme.colors.success}>
-              convai add agent "My Agent"
+              agents add agent "My Agent"
             </Text>
           </Text>
           <Text color={theme.colors.text.secondary}>
             4. Sync to ElevenLabs:{" "}
-            <Text color={theme.colors.success}>convai sync</Text>
+            <Text color={theme.colors.success}>agents sync</Text>
           </Text>
         </Box>
       </Box>
 
       <Box marginTop={1}>
         <Text color={theme.colors.text.muted}>
-          For more information on a command, use: convai [command] --help
+          For more information on a command, use: agents [command] --help
         </Text>
       </Box>
 

@@ -349,7 +349,7 @@ program
           console.log(`Residency: ${residency}`);
         } else {
           console.log('Not logged in');
-          console.log('Use "convai login" to authenticate');
+          console.log('Use "agents login" to authenticate');
         }
       }
     } catch (error) {
@@ -1561,7 +1561,7 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
   // Special handling for 'add' command without subcommand
   if (args[0] === 'add' && (args.length === 1 || args[1].startsWith('-'))) {
     console.error('Error: Missing required subcommand');
-    console.error('Usage: convai add <agent|webhook-tool|client-tool> [options]');
+    console.error('Usage: agents add <agent|webhook-tool|client-tool> [options]');
     console.error('');
     console.error('Available subcommands:');
     console.error('  agent          Add a new agent');

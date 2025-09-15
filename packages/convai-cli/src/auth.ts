@@ -18,14 +18,14 @@ try {
   // Keychain not available, will use file storage
 }
 
-const SERVICE_NAME = 'ElevenLabs-ConvAI-CLI';
+const SERVICE_NAME = 'ElevenLabs-Agents-CLI';
 const ACCOUNT_NAME = 'api-key';
 
 /**
  * Get config directory path
  */
 function getConfigDir(): string {
-  return path.join(os.homedir(), '.convai');
+  return path.join(os.homedir(), '.agents');
 }
 
 /**

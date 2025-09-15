@@ -1,5 +1,5 @@
 /**
- * Tool management for conversational AI agents
+ * Tool management for ElevenLabs agents
  */
 
 import fs from 'fs-extra';

@@ -100,7 +100,7 @@ describe('CLI End-to-End Tests', () => {
     it('should show help', async () => {
       const result = await runCli(['--help']);
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('ElevenLabs Conversational AI Agent Manager CLI');
+      expect(result.stdout).toContain('ElevenLabs Agents Manager CLI');
       expect(result.stdout).toContain('Usage:');
     });
 

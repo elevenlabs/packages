@@ -91,7 +91,7 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
 
   return (
     <App 
-      title="ConvAI Status" 
+      title="Agents Status" 
       subtitle="Agent Management Dashboard"
       showOverlay={false}
     >

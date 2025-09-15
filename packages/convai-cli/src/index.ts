@@ -1,5 +1,5 @@
 /**
- * ElevenLabs Conversational AI Agent Manager
+ * ElevenLabs Agents Manager
  * TypeScript/Node.js implementation
  */
 
