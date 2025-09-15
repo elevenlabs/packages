@@ -1,40 +1,8 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
 import type { Mode } from "../BaseConversation";
+import type { ConversationConfigOverrideAgentLanguage } from "@elevenlabs/types/generated/types/asyncapi-types";
 
-export type Language =
-  | "en"
-  | "ja"
-  | "zh"
-  | "de"
-  | "hi"
-  | "fr"
-  | "ko"
-  | "pt"
-  | "pt-br"
-  | "it"
-  | "es"
-  | "id"
-  | "nl"
-  | "tr"
-  | "pl"
-  | "sv"
-  | "bg"
-  | "ro"
-  | "ar"
-  | "cs"
-  | "el"
-  | "fi"
-  | "ms"
-  | "da"
-  | "ta"
-  | "uk"
-  | "ru"
-  | "hu"
-  | "hr"
-  | "sk"
-  | "no"
-  | "vi"
-  | "tl";
+export type Language = ConversationConfigOverrideAgentLanguage;
 
 export type DelayConfig = {
   default: number;
