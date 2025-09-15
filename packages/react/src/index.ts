@@ -94,6 +94,12 @@ export type HookCallbacks = Pick<
   | "onDebug"
   | "onUnhandledClientToolCall"
   | "onVadScore"
+  | "onInterruption"
+  | "onAgentToolResponse"
+  | "onConversationMetadata"
+  | "onMCPToolCall"
+  | "onMCPConnectionStatus"
+  | "onAsrInitiationMetadata"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -172,6 +178,21 @@ export function useConversation<T extends HookOptions & ControlledState>(
             options?.onUnhandledClientToolCall ||
             defaultOptions?.onUnhandledClientToolCall,
           onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
+          onInterruption:
+            options?.onInterruption || defaultOptions?.onInterruption,
+          onAgentToolResponse:
+            options?.onAgentToolResponse || defaultOptions?.onAgentToolResponse,
+          onConversationMetadata:
+            options?.onConversationMetadata ||
+            defaultOptions?.onConversationMetadata,
+          onMCPToolCall:
+            options?.onMCPToolCall || defaultOptions?.onMCPToolCall,
+          onMCPConnectionStatus:
+            options?.onMCPConnectionStatus ||
+            defaultOptions?.onMCPConnectionStatus,
+          onAsrInitiationMetadata:
+            options?.onAsrInitiationMetadata ||
+            defaultOptions?.onAsrInitiationMetadata,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });
