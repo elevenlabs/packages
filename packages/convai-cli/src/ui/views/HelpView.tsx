@@ -98,7 +98,7 @@ const commands: Command[] = [
   }
 ];
 
-export const HelpView: React.FC = () => {
+export const HelpView = () => {
   const { exit } = useApp();
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export const HelpView: React.FC = () => {
             <BigText text="convai" font="chrome" />
           </Gradient>
         </Box>
-        
+
         <Box marginBottom={1}>
           <Text color={theme.colors.text.secondary}>
             ElevenLabs Conversational AI Agent Manager CLI v{version}
@@ -143,7 +143,7 @@ export const HelpView: React.FC = () => {
             Commands:
           </Text>
         </Box>
-        
+
         {commands.map((cmd, index) => (
           <Box key={index} flexDirection="column" marginBottom={0.5}>
             <Box marginLeft={2}>
@@ -152,7 +152,7 @@ export const HelpView: React.FC = () => {
               </Box>
               <Text color={theme.colors.text.secondary}>{cmd.description}</Text>
             </Box>
-            
+
             {cmd.subcommands && cmd.subcommands.map((subcmd, subIndex) => (
               <Box key={subIndex} marginLeft={4}>
                 <Box width={22}>
@@ -171,7 +171,7 @@ export const HelpView: React.FC = () => {
             Quick Start:
           </Text>
         </Box>
-        
+
         <Box flexDirection="column" marginLeft={2}>
           <Text color={theme.colors.text.secondary}>
             1. Initialize a project:    <Text color={theme.colors.success}>convai init</Text>
