@@ -48,8 +48,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     let conversationSignature: string | undefined;
     if (signedUrl.value) {
       const params = new URL(signedUrl.value).searchParams;
-      currentAgentId = params.get('agent_id') ?? agentId.value;
-      conversationSignature = params.get('conversation_signature') ?? undefined;
+      currentAgentId = params.get("agent_id") ?? agentId.value;
+      conversationSignature = params.get("conversation_signature") ?? undefined;
     }
 
     if (!currentAgentId) {
@@ -58,7 +58,12 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     }
 
     const abort = new AbortController();
-    fetchConfig(currentAgentId, serverUrl.value, abort.signal, conversationSignature)
+    fetchConfig(
+      currentAgentId,
+      serverUrl.value,
+      abort.signal,
+      conversationSignature
+    )
       .then(config => {
         if (!abort.signal.aborted) {
           fetchedConfig.value = config;
@@ -86,6 +91,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const textInput = useAttribute("text-input");
   const defaultExpanded = useAttribute("default-expanded");
   const alwaysExpanded = useAttribute("always-expanded");
+  const dismissible = useAttribute("dismissible");
   const overrideTextOnly = useAttribute("override-text-only");
 
   const value = useComputed<WidgetConfig | null>(() => {
@@ -119,6 +125,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(defaultExpanded.value) ??
       fetchedConfig.value.default_expanded ??
       false;
+    const patchedDismissible =
+      parseBoolAttribute(dismissible.value) ??
+      fetchedConfig.value.dismissible ??
+      true;
 
     return {
       ...fetchedConfig.value,
@@ -130,6 +140,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       text_input_enabled: textOnly || patchedTextInput,
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
+      dismissible: patchedDismissible,
     };
   });
 
@@ -190,7 +201,7 @@ async function fetchConfig(
   conversationSignature?: string
 ): Promise<WidgetConfig> {
   const response = await fetch(
-    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ''}`,
+    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ""}`,
     {
       signal,
     }
