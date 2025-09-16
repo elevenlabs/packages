@@ -378,7 +378,7 @@ export interface ErrorMessage {
 
 export interface ErrorEvent {
   code: ErrorEventCode;
-  message: string;
+  message?: string;
   error_type?: ErrorEventErrorType;
   reason?: string;
   debug_message?: string;
