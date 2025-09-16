@@ -281,7 +281,72 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   );
 }
 
-function toCamelCaseKey(key: string): string {
+// Common HTTP headers that should never be converted to camelCase
+const HTTP_HEADERS = new Set([
+  // Standard HTTP headers
+  'accept', 'accept-charset', 'accept-encoding', 'accept-language', 'accept-ranges',
+  'access-control-allow-credentials', 'access-control-allow-headers', 'access-control-allow-methods',
+  'access-control-allow-origin', 'access-control-expose-headers', 'access-control-max-age',
+  'access-control-request-headers', 'access-control-request-method',
+  'age', 'allow', 'authorization', 'cache-control', 'connection', 'content-disposition',
+  'content-encoding', 'content-language', 'content-length', 'content-location',
+  'content-md5', 'content-range', 'content-type', 'cookie', 'date', 'etag', 'expect',
+  'expires', 'from', 'host', 'if-match', 'if-modified-since', 'if-none-match',
+  'if-range', 'if-unmodified-since', 'last-modified', 'location', 'max-forwards',
+  'pragma', 'proxy-authenticate', 'proxy-authorization', 'range', 'referer',
+  'retry-after', 'server', 'set-cookie', 'te', 'trailer', 'transfer-encoding',
+  'upgrade', 'user-agent', 'vary', 'via', 'warning', 'www-authenticate',
+  // Common custom headers (X- prefixed)
+  'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-real-ip',
+  'x-requested-with', 'x-csrf-token', 'x-api-key', 'x-auth-token',
+  'x-custom-header', 'x-correlation-id', 'x-request-id'
+]);
+
+/**
+ * Checks if a key looks like an HTTP header name
+ * @param key The key to check
+ * @returns true if the key appears to be an HTTP header name
+ */
+function isHttpHeaderName(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  
+  // Check if it's in our known headers list
+  if (HTTP_HEADERS.has(lowerKey)) {
+    return true;
+  }
+  
+  // Check if it starts with common header prefixes
+  if (lowerKey.startsWith('x-') || lowerKey.startsWith('sec-') || lowerKey.startsWith('cf-')) {
+    return true;
+  }
+  
+  // Check if it has the pattern of an HTTP header (contains hyphens, no underscores, reasonable length)
+  if (key.includes('-') && !key.includes('_') && key.length <= 50) {
+    // Additional heuristics: should not contain spaces, should be reasonable header format
+    if (!/\s/.test(key) && /^[a-zA-Z0-9\-]+$/.test(key)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Checks if we're currently processing an HTTP headers object
+ * @param parentKeys Array of parent keys leading to this point
+ * @returns true if we're in an HTTP headers context
+ */
+function isInHttpHeadersContext(parentKeys: string[]): boolean {
+  const keyPath = parentKeys.map(k => k.toLowerCase()).join('.');
+  return keyPath.includes('headers') || keyPath.includes('header');
+}
+
+function toCamelCaseKey(key: string, parentKeys: string[] = []): string {
+  // If we're in an HTTP headers context and this looks like a header name, preserve it
+  if (isInHttpHeadersContext(parentKeys) && isHttpHeaderName(key)) {
+    return key;
+  }
+  
   return key.replace(/[_-]([a-zA-Z0-9])/g, (_, c: string) => c.toUpperCase());
 }
 
@@ -293,14 +358,15 @@ function toSnakeCaseKey(key: string): string {
     .toLowerCase();
 }
 
-export function toCamelCaseKeys<T = unknown>(value: T): T {
+export function toCamelCaseKeys<T = unknown>(value: T, parentKeys: string[] = []): T {
   if (Array.isArray(value)) {
-    return (value.map((v) => toCamelCaseKeys(v)) as unknown) as T;
+    return (value.map((v) => toCamelCaseKeys(v, parentKeys)) as unknown) as T;
   }
   if (isPlainObject(value)) {
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
-      result[toCamelCaseKey(k)] = toCamelCaseKeys(v);
+      const camelKey = toCamelCaseKey(k, parentKeys);
+      result[camelKey] = toCamelCaseKeys(v, [...parentKeys, camelKey]);
     }
     return (result as unknown) as T;
   }
