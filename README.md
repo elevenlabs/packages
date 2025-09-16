@@ -124,45 +124,6 @@ npx @elevenlabs/convai-cli init
 pnpm dlx @elevenlabs/convai-cli init
 ```
 
-## Authentication
-
-### Public Agents
-
-For public agents, simply use the agent ID:
-
-```typescript
-const config = {
-  agentId: "your-public-agent-id",
-};
-```
-
-### Private Agents
-
-For private agents, you'll need to generate a signed URL from your backend:
-
-```typescript
-// Backend (Node.js example)
-async function generateSignedUrl(agentId: string): Promise<string> {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${agentId}`,
-    {
-      method: "GET",
-      headers: {
-        "xi-api-key": process.env.ELEVENLABS_API_KEY,
-      },
-    }
-  );
-
-  const data = await response.json();
-  return data.signed_url;
-}
-
-const signedUrl = await fetchSignedUrlFromBackend();
-const config = {
-  signedUrl: signedUrl,
-};
-```
-
 ## Client Tools
 
 Client tools allow your agent to trigger actions in your application, for example in React:
