@@ -17,7 +17,7 @@ const ConversationScreen = () => {
       console.log("✅ Connected to conversation", conversationId);
       setCurrentConversationId(conversationId);
     },
-    onDisconnect: (details: string) => {
+    onDisconnect: (details) => {
       console.log("❌ Disconnected from conversation", details);
       setCurrentConversationId(null);
     },
@@ -28,7 +28,7 @@ const ConversationScreen = () => {
       message,
       source,
     }: {
-      message: ConversationEvent;
+      message: string;
       source: Role;
     }) => {
       console.log(`💬 Message from ${source}:`, message);

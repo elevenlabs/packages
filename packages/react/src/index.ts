@@ -94,6 +94,12 @@ export type HookCallbacks = Pick<
   | "onDebug"
   | "onUnhandledClientToolCall"
   | "onVadScore"
+  | "onInterruption"
+  | "onAgentToolResponse"
+  | "onConversationMetadata"
+  | "onMCPToolCall"
+  | "onMCPConnectionStatus"
+  | "onAsrInitiationMetadata"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -105,6 +111,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
+
+  const micMutedRef = useRef<boolean | undefined>(micMuted);
+  const volumeRef = useRef<number | undefined>(volume);
+
+  micMutedRef.current = micMuted;
+  volumeRef.current = volume;
 
   useEffect(() => {
     if (micMuted !== undefined) {
@@ -172,6 +184,21 @@ export function useConversation<T extends HookOptions & ControlledState>(
             options?.onUnhandledClientToolCall ||
             defaultOptions?.onUnhandledClientToolCall,
           onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
+          onInterruption:
+            options?.onInterruption || defaultOptions?.onInterruption,
+          onAgentToolResponse:
+            options?.onAgentToolResponse || defaultOptions?.onAgentToolResponse,
+          onConversationMetadata:
+            options?.onConversationMetadata ||
+            defaultOptions?.onConversationMetadata,
+          onMCPToolCall:
+            options?.onMCPToolCall || defaultOptions?.onMCPToolCall,
+          onMCPConnectionStatus:
+            options?.onMCPConnectionStatus ||
+            defaultOptions?.onMCPConnectionStatus,
+          onAsrInitiationMetadata:
+            options?.onAsrInitiationMetadata ||
+            defaultOptions?.onAsrInitiationMetadata,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });
@@ -192,12 +219,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
         } as Options);
 
         conversationRef.current = await lockRef.current;
-        // Persist controlled state between sessions
-        if (micMuted !== undefined) {
-          conversationRef.current.setMicMuted(micMuted);
+        // Persist controlled state between sessions using refs to get current values
+        if (micMutedRef.current !== undefined) {
+          conversationRef.current.setMicMuted(micMutedRef.current);
         }
-        if (volume !== undefined) {
-          conversationRef.current.setVolume({ volume });
+        if (volumeRef.current !== undefined) {
+          conversationRef.current.setVolume({ volume: volumeRef.current });
         }
 
         return conversationRef.current.getId();

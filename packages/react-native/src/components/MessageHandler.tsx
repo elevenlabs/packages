@@ -1,20 +1,36 @@
-import { useEffect } from 'react';
-import { useLocalParticipant, useDataChannel } from '@livekit/react-native';
-import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig, ClientToolCallEvent, ConversationEvent } from '../types';
-import React from 'react';
+import { useEffect } from "react";
+import { useLocalParticipant, useDataChannel } from "@livekit/react-native";
+import type { LocalParticipant } from "livekit-client";
+import type {
+  Callbacks,
+  ClientToolsConfig,
+  ClientToolCallEvent,
+  ConversationEvent,
+} from "../types";
+import React from "react";
 
 interface MessageHandlerProps {
   onReady: (participant: LocalParticipant) => void;
   isConnected: boolean;
   callbacks: Callbacks;
   sendMessage: (message: unknown) => void;
-  clientTools?: ClientToolsConfig['clientTools'];
+  clientTools?: ClientToolsConfig["clientTools"];
   updateCurrentEventId?: (eventId: number) => void;
 }
 
 export function isValidEvent(event: any): event is ConversationEvent {
   return !!event.type;
+}
+
+function extractMessageText(event: ConversationEvent): string | null {
+  switch (event.type) {
+    case "user_transcript":
+      return event.user_transcription_event.user_transcript;
+    case "agent_response":
+      return event.agent_response_event.agent_response;
+    default:
+      return null;
+  }
 }
 
 export const MessageHandler = ({
@@ -23,7 +39,7 @@ export const MessageHandler = ({
   callbacks,
   sendMessage,
   clientTools = {},
-  updateCurrentEventId
+  updateCurrentEventId,
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
 
@@ -73,7 +89,7 @@ export const MessageHandler = ({
       }
     } else {
       if (callbacks.onUnhandledClientToolCall) {
-        callbacks.onUnhandledClientToolCall(clientToolCall);
+        callbacks.onUnhandledClientToolCall(clientToolCall.client_tool_call);
         return;
       }
 
@@ -90,7 +106,7 @@ export const MessageHandler = ({
     }
   };
 
-  const _ = useDataChannel((msg) => {
+  const _ = useDataChannel(msg => {
     const decoder = new TextDecoder();
     const message = JSON.parse(decoder.decode(msg.payload));
 
@@ -102,14 +118,17 @@ export const MessageHandler = ({
       return;
     }
 
-    callbacks.onMessage?.({
-      message,
-      source: msg.from?.isAgent ? 'ai' : 'user',
-    });
+    const messageText = extractMessageText(message);
+    if (messageText !== null) {
+      callbacks.onMessage?.({
+        message: messageText,
+        source: msg.from?.isAgent ? "ai" : "user",
+      });
+    }
 
     if (msg.from?.isAgent) {
       callbacks.onModeChange?.({
-        mode: msg.from?.isSpeaking ? 'speaking' : 'listening'
+        mode: msg.from?.isSpeaking ? "speaking" : "listening",
       });
 
       // Track agent responses for feedback (WebRTC mode needs synthetic event IDs)

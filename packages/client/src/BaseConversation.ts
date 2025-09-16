@@ -14,18 +14,16 @@ import type {
   InterruptionEvent,
   UserTranscriptionEvent,
   VadScoreEvent,
+  MCPToolCallClientEvent,
+  AgentToolResponseEvent,
+  ConversationMetadataEvent,
+  AsrInitiationMetadataEvent,
+  MCPConnectionStatusEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
+import type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
-export type Role = "user" | "ai";
-
-export type Mode = "speaking" | "listening";
-
-export type Status =
-  | "connecting"
-  | "connected"
-  | "disconnecting"
-  | "disconnected";
+export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 
 export type Options = SessionConfig &
   Callbacks &
@@ -45,23 +43,6 @@ export type ClientToolsConfig = {
       parameters: any
     ) => Promise<string | number | void> | string | number | void
   >;
-};
-
-export type Callbacks = {
-  onConnect?: (props: { conversationId: string }) => void;
-  // internal debug events, not to be used
-  onDebug?: (props: any) => void;
-  onDisconnect?: OnDisconnectCallback;
-  onError?: (message: string, context?: any) => void;
-  onMessage?: (props: { message: string; source: Role }) => void;
-  onAudio?: (base64Audio: string) => void;
-  onModeChange?: (prop: { mode: Mode }) => void;
-  onStatusChange?: (prop: { status: Status }) => void;
-  onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
-  onUnhandledClientToolCall?: (
-    params: ClientToolCallEvent["client_tool_call"]
-  ) => void;
-  onVadScore?: (props: { vadScore: number }) => void;
 };
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
@@ -87,6 +68,7 @@ export class BaseConversation {
       onModeChange: () => {},
       onStatusChange: () => {},
       onCanSendFeedbackChange: () => {},
+      onInterruption: () => {},
       ...partialOptions,
     };
   }
@@ -153,6 +135,12 @@ export class BaseConversation {
   protected handleInterruption(event: InterruptionEvent) {
     if (event.interruption_event) {
       this.lastInterruptTimestamp = event.interruption_event.event_id;
+
+      if (this.options.onInterruption) {
+        this.options.onInterruption({
+          event_id: event.interruption_event.event_id,
+        });
+      }
     }
   }
 
@@ -256,6 +244,38 @@ export class BaseConversation {
 
   protected handleAudio(event: AgentAudioEvent) {}
 
+  protected handleMCPToolCall(event: MCPToolCallClientEvent) {
+    if (this.options.onMCPToolCall) {
+      this.options.onMCPToolCall(event.mcp_tool_call);
+    }
+  }
+
+  protected handleMCPConnectionStatus(event: MCPConnectionStatusEvent) {
+    if (this.options.onMCPConnectionStatus) {
+      this.options.onMCPConnectionStatus(event.mcp_connection_status);
+    }
+  }
+
+  protected handleAgentToolResponse(event: AgentToolResponseEvent) {
+    if (this.options.onAgentToolResponse) {
+      this.options.onAgentToolResponse(event.agent_tool_response);
+    }
+  }
+
+  protected handleConversationMetadata(event: ConversationMetadataEvent) {
+    if (this.options.onConversationMetadata) {
+      this.options.onConversationMetadata(
+        event.conversation_initiation_metadata_event
+      );
+    }
+  }
+
+  protected handleAsrInitiationMetadata(event: AsrInitiationMetadataEvent) {
+    if (this.options.onAsrInitiationMetadata) {
+      this.options.onAsrInitiationMetadata(event.asr_initiation_metadata_event);
+    }
+  }
+
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
     switch (parsedEvent.type) {
       case "interruption": {
@@ -305,6 +325,31 @@ export class BaseConversation {
         });
         // parsedEvent.ping_event.ping_ms can be used on client side, for example
         // to warn if ping is too high that experience might be degraded.
+        return;
+      }
+
+      case "mcp_tool_call": {
+        this.handleMCPToolCall(parsedEvent);
+        return;
+      }
+
+      case "mcp_connection_status": {
+        this.handleMCPConnectionStatus(parsedEvent);
+        return;
+      }
+
+      case "agent_tool_response": {
+        this.handleAgentToolResponse(parsedEvent);
+        return;
+      }
+
+      case "conversation_initiation_metadata": {
+        this.handleConversationMetadata(parsedEvent);
+        return;
+      }
+
+      case "asr_initiation_metadata": {
+        this.handleAsrInitiationMetadata(parsedEvent);
         return;
       }
 

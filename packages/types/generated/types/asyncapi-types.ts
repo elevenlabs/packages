@@ -371,6 +371,50 @@ export interface TentativeAgentResponseInternalEvent {
   tentative_agent_response: string;
 }
 
+export interface ErrorMessage {
+  type: "error";
+  error_event: ErrorEvent;
+}
+
+export interface ErrorEvent {
+  code: ErrorEventCode;
+  message: string;
+  error_type?: ErrorEventErrorType;
+  reason?: string;
+  debug_message?: string;
+  details?: Record<string, any>;
+}
+
+export type ErrorEventCode = 1000 | 1002 | 1008 | 1011;
+
+export type ErrorEventErrorType =
+  | "unknown"
+  | "invalid_message"
+  | "telephony_agent_error"
+  | "mcp_tool_error"
+  | "mcp_https_error"
+  | "value_error"
+  | "missing_fields"
+  | "override_error"
+  | "missing_dynamic_variable_transfer"
+  | "missing_dynamic_variable"
+  | "websocket_disconnect"
+  | "safety_violation"
+  | "llm_timeout"
+  | "transport_receive_timeout"
+  | "asyncio_timeout"
+  | "http_exception"
+  | "max_duration_exceeded"
+  | "llm_error"
+  | "custom_llm_error"
+  | "cascade_brain_error"
+  | "asr_transcription_error"
+  | "vad_error"
+  | "turn_probability_error"
+  | "tts_cascade_error"
+  | "redis_timeout_error"
+  | "unknown_websocket_crash";
+
 export interface AudioClientEvent {
   type: "audio";
   audio_event: AudioEvent;
@@ -438,6 +482,11 @@ export interface TurnProbabilityInternalClientEvent {
 export interface TentativeAgentResponseInternalClientEvent {
   type: "internal_tentative_agent_response";
   tentative_agent_response_internal_event: TentativeAgentResponseInternalEvent;
+}
+
+export interface ErrorClientEvent {
+  type: "error";
+  error_event: ErrorEvent;
 }
 
 export interface PongClientToOrchestratorEvent {

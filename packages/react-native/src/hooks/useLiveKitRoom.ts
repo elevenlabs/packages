@@ -40,7 +40,7 @@ export const useLiveKitRoom = (
     setRoomConnected(false);
     setStatus("disconnected");
     setLocalParticipant(null);
-    callbacksRef.current.onDisconnect?.("disconnected");
+    callbacksRef.current.onDisconnect?.({ reason: "user" });
   }, [callbacksRef, setStatus]);
 
   const handleError = useCallback(

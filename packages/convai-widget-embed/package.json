@@ -8,8 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
-    "lint:ts": "tsc --noEmit --skipLibCheck",
+    "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
+    "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts'",
     "prepublishOnly": "pnpm run build"

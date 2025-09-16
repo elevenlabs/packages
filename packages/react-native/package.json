@@ -20,8 +20,8 @@
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "pnpm run clean && pnpm run generate-version && BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w --no-compress",
-    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
-    "lint:ts": "tsc --noEmit --skipLibCheck",
+    "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
+    "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
     "prepublishOnly": "pnpm run build",
@@ -43,6 +43,9 @@
     "livekit-client": "^2.11.0",
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
+  },
+  "dependencies": {
+    "@elevenlabs/types": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",

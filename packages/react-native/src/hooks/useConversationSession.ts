@@ -86,7 +86,7 @@ export const useConversationSession = (
       setToken("");
       setStatus("disconnected");
       callbacksRef.current.onStatusChange?.({ status: "disconnected" });
-      callbacksRef.current.onDisconnect?.("User ended conversation");
+      callbacksRef.current.onDisconnect?.({ reason: "user" });
     } catch (error) {
       callbacksRef.current.onError?.(error as string);
       throw error;

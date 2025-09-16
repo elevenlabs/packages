@@ -1,8 +1,12 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
 import type { Mode } from "../BaseConversation";
-import type { ConversationConfigOverrideAgentLanguage } from "@elevenlabs/types/generated/types/asyncapi-types";
+import type { ConversationConfigOverrideAgentLanguage as Language } from "@elevenlabs/types/generated/types/asyncapi-types";
+import type { DisconnectionDetails } from "@elevenlabs/types";
 
-export type Language = ConversationConfigOverrideAgentLanguage;
+export type {
+  DisconnectionDetails,
+  ConversationConfigOverrideAgentLanguage as Language,
+} from "@elevenlabs/types";
 
 export type DelayConfig = {
   default: number;
@@ -15,20 +19,6 @@ export type FormatConfig = {
   sampleRate: number;
   outputDeviceId?: string;
 };
-
-export type DisconnectionDetails =
-  | {
-      reason: "error";
-      message: string;
-      context: Event;
-    }
-  | {
-      reason: "agent";
-      context: CloseEvent;
-    }
-  | {
-      reason: "user";
-    };
 
 export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 export type OnMessageCallback = (event: IncomingSocketEvent) => void;
