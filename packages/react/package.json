@@ -49,5 +49,8 @@
     "type": "git",
     "url": "git+https://github.com/elevenlabs/packages.git",
     "directory": "packages/react"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

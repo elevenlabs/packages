@@ -76,6 +76,9 @@
     "tsx": "^3.14.0",
     "typescript": "^5.2.2"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=16.0.0"
   }

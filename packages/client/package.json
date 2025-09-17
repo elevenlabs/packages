@@ -47,6 +47,9 @@
     "url": "git+https://github.com/elevenlabs/packages.git",
     "directory": "packages/client"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@elevenlabs/types": "workspace:*",
     "livekit-client": "^2.11.4"
