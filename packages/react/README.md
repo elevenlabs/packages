@@ -179,6 +179,24 @@ const conversation = useConversation({
 });
 ```
 
+#### Data Residency
+
+The React SDK supports data residency for compliance with regional regulations. You can specify the server location when initializing the conversation:
+
+```ts
+const conversation = useConversation({
+  serverLocation: "eu-residency", // "us", "global", "eu-residency", or "in-residency"
+});
+```
+
+Available locations:
+- `"us"` (default) - United States servers
+- `"global"` - Global servers (same as US)
+- `"eu-residency"` - European Union residency servers
+- `"in-residency"` - India residency servers
+
+The SDK automatically routes both WebSocket and WebRTC connections to the appropriate regional servers based on your selection. This ensures that all conversation data, including audio streams, remain within the specified geographic region.
+
 #### Methods
 
 ##### startConversation
