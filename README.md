@@ -36,7 +36,7 @@ The ElevenLabs Agents SDKs provide a unified interface for integrating multimoda
 | [`@elevenlabs/react-native`](#elevenlabsreact-native) | React Native SDK for cross-platform applications | [![npm](https://img.shields.io/npm/v/@elevenlabs/react-native)](https://www.npmjs.com/package/@elevenlabs/react-native)               | [README](packages/react-native/README.md) • [Docs](https://elevenlabs.io/docs/agents-platform/libraries/react-native) |
 | [`@elevenlabs/convai-widget-core`](#widgets)          | Core widget library for embedding Agents         | [![npm](https://img.shields.io/npm/v/@elevenlabs/convai-widget-core)](https://www.npmjs.com/package/@elevenlabs/convai-widget-core)   | [Docs](https://elevenlabs.io/docs/agents-platform/customization/widget)                                               |
 | [`@elevenlabs/convai-widget-embed`](#widgets)         | Pre-bundled embeddable widget                    | [![npm](https://img.shields.io/npm/v/@elevenlabs/convai-widget-embed)](https://www.npmjs.com/package/@elevenlabs/convai-widget-embed) | [Docs](https://elevenlabs.io/docs/agents-platform/customization/widget)                                               |
-| [`@elevenlabs/convai-cli`](#agents-cli)               | CLI tool for managing agents as code             | [![npm](https://img.shields.io/npm/v/@elevenlabs/convai-cli)](https://www.npmjs.com/package/@elevenlabs/convai-cli)                   | [README](packages/convai-cli/README.md) • [Docs](https://elevenlabs.io/docs/agents-platform/libraries/agents-cli)     |
+| [`@elevenlabs/agents-cli`](#agents-cli)               | CLI tool for managing agents as code             | [![npm](https://img.shields.io/npm/v/@elevenlabs/agents-cli)](https://www.npmjs.com/package/@elevenlabs/agents-cli)                   | [README](packages/convai-cli/README.md) • [Docs](https://elevenlabs.io/docs/agents-platform/libraries/agents-cli)     |
 
 ## Package Details
 
@@ -115,13 +115,13 @@ The ElevenLabs Agents CLI allows you to manage your agents as code, with feature
 
 ```bash
 # Global installation
-npm install -g @elevenlabs/convai-cli
+npm install -g @elevenlabs/agents-cli
 # or
-pnpm install -g @elevenlabs/convai-cli
+pnpm install -g @elevenlabs/agents-cli
 
-npx @elevenlabs/convai-cli init
+npx @elevenlabs/agents-cli init
 # or
-pnpm dlx @elevenlabs/convai-cli init
+pnpm dlx @elevenlabs/agents-cli init
 ```
 
 ## Client Tools
