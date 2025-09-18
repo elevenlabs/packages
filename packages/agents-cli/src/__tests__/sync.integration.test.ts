@@ -105,7 +105,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -180,7 +181,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -230,7 +232,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -286,7 +289,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 

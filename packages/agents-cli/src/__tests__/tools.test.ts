@@ -14,7 +14,8 @@ describe('Tool Lock File Management', () => {
     it('should update tool in lock data', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: {}
+        tools: {},
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'tool_123', 'hash123');
@@ -28,7 +29,8 @@ describe('Tool Lock File Management', () => {
     it('should initialize tools object if not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any
+        tools: undefined as any,
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'tool_123', 'hash123');
@@ -69,7 +71,8 @@ describe('Tool Lock File Management', () => {
             id: 'tool_123',
             hash: 'hash123'
           }
-        }
+        },
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'test-tool');
@@ -83,7 +86,8 @@ describe('Tool Lock File Management', () => {
     it('should return undefined when tool does not exist', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: {}
+        tools: {},
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'non-existent-tool');
@@ -94,7 +98,8 @@ describe('Tool Lock File Management', () => {
     it('should return undefined when tools object is not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any
+        tools: undefined as any,
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'test-tool');

@@ -225,7 +225,7 @@ export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]>
 
 /**
  * Gets agents that depend on a specific tool.
- * 
+ *
  * @param client - An initialized ElevenLabs client
  * @param toolId - The ID of the tool
  * @returns Promise that resolves to a list of dependent agents
@@ -234,4 +234,93 @@ export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]>
 export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
   // Mock implementation until SDK supports tools API
   return [];
+}
+
+// Test API functions
+
+/**
+ * Creates a new test using the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param testConfig - The test configuration object
+ * @returns Promise that resolves to the created test with ID
+ */
+export async function createTestApi(client: ElevenLabsClient, testConfig: any): Promise<{ id: string }> {
+  const response = await client.conversationalAi.tests.create(testConfig as any);
+  return response as { id: string };
+}
+
+/**
+ * Gets a specific test from the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param testId - The ID of the test to retrieve
+ * @returns Promise that resolves to the test object
+ */
+export async function getTestApi(client: ElevenLabsClient, testId: string): Promise<unknown> {
+  const response = await client.conversationalAi.tests.get(testId);
+  return toSnakeCaseKeys(response);
+}
+
+/**
+ * Lists all tests from the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param pageSize - Maximum number of tests to return per page (default: 30)
+ * @returns Promise that resolves to a list of test objects
+ */
+export async function listTestsApi(client: ElevenLabsClient, pageSize: number = 30): Promise<unknown[]> {
+  const response = await client.conversationalAi.tests.list({ pageSize });
+  return (response).tests || [];
+}
+
+/**
+ * Updates an existing test using the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param testId - The ID of the test to update
+ * @param testConfig - The updated test configuration object
+ * @returns Promise that resolves to the updated test object
+ */
+export async function updateTestApi(client: ElevenLabsClient, testId: string, testConfig: any): Promise<unknown> {
+  const response = await client.conversationalAi.tests.update(testId, testConfig as any);
+  return toSnakeCaseKeys(response);
+}
+
+/**
+ * Runs tests on an agent using the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param agentId - The ID of the agent to run tests on
+ * @param testIds - Array of test IDs to run
+ * @param agentConfigOverride - Optional agent configuration override
+ * @returns Promise that resolves to the test invocation with ID
+ */
+export async function runTestsOnAgentApi(
+  client: ElevenLabsClient,
+  agentId: string,
+  testIds: string[],
+  agentConfigOverride?: any
+): Promise<any> {
+  const tests = testIds.map(testId => ({ test_id: testId }));
+  const requestBody: any = { tests };
+
+  if (agentConfigOverride) {
+    requestBody.agent_config_override = agentConfigOverride;
+  }
+
+  const response = await client.conversationalAi.agents.runTests(agentId, requestBody);
+  return toSnakeCaseKeys(response);
+}
+
+/**
+ * Gets test invocation results from the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param testInvocationId - The ID of the test invocation
+ * @returns Promise that resolves to the test invocation results
+ */
+export async function getTestInvocationApi(client: ElevenLabsClient, testInvocationId: string): Promise<unknown> {
+  const response = await client.conversationalAi.tests.invocations.get(testInvocationId);
+  return toSnakeCaseKeys(response);
 } 
