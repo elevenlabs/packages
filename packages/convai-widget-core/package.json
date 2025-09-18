@@ -45,6 +45,9 @@
     "preact": "^10.26.5",
     "preact-custom-element": "^4.3.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/elevenlabs/packages.git",

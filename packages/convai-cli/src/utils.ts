@@ -293,14 +293,19 @@ function toSnakeCaseKey(key: string): string {
     .toLowerCase();
 }
 
-export function toCamelCaseKeys<T = unknown>(value: T): T {
+export function toCamelCaseKeys<T = unknown>(value: T, skipHeaderConversion = false): T {
   if (Array.isArray(value)) {
-    return (value.map((v) => toCamelCaseKeys(v)) as unknown) as T;
+    return (value.map((v) => toCamelCaseKeys(v, skipHeaderConversion)) as unknown) as T;
   }
   if (isPlainObject(value)) {
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
-      result[toCamelCaseKey(k)] = toCamelCaseKeys(v);
+      // Skip camelCase conversion for HTTP header names in request_headers arrays
+      if (k === 'name' && skipHeaderConversion) {
+        result[k] = v;
+      } else {
+        result[toCamelCaseKey(k)] = toCamelCaseKeys(v, k === 'request_headers');
+      }
     }
     return (result as unknown) as T;
   }

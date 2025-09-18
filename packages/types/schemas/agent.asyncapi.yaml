@@ -1040,7 +1040,7 @@ components:
 
     ErrorData:
       type: object
-      required: [code, message]
+      required: [code]
       properties:
         code:
           $ref: "#/components/schemas/WebSocketCloseCode"
@@ -1071,8 +1071,8 @@ components:
       description: |
         WebSocket close codes used by the conversation API:
         - 1000: Normal closure (agent ended conversation, max duration exceeded)
-        - 1002: Protocol error (timeout, LLM/TTS/ASR failures, HTTP exceptions)
-        - 1008: Policy violation (invalid messages, missing required fields, auth errors)
+        - 1002: Protocol/operational error (timeouts, safety/policy violations, LLM/TTS/ASR failures, HTTP exceptions)
+        - 1008: Input/contract error (invalid messages, missing required fields, auth/validation errors)
         - 1011: Internal server error (unexpected errors)
 
     ErrorType:

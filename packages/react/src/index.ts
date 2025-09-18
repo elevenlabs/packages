@@ -53,6 +53,17 @@ export function getOriginForLocation(location: Location): string {
   return originMap[location];
 }
 
+export function getLivekitUrlForLocation(location: Location): string {
+  const livekitUrlMap: Record<Location, string> = {
+    us: "wss://livekit.rtc.elevenlabs.io",
+    "eu-residency": "wss://livekit.rtc.eu.residency.elevenlabs.io",
+    "in-residency": "wss://livekit.rtc.in.residency.elevenlabs.io",
+    global: "wss://livekit.rtc.elevenlabs.io",
+  };
+
+  return livekitUrlMap[location];
+}
+
 export type {
   Role,
   Mode,
@@ -152,11 +163,13 @@ export function useConversation<T extends HookOptions & ControlledState>(
           options?.serverLocation || serverLocation
         );
         const origin = getOriginForLocation(resolvedServerLocation);
+        const livekitUrl = getLivekitUrlForLocation(resolvedServerLocation);
 
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
           origin,
+          livekitUrl,
           overrides: {
             ...(defaultOptions?.overrides ?? {}),
             ...(options?.overrides ?? {}),

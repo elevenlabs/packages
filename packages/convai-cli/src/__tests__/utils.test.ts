@@ -1,4 +1,4 @@
-import { calculateConfigHash } from '../utils';
+import { calculateConfigHash, toCamelCaseKeys } from '../utils';
 
 describe('Utils', () => {
   describe('calculateConfigHash', () => {
@@ -169,6 +169,144 @@ describe('Utils', () => {
       const hash2 = calculateConfigHash(config2);
       
       expect(hash1).toBe(hash2);
+    });
+  });
+
+  describe('toCamelCaseKeys', () => {
+    it('should convert snake_case keys to camelCase', () => {
+      const input = {
+        snake_case_key: 'value',
+        another_key: 'another_value'
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        snakeCaseKey: 'value',
+        anotherKey: 'another_value'
+      });
+    });
+
+    it('should convert kebab-case keys to camelCase', () => {
+      const input = {
+        'kebab-case-key': 'value',
+        'another-key': 'another_value'
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        kebabCaseKey: 'value',
+        anotherKey: 'another_value'
+      });
+    });
+
+    it('should preserve HTTP header names in request_headers arrays', () => {
+      const input = {
+        some_config: {
+          request_headers: [
+            {
+              type: 'value',
+              name: 'Content-Type',
+              value: 'application/json'
+            },
+            {
+              type: 'value',
+              name: 'X-Api-Key',
+              value: 'secret'
+            },
+            {
+              type: 'value',
+              name: 'Authorization',
+              value: 'Bearer token'
+            }
+          ]
+        }
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        someConfig: {
+          requestHeaders: [
+            {
+              type: 'value',
+              name: 'Content-Type', // Should NOT be converted to contentType
+              value: 'application/json'
+            },
+            {
+              type: 'value',
+              name: 'X-Api-Key', // Should NOT be converted to xApiKey
+              value: 'secret'
+            },
+            {
+              type: 'value',
+              name: 'Authorization', // Should NOT be converted to authorization
+              value: 'Bearer token'
+            }
+          ]
+        }
+      });
+    });
+
+    it('should handle nested objects with request_headers', () => {
+      const input = {
+        conversation_config: {
+          tools: [
+            {
+              tool_name: 'webhook',
+              api_schema: {
+                request_headers: [
+                  {
+                    type: 'value',
+                    name: 'Content-Type',
+                    value: 'application/json'
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        conversationConfig: {
+          tools: [
+            {
+              toolName: 'webhook',
+              apiSchema: {
+                requestHeaders: [
+                  {
+                    type: 'value',
+                    name: 'Content-Type', // Header name preserved
+                    value: 'application/json'
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      });
+    });
+
+    it('should still convert other name fields that are not in request_headers', () => {
+      const input = {
+        user_name: 'john',
+        config: {
+          display_name: 'John Doe'
+        }
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        userName: 'john',
+        config: {
+          displayName: 'John Doe'
+        }
+      });
     });
   });
 }); 
