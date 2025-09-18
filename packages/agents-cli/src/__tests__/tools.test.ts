@@ -50,7 +50,8 @@ describe('Tool Lock File Management', () => {
             id: 'old_id',
             hash: 'old_hash'
           }
-        }
+        },
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'new_id', 'new_hash');
