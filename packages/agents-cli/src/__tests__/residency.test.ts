@@ -50,7 +50,7 @@ describe('Residency-specific API Client', () => {
     const client = await getElevenLabsClient();
     
     expect(client).toEqual({
-      baseUrl: 'https://api.eu.elevenlabs.io',
+      baseUrl: 'https://api.eu.residency.elevenlabs.io',
       apiKey: 'test-api-key'
     });
   });
@@ -61,7 +61,7 @@ describe('Residency-specific API Client', () => {
     const client = await getElevenLabsClient();
     
     expect(client).toEqual({
-      baseUrl: 'https://api.in.elevenlabs.io',
+      baseUrl: 'https://api.in.residency.elevenlabs.io',
       apiKey: 'test-api-key'
     });
   });

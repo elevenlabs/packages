@@ -18,9 +18,9 @@ function isPlatformSettings(settings: unknown): settings is AgentPlatformSetting
 function getApiBaseUrl(residency?: Location): string {
   switch (residency) {
     case 'eu-residency':
-      return 'https://api.eu.elevenlabs.io';
+      return 'https://api.eu.residency.elevenlabs.io';
     case 'in-residency':
-      return 'https://api.in.elevenlabs.io';
+      return 'https://api.in.residency.elevenlabs.io';
     case 'us':
       return 'https://api.us.elevenlabs.io';
     case 'global':
