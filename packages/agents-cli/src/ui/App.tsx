@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from 'ink';
-import Header from './components/Header';
-import ChladniOverlay from './components/ChladniOverlay';
+import Header from './components/Header.js';
+import ChladniOverlay from './components/ChladniOverlay.js';
 
 interface AppProps {
   title?: string;

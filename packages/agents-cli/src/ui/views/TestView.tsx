@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
-import App from '../App';
-import StatusCard from '../components/StatusCard';
-import ProgressFlow from '../components/ProgressFlow';
-import theme from '../themes/elevenlabs';
+import App from '../App.js';
+import StatusCard from '../components/StatusCard.js';
+import ProgressFlow from '../components/ProgressFlow.js';
+import theme from '../themes/elevenlabs.js';
 
 interface TestRun {
   test_run_id: string;

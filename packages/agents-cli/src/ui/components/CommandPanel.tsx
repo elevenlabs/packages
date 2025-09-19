@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import theme from '../themes/elevenlabs';
+import theme from '../themes/elevenlabs.js';
 
 interface CommandOption {
   key: string;

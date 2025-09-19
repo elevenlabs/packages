@@ -1,6 +1,7 @@
 
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
+  extensionsToTreatAsEsm: ['.ts'],
   testEnvironment: '<rootDir>/jest-environment.cjs',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
@@ -13,10 +14,14 @@ export default {
   testTimeout: 30000,
   maxWorkers: 1,
   forceExit: true,
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
   transform: {
     '^.+\\.ts$': ['ts-jest', {
+      useESM: true,
       tsconfig: {
-        module: 'commonjs'
+        module: 'esnext'
       }
     }]
   },

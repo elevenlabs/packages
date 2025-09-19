@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
-import App from '../App';
-import StatusCard from '../components/StatusCard';
-import CommandPanel from '../components/CommandPanel';
-import ChladniOverlay from '../components/ChladniOverlay';
-import theme from '../themes/elevenlabs';
+import App from '../App.js';
+import StatusCard from '../components/StatusCard.js';
+import CommandPanel from '../components/CommandPanel.js';
+import ChladniOverlay from '../components/ChladniOverlay.js';
+import theme from '../themes/elevenlabs.js';
 
 interface AgentStatus {
   name: string;

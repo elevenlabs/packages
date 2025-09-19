@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Box, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
-import App from '../App';
-import StatusCard from '../components/StatusCard';
-import theme from '../themes/elevenlabs';
-import { setResidency, getResidency, LOCATIONS } from '../../config';
+import App from '../App.js';
+import StatusCard from '../components/StatusCard.js';
+import theme from '../themes/elevenlabs.js';
+import { setResidency, getResidency, LOCATIONS } from '../../config.js';
 
 interface ResidencyViewProps {
   initialResidency?: string;

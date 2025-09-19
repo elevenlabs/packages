@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
-import App from '../App';
-import StatusCard from '../components/StatusCard';
-import theme from '../themes/elevenlabs';
-import { readAgentConfig } from '../../utils';
+import App from '../App.js';
+import StatusCard from '../components/StatusCard.js';
+import theme from '../themes/elevenlabs.js';
+import { readAgentConfig } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 

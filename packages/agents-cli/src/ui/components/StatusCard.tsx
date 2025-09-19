@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { Spinner } from '@inkjs/ui';
-import theme from '../themes/elevenlabs';
+import theme from '../themes/elevenlabs.js';
 
 export type StatusType = 'success' | 'error' | 'warning' | 'info' | 'loading' | 'idle';
 

@@ -11,7 +11,7 @@ import {
   retrieveApiKey,
   removeApiKey as removeStoredApiKey,
   hasApiKey
-} from './auth';
+} from './auth.js';
 export const LOCATIONS = ["us", "global", "eu-residency", "in-residency"] as const;
 export type Location = (typeof LOCATIONS)[number];
 

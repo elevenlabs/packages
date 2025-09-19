@@ -35,7 +35,7 @@
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "prepublishOnly": "npm run build",
-    "test": "node --enable-source-maps node_modules/.bin/jest",
+    "test": "jest",
     "lint": "eslint src -c eslint.config.js",
     "format": "prettier --write src/**/*.ts"
   },
