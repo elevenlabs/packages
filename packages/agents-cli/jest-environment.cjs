@@ -38,6 +38,8 @@ class CustomTestEnvironment extends TestEnvironment {
     // Set environment variables
     process.env.NODE_ENV = 'test';
     process.env.TEST_TEMP_DIR = testWorkDir;
+    // Disable keytar in tests to avoid keychain issues
+    process.env.CI = 'true';
   }
 
   async setup() {

@@ -23,6 +23,27 @@ jest.mock('os', () => ({
   homedir: jest.fn()
 }));
 
+// Mock auth module for better isolation
+jest.mock('../auth', () => {
+  let storedApiKey: string | undefined;
+  return {
+    storeApiKey: jest.fn().mockImplementation((key: any) => {
+      storedApiKey = key;
+      return Promise.resolve();
+    }),
+    retrieveApiKey: jest.fn().mockImplementation(() => {
+      return Promise.resolve(storedApiKey);
+    }),
+    removeApiKey: jest.fn().mockImplementation(() => {
+      storedApiKey = undefined;
+      return Promise.resolve();
+    }),
+    hasApiKey: jest.fn().mockImplementation(() => {
+      return Promise.resolve(!!storedApiKey);
+    })
+  };
+});
+
 const mockedOs = os as jest.Mocked<typeof os>;
 
 describe('Residency-specific API Client', () => {
@@ -41,6 +62,8 @@ describe('Residency-specific API Client', () => {
   afterEach(async () => {
     // Clean up temp directory
     await fs.remove(tempDir);
+    // Clear environment variables
+    delete process.env.ELEVENLABS_API_KEY;
     jest.clearAllMocks();
   });
 
@@ -101,6 +124,10 @@ describe('Residency-specific API Client', () => {
   it('should throw error when no API key is found', async () => {
     // Remove API key from environment
     delete process.env.ELEVENLABS_API_KEY;
+
+    // Clear the stored API key from the mocked auth module
+    const { removeApiKey } = require('../config');
+    await removeApiKey();
 
     // Clear the temp directory to remove any stored config
     await fs.remove(tempDir);

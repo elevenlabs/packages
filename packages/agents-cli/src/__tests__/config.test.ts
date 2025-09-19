@@ -25,6 +25,35 @@ jest.mock('os', () => ({
   homedir: jest.fn()
 }));
 
+// Mock auth module for better isolation
+jest.mock('../auth', () => {
+  let storedApiKey: string | undefined;
+  return {
+    storeApiKey: jest.fn().mockImplementation((key: any) => {
+      storedApiKey = key;
+      return Promise.resolve();
+    }),
+    retrieveApiKey: jest.fn().mockImplementation(() => {
+      // Check environment variable first (same logic as real auth module)
+      if (process.env.ELEVENLABS_API_KEY) {
+        return Promise.resolve(process.env.ELEVENLABS_API_KEY);
+      }
+      return Promise.resolve(storedApiKey);
+    }),
+    removeApiKey: jest.fn().mockImplementation(() => {
+      storedApiKey = undefined;
+      return Promise.resolve();
+    }),
+    hasApiKey: jest.fn().mockImplementation(() => {
+      // Check environment variable first (same logic as real auth module)
+      if (process.env.ELEVENLABS_API_KEY) {
+        return Promise.resolve(true);
+      }
+      return Promise.resolve(!!storedApiKey);
+    })
+  };
+});
+
 const mockedOs = os as jest.Mocked<typeof os>;
 
 describe('Config Management', () => {
@@ -40,6 +69,8 @@ describe('Config Management', () => {
   afterEach(async () => {
     // Clean up temp directory
     await fs.remove(tempDir);
+    // Clear environment variables
+    delete process.env.ELEVENLABS_API_KEY;
     jest.clearAllMocks();
   });
 
