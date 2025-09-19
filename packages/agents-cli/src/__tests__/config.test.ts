@@ -29,7 +29,7 @@ jest.mock('os', () => ({
 jest.mock('../auth', () => {
   let storedApiKey: string | undefined;
   return {
-    storeApiKey: jest.fn().mockImplementation((key: any) => {
+    storeApiKey: jest.fn().mockImplementation((key: string) => {
       storedApiKey = key;
       return Promise.resolve();
     }),

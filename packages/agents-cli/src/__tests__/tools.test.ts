@@ -2,11 +2,12 @@ import {
   WebhookTool, 
   ClientTool
 } from '../tools';
-import { 
-  updateToolInLock, 
-  getToolFromLock, 
+import {
+  updateToolInLock,
+  getToolFromLock,
   calculateConfigHash,
-  LockFileData
+  LockFileData,
+  LockFileAgent
 } from '../utils';
 
 describe('Tool Lock File Management', () => {
@@ -29,7 +30,7 @@ describe('Tool Lock File Management', () => {
     it('should initialize tools object if not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any,
+        tools: undefined as unknown as Record<string, LockFileAgent>,
         tests: {}
       };
       
@@ -99,7 +100,7 @@ describe('Tool Lock File Management', () => {
     it('should return undefined when tools object is not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any,
+        tools: undefined as unknown as Record<string, LockFileAgent>,
         tests: {}
       };
       

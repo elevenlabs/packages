@@ -2,6 +2,24 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import fs from 'fs-extra';
 import path from 'path';
 import { tmpdir } from 'os';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+
+interface TestDefinition {
+  name: string;
+  config: string;
+  type?: string;
+}
+
+interface TestsConfig {
+  tests: TestDefinition[];
+}
+
+interface TestConfigWithMethods {
+  tests?: TestDefinition[];
+  name?: string;
+  type?: string;
+  chat_history?: Array<{ role: string; time_in_call_secs: number; message: string }>;
+}
 import {
   readAgentConfig,
   writeAgentConfig,
@@ -31,7 +49,7 @@ const mockedApi = jest.mocked(elevenlabsApi);
 
 // Set up default mock implementations
 beforeEach(() => {
-  mockedApi.getElevenLabsClient.mockResolvedValue({} as any);
+  mockedApi.getElevenLabsClient.mockResolvedValue({} as unknown as ElevenLabsClient);
   mockedApi.createTestApi.mockResolvedValue({ id: 'test_123' });
   mockedApi.getTestApi.mockResolvedValue({
     id: 'test_123',
@@ -97,7 +115,7 @@ describe('Test Commands Integration', () => {
 
       // Add a test
       const config = await readAgentConfig(testsConfigPath);
-      (config as any).tests.push({
+      (config as unknown as TestsConfig).tests.push({
         name: 'Test 1',
         config: 'test_configs/test_1.json',
         type: 'basic-llm'
@@ -106,8 +124,8 @@ describe('Test Commands Integration', () => {
 
       // Verify test was added
       const updatedConfig = await readAgentConfig(testsConfigPath);
-      expect((updatedConfig as any).tests).toHaveLength(1);
-      expect((updatedConfig as any).tests[0].name).toBe('Test 1');
+      expect((updatedConfig as unknown as TestsConfig).tests).toHaveLength(1);
+      expect((updatedConfig as unknown as TestsConfig).tests[0].name).toBe('Test 1');
     });
 
     it('should create test config file with template', async () => {
@@ -124,9 +142,9 @@ describe('Test Commands Integration', () => {
       expect(await fs.pathExists(fullConfigPath)).toBe(true);
 
       const savedConfig = await readAgentConfig(fullConfigPath);
-      expect((savedConfig as any).name).toBe(testName);
-      expect((savedConfig as any).type).toBe('llm');
-      expect((savedConfig as any).chat_history).toHaveLength(1);
+      expect((savedConfig as TestConfigWithMethods).name).toBe(testName);
+      expect((savedConfig as TestConfigWithMethods).type).toBe('llm');
+      expect((savedConfig as TestConfigWithMethods).chat_history).toHaveLength(1);
     });
   });
 
@@ -263,7 +281,7 @@ describe('Test Commands Integration', () => {
       await saveLockFile(lockFilePath, lockData);
 
       // Add test to both files
-      (testsConfig as any).tests.push({
+      (testsConfig as unknown as TestsConfig).tests.push({
         name: 'Integration Test',
         config: 'test_configs/integration_test.json',
         type: 'basic-llm'
@@ -278,8 +296,8 @@ describe('Test Commands Integration', () => {
       const loadedTestsConfig = await readAgentConfig(testsConfigPath);
       const loadedLockData = await loadLockFile(lockFilePath);
 
-      expect((loadedTestsConfig as any).tests).toHaveLength(1);
-      expect((loadedTestsConfig as any).tests[0].name).toBe('Integration Test');
+      expect((loadedTestsConfig as unknown as TestsConfig).tests).toHaveLength(1);
+      expect((loadedTestsConfig as unknown as TestsConfig).tests[0].name).toBe('Integration Test');
 
       const testData = getTestFromLock(loadedLockData, 'Integration Test');
       expect(testData?.id).toBe('test_456');
@@ -379,7 +397,7 @@ describe('Test Commands Integration', () => {
       const loadedTestsConfig = await readAgentConfig(testsConfigPath);
       const loadedLockData = await loadLockFile(lockFilePath);
 
-      (loadedTestsConfig as any).tests.forEach((test: any) => {
+      (loadedTestsConfig as unknown as TestsConfig).tests.forEach((test: TestDefinition) => {
         const lockEntry = getTestFromLock(loadedLockData, test.name);
         expect(lockEntry).toBeTruthy();
         expect(lockEntry?.id).toBeTruthy();

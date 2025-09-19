@@ -3,6 +3,7 @@
  */
 
 export interface TestConfig {
+  [key: string]: unknown;
   chat_history: Array<{
     role: 'user' | 'agent';
     time_in_call_secs: number;
@@ -270,17 +271,17 @@ export function getTestTemplateByName(
     toolId?: string;
   } = {}
 ): TestConfig {
-  const templateFunctions: Record<string, (name: string, options?: any) => TestConfig> = {
-    "basic-llm": (name: string, opts: any) => getBasicLLMTestTemplate(
+  const templateFunctions: Record<string, (name: string, options?: Record<string, unknown>) => TestConfig> = {
+    "basic-llm": (name: string, opts: Record<string, unknown> = {}) => getBasicLLMTestTemplate(
       name,
-      opts.userMessage,
-      opts.successCondition
+      opts.userMessage as string | undefined,
+      opts.successCondition as string | undefined
     ),
-    "tool": (name: string, opts: any) => getToolTestTemplate(
+    "tool": (name: string, opts: Record<string, unknown> = {}) => getToolTestTemplate(
       name,
-      opts.toolName || "example_tool",
-      opts.toolId || "tool_123",
-      opts.userMessage
+      (opts.toolName as string) || "example_tool",
+      (opts.toolId as string) || "tool_123",
+      opts.userMessage as string | undefined
     ),
     "conversation-flow": getConversationFlowTestTemplate,
     "customer-service": getCustomerServiceTestTemplate

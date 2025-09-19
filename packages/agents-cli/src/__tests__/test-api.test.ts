@@ -7,21 +7,24 @@ import {
   runTestsOnAgentApi,
   getTestInvocationApi
 } from '../elevenlabs-api';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+
+type MockedFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
 // Mock the ElevenLabs client
 const mockClient = {
   conversationalAi: {
     tests: {
-      create: jest.fn() as jest.MockedFunction<any>,
-      get: jest.fn() as jest.MockedFunction<any>,
-      list: jest.fn() as jest.MockedFunction<any>,
-      update: jest.fn() as jest.MockedFunction<any>,
+      create: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>,
+      get: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>,
+      list: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>,
+      update: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>,
       invocations: {
-        get: jest.fn() as jest.MockedFunction<any>
+        get: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>
       }
     },
     agents: {
-      runTests: jest.fn() as jest.MockedFunction<any>
+      runTests: jest.fn() as MockedFunction<(...args: unknown[]) => Promise<unknown>>
     }
   }
 };
@@ -44,7 +47,7 @@ describe('Test API Functions', () => {
         failure_examples: [{ response: 'Error', type: 'failure' }]
       };
 
-      const result = await createTestApi(mockClient as any, testConfig);
+      const result = await createTestApi(mockClient as unknown as ElevenLabsClient, testConfig);
 
       expect(mockClient.conversationalAi.tests.create).toHaveBeenCalledWith(testConfig);
       expect(result).toEqual({ id: 'test_123' });
@@ -55,7 +58,7 @@ describe('Test API Functions', () => {
 
       const testConfig = { name: 'Test' };
 
-      await expect(createTestApi(mockClient as any, testConfig)).rejects.toThrow('API Error');
+      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, testConfig)).rejects.toThrow('API Error');
     });
   });
 
@@ -70,7 +73,7 @@ describe('Test API Functions', () => {
 
       mockClient.conversationalAi.tests.get.mockResolvedValue(mockResponse);
 
-      const result = await getTestApi(mockClient as any, 'test_123');
+      const result = await getTestApi(mockClient as unknown as ElevenLabsClient, 'test_123');
 
       expect(mockClient.conversationalAi.tests.get).toHaveBeenCalledWith('test_123');
       expect(result).toEqual({
@@ -84,7 +87,7 @@ describe('Test API Functions', () => {
     it('should handle missing test', async () => {
       mockClient.conversationalAi.tests.get.mockRejectedValue(new Error('Test not found'));
 
-      await expect(getTestApi(mockClient as any, 'nonexistent')).rejects.toThrow('Test not found');
+      await expect(getTestApi(mockClient as unknown as ElevenLabsClient, 'nonexistent')).rejects.toThrow('Test not found');
     });
   });
 
@@ -99,7 +102,7 @@ describe('Test API Functions', () => {
 
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
-      const result = await listTestsApi(mockClient as any);
+      const result = await listTestsApi(mockClient as unknown as ElevenLabsClient);
 
       expect(mockClient.conversationalAi.tests.list).toHaveBeenCalledWith({ pageSize: 30 });
       expect(result).toEqual(mockResponse.tests);
@@ -109,7 +112,7 @@ describe('Test API Functions', () => {
       const mockResponse = { tests: [] };
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
-      await listTestsApi(mockClient as any, 50);
+      await listTestsApi(mockClient as unknown as ElevenLabsClient, 50);
 
       expect(mockClient.conversationalAi.tests.list).toHaveBeenCalledWith({ pageSize: 50 });
     });
@@ -118,7 +121,7 @@ describe('Test API Functions', () => {
       const mockResponse = {};
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
-      const result = await listTestsApi(mockClient as any);
+      const result = await listTestsApi(mockClient as unknown as ElevenLabsClient);
 
       expect(result).toEqual([]);
     });
@@ -139,7 +142,7 @@ describe('Test API Functions', () => {
         chat_history: [{ role: 'user', time_in_call_secs: 1 }]
       };
 
-      const result = await updateTestApi(mockClient as any, 'test_123', testConfig);
+      const result = await updateTestApi(mockClient as unknown as ElevenLabsClient, 'test_123', testConfig);
 
       expect(mockClient.conversationalAi.tests.update).toHaveBeenCalledWith('test_123', testConfig);
       expect(result).toEqual({
@@ -167,7 +170,7 @@ describe('Test API Functions', () => {
       mockClient.conversationalAi.agents.runTests.mockResolvedValue(mockResponse);
 
       const testIds = ['test_1', 'test_2'];
-      const result = await runTestsOnAgentApi(mockClient as any, 'agent_123', testIds);
+      const result = await runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', testIds);
 
       expect(mockClient.conversationalAi.agents.runTests).toHaveBeenCalledWith('agent_123', {
         tests: [
@@ -205,7 +208,7 @@ describe('Test API Functions', () => {
         }
       };
 
-      await runTestsOnAgentApi(mockClient as any, 'agent_123', testIds, agentConfigOverride);
+      await runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', testIds, agentConfigOverride);
 
       expect(mockClient.conversationalAi.agents.runTests).toHaveBeenCalledWith('agent_123', {
         tests: [{ test_id: 'test_1' }],
@@ -217,7 +220,7 @@ describe('Test API Functions', () => {
       const mockResponse = { id: 'invocation_123', testRuns: [] };
       mockClient.conversationalAi.agents.runTests.mockResolvedValue(mockResponse);
 
-      await runTestsOnAgentApi(mockClient as any, 'agent_123', []);
+      await runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', []);
 
       expect(mockClient.conversationalAi.agents.runTests).toHaveBeenCalledWith('agent_123', {
         tests: []
@@ -252,7 +255,7 @@ describe('Test API Functions', () => {
 
       mockClient.conversationalAi.tests.invocations.get.mockResolvedValue(mockResponse);
 
-      const result = await getTestInvocationApi(mockClient as any, 'invocation_123');
+      const result = await getTestInvocationApi(mockClient as unknown as ElevenLabsClient, 'invocation_123');
 
       expect(mockClient.conversationalAi.tests.invocations.get).toHaveBeenCalledWith('invocation_123');
       expect(result).toEqual({
@@ -282,7 +285,7 @@ describe('Test API Functions', () => {
     it('should handle API errors', async () => {
       mockClient.conversationalAi.tests.invocations.get.mockRejectedValue(new Error('Invocation not found'));
 
-      await expect(getTestInvocationApi(mockClient as any, 'nonexistent')).rejects.toThrow('Invocation not found');
+      await expect(getTestInvocationApi(mockClient as unknown as ElevenLabsClient, 'nonexistent')).rejects.toThrow('Invocation not found');
     });
   });
 
@@ -290,23 +293,23 @@ describe('Test API Functions', () => {
     it('should propagate network errors', async () => {
       mockClient.conversationalAi.tests.create.mockRejectedValue(new Error('Network error'));
 
-      await expect(createTestApi(mockClient as any, {})).rejects.toThrow('Network error');
+      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, {})).rejects.toThrow('Network error');
     });
 
     it('should handle authentication errors', async () => {
       const authError = new Error('Unauthorized');
-      (authError as any).statusCode = 401;
+      (authError as Error & { statusCode: number }).statusCode = 401;
       mockClient.conversationalAi.tests.list.mockRejectedValue(authError);
 
-      await expect(listTestsApi(mockClient as any)).rejects.toThrow('Unauthorized');
+      await expect(listTestsApi(mockClient as unknown as ElevenLabsClient)).rejects.toThrow('Unauthorized');
     });
 
     it('should handle rate limiting errors', async () => {
       const rateLimitError = new Error('Rate limit exceeded');
-      (rateLimitError as any).statusCode = 429;
+      (rateLimitError as Error & { statusCode: number }).statusCode = 429;
       mockClient.conversationalAi.agents.runTests.mockRejectedValue(rateLimitError);
 
-      await expect(runTestsOnAgentApi(mockClient as any, 'agent_123', ['test_1'])).rejects.toThrow('Rate limit exceeded');
+      await expect(runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', ['test_1'])).rejects.toThrow('Rate limit exceeded');
     });
   });
 
@@ -336,7 +339,7 @@ describe('Test API Functions', () => {
 
       mockClient.conversationalAi.tests.get.mockResolvedValue(camelCaseResponse);
 
-      const result = await getTestApi(mockClient as any, 'test_123');
+      const result = await getTestApi(mockClient as unknown as ElevenLabsClient, 'test_123');
 
       expect(result).toEqual({
         test_id: 'test_123',
@@ -382,7 +385,7 @@ describe('Test API Functions', () => {
 
       mockClient.conversationalAi.tests.invocations.get.mockResolvedValue(complexResponse);
 
-      const result = await getTestInvocationApi(mockClient as any, 'inv_123');
+      const result = await getTestInvocationApi(mockClient as unknown as ElevenLabsClient, 'inv_123');
 
       expect(result).toEqual({
         test_runs: [

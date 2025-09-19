@@ -11,7 +11,7 @@ import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals
 
 // Mock the ElevenLabsClient
 jest.mock('@elevenlabs/elevenlabs-js', () => ({
-  ElevenLabsClient: jest.fn().mockImplementation((options: any) => ({
+  ElevenLabsClient: jest.fn().mockImplementation((options: { baseUrl?: string; apiKey: string }) => ({
     baseUrl: options.baseUrl,
     apiKey: options.apiKey
   }))
@@ -27,7 +27,7 @@ jest.mock('os', () => ({
 jest.mock('../auth', () => {
   let storedApiKey: string | undefined;
   return {
-    storeApiKey: jest.fn().mockImplementation((key: any) => {
+    storeApiKey: jest.fn().mockImplementation((key: string) => {
       storedApiKey = key;
       return Promise.resolve();
     }),
@@ -126,7 +126,7 @@ describe('Residency-specific API Client', () => {
     delete process.env.ELEVENLABS_API_KEY;
 
     // Clear the stored API key from the mocked auth module
-    const { removeApiKey } = require('../config');
+    const { removeApiKey } = await import('../config');
     await removeApiKey();
 
     // Clear the temp directory to remove any stored config

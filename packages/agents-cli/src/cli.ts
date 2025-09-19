@@ -37,6 +37,7 @@ import {
   runTestsOnAgentApi,
   getTestInvocationApi
 } from './elevenlabs-api';
+// import { CreateUnitTestRequest } from '@elevenlabs/elevenlabs-js/api';
 import { 
   getApiKey, 
   setApiKey, 
@@ -304,13 +305,14 @@ program
         try {
           await listAgentsApi(client, 1);
           console.log('API key verified successfully');
-        } catch (error: any) {
-          if (error?.statusCode === 401 || error?.message?.includes('401')) {
+        } catch (error: unknown) {
+          const err = error as { statusCode?: number; message?: string; code?: string };
+          if (err?.statusCode === 401 || err?.message?.includes('401')) {
             console.error('Invalid API key');
-          } else if (error?.code === 'ENOTFOUND' || error?.code === 'ETIMEDOUT' || error?.message?.includes('network')) {
+          } else if (err?.code === 'ENOTFOUND' || err?.code === 'ETIMEDOUT' || err?.message?.includes('network')) {
             console.error('Network error: Unable to connect to ElevenLabs API');
           } else {
-            console.error('Error verifying API key:', error?.message || error);
+            console.error('Error verifying API key:', err?.message || error);
           }
           process.exit(1);
         }
@@ -1019,7 +1021,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   
   try {
     const response = await createToolApi(client, toolConfig);
-    const toolId = (response as any).toolId || `tool_${Date.now()}`;
+    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
@@ -1719,7 +1721,7 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
 
   try {
     const testApiConfig = toSnakeCaseKeys(testConfig);
-    const response = await createTestApi(client, testApiConfig);
+    const response = await createTestApi(client, testApiConfig as unknown as Record<string, unknown>);
     const testId = response.id;
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
@@ -1967,7 +1969,7 @@ async function fetchTests(options: { outputDir: string; dryRun: boolean }): Prom
   }
 
   if (options.dryRun) {
-    const newTestsCount = testsList.filter((t: any) => {
+    const newTestsCount = testsList.filter((t: unknown) => {
       const test = t as { id?: string };
       return test.id && !existingTestIds.has(test.id);
     }).length;

@@ -27,7 +27,7 @@ describe('Test Lock File Management', () => {
       const lockData: LockFileData = {
         agents: {},
         tools: {},
-        tests: undefined as any
+        tests: undefined as unknown as Record<string, LockFileAgent>
       };
 
       updateTestInLock(lockData, 'test-name', 'test_123', 'hash123');
@@ -150,7 +150,7 @@ describe('Test Lock File Management', () => {
       const lockData: LockFileData = {
         agents: {},
         tools: {},
-        tests: undefined as any
+        tests: undefined as unknown as Record<string, LockFileAgent>
       };
 
       const result = getTestFromLock(lockData, 'test-name');
