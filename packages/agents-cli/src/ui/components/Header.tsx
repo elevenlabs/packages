@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/elevenlabs';
 
 interface HeaderProps {
   title?: string;

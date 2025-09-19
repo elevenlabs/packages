@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
-import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
-import { setApiKey } from '../../config.js';
+import App from '../App';
+import StatusCard from '../components/StatusCard';
+import theme from '../themes/elevenlabs';
+import { setApiKey } from '../../config';
 
 interface LoginViewProps {
   onComplete?: () => void;

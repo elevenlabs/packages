@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
-import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
-import { isLoggedIn, getApiKey, getResidency } from '../../config.js';
+import App from '../App';
+import StatusCard from '../components/StatusCard';
+import theme from '../themes/elevenlabs';
+import { isLoggedIn, getApiKey, getResidency } from '../../config';
 
 interface WhoamiViewProps {
   onComplete?: () => void;

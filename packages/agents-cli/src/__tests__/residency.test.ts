@@ -99,12 +99,14 @@ describe('Residency-specific API Client', () => {
   });
 
   it('should throw error when no API key is found', async () => {
-    // Remove API key
+    // Remove API key from environment
     delete process.env.ELEVENLABS_API_KEY;
-    
+
     // Clear the temp directory to remove any stored config
     await fs.remove(tempDir);
-    await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
+
+    // Create a new empty temp directory
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     mockedOs.homedir.mockReturnValue(tempDir);
 
     await expect(getElevenLabsClient()).rejects.toThrow("No API key found. Use 'agents login' to authenticate or set ELEVENLABS_API_KEY environment variable.");

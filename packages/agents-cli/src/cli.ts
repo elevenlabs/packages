@@ -17,12 +17,12 @@ import {
   updateTestInLock,
   getTestFromLock,
   toSnakeCaseKeys
-} from './utils.js';
+} from './utils';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
-} from './templates.js';
+} from './templates';
 import {
   getElevenLabsClient,
   createAgentApi,
@@ -36,7 +36,7 @@ import {
   updateTestApi,
   runTestsOnAgentApi,
   getTestInvocationApi
-} from './elevenlabs-api.js';
+} from './elevenlabs-api';
 import { 
   getApiKey, 
   setApiKey, 
@@ -46,14 +46,14 @@ import {
   setResidency,
   Location,
   LOCATIONS
-} from './config.js';
+} from './config';
 import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
   ToolsConfig,
   ToolDefinition
-} from './tools.js';
+} from './tools';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -64,18 +64,18 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 
 const { version } = packageJson;
 import { render } from 'ink';
 import React from 'react';
-import InitView from './ui/views/InitView.js';
-import SyncView from './ui/views/SyncView.js';
-import LoginView from './ui/views/LoginView.js';
-import AddAgentView from './ui/views/AddAgentView.js';
-import StatusView from './ui/views/StatusView.js';
-import WhoamiView from './ui/views/WhoamiView.js';
-import ListAgentsView from './ui/views/ListAgentsView.js';
-import LogoutView from './ui/views/LogoutView.js';
-import ResidencyView from './ui/views/ResidencyView.js';
-import HelpView from './ui/views/HelpView.js';
-import TestView from './ui/views/TestView.js';
-import AddTestView from './ui/views/AddTestView.js';
+import InitView from './ui/views/InitView';
+import SyncView from './ui/views/SyncView';
+import LoginView from './ui/views/LoginView';
+import AddAgentView from './ui/views/AddAgentView';
+import StatusView from './ui/views/StatusView';
+import WhoamiView from './ui/views/WhoamiView';
+import ListAgentsView from './ui/views/ListAgentsView';
+import LogoutView from './ui/views/LogoutView';
+import ResidencyView from './ui/views/ResidencyView';
+import HelpView from './ui/views/HelpView';
+import TestView from './ui/views/TestView';
+import AddTestView from './ui/views/AddTestView';
 
 // Load environment variables
 dotenv.config();

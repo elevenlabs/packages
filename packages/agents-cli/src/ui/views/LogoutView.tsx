@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
-import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
-import { isLoggedIn, removeApiKey } from '../../config.js';
+import App from '../App';
+import StatusCard from '../components/StatusCard';
+import theme from '../themes/elevenlabs';
+import { isLoggedIn, removeApiKey } from '../../config';
 
 interface LogoutViewProps {
   onComplete?: () => void;

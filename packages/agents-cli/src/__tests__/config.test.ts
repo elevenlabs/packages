@@ -99,9 +99,15 @@ describe('Config Management', () => {
 
       const apiKey = await getApiKey();
       expect(apiKey).toBe('env-key');
+
+      // Clean up environment variable
+      delete process.env.ELEVENLABS_API_KEY;
     });
 
     it('should check login status correctly', async () => {
+      // Clear any existing API key from environment
+      delete process.env.ELEVENLABS_API_KEY;
+
       expect(await isLoggedIn()).toBe(false);
 
       await setApiKey('test-key');

@@ -1,7 +1,7 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ConversationalConfig, AgentPlatformSettingsRequestModel } from '@elevenlabs/elevenlabs-js/api';
-import { getApiKey, loadConfig, Location } from './config.js';
-import { toCamelCaseKeys, toSnakeCaseKeys } from './utils.js';
+import { getApiKey, loadConfig, Location } from './config';
+import { toCamelCaseKeys, toSnakeCaseKeys } from './utils';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {

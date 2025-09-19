@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
-import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import App from '../App';
+import StatusCard from '../components/StatusCard';
+import theme from '../themes/elevenlabs';
 
 interface AddTestViewProps {
   initialName?: string;
