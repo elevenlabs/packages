@@ -178,8 +178,8 @@ describe('Test API Functions', () => {
 
       expect(mockClient.conversationalAi.agents.runTests).toHaveBeenCalledWith('agent_123', {
         tests: [
-          { test_id: 'test_1' },
-          { test_id: 'test_2' }
+          { testId: 'test_1' },
+          { testId: 'test_2' }
         ]
       });
 
@@ -215,8 +215,8 @@ describe('Test API Functions', () => {
       await runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', testIds, agentConfigOverride);
 
       expect(mockClient.conversationalAi.agents.runTests).toHaveBeenCalledWith('agent_123', {
-        tests: [{ test_id: 'test_1' }],
-        agent_config_override: agentConfigOverride
+        tests: [{ testId: 'test_1' }],
+        agentConfigOverride: agentConfigOverride
       });
     });
 
