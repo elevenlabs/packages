@@ -55,7 +55,7 @@ export const TestView: React.FC<TestViewProps> = ({
         const { getElevenLabsClient, runTestsOnAgentApi } = await import('../../elevenlabs-api.js');
         const client = await getElevenLabsClient();
 
-        const result = await runTestsOnAgentApi(client, agentId, testIds);
+        const result = await runTestsOnAgentApi(client, agentId, testIds) as TestInvocation;
         setTestInvocation(result);
         setTestRuns(result.test_runs || []);
         setPolling(true);

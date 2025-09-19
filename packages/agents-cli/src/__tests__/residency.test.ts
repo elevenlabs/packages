@@ -11,10 +11,13 @@ import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals
 
 // Mock the ElevenLabsClient
 jest.mock('@elevenlabs/elevenlabs-js', () => ({
-  ElevenLabsClient: jest.fn().mockImplementation((options: { baseUrl?: string; apiKey: string }) => ({
-    baseUrl: options.baseUrl,
-    apiKey: options.apiKey
-  }))
+  ElevenLabsClient: jest.fn().mockImplementation((options: unknown) => {
+    const opts = options as { baseUrl?: string; apiKey: string };
+    return {
+      baseUrl: opts.baseUrl,
+      apiKey: opts.apiKey
+    };
+  })
 }));
 
 // Mock os module
@@ -27,8 +30,8 @@ jest.mock('os', () => ({
 jest.mock('../auth', () => {
   let storedApiKey: string | undefined;
   return {
-    storeApiKey: jest.fn().mockImplementation((key: string) => {
-      storedApiKey = key;
+    storeApiKey: jest.fn().mockImplementation((key: unknown) => {
+      storedApiKey = key as string;
       return Promise.resolve();
     }),
     retrieveApiKey: jest.fn().mockImplementation(() => {
