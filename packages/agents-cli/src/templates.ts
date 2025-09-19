@@ -45,6 +45,13 @@ export interface AgentConfig {
       };
       [key: string]: unknown;
     };
+    testing?: {
+      attached_tests?: Array<{
+        test_id: string;
+        workflow_node_id?: string;
+      }>;
+      [key: string]: unknown;
+    };
     [key: string]: unknown;
   };
   tags: string[];
@@ -256,6 +263,9 @@ export function getDefaultAgentTemplate(name: string): AgentConfig {
         is_blocked_ivc: false,
         is_blocked_non_ivc: false,
         ignore_safety_evaluation: false
+      },
+      testing: {
+        attached_tests: []
       },
       ban: null
     },

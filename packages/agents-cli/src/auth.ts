@@ -8,7 +8,11 @@ import path from 'path';
 import os from 'os';
 
 // Optional keychain import - graceful fallback if not available
-let keytar: any;
+let keytar: {
+  setPassword: (service: string, account: string, password: string) => Promise<void>;
+  getPassword: (service: string, account: string) => Promise<string | null>;
+  deletePassword: (service: string, account: string) => Promise<boolean>;
+} | undefined;
 try {
   // Skip keytar in CI environments where it might cause permission issues
   if (!process.env.CI && !process.env.GITHUB_ACTIONS && !process.env.DOCKER_CONTAINER) {

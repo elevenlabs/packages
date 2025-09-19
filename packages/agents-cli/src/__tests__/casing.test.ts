@@ -1,4 +1,5 @@
 import { createAgentApi, updateAgentApi, getAgentApi } from "../elevenlabs-api";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 describe("Key casing normalization", () => {
   function makeMockClient() {
@@ -28,7 +29,7 @@ describe("Key casing normalization", () => {
       conversationalAi: {
         agents: { create, update, get },
       },
-    } as any;
+    } as unknown as ElevenLabsClient;
   }
 
   it("createAgentApi camelizes outbound conversation_config and platform_settings", async () => {

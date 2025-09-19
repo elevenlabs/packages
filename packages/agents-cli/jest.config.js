@@ -1,22 +1,8 @@
+
 export default {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
+  preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
-  },
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        useESM: true,
-        tsconfig: {
-          module: 'ESNext',
-          moduleResolution: 'bundler'
-        }
-      }
-    ]
-  },
+  testEnvironment: '<rootDir>/jest-environment.cjs',
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   collectCoverageFrom: [
@@ -25,5 +11,19 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: []
+  testTimeout: 30000,
+  maxWorkers: 1,
+  forceExit: true,
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      useESM: true,
+      tsconfig: {
+        module: 'esnext'
+      }
+    }]
+  },
+  moduleFileExtensions: ['ts', 'js', 'json']
 }; 

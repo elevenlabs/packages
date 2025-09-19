@@ -12,6 +12,7 @@ export interface LockFileAgent {
 export interface LockFileData {
   agents: Record<string, Record<string, LockFileAgent>>;
   tools: Record<string, LockFileAgent>;
+  tests: Record<string, LockFileAgent>;
 }
 
 /**
@@ -120,7 +121,7 @@ export async function loadLockFile(
   try {
     const exists = await fs.pathExists(lockFilePath);
     if (!exists) {
-      return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {} };
+      return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {}, tests: {} };
     }
 
     const data = await fs.readFile(lockFilePath, "utf-8");
@@ -140,6 +141,10 @@ export async function loadLockFile(
       parsed.tools = {};
     }
 
+    if (!parsed.tests || typeof parsed.tests !== "object") {
+      parsed.tests = {};
+    }
+
     return parsed;
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -151,7 +156,7 @@ export async function loadLockFile(
         `Warning: Could not read lock file ${lockFilePath}. Initializing with empty lists.`
       );
     }
-    return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {} };
+    return { [LOCK_FILE_AGENTS_KEY]: {}, tools: {}, tests: {} };
   }
 }
 
@@ -324,4 +329,42 @@ export function toSnakeCaseKeys<T = unknown>(value: T): T {
     return (result as unknown) as T;
   }
   return value;
+}
+
+/**
+ * Updates or adds a test's ID and hash in the lock data.
+ *
+ * @param lockData - The lock file data to update
+ * @param testName - The test name
+ * @param testId - The test ID
+ * @param configHash - The configuration hash
+ */
+export function updateTestInLock(
+  lockData: LockFileData,
+  testName: string,
+  testId: string,
+  configHash: string
+): void {
+  if (!lockData.tests || typeof lockData.tests !== "object") {
+    lockData.tests = {};
+  }
+
+  lockData.tests[testName] = {
+    id: testId,
+    hash: configHash,
+  };
+}
+
+/**
+ * Retrieves test ID and hash from lock data by test name.
+ *
+ * @param lockData - The lock file data
+ * @param testName - The test name
+ * @returns The test data if found, undefined otherwise
+ */
+export function getTestFromLock(
+  lockData: LockFileData,
+  testName: string
+): LockFileAgent | undefined {
+  return lockData.tests?.[testName];
 }
