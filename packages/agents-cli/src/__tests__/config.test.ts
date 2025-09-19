@@ -67,8 +67,8 @@ describe('Config Management', () => {
     // Mock os.homedir to return our temp directory
     mockedOs.homedir.mockReturnValue(tempDir);
     // Reset mock state
-    const authMock = require('../auth');
-    if (authMock.__resetStoredApiKey) {
+    const authMock = jest.mocked(await import('../auth.js'));
+    if ('__resetStoredApiKey' in authMock && typeof authMock.__resetStoredApiKey === 'function') {
       authMock.__resetStoredApiKey();
     }
   });

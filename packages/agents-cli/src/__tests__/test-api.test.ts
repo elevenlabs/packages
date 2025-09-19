@@ -8,6 +8,7 @@ import {
   getTestInvocationApi
 } from '../elevenlabs-api';
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 
 type MockedFunction<T extends (...args: unknown[]) => unknown> = jest.MockedFunction<T>;
 
@@ -41,13 +42,13 @@ describe('Test API Functions', () => {
 
       const testConfig = {
         name: 'Test Name',
-        chat_history: [{ role: 'user', time_in_call_secs: 1, message: 'Hello' }],
-        success_condition: 'Agent responds helpfully',
-        success_examples: [{ response: 'Hi there!', type: 'success' }],
-        failure_examples: [{ response: 'Error', type: 'failure' }]
+        chatHistory: [{ role: 'user', timeInCallSecs: 1, message: 'Hello' }],
+        successCondition: 'Agent responds helpfully',
+        successExamples: [{ response: 'Hi there!', type: 'success' }],
+        failureExamples: [{ response: 'Error', type: 'failure' }]
       };
 
-      const result = await createTestApi(mockClient as unknown as ElevenLabsClient, testConfig);
+      const result = await createTestApi(mockClient as unknown as ElevenLabsClient, testConfig as ElevenLabs.conversationalAi.CreateUnitTestRequest);
 
       expect(mockClient.conversationalAi.tests.create).toHaveBeenCalledWith(testConfig);
       expect(result).toEqual({ id: 'test_123' });
@@ -58,7 +59,7 @@ describe('Test API Functions', () => {
 
       const testConfig = { name: 'Test' };
 
-      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, testConfig)).rejects.toThrow('API Error');
+      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, testConfig as ElevenLabs.conversationalAi.CreateUnitTestRequest)).rejects.toThrow('API Error');
     });
   });
 
@@ -139,7 +140,10 @@ describe('Test API Functions', () => {
 
       const testConfig = {
         name: 'Updated Test',
-        chat_history: [{ role: 'user', time_in_call_secs: 1 }]
+        chatHistory: [{ role: 'user' as const, timeInCallSecs: 1 }],
+        successCondition: 'The agent responds appropriately',
+        successExamples: [{ response: 'Good response', type: 'success' as const }],
+        failureExamples: [{ response: 'Bad response', type: 'failure' as const }]
       };
 
       const result = await updateTestApi(mockClient as unknown as ElevenLabsClient, 'test_123', testConfig);
@@ -293,7 +297,14 @@ describe('Test API Functions', () => {
     it('should propagate network errors', async () => {
       mockClient.conversationalAi.tests.create.mockRejectedValue(new Error('Network error'));
 
-      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, {})).rejects.toThrow('Network error');
+      const validTestConfig = {
+        name: 'Test',
+        chatHistory: [{ role: 'user' as const, timeInCallSecs: 1 }],
+        successCondition: 'Test condition',
+        successExamples: [{ response: 'Good', type: 'success' as const }],
+        failureExamples: [{ response: 'Bad', type: 'failure' as const }]
+      };
+      await expect(createTestApi(mockClient as unknown as ElevenLabsClient, validTestConfig)).rejects.toThrow('Network error');
     });
 
     it('should handle authentication errors', async () => {

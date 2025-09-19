@@ -137,7 +137,6 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         saveLockFile,
         updateTestInLock,
         calculateConfigHash,
-        toSnakeCaseKeys
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
@@ -193,7 +192,8 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
         const client = await getElevenLabsClient();
 
-        const testApiConfig = toSnakeCaseKeys(testConfig);
+        const { toCamelCaseKeys } = await import('../../utils.js');
+        const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
         const response = await createTestApi(client, testApiConfig);
         const testId = response.id;
 

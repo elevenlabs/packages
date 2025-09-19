@@ -1,4 +1,5 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 import {
   ConversationalConfig,
   AgentPlatformSettingsRequestModel
@@ -248,8 +249,8 @@ export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId
  * @param testConfig - The test configuration object
  * @returns Promise that resolves to the created test with ID
  */
-export async function createTestApi(client: ElevenLabsClient, testConfig: Record<string, unknown>): Promise<{ id: string }> {
-  const response = await client.conversationalAi.tests.create(testConfig as any);
+export async function createTestApi(client: ElevenLabsClient, testConfig: ElevenLabs.conversationalAi.CreateUnitTestRequest): Promise<{ id: string }> {
+  const response = await client.conversationalAi.tests.create(testConfig);
   return response as { id: string };
 }
 
@@ -285,8 +286,8 @@ export async function listTestsApi(client: ElevenLabsClient, pageSize: number = 
  * @param testConfig - The updated test configuration object
  * @returns Promise that resolves to the updated test object
  */
-export async function updateTestApi(client: ElevenLabsClient, testId: string, testConfig: Record<string, unknown>): Promise<unknown> {
-  const response = await client.conversationalAi.tests.update(testId, testConfig as any);
+export async function updateTestApi(client: ElevenLabsClient, testId: string, testConfig: ElevenLabs.conversationalAi.UpdateUnitTestRequest): Promise<unknown> {
+  const response = await client.conversationalAi.tests.update(testId, testConfig);
   return toSnakeCaseKeys(response);
 }
 
@@ -305,14 +306,14 @@ export async function runTestsOnAgentApi(
   testIds: string[],
   agentConfigOverride?: Record<string, unknown>
 ): Promise<unknown> {
-  const tests = testIds.map(testId => ({ test_id: testId }));
-  const requestBody = { tests } as Record<string, unknown>;
+  const tests = testIds.map(testId => ({ testId }));
+  const requestBody: ElevenLabs.conversationalAi.RunAgentTestsRequestModel = { tests };
 
   if (agentConfigOverride) {
-    (requestBody as Record<string, unknown>).agent_config_override = agentConfigOverride;
+    requestBody.agentConfigOverride = agentConfigOverride as unknown as ElevenLabs.AdhocAgentConfigOverrideForTestRequestModel;
   }
 
-  const response = await client.conversationalAi.agents.runTests(agentId, requestBody as any);
+  const response = await client.conversationalAi.agents.runTests(agentId, requestBody);
   return toSnakeCaseKeys(response);
 }
 

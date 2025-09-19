@@ -16,6 +16,7 @@ import {
   getToolFromLock,
   updateTestInLock,
   getTestFromLock,
+  toCamelCaseKeys,
   toSnakeCaseKeys
 } from './utils.js';
 import { 
@@ -33,11 +34,9 @@ import {
   createTestApi,
   getTestApi,
   listTestsApi,
-  updateTestApi,
-  runTestsOnAgentApi,
-  getTestInvocationApi
+  updateTestApi
 } from './elevenlabs-api.js';
-// import { CreateUnitTestRequest } from '@elevenlabs/elevenlabs-js/api';
+import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -1720,8 +1719,8 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
   const client = await getElevenLabsClient();
 
   try {
-    const testApiConfig = toSnakeCaseKeys(testConfig);
-    const response = await createTestApi(client, testApiConfig as unknown as Record<string, unknown>);
+    const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
+    const response = await createTestApi(client, testApiConfig);
     const testId = response.id;
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
@@ -1817,7 +1816,7 @@ async function syncTests(testName?: string, dryRun = false): Promise<void> {
     // Perform API operation
     try {
       const testId = lockedTest?.id;
-      const testApiConfig = toSnakeCaseKeys(testConfig);
+      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
 
       if (!testId) {
         // Create new test
@@ -1827,7 +1826,7 @@ async function syncTests(testName?: string, dryRun = false): Promise<void> {
         updateTestInLock(lockData, testDefName, newTestId, configHash);
       } else {
         // Update existing test
-        await updateTestApi(client!, testId, testApiConfig);
+        await updateTestApi(client!, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
         console.log(`Updated test ${testDefName} (ID: ${testId})`);
         updateTestInLock(lockData, testDefName, testId, configHash);
       }
