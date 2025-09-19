@@ -28,6 +28,7 @@ jest.mock('os', () => ({
 // Mock auth module for better isolation
 jest.mock('../auth', () => {
   let storedApiKey: string | undefined;
+  const resetStoredApiKey = () => { storedApiKey = undefined; };
   return {
     storeApiKey: jest.fn().mockImplementation((key: unknown) => {
       storedApiKey = key as string;
@@ -50,7 +51,8 @@ jest.mock('../auth', () => {
         return Promise.resolve(true);
       }
       return Promise.resolve(!!storedApiKey);
-    })
+    }),
+    __resetStoredApiKey: resetStoredApiKey
   };
 });
 
@@ -64,6 +66,11 @@ describe('Config Management', () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agents-test-'));
     // Mock os.homedir to return our temp directory
     mockedOs.homedir.mockReturnValue(tempDir);
+    // Reset mock state
+    const authMock = require('../auth');
+    if (authMock.__resetStoredApiKey) {
+      authMock.__resetStoredApiKey();
+    }
   });
 
   afterEach(async () => {
