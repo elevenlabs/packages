@@ -14,7 +14,8 @@ Manage ElevenLabs Agents with local configuration files. This tool is an experim
 - **Multi-environment**: Deploy across dev, staging, production
 - **Smart Updates**: Hash-based change detection
 - **Watch Mode**: Automatic sync on file changes
-- **Import/Export**: Fetch existing agents from workspace
+- **Import/Export**: Fetch existing agents and tools from workspace
+- **Tool Management**: Import and manage tools from ElevenLabs workspace
 - **Widget Generation**: HTML widget snippets
 - **Secure Storage**: OS keychain integration with secure file fallback
 
@@ -103,11 +104,14 @@ agents watch
 ```
 your_project/
 ├── agents.json              # Central configuration
+├── tools.json               # Tool configurations
 ├── agent_configs/           # Agent configs by environment
 │   ├── prod/
 │   ├── dev/
 │   └── staging/
-└── agents.lock              # Agent IDs and hashes
+├── tool_configs/            # Tool configurations
+├── agents.lock              # Agent IDs and hashes
+└── tools-lock.json          # Tool IDs and hashes
 ```
 
 ## Commands
@@ -137,6 +141,9 @@ agents watch [--agent "Agent Name"] [--env dev] [--interval 5]
 
 # Import from ElevenLabs
 agents fetch [--search "term"] [--env staging] [--dry-run]
+
+# Import tools from ElevenLabs
+agents fetch-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-dir tool_configs]
 
 # Generate widget HTML (includes server-location for isolated regions)
 agents widget "Agent Name" [--env production]
@@ -230,6 +237,17 @@ agents sync --env prod
 agents init
 agents login
 agents fetch --env prod
+agents sync
+```
+
+**Import and Use Tools:**
+
+```bash
+agents init
+agents login
+agents fetch-tools
+# Edit tool configs in tool_configs/
+# Reference tools in your agent configurations
 agents sync
 ```
 
