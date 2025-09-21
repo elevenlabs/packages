@@ -12,7 +12,8 @@ import {
   updateToolInLock,
   getToolFromLock,
   calculateConfigHash,
-  LockFileData
+  LockFileData,
+  LockFileAgent
 } from '../utils';
 import {
   getElevenLabsClient,
@@ -34,7 +35,8 @@ describe('Tool Lock File Management', () => {
     it('should update tool in lock data', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: {}
+        tools: {},
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'tool_123', 'hash123');
@@ -48,7 +50,8 @@ describe('Tool Lock File Management', () => {
     it('should initialize tools object if not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any
+        tools: undefined as unknown as Record<string, LockFileAgent>,
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'tool_123', 'hash123');
@@ -68,7 +71,8 @@ describe('Tool Lock File Management', () => {
             id: 'old_id',
             hash: 'old_hash'
           }
-        }
+        },
+        tests: {}
       };
       
       updateToolInLock(lockData, 'test-tool', 'new_id', 'new_hash');
@@ -89,7 +93,8 @@ describe('Tool Lock File Management', () => {
             id: 'tool_123',
             hash: 'hash123'
           }
-        }
+        },
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'test-tool');
@@ -103,7 +108,8 @@ describe('Tool Lock File Management', () => {
     it('should return undefined when tool does not exist', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: {}
+        tools: {},
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'non-existent-tool');
@@ -114,7 +120,8 @@ describe('Tool Lock File Management', () => {
     it('should return undefined when tools object is not present', () => {
       const lockData: LockFileData = {
         agents: {},
-        tools: undefined as any
+        tools: undefined as unknown as Record<string, LockFileAgent>,
+        tests: {}
       };
       
       const result = getToolFromLock(lockData, 'test-tool');

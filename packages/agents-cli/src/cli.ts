@@ -12,6 +12,9 @@ import {
   saveLockFile,
   getAgentFromLock,
   updateAgentInLock,
+  updateTestInLock,
+  getTestFromLock,
+  toCamelCaseKeys,
   toSnakeCaseKeys
 } from './utils.js';
 import { 
@@ -27,8 +30,13 @@ import {
   getAgentApi,
   createToolApi,
   listToolsApi,
-  getToolApi
+  getToolApi,
+  createTestApi,
+  getTestApi,
+  listTestsApi,
+  updateTestApi
 } from './elevenlabs-api.js';
+import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -71,6 +79,8 @@ import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
 import HelpView from './ui/views/HelpView.js';
 import FetchToolsView from './ui/views/FetchToolsView.js';
+import TestView from './ui/views/TestView.js';
+import AddTestView from './ui/views/AddTestView.js';
 
 // Load environment variables
 dotenv.config();
@@ -80,6 +90,7 @@ const program = new Command();
 // Default file names
 const AGENTS_CONFIG_FILE = "agents.json";
 const TOOLS_CONFIG_FILE = "tools.json";
+const TESTS_CONFIG_FILE = "tests.json";
 const LOCK_FILE = "agents.lock";
 
 interface AgentDefinition {
@@ -90,6 +101,16 @@ interface AgentDefinition {
 
 interface AgentsConfig {
   agents: AgentDefinition[];
+}
+
+interface TestDefinition {
+  name: string;
+  config: string;
+  type?: string;
+}
+
+interface TestsConfig {
+  tests: TestDefinition[];
 }
 
 interface AddOptions {
@@ -202,9 +223,21 @@ program
           await writeToolsConfig(toolsConfigPath, initialToolsConfig);
           console.log(`Created ${TOOLS_CONFIG_FILE}`);
         }
+
+        // Create tests.json file
+        const testsConfigPath = path.join(fullPath, TESTS_CONFIG_FILE);
+        if (await fs.pathExists(testsConfigPath)) {
+          console.log(`${TESTS_CONFIG_FILE} already exists, skipping creation`);
+        } else {
+          const initialTestsConfig: TestsConfig = {
+            tests: []
+          };
+          await writeAgentConfig(testsConfigPath, initialTestsConfig);
+          console.log(`Created ${TESTS_CONFIG_FILE}`);
+        }
         
         // Create agent_configs directory structure
-        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs'];
+        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs', 'test_configs'];
         for (const dir of configDirs) {
           const dirPath = path.join(fullPath, dir);
           await fs.ensureDir(dirPath);
@@ -218,7 +251,8 @@ program
         } else {
           const initialLockData = {
             agents: {},
-            tools: {}
+            tools: {},
+            tests: {}
           };
           await saveLockFile(lockFilePath, initialLockData);
           console.log(`Created ${LOCK_FILE}`);
@@ -239,7 +273,9 @@ ELEVENLABS_API_KEY=your_api_key_here
         console.log('1. Set your ElevenLabs API key: agents login');
         console.log('2. Create an agent: agents add "My Agent" --template default');
         console.log('3. Create tools: agents add-webhook-tool "My Webhook" or agents add-client-tool "My Client"');
-        console.log('4. Sync to ElevenLabs: agents sync');
+        console.log('4. Create tests: agents add-test "My Test" --template basic-llm');
+        console.log('5. Sync to ElevenLabs: agents sync && agents sync-tests');
+        console.log('6. Run tests: agents test "My Agent"');
       }
     } catch (error) {
       console.error(`Error initializing project: ${error}`);
@@ -280,13 +316,14 @@ program
         try {
           await listAgentsApi(client, 1);
           console.log('API key verified successfully');
-        } catch (error: any) {
-          if (error?.statusCode === 401 || error?.message?.includes('401')) {
+        } catch (error: unknown) {
+          const err = error as { statusCode?: number; message?: string; code?: string };
+          if (err?.statusCode === 401 || err?.message?.includes('401')) {
             console.error('Invalid API key');
-          } else if (error?.code === 'ENOTFOUND' || error?.code === 'ETIMEDOUT' || error?.message?.includes('network')) {
+          } else if (err?.code === 'ENOTFOUND' || err?.code === 'ETIMEDOUT' || err?.message?.includes('network')) {
             console.error('Network error: Unable to connect to ElevenLabs API');
           } else {
-            console.error('Error verifying API key:', error?.message || error);
+            console.error('Error verifying API key:', err?.message || error);
           }
           process.exit(1);
         }
@@ -826,6 +863,80 @@ program
     }
   });
 
+program
+  .command('add-test')
+  .description('Add a new test - creates config and uploads to ElevenLabs')
+  .argument('<name>', 'Name of the test to create')
+  .option('--template <template>', 'Test template type to use', 'basic-llm')
+  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (name: string, options: { template: string; skipUpload: boolean; ui: boolean }) => {
+    try {
+      if (options.ui !== false) {
+        // Use Ink UI for test creation
+        const { waitUntilExit } = render(
+          React.createElement(AddTestView, {
+            initialName: name,
+            skipUpload: options.skipUpload
+          })
+        );
+        await waitUntilExit();
+      } else {
+        await addTest(name, options.template, options.skipUpload);
+      }
+    } catch (error) {
+      console.error(`Error creating test: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('sync-tests')
+  .description('Synchronize tests with ElevenLabs API when configs change')
+  .option('--test <name>', 'Specific test name to sync (defaults to all tests)')
+  .option('--dry-run', 'Show what would be done without making changes', false)
+  .action(async (options: { test?: string; dryRun: boolean }) => {
+    try {
+      await syncTests(options.test, options.dryRun);
+    } catch (error) {
+      console.error(`Error during test sync: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('fetch-tests')
+  .description('Fetch all tests from ElevenLabs workspace and add them to local configuration')
+  .option('--output-dir <dir>', 'Directory to store fetched test configs', 'test_configs')
+  .option('--dry-run', 'Show what would be fetched without making changes', false)
+  .action(async (options: { outputDir: string; dryRun: boolean }) => {
+    try {
+      await fetchTests(options);
+    } catch (error) {
+      console.error(`Error fetching tests: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('test')
+  .description('Run tests attached to an agent')
+  .argument('<agentName>', 'Name of the agent to test')
+  .option('--env <environment>', 'Environment to test in', 'prod')
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (agentName: string, options: { env: string; ui: boolean }) => {
+    try {
+      if (options.ui !== false) {
+        await runAgentTestsWithUI(agentName, options.env);
+      } else {
+        await runAgentTests(agentName, options.env);
+      }
+    } catch (error) {
+      console.error(`Error running tests: ${error}`);
+      process.exit(1);
+    }
+  });
+
 // Helper functions
 
 async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, skipUpload = false): Promise<void> {
@@ -952,7 +1063,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   
   try {
     const response = await createToolApi(client, toolConfig);
-    const toolId = (response as any).toolId || `tool_${Date.now()}`;
+    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
@@ -1736,6 +1847,403 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   console.log(htmlSnippet);
   console.log('='.repeat(60));
   console.log(`Agent ID: ${agentId}`);
+}
+
+// Test helper functions
+
+async function addTest(name: string, templateType: string = "basic-llm", skipUpload = false): Promise<void> {
+  const { getTestTemplateByName } = await import('./test-templates.js');
+
+  // Check if tests.json exists
+  const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
+  let testsConfig: TestsConfig;
+
+  try {
+    testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+  } catch (error) {
+    // Initialize tests.json if it doesn't exist
+    testsConfig = { tests: [] };
+    await writeAgentConfig(testsConfigPath, testsConfig);
+    console.log(`Created ${TESTS_CONFIG_FILE}`);
+  }
+
+  // Load lock file
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+
+  // Check if test already exists
+  const existingTest = testsConfig.tests.find(test => test.name === name);
+  const lockedTest = getTestFromLock(lockData, name);
+
+  if (existingTest && lockedTest?.id) {
+    console.error(`Test '${name}' already exists`);
+    process.exit(1);
+  }
+
+  // Generate config path
+  const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
+  const configPath = `test_configs/${safeName}.json`;
+
+  // Create config directory and file
+  const configFilePath = path.resolve(configPath);
+  await fs.ensureDir(path.dirname(configFilePath));
+
+  // Create test config using template
+  const testConfig = getTestTemplateByName(name, templateType);
+  await writeAgentConfig(configFilePath, testConfig);
+  console.log(`Created config file: ${configPath} (template: ${templateType})`);
+
+  // Add to tests.json if not already present
+  if (!existingTest) {
+    const newTest: TestDefinition = {
+      name,
+      config: configPath,
+      type: templateType
+    };
+    testsConfig.tests.push(newTest);
+    await writeAgentConfig(testsConfigPath, testsConfig);
+    console.log(`Added test '${name}' to tests.json`);
+  }
+
+  if (skipUpload) {
+    console.log(`Edit ${configPath} to customize your test, then run 'agents sync-tests' to upload`);
+    return;
+  }
+
+  // Create test in ElevenLabs
+  console.log(`Creating test '${name}' in ElevenLabs...`);
+
+  const client = await getElevenLabsClient();
+
+  try {
+    const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
+    const response = await createTestApi(client, testApiConfig);
+    const testId = response.id;
+
+    console.log(`Created test in ElevenLabs with ID: ${testId}`);
+
+    // Update lock file
+    const configHash = calculateConfigHash(testApiConfig);
+    updateTestInLock(lockData, name, testId, configHash);
+    await saveLockFile(lockFilePath, lockData);
+
+    console.log(`Edit ${configPath} to customize your test, then run 'agents sync-tests' to update`);
+
+  } catch (error) {
+    console.error(`Error creating test in ElevenLabs: ${error}`);
+    process.exit(1);
+  }
+}
+
+async function syncTests(testName?: string, dryRun = false): Promise<void> {
+  // Load tests configuration
+  const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
+  if (!(await fs.pathExists(testsConfigPath))) {
+    throw new Error('tests.json not found. Run \'agents add-test\' first.');
+  }
+
+  const testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+
+  // Initialize ElevenLabs client
+  let client;
+  if (!dryRun) {
+    client = await getElevenLabsClient();
+  }
+
+  // Filter tests if specific test name provided
+  let testsToProcess = testsConfig.tests;
+  if (testName) {
+    testsToProcess = testsConfig.tests.filter(test => test.name === testName);
+    if (testsToProcess.length === 0) {
+      throw new Error(`Test '${testName}' not found in configuration`);
+    }
+  }
+
+  let changesMade = false;
+
+  for (const testDef of testsToProcess) {
+    const testDefName = testDef.name;
+    const configPath = testDef.config;
+
+    // Check if config file exists
+    if (!(await fs.pathExists(configPath))) {
+      console.log(`Warning: Config file not found for ${testDefName}: ${configPath}`);
+      continue;
+    }
+
+    // Load test config
+    let testConfig;
+    try {
+      testConfig = await readAgentConfig(configPath);
+    } catch (error) {
+      console.log(`Error reading config for ${testDefName}: ${error}`);
+      continue;
+    }
+
+    // Calculate config hash
+    const configHash = calculateConfigHash(toSnakeCaseKeys(testConfig));
+
+    // Get test data from lock file
+    const lockedTest = getTestFromLock(lockData, testDefName);
+
+    let needsUpdate = true;
+
+    if (lockedTest) {
+      if (lockedTest.hash === configHash) {
+        needsUpdate = false;
+        console.log(`${testDefName}: No changes`);
+      } else {
+        console.log(`${testDefName}: Config changed, will update`);
+      }
+    } else {
+      console.log(`${testDefName}: New test detected, will create`);
+    }
+
+    if (!needsUpdate) {
+      continue;
+    }
+
+    if (dryRun) {
+      console.log(`[DRY RUN] Would update test: ${testDefName}`);
+      continue;
+    }
+
+    // Perform API operation
+    try {
+      const testId = lockedTest?.id;
+      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
+
+      if (!testId) {
+        // Create new test
+        const response = await createTestApi(client!, testApiConfig);
+        const newTestId = response.id;
+        console.log(`Created test ${testDefName} (ID: ${newTestId})`);
+        updateTestInLock(lockData, testDefName, newTestId, configHash);
+      } else {
+        // Update existing test
+        await updateTestApi(client!, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
+        console.log(`Updated test ${testDefName} (ID: ${testId})`);
+        updateTestInLock(lockData, testDefName, testId, configHash);
+      }
+
+      changesMade = true;
+
+    } catch (error) {
+      console.log(`Error processing ${testDefName}: ${error}`);
+    }
+  }
+
+  // Save lock file if changes were made
+  if (changesMade && !dryRun) {
+    await saveLockFile(lockFilePath, lockData);
+    console.log('Updated lock file');
+  }
+}
+
+async function fetchTests(options: { outputDir: string; dryRun: boolean }): Promise<void> {
+  // Check if tests.json exists
+  const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
+  let testsConfig: TestsConfig;
+
+  try {
+    testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+  } catch (error) {
+    testsConfig = { tests: [] };
+    await writeAgentConfig(testsConfigPath, testsConfig);
+    console.log(`Created ${TESTS_CONFIG_FILE}`);
+  }
+
+  const client = await getElevenLabsClient();
+
+  // Fetch all tests from ElevenLabs
+  console.log('Fetching tests from ElevenLabs...');
+  const testsList = await listTestsApi(client, 30);
+
+  if (testsList.length === 0) {
+    console.log('No tests found in your ElevenLabs workspace.');
+    return;
+  }
+
+  console.log(`Found ${testsList.length} test(s)`);
+
+  // Load existing config
+  const existingTestNames = new Set(testsConfig.tests.map(test => test.name));
+
+  // Load lock file to check for existing test IDs
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+  const existingTestIds = new Set<string>();
+
+  // Collect all existing test IDs
+  Object.values(lockData.tests || {}).forEach(testData => {
+    if (testData.id) {
+      existingTestIds.add(testData.id);
+    }
+  });
+
+  let newTestsAdded = 0;
+
+  for (const testMeta of testsList) {
+    const testMetaTyped = testMeta as { id?: string; name: string };
+    const testId = testMetaTyped.id;
+    if (!testId) {
+      console.log(`Warning: Skipping test '${testMetaTyped.name}' - no test ID found`);
+      continue;
+    }
+    let testNameRemote = testMetaTyped.name;
+
+    // Skip if test already exists by ID
+    if (existingTestIds.has(testId)) {
+      console.log(`Skipping '${testNameRemote}' - already exists (ID: ${testId})`);
+      continue;
+    }
+
+    // Check for name conflicts
+    if (existingTestNames.has(testNameRemote)) {
+      let counter = 1;
+      const originalName = testNameRemote;
+      while (existingTestNames.has(testNameRemote)) {
+        testNameRemote = `${originalName}_${counter}`;
+        counter++;
+      }
+      console.log(`Warning: Name conflict: renamed '${originalName}' to '${testNameRemote}'`);
+    }
+
+    if (options.dryRun) {
+      console.log(`[DRY RUN] Would fetch test: ${testNameRemote} (ID: ${testId})`);
+      continue;
+    }
+
+    try {
+      // Fetch detailed test configuration
+      console.log(`Fetching config for '${testNameRemote}'...`);
+      const testDetails = await getTestApi(client, testId);
+
+      // Generate config file path
+      const safeName = testNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
+      const configPath = `${options.outputDir}/${safeName}.json`;
+
+      // Create config file
+      const configFilePath = path.resolve(configPath);
+      await fs.ensureDir(path.dirname(configFilePath));
+      await writeAgentConfig(configFilePath, testDetails);
+
+      // Create new test entry for tests.json
+      const newTest: TestDefinition = {
+        name: testNameRemote,
+        config: configPath
+      };
+
+      // Add to tests config
+      testsConfig.tests.push(newTest);
+      existingTestNames.add(testNameRemote);
+      existingTestIds.add(testId);
+
+      // Update lock file with test ID
+      const configHash = calculateConfigHash(toSnakeCaseKeys(testDetails));
+      updateTestInLock(lockData, testNameRemote, testId, configHash);
+
+      console.log(`Added '${testNameRemote}' (config: ${configPath})`);
+      newTestsAdded++;
+
+    } catch (error) {
+      console.log(`Error fetching test '${testNameRemote}': ${error}`);
+      continue;
+    }
+  }
+
+  if (!options.dryRun && newTestsAdded > 0) {
+    // Save updated tests.json
+    await writeAgentConfig(testsConfigPath, testsConfig);
+
+    // Save updated lock file
+    await saveLockFile(lockFilePath, lockData);
+
+    console.log(`Updated ${TESTS_CONFIG_FILE} and ${LOCK_FILE}`);
+  }
+
+  if (options.dryRun) {
+    const newTestsCount = testsList.filter((t: unknown) => {
+      const test = t as { id?: string };
+      return test.id && !existingTestIds.has(test.id);
+    }).length;
+    console.log(`[DRY RUN] Would add ${newTestsCount} new test(s)`);
+  } else {
+    console.log(`Successfully added ${newTestsAdded} new test(s)`);
+    if (newTestsAdded > 0) {
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents sync-tests' to update`);
+    }
+  }
+}
+
+async function runAgentTestsWithUI(agentName: string, environment: string): Promise<void> {
+  // Load agents configuration and get agent details
+  const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    throw new Error('agents.json not found. Run \'agents init\' first.');
+  }
+
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentDef = agentsConfig.agents.find(agent => agent.name === agentName);
+
+  if (!agentDef) {
+    throw new Error(`Agent '${agentName}' not found in configuration`);
+  }
+
+  // Get agent ID from lock file
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+  const lockedAgent = getAgentFromLock(lockData, agentName, environment);
+
+  if (!lockedAgent?.id) {
+    throw new Error(`Agent '${agentName}' not found for environment '${environment}' or not yet synced. Run 'agents sync --agent ${agentName} --env ${environment}' to create the agent first`);
+  }
+
+  const agentId = lockedAgent.id;
+
+  // Get agent config to find attached tests
+  let configPath: string | undefined;
+  if (agentDef.environments) {
+    if (environment in agentDef.environments) {
+      configPath = agentDef.environments[environment].config;
+    } else {
+      throw new Error(`Agent '${agentName}' not configured for environment '${environment}'`);
+    }
+  } else {
+    configPath = agentDef.config;
+  }
+
+  if (!configPath || !(await fs.pathExists(configPath))) {
+    throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
+  }
+
+  const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+  const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
+
+  if (attachedTests.length === 0) {
+    throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
+  }
+
+  const testIds = attachedTests.map(test => test.test_id);
+
+  // Use TestView UI
+  const { waitUntilExit } = render(
+    React.createElement(TestView, {
+      agentName,
+      agentId,
+      testIds
+    })
+  );
+  await waitUntilExit();
+}
+
+async function runAgentTests(agentName: string, environment: string): Promise<void> {
+  // Implementation for non-UI test running
+  console.log(`Running tests for agent '${agentName}' in environment '${environment}'`);
+  // This would be similar to runAgentTestsWithUI but without the UI component
+  throw new Error('Non-UI test running not yet implemented. Use --ui mode.');
 }
 
 // Handle SIGINT (Ctrl+C)

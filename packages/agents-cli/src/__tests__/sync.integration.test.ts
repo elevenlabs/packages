@@ -15,6 +15,13 @@ import {
 import { getDefaultAgentTemplate } from '../templates';
 import * as elevenLabsApi from '../elevenlabs-api';
 import * as config from '../config';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+
+interface AgentDefinition {
+  name: string;
+  environments?: Record<string, { config: string }>;
+  config?: string;
+}
 
 // Mock the entire elevenlabs-api module
 jest.mock('../elevenlabs-api');
@@ -56,7 +63,7 @@ describe('Sync Integration Tests', () => {
         }
       }
     };
-    mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient as any);
+    mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient as unknown as ElevenLabsClient);
     mockedElevenLabsApi.updateAgentApi.mockResolvedValue('agent_123');
 
     // Clear all mocks
@@ -105,7 +112,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -180,7 +188,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -230,7 +239,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -286,7 +296,8 @@ describe('Sync Integration Tests', () => {
             }
           }
         },
-        tools: {}
+        tools: {},
+        tests: {}
       };
       await saveLockFile(lockFilePath, lockData);
 
@@ -325,7 +336,7 @@ async function createSyncFunction() {
     const lockData = await loadLockFile(lockFilePath);
     
     // Initialize ElevenLabs client
-    let client: any;
+    let client: ElevenLabsClient | undefined;
     if (!dryRun) {
       client = await mockedElevenLabsApi.getElevenLabsClient();
     }
@@ -333,7 +344,7 @@ async function createSyncFunction() {
     // Filter agents if specific agent name provided
     let agentsToProcess = agentsConfig.agents;
     if (agentName) {
-      agentsToProcess = agentsConfig.agents.filter((agent: any) => agent.name === agentName);
+      agentsToProcess = agentsConfig.agents.filter((agent: AgentDefinition) => agent.name === agentName);
     }
     
     // Determine environments to sync
