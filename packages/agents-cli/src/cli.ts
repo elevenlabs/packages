@@ -264,7 +264,7 @@ ELEVENLABS_API_KEY=your_api_key_here
         console.log('2. Create an agent: agents add "My Agent" --template default');
         console.log('3. Create tools: agents add-webhook-tool "My Webhook" or agents add-client-tool "My Client"');
         console.log('4. Create tests: agents add-test "My Test" --template basic-llm');
-        console.log('5. Sync to ElevenLabs: agents sync && agents sync-tests');
+        console.log('5. Sync to ElevenLabs: agents sync && agents sync-tools && agents sync-tests');
         console.log('6. Run tests: agents test "My Agent"');
       }
     } catch (error) {
