@@ -68,6 +68,7 @@ import { render } from 'ink';
 import React from 'react';
 import InitView from './ui/views/InitView.js';
 import SyncView from './ui/views/SyncView.js';
+import SyncToolsView from './ui/views/SyncToolsView.js';
 import LoginView from './ui/views/LoginView.js';
 import AddAgentView from './ui/views/AddAgentView.js';
 import StatusView from './ui/views/StatusView.js';
@@ -868,9 +869,46 @@ program
   .description('Synchronize tools with ElevenLabs API when configs change')
   .option('--tool <name>', 'Specific tool name to sync (defaults to all tools)')
   .option('--dry-run', 'Show what would be done without making changes', false)
-  .action(async (options: { tool?: string; dryRun: boolean }) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { tool?: string; dryRun: boolean; ui: boolean }) => {
     try {
-      await syncTools(options.tool, options.dryRun);
+      if (options.ui !== false) {
+        // Use new Ink UI for sync-tools
+        const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+        if (!(await fs.pathExists(toolsConfigPath))) {
+          throw new Error('tools.json not found. Run \'agents add-webhook-tool\' or \'agents add-client-tool\' first.');
+        }
+
+        const toolsConfig = await readToolsConfig(toolsConfigPath);
+
+        // Filter tools if specific tool name provided
+        let toolsToProcess = toolsConfig.tools;
+        if (options.tool) {
+          toolsToProcess = toolsConfig.tools.filter(tool => tool.name === options.tool);
+          if (toolsToProcess.length === 0) {
+            throw new Error(`Tool '${options.tool}' not found in configuration`);
+          }
+        }
+
+        // Prepare tools for UI
+        const syncTools = toolsToProcess.map(tool => ({
+          name: tool.name,
+          type: tool.type,
+          configPath: tool.config || `tool_configs/${tool.name}.json`,
+          status: 'pending' as const
+        }));
+
+        const { waitUntilExit } = render(
+          React.createElement(SyncToolsView, {
+            tools: syncTools,
+            dryRun: options.dryRun
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Use existing non-UI sync
+        await syncTools(options.tool, options.dryRun);
+      }
     } catch (error) {
       console.error(`Error during tool sync: ${error}`);
       process.exit(1);
