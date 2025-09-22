@@ -61,6 +61,17 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       status: 'pending',
     },
     {
+      name: 'Create tests.json',
+      description: 'Initializing tests configuration',
+      action: async () => {
+        const testsConfigPath = path.join(fullPath, 'tests.json');
+        if (!(await fs.pathExists(testsConfigPath))) {
+          await fs.writeJson(testsConfigPath, { tests: [] }, { spaces: 2 });
+        }
+      },
+      status: 'pending',
+    },
+    {
       name: 'Create directory structure',
       description: 'Setting up environment directories',
       action: async () => {
@@ -69,6 +80,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
           'agent_configs/staging',
           'agent_configs/prod',
           'tool_configs',
+          'test_configs',
         ];
         for (const dir of dirs) {
           await fs.ensureDir(path.join(fullPath, dir));
@@ -82,7 +94,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       action: async () => {
         const lockFilePath = path.join(fullPath, 'agents.lock');
         if (!(await fs.pathExists(lockFilePath))) {
-          await fs.writeJson(lockFilePath, { agents: {}, tools: {} }, { spaces: 2 });
+          await fs.writeJson(lockFilePath, { agents: {}, tools: {}, tests: {} }, { spaces: 2 });
         }
       },
       status: 'pending',

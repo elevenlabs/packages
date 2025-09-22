@@ -890,6 +890,7 @@ program
           }
         }
 
+
         // Prepare tools for UI
         const syncTools = toolsToProcess.map(tool => ({
           name: tool.name,

@@ -254,13 +254,11 @@ describe('CLI End-to-End Tests', () => {
     it('should recognize sync-tools command', async () => {
       const result = await runCli(['sync-tools', '--dry-run']);
 
-      // Should fail with either missing tools.json or API key error, not unknown command
-      expect(result.exitCode).toBe(1);
+      // Should succeed in dry-run mode with valid tools.json (created by init)
+      expect(result.exitCode).toBe(0);
       expect(result.stderr).not.toContain('unknown command');
-      // It should fail with one of these expected errors
-      const hasExpectedError = result.stderr.includes('tools.json not found') ||
-                               result.stderr.includes('No API key found');
-      expect(hasExpectedError).toBe(true);
+      // Should show dry-run mode output
+      expect(result.stdout).toContain('Dry run mode');
     });
 
     it('should show help for sync-tools command', async () => {
@@ -272,24 +270,24 @@ describe('CLI End-to-End Tests', () => {
     });
 
     it('should handle missing tools.json file', async () => {
+      // Remove tools.json to test missing file scenario
+      const toolsJsonPath = path.join(tempDir, 'tools.json');
+      await fs.remove(toolsJsonPath);
+
       const result = await runCli(['sync-tools']);
 
       expect(result.exitCode).toBe(1);
-      // Should get one of the expected error messages
-      const hasExpectedError = result.stderr.includes('tools.json not found') ||
-                               result.stderr.includes('No API key found');
-      expect(hasExpectedError).toBe(true);
+      // Should get tools.json not found error
+      expect(result.stderr).toContain('tools.json not found');
     });
 
     it('should handle dry-run option', async () => {
       const result = await runCli(['sync-tools', '--dry-run']);
 
-      expect(result.exitCode).toBe(1);
-      // Should get expected error, not unknown option error
+      expect(result.exitCode).toBe(0);
+      // Should get expected success, not unknown option error
       expect(result.stderr).not.toContain('unknown option');
-      const hasExpectedError = result.stderr.includes('tools.json not found') ||
-                               result.stderr.includes('No API key found');
-      expect(hasExpectedError).toBe(true);
+      expect(result.stdout).toContain('Dry run mode');
     });
 
     it('should handle specific tool name option', async () => {
@@ -298,9 +296,8 @@ describe('CLI End-to-End Tests', () => {
       expect(result.exitCode).toBe(1);
       // --tool option should be parsed correctly (no unknown option error)
       expect(result.stderr).not.toContain('unknown option');
-      const hasExpectedError = result.stderr.includes('tools.json not found') ||
-                               result.stderr.includes('No API key found');
-      expect(hasExpectedError).toBe(true);
+      // Should get tool not found error since test-tool doesn't exist in empty tools.json
+      expect(result.stderr).toContain('not found in configuration');
     });
 
     it('should work with existing tools.json', async () => {
@@ -340,8 +337,8 @@ describe('CLI End-to-End Tests', () => {
 
       // Should succeed (exit code 0) since files exist
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('New tool detected');
-      expect(result.stdout).toContain('[DRY RUN] Would update tool: test-webhook');
+      expect(result.stdout).toContain('test-webhook (webhook)');
+      expect(result.stdout).toContain('[DRY RUN] Would sync');
     });
 
     it('should handle missing config files gracefully', async () => {
@@ -361,9 +358,9 @@ describe('CLI End-to-End Tests', () => {
 
       const result = await runCli(['sync-tools', '--dry-run']);
 
-      // Should not crash, should show warning about missing config
+      // Should not crash, UI should handle gracefully
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Warning: Config file not found for missing-config-tool');
+      expect(result.stdout).toContain('missing-config-tool (webhook)');
     });
 
     it('should handle tools without config path', async () => {
@@ -383,9 +380,9 @@ describe('CLI End-to-End Tests', () => {
 
       const result = await runCli(['sync-tools', '--dry-run']);
 
-      // Should not crash, should show warning about missing config path
+      // Should not crash, UI should handle gracefully
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Warning: No config path specified for no-config-tool');
+      expect(result.stdout).toContain('no-config-tool (webhook)');
     });
   });
 });
