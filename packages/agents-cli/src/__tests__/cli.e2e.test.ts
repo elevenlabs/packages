@@ -338,7 +338,7 @@ describe('CLI End-to-End Tests', () => {
       // Should succeed (exit code 0) since files exist
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('test-webhook (webhook)');
-      expect(result.stdout).toContain('[DRY RUN] Would sync');
+      expect(result.stdout).toContain('Dry run mode - no changes will be made');
     });
 
     it('should handle missing config files gracefully', async () => {
