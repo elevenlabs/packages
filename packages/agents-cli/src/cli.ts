@@ -31,6 +31,8 @@ import {
   listAgentsApi,
   getAgentApi,
   createToolApi,
+  updateToolApi,
+  listToolsApi,
   createTestApi,
   getTestApi,
   listTestsApi,
@@ -857,6 +859,20 @@ program
       await syncTests(options.test, options.dryRun);
     } catch (error) {
       console.error(`Error during test sync: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('sync-tools')
+  .description('Synchronize tools with ElevenLabs API when configs change')
+  .option('--tool <name>', 'Specific tool name to sync (defaults to all tools)')
+  .option('--dry-run', 'Show what would be done without making changes', false)
+  .action(async (options: { tool?: string; dryRun: boolean }) => {
+    try {
+      await syncTools(options.tool, options.dryRun);
+    } catch (error) {
+      console.error(`Error during tool sync: ${error}`);
       process.exit(1);
     }
   });
@@ -1835,6 +1851,117 @@ async function syncTests(testName?: string, dryRun = false): Promise<void> {
 
     } catch (error) {
       console.log(`Error processing ${testDefName}: ${error}`);
+    }
+  }
+
+  // Save lock file if changes were made
+  if (changesMade && !dryRun) {
+    await saveLockFile(lockFilePath, lockData);
+    console.log('Updated lock file');
+  }
+}
+
+async function syncTools(toolName?: string, dryRun = false): Promise<void> {
+  // Load tools configuration
+  const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+  if (!(await fs.pathExists(toolsConfigPath))) {
+    throw new Error('tools.json not found. Run \'agents add-webhook-tool\' or \'agents add-client-tool\' first.');
+  }
+
+  const toolsConfig = await readToolsConfig(toolsConfigPath);
+  const lockFilePath = path.resolve(LOCK_FILE);
+  const lockData = await loadLockFile(lockFilePath);
+
+  // Initialize ElevenLabs client
+  let client;
+  if (!dryRun) {
+    client = await getElevenLabsClient();
+  }
+
+  // Filter tools if specific tool name provided
+  let toolsToProcess = toolsConfig.tools;
+  if (toolName) {
+    toolsToProcess = toolsConfig.tools.filter(tool => tool.name === toolName);
+    if (toolsToProcess.length === 0) {
+      throw new Error(`Tool '${toolName}' not found in configuration`);
+    }
+  }
+
+  let changesMade = false;
+
+  for (const toolDef of toolsToProcess) {
+    const toolDefName = toolDef.name;
+    const configPath = toolDef.config;
+
+    if (!configPath) {
+      console.log(`Warning: No config path specified for ${toolDefName}`);
+      continue;
+    }
+
+    // Check if config file exists
+    if (!(await fs.pathExists(configPath))) {
+      console.log(`Warning: Config file not found for ${toolDefName}: ${configPath}`);
+      continue;
+    }
+
+    // Load tool config
+    let toolConfig;
+    try {
+      toolConfig = await readAgentConfig(configPath);
+    } catch (error) {
+      console.log(`Error reading config for ${toolDefName}: ${error}`);
+      continue;
+    }
+
+    // Calculate config hash
+    const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
+
+    // Get tool data from lock file
+    const lockedTool = getToolFromLock(lockData, toolDefName);
+
+    let needsUpdate = true;
+
+    if (lockedTool) {
+      if (lockedTool.hash === configHash) {
+        needsUpdate = false;
+        console.log(`${toolDefName}: No changes`);
+      } else {
+        console.log(`${toolDefName}: Config changed, will update`);
+      }
+    } else {
+      console.log(`${toolDefName}: New tool detected, will create`);
+    }
+
+    if (!needsUpdate) {
+      continue;
+    }
+
+    if (dryRun) {
+      console.log(`[DRY RUN] Would update tool: ${toolDefName}`);
+      continue;
+    }
+
+    // Perform API operation
+    try {
+      const toolId = lockedTool?.id;
+
+      if (!toolId) {
+        // Create new tool
+        const response = await createToolApi(client!, toolConfig);
+        const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
+        console.log(`Created tool ${toolDefName} (ID: ${newToolId})`);
+        updateToolInLock(lockData, toolDefName, newToolId, configHash);
+      } else {
+        // Update existing tool
+        await updateToolApi(client!, toolId, toolConfig);
+        console.log(`Updated tool ${toolDefName} (ID: ${toolId})`);
+        updateToolInLock(lockData, toolDefName, toolId, configHash);
+      }
+
+      changesMade = true;
+
+    } catch (error) {
+      console.log(`Error processing ${toolDefName}: ${error}`);
     }
   }
 
