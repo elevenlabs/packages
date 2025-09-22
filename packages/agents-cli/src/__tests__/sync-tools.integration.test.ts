@@ -6,11 +6,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
 import {
-  loadLockFile,
-  saveLockFile,
   calculateConfigHash,
-  updateToolInLock,
-  getToolFromLock,
   toSnakeCaseKeys
 } from '../utils';
 import {
@@ -18,7 +14,11 @@ import {
   writeToolConfig,
   readToolsConfig,
   ToolsConfig,
-  ToolDefinition
+  loadToolsLockFile,
+  saveToolsLockFile,
+  updateToolInLock,
+  getToolFromLock,
+  ToolsLockFile
 } from '../tools';
 import * as elevenLabsApi from '../elevenlabs-api';
 import * as config from '../config';
@@ -38,8 +38,7 @@ jest.mock('os', () => ({
 }));
 const mockedOs = os as jest.Mocked<typeof os>;
 
-// Import the sync function we want to test
-let syncTools: (toolName?: string, dryRun?: boolean) => Promise<void>;
+// Note: syncTools function is tested indirectly through its component functions
 
 describe('Sync Tools Integration Tests', () => {
   let tempDir: string;
@@ -60,11 +59,6 @@ describe('Sync Tools Integration Tests', () => {
 
     const mockClient = {} as any;
     mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient);
-
-    // Dynamically import the CLI module to get the syncTools function
-    const cliModule = await import('../cli');
-    // Since syncTools is not exported, we need to test it through the command
-    // For now, we'll test the underlying logic components
   });
 
   afterEach(async () => {
@@ -175,10 +169,8 @@ describe('Sync Tools Integration Tests', () => {
     });
 
     it('should handle lock file operations for tools', async () => {
-      const lockData = {
-        agents: {},
-        tools: {} as Record<string, { id: string; hash: string }>,
-        tests: {}
+      const lockData: ToolsLockFile = {
+        tools: {}
       };
 
       // Test updating tool in lock
@@ -229,10 +221,8 @@ describe('Sync Tools Integration Tests', () => {
 
       const initialHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
 
-      const lockData = {
-        agents: {},
-        tools: {},
-        tests: {}
+      const lockData: ToolsLockFile = {
+        tools: {}
       };
 
       updateToolInLock(lockData, 'test-tool', 'tool_123', initialHash);
@@ -343,9 +333,9 @@ describe('Sync Tools Integration Tests', () => {
         tests: {}
       };
 
-      await saveLockFile(lockFilePath, lockData);
+      await saveToolsLockFile(lockFilePath, lockData);
 
-      const loadedLockData = await loadLockFile(lockFilePath);
+      const loadedLockData = await loadToolsLockFile(lockFilePath);
       expect(loadedLockData.tools['test-tool']).toEqual({
         id: 'tool_123',
         hash: 'hash123'
