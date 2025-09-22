@@ -197,7 +197,8 @@ describe('Sync Tools Integration Tests', () => {
 
       // Test getting non-existent tool from lock
       const nonExistentTool = getToolFromLock(lockData, 'non-existent');
-      expect(nonExistentTool).toBeNull();
+
+      expect(nonExistentTool).toBeUndefined();
     });
 
     it('should calculate config hash correctly', async () => {
