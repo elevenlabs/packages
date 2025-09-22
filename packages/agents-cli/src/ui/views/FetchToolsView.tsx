@@ -13,7 +13,8 @@ import {
   saveToolsLockFile,
   updateToolInLock,
   ToolsConfig,
-  ToolDefinition
+  ToolDefinition,
+  type Tool
 } from '../../tools.js';
 import { calculateConfigHash } from '../../utils.js';
 import path from 'path';
@@ -209,7 +210,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
 
         // Create config file
         await fs.ensureDir(path.dirname(configFilePath));
-        await writeToolConfig(configFilePath, toolDetails as any);
+        await writeToolConfig(configFilePath, toolDetails as Tool);
 
         // Update tools.json
         const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);

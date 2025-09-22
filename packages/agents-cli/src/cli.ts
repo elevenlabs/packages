@@ -53,6 +53,7 @@ import {
   writeToolConfig,
   ToolsConfig,
   ToolDefinition,
+  type Tool,
   loadToolsLockFile,
   saveToolsLockFile,
   updateToolInLock,
@@ -1745,7 +1746,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeToolConfig(configFilePath, toolDetails as any);
+      await writeToolConfig(configFilePath, toolDetails as Tool);
 
       // Determine tool type from the details
       const toolDetailsTyped = toolDetails as { type?: string };

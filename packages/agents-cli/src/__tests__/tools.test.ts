@@ -5,8 +5,7 @@ import {
   writeToolsConfig,
   loadToolsLockFile,
   saveToolsLockFile,
-  ToolsConfig,
-  ToolDefinition
+  ToolsConfig
 } from '../tools';
 import {
   updateToolInLock,
@@ -20,6 +19,7 @@ import {
   listToolsApi,
   getToolApi
 } from '../elevenlabs-api';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
@@ -491,7 +491,7 @@ describe('Tool Fetching', () => {
           get: jest.fn()
         }
       }
-    } as any);
+    } as unknown as ElevenLabsClient);
   });
 
   afterEach(async () => {
@@ -691,7 +691,7 @@ describe('Tool Fetching', () => {
       const toolsList = await listToolsApi(client);
 
       expect(toolsList).toHaveLength(1);
-      expect((toolsList[0] as any).tool_id).toBe('tool_123');
+      expect((toolsList[0] as { tool_id: string }).tool_id).toBe('tool_123');
 
       // Simulate getting tool details
       const toolDetails = await getToolApi(client, 'tool_123');
@@ -728,13 +728,13 @@ describe('Tool Fetching', () => {
       const allTools = await listToolsApi(client);
 
       // Simulate filtering by search term 'webhook'
-      const webhookTools = allTools.filter((tool: any) =>
-        tool.name.toLowerCase().includes('webhook')
+      const webhookTools = allTools.filter((tool: unknown) =>
+        (tool as { name: string }).name.toLowerCase().includes('webhook')
       );
 
       expect(webhookTools).toHaveLength(2);
-      expect((webhookTools[0] as any).name).toBe('Webhook Tool');
-      expect((webhookTools[1] as any).name).toBe('Another Webhook');
+      expect((webhookTools[0] as { name: string }).name).toBe('Webhook Tool');
+      expect((webhookTools[1] as { name: string }).name).toBe('Another Webhook');
     });
   });
 });
