@@ -205,39 +205,39 @@ export async function updateToolApi(client: ElevenLabsClient, toolId: string, to
 
 /**
  * Gets a specific tool from the ElevenLabs API.
- * 
+ *
  * @param client - An initialized ElevenLabs client
  * @param toolId - The ID of the tool to retrieve
  * @returns Promise that resolves to the tool object
  */
 export async function getToolApi(client: ElevenLabsClient, toolId: string): Promise<unknown> {
-  // Mock implementation until SDK supports tools API
-  return { toolId, name: 'example_tool' };
+  const response = await client.conversationalAi.tools.get(toolId);
+  // Normalize response to snake_case for downstream writing
+  return toSnakeCaseKeys(response);
 }
 
 /**
  * Lists all tools from the ElevenLabs API.
- * 
+ *
  * @param client - An initialized ElevenLabs client
  * @returns Promise that resolves to a list of tool objects
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]> {
-  // Mock implementation until SDK supports tools API
-  return [];
+  const response = await client.conversationalAi.tools.list();
+  return response.tools.map(tool => toSnakeCaseKeys(tool));
 }
 
 /**
  * Gets agents that depend on a specific tool.
  *
+ *
  * @param client - An initialized ElevenLabs client
  * @param toolId - The ID of the tool
  * @returns Promise that resolves to a list of dependent agents
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
-  // Mock implementation until SDK supports tools API
-  return [];
+  const response = await client.conversationalAi.tools.getDependentAgents(toolId);
+  return response.agents.map(agent => toSnakeCaseKeys(agent));
 }
 
 // Test API functions

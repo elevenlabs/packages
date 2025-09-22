@@ -12,8 +12,6 @@ import {
   saveLockFile,
   getAgentFromLock,
   updateAgentInLock,
-  updateToolInLock,
-  getToolFromLock,
   updateTestInLock,
   getTestFromLock,
   toCamelCaseKeys,
@@ -32,6 +30,8 @@ import {
   getAgentApi,
   createToolApi,
   updateToolApi,
+  listToolsApi,
+  getToolApi,
   createTestApi,
   getTestApi,
   listTestsApi,
@@ -53,7 +53,12 @@ import {
   writeToolsConfig,
   writeToolConfig,
   ToolsConfig,
-  ToolDefinition
+  ToolDefinition,
+  type Tool,
+  loadToolsLockFile,
+  saveToolsLockFile,
+  updateToolInLock,
+  getToolFromLock
 } from './tools.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -76,6 +81,7 @@ import ListAgentsView from './ui/views/ListAgentsView.js';
 import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
 import HelpView from './ui/views/HelpView.js';
+import FetchToolsView from './ui/views/FetchToolsView.js';
 import TestView from './ui/views/TestView.js';
 import AddTestView from './ui/views/AddTestView.js';
 
@@ -140,6 +146,13 @@ interface FetchOptions {
   search?: string;
   dryRun: boolean;
   env: string;
+}
+
+interface FetchToolsOptions {
+  tool?: string;
+  outputDir: string;
+  search?: string;
+  dryRun: boolean;
 }
 
 interface WidgetOptions {
@@ -804,6 +817,37 @@ program
       await fetchAgents(options);
     } catch (error) {
       console.error(`Error fetching agents: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('fetch-tools')
+  .description('Fetch all tools from ElevenLabs workspace and add them to local configuration')
+  .option('--tool <name>', 'Specific tool name pattern to search for')
+  .option('--output-dir <dir>', 'Directory to store fetched tool configs', 'tool_configs')
+  .option('--search <term>', 'Search tools by name')
+  .option('--dry-run', 'Show what would be fetched without making changes', false)
+  .option('--no-ui', 'Disable interactive UI', false)
+  .action(async (options: FetchToolsOptions & { ui: boolean }) => {
+    try {
+      if (options.ui !== false) {
+        // Use Ink UI for fetch-tools
+        const { waitUntilExit } = render(
+          React.createElement(FetchToolsView, {
+            tool: options.tool,
+            outputDir: options.outputDir,
+            search: options.search,
+            dryRun: options.dryRun
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to text-based fetching
+        await fetchTools(options);
+      }
+    } catch (error) {
+      console.error(`Error fetching tools: ${error}`);
       process.exit(1);
     }
   });
@@ -1654,6 +1698,160 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     console.log(`Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
     if (newAgentsAdded > 0) {
       console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents sync --env ${options.env}' to update`);
+    }
+  }
+}
+
+async function fetchTools(options: FetchToolsOptions): Promise<void> {
+  // Check if tools.json exists, create if not
+  const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+  let toolsConfig: ToolsConfig;
+
+  if (!(await fs.pathExists(toolsConfigPath))) {
+    console.log(`${TOOLS_CONFIG_FILE} not found. Creating initial tools configuration...`);
+    toolsConfig = { tools: [] };
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
+  } else {
+    toolsConfig = await readToolsConfig(toolsConfigPath);
+  }
+
+  const client = await getElevenLabsClient();
+
+  // Use tool option as search term if provided, otherwise use search parameter
+  const searchTerm = options.tool || options.search;
+
+  // Fetch all tools from ElevenLabs
+  console.log('Fetching tools from ElevenLabs...');
+  const toolsList = await listToolsApi(client);
+
+  if (toolsList.length === 0) {
+    console.log('No tools found in your ElevenLabs workspace.');
+    return;
+  }
+
+  console.log(`Found ${toolsList.length} tool(s)`);
+
+  // Filter tools by search term if provided
+  let filteredTools = toolsList;
+  if (searchTerm) {
+    filteredTools = toolsList.filter((tool: unknown) => {
+      const toolTyped = tool as { name?: string };
+      return toolTyped.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    console.log(`Filtered to ${filteredTools.length} tool(s) matching "${searchTerm}"`);
+  }
+
+  const existingToolNames = new Set(toolsConfig.tools.map(tool => tool.name));
+
+  // Load tools lock file to check for existing tool IDs
+  const lockFilePath = path.resolve('tools-lock.json');
+  const toolsLockData = await loadToolsLockFile(lockFilePath);
+  const existingToolIds = new Set<string>();
+
+  // Collect all existing tool IDs
+  Object.values(toolsLockData.tools).forEach(toolData => {
+    if (toolData.id) {
+      existingToolIds.add(toolData.id);
+    }
+  });
+
+  let newToolsAdded = 0;
+
+  for (const toolMeta of filteredTools) {
+    const toolMetaTyped = toolMeta as { tool_id?: string; toolId?: string; id?: string; name: string };
+    const toolId = toolMetaTyped.tool_id || toolMetaTyped.toolId || toolMetaTyped.id;
+    if (!toolId) {
+      console.log(`Warning: Skipping tool '${toolMetaTyped.name}' - no tool ID found`);
+      continue;
+    }
+    let toolNameRemote = toolMetaTyped.name;
+
+    // Skip if tool already exists by ID
+    if (existingToolIds.has(toolId)) {
+      console.log(`Skipping '${toolNameRemote}' - already exists (ID: ${toolId})`);
+      continue;
+    }
+
+    // Check for name conflicts
+    if (existingToolNames.has(toolNameRemote)) {
+      let counter = 1;
+      const originalName = toolNameRemote;
+      while (existingToolNames.has(toolNameRemote)) {
+        toolNameRemote = `${originalName}_${counter}`;
+        counter++;
+      }
+      console.log(`Warning: Name conflict: renamed '${originalName}' to '${toolNameRemote}'`);
+    }
+
+    if (options.dryRun) {
+      console.log(`[DRY RUN] Would fetch tool: ${toolNameRemote} (ID: ${toolId})`);
+      continue;
+    }
+
+    try {
+      // Fetch detailed tool configuration
+      console.log(`Fetching config for '${toolNameRemote}'...`);
+      const toolDetails = await getToolApi(client, toolId);
+
+      // Generate config file path
+      const safeName = toolNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
+      const configPath = `${options.outputDir}/${safeName}.json`;
+
+      // Create config file
+      const configFilePath = path.resolve(configPath);
+      await fs.ensureDir(path.dirname(configFilePath));
+      await writeToolConfig(configFilePath, toolDetails as Tool);
+
+      // Determine tool type from the details
+      const toolDetailsTyped = toolDetails as { type?: string };
+      const toolType = toolDetailsTyped.type || 'unknown';
+
+      // Create new tool entry for tools.json
+      const newTool: ToolDefinition = {
+        name: toolNameRemote,
+        type: toolType as 'webhook' | 'client',
+        config: configPath
+      };
+
+      // Add to tools config
+      toolsConfig.tools.push(newTool);
+      existingToolNames.add(toolNameRemote);
+      existingToolIds.add(toolId);
+
+      // Update tools lock file with tool ID
+      const configHash = calculateConfigHash(toolDetails);
+      updateToolInLock(toolsLockData, toolNameRemote, toolId, configHash);
+
+      console.log(`Added '${toolNameRemote}' (config: ${configPath}, type: ${toolType})`);
+      newToolsAdded++;
+
+    } catch (error) {
+      console.log(`Error fetching tool '${toolNameRemote}': ${error}`);
+      continue;
+    }
+  }
+
+  if (!options.dryRun && newToolsAdded > 0) {
+    // Save updated tools.json
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
+
+    // Save updated tools lock file
+    await saveToolsLockFile(lockFilePath, toolsLockData);
+
+    console.log(`Updated ${TOOLS_CONFIG_FILE} and tools-lock.json`);
+  }
+
+  if (options.dryRun) {
+    const newToolsCount = filteredTools.filter((t: unknown) => {
+      const tool = t as { tool_id?: string; toolId?: string; id?: string };
+      const id = tool.tool_id || tool.toolId || tool.id;
+      return id && !existingToolIds.has(id);
+    }).length;
+    console.log(`[DRY RUN] Would add ${newToolsCount} new tool(s)`);
+  } else {
+    console.log(`Successfully added ${newToolsAdded} new tool(s)`);
+    if (newToolsAdded > 0) {
+      console.log(`You can now edit the config files in '${options.outputDir}/' and use them in your agents`);
     }
   }
 }
