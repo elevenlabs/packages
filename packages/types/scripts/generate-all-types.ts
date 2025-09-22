@@ -21,11 +21,11 @@ const outOutgoingPath = path.join(outDir, "outgoing.ts");
 function opKindToDir(op: "publish" | "subscribe", r: Role): Dir {
   return r === "client"
     ? op === "publish"
-      ? "incoming"
-      : "outgoing"
-    : op === "publish"
       ? "outgoing"
-      : "incoming";
+      : "incoming"
+    : op === "publish"
+      ? "incoming"
+      : "outgoing";
 }
 
 // Parser normalization (works fine with @asyncapi/parser 3.4.x)
