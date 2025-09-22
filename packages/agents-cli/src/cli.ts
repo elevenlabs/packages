@@ -32,7 +32,6 @@ import {
   getAgentApi,
   createToolApi,
   updateToolApi,
-  listToolsApi,
   createTestApi,
   getTestApi,
   listTestsApi,

@@ -22,6 +22,7 @@ import {
 } from '../tools';
 import * as elevenLabsApi from '../elevenlabs-api';
 import * as config from '../config';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 // Mock the entire elevenlabs-api module
 jest.mock('../elevenlabs-api');
@@ -57,7 +58,7 @@ describe('Sync Tools Integration Tests', () => {
     mockedConfig.isLoggedIn.mockResolvedValue(true);
     mockedConfig.getResidency.mockResolvedValue('us');
 
-    const mockClient = {} as any;
+    const mockClient = {} as ElevenLabsClient;
     mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient);
   });
 
@@ -257,7 +258,7 @@ describe('Sync Tools Integration Tests', () => {
       };
 
       // Simulate creating a new tool
-      const mockClient = {} as any;
+      const mockClient = {} as ElevenLabsClient;
       const result = await mockedElevenLabsApi.createToolApi(mockClient, toolConfig);
 
       expect(mockedElevenLabsApi.createToolApi).toHaveBeenCalledWith(mockClient, toolConfig);
@@ -274,7 +275,7 @@ describe('Sync Tools Integration Tests', () => {
       };
 
       // Simulate updating an existing tool
-      const mockClient = {} as any;
+      const mockClient = {} as ElevenLabsClient;
       const toolId = 'tool_existing_123';
       await mockedElevenLabsApi.updateToolApi(mockClient, toolId, toolConfig);
 
@@ -285,7 +286,7 @@ describe('Sync Tools Integration Tests', () => {
       const apiError = new Error('API Error: Tool creation failed');
       mockedElevenLabsApi.createToolApi.mockRejectedValue(apiError);
 
-      const mockClient = {} as any;
+      const mockClient = {} as ElevenLabsClient;
       const toolConfig = { name: 'failing-tool', type: 'webhook' };
 
       await expect(mockedElevenLabsApi.createToolApi(mockClient, toolConfig))
