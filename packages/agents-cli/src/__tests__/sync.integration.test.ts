@@ -125,7 +125,7 @@ describe('Sync Integration Tests', () => {
           agent: {
             ...initialConfig.conversation_config.agent,
             prompt: {
-              ...initialConfig.conversation_config.agent.prompt,
+              ...initialConfig.conversation_config.agent?.prompt,
               prompt: 'Modified prompt for testing',
               temperature: 0.5 // Changed from 0.0
             }
@@ -224,7 +224,9 @@ describe('Sync Integration Tests', () => {
 
       // Create modified agent config
       const modifiedConfig = getDefaultAgentTemplate(agentName);
-      modifiedConfig.conversation_config.agent.prompt.prompt = 'Modified prompt';
+      if (modifiedConfig.conversation_config.agent?.prompt) {
+        modifiedConfig.conversation_config.agent.prompt.prompt = 'Modified prompt';
+      }
       const configPath = path.join(tempDir, agentsConfig.agents[0].environments[environment].config);
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, modifiedConfig);
@@ -281,7 +283,9 @@ describe('Sync Integration Tests', () => {
 
       // Create modified agent config
       const modifiedConfig = getDefaultAgentTemplate(agentName);
-      modifiedConfig.conversation_config.agent.prompt.prompt = 'Modified prompt';
+      if (modifiedConfig.conversation_config.agent?.prompt) {
+        modifiedConfig.conversation_config.agent.prompt.prompt = 'Modified prompt';
+      }
       const configPath = path.join(tempDir, agentsConfig.agents[0].environments[environment].config);
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, modifiedConfig);
