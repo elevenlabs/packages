@@ -5,10 +5,9 @@ import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
-interface SyncTool {
+export interface SyncTool {
   name: string;
   type: 'webhook' | 'client';
-  configPath: string;
   status: 'pending' | 'checking' | 'syncing' | 'completed' | 'error' | 'skipped';
   message?: string;
   toolId?: string;

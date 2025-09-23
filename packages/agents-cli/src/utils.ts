@@ -66,7 +66,7 @@ export function calculateConfigHash(config: unknown): string {
  * @returns A promise that resolves to the agent configuration object
  * @throws {Error} If the configuration file is not found or contains invalid JSON
  */
-export async function readAgentConfig<T = Record<string, unknown>>(
+export async function readAgentConfig<T = Record<string, unknown>>( //todo angelo - this needs to read a tool definitions 
   filePath: string
 ): Promise<T> {
   try {

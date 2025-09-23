@@ -5,70 +5,17 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { calculateConfigHash } from './utils.js';
+import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 
-export interface WebhookToolSchema {
-  id: string;
-  type: string;
-  value_type: string;
-  description: string;
-  dynamic_variable: string;
-  constant_value: string;
-  required: boolean;
-  properties?: WebhookToolSchema[];
-}
 
-export interface WebhookTool {
-  name: string;
-  description: string;
-  type: 'webhook';
-  api_schema: {
-    url: string;
-    method: string;
-    path_params_schema: unknown[];
-    query_params_schema: unknown[];
-    request_body_schema: WebhookToolSchema;
-    request_headers: Array<{
-      type: 'value' | 'secret';
-      name: string;
-      value?: string;
-      secret_id?: string;
-    }>;
-    auth_connection: unknown;
-  };
-  response_timeout_secs: number;
-  dynamic_variables: {
-    dynamic_variable_placeholders: Record<string, unknown>;
-  };
-}
+type WebhookTool = ElevenLabs.WebhookToolConfigInput;
+type ClientTool = ElevenLabs.ClientToolConfigInput;
 
-export interface ClientToolParameter {
-  id: string;
-  type: string;
-  value_type: string;
-  description: string;
-  dynamic_variable: string;
-  constant_value: string;
-  required: boolean;
-}
-
-export interface ClientTool {
-  name: string;
-  description: string;
-  type: 'client';
-  expects_response: boolean;
-  response_timeout_secs: number;
-  parameters: ClientToolParameter[];
-  dynamic_variables: {
-    dynamic_variable_placeholders: Record<string, unknown>;
-  };
-}
-
-export type Tool = WebhookTool | ClientTool;
+export type Tool = WebhookTool  | ClientTool;
 
 export interface ToolDefinition {
-  name: string;
-  type: 'webhook' | 'client';
-  config?: string;
+  type: "webhook" | "client";
+  config?: Tool;
 }
 
 export interface ToolsConfig {
@@ -87,67 +34,44 @@ export interface ToolsLockFile {
 /**
  * Creates a default webhook tool configuration
  */
-export function createDefaultWebhookTool(name: string): WebhookTool {
-  return {
+export function createDefaultWebhookTool(name: string): ToolDefinition {
+  let tool: WebhookTool = {
     name,
     description: `${name} webhook tool`,
-    type: 'webhook',
-    api_schema: {
+    apiSchema: {
       url: 'https://api.example.com/webhook',
       method: 'POST',
-      path_params_schema: [],
-      query_params_schema: [],
-      request_body_schema: {
-        id: 'body',
-        type: 'object',
-        value_type: 'llm_prompt',
-        description: 'Request body for the webhook',
-        dynamic_variable: '',
-        constant_value: '',
-        required: true,
-        properties: []
-      },
-      request_headers: [
-        {
-          type: 'value',
-          name: 'Content-Type',
-          value: 'application/json'
-        }
-      ],
-      auth_connection: null
+      pathParamsSchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.pathParamsSchema?: Record<string, ElevenLabs.LiteralJsonSchemaProperty> | undefined
+      queryParamsSchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.queryParamsSchema?: ElevenLabs.QueryParamsJsonSchema
+      requestBodySchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.ObjectJsonSchemaPropertyInput?: ElevenLabs.requestBodySchema
+      requestHeaders: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.requestHeaders?: Record<string, ElevenLabs.WebhookToolApiSchemaConfigInputRequestHeadersValue> | undefined
+      authConnection: undefined
     },
-    response_timeout_secs: 30,
-    dynamic_variables: {
-      dynamic_variable_placeholders: {}
-    }
+    responseTimeoutSecs: 30,
+    dynamicVariables: {
+      dynamicVariablePlaceholders: {}
+    },
+    disableInterruptions: false,
   };
+  return {type: 'webhook', config: tool}
 }
 
 /**
  * Creates a default client tool configuration
  */
-export function createDefaultClientTool(name: string): ClientTool {
-  return {
+export function createDefaultClientTool(name: string): ToolDefinition {
+  let tool : ClientTool= {
     name,
     description: `${name} client tool`,
-    type: 'client',
-    expects_response: false,
-    response_timeout_secs: 30,
-    parameters: [
-      {
-        id: 'input',
-        type: 'string',
-        value_type: 'llm_prompt',
-        description: 'Input parameter for the client tool',
-        dynamic_variable: '',
-        constant_value: '',
-        required: true
-      }
-    ],
-    dynamic_variables: {
-      dynamic_variable_placeholders: {}
+    expectsResponse: false,
+    responseTimeoutSecs: 30,
+    parameters: undefined, //todo angelo: fix to match ObjectJsonSchemaPropertyInput
+    dynamicVariables: {
+      dynamicVariablePlaceholders: {}
     }
   };
+  return {type: 'client', config: tool}
+
 }
 
 /**
@@ -171,7 +95,7 @@ export async function readToolConfig<T = Tool>(filePath: string): Promise<T> {
 /**
  * Writes a tool configuration to a file
  */
-export async function writeToolConfig(filePath: string, config: Tool): Promise<void> {
+export async function writeToolConfig(filePath: string, config: ToolDefinition): Promise<void> {
   try {
     const directory = path.dirname(filePath);
     if (directory) {

@@ -84,6 +84,7 @@ import HelpView from './ui/views/HelpView.js';
 import FetchToolsView from './ui/views/FetchToolsView.js';
 import TestView from './ui/views/TestView.js';
 import AddTestView from './ui/views/AddTestView.js';
+import { SyncTool } from './ui/views/SyncToolsView.js';
 
 // Load environment variables
 dotenv.config();
@@ -566,8 +567,8 @@ program
       const client = await getElevenLabsClient();
       
       // Extract config components
-      const conversationConfig = agentConfig.conversation_config || {};
-      const platformSettings = agentConfig.platform_settings;
+      const conversationConfig = agentConfig.conversation_config as ElevenLabs.ConversationalConfig;
+      const platformSettings = agentConfig.platform_settings as ElevenLabs.AgentPlatformSettingsRequestModel;
       let tags = agentConfig.tags || [];
       
       // Add environment tag if specified and not already present
@@ -927,7 +928,7 @@ program
         // Filter tools if specific tool name provided
         let toolsToProcess = toolsConfig.tools;
         if (options.tool) {
-          toolsToProcess = toolsConfig.tools.filter(tool => tool.name === options.tool);
+          toolsToProcess = toolsConfig.tools.filter(tool => tool.config?.name === options.tool);
           if (toolsToProcess.length === 0) {
             throw new Error(`Tool '${options.tool}' not found in configuration`);
           }
@@ -935,11 +936,12 @@ program
 
 
         // Prepare tools for UI
-        const syncTools = toolsToProcess.map(tool => ({
-          name: tool.name,
+
+        // todo angelo - we need to fix this so that the config path is actually the path to the tool
+        const syncTools : SyncTool[] = toolsToProcess.map(tool => ({
+          name: tool.config?.name || "Unknown tool",
           type: tool.type,
-          configPath: tool.config || `tool_configs/${tool.name}.json`,
-          status: 'pending' as const
+          status: 'pending'
         }));
 
         const { waitUntilExit } = render(
@@ -1013,7 +1015,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   const lockData = await loadLockFile(lockFilePath);
   
   // Check if tool already exists
-  const existingTool = toolsConfig.tools.find(tool => tool.name === name);
+  const existingTool = toolsConfig.tools.find(tool => tool.config?.name === name);
   const lockedTool = getToolFromLock(lockData, name);
   
   if (existingTool && lockedTool?.id) {
@@ -1032,9 +1034,9 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   await fs.ensureDir(path.dirname(configFilePath));
   
   // Create tool config using appropriate template
-  let toolConfig;
+  let tool: ToolDefinition;
   if (type === 'webhook') {
-    toolConfig = {
+    tool_config: ElevenLabs.WebhookToolConfigInput = {
       name,
       description: `${name} webhook tool`,
       type: 'webhook' as const,
@@ -1090,8 +1092,10 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
       }
     };
   }
+
+  tool = {toolConfig}
   
-  await writeToolConfig(configFilePath, toolConfig);
+  await writeToolConfig(configFilePath, tool);
   console.log(`Created config file: ${configPath}`);
   
   // Add to tools.json if not already present
@@ -1099,7 +1103,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     const newTool: ToolDefinition = {
       name,
       type,
-      config: configPath
+      config: configPath //todo angelo - this is a fundamental misunderstanding the config should be 11labs xi expected json schema 
     };
     toolsConfig.tools.push(newTool);
     await writeToolsConfig(toolsConfigPath, toolsConfig);
@@ -1118,7 +1122,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   
   try {
     const response = await createToolApi(client, toolConfig);
-    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
+    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`; // todo angelo: wtf why is this 
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
@@ -1623,23 +1627,14 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       console.log(`Fetching config for '${agentNameRemote}'...`);
       const agentDetails = await getAgentApi(client, agentId);
       
-      // Extract configuration components
-      const agentDetailsTyped = agentDetails as {
-        conversationConfig: Record<string, unknown>;
-        conversation_config: Record<string, unknown>;
-        platformSettings: Record<string, unknown>;
-        platform_settings: Record<string, unknown>;
-        tags: string[];
-      };
-
-      const conversationConfig = agentDetailsTyped.conversationConfig || agentDetailsTyped.conversation_config || {};
-      const platformSettings = agentDetailsTyped.platformSettings || agentDetailsTyped.platform_settings || {};
-      const tags = agentDetailsTyped.tags || [];
+      const conversationConfig = agentDetails.conversationConfig || {};
+      const platformSettings = agentDetails.platformSettings || {};
+      const tags = agentDetails.tags || [];
       
       // Create agent config structure
       const agentConfig: AgentConfig = {
         name: agentNameRemote,
-        conversation_config: conversationConfig as AgentConfig['conversation_config'],
+        conversation_config: conversationConfig,
         platform_settings: platformSettings,
         tags
       };
@@ -1800,7 +1795,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeToolConfig(configFilePath, toolDetails as Tool);
+      await writeToolConfig(configFilePath, toolDetails as ToolDefinition);
 
       // Determine tool type from the details
       const toolDetailsTyped = toolDetails as { type?: string };
@@ -1810,7 +1805,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
       const newTool: ToolDefinition = {
         name: toolNameRemote,
         type: toolType as 'webhook' | 'client',
-        config: configPath
+        config: configPath //similar fundamental misunderstanding 
       };
 
       // Add to tools config
@@ -2117,7 +2112,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
   // Filter tools if specific tool name provided
   let toolsToProcess = toolsConfig.tools;
   if (toolName) {
-    toolsToProcess = toolsConfig.tools.filter(tool => tool.name === toolName);
+    toolsToProcess = toolsConfig.tools.filter(tool => tool.config?.name === toolName);
     if (toolsToProcess.length === 0) {
       throw new Error(`Tool '${toolName}' not found in configuration`);
     }
@@ -2126,7 +2121,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
   let changesMade = false;
 
   for (const toolDef of toolsToProcess) {
-    const toolDefName = toolDef.name;
+    const toolDefName = toolDef.config?.name;
     const configPath = toolDef.config;
 
     if (!configPath) {
@@ -2141,7 +2136,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
     }
 
     // Load tool config
-    let toolConfig;
+    let toolConfig : ToolDefinition;
     try {
       toolConfig = await readAgentConfig(configPath);
     } catch (error) {
