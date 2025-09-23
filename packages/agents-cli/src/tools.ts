@@ -13,17 +13,15 @@ export type ClientTool = ElevenLabs.ClientToolConfigInput;
 
 export type Tool = WebhookTool | ClientTool;
 
-// This represents what gets stored in individual tool config files (tool_configs/*.json)
 export interface ToolDefinition {
   type: "webhook" | "client";
   config: Tool;
 }
 
-// This represents what gets stored in tools.json - references to tool config files
 export interface ToolConfigFile {
   name: string;
   type: "webhook" | "client";
-  config: string; // Path to the tool config file
+  config: string;
 }
 
 export interface ToolsConfig {
@@ -99,9 +97,6 @@ export function createDefaultClientTool(name: string): ToolDefinition {
   return { type: 'client', config: tool };
 }
 
-/**
- * Reads a tool configuration file (returns the actual tool config, not the wrapper)
- */
 export async function readToolConfig<T = Tool>(filePath: string): Promise<T> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
@@ -117,9 +112,6 @@ export async function readToolConfig<T = Tool>(filePath: string): Promise<T> {
   }
 }
 
-/**
- * Reads a tool file definition (the wrapper with type and config)
- */
 export async function readToolDefinition(filePath: string): Promise<ToolDefinition> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
@@ -135,9 +127,6 @@ export async function readToolDefinition(filePath: string): Promise<ToolDefiniti
   }
 }
 
-/**
- * Writes a tool configuration to a file
- */
 export async function writeToolConfig(filePath: string, config: ToolDefinition): Promise<void> {
   try {
     const directory = path.dirname(filePath);
@@ -151,9 +140,6 @@ export async function writeToolConfig(filePath: string, config: ToolDefinition):
   }
 }
 
-/**
- * Reads the tools configuration file
- */
 export async function readToolsConfig(filePath: string): Promise<ToolsConfig> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
@@ -166,9 +152,6 @@ export async function readToolsConfig(filePath: string): Promise<ToolsConfig> {
   }
 }
 
-/**
- * Writes the tools configuration file
- */
 export async function writeToolsConfig(filePath: string, config: ToolsConfig): Promise<void> {
   try {
     const directory = path.dirname(filePath);
@@ -182,9 +165,6 @@ export async function writeToolsConfig(filePath: string, config: ToolsConfig): P
   }
 }
 
-/**
- * Loads the tools lock file
- */
 export async function loadToolsLockFile(lockFilePath: string): Promise<ToolsLockFile> {
   try {
     const exists = await fs.pathExists(lockFilePath);
@@ -202,9 +182,6 @@ export async function loadToolsLockFile(lockFilePath: string): Promise<ToolsLock
   }
 }
 
-/**
- * Saves the tools lock file
- */
 export async function saveToolsLockFile(lockFilePath: string, lockData: ToolsLockFile): Promise<void> {
   try {
     const directory = path.dirname(lockFilePath);
@@ -218,9 +195,6 @@ export async function saveToolsLockFile(lockFilePath: string, lockData: ToolsLoc
   }
 }
 
-/**
- * Updates a tool in the lock file
- */
 export function updateToolInLock(
   lockData: ToolsLockFile,
   toolName: string,
@@ -233,16 +207,10 @@ export function updateToolInLock(
   };
 }
 
-/**
- * Gets a tool from the lock file
- */
 export function getToolFromLock(lockData: ToolsLockFile, toolName: string): ToolLockData | undefined {
   return lockData.tools[toolName];
 }
 
-/**
- * Calculates the hash of a tool configuration
- */
 export function calculateToolHash(tool: Tool): string {
   return calculateConfigHash(tool);
 }
