@@ -25,6 +25,7 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
+  const [dismissible, setDismissible] = useState(true);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -93,6 +94,14 @@ function Playground() {
           />{" "}
           Always expanded
         </label>
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={dismissible}
+            onChange={e => setDismissible(e.currentTarget.checked)}
+          />{" "}
+          Dismissible
+        </label>
         <label className="flex flex-col">
           Server Location
           <select
@@ -116,6 +125,7 @@ function Playground() {
           mic-muting={JSON.stringify(micMuting)}
           override-text-only={JSON.stringify(textOnly)}
           always-expanded={JSON.stringify(alwaysExpanded)}
+          dismissible={JSON.stringify(dismissible)}
           server-location={location}
         />
       </div>
