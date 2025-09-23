@@ -6,6 +6,7 @@ import {
 } from '@elevenlabs/elevenlabs-js/api';
 import { getApiKey, loadConfig, Location } from './config.js';
 import { toCamelCaseKeys, toSnakeCaseKeys } from './utils.js';
+import { Tool } from './tools.js';
 
 // Type guard for conversational config
 function isConversationalConfig(config: unknown): config is ConversationalConfig {
@@ -135,7 +136,7 @@ export async function listAgentsApi(
   let cursor: string | undefined;
   
   while (true) {
-    const requestParams : Record<string, any> = {
+    const requestParams : Record<string, unknown> = {
       pageSize: Math.min(pageSize, 100)
     };
     
@@ -185,8 +186,15 @@ export async function getAgentApi(client: ElevenLabsClient, agentId: string): Pr
  * @param toolConfig - The tool configuration object
  * @returns Promise that resolves to the created tool object
  */
-export async function createToolApi(client: ElevenLabsClient, toolConfig: ElevenLabs.ToolRequestModel): Promise<ElevenLabs.ToolResponseModel> {
-  return await client.conversationalAi.tools.create(toolConfig)
+export async function createToolApi(client: ElevenLabsClient, toolConfig: Tool): Promise<ElevenLabs.ToolResponseModel> {
+  // Determine the type based on the properties present
+  const type = 'apiSchema' in toolConfig ? 'webhook' : 'client';
+  return await client.conversationalAi.tools.create({
+    toolConfig: {
+      ...toolConfig,
+      type
+    } as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**
@@ -197,8 +205,15 @@ export async function createToolApi(client: ElevenLabsClient, toolConfig: Eleven
  * @param toolConfig - The updated tool configuration object
  * @returns Promise that resolves to the updated tool object
  */
-export async function updateToolApi(client: ElevenLabsClient, toolConfig: ElevenLabs.ToolRequestModel): Promise<ElevenLabs.ToolResponseModel> {
-  return await client.conversationalAi.tools.create(toolConfig)
+export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: Tool): Promise<ElevenLabs.ToolResponseModel> {
+  // Determine the type based on the properties present
+  const type = 'apiSchema' in toolConfig ? 'webhook' : 'client';
+  return await client.conversationalAi.tools.update(toolId, {
+    toolConfig: {
+      ...toolConfig,
+      type
+    } as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**

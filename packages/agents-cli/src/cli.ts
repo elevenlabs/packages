@@ -52,13 +52,17 @@ import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
+  readToolDefinition,
   ToolsConfig,
   ToolDefinition,
+  ToolConfigFile,
   type Tool,
   loadToolsLockFile,
   saveToolsLockFile,
   updateToolInLock,
-  getToolFromLock
+  getToolFromLock,
+  createDefaultWebhookTool,
+  createDefaultClientTool
 } from './tools.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -928,18 +932,15 @@ program
         // Filter tools if specific tool name provided
         let toolsToProcess = toolsConfig.tools;
         if (options.tool) {
-          toolsToProcess = toolsConfig.tools.filter(tool => tool.config?.name === options.tool);
+          toolsToProcess = toolsConfig.tools.filter(tool => tool.name === options.tool);
           if (toolsToProcess.length === 0) {
             throw new Error(`Tool '${options.tool}' not found in configuration`);
           }
         }
 
-
         // Prepare tools for UI
-
-        // todo angelo - we need to fix this so that the config path is actually the path to the tool
         const syncTools : SyncTool[] = toolsToProcess.map(tool => ({
-          name: tool.config?.name || "Unknown tool",
+          name: tool.name,
           type: tool.type,
           status: 'pending'
         }));
@@ -1000,7 +1001,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   // Check if tools.json exists, create if not
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   let toolsConfig: ToolsConfig;
-  
+
   try {
     toolsConfig = await readToolsConfig(toolsConfigPath);
   } catch (error) {
@@ -1009,130 +1010,76 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     await writeToolsConfig(toolsConfigPath, toolsConfig);
     console.log(`Created ${TOOLS_CONFIG_FILE}`);
   }
-  
+
   // Load lock file
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
-  
+
   // Check if tool already exists
-  const existingTool = toolsConfig.tools.find(tool => tool.config?.name === name);
+  const existingTool = toolsConfig.tools.find(tool => tool.name === name);
   const lockedTool = getToolFromLock(lockData, name);
-  
+
   if (existingTool && lockedTool?.id) {
     console.error(`Tool '${name}' already exists`);
     process.exit(1);
   }
-  
+
   // Generate config path if not provided
   if (!configPath) {
     const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
     configPath = `tool_configs/${safeName}.json`;
   }
-  
+
   // Create config directory and file
   const configFilePath = path.resolve(configPath);
   await fs.ensureDir(path.dirname(configFilePath));
-  
+
   // Create tool config using appropriate template
-  let tool: ToolDefinition;
+  let toolDefinition: ToolDefinition;
   if (type === 'webhook') {
-    tool_config: ElevenLabs.WebhookToolConfigInput = {
-      name,
-      description: `${name} webhook tool`,
-      type: 'webhook' as const,
-      api_schema: {
-        url: 'https://api.example.com/webhook',
-        method: 'POST',
-        path_params_schema: [],
-        query_params_schema: [],
-        request_body_schema: {
-          id: 'body',
-          type: 'object',
-          value_type: 'llm_prompt',
-          description: 'Request body for the webhook',
-          dynamic_variable: '',
-          constant_value: '',
-          required: true,
-          properties: []
-        },
-        request_headers: [
-          {
-            type: 'value' as const,
-            name: 'Content-Type',
-            value: 'application/json'
-          }
-        ],
-        auth_connection: null
-      },
-      response_timeout_secs: 30,
-      dynamic_variables: {
-        dynamic_variable_placeholders: {}
-      }
-    };
+    toolDefinition = createDefaultWebhookTool(name);
   } else {
-    toolConfig = {
-      name,
-      description: `${name} client tool`,
-      type: 'client' as const,
-      expects_response: false,
-      response_timeout_secs: 30,
-      parameters: [
-        {
-          id: 'input',
-          type: 'string',
-          value_type: 'llm_prompt',
-          description: 'Input parameter for the client tool',
-          dynamic_variable: '',
-          constant_value: '',
-          required: true
-        }
-      ],
-      dynamic_variables: {
-        dynamic_variable_placeholders: {}
-      }
-    };
+    toolDefinition = createDefaultClientTool(name);
   }
 
-  tool = {toolConfig}
-  
-  await writeToolConfig(configFilePath, tool);
+  await writeToolConfig(configFilePath, toolDefinition);
   console.log(`Created config file: ${configPath}`);
-  
+
   // Add to tools.json if not already present
   if (!existingTool) {
-    const newTool: ToolDefinition = {
+    const newTool: ToolConfigFile = {
       name,
       type,
-      config: configPath //todo angelo - this is a fundamental misunderstanding the config should be 11labs xi expected json schema 
+      config: configPath
     };
     toolsConfig.tools.push(newTool);
     await writeToolsConfig(toolsConfigPath, toolsConfig);
     console.log(`Added tool '${name}' to tools.json`);
   }
-  
+
   if (skipUpload) {
     console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to upload`);
     return;
   }
-  
+
   // Create tool in ElevenLabs
   console.log(`Creating ${type} tool '${name}' in ElevenLabs...`);
-  
+
   const client = await getElevenLabsClient();
-  
+
   try {
-    const response = await createToolApi(client, toolConfig);
-    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`; // todo angelo: wtf why is this 
-    
+    const response = await createToolApi(client, toolDefinition.config);
+    const toolId = response.id;
+
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
-    
+
     // Update lock file
-    const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
+    const configHash = calculateConfigHash(toSnakeCaseKeys(toolDefinition.config));
     updateToolInLock(lockData, name, toolId, configHash);
     await saveLockFile(lockFilePath, lockData);
-    
+
     console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to update`);
-    
+
   } catch (error) {
     console.error(`Error creating tool in ElevenLabs: ${error}`);
     process.exit(1);
@@ -1729,9 +1676,12 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
   // Filter tools by search term if provided
   let filteredTools = toolsList;
   if (searchTerm) {
-    filteredTools = toolsList.filter((tool: unknown) => {
-      const toolTyped = tool as { name?: string };
-      return toolTyped.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    filteredTools = toolsList.filter((tool) => {
+      const toolConfig = tool.toolConfig;
+      if (toolConfig && 'name' in toolConfig) {
+        return (toolConfig as { name: string }).name.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      return false;
     });
     console.log(`Filtered to ${filteredTools.length} tool(s) matching "${searchTerm}"`);
   }
@@ -1753,13 +1703,18 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
   let newToolsAdded = 0;
 
   for (const toolMeta of filteredTools) {
-    const toolMetaTyped = toolMeta as { tool_id?: string; toolId?: string; id?: string; name: string };
+    const toolMetaTyped = toolMeta as unknown as ElevenLabs.ToolResponseModel & { tool_id?: string; toolId?: string };
     const toolId = toolMetaTyped.tool_id || toolMetaTyped.toolId || toolMetaTyped.id;
+
+    // Get tool name safely
+    const toolConfig = toolMetaTyped.toolConfig;
+    const toolName = (toolConfig && 'name' in toolConfig) ? (toolConfig as { name: string }).name : 'Unknown Tool';
+
     if (!toolId) {
-      console.log(`Warning: Skipping tool '${toolMetaTyped.name}' - no tool ID found`);
+      console.log(`Warning: Skipping tool '${toolName}' - no tool ID found`);
       continue;
     }
-    let toolNameRemote = toolMetaTyped.name;
+    let toolNameRemote = toolName;
 
     // Skip if tool already exists by ID
     if (existingToolIds.has(toolId)) {
@@ -1795,17 +1750,24 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeToolConfig(configFilePath, toolDetails as ToolDefinition);
 
       // Determine tool type from the details
-      const toolDetailsTyped = toolDetails as { type?: string };
+      const toolDetailsTyped = toolDetails as { type?: string; toolConfig?: Tool };
       const toolType = toolDetailsTyped.type || 'unknown';
 
+      // Create tool file definition from the response
+      const toolDefinition: ToolDefinition = {
+        type: toolType as 'webhook' | 'client',
+        config: toolDetailsTyped.toolConfig || (toolDetails as unknown as Tool)
+      };
+
+      await writeToolConfig(configFilePath, toolDefinition);
+
       // Create new tool entry for tools.json
-      const newTool: ToolDefinition = {
+      const newTool: ToolConfigFile = {
         name: toolNameRemote,
         type: toolType as 'webhook' | 'client',
-        config: configPath //similar fundamental misunderstanding 
+        config: configPath
       };
 
       // Add to tools config
@@ -2112,7 +2074,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
   // Filter tools if specific tool name provided
   let toolsToProcess = toolsConfig.tools;
   if (toolName) {
-    toolsToProcess = toolsConfig.tools.filter(tool => tool.config?.name === toolName);
+    toolsToProcess = toolsConfig.tools.filter(tool => tool.name === toolName);
     if (toolsToProcess.length === 0) {
       throw new Error(`Tool '${toolName}' not found in configuration`);
     }
@@ -2121,7 +2083,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
   let changesMade = false;
 
   for (const toolDef of toolsToProcess) {
-    const toolDefName = toolDef.config?.name;
+    const toolDefName = toolDef.name;
     const configPath = toolDef.config;
 
     if (!configPath) {
@@ -2136,16 +2098,16 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
     }
 
     // Load tool config
-    let toolConfig : ToolDefinition;
+    let toolDefinition: ToolDefinition;
     try {
-      toolConfig = await readAgentConfig(configPath);
+      toolDefinition = await readToolDefinition(configPath);
     } catch (error) {
       console.log(`Error reading config for ${toolDefName}: ${error}`);
       continue;
     }
 
     // Calculate config hash
-    const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
+    const configHash = calculateConfigHash(toSnakeCaseKeys(toolDefinition.config));
 
     // Get tool data from lock file
     const lockedTool = getToolFromLock(lockData, toolDefName);
@@ -2178,13 +2140,13 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
 
       if (!toolId) {
         // Create new tool
-        const response = await createToolApi(client!, toolConfig);
-        const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
+        const response = await createToolApi(client!, toolDefinition.config);
+        const newToolId = response.id;
         console.log(`Created tool ${toolDefName} (ID: ${newToolId})`);
         updateToolInLock(lockData, toolDefName, newToolId, configHash);
       } else {
         // Update existing tool
-        await updateToolApi(client!, toolId, toolConfig);
+        await updateToolApi(client!, toolId, toolDefinition.config);
         console.log(`Updated tool ${toolDefName} (ID: ${toolId})`);
         updateToolInLock(lockData, toolDefName, toolId, configHash);
       }
@@ -2381,13 +2343,13 @@ async function runAgentTestsWithUI(agentName: string, environment: string): Prom
   }
 
   const agentConfig = await readAgentConfig<AgentConfig>(configPath);
-  const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
+  const attachedTests = agentConfig.platform_settings?.testing?.attachedTests || [];
 
   if (attachedTests.length === 0) {
     throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
   }
 
-  const testIds = attachedTests.map(test => test.test_id);
+  const testIds = attachedTests.map((test: { testId?: string; test_id?: string }) => test.testId || test.test_id).filter((id): id is string => Boolean(id));
 
   // Use TestView UI
   const { waitUntilExit } = render(

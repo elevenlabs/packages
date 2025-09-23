@@ -8,18 +8,26 @@ import { calculateConfigHash } from './utils.js';
 import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 
 
-type WebhookTool = ElevenLabs.WebhookToolConfigInput;
-type ClientTool = ElevenLabs.ClientToolConfigInput;
+export type WebhookTool = ElevenLabs.WebhookToolConfigInput;
+export type ClientTool = ElevenLabs.ClientToolConfigInput;
 
-export type Tool = WebhookTool  | ClientTool;
+export type Tool = WebhookTool | ClientTool;
 
+// This represents what gets stored in individual tool config files (tool_configs/*.json)
 export interface ToolDefinition {
   type: "webhook" | "client";
-  config?: Tool;
+  config: Tool;
+}
+
+// This represents what gets stored in tools.json - references to tool config files
+export interface ToolConfigFile {
+  name: string;
+  type: "webhook" | "client";
+  config: string; // Path to the tool config file
 }
 
 export interface ToolsConfig {
-  tools: ToolDefinition[];
+  tools: ToolConfigFile[];
 }
 
 export interface ToolLockData {
@@ -35,49 +43,84 @@ export interface ToolsLockFile {
  * Creates a default webhook tool configuration
  */
 export function createDefaultWebhookTool(name: string): ToolDefinition {
-  let tool: WebhookTool = {
+  const tool: WebhookTool = {
     name,
     description: `${name} webhook tool`,
     apiSchema: {
       url: 'https://api.example.com/webhook',
       method: 'POST',
-      pathParamsSchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.pathParamsSchema?: Record<string, ElevenLabs.LiteralJsonSchemaProperty> | undefined
-      queryParamsSchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.queryParamsSchema?: ElevenLabs.QueryParamsJsonSchema
-      requestBodySchema: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.ObjectJsonSchemaPropertyInput?: ElevenLabs.requestBodySchema
-      requestHeaders: undefined, //todo angelo fix to match WebhookToolApiSchemaConfigInput.requestHeaders?: Record<string, ElevenLabs.WebhookToolApiSchemaConfigInputRequestHeadersValue> | undefined
+      pathParamsSchema: {},
+      queryParamsSchema: {
+        required: [],
+        properties: {}
+      },
+      requestBodySchema: {
+        type: 'object',
+        description: 'Request body for the webhook',
+        required: [],
+        properties: {}
+      },
+      requestHeaders: {},
       authConnection: undefined
     },
     responseTimeoutSecs: 30,
     dynamicVariables: {
       dynamicVariablePlaceholders: {}
     },
-    disableInterruptions: false,
+    disableInterruptions: false
   };
-  return {type: 'webhook', config: tool}
+  return { type: 'webhook', config: tool };
 }
 
 /**
  * Creates a default client tool configuration
  */
 export function createDefaultClientTool(name: string): ToolDefinition {
-  let tool : ClientTool= {
+  const tool: ClientTool = {
     name,
     description: `${name} client tool`,
     expectsResponse: false,
     responseTimeoutSecs: 30,
-    parameters: undefined, //todo angelo: fix to match ObjectJsonSchemaPropertyInput
+    parameters: {
+      type: 'object',
+      description: 'Client tool parameters',
+      required: [],
+      properties: {
+        'input': {
+          type: 'string',
+          description: 'Input parameter for the client tool'
+        }
+      }
+    },
     dynamicVariables: {
       dynamicVariablePlaceholders: {}
     }
   };
-  return {type: 'client', config: tool}
-
+  return { type: 'client', config: tool };
 }
 
 /**
- * Reads a tool configuration file
+ * Reads a tool configuration file (returns the actual tool config, not the wrapper)
  */
 export async function readToolConfig<T = Tool>(filePath: string): Promise<T> {
+  try {
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(`Tool configuration file not found at ${filePath}`);
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(`Invalid JSON in tool configuration file ${filePath}`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Reads a tool file definition (the wrapper with type and config)
+ */
+export async function readToolDefinition(filePath: string): Promise<ToolDefinition> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(data);
@@ -101,7 +144,7 @@ export async function writeToolConfig(filePath: string, config: ToolDefinition):
     if (directory) {
       await fs.ensureDir(directory);
     }
-    
+
     await fs.writeFile(filePath, JSON.stringify(config, null, 4), 'utf-8');
   } catch (error) {
     throw new Error(`Could not write tool configuration file to ${filePath}: ${error}`);
