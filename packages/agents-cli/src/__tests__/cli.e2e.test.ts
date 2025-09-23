@@ -386,7 +386,3 @@ describe('CLI End-to-End Tests', () => {
     });
   });
 });
-
-
-
-//todo angelo, check that creating all templates succeeds
