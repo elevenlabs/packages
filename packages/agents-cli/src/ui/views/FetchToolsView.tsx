@@ -14,6 +14,7 @@ import {
   updateToolInLock,
   ToolsConfig,
   ToolDefinition,
+  ToolConfigFile,
   type Tool
 } from '../../tools.js';
 import { calculateConfigHash } from '../../utils.js';
@@ -210,16 +211,22 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
 
         // Create config file
         await fs.ensureDir(path.dirname(configFilePath));
-        await writeToolConfig(configFilePath, toolDetails as Tool);
+
+        const toolDetailsTyped = toolDetails as { type?: string; toolConfig?: any };
+        const toolType = toolDetailsTyped.type || 'unknown';
+
+        // Create proper ToolDefinition from the response
+        const toolDefinition: ToolDefinition = {
+          type: toolType as 'webhook' | 'client',
+          config: toolDetailsTyped.toolConfig || (toolDetails as any)
+        };
+        await writeToolConfig(configFilePath, toolDefinition);
 
         // Update tools.json
         const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
         const toolsConfig = await readToolsConfig(toolsConfigPath);
 
-        const toolDetailsTyped = toolDetails as { type?: string };
-        const toolType = toolDetailsTyped.type || 'unknown';
-
-        const newTool: ToolDefinition = {
+        const newTool: ToolConfigFile = {
           name: toolToFetch.name,
           type: toolType as 'webhook' | 'client',
           config: configPath

@@ -73,40 +73,43 @@ describe('Sync Tools Integration Tests', () => {
       const toolConfig = {
         name: 'test-webhook',
         description: 'test-webhook webhook tool',
-        type: 'webhook' as const,
-        api_schema: {
+        apiSchema: {
           url: 'https://api.example.com/webhook',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: {},
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body for the webhook',
-            dynamic_variable: '',
-            constant_value: '',
+            dynamicVariable: '',
+            constantValue: '',
             required: true,
             properties: []
           },
-          request_headers: [
+          requestHeaders: [
             {
               type: 'value' as const,
               name: 'Content-Type',
               value: 'application/json'
             }
           ],
-          auth_connection: null
+          authConnection: null
         },
-        response_timeout_secs: 30,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 30,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
       const configPath = path.join(tempDir, 'tool_configs', 'test_webhook.json');
       await fs.ensureDir(path.dirname(configPath));
-      await writeToolConfig(configPath, toolConfig);
+      const toolDefinition = {
+        type: 'webhook' as const,
+        config: toolConfig
+      };
+      await writeToolConfig(configPath, toolDefinition);
 
       const toolsConfig: ToolsConfig = {
         tools: [{
@@ -129,28 +132,31 @@ describe('Sync Tools Integration Tests', () => {
       const toolConfig = {
         name: 'test-client',
         description: 'test-client client tool',
-        type: 'client' as const,
-        expects_response: false,
-        response_timeout_secs: 30,
-        parameters: [
-          {
-            id: 'input',
-            type: 'string',
-            value_type: 'llm_prompt',
-            description: 'Input parameter for the client tool',
-            dynamic_variable: '',
-            constant_value: '',
-            required: true
-          }
-        ],
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        expectsResponse: false,
+        responseTimeoutSecs: 30,
+        parameters: {
+          id: 'input',
+          type: 'object',
+          valueType: 'llm_prompt',
+          description: 'Input parameter for the client tool',
+          dynamicVariable: '',
+          constantValue: '',
+          required: [],
+          properties: {}
+        },
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
       const configPath = path.join(tempDir, 'tool_configs', 'test_client.json');
       await fs.ensureDir(path.dirname(configPath));
-      await writeToolConfig(configPath, toolConfig);
+      const toolDefinition = {
+        type: 'client' as const,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        config: toolConfig as any
+      };
+      await writeToolConfig(configPath, toolDefinition);
 
       const toolsConfig: ToolsConfig = {
         tools: [{
@@ -248,13 +254,67 @@ describe('Sync Tools Integration Tests', () => {
     });
 
     it('should call createToolApi for new tools', async () => {
-      const mockResponse = { toolId: 'tool_new_123' };
-      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse);
+      const mockResponse = {
+        id: 'tool_new_123',
+        toolConfig: {
+          name: 'new-tool',
+          description: 'New tool',
+          type: 'webhook' as const,
+          apiSchema: {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+            pathParamsSchema: {},
+            queryParamsSchema: { properties: {} },
+            requestBodySchema: {
+              id: 'body',
+              type: 'object',
+              valueType: 'llm_prompt',
+              description: 'Request body',
+              dynamicVariable: '',
+              constantValue: '',
+              required: [],
+              properties: {}
+            },
+            requestHeaders: {},
+            authConnection: undefined
+          },
+          responseTimeoutSecs: 30,
+          dynamicVariables: { dynamicVariablePlaceholders: {} }
+        },
+        accessInfo: {
+          isCreator: true,
+          creatorName: 'test',
+          creatorEmail: 'test@test.com',
+          role: 'owner'
+        },
+        usageStats: { avgLatencySecs: 0.5 }
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse as any);
 
       const toolConfig = {
         name: 'new-tool',
         description: 'New tool',
-        type: 'webhook'
+        apiSchema: {
+          url: 'https://example.com/webhook',
+          method: 'POST',
+          pathParamsSchema: {},
+          queryParamsSchema: { properties: {} },
+          requestBodySchema: {
+            id: 'body',
+            type: 'object',
+            valueType: 'llm_prompt',
+            description: 'Request body',
+            dynamicVariable: '',
+            constantValue: '',
+            required: [],
+            properties: {}
+          },
+          requestHeaders: {},
+          authConnection: undefined
+        },
+        responseTimeoutSecs: 30,
+        dynamicVariables: { dynamicVariablePlaceholders: {} }
       };
 
       // Simulate creating a new tool
@@ -266,12 +326,67 @@ describe('Sync Tools Integration Tests', () => {
     });
 
     it('should call updateToolApi for existing tools', async () => {
-      mockedElevenLabsApi.updateToolApi.mockResolvedValue({});
+      const mockResponse = {
+        id: 'tool_123',
+        toolConfig: {
+          name: 'existing-tool',
+          description: 'Updated existing tool',
+          type: 'webhook' as const,
+          apiSchema: {
+            url: 'https://example.com/webhook',
+            method: 'POST',
+            pathParamsSchema: {},
+            queryParamsSchema: { properties: {} },
+            requestBodySchema: {
+              id: 'body',
+              type: 'object',
+              valueType: 'llm_prompt',
+              description: 'Request body',
+              dynamicVariable: '',
+              constantValue: '',
+              required: [],
+              properties: {}
+            },
+            requestHeaders: {},
+            authConnection: undefined
+          },
+          responseTimeoutSecs: 30,
+          dynamicVariables: { dynamicVariablePlaceholders: {} }
+        },
+        accessInfo: {
+          isCreator: true,
+          creatorName: 'test',
+          creatorEmail: 'test@test.com',
+          role: 'owner'
+        },
+        usageStats: { avgLatencySecs: 0.5 }
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockedElevenLabsApi.updateToolApi.mockResolvedValue(mockResponse as any);
 
       const toolConfig = {
         name: 'existing-tool',
         description: 'Updated existing tool',
-        type: 'webhook'
+        apiSchema: {
+          url: 'https://example.com/webhook',
+          method: 'POST',
+          pathParamsSchema: {},
+          queryParamsSchema: { properties: {} },
+          requestBodySchema: {
+            id: 'body',
+            type: 'object',
+            valueType: 'llm_prompt',
+            description: 'Request body',
+            dynamicVariable: '',
+            constantValue: '',
+            required: [],
+            properties: {}
+          },
+          requestHeaders: {},
+          authConnection: undefined
+        },
+        responseTimeoutSecs: 30,
+        dynamicVariables: { dynamicVariablePlaceholders: {} }
       };
 
       // Simulate updating an existing tool
@@ -287,7 +402,30 @@ describe('Sync Tools Integration Tests', () => {
       mockedElevenLabsApi.createToolApi.mockRejectedValue(apiError);
 
       const mockClient = {} as ElevenLabsClient;
-      const toolConfig = { name: 'failing-tool', type: 'webhook' };
+      const toolConfig = {
+        name: 'failing-tool',
+        description: 'Failing tool',
+        apiSchema: {
+          url: 'https://example.com/webhook',
+          method: 'POST',
+          pathParamsSchema: {},
+          queryParamsSchema: { properties: {} },
+          requestBodySchema: {
+            id: 'body',
+            type: 'object',
+            valueType: 'llm_prompt',
+            description: 'Request body',
+            dynamicVariable: '',
+            constantValue: '',
+            required: [],
+            properties: {}
+          },
+          requestHeaders: {},
+          authConnection: undefined
+        },
+        responseTimeoutSecs: 30,
+        dynamicVariables: { dynamicVariablePlaceholders: {} }
+      };
 
       await expect(mockedElevenLabsApi.createToolApi(mockClient, toolConfig))
         .rejects.toThrow('API Error: Tool creation failed');

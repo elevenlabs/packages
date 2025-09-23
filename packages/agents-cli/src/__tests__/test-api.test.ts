@@ -202,14 +202,15 @@ describe('Test API Functions', () => {
 
       const testIds = ['test_1'];
       const agentConfigOverride = {
-        conversation_config: {
+        conversationConfig: {
           agent: {
             prompt: {
               prompt: 'Custom prompt',
               temperature: 0.5
             }
           }
-        }
+        },
+        platformSettings: {}
       };
 
       await runTestsOnAgentApi(mockClient as unknown as ElevenLabsClient, 'agent_123', testIds, agentConfigOverride);

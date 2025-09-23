@@ -18,7 +18,7 @@ interface TestConfigWithMethods {
   tests?: TestDefinition[];
   name?: string;
   type?: string;
-  chat_history?: Array<{ role: string; time_in_call_secs: number; message: string }>;
+  chatHistory?: Array<{ role: string; timeInCallSecs: number; message: string }>;
 }
 import {
   readAgentConfig,
@@ -54,25 +54,39 @@ beforeEach(() => {
   mockedApi.getTestApi.mockResolvedValue({
     id: 'test_123',
     name: 'Test Name',
-    chat_history: [{ role: 'user', time_in_call_secs: 1, message: 'Hello' }],
-    success_condition: 'Agent responds helpfully'
+    chatHistory: [{ role: 'user', timeInCallSecs: 1, message: 'Hello' }],
+    successCondition: 'Agent responds helpfully',
+    successExamples: [],
+    failureExamples: []
   });
   mockedApi.listTestsApi.mockResolvedValue([
-    { id: 'test_1', name: 'Remote Test 1' },
-    { id: 'test_2', name: 'Remote Test 2' }
+    { id: 'test_1', name: 'Remote Test 1', createdAtUnixSecs: 1234567890, lastUpdatedAtUnixSecs: 1234567890 },
+    { id: 'test_2', name: 'Remote Test 2', createdAtUnixSecs: 1234567890, lastUpdatedAtUnixSecs: 1234567890 }
   ]);
-  mockedApi.updateTestApi.mockResolvedValue({ id: 'test_123' });
+  mockedApi.updateTestApi.mockResolvedValue({
+    id: 'test_123',
+    name: 'Test Name',
+    chatHistory: [],
+    successCondition: 'Agent responds helpfully',
+    successExamples: [],
+    failureExamples: []
+  });
   mockedApi.runTestsOnAgentApi.mockResolvedValue({
     id: 'invocation_123',
-    test_runs: [
+    testRuns: [
       {
-        test_run_id: 'run_1',
-        test_id: 'test_1',
+        testRunId: 'run_1',
+        testId: 'test_1',
+        testInvocationId: 'invocation_123',
+        agentId: 'agent_123',
         status: 'pending'
       }
     ]
   });
-  mockedApi.getTestInvocationApi.mockResolvedValue({});
+  mockedApi.getTestInvocationApi.mockResolvedValue({
+    id: 'invocation_123',
+    testRuns: []
+  });
 });
 
 describe('Test Commands Integration', () => {
@@ -144,7 +158,7 @@ describe('Test Commands Integration', () => {
       const savedConfig = await readAgentConfig(fullConfigPath);
       expect((savedConfig as TestConfigWithMethods).name).toBe(testName);
       expect((savedConfig as TestConfigWithMethods).type).toBe('llm');
-      expect((savedConfig as TestConfigWithMethods).chat_history).toHaveLength(1);
+      expect((savedConfig as TestConfigWithMethods).chatHistory).toHaveLength(1);
     });
   });
 
