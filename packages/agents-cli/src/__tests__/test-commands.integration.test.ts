@@ -158,7 +158,7 @@ describe('Test Commands Integration', () => {
       const savedConfig = await readAgentConfig(fullConfigPath);
       expect((savedConfig as TestConfigWithMethods).name).toBe(testName);
       expect((savedConfig as TestConfigWithMethods).type).toBe('llm');
-      expect((savedConfig as TestConfigWithMethods).chatHistory).toHaveLength(1);
+      expect((savedConfig).chat_history).toHaveLength(1);
     });
   });
 
