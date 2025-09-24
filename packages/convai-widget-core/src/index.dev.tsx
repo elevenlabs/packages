@@ -25,6 +25,7 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -105,6 +106,23 @@ function Playground() {
             ))}
           </select>
         </label>
+        {(textOnly || textInput || transcript) && (
+          <button
+            type="button"
+            onClick={() => {
+              const event = new CustomEvent('elevenlabs-agent:expand', {
+                detail: { action: expanded ? 'collapse' : 'expand' },
+                bubbles: true,
+                composed: true
+              });
+              document.dispatchEvent(event);
+              setExpanded(!expanded);
+            }}
+            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Toggle expand
+          </button>
+        )}
       </div>
       <div className="dev-host">
         <ConvAIWidget

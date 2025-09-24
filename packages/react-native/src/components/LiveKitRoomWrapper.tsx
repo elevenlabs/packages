@@ -57,7 +57,7 @@ export const LiveKitRoomWrapper = ({
         clientTools={clientTools}
         updateCurrentEventId={updateCurrentEventId}
       />
-      {children}
+      {children as any}
     </LiveKitRoom>
   );
 };
