@@ -21,7 +21,7 @@ export interface LockFileData {
  * @param obj - The object to sort
  * @returns A new object with recursively sorted keys
  */
-function sortObjectKeysRecursively(obj: unknown): unknown {
+function sortObjectKeysRecursively(obj: any): any {
   if (obj === null || typeof obj !== "object") {
     return obj;
   }
@@ -30,12 +30,12 @@ function sortObjectKeysRecursively(obj: unknown): unknown {
     return obj.map(sortObjectKeysRecursively);
   }
 
-  const sortedObj: Record<string, unknown> = {};
-  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  const sortedObj: Record<string, any> = {};
+  const keys = Object.keys(obj as Record<string, any>).sort();
 
   for (const key of keys) {
     sortedObj[key] = sortObjectKeysRecursively(
-      (obj as Record<string, unknown>)[key]
+      (obj as Record<string, any>)[key]
     );
   }
 
@@ -48,7 +48,7 @@ function sortObjectKeysRecursively(obj: unknown): unknown {
  * @param config - The configuration object
  * @returns The hexadecimal representation of the MD5 hash
  */
-export function calculateConfigHash(config: unknown): string {
+export function calculateConfigHash(config: any): string {
   // Recursively sort all object keys to ensure consistent hashes
   const sortedConfig = sortObjectKeysRecursively(config);
   const configString = JSON.stringify(sortedConfig);
@@ -66,7 +66,7 @@ export function calculateConfigHash(config: unknown): string {
  * @returns A promise that resolves to the agent configuration object
  * @throws {Error} If the configuration file is not found or contains invalid JSON
  */
-export async function readAgentConfig<T = Record<string, unknown>>( //todo angelo - this needs to read a tool definitions 
+export async function readAgentConfig<T = Record<string, any>>( //todo angelo - this needs to read a tool definitions 
   filePath: string
 ): Promise<T> {
   try {
@@ -92,7 +92,7 @@ export async function readAgentConfig<T = Record<string, unknown>>( //todo angel
  */
 export async function writeAgentConfig(
   filePath: string,
-  config: unknown
+  config: any
 ): Promise<void> {
   try {
     // Ensure the directory exists before writing
@@ -278,7 +278,7 @@ export function getToolFromLock(
 
 // Deep key normalization utilities
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+function isPlainObject(value: any): value is Record<string, any> {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -298,12 +298,12 @@ function toSnakeCaseKey(key: string): string {
     .toLowerCase();
 }
 
-export function toCamelCaseKeys<T = unknown>(value: T, skipHeaderConversion = false): T {
+export function toCamelCaseKeys<T = any>(value: T, skipHeaderConversion = false): T {
   if (Array.isArray(value)) {
-    return (value.map((v) => toCamelCaseKeys(v, skipHeaderConversion)) as unknown) as T;
+    return (value.map((v) => toCamelCaseKeys(v, skipHeaderConversion)) as any) as T;
   }
   if (isPlainObject(value)) {
-    const result: Record<string, unknown> = {};
+    const result: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
       // Skip camelCase conversion for HTTP header names in request_headers arrays
       if (k === 'name' && skipHeaderConversion) {
@@ -312,21 +312,21 @@ export function toCamelCaseKeys<T = unknown>(value: T, skipHeaderConversion = fa
         result[toCamelCaseKey(k)] = toCamelCaseKeys(v, k === 'request_headers');
       }
     }
-    return (result as unknown) as T;
+    return (result as any) as T;
   }
   return value;
 }
 
-export function toSnakeCaseKeys<T = unknown>(value: T): T {
+export function toSnakeCaseKeys<T = any>(value: T): T {
   if (Array.isArray(value)) {
-    return (value.map((v) => toSnakeCaseKeys(v)) as unknown) as T;
+    return (value.map((v) => toSnakeCaseKeys(v)) as any) as T;
   }
   if (isPlainObject(value)) {
-    const result: Record<string, unknown> = {};
+    const result: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
       result[toSnakeCaseKey(k)] = toSnakeCaseKeys(v);
     }
-    return (result as unknown) as T;
+    return (result as any) as T;
   }
   return value;
 }

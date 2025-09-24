@@ -9,12 +9,12 @@ import { toCamelCaseKeys, toSnakeCaseKeys } from './utils.js';
 import { Tool } from './tools.js';
 
 // Type guard for conversational config
-function isConversationalConfig(config: unknown): config is ConversationalConfig {
+function isConversationalConfig(config: object | null): config is ConversationalConfig {
   return typeof config === 'object' && config !== null;
 }
 
 // Type guard for platform settings
-function isPlatformSettings(settings: unknown): settings is AgentPlatformSettingsRequestModel {
+function isPlatformSettings(settings: object | null): settings is AgentPlatformSettingsRequestModel {
   return typeof settings === 'object' && settings !== null;
 }
 /**
@@ -136,7 +136,7 @@ export async function listAgentsApi(
   let cursor: string | undefined;
   
   while (true) {
-    const requestParams : Record<string, unknown> = {
+    const requestParams: Record<string, string | number> = {
       pageSize: Math.min(pageSize, 100)
     };
     

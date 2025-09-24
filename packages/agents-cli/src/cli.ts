@@ -324,7 +324,7 @@ program
         try {
           await listAgentsApi(client, 1);
           console.log('API key verified successfully');
-        } catch (error: unknown) {
+        } catch (error) {
           const err = error as { statusCode?: number; message?: string; code?: string };
           if (err?.statusCode === 401 || err?.message?.includes('401')) {
             console.error('Invalid API key');
@@ -1630,7 +1630,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   }
   
   if (options.dryRun) {
-    const newAgentsCount = agentsList.filter((a: unknown) => {
+    const newAgentsCount = agentsList.filter((a: ElevenLabs.AgentSummaryResponseModel) => {
       const agent = a as { agentId?: string; agent_id?: string };
       const id = agent.agentId || agent.agent_id;
       return id && !existingAgentIds.has(id);
@@ -1703,7 +1703,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
   let newToolsAdded = 0;
 
   for (const toolMeta of filteredTools) {
-    const toolMetaTyped = toolMeta as unknown as ElevenLabs.ToolResponseModel & { tool_id?: string; toolId?: string };
+    const toolMetaTyped = toolMeta as ElevenLabs.ToolResponseModel & { tool_id?: string; toolId?: string };
     const toolId = toolMetaTyped.tool_id || toolMetaTyped.toolId || toolMetaTyped.id;
 
     // Get tool name safely
@@ -1753,7 +1753,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
 
       // Determine tool type from the details
       const toolDetailsTyped = toolDetails as { type?: string; toolConfig?: Tool };
-      const toolType = toolDetailsTyped.type || 'unknown';
+      const toolType = toolDetailsTyped.type || 'webhook';
 
       // Create tool file definition from the response
       const toolDefinition: ToolDefinition = {
@@ -1799,7 +1799,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
   }
 
   if (options.dryRun) {
-    const newToolsCount = filteredTools.filter((t: unknown) => {
+    const newToolsCount = filteredTools.filter((t: ElevenLabs.ToolResponseModel) => {
       const tool = t as { tool_id?: string; toolId?: string; id?: string };
       const id = tool.tool_id || tool.toolId || tool.id;
       return id && !existingToolIds.has(id);
@@ -2288,7 +2288,7 @@ async function fetchTests(options: { outputDir: string; dryRun: boolean }): Prom
   }
 
   if (options.dryRun) {
-    const newTestsCount = testsList.filter((t: unknown) => {
+    const newTestsCount = testsList.filter((t: ElevenLabs.UnitTestSummaryResponseModel) => {
       const test = t as { id?: string };
       return test.id && !existingTestIds.has(test.id);
     }).length;
