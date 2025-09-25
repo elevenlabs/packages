@@ -1,7 +1,7 @@
+import { Callbacks, Mode, Status } from "@elevenlabs/types";
 import type {
   BaseConnection,
   DisconnectionDetails,
-  OnDisconnectCallback,
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection";
@@ -28,8 +28,8 @@ export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
   workletPaths?: {
-    "raw-audio-processor"?: string;
-    "audio-concat-processor"?: string;
+    rawAudioProcessor?: string;
+    audioConcatProcessor?: string;
   };
   libsampleratePath?: string;
 };

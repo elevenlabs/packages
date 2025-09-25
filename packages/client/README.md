@@ -431,7 +431,7 @@ await conversation.changeOutputDevice({
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
-## CSP compilance
+## CSP compliance
 
 If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
 
@@ -450,6 +450,8 @@ It is recommended to update the scripts with a build script like
 ```js
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { createRequire } from 'node:module';
+import path from 'path';
+
 
 const require = createRequire(import.meta.url);
 
@@ -458,11 +460,11 @@ export default {
     viteStaticCopy({
       targets: [
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/audio-concat-processor.js',
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audioConcatProcessor.js',
           dest: 'dist',
         },
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/raw-audio-processor.js',
+          src: require.resolve('@elevenlabs/client')/dist/worklets/rawAudioProcessor.js',
           dest: 'dist',
         },
       ],

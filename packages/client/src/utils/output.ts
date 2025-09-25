@@ -1,4 +1,4 @@
-import { loadAudioConcatProcessor } from "./audioConcatProcessor";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
 import type { FormatConfig } from "./connection";
 import type { AudioWorkletConfig } from "../BaseConversation";
 
@@ -38,9 +38,9 @@ export class Output {
 
       await loadAudioConcatProcessor(
         context.audioWorklet,
-        workletPaths?.["audio-concat-processor"]
+        workletPaths?.["audioConcatProcessor"]
       );
-      const worklet = new AudioWorkletNode(context, "audio-concat-processor");
+      const worklet = new AudioWorkletNode(context, "audioConcatProcessor");
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 

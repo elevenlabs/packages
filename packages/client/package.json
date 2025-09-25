@@ -17,7 +17,7 @@
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "generate-worklets": "node scripts/generate-worklets.js",
+    "generate-worklets": "node scripts/generateWorklets.js",
     "prebuild": "pnpm run generate-version && pnpm run generate-worklets",
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",

@@ -1,4 +1,4 @@
-import { loadRawAudioProcessor } from "./rawAudioProcessor";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
@@ -73,7 +73,7 @@ export class Input {
       }
       await loadRawAudioProcessor(
         context.audioWorklet,
-        workletPaths?.["raw-audio-processor"]
+        workletPaths?.["rawAudioProcessor"]
       );
 
       const constraints = { voiceIsolation: true, ...options };
@@ -82,7 +82,7 @@ export class Input {
       });
 
       const source = context.createMediaStreamSource(inputStream);
-      const worklet = new AudioWorkletNode(context, "raw-audio-processor");
+      const worklet = new AudioWorkletNode(context, "rawAudioProcessor");
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
 
       source.connect(analyser);

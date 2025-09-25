@@ -1,11 +1,7 @@
-import { createWorkletModuleLoader } from "./createWorkletModuleLoader";
-
-export const loadRawAudioProcessor = createWorkletModuleLoader(
-  "raw-audio-processor",
-  // language=JavaScript
-  `/*
+/*
  * ulaw encoding logic taken from the wavefile library
  * https://github.com/rochars/wavefile/blob/master/lib/codecs/mulaw.js
+ * USED BY @elevenlabs/client
  */
 
 const BIAS = 0x84;
@@ -125,6 +121,4 @@ class RawAudioProcessor extends AudioWorkletProcessor {
     return true; // Continue processing
   }
 }
-registerProcessor("raw-audio-processor", RawAudioProcessor);
-`
-);
+registerProcessor("rawAudioProcessor", RawAudioProcessor);

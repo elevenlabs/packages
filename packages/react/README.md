@@ -190,6 +190,7 @@ const conversation = useConversation({
 ```
 
 Available locations:
+
 - `"us"` (default) - United States servers
 - `"global"` - Global servers (same as US)
 - `"eu-residency"` - European Union residency servers
@@ -511,7 +512,7 @@ const { canSendFeedback } = useConversation();
 console.log(canSendFeedback); // boolean
 ```
 
-## CSP compilance
+## CSP compliance
 
 If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
 
@@ -529,9 +530,9 @@ Then call start with
       await conversation.startSession({
 ...
         workletPaths: {
-          'raw-audio-processor': '/elevenlabs/raw-audio-processor.worklet.js',
-          'audio-concat-processor':
-            '/elevenlabs/audio-concat-processor.worklet.js',
+          'rawAudioProcessor': '/elevenlabs/rawAudioProcessor.worklet.js',
+          'audioConcatProcessor':
+            '/elevenlabs/audioConcatProcessor.worklet.js',
         },
       });
 ```
@@ -541,6 +542,7 @@ It is recommended to update the scripts with a build script like
 ```js
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { createRequire } from 'node:module';
+import path from 'path';
 
 const require = createRequire(import.meta.url);
 
@@ -549,11 +551,11 @@ export default {
     viteStaticCopy({
       targets: [
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/audio-concat-processor.js',
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audioConcatProcessor.js',
           dest: 'dist',
         },
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/raw-audio-processor.js',
+          src: require.resolve('@elevenlabs/client')/dist/worklets/rawAudioProcessor.js',
           dest: 'dist',
         },
       ],
