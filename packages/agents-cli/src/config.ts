@@ -19,7 +19,6 @@ export interface CliConfig {
   apiKey?: string;
   defaultEnvironment?: string;
   residency?: Location;
-  [key: string]: unknown;
 }
 
 /**

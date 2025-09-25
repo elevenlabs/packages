@@ -102,7 +102,7 @@ describe("Key casing normalization", () => {
         name: "Name",
         conversationConfig: expect.objectContaining({
           conversation: expect.objectContaining({
-            clientEvents: ["audio", "agent_response"],
+            client_events: ["audio", "agent_response"],
           }),
         }),
         tags: ["prod"],

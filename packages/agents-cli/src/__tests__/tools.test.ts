@@ -1,6 +1,4 @@
 import {
-  WebhookTool,
-  ClientTool,
   readToolsConfig,
   writeToolsConfig,
   loadToolsLockFile,
@@ -134,41 +132,36 @@ describe('Tool Lock File Management', () => {
 describe('Tool Configuration Hash Generation', () => {
   describe('Webhook Tool Hash', () => {
     it('should generate consistent hashes for identical webhook tools', () => {
-      const webhookTool1: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTool1: any = {
         name: 'consistent-webhook',
         description: 'Consistent webhook tool',
-        type: 'webhook',
-        api_schema: {
+        apiSchema: {
           url: 'https://api.example.com/webhook',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: { properties: {} },
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body',
-            dynamic_variable: '',
-            constant_value: '',
-            required: true,
-            properties: []
+            dynamicVariable: '',
+            constantValue: '',
+            required: [],
+            properties: {}
           },
-          request_headers: [
-            {
-              type: 'value',
-              name: 'Content-Type',
-              value: 'application/json'
-            }
-          ],
-          auth_connection: null
+          requestHeaders: {},
+          authConnection: undefined
         },
-        response_timeout_secs: 30,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 30,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      const webhookTool2: WebhookTool = JSON.parse(JSON.stringify(webhookTool1));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTool2: any = JSON.parse(JSON.stringify(webhookTool1));
 
       const hash1 = calculateConfigHash(webhookTool1);
       const hash2 = calculateConfigHash(webhookTool2);
@@ -180,46 +173,47 @@ describe('Tool Configuration Hash Generation', () => {
     });
 
     it('should generate different hashes for different webhook tools', () => {
-      const webhookTool1: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTool1: any = {
         name: 'webhook-1',
         description: 'First webhook tool',
-        type: 'webhook',
-        api_schema: {
+        apiSchema: {
           url: 'https://api.example.com/webhook1',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: {},
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body',
-            dynamic_variable: '',
-            constant_value: '',
+            dynamicVariable: '',
+            constantValue: '',
             required: true,
             properties: []
           },
-          request_headers: [
+          requestHeaders: [
             {
               type: 'value',
               name: 'Content-Type',
               value: 'application/json'
             }
           ],
-          auth_connection: null
+          authConnection: null
         },
-        response_timeout_secs: 30,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 30,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      const webhookTool2: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTool2: any = {
         ...webhookTool1,
         name: 'webhook-2',
         description: 'Second webhook tool',
-        api_schema: {
-          ...webhookTool1.api_schema,
+        apiSchema: {
+          ...webhookTool1.apiSchema,
           url: 'https://api.example.com/webhook2'
         }
       };
@@ -233,26 +227,26 @@ describe('Tool Configuration Hash Generation', () => {
     });
 
     it('should handle webhook tools with secrets', () => {
-      const webhookTool: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTool: any = {
         name: 'secure-webhook',
         description: 'Secure webhook tool',
-        type: 'webhook',
-        api_schema: {
+        apiSchema: {
           url: 'https://secure.api.com/webhook',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: {},
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body',
-            dynamic_variable: '',
-            constant_value: '',
+            dynamicVariable: '',
+            constantValue: '',
             required: true,
             properties: []
           },
-          request_headers: [
+          requestHeaders: [
             {
               type: 'value',
               name: 'Content-Type',
@@ -261,14 +255,14 @@ describe('Tool Configuration Hash Generation', () => {
             {
               type: 'secret',
               name: 'Authorization',
-              secret_id: 'auth_secret_123'
+              secretId: 'auth_secret_123'
             }
           ],
-          auth_connection: null
+          authConnection: null
         },
-        response_timeout_secs: 60,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 60,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
@@ -281,29 +275,28 @@ describe('Tool Configuration Hash Generation', () => {
 
   describe('Client Tool Hash', () => {
     it('should generate consistent hashes for identical client tools', () => {
-      const clientTool1: ClientTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTool1: any = {
         name: 'consistent-client',
         description: 'Consistent client tool',
-        type: 'client',
-        expects_response: false,
-        response_timeout_secs: 30,
-        parameters: [
-          {
-            id: 'input',
-            type: 'string',
-            value_type: 'llm_prompt',
-            description: 'Input parameter',
-            dynamic_variable: '',
-            constant_value: '',
-            required: true
-          }
-        ],
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        expectsResponse: false,
+        responseTimeoutSecs: 30,
+        parameters: {
+          id: 'input',
+          type: 'string',
+          valueType: 'llm_prompt',
+          description: 'Input parameter',
+          dynamicVariable: '',
+          constantValue: '',
+          required: true
+        },
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      const clientTool2: ClientTool = JSON.parse(JSON.stringify(clientTool1));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTool2: any = JSON.parse(JSON.stringify(clientTool1));
 
       const hash1 = calculateConfigHash(clientTool1);
       const hash2 = calculateConfigHash(clientTool2);
@@ -315,33 +308,32 @@ describe('Tool Configuration Hash Generation', () => {
     });
 
     it('should generate different hashes for different client tools', () => {
-      const clientTool1: ClientTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTool1: any = {
         name: 'client-1',
         description: 'First client tool',
-        type: 'client',
-        expects_response: false,
-        response_timeout_secs: 30,
-        parameters: [
-          {
-            id: 'input',
-            type: 'string',
-            value_type: 'llm_prompt',
-            description: 'Input parameter',
-            dynamic_variable: '',
-            constant_value: '',
-            required: true
-          }
-        ],
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        expectsResponse: false,
+        responseTimeoutSecs: 30,
+        parameters: {
+          id: 'input',
+          type: 'string',
+          valueType: 'llm_prompt',
+          description: 'Input parameter',
+          dynamicVariable: '',
+          constantValue: '',
+          required: true
+        },
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      const clientTool2: ClientTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTool2: any = {
         ...clientTool1,
         name: 'client-2',
         description: 'Second client tool',
-        expects_response: true
+        expectsResponse: true
       };
 
       const hash1 = calculateConfigHash(clientTool1);
@@ -353,34 +345,43 @@ describe('Tool Configuration Hash Generation', () => {
     });
 
     it('should handle client tools with multiple parameters', () => {
-      const clientTool: ClientTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientTool: any = {
         name: 'multi-param-client',
         description: 'Client tool with multiple parameters',
-        type: 'client',
-        expects_response: true,
-        response_timeout_secs: 45,
-        parameters: [
-          {
-            id: 'name',
-            type: 'string',
-            value_type: 'llm_prompt',
-            description: 'Name parameter',
-            dynamic_variable: '',
-            constant_value: '',
-            required: true
-          },
-          {
-            id: 'age',
-            type: 'number',
-            value_type: 'llm_prompt',
-            description: 'Age parameter',
-            dynamic_variable: '',
-            constant_value: '',
-            required: false
-          }
-        ],
-        dynamic_variables: {
-          dynamic_variable_placeholders: {
+        expectsResponse: true,
+        responseTimeoutSecs: 45,
+        parameters: {
+          id: 'params',
+          type: 'object',
+          valueType: 'llm_prompt',
+          description: 'Parameters',
+          dynamicVariable: '',
+          constantValue: '',
+          required: true,
+          properties: [
+            {
+              id: 'name',
+              type: 'string',
+              valueType: 'llm_prompt',
+              description: 'Name parameter',
+              dynamicVariable: '',
+              constantValue: '',
+              required: true
+            },
+            {
+              id: 'age',
+              type: 'number',
+              valueType: 'llm_prompt',
+              description: 'Age parameter',
+              dynamicVariable: '',
+              constantValue: '',
+              required: false
+            }
+          ]
+        },
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {
             'user_id': 'current_user_id'
           }
         }
@@ -396,79 +397,74 @@ describe('Tool Configuration Hash Generation', () => {
 
 describe('Tool Configuration Structure', () => {
   it('should validate webhook tool structure', () => {
-    const webhookTool: WebhookTool = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const webhookTool: any = {
       name: 'test-webhook',
       description: 'test-webhook webhook tool',
-      type: 'webhook',
-      api_schema: {
+      apiSchema: {
         url: 'https://api.example.com/webhook',
         method: 'POST',
-        path_params_schema: [],
-        query_params_schema: [],
-        request_body_schema: {
+        pathParamsSchema: {},
+        queryParamsSchema: {},
+        requestBodySchema: {
           id: 'body',
           type: 'object',
-          value_type: 'llm_prompt',
+          valueType: 'llm_prompt',
           description: 'Request body for the webhook',
-          dynamic_variable: '',
-          constant_value: '',
+          dynamicVariable: '',
+          constantValue: '',
           required: true,
           properties: []
         },
-        request_headers: [
+        requestHeaders: [
           {
             type: 'value',
             name: 'Content-Type',
             value: 'application/json'
           }
         ],
-        auth_connection: null
+        authConnection: null
       },
-      response_timeout_secs: 30,
-      dynamic_variables: {
-        dynamic_variable_placeholders: {}
+      responseTimeoutSecs: 30,
+      dynamicVariables: {
+        dynamicVariablePlaceholders: {}
       }
     };
 
     // Test that the structure is valid
-    expect(webhookTool.type).toBe('webhook');
-    expect(webhookTool.api_schema).toBeDefined();
-    expect(webhookTool.api_schema.url).toBeTruthy();
-    expect(webhookTool.api_schema.method).toBe('POST');
-    expect(webhookTool.response_timeout_secs).toBeGreaterThan(0);
-    expect(webhookTool.dynamic_variables).toBeDefined();
+    expect(webhookTool.apiSchema).toBeDefined();
+    expect(webhookTool.apiSchema.url).toBeTruthy();
+    expect(webhookTool.apiSchema.method).toBe('POST');
+    expect(webhookTool.responseTimeoutSecs).toBeGreaterThan(0);
+    expect(webhookTool.dynamicVariables).toBeDefined();
   });
 
   it('should validate client tool structure', () => {
-    const clientTool: ClientTool = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clientTool: any = {
       name: 'test-client',
       description: 'test-client client tool',
-      type: 'client',
-      expects_response: false,
-      response_timeout_secs: 30,
-      parameters: [
-        {
-          id: 'input',
-          type: 'string',
-          value_type: 'llm_prompt',
-          description: 'Input parameter for the client tool',
-          dynamic_variable: '',
-          constant_value: '',
-          required: true
-        }
-      ],
-      dynamic_variables: {
-        dynamic_variable_placeholders: {}
+      expectsResponse: false,
+      responseTimeoutSecs: 30,
+      parameters: {
+        id: 'input',
+        type: 'string',
+        valueType: 'llm_prompt',
+        description: 'Input parameter for the client tool',
+        dynamicVariable: '',
+        constantValue: '',
+        required: true
+      },
+      dynamicVariables: {
+        dynamicVariablePlaceholders: {}
       }
     };
 
     // Test that the structure is valid
-    expect(clientTool.type).toBe('client');
     expect(clientTool.parameters).toBeDefined();
-    expect(clientTool.parameters.length).toBeGreaterThan(0);
-    expect(clientTool.expects_response).toBe(false);
-    expect(clientTool.response_timeout_secs).toBeGreaterThan(0);
-    expect(clientTool.dynamic_variables).toBeDefined();
+    expect(clientTool.expectsResponse).toBe(false);
+    expect(clientTool.responseTimeoutSecs).toBeGreaterThan(0);
+    expect(clientTool.dynamicVariables).toBeDefined();
   });
 });
 
@@ -503,20 +499,59 @@ describe('Tool Fetching', () => {
     it('should fetch tools from ElevenLabs API', async () => {
       const mockTools = [
         {
-          tool_id: 'tool_123',
-          name: 'Test Webhook Tool',
-          type: 'webhook',
-          description: 'A test webhook tool'
+          id: 'tool_123',
+          toolConfig: {
+            name: 'Test Webhook Tool',
+            description: 'A test webhook tool',
+            apiSchema: {
+              url: 'https://example.com/webhook',
+              method: 'POST',
+              pathParamsSchema: {},
+              queryParamsSchema: {},
+              requestBodySchema: {
+                id: 'body',
+                type: 'object',
+                valueType: 'llm_prompt',
+                description: 'Request body',
+                dynamicVariable: '',
+                constantValue: '',
+                required: true,
+                properties: []
+              },
+              requestHeaders: [],
+              authConnection: null
+            },
+            responseTimeoutSecs: 30,
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.5 }
         },
         {
-          tool_id: 'tool_456',
-          name: 'Test Client Tool',
-          type: 'client',
-          description: 'A test client tool'
+          id: 'tool_456',
+          toolConfig: {
+            name: 'Test Client Tool',
+            description: 'A test client tool',
+            expectsResponse: false,
+            responseTimeoutSecs: 30,
+            parameters: {
+              id: 'input',
+              type: 'string',
+              valueType: 'llm_prompt',
+              description: 'Input parameter',
+              dynamicVariable: '',
+              constantValue: '',
+              required: true
+            },
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.3 }
         }
       ];
 
-      mockListToolsApi.mockResolvedValue(mockTools);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockListToolsApi.mockResolvedValue(mockTools as any);
 
       const client = await getElevenLabsClient();
       const tools = await listToolsApi(client);
@@ -526,7 +561,8 @@ describe('Tool Fetching', () => {
     });
 
     it('should return empty array when no tools exist', async () => {
-      mockListToolsApi.mockResolvedValue([]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockListToolsApi.mockResolvedValue([] as any);
 
       const client = await getElevenLabsClient();
       const tools = await listToolsApi(client);
@@ -538,41 +574,42 @@ describe('Tool Fetching', () => {
 
   describe('getToolApi', () => {
     it('should fetch specific tool details from ElevenLabs API', async () => {
-      const mockToolDetails: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockToolDetails: any = {
         name: 'Test Webhook Tool',
         description: 'A test webhook tool',
-        type: 'webhook',
-        api_schema: {
+        apiSchema: {
           url: 'https://api.example.com/webhook',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: {},
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body',
-            dynamic_variable: '',
-            constant_value: '',
+            dynamicVariable: '',
+            constantValue: '',
             required: true,
             properties: []
           },
-          request_headers: [
+          requestHeaders: [
             {
               type: 'value',
               name: 'Content-Type',
               value: 'application/json'
             }
           ],
-          auth_connection: null
+          authConnection: null
         },
-        response_timeout_secs: 30,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 30,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      mockGetToolApi.mockResolvedValue(mockToolDetails);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockGetToolApi.mockResolvedValue(mockToolDetails as any);
 
       const client = await getElevenLabsClient();
       const toolDetails = await getToolApi(client, 'tool_123');
@@ -649,49 +686,75 @@ describe('Tool Fetching', () => {
       // Mock API responses
       const mockToolsList = [
         {
-          tool_id: 'tool_123',
-          name: 'Webhook Tool',
-          type: 'webhook'
+          id: 'tool_123',
+          toolConfig: {
+            name: 'Webhook Tool',
+            description: 'A webhook tool',
+            apiSchema: {
+              url: 'https://api.example.com/webhook',
+              method: 'POST',
+              pathParamsSchema: {},
+              queryParamsSchema: {},
+              requestBodySchema: {
+                id: 'body',
+                type: 'object',
+                valueType: 'llm_prompt',
+                description: 'Request body',
+                dynamicVariable: '',
+                constantValue: '',
+                required: true,
+                properties: []
+              },
+              requestHeaders: [],
+              authConnection: null
+            },
+            responseTimeoutSecs: 30,
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.5 }
         }
       ];
 
-      const mockToolDetails: WebhookTool = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockToolDetails: any = {
         name: 'Webhook Tool',
         description: 'A webhook tool',
-        type: 'webhook',
-        api_schema: {
+        apiSchema: {
           url: 'https://api.example.com/webhook',
           method: 'POST',
-          path_params_schema: [],
-          query_params_schema: [],
-          request_body_schema: {
+          pathParamsSchema: {},
+          queryParamsSchema: {},
+          requestBodySchema: {
             id: 'body',
             type: 'object',
-            value_type: 'llm_prompt',
+            valueType: 'llm_prompt',
             description: 'Request body',
-            dynamic_variable: '',
-            constant_value: '',
+            dynamicVariable: '',
+            constantValue: '',
             required: true,
             properties: []
           },
-          request_headers: [],
-          auth_connection: null
+          requestHeaders: [],
+          authConnection: null
         },
-        response_timeout_secs: 30,
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        responseTimeoutSecs: 30,
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         }
       };
 
-      mockListToolsApi.mockResolvedValue(mockToolsList);
-      mockGetToolApi.mockResolvedValue(mockToolDetails);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockListToolsApi.mockResolvedValue(mockToolsList as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockGetToolApi.mockResolvedValue(mockToolDetails as any);
 
       // Simulate fetching tools
       const client = await getElevenLabsClient();
       const toolsList = await listToolsApi(client);
 
       expect(toolsList).toHaveLength(1);
-      expect((toolsList[0] as { tool_id: string }).tool_id).toBe('tool_123');
+      expect(toolsList[0].id).toBe('tool_123');
 
       // Simulate getting tool details
       const toolDetails = await getToolApi(client, 'tool_123');
@@ -706,35 +769,103 @@ describe('Tool Fetching', () => {
     it('should filter tools by search term', async () => {
       const mockToolsList = [
         {
-          tool_id: 'tool_123',
-          name: 'Webhook Tool',
-          type: 'webhook'
+          id: 'tool_123',
+          toolConfig: {
+            name: 'Webhook Tool',
+            description: 'A webhook tool',
+            apiSchema: {
+              url: 'https://api.example.com/webhook',
+              method: 'POST',
+              pathParamsSchema: {},
+              queryParamsSchema: {},
+              requestBodySchema: {
+                id: 'body',
+                type: 'object',
+                valueType: 'llm_prompt',
+                description: 'Request body',
+                dynamicVariable: '',
+                constantValue: '',
+                required: true,
+                properties: []
+              },
+              requestHeaders: [],
+              authConnection: null
+            },
+            responseTimeoutSecs: 30,
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.5 }
         },
         {
-          tool_id: 'tool_456',
-          name: 'Client Tool',
-          type: 'client'
+          id: 'tool_456',
+          toolConfig: {
+            name: 'Client Tool',
+            description: 'A client tool',
+            expectsResponse: false,
+            responseTimeoutSecs: 30,
+            parameters: {
+              id: 'input',
+              type: 'string',
+              valueType: 'llm_prompt',
+              description: 'Input parameter',
+              dynamicVariable: '',
+              constantValue: '',
+              required: true
+            },
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.5 }
         },
         {
-          tool_id: 'tool_789',
-          name: 'Another Webhook',
-          type: 'webhook'
+          id: 'tool_789',
+          toolConfig: {
+            name: 'Another Webhook',
+            description: 'Another webhook tool',
+            apiSchema: {
+              url: 'https://api.example.com/webhook',
+              method: 'POST',
+              pathParamsSchema: {},
+              queryParamsSchema: {},
+              requestBodySchema: {
+                id: 'body',
+                type: 'object',
+                valueType: 'llm_prompt',
+                description: 'Request body',
+                dynamicVariable: '',
+                constantValue: '',
+                required: true,
+                properties: []
+              },
+              requestHeaders: [],
+              authConnection: null
+            },
+            responseTimeoutSecs: 30,
+            dynamicVariables: { dynamicVariablePlaceholders: {} }
+          },
+          accessInfo: { isCreator: true, creatorName: 'test', creatorEmail: 'test@test.com', role: 'owner' },
+          usageStats: { avgLatencySecs: 0.5 }
         }
       ];
 
-      mockListToolsApi.mockResolvedValue(mockToolsList);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockListToolsApi.mockResolvedValue(mockToolsList as any);
 
       const client = await getElevenLabsClient();
       const allTools = await listToolsApi(client);
 
       // Simulate filtering by search term 'webhook'
-      const webhookTools = allTools.filter((tool: unknown) =>
-        (tool as { name: string }).name.toLowerCase().includes('webhook')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const webhookTools = allTools.filter((tool: any) =>
+        tool.toolConfig.name.toLowerCase().includes('webhook')
       );
 
       expect(webhookTools).toHaveLength(2);
-      expect((webhookTools[0] as { name: string }).name).toBe('Webhook Tool');
-      expect((webhookTools[1] as { name: string }).name).toBe('Another Webhook');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((webhookTools[0] as any).toolConfig.name).toBe('Webhook Tool');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((webhookTools[1] as any).toolConfig.name).toBe('Another Webhook');
     });
   });
 });

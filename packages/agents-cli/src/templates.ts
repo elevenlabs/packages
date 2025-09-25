@@ -2,58 +2,12 @@
  * Agent configuration template functions
  */
 
+import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
+
 export interface AgentConfig {
   name: string;
-  conversation_config: {
-    agent: {
-      prompt: {
-        prompt: string;
-        temperature: number;
-        max_tokens?: number;
-        [key: string]: unknown;
-      };
-      [key: string]: unknown;
-    };
-    conversation: {
-      text_only: boolean;
-      max_duration_seconds?: number;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
-  platform_settings?: {
-    widget?: {
-      supports_text_only?: boolean;
-      text_input_enabled?: boolean;
-      [key: string]: unknown;
-    };
-    call_limits?: {
-      daily_limit?: number;
-      [key: string]: unknown;
-    };
-    evaluation?: {
-      criteria?: string[];
-      [key: string]: unknown;
-    };
-    overrides?: {
-      conversation_config_override?: {
-        conversation?: {
-          text_only?: boolean;
-          [key: string]: unknown;
-        };
-        [key: string]: unknown;
-      };
-      [key: string]: unknown;
-    };
-    testing?: {
-      attached_tests?: Array<{
-        test_id: string;
-        workflow_node_id?: string;
-      }>;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
+  conversation_config: ElevenLabs.ConversationalConfig,
+  platform_settings?: ElevenLabs.AgentPlatformSettingsRequestModel
   tags: string[];
 }
 
@@ -70,67 +24,67 @@ export function getDefaultAgentTemplate(name: string): AgentConfig {
       asr: {
         quality: "high",
         provider: "elevenlabs",
-        user_input_audio_format: "pcm_16000",
+        userInputAudioFormat: "pcm_16000",
         keywords: []
       },
       turn: {
-        turn_timeout: 7.0,
-        silence_end_call_timeout: -1.0,
+        turnTimeout: 7.0,
+        silenceEndCallTimeout: -1.0,
         mode: "turn"
       },
       tts: {
-        model_id: "eleven_turbo_v2",
-        voice_id: "cjVigY5qzO86Huf0OWal",  // Default voice ID
-        supported_voices: [],
-        agent_output_audio_format: "pcm_16000",
-        optimize_streaming_latency: 3,
+        modelId: "eleven_turbo_v2",
+        voiceId: "cjVigY5qzO86Huf0OWal",  // Default voice ID
+        supportedVoices: [],
+        agentOutputAudioFormat: "pcm_16000",
+        optimizeStreamingLatency: 3,
         stability: 0.5,
         speed: 1.0,
-        similarity_boost: 0.8,
-        pronunciation_dictionary_locators: []
+        similarityBoost: 0.8,
+        pronunciationDictionaryLocators: []
       },
       conversation: {
-        text_only: false,
-        max_duration_seconds: 600,
-        client_events: [
+        textOnly: false,
+        maxDurationSeconds: 600,
+        clientEvents: [
           "audio",
           "interruption"
         ]
       },
-      language_presets: {},
+      languagePresets: {},
       agent: {
-        first_message: "",
+        firstMessage: "",
         language: "en",
-        dynamic_variables: {
-          dynamic_variable_placeholders: {}
+        dynamicVariables: {
+          dynamicVariablePlaceholders: {}
         },
         prompt: {
           prompt: `You are ${name}, a helpful AI assistant.`,
           llm: "gemini-2.0-flash",
           temperature: 0.0,
-          max_tokens: -1,
+          maxTokens: -1,
           tools: [],
-          tool_ids: [],
-          mcp_server_ids: [],
-          native_mcp_server_ids: [],
-          knowledge_base: [],
-          ignore_default_personality: false,
+          toolIds: [],
+          mcpServerIds: [],
+          nativeMcpServerIds: [],
+          knowledgeBase: [],
+          ignoreDefaultPersonality: false,
           rag: {
             enabled: false,
-            embedding_model: "e5_mistral_7b_instruct",
-            max_vector_distance: 0.6,
-            max_documents_length: 50000,
-            max_retrieved_rag_chunks_count: 20
+            embeddingModel: "e5_mistral_7b_instruct",
+            maxVectorDistance: 0.6,
+            maxDocumentsLength: 50000,
+            maxRetrievedRagChunksCount: 20
           },
-          custom_llm: null
+          customLlm: undefined
         }
       }
     },
     platform_settings: {
       auth: {
-        enable_auth: false,
+        enableAuth: false,
         allowlist: [],
-        shareable_token: null
+        shareableToken: undefined
       },
       evaluation: {
         criteria: []
@@ -141,133 +95,127 @@ export function getDefaultAgentTemplate(name: string): AgentConfig {
         expandable: "never",
         avatar: {
           type: "orb",
-          color_1: "#2792dc",
-          color_2: "#9ce6e6"
+          color1: "#2792dc",
+          color2: "#9ce6e6"
         },
-        feedback_mode: "none",
-        bg_color: "#ffffff",
-        text_color: "#000000",
-        btn_color: "#000000",
-        btn_text_color: "#ffffff",
-        border_color: "#e1e1e1",
-        focus_color: "#000000",
-        shareable_page_show_terms: true,
-        show_avatar_when_collapsed: false,
-        disable_banner: false,
-        mic_muting_enabled: false,
-        transcript_enabled: false,
-        text_input_enabled: true,
-        text_contents: {
-          main_label: null,
-          start_call: null,
-          new_call: null,
-          end_call: null,
-          mute_microphone: null,
-          change_language: null,
-          collapse: null,
-          expand: null,
-          copied: null,
-          accept_terms: null,
-          dismiss_terms: null,
-          listening_status: null,
-          speaking_status: null,
-          connecting_status: null,
-          input_label: null,
-          input_placeholder: null,
-          user_ended_conversation: null,
-          agent_ended_conversation: null,
-          conversation_id: null,
-          error_occurred: null,
-          copy_id: null
+        feedbackMode: "none",
+        bgColor: "#ffffff",
+        textColor: "#000000",
+        btnColor: "#000000",
+        btnTextColor: "#ffffff",
+        borderColor: "#e1e1e1",
+        focusColor: "#000000",
+        shareablePageShowTerms: true,
+        showAvatarWhenCollapsed: false,
+        disableBanner: false,
+        micMutingEnabled: false,
+        transcriptEnabled: false,
+        textInputEnabled: true,
+        textContents: {
+          mainLabel: undefined,
+          startCall: undefined,
+          newCall: undefined,
+          endCall: undefined,
+          muteMicrophone: undefined,
+          changeLanguage: undefined,
+          collapse: undefined,
+          expand: undefined,
+          copied: undefined,
+          acceptTerms: undefined,
+          dismissTerms: undefined,
+          listeningStatus: undefined,
+          speakingStatus: undefined,
+          connectingStatus: undefined,
+          inputLabel: undefined,
+          inputPlaceholder: undefined,
+          userEndedConversation: undefined,
+          agentEndedConversation: undefined,
+          conversationId: undefined,
+          errorOccurred: undefined,
+          copyId: undefined
         },
-        language_selector: false,
-        supports_text_only: true,
-        language_presets: {},
+        languageSelector: false,
+        supportsTextOnly: true,
+        languagePresets: {},
         styles: {
-          base: null,
-          base_hover: null,
-          base_active: null,
-          base_border: null,
-          base_subtle: null,
-          base_primary: null,
-          base_error: null,
-          accent: null,
-          accent_hover: null,
-          accent_active: null,
-          accent_border: null,
-          accent_subtle: null,
-          accent_primary: null,
-          overlay_padding: null,
-          button_radius: null,
-          input_radius: null,
-          bubble_radius: null,
-          sheet_radius: null,
-          compact_sheet_radius: null,
-          dropdown_sheet_radius: null
+          base: undefined,
+          baseHover: undefined,
+          baseActive: undefined,
+          baseBorder: undefined,
+          baseSubtle: undefined,
+          basePrimary: undefined,
+          baseError: undefined,
+          accent: undefined,
+          accentHover: undefined,
+          accentActive: undefined,
+          accentBorder: undefined,
+          accentSubtle: undefined,
+          accentPrimary: undefined,
+          overlayPadding: undefined,
+          buttonRadius: undefined,
+          inputRadius: undefined,
+          bubbleRadius: undefined,
+          sheetRadius: undefined,
+          compactSheetRadius: undefined,
+          dropdownSheetRadius: undefined
         },
-        border_radius: null,
-        btn_radius: null,
-        action_text: null,
-        start_call_text: null,
-        end_call_text: null,
-        expand_text: null,
-        listening_text: null,
-        speaking_text: null,
-        shareable_page_text: null,
-        terms_text: null,
-        terms_html: null,
-        terms_key: null,
-        override_link: null,
-        custom_avatar_path: null
+        borderRadius: undefined,
+        btnRadius: undefined,
+        actionText: undefined,
+        startCallText: undefined,
+        endCallText: undefined,
+        expandText: undefined,
+        listeningText: undefined,
+        speakingText: undefined,
+        shareablePageText: undefined,
+        termsText: undefined,
+        termsHtml: undefined,
+        termsKey: undefined,
+        overrideLink: undefined,
+        customAvatarPath: undefined
       },
-      data_collection: {},
+      dataCollection: {},
       overrides: {
-        conversation_config_override: {
+        conversationConfigOverride: {
           tts: {
-            voice_id: false
+            voiceId: false
           },
           conversation: {
-            text_only: true
+            textOnly: true
           },
           agent: {
-            first_message: false,
+            firstMessage: false,
             language: false,
             prompt: {
               prompt: false
             }
           }
         },
-        custom_llm_extra_body: false,
-        enable_conversation_initiation_client_data_from_webhook: false
+        customLlmExtraBody: false,
+        enableConversationInitiationClientDataFromWebhook: false
       },
-      call_limits: {
-        agent_concurrency_limit: -1,
-        daily_limit: 100000,
-        bursting_enabled: true
+      callLimits: {
+        agentConcurrencyLimit: -1,
+        dailyLimit: 100000,
+        burstingEnabled: true
       },
       privacy: {
-        record_voice: true,
-        retention_days: -1,
-        delete_transcript_and_pii: false,
-        delete_audio: false,
-        apply_to_existing_conversations: false,
-        zero_retention_mode: false
+        recordVoice: true,
+        retentionDays: -1,
+        deleteTranscriptAndPii: false,
+        deleteAudio: false,
+        applyToExistingConversations: false,
+        zeroRetentionMode: false
       },
-      workspace_overrides: {
+      workspaceOverrides: {
         webhooks: {
-          post_call_webhook_id: null
+          postCallWebhookId: undefined
         },
-        conversation_initiation_client_data_webhook: null
-      },
-      safety: {
-        is_blocked_ivc: false,
-        is_blocked_non_ivc: false,
-        ignore_safety_evaluation: false
+        conversationInitiationClientDataWebhook: undefined
       },
       testing: {
-        attached_tests: []
+        attachedTests: []
       },
-      ban: null
     },
     tags: []
   };
@@ -292,11 +240,11 @@ export function getMinimalAgentTemplate(name: string): AgentConfig {
         language: "en"
       },
       conversation: {
-        text_only: false
+        textOnly: false
       },
       tts: {
-        model_id: "eleven_turbo_v2",
-        voice_id: "cjVigY5qzO86Huf0OWal"
+        modelId: "eleven_turbo_v2",
+        voiceId: "cjVigY5qzO86Huf0OWal"
       }
     },
     platform_settings: {},
@@ -325,10 +273,12 @@ export function getTemplateOptions(): Record<string, string> {
  */
 export function getVoiceOnlyTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
-  template.conversation_config.conversation.text_only = false;
+  if (template.conversation_config.conversation){
+    template.conversation_config.conversation.textOnly = false;
+  }
   if (template.platform_settings?.widget) {
-    template.platform_settings.widget.supports_text_only = false;
-    template.platform_settings.widget.text_input_enabled = false;
+    template.platform_settings.widget.supportsTextOnly = false;
+    template.platform_settings.widget.textInputEnabled = false;
   }
   return template;
 }
@@ -338,12 +288,14 @@ export function getVoiceOnlyTemplate(name: string): AgentConfig {
  */
 export function getTextOnlyTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
-  template.conversation_config.conversation.text_only = true;
-  if (template.platform_settings?.widget) {
-    template.platform_settings.widget.supports_text_only = true;
+  if (template.conversation_config.conversation){
+    template.conversation_config.conversation.textOnly = true;
   }
-  if (template.platform_settings?.overrides?.conversation_config_override?.conversation) {
-    template.platform_settings.overrides.conversation_config_override.conversation.text_only = false;
+  if (template.platform_settings?.widget) {
+    template.platform_settings.widget.supportsTextOnly = true;
+  }
+  if (template.platform_settings?.overrides?.conversationConfigOverride?.conversation) {
+    template.platform_settings.overrides.conversationConfigOverride.conversation.textOnly = false;
   }
   return template;
 }
@@ -353,18 +305,33 @@ export function getTextOnlyTemplate(name: string): AgentConfig {
  */
 export function getCustomerServiceTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
-  template.conversation_config.agent.prompt.prompt = `You are ${name}, a helpful customer service representative. You are professional, empathetic, and focused on solving customer problems efficiently.`;
-  template.conversation_config.agent.prompt.temperature = 0.1; // More consistent responses
-  template.conversation_config.conversation.max_duration_seconds = 1800; // 30 minutes
-  if (template.platform_settings?.call_limits) {
-    template.platform_settings.call_limits.daily_limit = 10000;
+
+  //todo angelo fix these shitty compile issues 
+  if (template.conversation_config.agent && template.conversation_config.agent.prompt) {
+    template.conversation_config.agent.prompt.prompt = `You are ${name}, a helpful customer service representative. You are professional, empathetic, and focused on solving customer problems efficiently.`;
+    template.conversation_config.agent.prompt.temperature = 0.1; // More consistent responses
   }
+  if (template.conversation_config.conversation){
+    template.conversation_config.conversation.maxDurationSeconds = 1800;
+  }
+  
+  
+  if (template.platform_settings?.callLimits) {
+    template.platform_settings.callLimits.dailyLimit = 10000;
+  }
+
   if (template.platform_settings?.evaluation) {
     template.platform_settings.evaluation.criteria = [
-      "Helpfulness",
-      "Professionalism", 
-      "Problem Resolution",
-      "Response Time"
+      {
+        name: "helpfulness",
+        id: "helpfulness",
+        conversationGoalPrompt: "was the agent helpful to the user?",
+      },
+      {
+        name: "resolution",
+        id: "resolution",
+        conversationGoalPrompt: "did the agent resolve the user's issue",
+      }
     ];
   }
   template.tags = ["customer-service"];
@@ -376,9 +343,11 @@ export function getCustomerServiceTemplate(name: string): AgentConfig {
  */
 export function getAssistantTemplate(name: string): AgentConfig {
   const template = getDefaultAgentTemplate(name);
-  template.conversation_config.agent.prompt.prompt = `You are ${name}, a knowledgeable and helpful AI assistant. You can help with a wide variety of tasks including answering questions, providing explanations, helping with analysis, and creative tasks.`;
-  template.conversation_config.agent.prompt.temperature = 0.3; // Balanced creativity
-  template.conversation_config.agent.prompt.max_tokens = 1000;
+  if (template.conversation_config.agent?.prompt) {
+    template.conversation_config.agent.prompt.prompt = `You are ${name}, a knowledgeable and helpful AI assistant. You can help with a wide variety of tasks including answering questions, providing explanations, helping with analysis, and creative tasks.`;
+    template.conversation_config.agent.prompt.temperature = 0.3; // Balanced creativity
+    template.conversation_config.agent.prompt.maxTokens = 1000;
+  }
   template.tags = ["assistant", "general-purpose"];
   return template;
 }

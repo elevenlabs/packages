@@ -6,26 +6,26 @@ import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
 interface TestRun {
-  test_run_id: string;
-  test_invocation_id: string;
-  agent_id: string;
+  testRunId: string;
+  testInvocationId: string;
+  agentId: string;
   status: 'pending' | 'passed' | 'failed';
-  test_id: string;
-  test_name: string;
-  condition_result?: {
+  testId: string;
+  testName: string;
+  conditionResult?: {
     result: 'success' | 'failure';
     rationale?: {
       messages: string[];
       summary: string;
     };
   };
-  last_updated_at_unix?: number;
+  lastUpdatedAtUnix?: number;
 }
 
 interface TestInvocation {
   id: string;
-  test_runs: TestRun[];
-  created_at: number;
+  testRuns: TestRun[];
+  createdAt: number;
 }
 
 interface TestViewProps {
@@ -57,7 +57,7 @@ export const TestView: React.FC<TestViewProps> = ({
 
         const result = await runTestsOnAgentApi(client, agentId, testIds) as TestInvocation;
         setTestInvocation(result);
-        setTestRuns(result.test_runs || []);
+        setTestRuns(result.testRuns || []);
         setPolling(true);
       } catch (err) {
         setError(`Failed to start tests: ${err}`);
@@ -77,10 +77,10 @@ export const TestView: React.FC<TestViewProps> = ({
         const client = await getElevenLabsClient();
 
         const result = await getTestInvocationApi(client, testInvocation.id) as TestInvocation;
-        setTestRuns(result.test_runs || []);
+        setTestRuns(result.testRuns || []);
 
         // Check if all tests are complete
-        const allComplete = result.test_runs.every(run =>
+        const allComplete = result.testRuns.every(run =>
           run.status === 'passed' || run.status === 'failed'
         );
 
@@ -190,7 +190,7 @@ export const TestView: React.FC<TestViewProps> = ({
           </Text>
 
           {testRuns.map((testRun, index) => (
-            <Box key={testRun.test_run_id} marginTop={1}>
+            <Box key={testRun.testRunId} marginTop={1}>
               <Box width={3}>
                 <Text color={getStatusColor(testRun.status)}>
                   {getStatusIcon(testRun.status)}
@@ -199,7 +199,7 @@ export const TestView: React.FC<TestViewProps> = ({
 
               <Box flexGrow={1}>
                 <Text color={theme.colors.text.primary}>
-                  {testRun.test_name || `Test ${index + 1}`}
+                  {testRun.testName || `Test ${index + 1}`}
                 </Text>
               </Box>
 
@@ -234,13 +234,13 @@ export const TestView: React.FC<TestViewProps> = ({
                 {testRuns
                   .filter(run => run.status === 'failed')
                   .map(run => (
-                    <Box key={run.test_run_id} marginLeft={2} marginTop={1}>
+                    <Box key={run.testRunId} marginLeft={2} marginTop={1}>
                       <Text color={theme.colors.error}>
-                        • {run.test_name || run.test_id}
+                        • {run.testName || run.testId}
                       </Text>
-                      {run.condition_result?.rationale?.summary && (
+                      {run.conditionResult?.rationale?.summary && (
                         <Text color={theme.colors.text.muted}>
-                          {' - ' + run.condition_result.rationale.summary}
+                          {' - ' + run.conditionResult.rationale.summary}
                         </Text>
                       )}
                     </Box>

@@ -2,18 +2,19 @@ import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 import {
   ConversationalConfig,
-  AgentPlatformSettingsRequestModel
+  AgentPlatformSettingsRequestModel,
 } from '@elevenlabs/elevenlabs-js/api';
 import { getApiKey, loadConfig, Location } from './config.js';
 import { toCamelCaseKeys, toSnakeCaseKeys } from './utils.js';
+import { Tool } from './tools.js';
 
 // Type guard for conversational config
-function isConversationalConfig(config: unknown): config is ConversationalConfig {
+function isConversationalConfig(config: object | null): config is ConversationalConfig {
   return typeof config === 'object' && config !== null;
 }
 
 // Type guard for platform settings
-function isPlatformSettings(settings: unknown): settings is AgentPlatformSettingsRequestModel {
+function isPlatformSettings(settings: object | null): settings is AgentPlatformSettingsRequestModel {
   return typeof settings === 'object' && settings !== null;
 }
 /**
@@ -67,8 +68,8 @@ export async function getElevenLabsClient(): Promise<ElevenLabsClient> {
 export async function createAgentApi(
   client: ElevenLabsClient,
   name: string,
-  conversationConfigDict: Record<string, unknown>,
-  platformSettingsDict?: Record<string, unknown>,
+  conversationConfigDict: ConversationalConfig,
+  platformSettingsDict?: AgentPlatformSettingsRequestModel,
   tags?: string[]
 ): Promise<string> {
   if (!isConversationalConfig(conversationConfigDict)) {
@@ -104,17 +105,14 @@ export async function updateAgentApi(
   client: ElevenLabsClient,
   agentId: string,
   name?: string,
-  conversationConfigDict?: Record<string, unknown>,
-  platformSettingsDict?: Record<string, unknown>,
+  conversationConfig?: ConversationalConfig,
+  platformSettings?: AgentPlatformSettingsRequestModel,
   tags?: string[]
 ): Promise<string> {
-  const convConfig = conversationConfigDict && isConversationalConfig(conversationConfigDict) ? toCamelCaseKeys(conversationConfigDict) as ConversationalConfig : undefined;
-  const platformSettings = platformSettingsDict && isPlatformSettings(platformSettingsDict) ? toCamelCaseKeys(platformSettingsDict) as AgentPlatformSettingsRequestModel : undefined;
-    
   const response = await client.conversationalAi.agents.update(agentId, {
     name,
-    conversationConfig: convConfig,
-    platformSettings,
+    conversationConfig: conversationConfig,
+    platformSettings: platformSettings,
     tags
   });
   
@@ -133,12 +131,12 @@ export async function listAgentsApi(
   client: ElevenLabsClient,
   pageSize: number = 30,
   search?: string
-): Promise<unknown[]> {
-  const allAgents: unknown[] = [];
+): Promise<ElevenLabs.AgentSummaryResponseModel[]> {
+  const allAgents: ElevenLabs.AgentSummaryResponseModel[] = [];
   let cursor: string | undefined;
   
   while (true) {
-    const requestParams: Record<string, unknown> = {
+    const requestParams: Record<string, string | number> = {
       pageSize: Math.min(pageSize, 100)
     };
     
@@ -171,11 +169,15 @@ export async function listAgentsApi(
  * @param agentId - The ID of the agent to retrieve
  * @returns Promise that resolves to an object containing the full agent configuration
  */
-export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<unknown> {
+export async function getAgentApi(client: ElevenLabsClient, agentId: string): Promise<ElevenLabs.GetAgentResponseModel> {
   const response = await client.conversationalAi.agents.get(agentId);
-  // Normalize response to snake_case for downstream writing
   return toSnakeCaseKeys(response);
 }
+
+// why are these two mocked, we should fix them???
+/**
+ * createToolApi and updateToolApi 
+ */
 
 /**
  * Creates a new tool using the ElevenLabs API.
@@ -184,10 +186,15 @@ export async function getAgentApi(client: ElevenLabsClient, agentId: string): Pr
  * @param toolConfig - The tool configuration object
  * @returns Promise that resolves to the created tool object
  */
-export async function createToolApi(client: ElevenLabsClient, toolConfig: unknown): Promise<unknown> {
-  // Mock implementation until SDK supports tools API
-  const toolId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  return { toolId, ...(toolConfig as Record<string, unknown>) };
+export async function createToolApi(client: ElevenLabsClient, toolConfig: Tool): Promise<ElevenLabs.ToolResponseModel> {
+  // Determine the type based on the properties present
+  const type = 'apiSchema' in toolConfig ? 'webhook' : 'client';
+  return await client.conversationalAi.tools.create({
+    toolConfig: {
+      ...toolConfig,
+      type
+    } as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**
@@ -198,9 +205,15 @@ export async function createToolApi(client: ElevenLabsClient, toolConfig: unknow
  * @param toolConfig - The updated tool configuration object
  * @returns Promise that resolves to the updated tool object
  */
-export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: unknown): Promise<unknown> {
-  // Mock implementation until SDK supports tools API
-  return { toolId, ...(toolConfig as Record<string, unknown>) };
+export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: Tool): Promise<ElevenLabs.ToolResponseModel> {
+  // Determine the type based on the properties present
+  const type = 'apiSchema' in toolConfig ? 'webhook' : 'client';
+  return await client.conversationalAi.tools.update(toolId, {
+    toolConfig: {
+      ...toolConfig,
+      type
+    } as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**
@@ -210,10 +223,8 @@ export async function updateToolApi(client: ElevenLabsClient, toolId: string, to
  * @param toolId - The ID of the tool to retrieve
  * @returns Promise that resolves to the tool object
  */
-export async function getToolApi(client: ElevenLabsClient, toolId: string): Promise<unknown> {
-  const response = await client.conversationalAi.tools.get(toolId);
-  // Normalize response to snake_case for downstream writing
-  return toSnakeCaseKeys(response);
+export async function getToolApi(client: ElevenLabsClient, toolId: string): Promise<ElevenLabs.ToolResponseModel> {
+  return await client.conversationalAi.tools.get(toolId)
 }
 
 /**
@@ -222,7 +233,7 @@ export async function getToolApi(client: ElevenLabsClient, toolId: string): Prom
  * @param client - An initialized ElevenLabs client
  * @returns Promise that resolves to a list of tool objects
  */
-export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]> {
+export async function listToolsApi(client: ElevenLabsClient): Promise<ElevenLabs.ToolResponseModel[]> {
   const response = await client.conversationalAi.tools.list();
   return response.tools.map(tool => toSnakeCaseKeys(tool));
 }
@@ -235,7 +246,7 @@ export async function listToolsApi(client: ElevenLabsClient): Promise<unknown[]>
  * @param toolId - The ID of the tool
  * @returns Promise that resolves to a list of dependent agents
  */
-export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<unknown[]> {
+export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId: string): Promise<ElevenLabs.GetToolDependentAgentsResponseModelAgentsItem[]> {
   const response = await client.conversationalAi.tools.getDependentAgents(toolId);
   return response.agents.map(agent => toSnakeCaseKeys(agent));
 }
@@ -249,9 +260,9 @@ export async function getToolDependentAgentsApi(client: ElevenLabsClient, toolId
  * @param testConfig - The test configuration object
  * @returns Promise that resolves to the created test with ID
  */
-export async function createTestApi(client: ElevenLabsClient, testConfig: ElevenLabs.conversationalAi.CreateUnitTestRequest): Promise<{ id: string }> {
-  const response = await client.conversationalAi.tests.create(testConfig);
-  return response as { id: string };
+export async function createTestApi(client: ElevenLabsClient, testConfig: ElevenLabs.conversationalAi.CreateUnitTestRequest): Promise<ElevenLabs.CreateUnitTestResponseModel> {
+  const response : ElevenLabs.CreateUnitTestResponseModel = await client.conversationalAi.tests.create(testConfig);
+  return response;
 }
 
 /**
@@ -261,7 +272,7 @@ export async function createTestApi(client: ElevenLabsClient, testConfig: Eleven
  * @param testId - The ID of the test to retrieve
  * @returns Promise that resolves to the test object
  */
-export async function getTestApi(client: ElevenLabsClient, testId: string): Promise<unknown> {
+export async function getTestApi(client: ElevenLabsClient, testId: string): Promise<ElevenLabs.GetUnitTestResponseModel> {
   const response = await client.conversationalAi.tests.get(testId);
   return toSnakeCaseKeys(response);
 }
@@ -273,7 +284,7 @@ export async function getTestApi(client: ElevenLabsClient, testId: string): Prom
  * @param pageSize - Maximum number of tests to return per page (default: 30)
  * @returns Promise that resolves to a list of test objects
  */
-export async function listTestsApi(client: ElevenLabsClient, pageSize: number = 30): Promise<unknown[]> {
+export async function listTestsApi(client: ElevenLabsClient, pageSize: number = 30): Promise<ElevenLabs.UnitTestSummaryResponseModel[]> {
   const response = await client.conversationalAi.tests.list({ pageSize });
   return (response).tests || [];
 }
@@ -286,7 +297,7 @@ export async function listTestsApi(client: ElevenLabsClient, pageSize: number = 
  * @param testConfig - The updated test configuration object
  * @returns Promise that resolves to the updated test object
  */
-export async function updateTestApi(client: ElevenLabsClient, testId: string, testConfig: ElevenLabs.conversationalAi.UpdateUnitTestRequest): Promise<unknown> {
+export async function updateTestApi(client: ElevenLabsClient, testId: string, testConfig: ElevenLabs.conversationalAi.UpdateUnitTestRequest): Promise<ElevenLabs.GetUnitTestResponseModel> {
   const response = await client.conversationalAi.tests.update(testId, testConfig);
   return toSnakeCaseKeys(response);
 }
@@ -304,13 +315,13 @@ export async function runTestsOnAgentApi(
   client: ElevenLabsClient,
   agentId: string,
   testIds: string[],
-  agentConfigOverride?: Record<string, unknown>
-): Promise<unknown> {
+  agentConfigOverride?: ElevenLabs.AdhocAgentConfigOverrideForTestRequestModel
+): Promise<ElevenLabs.GetTestSuiteInvocationResponseModel> {
   const tests = testIds.map(testId => ({ testId }));
   const requestBody: ElevenLabs.conversationalAi.RunAgentTestsRequestModel = { tests };
 
   if (agentConfigOverride) {
-    requestBody.agentConfigOverride = agentConfigOverride as unknown as ElevenLabs.AdhocAgentConfigOverrideForTestRequestModel;
+    requestBody.agentConfigOverride = agentConfigOverride;
   }
 
   const response = await client.conversationalAi.agents.runTests(agentId, requestBody);
@@ -324,7 +335,7 @@ export async function runTestsOnAgentApi(
  * @param testInvocationId - The ID of the test invocation
  * @returns Promise that resolves to the test invocation results
  */
-export async function getTestInvocationApi(client: ElevenLabsClient, testInvocationId: string): Promise<unknown> {
+export async function getTestInvocationApi(client: ElevenLabsClient, testInvocationId: string): Promise<ElevenLabs.GetTestSuiteInvocationResponseModel> {
   const response = await client.conversationalAi.tests.invocations.get(testInvocationId);
   return toSnakeCaseKeys(response);
 } 
