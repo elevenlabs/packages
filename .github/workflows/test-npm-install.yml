@@ -1,0 +1,81 @@
+name: Test NPM Install
+
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+
+permissions:
+  checks: write
+  contents: write
+
+jobs:
+  test-install:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Pack packages for testing
+        run: |
+          mkdir -p test-artifacts
+          cd packages/types && npm pack --pack-destination=../../test-artifacts && cd ../..
+          cd packages/client && npm pack --pack-destination=../../test-artifacts && cd ../..
+          cd packages/react && npm pack --pack-destination=../../test-artifacts && cd ../..
+          cd packages/react-native && npm pack --pack-destination=../../test-artifacts && cd ../..
+
+      - name: Test installation from packed tarballs
+        run: |
+          # Create a test project directory
+          mkdir test-project && cd test-project
+          npm init -y
+
+          # Install packages in dependency order
+          npm install ../test-artifacts/elevenlabs-types-*.tgz
+          npm install ../test-artifacts/elevenlabs-client-*.tgz
+          npm install ../test-artifacts/elevenlabs-react-*.tgz
+
+          # Test that imports work
+          cat > test.js << 'EOF'
+          try {
+            const react = require('@elevenlabs/react');
+            console.log('✅ @elevenlabs/react loaded successfully');
+            process.exit(0);
+          } catch (error) {
+            console.error('❌ Failed to load packages:', error.message);
+            process.exit(1);
+          }
+          EOF
+
+          node test.js
+
+      - name: Verify no workspace references in packed files
+        run: |
+          cd test-artifacts
+          for tarball in *.tgz; do
+            echo "Checking $tarball..."
+            # Extract package.json from tarball and check for workspace references
+            tar -xzOf "$tarball" package/package.json | grep -q "workspace:" && {
+              echo "❌ Found workspace: reference in $tarball"
+              exit 1
+            } || echo "✅ $tarball is clean"
+          done
