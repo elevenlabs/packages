@@ -380,6 +380,9 @@ importers:
       '@elevenlabs/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@esbuild/darwin-arm64':
+        specifier: ^0.25.10
+        version: 0.25.10
       '@types/node':
         specifier: ^22.10.5
         version: 22.18.1
@@ -1518,6 +1521,12 @@ packages:
   '@esbuild/darwin-arm64@0.18.20':
     resolution: {integrity: sha512-bxRHW5kHU38zS2lPTPOyuyTm+S+eobPUnTNkdJEfAddYgEcll4xkT8DB9d2008DtTbl7uJag2HuE5NZAZgnNEA==}
     engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@esbuild/darwin-arm64@0.25.10':
+    resolution: {integrity: sha512-JC74bdXcQEpW9KkV326WpZZjLguSZ3DfS8wrrvPMHgQOIEIG/sPXEN/V8IssoJhbefLRcRqw6RQH2NnpdprtMA==}
+    engines: {node: '>=18'}
     cpu: [arm64]
     os: [darwin]
 
@@ -12866,6 +12875,8 @@ snapshots:
 
   '@esbuild/darwin-arm64@0.18.20':
     optional: true
+
+  '@esbuild/darwin-arm64@0.25.10': {}
 
   '@esbuild/darwin-arm64@0.25.9':
     optional: true
