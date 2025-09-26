@@ -120,17 +120,17 @@ export class Input {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
-  public async setInputDevice(inputDeviceId: string): Promise<void> {
-    if (!inputDeviceId) {
-      throw new Error("Input device ID is required");
-    }
-
+  public async setInputDevice(inputDeviceId?: string): Promise<void> {
     try {
-      // Create new constraints with the specified device
+      // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
-        deviceId: { exact: inputDeviceId },
         ...defaultConstraints,
       };
+
+      if (inputDeviceId) {
+        options.deviceId = { exact: inputDeviceId };
+      }
+      // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
       const constraints = { voiceIsolation: true, ...options };
 
