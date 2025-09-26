@@ -49,10 +49,10 @@ jobs:
           mkdir test-project && cd test-project
           npm init -y
 
-          # Install packages in dependency order
-          npm install ../test-artifacts/elevenlabs-types-*.tgz
-          npm install ../test-artifacts/elevenlabs-client-*.tgz
-          npm install ../test-artifacts/elevenlabs-react-*.tgz
+          # Install all packages together to resolve dependencies
+          npm install ../test-artifacts/elevenlabs-types-*.tgz \
+                      ../test-artifacts/elevenlabs-client-*.tgz \
+                      ../test-artifacts/elevenlabs-react-*.tgz
 
           # Test that imports work
           cat > test.js << 'EOF'
