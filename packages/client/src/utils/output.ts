@@ -82,12 +82,13 @@ export class Output {
     public readonly audioElement: HTMLAudioElement
   ) {}
 
-  public async setOutputDevice(deviceId: string): Promise<void> {
+  public async setOutputDevice(deviceId?: string): Promise<void> {
     if (!("setSinkId" in HTMLAudioElement.prototype)) {
       throw new Error("setSinkId is not supported in this browser");
     }
 
-    await this.audioElement.setSinkId(deviceId);
+    // If deviceId is undefined, use empty string which resets to default device
+    await this.audioElement.setSinkId(deviceId || "");
   }
 
   public async close() {

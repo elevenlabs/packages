@@ -887,6 +887,67 @@ describe("WebRTC Volume Control", () => {
   });
 });
 
+describe("Device Change Default Device", () => {
+  it("successfully changes to default device when no deviceId is provided", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/default-device-test"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/default-device-test",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    // Test that changeInputDevice works without deviceId (uses default)
+    const inputResult = await (
+      conversation as VoiceConversation
+    ).changeInputDevice({
+      sampleRate: 16000,
+      format: "pcm",
+      // No inputDeviceId provided - should use browser default
+    });
+
+    expect(inputResult).toBeDefined();
+    expect(inputResult.inputStream).toBeDefined();
+
+    // Test that changeOutputDevice works without deviceId (uses default)
+    const outputResult = await (
+      conversation as VoiceConversation
+    ).changeOutputDevice({
+      sampleRate: 16000,
+      format: "pcm",
+      // No outputDeviceId provided - should use browser default
+    });
+
+    expect(outputResult).toBeDefined();
+    expect(outputResult.audioElement).toBeDefined();
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
