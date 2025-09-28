@@ -62,10 +62,10 @@ agents whoami
 Configure the API residency for isolated regions:
 
 ```bash
-# Set to EU residency (uses api.eu.elevenlabs.io)
+# Set to EU residency (uses api.eu.residency.elevenlabs.io)
 agents residency eu-residency
 
-# Set to India residency (uses api.in.elevenlabs.io)
+# Set to India residency (uses api.in.residency.elevenlabs.io)
 agents residency in-residency
 
 # Set to US/Global (uses api.elevenlabs.io or api.us.elevenlabs.io)
