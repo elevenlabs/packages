@@ -2446,7 +2446,7 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
   const componentsCommand = program
     .command("components")
     .description(
-      "Import components from the ElevenLabs UI (https://ui.elevenlabs.io)"
+      "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)"
     );
 
   componentsCommand
