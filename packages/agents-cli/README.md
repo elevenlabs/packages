@@ -1,4 +1,5 @@
 # ElevenLabs Agents CLI - Agents as Code
+
 ![hero](../../assets/hero.png)
 
 # ElevenLabs Agents CLI
@@ -29,7 +30,7 @@ npm install -g @elevenlabs/agents-cli
 
 # One-time usage
 pnpm dlx @elevenlabs/agents-cli init
-# OR  
+# OR
 npx @elevenlabs/agents-cli init
 ```
 
@@ -49,7 +50,7 @@ Or set environment variable:
 export ELEVENLABS_API_KEY="your_api_key_here"
 ```
 
-> **Note**: For now, your API key must be unrestricted to work with the CLI, as ElevenLabs Agents-restricted keys are not available yet. 
+> **Note**: For now, your API key must be unrestricted to work with the CLI, as ElevenLabs Agents-restricted keys are not available yet.
 
 ### Check Status
 
@@ -150,6 +151,9 @@ agents widget "Agent Name" [--env production]
 
 # List agents
 agents list-agents
+
+# Add componenents from [ui.elevenlabs.io](https://ui.elevenlabs.io)
+agents components add "Component Name"
 ```
 
 ### Templates
@@ -274,10 +278,12 @@ export ELEVENLABS_API_KEY="your_api_key_here"
 ```
 
 **Agent Not Found:**
+
 - Check: `agents list-agents`
 - Verify: `agents status --env <environment>`
 
 **Sync Issues:**
+
 - Preview: `agents sync --dry-run`
 - Check: `cat agents.lock`
 

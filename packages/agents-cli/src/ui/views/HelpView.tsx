@@ -99,11 +99,22 @@ const commands: Command[] = [
     name: "widget <name>",
     description: "Generate HTML widget snippet for an agent",
   },
+  {
+    name: "components",
+    description:
+      "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)",
+    subcommands: [
+      {
+        name: "add [name]",
+        description: "Add component from registry",
+      },
+    ],
+  },
 ];
 
 export const HelpView: React.FC = () => {
   const { exit } = useApp();
-  
+
   useEffect(() => {
     // Auto-exit after a short delay to allow the UI to render
     const timer = setTimeout(() => {
