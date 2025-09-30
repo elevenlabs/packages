@@ -52,12 +52,12 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["generate-version"]
+      "dependsOn": ["^build", "generate-version"]
     },
     "generate": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
       "outputs": ["generated/**"],
-      "cache": true
+      "cache": false
     }
   }
 }
