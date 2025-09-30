@@ -78,6 +78,7 @@ export type {
   FormatConfig,
   VoiceConversation,
   TextConversation,
+  Callbacks,
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 
