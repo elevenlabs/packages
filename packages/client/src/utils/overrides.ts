@@ -12,6 +12,8 @@ export function constructOverrides(
   };
 
   if (config.overrides) {
+    const textOnly = config.overrides.conversation?.textOnly ?? config.textOnly;
+
     overridesEvent.conversation_config_override = {
       agent: {
         prompt: config.overrides.agent?.prompt,
@@ -21,9 +23,7 @@ export function constructOverrides(
       tts: {
         voice_id: config.overrides.tts?.voiceId,
       },
-      conversation: {
-        text_only: config.overrides.conversation?.textOnly,
-      },
+      conversation: textOnly !== undefined ? { text_only: textOnly } : {},
     };
   }
 
