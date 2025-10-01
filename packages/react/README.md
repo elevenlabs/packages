@@ -66,6 +66,19 @@ const conversation = useConversation({
 - **onDisconnect** - handler called when the conversation connection has ended.
 - **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
 - **onError** - handler called when a error is encountered.
+- **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
+- **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
+- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
+- **onUnhandledClientToolCall** - handler called when a client tool is invoked but no corresponding client tool was defined.
+- **onDebug** - handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.
+- **onAudio** - handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.
+- **onInterruption** - handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.
+- **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
+- **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
+- **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
+- **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
+- **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
 
 ##### Client Tools
 
