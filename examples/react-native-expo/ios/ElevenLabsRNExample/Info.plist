@@ -54,8 +54,6 @@
     <string>Allow $(PRODUCT_NAME) to access your camera</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>This app needs access to microphone for voice conversations.</string>
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>This app uses local network access to optimize voice call quality and connection performance for real-time conversations.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
