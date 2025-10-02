@@ -62,7 +62,8 @@ export const LiveKitRoomWrapper = ({
         clientTools={clientTools}
         updateCurrentEventId={updateCurrentEventId}
       />
-      {children as any}
+      {/* @ts-expect-error: React type mismatch due to pnpm hoisting */}
+      {children}
     </LiveKitRoom>
   );
 };
