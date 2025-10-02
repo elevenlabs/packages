@@ -45,6 +45,11 @@ export const LiveKitRoomWrapper = ({
       options={{
         adaptiveStream: { pixelDensity: 'screen' },
       }}
+      connectOptions={{
+        rtcConfig: {
+          iceTransportPolicy: 'relay',
+        },
+      }}
       onConnected={onConnected}
       onDisconnected={onDisconnected}
       onError={onError}
