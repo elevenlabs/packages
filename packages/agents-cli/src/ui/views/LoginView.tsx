@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
-import TextInput from 'ink-text-input';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
@@ -17,12 +16,35 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useInput((_, key) => {
-    if (key.return && apiKey && !isSubmitting) {
-      handleSubmit();
+  // Handle keyboard input (including paste)
+  useInput((input, key) => {
+    // Ignore input while submitting or after success
+    if (success || isSubmitting) return;
+
+    // Submit on Enter
+    if (key.return) {
+      if (apiKey.trim()) {
+        handleSubmit();
+      }
+      return;
     }
+
+    // Exit on Escape
     if (key.escape) {
       exit();
+      return;
+    }
+
+    // Delete character on Backspace/Delete
+    if (key.backspace || key.delete) {
+      setApiKeyInput(prev => prev.slice(0, -1));
+      return;
+    }
+
+    // Append character (handles both typing and paste)
+    // Paste events come as rapid individual character inputs
+    if (input) {
+      setApiKeyInput(prev => prev + input);
     }
   });
 
@@ -68,12 +90,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
             </Box>
 
             <Box marginBottom={1}>
-              <TextInput
-                value={apiKey}
-                onChange={setApiKeyInput}
-                placeholder="sk_..."
-                mask="*"
-              />
+              <Text>
+                {/* Masked input display */}
+                <Text color={theme.colors.text.primary}>
+                  {apiKey ? '*'.repeat(apiKey.length) : ''}
+                </Text>
+
+                {/* Placeholder when empty */}
+                {!apiKey && (
+                  <Text color={theme.colors.text.secondary}> sk_...</Text>
+                )}
+              </Text>
             </Box>
 
             {error && (
@@ -84,9 +111,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
               </Box>
             )}
 
-            <Box marginTop={1}>
+            <Box marginTop={1} flexDirection="column">
               <Text color={theme.colors.text.secondary}>
-                Press Enter to submit, Escape to cancel
+                Press <Text bold>Enter</Text> to submit • <Text bold>Escape</Text> to cancel
               </Text>
             </Box>
 
