@@ -37,7 +37,10 @@
     "prepublishOnly": "npm run build",
     "test": "jest",
     "lint": "eslint src -c eslint.config.js",
-    "format": "prettier --write src/**/*.ts"
+    "lint:fix": "eslint src -c eslint.config.js --fix",
+    "format": "prettier --write src/**/*.ts src/**/*.tsx",
+    "format:check": "prettier --check src/**/*.ts src/**/*.tsx",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "2.15.0",
@@ -66,14 +69,17 @@
     "@types/keytar": "^4.4.2",
     "@types/node": "^20.8.0",
     "@types/react": "19.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "jest": "^29.7.0",
     "prettier": "^3.0.3",
     "ts-jest": "^29.4.0",
     "tsx": "^3.14.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "typescript-eslint": "^8.0.0"
   },
   "publishConfig": {
     "access": "public"

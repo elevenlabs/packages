@@ -5,6 +5,9 @@ import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 import { getElevenLabsClient, listToolsApi, getToolApi } from '../../elevenlabs-api.js';
+import type {
+  ToolsConfig,
+  ToolDefinition} from '../../tools.js';
 import {
   readToolsConfig,
   writeToolsConfig,
@@ -12,8 +15,6 @@ import {
   loadToolsLockFile,
   saveToolsLockFile,
   updateToolInLock,
-  ToolsConfig,
-  ToolDefinition,
   type Tool
 } from '../../tools.js';
 import { calculateConfigHash } from '../../utils.js';

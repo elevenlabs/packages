@@ -1,12 +1,13 @@
 import { describe, it, expect } from "@jest/globals";
+import type {
+  TestConfig} from "../test-templates";
 import {
   getBasicLLMTestTemplate,
   getToolTestTemplate,
   getConversationFlowTestTemplate,
   getCustomerServiceTestTemplate,
   getTestTemplateOptions,
-  getTestTemplateByName,
-  TestConfig,
+  getTestTemplateByName
 } from "../test-templates";
 
 describe("Test Templates", () => {

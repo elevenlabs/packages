@@ -15,7 +15,7 @@ import {
 import { getDefaultAgentTemplate } from "../templates";
 import * as elevenLabsApi from "../elevenlabs-api";
 import * as config from "../config";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 interface AgentDefinition {
   name: string;

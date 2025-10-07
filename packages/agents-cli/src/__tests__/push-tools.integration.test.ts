@@ -6,20 +6,21 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as os from "os";
 import { calculateConfigHash, toSnakeCaseKeys } from "../utils";
+import type {
+  ToolsConfig,
+  ToolsLockFile} from "../tools";
 import {
   writeToolsConfig,
   writeToolConfig,
   readToolsConfig,
-  ToolsConfig,
   loadToolsLockFile,
   saveToolsLockFile,
   updateToolInLock,
-  getToolFromLock,
-  ToolsLockFile,
+  getToolFromLock
 } from "../tools";
 import * as elevenLabsApi from "../elevenlabs-api";
 import * as config from "../config";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 // Mock the entire elevenlabs-api module
 jest.mock("../elevenlabs-api");

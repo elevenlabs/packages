@@ -9,7 +9,7 @@ import {
 import fs from "fs-extra";
 import path from "path";
 import { tmpdir } from "os";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 interface TestDefinition {
   name: string;

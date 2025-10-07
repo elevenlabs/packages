@@ -195,7 +195,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
               {agents.map((agent, index) => {
                 let status: 'success' | 'warning' | 'error' | 'idle';
                 let statusText: string;
-                let details: string[] = [];
+                const details: string[] = [];
 
                 switch (agent.status) {
                   case 'synced':

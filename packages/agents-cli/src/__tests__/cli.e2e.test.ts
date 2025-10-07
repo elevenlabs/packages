@@ -211,7 +211,7 @@ describe("CLI End-to-End Tests", () => {
   describe("project workflow", () => {
     it("should handle basic project workflow without API key", async () => {
       // Initialize project
-      let result = await runCli(["init"]);
+      const result = await runCli(["init"]);
       expect(result.exitCode).toBe(0);
     });
   });

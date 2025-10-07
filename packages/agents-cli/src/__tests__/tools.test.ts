@@ -1,25 +1,27 @@
-import {
+import type {
   WebhookTool,
   ClientTool,
+  ToolsConfig} from "../tools";
+import {
   readToolsConfig,
   writeToolsConfig,
   loadToolsLockFile,
-  saveToolsLockFile,
-  ToolsConfig,
+  saveToolsLockFile
 } from "../tools";
+import type {
+  LockFileData,
+  LockFileAgent} from "../utils";
 import {
   updateToolInLock,
   getToolFromLock,
-  calculateConfigHash,
-  LockFileData,
-  LockFileAgent,
+  calculateConfigHash
 } from "../utils";
 import {
   getElevenLabsClient,
   listToolsApi,
   getToolApi,
 } from "../elevenlabs-api";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";

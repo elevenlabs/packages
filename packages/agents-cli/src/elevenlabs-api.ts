@@ -1,10 +1,11 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
-import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
-import {
+import type { ElevenLabs } from '@elevenlabs/elevenlabs-js';
+import type {
   ConversationalConfig,
   AgentPlatformSettingsRequestModel
 } from '@elevenlabs/elevenlabs-js/api';
-import { getApiKey, loadConfig, Location } from './config.js';
+import type { Location } from './config.js';
+import { getApiKey, loadConfig } from './config.js';
 import { toCamelCaseKeys, toSnakeCaseKeys } from './utils.js';
 
 // Type guard for conversational config

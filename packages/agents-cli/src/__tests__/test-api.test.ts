@@ -7,8 +7,8 @@ import {
   runTestsOnAgentApi,
   getTestInvocationApi,
 } from "../elevenlabs-api";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import type { ElevenLabs } from "@elevenlabs/elevenlabs-js";
 
 type MockedFunction<T extends (...args: unknown[]) => unknown> =
   jest.MockedFunction<T>;

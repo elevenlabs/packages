@@ -1,9 +1,10 @@
 import { describe, it, expect } from "@jest/globals";
+import type {
+  LockFileData,
+  LockFileAgent} from "../utils";
 import {
   updateTestInLock,
-  getTestFromLock,
-  LockFileData,
-  LockFileAgent,
+  getTestFromLock
 } from "../utils";
 
 describe("Test Lock File Management", () => {

@@ -95,7 +95,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       const agentsConfig = await fs.readJson(agentsConfigPath);
       
       // Check if agent already exists
-      let existingAgent = agentsConfig.agents.find((agent: any) => agent.name === agentName);
+      const existingAgent = agentsConfig.agents.find((agent: any) => agent.name === agentName);
       const relativeConfigPath = `agent_configs/${selectedEnvironment}/${agentName}.json`;
       
       if (existingAgent) {

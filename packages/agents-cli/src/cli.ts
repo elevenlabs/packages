@@ -17,10 +17,12 @@ import {
   toCamelCaseKeys,
   toSnakeCaseKeys
 } from './utils.js';
+import type {
+  AgentConfig 
+} from './templates.js';
 import { 
   getTemplateByName, 
-  getTemplateOptions,
-  AgentConfig 
+  getTemplateOptions 
 } from './templates.js';
 import {
   getElevenLabsClient,
@@ -37,7 +39,9 @@ import {
   listTestsApi,
   updateTestApi
 } from './elevenlabs-api.js';
-import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
+import type { ElevenLabs } from '@elevenlabs/elevenlabs-js';
+import type {
+  Location} from './config.js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -45,15 +49,15 @@ import {
   isLoggedIn,
   getResidency,
   setResidency,
-  Location,
   LOCATIONS
 } from './config.js';
+import type {
+  ToolsConfig,
+  ToolDefinition} from './tools.js';
 import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
-  ToolsConfig,
-  ToolDefinition,
   type Tool,
   loadToolsLockFile,
   saveToolsLockFile,
@@ -506,7 +510,7 @@ program
       }
       
       // Check if agent name exists in agents.json
-      let existingAgent = agentsConfig.agents.find(agent => agent.name === name);
+      const existingAgent = agentsConfig.agents.find(agent => agent.name === name);
       
       // Generate environment-specific config path if not provided
       let configPath = options.configPath;
