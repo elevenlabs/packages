@@ -88,7 +88,7 @@ const commands: Command[] = [
     description: "Watch for config changes and auto-sync",
   },
   {
-    name: "list-agents",
+    name: "list",
     description: "List all configured agents",
   },
   {

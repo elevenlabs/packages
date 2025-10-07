@@ -150,7 +150,7 @@ agents fetch-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-
 agents widget "Agent Name" [--env production]
 
 # List agents
-agents list-agents
+agents list
 
 # Add componenents from [ui.elevenlabs.io](https://ui.elevenlabs.io)
 agents components add "Component Name"
