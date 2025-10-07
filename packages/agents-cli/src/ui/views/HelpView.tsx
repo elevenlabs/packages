@@ -80,6 +80,10 @@ const commands: Command[] = [
     description: "Synchronize agents with ElevenLabs API",
   },
   {
+    name: "sync-tools",
+    description: "Synchronize tools with ElevenLabs API",
+  },
+  {
     name: "status",
     description: "Show the status of agents",
   },
@@ -94,6 +98,26 @@ const commands: Command[] = [
   {
     name: "fetch",
     description: "Fetch agents from ElevenLabs workspace",
+  },
+  {
+    name: "fetch-tools",
+    description: "Fetch tools from ElevenLabs workspace",
+  },
+  {
+    name: "add-test <name>",
+    description: "Add a new test",
+  },
+  {
+    name: "sync-tests",
+    description: "Synchronize tests with ElevenLabs API",
+  },
+  {
+    name: "fetch-tests",
+    description: "Fetch tests from ElevenLabs workspace",
+  },
+  {
+    name: "test <agent>",
+    description: "Run tests for an agent",
   },
   {
     name: "widget <name>",

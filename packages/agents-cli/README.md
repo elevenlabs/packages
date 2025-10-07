@@ -134,6 +134,12 @@ agents add "Agent Name" [--template customer-service] [--env dev]
 # Sync changes
 agents sync [--agent "Agent Name"] [--env production] [--dry-run]
 
+# Sync tools
+agents sync-tools [--tool "Tool Name"] [--dry-run]
+
+# Sync tests
+agents sync-tests [--dry-run]
+
 # Check status
 agents status [--agent "Agent Name"] [--env production]
 
@@ -145,6 +151,12 @@ agents fetch [--search "term"] [--env staging] [--dry-run]
 
 # Import tools from ElevenLabs
 agents fetch-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-dir tool_configs]
+
+# Import tests from ElevenLabs
+agents fetch-tests [--output-dir test_configs] [--dry-run]
+
+# Run tests
+agents test "Agent Name" [--env production]
 
 # Generate widget HTML (includes server-location for isolated regions)
 agents widget "Agent Name" [--env production]
