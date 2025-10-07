@@ -30,7 +30,7 @@ function Playground() {
 
   const dynamicVariables = useMemo(() =>
     dynamicVariablesStr
-      .split(',')
+      .split('\n')
       .reduce<Record<string, string>>((acc, expr) => {
         const [name, value] = expr.split('=')
         return { ...acc, [name]: value };
