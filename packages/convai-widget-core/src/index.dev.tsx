@@ -11,7 +11,7 @@ import {
   Location,
   parseLocation,
 } from "./types/config";
-import { useState } from "preact/compat";
+import { useMemo, useState } from "preact/compat";
 
 /**
  * A dev-only playground for testing the ConvAIWidget component.
@@ -25,7 +25,17 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
+  const [dynamicVariablesStr, setDynamicVariablesStr] = useState("")
   const [expanded, setExpanded] = useState(false);
+
+  const dynamicVariables = useMemo(() =>
+    dynamicVariablesStr
+      .split(',')
+      .reduce<Record<string, string>>((acc, expr) => {
+        const [name, value] = expr.split('=')
+        return { ...acc, [name]: value };
+      }, {})
+  , [dynamicVariablesStr])
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -95,6 +105,15 @@ function Playground() {
           Always expanded
         </label>
         <label className="flex flex-col">
+          Dynamic variables (i.e., new-line separated name=value)
+          <textarea
+            className="p-1 bg-base border border-base-border"
+            onChange={e => setDynamicVariablesStr(e.currentTarget.value)}
+            value={dynamicVariablesStr}
+            rows={5}
+          />
+        </label>
+        <label className="flex flex-col">
           Server Location
           <select
             value={location}
@@ -134,6 +153,7 @@ function Playground() {
           mic-muting={JSON.stringify(micMuting)}
           override-text-only={JSON.stringify(textOnly)}
           always-expanded={JSON.stringify(alwaysExpanded)}
+          dynamic-variables={JSON.stringify(dynamicVariables)}
           server-location={location}
         />
       </div>

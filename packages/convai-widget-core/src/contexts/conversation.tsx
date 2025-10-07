@@ -78,6 +78,7 @@ export function useConversation() {
 function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  const receivedFirstMessageRef = useRef(false);
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
@@ -194,12 +195,15 @@ function useConversationSetup() {
               if (
                 conversationTextOnly.peek() === true &&
                 source === "ai" &&
-                message === firstMessage.peek()
+                !receivedFirstMessageRef.current
               ) {
+                receivedFirstMessageRef.current = true
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
                 return;
+              } else if (source === "ai") {
+                receivedFirstMessageRef.current = true
               }
 
               transcript.value = [
@@ -214,6 +218,7 @@ function useConversationSetup() {
               ];
             },
             onDisconnect: details => {
+              receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               transcript.value = [
                 ...transcript.value,
