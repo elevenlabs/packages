@@ -70,12 +70,12 @@ const commands: Command[] = [
     ],
   },
   {
-    name: "sync",
-    description: "Synchronize agents with ElevenLabs API",
+    name: "push",
+    description: "Push agents to ElevenLabs API",
   },
   {
-    name: "sync-tools",
-    description: "Synchronize tools with ElevenLabs API",
+    name: "push-tools",
+    description: "Push tools to ElevenLabs API",
   },
   {
     name: "status",
@@ -83,31 +83,31 @@ const commands: Command[] = [
   },
   {
     name: "watch",
-    description: "Watch for config changes and auto-sync",
+    description: "Watch for config changes and auto-push",
   },
   {
     name: "list",
     description: "List all configured agents",
   },
   {
-    name: "fetch",
-    description: "Fetch agents from ElevenLabs workspace",
+    name: "pull",
+    description: "Pull agents from ElevenLabs workspace",
   },
   {
-    name: "fetch-tools",
-    description: "Fetch tools from ElevenLabs workspace",
+    name: "pull-tools",
+    description: "Pull tools from ElevenLabs workspace",
   },
   {
     name: "add-test <name>",
     description: "Add a new test",
   },
   {
-    name: "sync-tests",
-    description: "Synchronize tests with ElevenLabs API",
+    name: "push-tests",
+    description: "Push tests to ElevenLabs API",
   },
   {
-    name: "fetch-tests",
-    description: "Fetch tests from ElevenLabs workspace",
+    name: "pull-tests",
+    description: "Pull tests from ElevenLabs workspace",
   },
   {
     name: "test <agent>",
@@ -224,8 +224,8 @@ export const HelpView: React.FC = () => {
             </Text>
           </Text>
           <Text color={theme.colors.text.secondary}>
-            4. Sync to ElevenLabs:{" "}
-            <Text color={theme.colors.success}>agents sync</Text>
+            4. Push to ElevenLabs:{" "}
+            <Text color={theme.colors.success}>agents push</Text>
           </Text>
         </Box>
       </Box>

@@ -205,12 +205,12 @@ export const StatusView: React.FC<StatusViewProps> = ({
                   case 'modified':
                     status = 'warning';
                     statusText = '⚠ Modified locally';
-                    details.push('Run "agents sync" to update');
+                    details.push('Run "agents push" to update');
                     break;
                   case 'not-deployed':
                     status = 'idle';
                     statusText = '○ Not deployed';
-                    details.push('Run "agents sync" to deploy');
+                    details.push('Run "agents push" to deploy');
                     break;
                   case 'missing':
                     status = 'error';

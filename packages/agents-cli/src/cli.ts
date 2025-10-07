@@ -71,8 +71,8 @@ const { version } = packageJson;
 import { render } from 'ink';
 import React from 'react';
 import InitView from './ui/views/InitView.js';
-import SyncView from './ui/views/SyncView.js';
-import SyncToolsView from './ui/views/SyncToolsView.js';
+import PushView from './ui/views/PushView.js';
+import PushToolsView from './ui/views/PushToolsView.js';
 import LoginView from './ui/views/LoginView.js';
 import AddAgentView from './ui/views/AddAgentView.js';
 import StatusView from './ui/views/StatusView.js';
@@ -81,7 +81,7 @@ import ListAgentsView from './ui/views/ListAgentsView.js';
 import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
 import HelpView from './ui/views/HelpView.js';
-import FetchToolsView from './ui/views/FetchToolsView.js';
+import PullToolsView from './ui/views/PullToolsView.js';
 import TestView from './ui/views/TestView.js';
 import AddTestView from './ui/views/AddTestView.js';
 import { spawnSync } from 'child_process';
@@ -125,7 +125,7 @@ interface AddOptions {
   env: string;
 }
 
-interface SyncOptions {
+interface PushOptions {
   agent?: string;
   dryRun: boolean;
   env?: string;
@@ -142,7 +142,7 @@ interface WatchOptions {
   interval: string;
 }
 
-interface FetchOptions {
+interface PullOptions {
   agent?: string;
   outputDir: string;
   search?: string;
@@ -150,7 +150,7 @@ interface FetchOptions {
   env: string;
 }
 
-interface FetchToolsOptions {
+interface PullToolsOptions {
   tool?: string;
   outputDir: string;
   search?: string;
@@ -279,7 +279,7 @@ ELEVENLABS_API_KEY=your_api_key_here
         console.log('2. Create an agent: agents add "My Agent" --template default');
         console.log('3. Create tools: agents add-webhook-tool "My Webhook" or agents add-client-tool "My Client"');
         console.log('4. Create tests: agents add-test "My Test" --template basic-llm');
-        console.log('5. Sync to ElevenLabs: agents sync && agents sync-tools && agents sync-tests');
+        console.log('5. Push to ElevenLabs: agents push && agents push-tools && agents push-tests');
         console.log('6. Run tests: agents test "My Agent"');
       }
     } catch (error) {
@@ -558,7 +558,7 @@ program
         }
         
         await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`Edit ${configPath} to customize your agent, then run 'agents sync --env ${options.env}' to upload`);
+        console.log(`Edit ${configPath} to customize your agent, then run 'agents push --env ${options.env}' to upload`);
         return;
       }
       
@@ -615,7 +615,7 @@ program
       updateAgentInLock(lockData, name, options.env, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
-      console.log(`Edit ${configPath} to customize your agent, then run 'agents sync --env ${options.env}' to update`);
+      console.log(`Edit ${configPath} to customize your agent, then run 'agents push --env ${options.env}' to update`);
       
     } catch (error) {
       console.error(`Error creating agent: ${error}`);
@@ -692,16 +692,16 @@ templatesCommand
   });
 
 program
-  .command('sync')
-  .description('Synchronize agents with ElevenLabs API when configs change')
-  .option('--agent <name>', 'Specific agent name to sync (defaults to all agents)')
+  .command('push')
+  .description('Push agents to ElevenLabs API when configs change')
+  .option('--agent <name>', 'Specific agent name to push (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--env <environment>', 'Target specific environment (defaults to all environments)')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: SyncOptions & { ui: boolean }) => {
+  .action(async (options: PushOptions & { ui: boolean }) => {
     try {
       if (options.ui !== false) {
-        // Use new Ink UI for sync
+        // Use new Ink UI for push
         const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
         if (!(await fs.pathExists(agentsConfigPath))) {
           throw new Error('agents.json not found. Run \'init\' first.');
@@ -719,7 +719,7 @@ program
         }
         
         // Prepare agents for UI
-        const syncAgents = agentsToProcess.map(agent => ({
+        const pushAgentsData = agentsToProcess.map(agent => ({
           name: agent.name,
           environment: options.env || 'all',
           configPath: agent.config || `agent_configs/${agent.name}.json`,
@@ -727,18 +727,18 @@ program
         }));
         
         const { waitUntilExit } = render(
-          React.createElement(SyncView, { 
-            agents: syncAgents,
+          React.createElement(PushView, { 
+            agents: pushAgentsData,
             dryRun: options.dryRun
           })
         );
         await waitUntilExit();
       } else {
-        // Use existing non-UI sync
-        await syncAgents(options.agent, options.dryRun, options.env);
+        // Use existing non-UI push
+        await pushAgents(options.agent, options.dryRun, options.env);
       }
     } catch (error) {
-      console.error(`Error during sync: ${error}`);
+      console.error(`Error during push: ${error}`);
       process.exit(1);
     }
   });
@@ -771,7 +771,7 @@ program
 
 program
   .command('watch')
-  .description('Watch for config changes and auto-sync agents')
+  .description('Watch for config changes and auto-push agents')
   .option('--agent <name>', 'Specific agent name to watch (defaults to all agents)')
   .option('--env <environment>', 'Environment to watch', 'prod')
   .option('--interval <seconds>', 'Check interval in seconds', '5')
@@ -807,36 +807,36 @@ program
   });
 
 program
-  .command('fetch')
-  .description('Fetch all agents from ElevenLabs workspace and add them to local configuration')
+  .command('pull')
+  .description('Pull all agents from ElevenLabs workspace and add them to local configuration')
   .option('--agent <name>', 'Specific agent name pattern to search for')
-  .option('--output-dir <dir>', 'Directory to store fetched agent configs', 'agent_configs')
+  .option('--output-dir <dir>', 'Directory to store pulled agent configs', 'agent_configs')
   .option('--search <term>', 'Search agents by name')
-  .option('--dry-run', 'Show what would be fetched without making changes', false)
-  .option('--env <environment>', 'Environment to associate fetched agents with', 'prod')
-  .action(async (options: FetchOptions) => {
+  .option('--dry-run', 'Show what would be pulled without making changes', false)
+  .option('--env <environment>', 'Environment to associate pulled agents with', 'prod')
+  .action(async (options: PullOptions) => {
     try {
-      await fetchAgents(options);
+      await pullAgents(options);
     } catch (error) {
-      console.error(`Error fetching agents: ${error}`);
+      console.error(`Error pulling agents: ${error}`);
       process.exit(1);
     }
   });
 
 program
-  .command('fetch-tools')
-  .description('Fetch all tools from ElevenLabs workspace and add them to local configuration')
+  .command('pull-tools')
+  .description('Pull all tools from ElevenLabs workspace and add them to local configuration')
   .option('--tool <name>', 'Specific tool name pattern to search for')
-  .option('--output-dir <dir>', 'Directory to store fetched tool configs', 'tool_configs')
+  .option('--output-dir <dir>', 'Directory to store pulled tool configs', 'tool_configs')
   .option('--search <term>', 'Search tools by name')
-  .option('--dry-run', 'Show what would be fetched without making changes', false)
+  .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI', false)
-  .action(async (options: FetchToolsOptions & { ui: boolean }) => {
+  .action(async (options: PullToolsOptions & { ui: boolean }) => {
     try {
       if (options.ui !== false) {
-        // Use Ink UI for fetch-tools
+        // Use Ink UI for pull-tools
         const { waitUntilExit } = render(
-          React.createElement(FetchToolsView, {
+          React.createElement(PullToolsView, {
             tool: options.tool,
             outputDir: options.outputDir,
             search: options.search,
@@ -845,11 +845,11 @@ program
         );
         await waitUntilExit();
       } else {
-        // Fallback to text-based fetching
-        await fetchTools(options);
+        // Fallback to text-based pulling
+        await pullTools(options);
       }
     } catch (error) {
-      console.error(`Error fetching tools: ${error}`);
+      console.error(`Error pulling tools: ${error}`);
       process.exit(1);
     }
   });
@@ -896,29 +896,29 @@ program
   });
 
 program
-  .command('sync-tests')
-  .description('Synchronize tests with ElevenLabs API when configs change')
-  .option('--test <name>', 'Specific test name to sync (defaults to all tests)')
+  .command('push-tests')
+  .description('Push tests to ElevenLabs API when configs change')
+  .option('--test <name>', 'Specific test name to push (defaults to all tests)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .action(async (options: { test?: string; dryRun: boolean }) => {
     try {
-      await syncTests(options.test, options.dryRun);
+      await pushTests(options.test, options.dryRun);
     } catch (error) {
-      console.error(`Error during test sync: ${error}`);
+      console.error(`Error during test push: ${error}`);
       process.exit(1);
     }
   });
 
 program
-  .command('sync-tools')
-  .description('Synchronize tools with ElevenLabs API when configs change')
-  .option('--tool <name>', 'Specific tool name to sync (defaults to all tools)')
+  .command('push-tools')
+  .description('Push tools to ElevenLabs API when configs change')
+  .option('--tool <name>', 'Specific tool name to push (defaults to all tools)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: { tool?: string; dryRun: boolean; ui: boolean }) => {
     try {
       if (options.ui !== false) {
-        // Use new Ink UI for sync-tools
+        // Use new Ink UI for push-tools
         const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
         if (!(await fs.pathExists(toolsConfigPath))) {
           throw new Error('tools.json not found. Run \'agents add-webhook-tool\' or \'agents add-client-tool\' first.');
@@ -937,7 +937,7 @@ program
 
 
         // Prepare tools for UI
-        const syncTools = toolsToProcess.map(tool => ({
+        const pushToolsData = toolsToProcess.map(tool => ({
           name: tool.name,
           type: tool.type,
           configPath: tool.config || `tool_configs/${tool.name}.json`,
@@ -945,32 +945,32 @@ program
         }));
 
         const { waitUntilExit } = render(
-          React.createElement(SyncToolsView, {
-            tools: syncTools,
+          React.createElement(PushToolsView, {
+            tools: pushToolsData,
             dryRun: options.dryRun
           })
         );
         await waitUntilExit();
       } else {
-        // Use existing non-UI sync
-        await syncTools(options.tool, options.dryRun);
+        // Use existing non-UI push
+        await pushTools(options.tool, options.dryRun);
       }
     } catch (error) {
-      console.error(`Error during tool sync: ${error}`);
+      console.error(`Error during tool push: ${error}`);
       process.exit(1);
     }
   });
 
 program
-  .command('fetch-tests')
-  .description('Fetch all tests from ElevenLabs workspace and add them to local configuration')
-  .option('--output-dir <dir>', 'Directory to store fetched test configs', 'test_configs')
-  .option('--dry-run', 'Show what would be fetched without making changes', false)
+  .command('pull-tests')
+  .description('Pull all tests from ElevenLabs workspace and add them to local configuration')
+  .option('--output-dir <dir>', 'Directory to store pulled test configs', 'test_configs')
+  .option('--dry-run', 'Show what would be pulled without making changes', false)
   .action(async (options: { outputDir: string; dryRun: boolean }) => {
     try {
-      await fetchTests(options);
+      await pullTests(options);
     } catch (error) {
-      console.error(`Error fetching tests: ${error}`);
+      console.error(`Error pulling tests: ${error}`);
       process.exit(1);
     }
   });
@@ -1109,7 +1109,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   }
   
   if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to upload`);
+    console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to upload`);
     return;
   }
   
@@ -1129,7 +1129,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     updateToolInLock(lockData, name, toolId, configHash);
     await saveLockFile(lockFilePath, lockData);
     
-    console.log(`Edit ${configPath} to customize your tool, then run 'agents sync-tools' to update`);
+    console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
     
   } catch (error) {
     console.error(`Error creating tool in ElevenLabs: ${error}`);
@@ -1137,7 +1137,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   }
 }
 
-async function syncAgents(agentName?: string, dryRun = false, environment?: string): Promise<void> {
+async function pushAgents(agentName?: string, dryRun = false, environment?: string): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1163,7 +1163,7 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
     }
   }
   
-  // Determine environments to sync
+  // Determine environments to push
   let environmentsToSync: string[] = [];
   if (environment) {
     environmentsToSync = [environment];
@@ -1179,11 +1179,11 @@ async function syncAgents(agentName?: string, dryRun = false, environment?: stri
     environmentsToSync = Array.from(envSet);
     
     if (environmentsToSync.length === 0) {
-      console.log('No environments found to sync');
+      console.log('No environments found to push');
       return;
     }
     
-    console.log(`Syncing all environments: ${environmentsToSync.join(', ')}`);
+    console.log(`Pushing all environments: ${environmentsToSync.join(', ')}`);
   }
   
   let changesMade = false;
@@ -1393,10 +1393,10 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
             if (lockedAgent.hash === configHash) {
               console.log(`   Status: Synced (${currentEnv})`);
             } else {
-              console.log(`   Status: Config changed (needs sync for ${currentEnv})`);
+              console.log(`   Status: Config changed (needs push for ${currentEnv})`);
             }
           } else {
-            console.log(`   Status: New (needs sync for ${currentEnv})`);
+            console.log(`   Status: New (needs push for ${currentEnv})`);
           }
           
         } catch (error) {
@@ -1494,11 +1494,11 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
   try {
     while (true) {
       if (await checkForChanges()) {
-        console.log('Running sync...');
+        console.log('Running push...');
         try {
-          await syncAgents(agentName, false, environment);
+          await pushAgents(agentName, false, environment);
         } catch (error) {
-          console.log(`Error during sync: ${error}`);
+          console.log(`Error during push: ${error}`);
         }
       }
       
@@ -1546,7 +1546,7 @@ async function listConfiguredAgents(): Promise<void> {
   });
 }
 
-async function fetchAgents(options: FetchOptions): Promise<void> {
+async function pullAgents(options: PullOptions): Promise<void> {
   // Check if agents.json exists
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1558,8 +1558,8 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   // Use agent option as search term if provided, otherwise use search parameter
   const searchTerm = options.agent || options.search;
   
-  // Fetch all agents from ElevenLabs
-  console.log('Fetching agents from ElevenLabs...');
+  // Pull all agents from ElevenLabs
+  console.log('Pulling agents from ElevenLabs...');
   const agentsList = await listAgentsApi(client, 30, searchTerm);
   
   if (agentsList.length === 0) {
@@ -1616,13 +1616,13 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
     }
     
     if (options.dryRun) {
-      console.log(`[DRY RUN] Would fetch agent: ${agentNameRemote} (ID: ${agentId}) for environment: ${options.env}`);
+      console.log(`[DRY RUN] Would pull agent: ${agentNameRemote} (ID: ${agentId}) for environment: ${options.env}`);
       continue;
     }
     
     try {
       // Fetch detailed agent configuration
-      console.log(`Fetching config for '${agentNameRemote}'...`);
+      console.log(`Pulling config for '${agentNameRemote}'...`);
       const agentDetails = await getAgentApi(client, agentId);
       
       // Extract configuration components
@@ -1674,7 +1674,7 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
       newAgentsAdded++;
       
     } catch (error) {
-      console.log(`Error fetching agent '${agentNameRemote}': ${error}`);
+      console.log(`Error pulling agent '${agentNameRemote}': ${error}`);
       continue;
     }
   }
@@ -1699,12 +1699,12 @@ async function fetchAgents(options: FetchOptions): Promise<void> {
   } else {
     console.log(`Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
     if (newAgentsAdded > 0) {
-      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents sync --env ${options.env}' to update`);
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents push --env ${options.env}' to update`);
     }
   }
 }
 
-async function fetchTools(options: FetchToolsOptions): Promise<void> {
+async function pullTools(options: PullToolsOptions): Promise<void> {
   // Check if tools.json exists, create if not
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   let toolsConfig: ToolsConfig;
@@ -1722,8 +1722,8 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
   // Use tool option as search term if provided, otherwise use search parameter
   const searchTerm = options.tool || options.search;
 
-  // Fetch all tools from ElevenLabs
-  console.log('Fetching tools from ElevenLabs...');
+  // Pull all tools from ElevenLabs
+  console.log('Pulling tools from ElevenLabs...');
   const toolsList = await listToolsApi(client);
 
   if (toolsList.length === 0) {
@@ -1786,13 +1786,13 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
     }
 
     if (options.dryRun) {
-      console.log(`[DRY RUN] Would fetch tool: ${toolNameRemote} (ID: ${toolId})`);
+      console.log(`[DRY RUN] Would pull tool: ${toolNameRemote} (ID: ${toolId})`);
       continue;
     }
 
     try {
       // Fetch detailed tool configuration
-      console.log(`Fetching config for '${toolNameRemote}'...`);
+      console.log(`Pulling config for '${toolNameRemote}'...`);
       const toolDetails = await getToolApi(client, toolId);
 
       // Generate config file path
@@ -1828,7 +1828,7 @@ async function fetchTools(options: FetchToolsOptions): Promise<void> {
       newToolsAdded++;
 
     } catch (error) {
-      console.log(`Error fetching tool '${toolNameRemote}': ${error}`);
+      console.log(`Error pulling tool '${toolNameRemote}': ${error}`);
       continue;
     }
   }
@@ -1881,7 +1881,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   const lockedAgent = getAgentFromLock(lockData, name, environment);
   
   if (!lockedAgent?.id) {
-    throw new Error(`Agent '${name}' not found for environment '${environment}' or not yet synced. Run 'agents sync --agent ${name} --env ${environment}' to create the agent first`);
+    throw new Error(`Agent '${name}' not found for environment '${environment}' or not yet pushed. Run 'agents push --agent ${name} --env ${environment}' to create the agent first`);
   }
   
   const agentId = lockedAgent.id;
@@ -1963,7 +1963,7 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
   }
 
   if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your test, then run 'agents sync-tests' to upload`);
+    console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to upload`);
     return;
   }
 
@@ -1984,7 +1984,7 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
     updateTestInLock(lockData, name, testId, configHash);
     await saveLockFile(lockFilePath, lockData);
 
-    console.log(`Edit ${configPath} to customize your test, then run 'agents sync-tests' to update`);
+    console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
 
   } catch (error) {
     console.error(`Error creating test in ElevenLabs: ${error}`);
@@ -1992,7 +1992,7 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
   }
 }
 
-async function syncTests(testName?: string, dryRun = false): Promise<void> {
+async function pushTests(testName?: string, dryRun = false): Promise<void> {
   // Load tests configuration
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   if (!(await fs.pathExists(testsConfigPath))) {
@@ -2099,7 +2099,7 @@ async function syncTests(testName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function syncTools(toolName?: string, dryRun = false): Promise<void> {
+async function pushTools(toolName?: string, dryRun = false): Promise<void> {
   // Load tools configuration
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   if (!(await fs.pathExists(toolsConfigPath))) {
@@ -2210,7 +2210,7 @@ async function syncTools(toolName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function fetchTests(options: { outputDir: string; dryRun: boolean }): Promise<void> {
+async function pullTests(options: { outputDir: string; dryRun: boolean }): Promise<void> {
   // Check if tests.json exists
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   let testsConfig: TestsConfig;
@@ -2280,13 +2280,13 @@ async function fetchTests(options: { outputDir: string; dryRun: boolean }): Prom
     }
 
     if (options.dryRun) {
-      console.log(`[DRY RUN] Would fetch test: ${testNameRemote} (ID: ${testId})`);
+      console.log(`[DRY RUN] Would pull test: ${testNameRemote} (ID: ${testId})`);
       continue;
     }
 
     try {
       // Fetch detailed test configuration
-      console.log(`Fetching config for '${testNameRemote}'...`);
+      console.log(`Pulling config for '${testNameRemote}'...`);
       const testDetails = await getTestApi(client, testId);
 
       // Generate config file path
@@ -2317,7 +2317,7 @@ async function fetchTests(options: { outputDir: string; dryRun: boolean }): Prom
       newTestsAdded++;
 
     } catch (error) {
-      console.log(`Error fetching test '${testNameRemote}': ${error}`);
+      console.log(`Error pulling test '${testNameRemote}': ${error}`);
       continue;
     }
   }
@@ -2341,7 +2341,7 @@ async function fetchTests(options: { outputDir: string; dryRun: boolean }): Prom
   } else {
     console.log(`Successfully added ${newTestsAdded} new test(s)`);
     if (newTestsAdded > 0) {
-      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents sync-tests' to update`);
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents push-tests' to update`);
     }
   }
 }
@@ -2366,7 +2366,7 @@ async function runAgentTestsWithUI(agentName: string, environment: string): Prom
   const lockedAgent = getAgentFromLock(lockData, agentName, environment);
 
   if (!lockedAgent?.id) {
-    throw new Error(`Agent '${agentName}' not found for environment '${environment}' or not yet synced. Run 'agents sync --agent ${agentName} --env ${environment}' to create the agent first`);
+    throw new Error(`Agent '${agentName}' not found for environment '${environment}' or not yet pushed. Run 'agents push --agent ${agentName} --env ${environment}' to create the agent first`);
   }
 
   const agentId = lockedAgent.id;

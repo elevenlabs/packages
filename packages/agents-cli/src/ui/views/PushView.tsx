@@ -5,34 +5,34 @@ import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
-interface SyncAgent {
+interface PushAgent {
   name: string;
   environment: string;
   configPath: string;
-  status: 'pending' | 'checking' | 'syncing' | 'completed' | 'error' | 'skipped';
+  status: 'pending' | 'checking' | 'pushing' | 'completed' | 'error' | 'skipped';
   message?: string;
   agentId?: string;
 }
 
-interface SyncViewProps {
-  agents: SyncAgent[];
+interface PushViewProps {
+  agents: PushAgent[];
   dryRun?: boolean;
   onComplete?: () => void;
 }
 
-export const SyncView: React.FC<SyncViewProps> = ({ 
+export const PushView: React.FC<PushViewProps> = ({ 
   agents, 
   dryRun = false,
   onComplete 
 }) => {
   const { exit } = useApp();
   const [currentAgentIndex, setCurrentAgentIndex] = useState(0);
-  const [syncedAgents, setSyncedAgents] = useState<SyncAgent[]>([]);
+  const [pushedAgents, setPushedAgents] = useState<PushAgent[]>([]);
   const [progress, setProgress] = useState(0);
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
-    const syncNextAgent = async () => {
+    const pushNextAgent = async () => {
       if (currentAgentIndex >= agents.length) {
         setComplete(true);
         setTimeout(() => {
@@ -48,17 +48,17 @@ export const SyncView: React.FC<SyncViewProps> = ({
       const agent = agents[currentAgentIndex];
       
       // Update agent status to checking
-      setSyncedAgents(prev => [...prev, { ...agent, status: 'checking' }]);
+      setPushedAgents(prev => [...prev, { ...agent, status: 'checking' }]);
       
       // Simulate checking for changes
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Randomly determine if agent needs sync
-      const needsSync = Math.random() > 0.5;
+      // Randomly determine if agent needs push
+      const needsPush = Math.random() > 0.5;
       
-      if (!needsSync) {
+      if (!needsPush) {
         // Update to skipped
-        setSyncedAgents(prev => 
+        setPushedAgents(prev => 
           prev.map((a, i) => i === currentAgentIndex 
             ? { ...a, status: 'skipped', message: 'No changes detected' }
             : a
@@ -66,32 +66,32 @@ export const SyncView: React.FC<SyncViewProps> = ({
         );
       } else if (dryRun) {
         // Update to completed (dry run)
-        setSyncedAgents(prev => 
+        setPushedAgents(prev => 
           prev.map((a, i) => i === currentAgentIndex 
-            ? { ...a, status: 'completed', message: '[DRY RUN] Would sync' }
+            ? { ...a, status: 'completed', message: '[DRY RUN] Would push' }
             : a
           )
         );
       } else {
-        // Update to syncing
-        setSyncedAgents(prev => 
+        // Update to pushing
+        setPushedAgents(prev => 
           prev.map((a, i) => i === currentAgentIndex 
-            ? { ...a, status: 'syncing' }
+            ? { ...a, status: 'pushing' }
             : a
           )
         );
         
-        // Simulate sync operation
+        // Simulate push operation
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Update to completed
         const agentId = `agent_${Date.now()}`;
-        setSyncedAgents(prev => 
+        setPushedAgents(prev => 
           prev.map((a, i) => i === currentAgentIndex 
             ? { 
                 ...a, 
                 status: 'completed', 
-                message: 'Successfully synced',
+                message: 'Successfully pushed',
                 agentId 
               }
             : a
@@ -107,29 +107,29 @@ export const SyncView: React.FC<SyncViewProps> = ({
       setCurrentAgentIndex(currentAgentIndex + 1);
     };
 
-    syncNextAgent();
+    pushNextAgent();
   }, [currentAgentIndex, agents, dryRun]);
 
   const totalAgents = agents.length;
-  const syncedCount = syncedAgents.filter(a => a.status === 'completed').length;
-  const skippedCount = syncedAgents.filter(a => a.status === 'skipped').length;
-  const errorCount = syncedAgents.filter(a => a.status === 'error').length;
+  const pushedCount = pushedAgents.filter(a => a.status === 'completed').length;
+  const skippedCount = pushedAgents.filter(a => a.status === 'skipped').length;
+  const errorCount = pushedAgents.filter(a => a.status === 'error').length;
 
   return (
     <App 
       title="ElevenLabs Agents" 
-      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Synchronizing agents'}
+      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Pushing agents'}
       showOverlay={!complete}
     >
       <Box flexDirection="column">
         {/* Summary */}
         <Box marginBottom={2}>
           <StatusCard
-            title="Sync Progress"
+            title="Push Progress"
             status={complete ? 'success' : 'loading'}
             message={
               complete 
-                ? `Completed: ${syncedCount} synced, ${skippedCount} skipped, ${errorCount} errors`
+                ? `Completed: ${pushedCount} pushed, ${skippedCount} skipped, ${errorCount} errors`
                 : `Processing ${currentAgentIndex + 1} of ${totalAgents} agents`
             }
           />
@@ -149,9 +149,9 @@ export const SyncView: React.FC<SyncViewProps> = ({
               Agents:
             </Text>
           </Box>
-          {syncedAgents.map((agent, index) => {
+          {pushedAgents.map((agent, index) => {
             let status: 'loading' | 'success' | 'error' | 'idle' | 'warning';
-            if (agent.status === 'checking' || agent.status === 'syncing') {
+            if (agent.status === 'checking' || agent.status === 'pushing') {
               status = 'loading';
             } else if (agent.status === 'completed') {
               status = 'success';
@@ -164,8 +164,8 @@ export const SyncView: React.FC<SyncViewProps> = ({
             }
 
             const title = `${agent.name} (${agent.environment})`;
-            const message = agent.status === 'syncing' 
-              ? 'Syncing to ElevenLabs...'
+            const message = agent.status === 'pushing' 
+              ? 'Pushing to ElevenLabs...'
               : agent.message;
 
             return (
@@ -185,11 +185,11 @@ export const SyncView: React.FC<SyncViewProps> = ({
         {complete && (
           <Box marginTop={2} flexDirection="column">
             <Text color={theme.colors.success} bold>
-              ✓ Sync completed successfully!
+              ✓ Push completed successfully!
             </Text>
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                {syncedCount} agent(s) synchronized
+                {pushedCount} agent(s) pushed
               </Text>
               {skippedCount > 0 && (
                 <Text color={theme.colors.text.secondary}>
@@ -198,7 +198,7 @@ export const SyncView: React.FC<SyncViewProps> = ({
               )}
               {errorCount > 0 && (
                 <Text color={theme.colors.error}>
-                  {errorCount} agent(s) failed to sync
+                  {errorCount} agent(s) failed to push
                 </Text>
               )}
             </Box>
@@ -209,4 +209,4 @@ export const SyncView: React.FC<SyncViewProps> = ({
   );
 };
 
-export default SyncView;
+export default PushView;

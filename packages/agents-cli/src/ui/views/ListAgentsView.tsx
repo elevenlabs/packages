@@ -143,10 +143,10 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
                 Commands:
               </Text>
               <Text color={theme.colors.text.muted}>
-                • 'agents status' - Check sync status
+                • 'agents status' - Check push status
               </Text>
               <Text color={theme.colors.text.muted}>
-                • 'agents sync' - Deploy to ElevenLabs
+                • 'agents push' - Deploy to ElevenLabs
               </Text>
               <Text color={theme.colors.text.muted}>
                 • 'agents add' - Add new agent

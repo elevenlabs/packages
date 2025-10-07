@@ -20,16 +20,16 @@ import { calculateConfigHash } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 
-interface FetchTool {
+interface PullTool {
   name: string;
   id: string;
   type?: string;
-  status: 'pending' | 'fetching' | 'completed' | 'error' | 'skipped';
+  status: 'pending' | 'pulling' | 'completed' | 'error' | 'skipped';
   message?: string;
   configPath?: string;
 }
 
-interface FetchToolsViewProps {
+interface PullToolsViewProps {
   tool?: string;
   outputDir: string;
   search?: string;
@@ -39,7 +39,7 @@ interface FetchToolsViewProps {
 
 const TOOLS_CONFIG_FILE = "tools.json";
 
-export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
+export const PullToolsView: React.FC<PullToolsViewProps> = ({
   tool,
   outputDir = 'tool_configs',
   search,
@@ -47,16 +47,16 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
   onComplete
 }) => {
   const { exit } = useApp();
-  const [tools, setTools] = useState<FetchTool[]>([]);
+  const [tools, setTools] = useState<PullTool[]>([]);
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
   const [state, setState] = useState({
     loading: true,
     error: null as string | null,
-    phase: 'loading' as 'loading' | 'fetching' | 'complete'
+    phase: 'loading' as 'loading' | 'pulling' | 'complete'
   });
 
   useEffect(() => {
-    const initializeFetch = async () => {
+    const initializePull = async () => {
       try {
         setState(prev => ({ ...prev, phase: 'loading' }));
 
@@ -101,7 +101,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
         });
 
         // Prepare tools list
-        const toolsToFetch: FetchTool[] = filteredTools
+        const toolsToPull: PullTool[] = filteredTools
           .map((toolItem: any) => {
             const toolId = toolItem.tool_id || toolItem.toolId || toolItem.id;
             let toolName = toolItem.name;
@@ -136,30 +136,30 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
               status: 'pending' as const
             };
           })
-          .filter(Boolean) as FetchTool[];
+          .filter(Boolean) as PullTool[];
 
-        setTools(toolsToFetch);
-        setState(prev => ({ ...prev, loading: false, phase: 'fetching' }));
+        setTools(toolsToPull);
+        setState(prev => ({ ...prev, loading: false, phase: 'pulling' }));
 
-        if (toolsToFetch.length === 0) {
-          setState(prev => ({ ...prev, error: 'No new tools to fetch.', phase: 'complete' }));
+        if (toolsToPull.length === 0) {
+          setState(prev => ({ ...prev, error: 'No new tools to pull.', phase: 'complete' }));
           return;
         }
 
       } catch (err) {
         setState(prev => ({
           ...prev,
-          error: err instanceof Error ? err.message : 'Failed to initialize tool fetching',
+          error: err instanceof Error ? err.message : 'Failed to initialize tool pulling',
           loading: false
         }));
       }
     };
 
-    initializeFetch();
+    initializePull();
   }, [tool, search]);
 
   useEffect(() => {
-    if (state.phase !== 'fetching' || currentToolIndex >= tools.length) {
+    if (state.phase !== 'pulling' || currentToolIndex >= tools.length) {
       if (currentToolIndex >= tools.length && tools.length > 0) {
         setState(prev => ({ ...prev, phase: 'complete' }));
         setTimeout(() => {
@@ -173,17 +173,17 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
       return;
     }
 
-    const fetchNextTool = async () => {
-      const toolToFetch = tools[currentToolIndex];
+    const pullNextTool = async () => {
+      const toolToPull = tools[currentToolIndex];
 
-      if (toolToFetch.status === 'skipped') {
+      if (toolToPull.status === 'skipped') {
         setCurrentToolIndex(prev => prev + 1);
         return;
       }
 
-      // Update status to fetching
+      // Update status to pulling
       setTools(prev => prev.map((t, i) =>
-        i === currentToolIndex ? { ...t, status: 'fetching', message: 'Downloading config...' } : t
+        i === currentToolIndex ? { ...t, status: 'pulling', message: 'Downloading config...' } : t
       ));
 
       if (dryRun) {
@@ -191,7 +191,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
         setTimeout(() => {
           setTools(prev => prev.map((t, i) =>
             i === currentToolIndex
-              ? { ...t, status: 'completed', message: '[DRY RUN] Would fetch tool' }
+              ? { ...t, status: 'completed', message: '[DRY RUN] Would pull tool' }
               : t
           ));
           setCurrentToolIndex(prev => prev + 1);
@@ -201,10 +201,10 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
 
       try {
         const client = await getElevenLabsClient();
-        const toolDetails = await getToolApi(client, toolToFetch.id);
+        const toolDetails = await getToolApi(client, toolToPull.id);
 
         // Generate config file path
-        const safeName = toolToFetch.name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
+        const safeName = toolToPull.name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
         const configPath = `${outputDir}/${safeName}.json`;
         const configFilePath = path.resolve(configPath);
 
@@ -220,7 +220,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
         const toolType = toolDetailsTyped.type || 'unknown';
 
         const newTool: ToolDefinition = {
-          name: toolToFetch.name,
+          name: toolToPull.name,
           type: toolType as 'webhook' | 'client',
           config: configPath
         };
@@ -232,7 +232,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
         const lockFilePath = path.resolve('tools-lock.json');
         const toolsLockData = await loadToolsLockFile(lockFilePath);
         const configHash = calculateConfigHash(toolDetails);
-        updateToolInLock(toolsLockData, toolToFetch.name, toolToFetch.id, configHash);
+        updateToolInLock(toolsLockData, toolToPull.name, toolToPull.id, configHash);
         await saveToolsLockFile(lockFilePath, toolsLockData);
 
         setTools(prev => prev.map((t, i) =>
@@ -255,7 +255,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
             ? {
                 ...t,
                 status: 'error',
-                message: err instanceof Error ? err.message : 'Failed to fetch tool'
+                message: err instanceof Error ? err.message : 'Failed to pull tool'
               }
             : t
         ));
@@ -264,7 +264,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
       setCurrentToolIndex(prev => prev + 1);
     };
 
-    fetchNextTool();
+    pullNextTool();
   }, [currentToolIndex, state.phase, tools, dryRun, outputDir, exit, onComplete]);
 
   const getStatusSummary = () => {
@@ -286,7 +286,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
   return (
     <App
       title="ElevenLabs Agents CLI"
-      subtitle="Fetch Tools from Workspace"
+      subtitle="Pull Tools from Workspace"
       showOverlay={false}
     >
       <Box flexDirection="column" gap={1}>
@@ -306,12 +306,12 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
           <>
             {/* Summary Card */}
             <StatusCard
-              title="Tool Fetch Summary"
+              title="Tool Pull Summary"
               status={state.phase === 'complete' ? 'success' : 'loading'}
               message={
                 state.phase === 'complete'
-                  ? `Completed! ${getStatusSummary().completed} tool(s) fetched`
-                  : `Fetching ${tools.length} tool(s)${dryRun ? ' (DRY RUN)' : ''}...`
+                  ? `Completed! ${getStatusSummary().completed} tool(s) pulled`
+                  : `Pulling ${tools.length} tool(s)${dryRun ? ' (DRY RUN)' : ''}...`
               }
               details={
                 tools.length > 0 ? [
@@ -345,7 +345,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
                     switch (status) {
                       case 'completed': return 'success';
                       case 'error': return 'error';
-                      case 'fetching': return 'loading';
+                      case 'pulling': return 'loading';
                       case 'skipped': return 'warning';
                       case 'pending':
                       default: return 'idle';
@@ -388,7 +388,7 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
                   • Use tools in your agent configurations
                 </Text>
                 <Text color={theme.colors.text.muted}>
-                  • Run 'agents sync' to deploy agents with tools
+                  • Run 'agents push' to deploy agents with tools
                 </Text>
               </Box>
             )}
@@ -405,4 +405,4 @@ export const FetchToolsView: React.FC<FetchToolsViewProps> = ({
   );
 };
 
-export default FetchToolsView;
+export default PullToolsView;

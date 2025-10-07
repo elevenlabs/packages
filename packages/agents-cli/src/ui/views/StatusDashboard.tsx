@@ -37,7 +37,7 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
   const options = [
     { key: 'r', label: 'Refresh', disabled: refreshing },
     { key: 'd', label: showingDetails ? 'Hide Details' : 'Show Details' },
-    { key: 's', label: 'Sync Changed', disabled: refreshing },
+    { key: 's', label: 'Push Changed', disabled: refreshing },
     { key: 'q', label: 'Quit' },
   ];
 
@@ -52,7 +52,7 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
     } else if (input === 'd') {
       setShowingDetails(!showingDetails);
     } else if (input === 's' && !refreshing) {
-      handleSyncChanged();
+      handlePushChanged();
     } else if (key.upArrow) {
       setSelectedAgent(Math.max(0, selectedAgent - 1));
     } else if (key.downArrow) {
@@ -67,9 +67,9 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
     setRefreshing(false);
   };
 
-  const handleSyncChanged = async () => {
+  const handlePushChanged = async () => {
     setRefreshing(true);
-    // Simulate sync
+    // Simulate push
     await new Promise(resolve => setTimeout(resolve, 3000));
     setRefreshing(false);
   };
@@ -153,7 +153,7 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
                   details.push(`ID: ${agent.agentId}`);
                   details.push(`Config: ${agent.configPath}`);
                   if (agent.lastSynced) {
-                    details.push(`Last sync: ${agent.lastSynced.toLocaleString()}`);
+                    details.push(`Last push: ${agent.lastSynced.toLocaleString()}`);
                   }
                   details.push(`Hash: ${agent.configHash.substring(0, 8)}...`);
                 }
@@ -165,8 +165,8 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
                       status={status}
                       message={
                         agent.syncStatus === 'synced' ? 'Up to date' :
-                        agent.syncStatus === 'changed' ? 'Config changed - needs sync' :
-                        agent.syncStatus === 'new' ? 'New agent - needs sync' :
+                        agent.syncStatus === 'changed' ? 'Config changed - needs push' :
+                        agent.syncStatus === 'new' ? 'New agent - needs push' :
                         'Configuration error'
                       }
                       details={details}

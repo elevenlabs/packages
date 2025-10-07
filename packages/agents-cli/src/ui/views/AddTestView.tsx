@@ -347,7 +347,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
             </Box>
             {skipUpload && (
               <Box marginTop={1}>
-                <Text color={theme.colors.text.muted}>Run 'agents sync tests' to upload to ElevenLabs.</Text>
+                <Text color={theme.colors.text.muted}>Run 'agents push-tests' to upload to ElevenLabs.</Text>
               </Box>
             )}
           </Box>

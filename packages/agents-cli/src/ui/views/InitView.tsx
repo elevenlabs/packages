@@ -218,7 +218,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
               <Text color={theme.colors.text.secondary}>Next steps:</Text>
               <Text color={theme.colors.text.secondary}>1. Set your API key: agents login</Text>
               <Text color={theme.colors.text.secondary}>2. Create an agent: agents add "My Agent" --template default</Text>
-              <Text color={theme.colors.text.secondary}>3. Sync to ElevenLabs: agents sync</Text>
+              <Text color={theme.colors.text.secondary}>3. Push to ElevenLabs: agents push</Text>
             </Box>
           </Box>
         )}

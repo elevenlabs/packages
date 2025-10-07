@@ -5,34 +5,34 @@ import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
-interface SyncTool {
+interface PushTool {
   name: string;
   type: 'webhook' | 'client';
   configPath: string;
-  status: 'pending' | 'checking' | 'syncing' | 'completed' | 'error' | 'skipped';
+  status: 'pending' | 'checking' | 'pushing' | 'completed' | 'error' | 'skipped';
   message?: string;
   toolId?: string;
 }
 
-interface SyncToolsViewProps {
-  tools: SyncTool[];
+interface PushToolsViewProps {
+  tools: PushTool[];
   dryRun?: boolean;
   onComplete?: () => void;
 }
 
-export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
+export const PushToolsView: React.FC<PushToolsViewProps> = ({
   tools,
   dryRun = false,
   onComplete
 }) => {
   const { exit } = useApp();
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
-  const [syncedTools, setSyncedTools] = useState<SyncTool[]>([]);
+  const [pushedTools, setPushedTools] = useState<PushTool[]>([]);
   const [progress, setProgress] = useState(0);
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
-    const syncNextTool = async () => {
+    const pushNextTool = async () => {
       if (currentToolIndex >= tools.length) {
         setComplete(true);
         setTimeout(() => {
@@ -48,17 +48,17 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
       const tool = tools[currentToolIndex];
 
       // Update tool status to checking
-      setSyncedTools(prev => [...prev, { ...tool, status: 'checking' }]);
+      setPushedTools(prev => [...prev, { ...tool, status: 'checking' }]);
 
       // Simulate checking for changes
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Randomly determine if tool needs sync
-      const needsSync = Math.random() > 0.5;
+      // Randomly determine if tool needs push
+      const needsPush = Math.random() > 0.5;
 
-      if (!needsSync) {
+      if (!needsPush) {
         // Update to skipped
-        setSyncedTools(prev =>
+        setPushedTools(prev =>
           prev.map((t, i) => i === currentToolIndex
             ? { ...t, status: 'skipped', message: 'No changes detected' }
             : t
@@ -66,32 +66,32 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
         );
       } else if (dryRun) {
         // Update to completed (dry run)
-        setSyncedTools(prev =>
+        setPushedTools(prev =>
           prev.map((t, i) => i === currentToolIndex
-            ? { ...t, status: 'completed', message: '[DRY RUN] Would sync' }
+            ? { ...t, status: 'completed', message: '[DRY RUN] Would push' }
             : t
           )
         );
       } else {
-        // Update to syncing
-        setSyncedTools(prev =>
+        // Update to pushing
+        setPushedTools(prev =>
           prev.map((t, i) => i === currentToolIndex
-            ? { ...t, status: 'syncing' }
+            ? { ...t, status: 'pushing' }
             : t
           )
         );
 
-        // Simulate sync operation
+        // Simulate push operation
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Update to completed
         const toolId = `tool_${Date.now()}`;
-        setSyncedTools(prev =>
+        setPushedTools(prev =>
           prev.map((t, i) => i === currentToolIndex
             ? {
                 ...t,
                 status: 'completed',
-                message: 'Successfully synced',
+                message: 'Successfully pushed',
                 toolId
               }
             : t
@@ -107,29 +107,29 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
       setCurrentToolIndex(currentToolIndex + 1);
     };
 
-    syncNextTool();
+    pushNextTool();
   }, [currentToolIndex, tools, dryRun]);
 
   const totalTools = tools.length;
-  const syncedCount = syncedTools.filter(t => t.status === 'completed').length;
-  const skippedCount = syncedTools.filter(t => t.status === 'skipped').length;
-  const errorCount = syncedTools.filter(t => t.status === 'error').length;
+  const pushedCount = pushedTools.filter(t => t.status === 'completed').length;
+  const skippedCount = pushedTools.filter(t => t.status === 'skipped').length;
+  const errorCount = pushedTools.filter(t => t.status === 'error').length;
 
   return (
     <App
       title="ElevenLabs Agents"
-      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Synchronizing tools'}
+      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Pushing tools'}
       showOverlay={!complete}
     >
       <Box flexDirection="column">
         {/* Summary */}
         <Box marginBottom={2}>
           <StatusCard
-            title="Sync Progress"
+            title="Push Progress"
             status={complete ? 'success' : 'loading'}
             message={
               complete
-                ? `Completed: ${syncedCount} synced, ${skippedCount} skipped, ${errorCount} errors`
+                ? `Completed: ${pushedCount} pushed, ${skippedCount} skipped, ${errorCount} errors`
                 : `Processing ${currentToolIndex + 1} of ${totalTools} tools`
             }
           />
@@ -149,9 +149,9 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
               Tools:
             </Text>
           </Box>
-          {syncedTools.map((tool, index) => {
+          {pushedTools.map((tool, index) => {
             let status: 'loading' | 'success' | 'error' | 'idle' | 'warning';
-            if (tool.status === 'checking' || tool.status === 'syncing') {
+            if (tool.status === 'checking' || tool.status === 'pushing') {
               status = 'loading';
             } else if (tool.status === 'completed') {
               status = 'success';
@@ -164,8 +164,8 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
             }
 
             const title = `${tool.name} (${tool.type})`;
-            const message = tool.status === 'syncing'
-              ? 'Syncing to ElevenLabs...'
+            const message = tool.status === 'pushing'
+              ? 'Pushing to ElevenLabs...'
               : tool.message;
 
             return (
@@ -185,11 +185,11 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
         {complete && (
           <Box marginTop={2} flexDirection="column">
             <Text color={theme.colors.success} bold>
-              ✓ Sync completed successfully!
+              ✓ Push completed successfully!
             </Text>
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                {syncedCount} tool(s) synchronized
+                {pushedCount} tool(s) pushed
               </Text>
               {skippedCount > 0 && (
                 <Text color={theme.colors.text.secondary}>
@@ -198,7 +198,7 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
               )}
               {errorCount > 0 && (
                 <Text color={theme.colors.error}>
-                  {errorCount} tool(s) failed to sync
+                  {errorCount} tool(s) failed to push
                 </Text>
               )}
             </Box>
@@ -209,4 +209,4 @@ export const SyncToolsView: React.FC<SyncToolsViewProps> = ({
   );
 };
 
-export default SyncToolsView;
+export default PushToolsView;
