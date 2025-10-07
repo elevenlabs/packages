@@ -131,6 +131,12 @@ agents whoami
 # Create agent
 agents add "Agent Name" [--template customer-service] [--env dev]
 
+# Create webhook tool
+agents add-webhook-tool "Tool Name" [--config-path path] [--skip-upload]
+
+# Create client tool
+agents add-client-tool "Tool Name" [--config-path path] [--skip-upload]
+
 # Sync changes
 agents sync [--agent "Agent Name"] [--env production] [--dry-run]
 

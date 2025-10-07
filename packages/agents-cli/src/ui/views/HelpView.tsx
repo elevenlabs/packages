@@ -44,22 +44,16 @@ const commands: Command[] = [
     description: "Set the API residency location",
   },
   {
-    name: "add",
-    description: "Add agents and tools",
-    subcommands: [
-      {
-        name: "agent <name>",
-        description: "Add a new agent",
-      },
-      {
-        name: "webhook-tool <name>",
-        description: "Add a new webhook tool",
-      },
-      {
-        name: "client-tool <name>",
-        description: "Add a new client tool",
-      },
-    ],
+    name: "add <name>",
+    description: "Add a new agent",
+  },
+  {
+    name: "add-webhook-tool <name>",
+    description: "Add a new webhook tool",
+  },
+  {
+    name: "add-client-tool <name>",
+    description: "Add a new client tool",
   },
   {
     name: "templates",
