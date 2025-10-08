@@ -1,48 +1,31 @@
 /**
  * ElevenLabs Design System Theme
- * Minimalist, refined color palette and design tokens
+ * Terminal-adaptive color palette and design tokens
  */
 
 export const colors = {
-  // Primary palette - Deep blacks and whites
-  background: '#000000',
-  surface: '#0A0A0A',
-  surfaceLight: '#141414',
-  border: '#1F1F1F',
-  borderLight: '#2A2A2A',
-  
-  // Text hierarchy
+  // Text hierarchy - uses terminal's default colors (adapts to light/dark mode)
   text: {
-    primary: '#FFFFFF',
-    secondary: '#A0A0A0',
-    muted: '#666666',
-    disabled: '#404040',
+    primary: undefined,  // Terminal's default text color (adapts to theme)
+    secondary: 'gray',   // Terminal's gray (adapts to theme)
+    muted: 'gray',       // Terminal's gray (adapts to theme)
+    disabled: 'gray',    // Terminal's gray (adapts to theme)
   },
   
-  // Accent colors - ElevenLabs signature gradients
+  // Accent colors - consistent across all terminal themes
   accent: {
-    primary: '#7C3AED', // Purple
-    secondary: '#3B82F6', // Blue
-    gradient: {
-      start: '#7C3AED',
-      middle: '#5B21B6',
-      end: '#3B82F6',
-    },
+    primary: '#7C3AED',
+    secondary: '#3B82F6',
   },
   
-  // Semantic colors
+  // Semantic colors - consistent across all terminal themes
   success: '#10B981',
   warning: '#F59E0B',
   error: '#EF4444',
   info: '#3B82F6',
   
-  // Sound Flow inspired colors
-  soundFlow: {
-    wave1: '#7C3AED',
-    wave2: '#5B21B6',
-    wave3: '#3B82F6',
-    wave4: '#2563EB',
-  },
+  // Border colors - terminal's gray (adapts to theme)
+  border: 'gray',
 };
 
 export const gradients = {
