@@ -3,7 +3,6 @@ import { Box, Text, useApp } from 'ink';
 import path from 'path';
 import fs from 'fs-extra';
 import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
@@ -189,22 +188,53 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
           showWave={true}
         />
 
-        <Box flexDirection="column" marginTop={2}>
+        <Box 
+          flexDirection="column" 
+          marginTop={2}
+          borderStyle="round"
+          borderColor={complete ? theme.colors.success : theme.colors.text.muted}
+          padding={1}
+        >
+          <Box marginBottom={1}>
+            <Text color={theme.colors.text.primary} bold>
+              Initialization Steps
+            </Text>
+          </Box>
+          
           {steps.map((step, index) => {
-            let status: 'loading' | 'success' | 'error' | 'idle';
-            if (step.status === 'running') status = 'loading';
-            else if (step.status === 'completed') status = 'success';
-            else if (step.status === 'error') status = 'error';
-            else status = 'idle';
+            const isCompleted = step.status === 'completed';
+            const isRunning = step.status === 'running';
+            const isError = step.status === 'error';
+            
+            let icon = theme.ascii.patterns.circle; // gray circle for pending
+            let color = theme.colors.text.muted;
+            
+            if (isCompleted) {
+              icon = '✓';
+              color = theme.colors.success;
+            } else if (isRunning) {
+              icon = '●';
+              color = theme.colors.accent.primary;
+            } else if (isError) {
+              icon = '✗';
+              color = theme.colors.error;
+            }
 
             return (
-              <StatusCard
-                key={index}
-                title={step.name}
-                status={status}
-                message={step.description}
-                details={step.error ? [step.error] : []}
-              />
+              <Box key={index} flexDirection="column">
+                <Box>
+                  <Text color={color}>
+                    {icon} {step.name}
+                  </Text>
+                </Box>
+                {step.error && (
+                  <Box marginLeft={2}>
+                    <Text color={theme.colors.error}>
+                      {theme.ascii.patterns.dot} {step.error}
+                    </Text>
+                  </Box>
+                )}
+              </Box>
             );
           })}
         </Box>
