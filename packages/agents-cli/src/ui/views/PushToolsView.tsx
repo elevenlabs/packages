@@ -118,7 +118,6 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
   return (
     <App
       title="ElevenLabs Agents"
-      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Pushing tools'}
       showOverlay={!complete}
     >
       <Box flexDirection="column">

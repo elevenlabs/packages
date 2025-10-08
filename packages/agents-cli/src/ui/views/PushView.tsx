@@ -118,7 +118,6 @@ export const PushView: React.FC<PushViewProps> = ({
   return (
     <App 
       title="ElevenLabs Agents" 
-      subtitle={dryRun ? 'Dry run mode - no changes will be made' : 'Pushing agents'}
       showOverlay={!complete}
     >
       <Box flexDirection="column">

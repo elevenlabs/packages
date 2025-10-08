@@ -147,7 +147,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
   return (
     <App 
       title="ElevenLabs Agents"
-      subtitle="Agent Status"
       showOverlay={false}
     >
       <Box flexDirection="column" gap={1}>

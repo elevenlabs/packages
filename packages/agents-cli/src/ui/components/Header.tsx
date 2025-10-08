@@ -4,7 +4,6 @@ import theme from '../themes/elevenlabs.js';
 
 interface HeaderProps {
   title?: string;
-  subtitle?: string;
   showLogo?: boolean;
   showDivider?: boolean;
   marginBottom?: number;
@@ -12,7 +11,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ 
   title = 'ElevenLabs Agents', 
-  subtitle,
   showLogo = true,
   showDivider = true,
   marginBottom = 2
@@ -28,13 +26,6 @@ export const Header: React.FC<HeaderProps> = ({
                 ║║ {title}
               </Text>
             </Box>
-            {subtitle && (
-              <Box>
-                <Text color={theme.colors.text.muted} dimColor>
-                  {subtitle}
-                </Text>
-              </Box>
-            )}
           </Box>
           {showDivider && (
             <Box>

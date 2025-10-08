@@ -92,7 +92,6 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
   return (
     <App 
       title="Agents Status" 
-      subtitle="Agent Management Dashboard"
       showOverlay={false}
     >
       <Box flexDirection="column">

@@ -5,7 +5,6 @@ import ChladniOverlay from './components/ChladniOverlay.js';
 
 interface AppProps {
   title?: string;
-  subtitle?: string;
   showOverlay?: boolean;
   headerMarginBottom?: number;
   showHeaderDivider?: boolean;
@@ -14,7 +13,6 @@ interface AppProps {
 
 export const App: React.FC<AppProps> = ({ 
   title = 'ElevenLabs Agents',
-  subtitle,
   showOverlay = false,
   headerMarginBottom,
   showHeaderDivider,
@@ -22,7 +20,7 @@ export const App: React.FC<AppProps> = ({
 }) => {
   return (
     <Box flexDirection="column" padding={1}>
-      <Header title={title} subtitle={subtitle} marginBottom={headerMarginBottom} showDivider={showHeaderDivider} />
+      <Header title={title} marginBottom={headerMarginBottom} showDivider={showHeaderDivider} />
       
       {showOverlay && (
         <Box marginBottom={2}>
