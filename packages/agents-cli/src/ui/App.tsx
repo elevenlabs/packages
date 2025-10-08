@@ -7,6 +7,8 @@ interface AppProps {
   title?: string;
   subtitle?: string;
   showOverlay?: boolean;
+  headerMarginBottom?: number;
+  showHeaderDivider?: boolean;
   children?: React.ReactNode;
 }
 
@@ -14,11 +16,13 @@ export const App: React.FC<AppProps> = ({
   title = 'ElevenLabs Agents',
   subtitle,
   showOverlay = false,
+  headerMarginBottom,
+  showHeaderDivider,
   children 
 }) => {
   return (
     <Box flexDirection="column" padding={1}>
-      <Header title={title} subtitle={subtitle} />
+      <Header title={title} subtitle={subtitle} marginBottom={headerMarginBottom} showDivider={showHeaderDivider} />
       
       {showOverlay && (
         <Box marginBottom={2}>

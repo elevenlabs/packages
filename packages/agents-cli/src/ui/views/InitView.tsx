@@ -3,7 +3,6 @@ import { Box, Text, useApp } from 'ink';
 import path from 'path';
 import fs from 'fs-extra';
 import App from '../App.js';
-import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
 interface InitViewProps {
@@ -22,7 +21,6 @@ interface InitStep {
 export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) => {
   const { exit } = useApp();
   const [currentStep, setCurrentStep] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [steps, setSteps] = useState<InitStep[]>([]);
   const [complete, setComplete] = useState(false);
 
@@ -137,10 +135,6 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
           i === currentStep ? { ...s, status: 'completed' } : s
         ));
         
-        // Update progress
-        const newProgress = Math.round(((currentStep + 1) / steps.length) * 100);
-        setProgress(newProgress);
-        
         // Move to next step
         if (currentStep < steps.length - 1) {
           setTimeout(() => setCurrentStep(currentStep + 1), 300);
@@ -172,32 +166,19 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
   return (
     <App
       title="ElevenLabs Agents"
-      subtitle="Initializing project"
-      showOverlay={!complete}
+      headerMarginBottom={1}
+      showHeaderDivider={false}
     >
       <Box flexDirection="column">
-        <Box marginBottom={2}>
-          <Text color={theme.colors.text.primary}>
-            Initializing project in: <Text bold>{fullPath}</Text>
-          </Text>
-        </Box>
-
-        <ProgressFlow 
-          value={progress} 
-          label="Overall Progress"
-          showWave={true}
-        />
-
         <Box 
           flexDirection="column" 
-          marginTop={2}
           borderStyle="round"
           borderColor={complete ? theme.colors.success : theme.colors.text.muted}
           padding={1}
         >
           <Box marginBottom={1}>
-            <Text color={theme.colors.text.primary} bold>
-              Initialization Steps
+            <Text color={theme.colors.text.primary}>
+              Initializing project in: <Text bold>{fullPath}</Text>
             </Text>
           </Box>
           
