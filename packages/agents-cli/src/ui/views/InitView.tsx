@@ -167,7 +167,6 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
     <App
       title="ElevenLabs Agents"
       headerMarginBottom={1}
-      showHeaderDivider={false}
     >
       <Box flexDirection="column">
         <Box 
