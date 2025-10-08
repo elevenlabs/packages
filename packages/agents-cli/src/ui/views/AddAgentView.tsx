@@ -166,7 +166,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
   return (
     <App
       title="ElevenLabs Agents"
-      showOverlay={!success}
     >
       <Box flexDirection="column" gap={1}>
         {/* Step 1: Agent Name */}

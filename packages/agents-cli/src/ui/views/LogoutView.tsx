@@ -71,7 +71,6 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
   return (
     <App 
       title="ElevenLabs Agents"
-      showOverlay={!success && !notLoggedIn}
     >
       <Box flexDirection="column" gap={1}>
         {notLoggedIn ? (

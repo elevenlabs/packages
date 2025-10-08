@@ -76,7 +76,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
           {details.map((detail, index) => (
             <Box key={index} marginLeft={2}>
               <Text color={theme.colors.text.secondary}>
-                {theme.ascii.patterns.dot} {detail}
+                · {detail}
               </Text>
             </Box>
           ))}

@@ -118,7 +118,6 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
   return (
     <App
       title="ElevenLabs Agents"
-      showOverlay={!complete}
     >
       <Box flexDirection="column">
         {/* Summary */}

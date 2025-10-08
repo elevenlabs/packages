@@ -65,7 +65,6 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
   return (
     <App 
       title="ElevenLabs Agents"
-      showOverlay={false}
     >
       <Box flexDirection="column" gap={1}>
         {loading ? (

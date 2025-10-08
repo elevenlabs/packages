@@ -84,27 +84,13 @@ export const animation = {
 };
 
 export const ascii = {
-  // ASCII characters for patterns and borders
+  // ASCII characters for borders
   borders: {
     single: 'single',
     double: 'double',
     round: 'round',
     bold: 'bold',
     classic: 'classic',
-  },
-  
-  // Chladni-inspired pattern characters
-  patterns: {
-    wave: '~',
-    dot: '·',
-    circle: '○',
-    filledCircle: '●',
-    diamond: '◆',
-    star: '✦',
-    plus: '+',
-    cross: '×',
-    line: '─',
-    verticalLine: '│',
   },
 };
 

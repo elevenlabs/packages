@@ -143,7 +143,7 @@ export const HelpView: React.FC = () => {
   }, [exit]);
 
   return (
-    <App showOverlay={true}>
+    <App>
       <Box flexDirection="column" marginBottom={1}>
         <Box marginBottom={1}>
           <Gradient name="passion">

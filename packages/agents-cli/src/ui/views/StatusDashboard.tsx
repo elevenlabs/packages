@@ -3,7 +3,6 @@ import { Box, Text, useApp, useInput } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import CommandPanel from '../components/CommandPanel.js';
-import ChladniOverlay from '../components/ChladniOverlay.js';
 import theme from '../themes/elevenlabs.js';
 
 interface AgentStatus {
@@ -92,7 +91,6 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
   return (
     <App 
       title="Agents Status" 
-      showOverlay={false}
     >
       <Box flexDirection="column">
         {/* Summary Card */}
@@ -113,19 +111,6 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
             ].filter(Boolean) as string[]}
           />
         </Box>
-
-        {/* Chladni Pattern Animation */}
-        {refreshing && (
-          <Box marginBottom={2}>
-            <ChladniOverlay 
-              active={true} 
-              intensity={5} 
-              width={60} 
-              height={3}
-              color={theme.colors.accent.primary}
-            />
-          </Box>
-        )}
 
         {/* Agents by Environment */}
         <Box flexDirection="column">

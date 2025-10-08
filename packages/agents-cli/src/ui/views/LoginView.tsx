@@ -77,7 +77,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
   return (
     <App
       title="ElevenLabs Agents"
-      showOverlay={!success}
     >
       <Box flexDirection="column" gap={1}>
         {!success ? (

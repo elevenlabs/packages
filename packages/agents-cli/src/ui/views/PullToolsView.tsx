@@ -286,7 +286,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
   return (
     <App
       title="ElevenLabs Agents CLI"
-      showOverlay={false}
     >
       <Box flexDirection="column" gap={1}>
         {state.loading ? (

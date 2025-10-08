@@ -186,7 +186,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
             const isRunning = step.status === 'running';
             const isError = step.status === 'error';
             
-            let icon = theme.ascii.patterns.circle; // gray circle for pending
+            let icon = '○'; // gray circle for pending
             let color = theme.colors.text.muted;
             
             if (isCompleted) {
@@ -210,7 +210,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
                 {step.error && (
                   <Box marginLeft={2}>
                     <Text color={theme.colors.error}>
-                      {theme.ascii.patterns.dot} {step.error}
+                      · {step.error}
                     </Text>
                   </Box>
                 )}

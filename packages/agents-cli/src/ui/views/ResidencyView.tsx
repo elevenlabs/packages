@@ -72,7 +72,6 @@ export const ResidencyView: React.FC<ResidencyViewProps> = ({
   return (
     <App 
       title="ElevenLabs Agents"
-      showOverlay={!success}
     >
       <Box flexDirection="column" gap={1}>
         {isLoading ? (

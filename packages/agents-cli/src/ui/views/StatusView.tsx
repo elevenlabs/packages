@@ -147,7 +147,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
   return (
     <App 
       title="ElevenLabs Agents"
-      showOverlay={false}
     >
       <Box flexDirection="column" gap={1}>
         {loading ? (

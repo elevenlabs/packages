@@ -118,7 +118,6 @@ export const PushView: React.FC<PushViewProps> = ({
   return (
     <App 
       title="ElevenLabs Agents" 
-      showOverlay={!complete}
     >
       <Box flexDirection="column">
         {/* Summary */}
