@@ -50,7 +50,10 @@ export async function getElevenLabsClient(): Promise<ElevenLabsClient> {
   
   return new ElevenLabsClient({ 
     apiKey,
-    baseUrl: baseURL
+    baseUrl: baseURL,
+    headers: {
+      'X-Source': 'agents-cli'
+    }
   });
 }
 
