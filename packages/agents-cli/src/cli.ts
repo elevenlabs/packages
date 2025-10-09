@@ -234,8 +234,8 @@ program
           console.log(`Created ${TESTS_CONFIG_FILE}`);
         }
         
-        // Create agent_configs directory structure
-        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs', 'test_configs'];
+        // Create directory structure
+        const configDirs = ['agent_configs', 'tool_configs', 'test_configs'];
         for (const dir of configDirs) {
           const dirPath = path.join(fullPath, dir);
           await fs.ensureDir(dirPath);

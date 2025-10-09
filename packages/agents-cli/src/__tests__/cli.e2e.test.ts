@@ -138,19 +138,19 @@ describe("CLI End-to-End Tests", () => {
       expect(envExampleExists).toBe(true);
 
       // Check directory structure
-      const devDirExists = await fs.pathExists(
-        path.join(tempDir, "agent_configs/dev")
+      const agentConfigsDirExists = await fs.pathExists(
+        path.join(tempDir, "agent_configs")
       );
-      const stagingDirExists = await fs.pathExists(
-        path.join(tempDir, "agent_configs/staging")
+      const toolConfigsDirExists = await fs.pathExists(
+        path.join(tempDir, "tool_configs")
       );
-      const prodDirExists = await fs.pathExists(
-        path.join(tempDir, "agent_configs/prod")
+      const testConfigsDirExists = await fs.pathExists(
+        path.join(tempDir, "test_configs")
       );
 
-      expect(devDirExists).toBe(true);
-      expect(stagingDirExists).toBe(true);
-      expect(prodDirExists).toBe(true);
+      expect(agentConfigsDirExists).toBe(true);
+      expect(toolConfigsDirExists).toBe(true);
+      expect(testConfigsDirExists).toBe(true);
     });
 
     it("should not overwrite existing files", async () => {
