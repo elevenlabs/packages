@@ -10,7 +10,7 @@ export interface LockFileAgent {
 }
 
 export interface LockFileData {
-  agents: Record<string, Record<string, LockFileAgent>>;
+  agents: Record<string, LockFileAgent>;
   tools: Record<string, LockFileAgent>;
   tests: Record<string, LockFileAgent>;
 }
@@ -189,19 +189,17 @@ export async function saveLockFile(
 }
 
 /**
- * Retrieves agent ID and hash from lock data by agent name and tag.
+ * Retrieves agent ID and hash from lock data by agent name.
  *
  * @param lockData - The lock file data
  * @param agentName - The agent name
- * @param tag - The environment tag
  * @returns The agent data if found, undefined otherwise
  */
 export function getAgentFromLock(
   lockData: LockFileData,
-  agentName: string,
-  tag: string
+  agentName: string
 ): LockFileAgent | undefined {
-  return lockData[LOCK_FILE_AGENTS_KEY]?.[agentName]?.[tag];
+  return lockData[LOCK_FILE_AGENTS_KEY]?.[agentName];
 }
 
 /**
@@ -209,14 +207,12 @@ export function getAgentFromLock(
  *
  * @param lockData - The lock file data to update
  * @param agentName - The agent name
- * @param tag - The environment tag
  * @param agentId - The agent ID
  * @param configHash - The configuration hash
  */
 export function updateAgentInLock(
   lockData: LockFileData,
   agentName: string,
-  tag: string,
   agentId: string,
   configHash: string
 ): void {
@@ -228,11 +224,7 @@ export function updateAgentInLock(
   }
 
   const agents = lockData[LOCK_FILE_AGENTS_KEY];
-  if (!agents[agentName]) {
-    agents[agentName] = {};
-  }
-
-  agents[agentName][tag] = {
+  agents[agentName] = {
     id: agentId,
     hash: configHash,
   };

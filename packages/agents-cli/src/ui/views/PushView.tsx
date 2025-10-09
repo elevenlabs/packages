@@ -5,7 +5,6 @@ import theme from '../themes/elevenlabs.js';
 
 interface PushAgent {
   name: string;
-  environment: string;
   configPath: string;
   status: 'pending' | 'checking' | 'pushing' | 'completed' | 'error' | 'skipped';
   message?: string;

@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 
 interface AgentStatus {
   name: string;
-  environment: string;
+  environment: string; // Keep for backward compatibility but unused
   configPath: string;
   configExists: boolean;
   configHash?: string;
@@ -21,13 +21,11 @@ interface AgentStatus {
 
 interface StatusViewProps {
   agentName?: string;
-  environment?: string;
   onComplete?: () => void;
 }
 
 export const StatusView: React.FC<StatusViewProps> = ({ 
   agentName,
-  environment,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -57,63 +55,55 @@ export const StatusView: React.FC<StatusViewProps> = ({
             continue;
           }
 
-          // Handle both old and new config formats
-          const environments = agentDef.environments || { prod: { config: agentDef.config } };
+          const configPath = agentDef.config;
+          if (!configPath) continue;
           
-          for (const [env, envConfig] of Object.entries(environments)) {
-            // Filter by environment if specified
-            if (environment && env !== environment) {
-              continue;
-            }
+          const fullConfigPath = path.resolve(configPath);
+          const configExists = await fs.pathExists(fullConfigPath);
+          
+          let status: AgentStatus['status'] = 'missing';
+          let configHash: string | undefined;
+          let deployedHash: string | undefined;
+          let agentId: string | undefined;
 
-            const configPath = (envConfig as any).config;
-            const fullConfigPath = path.resolve(configPath);
-            const configExists = await fs.pathExists(fullConfigPath);
+          if (configExists) {
+            // Calculate current config hash
+            const config = await readAgentConfig(fullConfigPath);
+            const { calculateConfigHash, getAgentFromLock } = await import('../../utils.js');
+            configHash = calculateConfigHash(config);
+
+            // Get deployed info from lock file
+            const agentLock = getAgentFromLock(lockData, agentDef.name);
             
-            let status: AgentStatus['status'] = 'missing';
-            let configHash: string | undefined;
-            let deployedHash: string | undefined;
-            let agentId: string | undefined;
-
-            if (configExists) {
-              // Calculate current config hash
-              const config = await readAgentConfig(fullConfigPath);
-              const { calculateConfigHash, getAgentFromLock } = await import('../../utils.js');
-              configHash = calculateConfigHash(config);
-
-              // Get deployed info from lock file
-              const agentLock = getAgentFromLock(lockData, agentDef.name, env);
-              
-              if (agentLock && typeof agentLock === 'object') {
-                if ('config_hash' in agentLock) {
-                  deployedHash = (agentLock as any).config_hash;
-                  agentId = (agentLock as any).id;
-                } else if ('hash' in agentLock) {
-                  deployedHash = (agentLock as any).hash;
-                  agentId = (agentLock as any).id;
-                }
-
-                if (configHash === deployedHash) {
-                  status = 'synced';
-                } else {
-                  status = 'modified';
-                }
-              } else {
-                status = 'not-deployed';
+            if (agentLock && typeof agentLock === 'object') {
+              if ('config_hash' in agentLock) {
+                deployedHash = (agentLock as any).config_hash;
+                agentId = (agentLock as any).id;
+              } else if ('hash' in agentLock) {
+                deployedHash = (agentLock as any).hash;
+                agentId = (agentLock as any).id;
               }
-            }
 
-            statusList.push({
-              name: agentDef.name,
-              environment: env,
-              configPath,
-              configExists,
-              configHash,
-              deployedHash,
-              agentId,
-              status
-            });
+              if (configHash === deployedHash) {
+                status = 'synced';
+              } else {
+                status = 'modified';
+              }
+            } else {
+              status = 'not-deployed';
+            }
           }
+
+          statusList.push({
+            name: agentDef.name,
+            environment: '',
+            configPath,
+            configExists,
+            configHash,
+            deployedHash,
+            agentId,
+            status
+          });
         }
 
         setAgents(statusList);
@@ -136,7 +126,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
     }, 10000); // Show for 10 seconds
 
     return () => clearTimeout(timer);
-  }, [agentName, environment, exit, onComplete]);
+  }, [agentName, exit, onComplete]);
 
   const syncedCount = agents.filter(a => a.status === 'synced').length;
   const modifiedCount = agents.filter(a => a.status === 'modified').length;
@@ -194,9 +184,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
                 <Box width={30}>
                   <Text color={theme.colors.text.muted} bold>NAME</Text>
                 </Box>
-                <Box width={15}>
-                  <Text color={theme.colors.text.muted} bold>ENV</Text>
-                </Box>
                 <Box width={20}>
                   <Text color={theme.colors.text.muted} bold>STATUS</Text>
                 </Box>
@@ -241,9 +228,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
                   <Box key={index}>
                     <Box width={30}>
                       <Text color={theme.colors.text.primary}>{agent.name}</Text>
-                    </Box>
-                    <Box width={15}>
-                      <Text color={theme.colors.text.secondary}>{agent.environment}</Text>
                     </Box>
                     <Box width={20}>
                       <Text color={statusColor}>{statusText}</Text>
