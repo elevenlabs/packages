@@ -130,6 +130,11 @@ export const PullView: React.FC<PullViewProps> = ({
     lockFilePath: string
   ): Promise<void> => {
     if (index >= agentsList.length) {
+      // Save files after all agents are processed (if not dry run)
+      if (!dryRun) {
+        await writeAgentConfig(agentsConfigPath, agentsConfig);
+        await saveLockFile(lockFilePath, lockData);
+      }
       setComplete(true);
       setTimeout(() => {
         if (onComplete) onComplete();
@@ -238,12 +243,6 @@ export const PullView: React.FC<PullViewProps> = ({
       ));
       setCurrentIndex(index + 1);
       processNextAgent(agentsList, index + 1, agentsConfig, existingNames, existingIds, lockData, agentsConfigPath, lockFilePath);
-    }
-
-    // Save files if not dry run
-    if (!dryRun && complete) {
-      await writeAgentConfig(agentsConfigPath, agentsConfig);
-      await saveLockFile(lockFilePath, lockData);
     }
   };
 
