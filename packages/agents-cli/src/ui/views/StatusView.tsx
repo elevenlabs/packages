@@ -176,64 +176,84 @@ export const StatusView: React.FC<StatusViewProps> = ({
                 message={`${agents.length} agent(s) found`}
                 details={[
                   `✓ ${syncedCount} synced`,
-                  `⚠ ${modifiedCount} modified`,
+                  `! ${modifiedCount} modified`,
                   `○ ${notDeployedCount} not deployed`,
                   `✗ ${missingCount} missing`
                 ]}
               />
             </Box>
 
-            {/* Agent List */}
-            <Box flexDirection="column" gap={1}>
+            {/* Agent List - Compact Table */}
+            <Box flexDirection="column" marginTop={1}>
               <Text color={theme.colors.text.primary} bold>
                 Agents:
               </Text>
               
+              {/* Table Header */}
+              <Box marginTop={1}>
+                <Box width={30}>
+                  <Text color={theme.colors.text.muted} bold>NAME</Text>
+                </Box>
+                <Box width={15}>
+                  <Text color={theme.colors.text.muted} bold>ENV</Text>
+                </Box>
+                <Box width={20}>
+                  <Text color={theme.colors.text.muted} bold>STATUS</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.colors.text.muted} bold>AGENT ID</Text>
+                </Box>
+              </Box>
+              
+              {/* Separator */}
+              <Box marginY={0}>
+                <Text color={theme.colors.text.muted}>{'─'.repeat(80)}</Text>
+              </Box>
+              
+              {/* Table Rows */}
               {agents.map((agent, index) => {
-                let status: 'success' | 'warning' | 'error' | 'idle';
+                let statusColor: string;
                 let statusText: string;
-                let details: string[] = [];
 
                 switch (agent.status) {
                   case 'synced':
-                    status = 'success';
+                    statusColor = theme.colors.success;
                     statusText = '✓ Synced';
                     break;
                   case 'modified':
-                    status = 'warning';
-                    statusText = '⚠ Modified locally';
-                    details.push('Run "agents push" to update');
+                    statusColor = theme.colors.warning;
+                    statusText = '! Modified';
                     break;
                   case 'not-deployed':
-                    status = 'idle';
+                    statusColor = theme.colors.text.muted;
                     statusText = '○ Not deployed';
-                    details.push('Run "agents push" to deploy');
                     break;
                   case 'missing':
-                    status = 'error';
-                    statusText = '✗ Config file missing';
+                    statusColor = theme.colors.error;
+                    statusText = '✗ Missing';
                     break;
                   default:
-                    status = 'idle';
+                    statusColor = theme.colors.text.muted;
                     statusText = 'Unknown';
                 }
 
-                if (agent.agentId) {
-                  details.push(`ID: ${agent.agentId}`);
-                }
-                if (agent.configPath) {
-                  details.push(`Config: ${agent.configPath}`);
-                }
-
                 return (
-                  <StatusCard
-                    key={index}
-                    title={`${agent.name} (${agent.environment})`}
-                    status={status}
-                    message={statusText}
-                    details={details}
-                    borderStyle="single"
-                  />
+                  <Box key={index}>
+                    <Box width={30}>
+                      <Text color={theme.colors.text.primary}>{agent.name}</Text>
+                    </Box>
+                    <Box width={15}>
+                      <Text color={theme.colors.text.secondary}>{agent.environment}</Text>
+                    </Box>
+                    <Box width={20}>
+                      <Text color={statusColor}>{statusText}</Text>
+                    </Box>
+                    <Box>
+                      <Text color={theme.colors.text.muted}>
+                        {agent.agentId || '-'}
+                      </Text>
+                    </Box>
+                  </Box>
                 );
               })}
             </Box>
