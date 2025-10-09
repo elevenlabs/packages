@@ -9,7 +9,8 @@ import fs from 'fs-extra';
 
 interface Agent {
   name: string;
-  environments: Record<string, { config: string }>;
+  environments?: Record<string, { config: string }>;
+  config?: string; // Old format
 }
 
 interface ListAgentsViewProps {
@@ -58,9 +59,36 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
 
   const getTotalEnvironments = () => {
     return agents.reduce((total, agent) => {
-      return total + Object.keys(agent.environments || {}).length;
+      if (agent.environments) {
+        return total + Object.keys(agent.environments).length;
+      } else if (agent.config) {
+        return total + 1; // Old format counts as 1 environment
+      }
+      return total;
     }, 0);
   };
+
+  // Flatten agents into rows (one per environment)
+  const agentRows = agents.flatMap(agent => {
+    // Handle both old format (config) and new format (environments)
+    if (agent.environments) {
+      const environments = Object.entries(agent.environments);
+      return environments.map(([env, config]) => ({
+        name: agent.name,
+        environment: env,
+        configPath: config.config
+      }));
+    } else if (agent.config) {
+      // Old format: single config without environment specification
+      return [{
+        name: agent.name,
+        environment: 'prod', // Default to prod for old format
+        configPath: agent.config
+      }];
+    } else {
+      return [];
+    }
+  });
 
   return (
     <App 
@@ -104,35 +132,44 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
               ]}
             />
 
-            {/* Agent List */}
-            <Box flexDirection="column" gap={1} marginTop={1}>
+            {/* Agent List - Compact Table */}
+            <Box flexDirection="column" marginTop={1}>
               <Text color={theme.colors.text.primary} bold>
                 Agents:
               </Text>
               
-              {agents.map((agent, index) => {
-                const environments = Object.entries(agent.environments || {});
-                const envCount = environments.length;
-                
-                return (
-                  <Box key={index} flexDirection="column" marginBottom={1}>
-                    <StatusCard
-                      title={agent.name}
-                      status="idle"
-                      message={`${envCount} environment(s)`}
-                      borderStyle="single"
-                    />
-                    
-                    {environments.map(([env, config], envIndex) => (
-                      <Box key={envIndex} marginLeft={2} marginTop={0}>
-                        <Text color={theme.colors.text.secondary}>
-                          • {env}: <Text color={theme.colors.text.muted}>{config.config}</Text>
-                        </Text>
-                      </Box>
-                    ))}
+              {/* Table Header */}
+              <Box marginTop={1}>
+                <Box width={30}>
+                  <Text color={theme.colors.text.muted} bold>NAME</Text>
+                </Box>
+                <Box width={15}>
+                  <Text color={theme.colors.text.muted} bold>ENV</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.colors.text.muted} bold>CONFIG PATH</Text>
+                </Box>
+              </Box>
+              
+              {/* Separator */}
+              <Box marginY={0}>
+                <Text color={theme.colors.text.muted}>{'─'.repeat(80)}</Text>
+              </Box>
+              
+              {/* Table Rows */}
+              {agentRows.map((row, index) => (
+                <Box key={index}>
+                  <Box width={30}>
+                    <Text color={theme.colors.text.primary}>{row.name}</Text>
                   </Box>
-                );
-              })}
+                  <Box width={15}>
+                    <Text color={theme.colors.text.secondary}>{row.environment}</Text>
+                  </Box>
+                  <Box>
+                    <Text color={theme.colors.text.muted}>{row.configPath}</Text>
+                  </Box>
+                </Box>
+              ))}
             </Box>
 
             {/* Commands hint */}
