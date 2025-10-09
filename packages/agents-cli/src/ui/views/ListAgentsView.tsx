@@ -9,8 +9,7 @@ import fs from 'fs-extra';
 
 interface Agent {
   name: string;
-  environments?: Record<string, { config: string }>;
-  config?: string; // Old format
+  config: string;
 }
 
 interface ListAgentsViewProps {
@@ -57,38 +56,11 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
     return () => clearTimeout(timer);
   }, [exit, onComplete]);
 
-  const getTotalEnvironments = () => {
-    return agents.reduce((total, agent) => {
-      if (agent.environments) {
-        return total + Object.keys(agent.environments).length;
-      } else if (agent.config) {
-        return total + 1; // Old format counts as 1 environment
-      }
-      return total;
-    }, 0);
-  };
-
-  // Flatten agents into rows (one per environment)
-  const agentRows = agents.flatMap(agent => {
-    // Handle both old format (config) and new format (environments)
-    if (agent.environments) {
-      const environments = Object.entries(agent.environments);
-      return environments.map(([env, config]) => ({
-        name: agent.name,
-        environment: env,
-        configPath: config.config
-      }));
-    } else if (agent.config) {
-      // Old format: single config without environment specification
-      return [{
-        name: agent.name,
-        environment: 'prod', // Default to prod for old format
-        configPath: agent.config
-      }];
-    } else {
-      return [];
-    }
-  });
+  // Map agents to rows
+  const agentRows = agents.map(agent => ({
+    name: agent.name,
+    configPath: agent.config
+  }));
 
   return (
     <App 
@@ -127,9 +99,6 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
               title="Agent Summary"
               status="success"
               message={`${agents.length} agent(s) configured`}
-              details={[
-                `Total environments: ${getTotalEnvironments()}`
-              ]}
             />
 
             {/* Agent List - Compact Table */}
@@ -142,9 +111,6 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
               <Box marginTop={1}>
                 <Box width={30}>
                   <Text color={theme.colors.text.muted} bold>NAME</Text>
-                </Box>
-                <Box width={15}>
-                  <Text color={theme.colors.text.muted} bold>ENV</Text>
                 </Box>
                 <Box>
                   <Text color={theme.colors.text.muted} bold>CONFIG PATH</Text>
@@ -161,9 +127,6 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
                 <Box key={index}>
                   <Box width={30}>
                     <Text color={theme.colors.text.primary}>{row.name}</Text>
-                  </Box>
-                  <Box width={15}>
-                    <Text color={theme.colors.text.secondary}>{row.environment}</Text>
                   </Box>
                   <Box>
                     <Text color={theme.colors.text.muted}>{row.configPath}</Text>

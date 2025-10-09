@@ -6,13 +6,12 @@
 
 Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
 
-Manage ElevenLabs Agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, multi-environment support, and automatic pushing.
+Manage ElevenLabs Agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, watch mode, and automatic pushing.
 
 ## Features
 
 - **Agent Configuration**: Full ElevenLabs agent schema support
 - **Templates**: Pre-built templates for common use cases
-- **Multi-environment**: Deploy across dev, staging, production
 - **Smart Updates**: Hash-based change detection
 - **Watch Mode**: Automatic sync on file changes
 - **Import/Export**: Fetch existing agents and tools from workspace
@@ -91,7 +90,7 @@ agents login
 # 3. Create agent with template
 agents add "Support Bot" --template customer-service
 
-# 4. Edit configuration (agent_configs/prod/support_bot.json)
+# 4. Edit configuration (agent_configs/support_bot.json)
 
 # 5. Sync to ElevenLabs
 agents push
@@ -106,10 +105,7 @@ agents watch
 your_project/
 ├── agents.json              # Central configuration
 ├── tools.json               # Tool configurations
-├── agent_configs/           # Agent configs by environment
-│   ├── prod/
-│   ├── dev/
-│   └── staging/
+├── agent_configs/           # Agent configuration files
 ├── tool_configs/            # Tool configurations
 ├── agents.lock              # Agent IDs and hashes
 └── tools-lock.json          # Tool IDs and hashes
@@ -129,7 +125,7 @@ agents logout
 agents whoami
 
 # Create agent
-agents add "Agent Name" [--template customer-service] [--env dev]
+agents add "Agent Name" [--template customer-service]
 
 # Create webhook tool
 agents add-webhook-tool "Tool Name" [--config-path path] [--skip-upload]
@@ -138,7 +134,7 @@ agents add-webhook-tool "Tool Name" [--config-path path] [--skip-upload]
 agents add-client-tool "Tool Name" [--config-path path] [--skip-upload]
 
 # Push changes
-agents push [--agent "Agent Name"] [--env production] [--dry-run]
+agents push [--agent "Agent Name"] [--dry-run]
 
 # Sync tools
 agents push-tools [--tool "Tool Name"] [--dry-run]
@@ -147,13 +143,13 @@ agents push-tools [--tool "Tool Name"] [--dry-run]
 agents push-tests [--dry-run]
 
 # Check status
-agents status [--agent "Agent Name"] [--env production]
+agents status [--agent "Agent Name"]
 
 # Watch for changes
-agents watch [--agent "Agent Name"] [--env dev] [--interval 5]
+agents watch [--agent "Agent Name"] [--interval 5]
 
 # Pull agents from ElevenLabs
-agents pull [--search "term"] [--env staging] [--dry-run]
+agents pull [--search "term"] [--dry-run]
 
 # Pull tools from ElevenLabs
 agents pull-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-dir tool_configs]
@@ -162,10 +158,10 @@ agents pull-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-d
 agents pull-tests [--output-dir test_configs] [--dry-run]
 
 # Run tests
-agents test "Agent Name" [--env production]
+agents test "Agent Name"
 
 # Generate widget HTML (includes server-location for isolated regions)
-agents widget "Agent Name" [--env production]
+agents widget "Agent Name"
 
 # List agents
 agents list
@@ -244,21 +240,12 @@ agents add "My Agent" --template assistant
 agents push
 ```
 
-**Multi-Environment:**
-
-```bash
-agents add "Bot" --env dev --template customer-service
-agents add "Bot" --env prod --template customer-service
-agents push --env dev
-agents push --env prod
-```
-
 **Import Existing:**
 
 ```bash
 agents init
 agents login
-agents pull --env prod
+agents pull
 agents push
 ```
 
@@ -276,7 +263,7 @@ agents push
 **Development:**
 
 ```bash
-agents watch --env dev --interval 5
+agents watch --interval 5
 # Edit configs in another terminal - auto-pushes!
 ```
 
@@ -297,8 +284,8 @@ export ELEVENLABS_API_KEY="your_api_key_here"
 
 **Agent Not Found:**
 
-- Check: `agents list-agents`
-- Verify: `agents status --env <environment>`
+- Check: `agents list`
+- Verify: `agents status`
 
 **Push Issues:**
 

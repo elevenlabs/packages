@@ -70,12 +70,10 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
     },
     {
       name: 'Create directory structure',
-      description: 'Setting up environment directories',
+      description: 'Setting up config directories',
       action: async () => {
         const dirs = [
-          'agent_configs/dev',
-          'agent_configs/staging',
-          'agent_configs/prod',
+          'agent_configs',
           'tool_configs',
           'test_configs',
         ];

@@ -12,8 +12,6 @@ import {
   setApiKey,
   removeApiKey,
   isLoggedIn,
-  getDefaultEnvironment,
-  setDefaultEnvironment,
   getResidency,
   setResidency,
 } from "../config";
@@ -97,7 +95,7 @@ describe("Config Management", () => {
     it("should save and load config correctly", async () => {
       const config = {
         apiKey: "test-key",
-        defaultEnvironment: "dev",
+        residency: "us" as const,
       };
 
       await saveConfig(config);
@@ -105,7 +103,7 @@ describe("Config Management", () => {
 
       // API key is not saved to config file for security
       expect(loaded).toEqual({
-        defaultEnvironment: "dev",
+        residency: "us",
       });
     });
 
@@ -168,19 +166,6 @@ describe("Config Management", () => {
     });
   });
 
-  describe("Default environment management", () => {
-    it("should return prod as default environment", async () => {
-      const env = await getDefaultEnvironment();
-      expect(env).toBe("prod");
-    });
-
-    it("should set and get default environment", async () => {
-      await setDefaultEnvironment("dev");
-      const env = await getDefaultEnvironment();
-      expect(env).toBe("dev");
-    });
-  });
-
   describe("Residency management", () => {
     it("should return global as default residency", async () => {
       const residency = await getResidency();
@@ -219,12 +204,10 @@ describe("Config Management", () => {
       expect(residency).toBe("in-residency");
     });
 
-    it("should save residency along with other config", async () => {
-      await setDefaultEnvironment("staging");
+    it("should save residency in config", async () => {
       await setResidency("eu-residency");
 
       const config = await loadConfig();
-      expect(config.defaultEnvironment).toBe("staging");
       expect(config.residency).toBe("eu-residency");
     });
   });

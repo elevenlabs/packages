@@ -15,17 +15,15 @@ import fs from 'fs-extra';
 
 interface AddAgentViewProps {
   initialName?: string;
-  environment?: string;
   template?: string;
   skipUpload?: boolean;
   onComplete?: () => void;
 }
 
-type Step = 'name' | 'template' | 'environment' | 'confirm' | 'creating';
+type Step = 'name' | 'template' | 'confirm' | 'creating';
 
 export const AddAgentView: React.FC<AddAgentViewProps> = ({ 
   initialName,
-  environment = 'prod',
   template = 'default',
   skipUpload = false,
   onComplete 
@@ -34,7 +32,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
   const [currentStep, setCurrentStep] = useState<Step>(initialName ? 'template' : 'name');
   const [agentName, setAgentName] = useState(initialName || '');
   const [selectedTemplate, setSelectedTemplate] = useState(template);
-  const [selectedEnvironment, setSelectedEnvironment] = useState(environment);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -45,12 +42,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
     label: `${name} - ${description}`,
     value: name
   }));
-
-  const environments = [
-    { label: 'Production', value: 'prod' },
-    { label: 'Staging', value: 'staging' },
-    { label: 'Development', value: 'dev' }
-  ];
 
   useInput((_, key) => {
     if (key.escape && !isCreating) {
@@ -79,7 +70,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       // Step 2: Create directory
       setStatusMessage('Creating agent directory...');
       setProgress(40);
-      const configDir = path.resolve(`agent_configs/${selectedEnvironment}`);
+      const configDir = path.resolve(`agent_configs`);
       await fs.ensureDir(configDir);
       
       // Step 3: Write config file
@@ -96,21 +87,16 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       
       // Check if agent already exists
       let existingAgent = agentsConfig.agents.find((agent: any) => agent.name === agentName);
-      const relativeConfigPath = `agent_configs/${selectedEnvironment}/${agentName}.json`;
+      const relativeConfigPath = `agent_configs/${agentName}.json`;
       
       if (existingAgent) {
-        // Update existing agent with new environment
-        if (!existingAgent.environments) {
-          existingAgent.environments = {};
-        }
-        existingAgent.environments[selectedEnvironment] = { config: relativeConfigPath };
+        // Update existing agent
+        throw new Error(`Agent '${agentName}' already exists in agents.json`);
       } else {
         // Add new agent
         agentsConfig.agents.push({
           name: agentName,
-          environments: {
-            [selectedEnvironment]: { config: relativeConfigPath }
-          }
+          config: relativeConfigPath
         });
       }
       
@@ -155,11 +141,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
 
   const handleTemplateSelect = (item: { value: string }) => {
     setSelectedTemplate(item.value);
-    setCurrentStep('environment');
-  };
-
-  const handleEnvironmentSelect = (item: { value: string }) => {
-    setSelectedEnvironment(item.value);
     setCurrentStep('confirm');
   };
 
@@ -210,25 +191,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
           </Box>
         )}
 
-        {/* Step 3: Environment Selection */}
-        {currentStep === 'environment' && (
-          <Box flexDirection="column" gap={1}>
-            <Text color={theme.colors.text.primary} bold>
-              Step 3: Select Environment
-            </Text>
-            <Box marginBottom={1}>
-              <Text color={theme.colors.text.secondary}>
-                Choose the target environment:
-              </Text>
-            </Box>
-            <SelectInput
-              items={environments}
-              onSelect={handleEnvironmentSelect}
-            />
-          </Box>
-        )}
-
-        {/* Step 4: Confirmation */}
+        {/* Step 3: Confirmation */}
         {currentStep === 'confirm' && (
           <Box flexDirection="column" gap={1}>
             <Text color={theme.colors.text.primary} bold>
@@ -240,9 +203,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
               </Text>
               <Text color={theme.colors.text.secondary}>
                 • Template: <Text color={theme.colors.accent.primary}>{selectedTemplate}</Text>
-              </Text>
-              <Text color={theme.colors.text.secondary}>
-                • Environment: <Text color={theme.colors.accent.primary}>{selectedEnvironment}</Text>
               </Text>
               <Text color={theme.colors.text.secondary}>
                 • Upload to ElevenLabs: <Text color={theme.colors.accent.primary}>{skipUpload ? 'No' : 'Yes'}</Text>
@@ -281,7 +241,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
                 />
                 <Box marginTop={1}>
                   <Text color={theme.colors.text.secondary}>
-                    Configuration saved to: agent_configs/{selectedEnvironment}/{agentName}.json
+                    Configuration saved to: agent_configs/{agentName}.json
                   </Text>
                 </Box>
               </Box>

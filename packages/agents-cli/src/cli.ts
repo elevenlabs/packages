@@ -101,8 +101,7 @@ const LOCK_FILE = "agents.lock";
 
 interface AgentDefinition {
   name: string;
-  environments?: Record<string, { config: string }>;
-  config?: string;
+  config: string;
 }
 
 interface AgentsConfig {
@@ -123,23 +122,19 @@ interface AddOptions {
   configPath?: string;
   template: string;
   skipUpload: boolean;
-  env: string;
 }
 
 interface PushOptions {
   agent?: string;
   dryRun: boolean;
-  env?: string;
 }
 
 interface StatusOptions {
   agent?: string;
-  env?: string;
 }
 
 interface WatchOptions {
   agent?: string;
-  env: string;
   interval: string;
 }
 
@@ -148,7 +143,6 @@ interface PullOptions {
   outputDir: string;
   search?: string;
   dryRun: boolean;
-  env: string;
 }
 
 interface PullToolsOptions {
@@ -158,9 +152,7 @@ interface PullToolsOptions {
   dryRun: boolean;
 }
 
-interface WidgetOptions {
-  env: string;
-}
+// Widget options interface removed - no longer needed
 
 interface TemplateShowOptions {
   agentName: string;
@@ -242,8 +234,8 @@ program
           console.log(`Created ${TESTS_CONFIG_FILE}`);
         }
         
-        // Create agent_configs directory structure
-        const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs', 'test_configs'];
+        // Create directory structure
+        const configDirs = ['agent_configs', 'tool_configs', 'test_configs'];
         for (const dir of configDirs) {
           const dirPath = path.join(fullPath, dir);
           await fs.ensureDir(dirPath);
@@ -468,7 +460,6 @@ program
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--template <template>', 'Template type to use', 'default')
   .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
-  .option('--env <environment>', 'Environment to create agent for', 'prod')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
@@ -477,7 +468,6 @@ program
         const { waitUntilExit } = render(
           React.createElement(AddAgentView, {
             initialName: name,
-            environment: options.env,
             template: options.template,
             skipUpload: options.skipUpload
           })
@@ -495,25 +485,29 @@ program
       // Load existing config
       const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
-      // Load lock file to check environment-specific agents
+      // Load lock file
       const lockFilePath = path.resolve(LOCK_FILE);
       const lockData = await loadLockFile(lockFilePath);
       
-      // Check if agent already exists for this specific environment
-      const lockedAgent = getAgentFromLock(lockData, name, options.env);
+      // Check if agent already exists
+      const lockedAgent = getAgentFromLock(lockData, name);
       if (lockedAgent?.id) {
-        console.error(`Agent '${name}' already exists for environment '${options.env}'`);
+        console.error(`Agent '${name}' already exists`);
         process.exit(1);
       }
       
       // Check if agent name exists in agents.json
-      let existingAgent = agentsConfig.agents.find(agent => agent.name === name);
+      const existingAgent = agentsConfig.agents.find(agent => agent.name === name);
+      if (existingAgent) {
+        console.error(`Agent '${name}' already exists in agents.json`);
+        process.exit(1);
+      }
       
-      // Generate environment-specific config path if not provided
+      // Generate config path if not provided
       let configPath = options.configPath;
       if (!configPath) {
         const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-        configPath = `agent_configs/${options.env}/${safeName}.json`;
+        configPath = `agent_configs/${safeName}.json`;
       }
       
       // Create config directory and file
@@ -532,51 +526,27 @@ program
       await writeAgentConfig(configFilePath, agentConfig);
       console.log(`Created config file: ${configPath} (template: ${options.template})`);
       
-      if (existingAgent) {
-        console.log(`Agent '${name}' exists, adding new environment '${options.env}'`);
-      } else {
-        console.log(`Creating new agent '${name}' for environment '${options.env}'`);
-      }
-      
       if (options.skipUpload) {
-        if (!existingAgent) {
-          const newAgent: AgentDefinition = {
-            name,
-            environments: {
-              [options.env]: { config: configPath }
-            }
-          };
-          agentsConfig.agents.push(newAgent);
-          console.log(`Added agent '${name}' to agents.json (local only)`);
-        } else {
-          if (!existingAgent.environments) {
-            const oldConfig = existingAgent.config || '';
-            existingAgent.environments = { default: { config: oldConfig } };
-            delete existingAgent.config;
-          }
-          existingAgent.environments[options.env] = { config: configPath };
-          console.log(`Added environment '${options.env}' to existing agent '${name}' (local only)`);
-        }
-        
+        const newAgent: AgentDefinition = {
+          name,
+          config: configPath
+        };
+        agentsConfig.agents.push(newAgent);
         await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`Edit ${configPath} to customize your agent, then run 'agents push --env ${options.env}' to upload`);
+        console.log(`Added agent '${name}' to agents.json (local only)`);
+        console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to upload`);
         return;
       }
       
       // Create agent in ElevenLabs
-      console.log(`Creating agent '${name}' in ElevenLabs (environment: ${options.env})...`);
+      console.log(`Creating agent '${name}' in ElevenLabs...`);
       
       const client = await getElevenLabsClient();
       
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
       const platformSettings = agentConfig.platform_settings;
-      let tags = agentConfig.tags || [];
-      
-      // Add environment tag if specified and not already present
-      if (options.env && !tags.includes(options.env)) {
-        tags = [...tags, options.env];
-      }
+      const tags = agentConfig.tags || [];
       
       // Create new agent
       const agentId = await createAgentApi(
@@ -589,34 +559,22 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
-      if (!existingAgent) {
-        const newAgent: AgentDefinition = {
-          name,
-          environments: {
-            [options.env]: { config: configPath }
-          }
-        };
-        agentsConfig.agents.push(newAgent);
-        console.log(`Added agent '${name}' to agents.json`);
-      } else {
-        if (!existingAgent.environments) {
-          const oldConfig = existingAgent.config || '';
-          existingAgent.environments = { default: { config: oldConfig } };
-          delete existingAgent.config;
-        }
-        existingAgent.environments[options.env] = { config: configPath };
-        console.log(`Added environment '${options.env}' to existing agent '${name}'`);
-      }
+      const newAgent: AgentDefinition = {
+        name,
+        config: configPath
+      };
+      agentsConfig.agents.push(newAgent);
       
       // Save updated agents.json
       await writeAgentConfig(agentsConfigPath, agentsConfig);
+      console.log(`Added agent '${name}' to agents.json`);
       
-      // Update lock file with environment-specific agent ID
+      // Update lock file with agent ID
       const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-      updateAgentInLock(lockData, name, options.env, agentId, configHash);
+      updateAgentInLock(lockData, name, agentId, configHash);
       await saveLockFile(lockFilePath, lockData);
       
-      console.log(`Edit ${configPath} to customize your agent, then run 'agents push --env ${options.env}' to update`);
+      console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to update`);
       
     } catch (error) {
       console.error(`Error creating agent: ${error}`);
@@ -697,7 +655,6 @@ program
   .description('Push agents to ElevenLabs API when configs change')
   .option('--agent <name>', 'Specific agent name to push (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
-  .option('--env <environment>', 'Target specific environment (defaults to all environments)')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: PushOptions & { ui: boolean }) => {
     try {
@@ -722,8 +679,7 @@ program
         // Prepare agents for UI
         const pushAgentsData = agentsToProcess.map(agent => ({
           name: agent.name,
-          environment: options.env || 'all',
-          configPath: agent.config || `agent_configs/${agent.name}.json`,
+          configPath: agent.config,
           status: 'pending' as const
         }));
         
@@ -736,7 +692,7 @@ program
         await waitUntilExit();
       } else {
         // Use existing non-UI push
-        await pushAgents(options.agent, options.dryRun, options.env);
+        await pushAgents(options.agent, options.dryRun);
       }
     } catch (error) {
       console.error(`Error during push: ${error}`);
@@ -748,7 +704,6 @@ program
   .command('status')
   .description('Show the status of agents')
   .option('--agent <name>', 'Specific agent name to check (defaults to all agents)')
-  .option('--env <environment>', 'Environment to check status for (defaults to all environments)')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: StatusOptions & { ui: boolean }) => {
     try {
@@ -756,13 +711,12 @@ program
         // Use Ink UI for status display
         const { waitUntilExit } = render(
           React.createElement(StatusView, {
-            agentName: options.agent,
-            environment: options.env
+            agentName: options.agent
           })
         );
         await waitUntilExit();
       } else {
-        await showStatus(options.agent, options.env);
+        await showStatus(options.agent);
       }
     } catch (error) {
       console.error(`Error showing status: ${error}`);
@@ -774,11 +728,10 @@ program
   .command('watch')
   .description('Watch for config changes and auto-push agents')
   .option('--agent <name>', 'Specific agent name to watch (defaults to all agents)')
-  .option('--env <environment>', 'Environment to watch', 'prod')
   .option('--interval <seconds>', 'Check interval in seconds', '5')
   .action(async (options: WatchOptions) => {
     try {
-      await watchForChanges(options.agent, options.env, parseInt(options.interval));
+      await watchForChanges(options.agent, parseInt(options.interval));
     } catch (error) {
       console.error(`Error in watch mode: ${error}`);
       process.exit(1);
@@ -814,7 +767,6 @@ program
   .option('--output-dir <dir>', 'Directory to store pulled agent configs', 'agent_configs')
   .option('--search <term>', 'Search agents by name')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
-  .option('--env <environment>', 'Environment to associate pulled agents with', 'prod')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: PullOptions & { ui: boolean }) => {
     try {
@@ -825,8 +777,7 @@ program
             agent: options.agent,
             outputDir: options.outputDir,
             search: options.search,
-            dryRun: options.dryRun,
-            environment: options.env
+            dryRun: options.dryRun
           })
         );
         await waitUntilExit();
@@ -875,10 +826,9 @@ program
   .command('widget')
   .description('Generate HTML widget snippet for an agent')
   .argument('<name>', 'Name of the agent to generate widget for')
-  .option('--env <environment>', 'Environment to get agent ID from', 'prod')
-  .action(async (name: string, options: WidgetOptions) => {
+  .action(async (name: string) => {
     try {
-      await generateWidget(name, options.env);
+      await generateWidget(name);
     } catch (error) {
       console.error(`Error generating widget: ${error}`);
       process.exit(1);
@@ -996,14 +946,13 @@ program
   .command('test')
   .description('Run tests attached to an agent')
   .argument('<agentName>', 'Name of the agent to test')
-  .option('--env <environment>', 'Environment to test in', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (agentName: string, options: { env: string; ui: boolean }) => {
+  .action(async (agentName: string, options: { ui: boolean }) => {
     try {
       if (options.ui !== false) {
-        await runAgentTestsWithUI(agentName, options.env);
+        await runAgentTestsWithUI(agentName);
       } else {
-        await runAgentTests(agentName, options.env);
+        await runAgentTests(agentName);
       }
     } catch (error) {
       console.error(`Error running tests: ${error}`);
@@ -1154,7 +1103,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   }
 }
 
-async function pushAgents(agentName?: string, dryRun = false, environment?: string): Promise<void> {
+async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1180,143 +1129,100 @@ async function pushAgents(agentName?: string, dryRun = false, environment?: stri
     }
   }
   
-  // Determine environments to push
-  let environmentsToSync: string[] = [];
-  if (environment) {
-    environmentsToSync = [environment];
-  } else {
-    const envSet = new Set<string>();
-    for (const agentDef of agentsToProcess) {
-      if (agentDef.environments) {
-        Object.keys(agentDef.environments).forEach(env => envSet.add(env));
-      } else {
-        envSet.add('prod'); // Old format compatibility
-      }
-    }
-    environmentsToSync = Array.from(envSet);
-    
-    if (environmentsToSync.length === 0) {
-      console.log('No environments found to push');
-      return;
-    }
-    
-    console.log(`Pushing all environments: ${environmentsToSync.join(', ')}`);
-  }
-  
   let changesMade = false;
   
-  for (const currentEnv of environmentsToSync) {
-    console.log(`\nProcessing environment: ${currentEnv}`);
+  for (const agentDef of agentsToProcess) {
+    const agentDefName = agentDef.name;
+    const configPath = agentDef.config;
     
-    for (const agentDef of agentsToProcess) {
-      const agentDefName = agentDef.name;
-      
-      // Handle both old and new config structure
-      let configPath: string | undefined;
-      if (agentDef.environments) {
-        if (currentEnv in agentDef.environments) {
-          configPath = agentDef.environments[currentEnv].config;
-        } else {
-          console.log(`Warning: Agent '${agentDefName}' not configured for environment '${currentEnv}'`);
-          continue;
-        }
+    if (!configPath) {
+      console.log(`Warning: No config path found for agent '${agentDefName}'`);
+      continue;
+    }
+    
+    // Check if config file exists
+    if (!(await fs.pathExists(configPath))) {
+      console.log(`Warning: Config file not found for ${agentDefName}: ${configPath}`);
+      continue;
+    }
+    
+    // Load agent config
+    let agentConfig: AgentConfig;
+    try {
+      agentConfig = await readAgentConfig<AgentConfig>(configPath);
+    } catch (error) {
+      console.log(`Error reading config for ${agentDefName}: ${error}`);
+      continue;
+    }
+    
+    // Calculate config hash
+    const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
+    
+    // Get agent data from lock file
+    const lockedAgent = getAgentFromLock(lockData, agentDefName);
+    
+    let needsUpdate = true;
+    
+    if (lockedAgent) {
+      if (lockedAgent.hash === configHash) {
+        needsUpdate = false;
+        console.log(`${agentDefName}: No changes`);
       } else {
-        configPath = agentDef.config;
-        if (!configPath) {
-          console.log(`Warning: No config path found for agent '${agentDefName}'`);
-          continue;
-        }
+        console.log(`${agentDefName}: Config changed, will update`);
       }
+    } else {
+      console.log(`${agentDefName}: New agent detected, will create`);
+    }
+    
+    if (!needsUpdate) {
+      continue;
+    }
+    
+    if (dryRun) {
+      console.log(`[DRY RUN] Would update agent: ${agentDefName}`);
+      continue;
+    }
+    
+    // Perform API operation
+    try {
+      const agentId = lockedAgent?.id;
       
-      // Check if config file exists
-      if (!(await fs.pathExists(configPath))) {
-        console.log(`Warning: Config file not found for ${agentDefName}: ${configPath}`);
-        continue;
-      }
+      // Extract config components
+      const conversationConfig = agentConfig.conversation_config || {};
+      const platformSettings = agentConfig.platform_settings;
+      const tags = agentConfig.tags || [];
       
-      // Load agent config
-      let agentConfig: AgentConfig;
-      try {
-        agentConfig = await readAgentConfig<AgentConfig>(configPath);
-      } catch (error) {
-        console.log(`Error reading config for ${agentDefName}: ${error}`);
-        continue;
-      }
+      const agentDisplayName = agentConfig.name || agentDefName;
       
-      // Calculate config hash
-      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-      
-      // Get environment-specific agent data from lock file
-      const lockedAgent = getAgentFromLock(lockData, agentDefName, currentEnv);
-      
-      let needsUpdate = true;
-      
-      if (lockedAgent) {
-        if (lockedAgent.hash === configHash) {
-          needsUpdate = false;
-          console.log(`${agentDefName}: No changes (environment: ${currentEnv})`);
-        } else {
-          console.log(`${agentDefName}: Config changed, will update (environment: ${currentEnv})`);
-        }
+      if (!agentId) {
+        // Create new agent
+        const newAgentId = await createAgentApi(
+          client!,
+          agentDisplayName,
+          conversationConfig,
+          platformSettings,
+          tags
+        );
+        console.log(`Created agent ${agentDefName} (ID: ${newAgentId})`);
+        updateAgentInLock(lockData, agentDefName, newAgentId, configHash);
       } else {
-        console.log(`${agentDefName}: New environment detected, will create/update (environment: ${currentEnv})`);
+        // Update existing agent
+        await updateAgentApi(
+          client!,
+          agentId,
+          agentDisplayName,
+          conversationConfig,
+          platformSettings,
+          tags
+        );
+        console.log(`Updated agent ${agentDefName} (ID: ${agentId})`);
+        updateAgentInLock(lockData, agentDefName, agentId, configHash);
       }
       
-      if (!needsUpdate) {
-        continue;
-      }
+      changesMade = true;
       
-      if (dryRun) {
-        console.log(`[DRY RUN] Would update agent: ${agentDefName} (environment: ${currentEnv})`);
-        continue;
-      }
-      
-      // Perform API operation
-      try {
-        const agentId = lockedAgent?.id;
-        
-        // Extract config components
-        const conversationConfig = agentConfig.conversation_config || {};
-        const platformSettings = agentConfig.platform_settings;
-        let tags = agentConfig.tags || [];
-        
-        // Add environment tag if specified and not already present
-        if (currentEnv && !tags.includes(currentEnv)) {
-          tags = [...tags, currentEnv];
-        }
-        
-        const agentDisplayName = agentConfig.name || agentDefName;
-        
-        if (!agentId) {
-          // Create new agent for this environment
-          const newAgentId = await createAgentApi(
-            client!,
-            agentDisplayName,
-            conversationConfig,
-            platformSettings,
-            tags
-          );
-          console.log(`Created agent ${agentDefName} for environment '${currentEnv}' (ID: ${newAgentId})`);
-          updateAgentInLock(lockData, agentDefName, currentEnv, newAgentId, configHash);
-        } else {
-          // Update existing environment-specific agent
-          await updateAgentApi(
-            client!,
-            agentId,
-            agentDisplayName,
-            conversationConfig,
-            platformSettings,
-            tags
-          );
-          console.log(`Updated agent ${agentDefName} for environment '${currentEnv}' (ID: ${agentId})`);
-          updateAgentInLock(lockData, agentDefName, currentEnv, agentId, configHash);
-        }
-        
-        changesMade = true;
-        
-      } catch (error) {
-        console.log(`Error processing ${agentDefName}: ${error}`);
-      }
+    } catch (error) {
+      console.log(`Error processing ${agentDefName}: ${error}`);
     }
   }
   
@@ -1327,7 +1233,7 @@ async function pushAgents(agentName?: string, dryRun = false, environment?: stri
   }
 }
 
-async function showStatus(agentName?: string, environment?: string): Promise<void> {
+async function showStatus(agentName?: string): Promise<void> {
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
     throw new Error('agents.json not found. Run \'init\' first.');
@@ -1350,90 +1256,59 @@ async function showStatus(agentName?: string, environment?: string): Promise<voi
     }
   }
   
-  // Determine environments to show
-  let environmentsToShow: string[] = [];
-  if (environment) {
-    environmentsToShow = [environment];
-    console.log(`Agent Status (Environment: ${environment}):`);
-  } else {
-    const envSet = new Set<string>();
-    for (const agentDef of agentsToShow) {
-      if (agentDef.environments) {
-        Object.keys(agentDef.environments).forEach(env => envSet.add(env));
-      } else {
-        envSet.add('prod'); // Old format compatibility
-      }
-    }
-    environmentsToShow = Array.from(envSet);
-    console.log('Agent Status (All Environments):');
-  }
-  
+  console.log('Agent Status:');
   console.log('='.repeat(50));
   
   for (const agentDef of agentsToShow) {
     const agentNameCurrent = agentDef.name;
+    const configPath = agentDef.config;
     
-    for (const currentEnv of environmentsToShow) {
-      // Handle both old and new config structure
-      let configPath: string | undefined;
-      if (agentDef.environments) {
-        if (currentEnv in agentDef.environments) {
-          configPath = agentDef.environments[currentEnv].config;
-        } else {
-          continue; // Skip if agent not configured for this environment
-        }
-      } else {
-        configPath = agentDef.config;
-        if (!configPath) {
-          continue;
-        }
-      }
-      
-      // Get environment-specific agent ID from lock file
-      const lockedAgent = getAgentFromLock(lockData, agentNameCurrent, currentEnv);
-      const agentId = lockedAgent?.id || 'Not created for this environment';
-      
-      console.log(`\n${agentNameCurrent}`);
-      console.log(`   Environment: ${currentEnv}`);
-      console.log(`   Agent ID: ${agentId}`);
-      console.log(`   Config: ${configPath}`);
-      
-      // Check config file status
-      if (await fs.pathExists(configPath)) {
-        try {
-          const agentConfig = await readAgentConfig(configPath);
-          const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-          console.log(`   Config Hash: ${configHash.substring(0, 8)}...`);
-          
-          // Check lock status for specified environment
-          if (lockedAgent) {
-            if (lockedAgent.hash === configHash) {
-              console.log(`   Status: Synced (${currentEnv})`);
-            } else {
-              console.log(`   Status: Config changed (needs push for ${currentEnv})`);
-            }
+    if (!configPath) {
+      continue;
+    }
+    
+    // Get agent ID from lock file
+    const lockedAgent = getAgentFromLock(lockData, agentNameCurrent);
+    const agentId = lockedAgent?.id || 'Not created yet';
+    
+    console.log(`\n${agentNameCurrent}`);
+    console.log(`   Agent ID: ${agentId}`);
+    console.log(`   Config: ${configPath}`);
+    
+    // Check config file status
+    if (await fs.pathExists(configPath)) {
+      try {
+        const agentConfig = await readAgentConfig(configPath);
+        const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
+        console.log(`   Config Hash: ${configHash.substring(0, 8)}...`);
+        
+        // Check lock status
+        if (lockedAgent) {
+          if (lockedAgent.hash === configHash) {
+            console.log(`   Status: Synced`);
           } else {
-            console.log(`   Status: New (needs push for ${currentEnv})`);
+            console.log(`   Status: Config changed (needs push)`);
           }
-          
-        } catch (error) {
-          console.log(`   Status: Config error: ${error}`);
+        } else {
+          console.log(`   Status: New (needs push)`);
         }
-      } else {
-        console.log('   Status: Config file not found');
+        
+      } catch (error) {
+        console.log(`   Status: Config error: ${error}`);
       }
+    } else {
+      console.log('   Status: Config file not found');
     }
   }
 }
 
-async function watchForChanges(agentName?: string, environment = 'prod', interval = 5): Promise<void> {
+async function watchForChanges(agentName?: string, interval = 5): Promise<void> {
   console.log(`Watching for config changes (checking every ${interval}s)...`);
   if (agentName) {
     console.log(`Agent: ${agentName}`);
   } else {
     console.log('Agent: All agents');
   }
-  console.log(`Environment: ${environment}`);
   console.log('Press Ctrl+C to stop');
   
   // Track file modification times
@@ -1476,25 +1351,13 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
       
       // Check individual agent config files
       for (const agentDef of agentsToWatch) {
-        const configPaths: string[] = [];
-        if (agentDef.environments) {
-          if (environment in agentDef.environments) {
-            configPaths.push(agentDef.environments[environment].config);
-          }
-        } else {
-          if (agentDef.config) {
-            configPaths.push(agentDef.config);
-          }
-        }
-        
-        for (const configPath of configPaths) {
-          if (await fs.pathExists(configPath)) {
-            const configMtime = await getFileMtime(configPath);
-            if (fileTimestamps.get(configPath) !== configMtime) {
-              fileTimestamps.set(configPath, configMtime);
-              console.log(`Detected change in ${configPath}`);
-              return true;
-            }
+        const configPath = agentDef.config;
+        if (configPath && await fs.pathExists(configPath)) {
+          const configMtime = await getFileMtime(configPath);
+          if (fileTimestamps.get(configPath) !== configMtime) {
+            fileTimestamps.set(configPath, configMtime);
+            console.log(`Detected change in ${configPath}`);
+            return true;
           }
         }
       }
@@ -1513,7 +1376,7 @@ async function watchForChanges(agentName?: string, environment = 'prod', interva
       if (await checkForChanges()) {
         console.log('Running push...');
         try {
-          await pushAgents(agentName, false, environment);
+          await pushAgents(agentName, false);
         } catch (error) {
           console.log(`Error during push: ${error}`);
         }
@@ -1548,17 +1411,8 @@ async function listConfiguredAgents(): Promise<void> {
   
   agentsConfig.agents.forEach((agentDef, i) => {
     console.log(`${i + 1}. ${agentDef.name}`);
-    
-    if (agentDef.environments) {
-      console.log('   Environments:');
-      Object.entries(agentDef.environments).forEach(([envName, envConfig]) => {
-        console.log(`     ${envName}: ${envConfig.config}`);
-      });
-    } else {
-      const configPath = agentDef.config || 'No config path';
-      console.log(`   Config: ${configPath}`);
-    }
-    
+    const configPath = agentDef.config || 'No config path';
+    console.log(`   Config: ${configPath}`);
     console.log();
   });
 }
@@ -1590,18 +1444,16 @@ async function pullAgents(options: PullOptions): Promise<void> {
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
-  // Load lock file to check for existing agent IDs per environment
+  // Load lock file to check for existing agent IDs
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
   const existingAgentIds = new Set<string>();
   
-  // Collect all existing agent IDs across all environments
-  Object.values(lockData.agents).forEach(environments => {
-    Object.values(environments).forEach(envData => {
-      if (envData.id) {
-        existingAgentIds.add(envData.id);
-      }
-    });
+  // Collect all existing agent IDs
+  Object.values(lockData.agents).forEach((agentData: any) => {
+    if (agentData && agentData.id) {
+      existingAgentIds.add(agentData.id);
+    }
   });
   
   let newAgentsAdded = 0;
@@ -1615,7 +1467,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
     }
     let agentNameRemote = agentMetaTyped.name;
     
-    // Skip if agent already exists by ID (in any environment)
+    // Skip if agent already exists by ID
     if (existingAgentIds.has(agentId)) {
       console.log(`Skipping '${agentNameRemote}' - already exists (ID: ${agentId})`);
       continue;
@@ -1633,7 +1485,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
     }
     
     if (options.dryRun) {
-      console.log(`[DRY RUN] Would pull agent: ${agentNameRemote} (ID: ${agentId}) for environment: ${options.env}`);
+      console.log(`[DRY RUN] Would pull agent: ${agentNameRemote} (ID: ${agentId})`);
       continue;
     }
     
@@ -1683,11 +1535,11 @@ async function pullAgents(options: PullOptions): Promise<void> {
       existingAgentNames.add(agentNameRemote);
       existingAgentIds.add(agentId);
       
-      // Update lock file with environment-specific agent ID
+      // Update lock file with agent ID
       const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-      updateAgentInLock(lockData, agentNameRemote, options.env, agentId, configHash);
+      updateAgentInLock(lockData, agentNameRemote, agentId, configHash);
       
-      console.log(`Added '${agentNameRemote}' (config: ${configPath}) for environment: ${options.env}`);
+      console.log(`Added '${agentNameRemote}' (config: ${configPath})`);
       newAgentsAdded++;
       
     } catch (error) {
@@ -1712,11 +1564,11 @@ async function pullAgents(options: PullOptions): Promise<void> {
       const id = agent.agentId || agent.agent_id;
       return id && !existingAgentIds.has(id);
     }).length;
-    console.log(`[DRY RUN] Would add ${newAgentsCount} new agent(s) for environment: ${options.env}`);
+    console.log(`[DRY RUN] Would add ${newAgentsCount} new agent(s)`);
   } else {
-    console.log(`Successfully added ${newAgentsAdded} new agent(s) for environment: ${options.env}`);
+    console.log(`Successfully added ${newAgentsAdded} new agent(s)`);
     if (newAgentsAdded > 0) {
-      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents push --env ${options.env}' to update`);
+      console.log(`You can now edit the config files in '${options.outputDir}/' and run 'agents push' to update`);
     }
   }
 }
@@ -1875,7 +1727,7 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
   }
 }
 
-async function generateWidget(name: string, environment: string): Promise<void> {
+async function generateWidget(name: string): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1894,11 +1746,11 @@ async function generateWidget(name: string, environment: string): Promise<void> 
     throw new Error(`Agent '${name}' not found in configuration`);
   }
   
-  // Get environment-specific agent data from lock file
-  const lockedAgent = getAgentFromLock(lockData, name, environment);
+  // Get agent data from lock file
+  const lockedAgent = getAgentFromLock(lockData, name);
   
   if (!lockedAgent?.id) {
-    throw new Error(`Agent '${name}' not found for environment '${environment}' or not yet pushed. Run 'agents push --agent ${name} --env ${environment}' to create the agent first`);
+    throw new Error(`Agent '${name}' not found or not yet pushed. Run 'agents push --agent ${name}' to create the agent first`);
   }
   
   const agentId = lockedAgent.id;
@@ -1916,7 +1768,7 @@ async function generateWidget(name: string, environment: string): Promise<void> 
   htmlSnippet += `></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
   
-  console.log(`HTML Widget for '${name}' (environment: ${environment}, residency: ${residency}):`);
+  console.log(`HTML Widget for '${name}' (residency: ${residency}):`);
   console.log('='.repeat(60));
   console.log(htmlSnippet);
   console.log('='.repeat(60));
@@ -2363,7 +2215,7 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
   }
 }
 
-async function runAgentTestsWithUI(agentName: string, environment: string): Promise<void> {
+async function runAgentTestsWithUI(agentName: string): Promise<void> {
   // Load agents configuration and get agent details
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -2380,25 +2232,16 @@ async function runAgentTestsWithUI(agentName: string, environment: string): Prom
   // Get agent ID from lock file
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
-  const lockedAgent = getAgentFromLock(lockData, agentName, environment);
+  const lockedAgent = getAgentFromLock(lockData, agentName);
 
   if (!lockedAgent?.id) {
-    throw new Error(`Agent '${agentName}' not found for environment '${environment}' or not yet pushed. Run 'agents push --agent ${agentName} --env ${environment}' to create the agent first`);
+    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
   }
 
   const agentId = lockedAgent.id;
 
   // Get agent config to find attached tests
-  let configPath: string | undefined;
-  if (agentDef.environments) {
-    if (environment in agentDef.environments) {
-      configPath = agentDef.environments[environment].config;
-    } else {
-      throw new Error(`Agent '${agentName}' not configured for environment '${environment}'`);
-    }
-  } else {
-    configPath = agentDef.config;
-  }
+  const configPath = agentDef.config;
 
   if (!configPath || !(await fs.pathExists(configPath))) {
     throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
@@ -2424,9 +2267,9 @@ async function runAgentTestsWithUI(agentName: string, environment: string): Prom
   await waitUntilExit();
 }
 
-async function runAgentTests(agentName: string, environment: string): Promise<void> {
+async function runAgentTests(agentName: string): Promise<void> {
   // Implementation for non-UI test running
-  console.log(`Running tests for agent '${agentName}' in environment '${environment}'`);
+  console.log(`Running tests for agent '${agentName}'`);
   // This would be similar to runAgentTestsWithUI but without the UI component
   throw new Error('Non-UI test running not yet implemented. Use --ui mode.');
 }

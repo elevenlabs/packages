@@ -5,7 +5,6 @@ import theme from '../themes/elevenlabs.js';
 
 interface PushAgent {
   name: string;
-  environment: string;
   configPath: string;
   status: 'pending' | 'checking' | 'pushing' | 'completed' | 'error' | 'skipped';
   message?: string;
@@ -129,9 +128,6 @@ export const PushView: React.FC<PushViewProps> = ({
             <Box width={30}>
               <Text color={theme.colors.text.muted} bold>NAME</Text>
             </Box>
-            <Box width={15}>
-              <Text color={theme.colors.text.muted} bold>ENV</Text>
-            </Box>
             <Box width={20}>
               <Text color={theme.colors.text.muted} bold>STATUS</Text>
             </Box>
@@ -174,9 +170,6 @@ export const PushView: React.FC<PushViewProps> = ({
               <Box key={index}>
                 <Box width={30}>
                   <Text color={theme.colors.text.primary}>{agent.name}</Text>
-                </Box>
-                <Box width={15}>
-                  <Text color={theme.colors.text.secondary}>{agent.environment}</Text>
                 </Box>
                 <Box width={20}>
                   <Text color={statusColor}>{statusText}</Text>

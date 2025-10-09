@@ -21,7 +21,6 @@ interface PullViewProps {
   outputDir: string;
   search?: string;
   dryRun: boolean;
-  environment: string;
   onComplete?: () => void;
 }
 
@@ -30,7 +29,6 @@ export const PullView: React.FC<PullViewProps> = ({
   outputDir,
   search,
   dryRun,
-  environment,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -69,12 +67,10 @@ export const PullView: React.FC<PullViewProps> = ({
         const lockData = await loadLockFile(lockFilePath);
         const existingAgentIds = new Set<string>();
 
-        Object.values(lockData.agents).forEach((environments: any) => {
-          Object.values(environments).forEach((envData: any) => {
-            if (envData.id) {
-              existingAgentIds.add(envData.id);
-            }
-          });
+        Object.values(lockData.agents).forEach((agentData: any) => {
+          if (agentData && agentData.id) {
+            existingAgentIds.add(agentData.id);
+          }
         });
 
         // Prepare agents for display
@@ -218,7 +214,7 @@ export const PullView: React.FC<PullViewProps> = ({
 
         // Update lock file
         const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-        updateAgentInLock(lockData, agentName, environment, agent.agentId, configHash);
+        updateAgentInLock(lockData, agentName, agent.agentId, configHash);
 
         setAgents(prev => prev.map((a, i) => 
           i === index ? { 
