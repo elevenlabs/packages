@@ -19,8 +19,7 @@ import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 interface AgentDefinition {
   name: string;
-  environments?: Record<string, { config: string }>;
-  config?: string;
+  config: string;
 }
 
 // Mock the entire elevenlabs-api module
@@ -83,18 +82,13 @@ describe("Sync Integration Tests", () => {
       // Setup: Create initial agent configuration
       const agentName = "Test Agent";
       const agentId = "agent_123";
-      const environment = "prod";
 
       // Create agents.json
       const agentsConfig = {
         agents: [
           {
             name: agentName,
-            environments: {
-              [environment]: {
-                config: `agent_configs/${environment}/test_agent.json`,
-              },
-            },
+            config: `agent_configs/test_agent.json`,
           },
         ],
       };
@@ -104,7 +98,7 @@ describe("Sync Integration Tests", () => {
       const initialConfig = getDefaultAgentTemplate(agentName);
       const configPath = path.join(
         tempDir,
-        agentsConfig.agents[0].environments[environment].config
+        agentsConfig.agents[0].config
       );
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, initialConfig);
@@ -113,10 +107,8 @@ describe("Sync Integration Tests", () => {
       const lockData = {
         agents: {
           [agentName]: {
-            [environment]: {
-              id: agentId,
-              hash: "old_hash_that_will_not_match",
-            },
+            id: agentId,
+            hash: "old_hash_that_will_not_match",
           },
         },
         tools: {},
@@ -145,7 +137,7 @@ describe("Sync Integration Tests", () => {
       const { pushAgentsWithMocks } = await createPushFunction();
 
       // Execute push
-      await pushAgentsWithMocks(tempDir, agentName, false, environment);
+      await pushAgentsWithMocks(tempDir, agentName, false);
 
       // Verify that updateAgentApi was called
       expect(mockedElevenLabsApi.updateAgentApi).toHaveBeenCalledTimes(1);
@@ -163,18 +155,13 @@ describe("Sync Integration Tests", () => {
       // Setup: Create agent configuration
       const agentName = "Test Agent";
       const agentId = "agent_123";
-      const environment = "prod";
 
       // Create agents.json
       const agentsConfig = {
         agents: [
           {
             name: agentName,
-            environments: {
-              [environment]: {
-                config: `agent_configs/${environment}/test_agent.json`,
-              },
-            },
+            config: `agent_configs/test_agent.json`,
           },
         ],
       };
@@ -184,7 +171,7 @@ describe("Sync Integration Tests", () => {
       const agentConfig = getDefaultAgentTemplate(agentName);
       const configPath = path.join(
         tempDir,
-        agentsConfig.agents[0].environments[environment].config
+        agentsConfig.agents[0].config
       );
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, agentConfig);
@@ -194,10 +181,8 @@ describe("Sync Integration Tests", () => {
       const lockData = {
         agents: {
           [agentName]: {
-            [environment]: {
-              id: agentId,
-              hash: configHash,
-            },
+            id: agentId,
+            hash: configHash,
           },
         },
         tools: {},
@@ -209,7 +194,7 @@ describe("Sync Integration Tests", () => {
       const { pushAgentsWithMocks } = await createPushFunction();
 
       // Execute push
-      await pushAgentsWithMocks(tempDir, agentName, false, environment);
+      await pushAgentsWithMocks(tempDir, agentName, false);
 
       // Verify that updateAgentApi was NOT called
       expect(mockedElevenLabsApi.updateAgentApi).not.toHaveBeenCalled();
@@ -219,18 +204,13 @@ describe("Sync Integration Tests", () => {
       // Setup: Create agent with changed config
       const agentName = "Test Agent";
       const agentId = "agent_123";
-      const environment = "prod";
 
       // Create agents.json
       const agentsConfig = {
         agents: [
           {
             name: agentName,
-            environments: {
-              [environment]: {
-                config: `agent_configs/${environment}/test_agent.json`,
-              },
-            },
+            config: `agent_configs/test_agent.json`,
           },
         ],
       };
@@ -242,7 +222,7 @@ describe("Sync Integration Tests", () => {
         "Modified prompt";
       const configPath = path.join(
         tempDir,
-        agentsConfig.agents[0].environments[environment].config
+        agentsConfig.agents[0].config
       );
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, modifiedConfig);
@@ -251,10 +231,8 @@ describe("Sync Integration Tests", () => {
       const lockData = {
         agents: {
           [agentName]: {
-            [environment]: {
-              id: agentId,
-              hash: "old_hash_value",
-            },
+            id: agentId,
+            hash: "old_hash_value",
           },
         },
         tools: {},
@@ -266,13 +244,13 @@ describe("Sync Integration Tests", () => {
       const { pushAgentsWithMocks } = await createPushFunction();
 
       // Execute push
-      await pushAgentsWithMocks(tempDir, agentName, false, environment);
+      await pushAgentsWithMocks(tempDir, agentName, false);
 
       // Verify lock file was updated with new hash
       const updatedLockData = await loadLockFile(lockFilePath);
       const newHash = calculateConfigHash(modifiedConfig);
-      expect(updatedLockData.agents[agentName][environment].hash).toBe(newHash);
-      expect(updatedLockData.agents[agentName][environment].hash).not.toBe(
+      expect(updatedLockData.agents[agentName].hash).toBe(newHash);
+      expect(updatedLockData.agents[agentName].hash).not.toBe(
         "old_hash_value"
       );
     });
@@ -281,7 +259,6 @@ describe("Sync Integration Tests", () => {
       // Setup: Create agent configuration
       const agentName = "Test Agent";
       const agentId = "agent_123";
-      const environment = "prod";
 
       // Mock API to throw an error
       mockedElevenLabsApi.updateAgentApi.mockRejectedValue(
@@ -293,11 +270,7 @@ describe("Sync Integration Tests", () => {
         agents: [
           {
             name: agentName,
-            environments: {
-              [environment]: {
-                config: `agent_configs/${environment}/test_agent.json`,
-              },
-            },
+            config: `agent_configs/test_agent.json`,
           },
         ],
       };
@@ -309,7 +282,7 @@ describe("Sync Integration Tests", () => {
         "Modified prompt";
       const configPath = path.join(
         tempDir,
-        agentsConfig.agents[0].environments[environment].config
+        agentsConfig.agents[0].config
       );
       await fs.ensureDir(path.dirname(configPath));
       await writeAgentConfig(configPath, modifiedConfig);
@@ -318,10 +291,8 @@ describe("Sync Integration Tests", () => {
       const lockData = {
         agents: {
           [agentName]: {
-            [environment]: {
-              id: agentId,
-              hash: "old_hash",
-            },
+            id: agentId,
+            hash: "old_hash",
           },
         },
         tools: {},
@@ -333,14 +304,14 @@ describe("Sync Integration Tests", () => {
       const { pushAgentsWithMocks } = await createPushFunction();
 
       // Execute push and expect it to handle the error
-      await pushAgentsWithMocks(tempDir, agentName, false, environment);
+      await pushAgentsWithMocks(tempDir, agentName, false);
 
       // Verify API was called but failed
       expect(mockedElevenLabsApi.updateAgentApi).toHaveBeenCalledTimes(1);
 
       // Verify lock file was NOT updated due to error
       const lockDataAfter = await loadLockFile(lockFilePath);
-      expect(lockDataAfter.agents[agentName][environment].hash).toBe(
+      expect(lockDataAfter.agents[agentName].hash).toBe(
         "old_hash"
       );
     });
@@ -353,8 +324,7 @@ async function createPushFunction() {
   async function pushAgentsWithMocks(
     projectPath: string,
     agentName?: string,
-    dryRun = false,
-    environment?: string
+    dryRun = false
   ): Promise<void> {
     const AGENTS_CONFIG_FILE = "agents.json";
     const LOCK_FILE = "agents.lock";
@@ -379,96 +349,74 @@ async function createPushFunction() {
       );
     }
 
-    // Determine environments to push
-    let environmentsToSync: string[] = [];
-    if (environment) {
-      environmentsToSync = [environment];
-    } else {
-      const envSet = new Set<string>();
-      for (const agentDef of agentsToProcess) {
-        if (agentDef.environments) {
-          Object.keys(agentDef.environments).forEach(env => envSet.add(env));
-        }
-      }
-      environmentsToSync = Array.from(envSet);
-    }
-
     let changesMade = false;
 
-    for (const currentEnv of environmentsToSync) {
-      for (const agentDef of agentsToProcess) {
-        const agentDefName = agentDef.name;
+    for (const agentDef of agentsToProcess) {
+      const agentDefName = agentDef.name;
 
-        // Get config path for current environment
-        let configPath: string | undefined;
-        if (agentDef.environments && currentEnv in agentDef.environments) {
-          configPath = agentDef.environments[currentEnv].config;
-        } else {
-          continue;
+      // Get config path
+      const configPath = agentDef.config;
+
+      // Check if config file exists
+      if (!configPath) {
+        continue;
+      }
+      const fullConfigPath = path.join(projectPath, configPath);
+      if (!(await fs.pathExists(fullConfigPath))) {
+        continue;
+      }
+
+      // Load agent config
+      const agentConfig = await fs.readJson(fullConfigPath);
+
+      // Calculate config hash
+      const configHash = calculateConfigHash(agentConfig);
+
+      // Get agent data from lock file
+      const lockedAgent = lockData.agents?.[agentDefName];
+
+      let needsUpdate = true;
+
+      if (lockedAgent && lockedAgent.hash === configHash) {
+        needsUpdate = false;
+      }
+
+      if (!needsUpdate || dryRun) {
+        continue;
+      }
+
+      // Perform API operation
+      try {
+        const agentId = lockedAgent?.id;
+
+        // Extract config components
+        const conversationConfig = agentConfig.conversation_config || {};
+        const platformSettings = agentConfig.platform_settings;
+        const tags = agentConfig.tags || [];
+
+        const agentDisplayName = agentConfig.name || agentDefName;
+
+        if (agentId) {
+          // Update existing agent
+          await mockedElevenLabsApi.updateAgentApi(
+            client!,
+            agentId,
+            agentDisplayName,
+            conversationConfig,
+            platformSettings,
+            tags
+          );
+          updateAgentInLock(
+            lockData,
+            agentDefName,
+            agentId,
+            configHash
+          );
+          changesMade = true;
         }
-
-        // Check if config file exists
-        if (!configPath) {
-          continue;
-        }
-        const fullConfigPath = path.join(projectPath, configPath);
-        if (!(await fs.pathExists(fullConfigPath))) {
-          continue;
-        }
-
-        // Load agent config
-        const agentConfig = await fs.readJson(fullConfigPath);
-
-        // Calculate config hash
-        const configHash = calculateConfigHash(agentConfig);
-
-        // Get environment-specific agent data from lock file
-        const lockedAgent = lockData.agents?.[agentDefName]?.[currentEnv];
-
-        let needsUpdate = true;
-
-        if (lockedAgent && lockedAgent.hash === configHash) {
-          needsUpdate = false;
-        }
-
-        if (!needsUpdate || dryRun) {
-          continue;
-        }
-
-        // Perform API operation
-        try {
-          const agentId = lockedAgent?.id;
-
-          // Extract config components
-          const conversationConfig = agentConfig.conversation_config || {};
-          const platformSettings = agentConfig.platform_settings;
-          const tags = agentConfig.tags || [];
-
-          const agentDisplayName = agentConfig.name || agentDefName;
-
-          if (agentId) {
-            // Update existing agent
-            await mockedElevenLabsApi.updateAgentApi(
-              client!,
-              agentId,
-              agentDisplayName,
-              conversationConfig,
-              platformSettings,
-              tags
-            );
-            updateAgentInLock(
-              lockData,
-              agentDefName,
-              currentEnv,
-              agentId,
-              configHash
-            );
-            changesMade = true;
-          }
-        } catch (error) {
-          // Log error but continue (matches CLI behavior)
-          console.log(`Error processing ${agentDefName}: ${error}`);
-        }
+      } catch (error) {
+        // Log error but continue (matches CLI behavior)
+        console.log(`Error processing ${agentDefName}: ${error}`);
       }
     }
 

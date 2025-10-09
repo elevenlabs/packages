@@ -10,7 +10,6 @@ import fs from 'fs-extra';
 
 interface AgentStatus {
   name: string;
-  environment: string; // Keep for backward compatibility but unused
   configPath: string;
   configExists: boolean;
   configHash?: string;
@@ -96,7 +95,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
 
           statusList.push({
             name: agentDef.name,
-            environment: '',
             configPath,
             configExists,
             configHash,

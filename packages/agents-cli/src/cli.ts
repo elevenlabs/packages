@@ -1444,7 +1444,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
-  // Load lock file to check for existing agent IDs per environment
+  // Load lock file to check for existing agent IDs
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
   const existingAgentIds = new Set<string>();
@@ -1467,7 +1467,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
     }
     let agentNameRemote = agentMetaTyped.name;
     
-    // Skip if agent already exists by ID (in any environment)
+    // Skip if agent already exists by ID
     if (existingAgentIds.has(agentId)) {
       console.log(`Skipping '${agentNameRemote}' - already exists (ID: ${agentId})`);
       continue;

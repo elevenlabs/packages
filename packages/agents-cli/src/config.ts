@@ -17,7 +17,6 @@ export type Location = (typeof LOCATIONS)[number];
 
 export interface CliConfig {
   apiKey?: string;
-  defaultEnvironment?: string;
   residency?: Location;
   [key: string]: unknown;
 }
@@ -96,23 +95,6 @@ export async function removeApiKey(): Promise<void> {
  */
 export async function isLoggedIn(): Promise<boolean> {
   return await hasApiKey();
-}
-
-/**
- * Get default environment from config
- */
-export async function getDefaultEnvironment(): Promise<string> {
-  const config = await loadConfig();
-  return config.defaultEnvironment || 'prod';
-}
-
-/**
- * Set default environment in config
- */
-export async function setDefaultEnvironment(environment: string): Promise<void> {
-  const config = await loadConfig();
-  config.defaultEnvironment = environment;
-  await saveConfig(config);
 }
 
 /**

@@ -7,7 +7,6 @@ import theme from '../themes/elevenlabs.js';
 
 interface AgentStatus {
   name: string;
-  environment: string;
   agentId: string;
   configPath: string;
   configHash: string;
@@ -79,15 +78,6 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
   const newAgents = agents.filter(a => a.syncStatus === 'new').length;
   const errorAgents = agents.filter(a => a.syncStatus === 'error').length;
 
-  // Group agents by environment
-  const agentsByEnv = agents.reduce((acc, agent) => {
-    if (!acc[agent.environment]) {
-      acc[agent.environment] = [];
-    }
-    acc[agent.environment].push(agent);
-    return acc;
-  }, {} as Record<string, AgentStatus[]>);
-
   return (
     <App 
       title="Agents Status" 
@@ -102,7 +92,7 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
               changedAgents > 0 || newAgents > 0 ? 'warning' :
               'success'
             }
-            message={`${totalAgents} total agents across ${Object.keys(agentsByEnv).length} environments`}
+            message={`${totalAgents} total agents`}
             details={[
               `✓ ${syncedAgents} synced`,
               `⚠ ${changedAgents} changed`,
@@ -112,55 +102,44 @@ export const StatusDashboard: React.FC<StatusDashboardProps> = ({
           />
         </Box>
 
-        {/* Agents by Environment */}
+        {/* Agents List */}
         <Box flexDirection="column">
-          {Object.entries(agentsByEnv).map(([env, envAgents]) => (
-            <Box key={env} flexDirection="column" marginBottom={2}>
-              <Box marginBottom={1}>
-                <Text color={theme.colors.accent.primary} bold>
-                  Environment: {env.toUpperCase()}
-                </Text>
-              </Box>
-              
-              {envAgents.map((agent, index) => {
-                const globalIndex = agents.indexOf(agent);
-                const isSelected = globalIndex === selectedAgent && interactive;
-                
-                let status: 'success' | 'warning' | 'error' | 'idle';
-                if (agent.syncStatus === 'synced') status = 'success';
-                else if (agent.syncStatus === 'changed') status = 'warning';
-                else if (agent.syncStatus === 'new') status = 'idle';
-                else status = 'error';
+          {agents.map((agent, index) => {
+            const isSelected = index === selectedAgent && interactive;
+            
+            let status: 'success' | 'warning' | 'error' | 'idle';
+            if (agent.syncStatus === 'synced') status = 'success';
+            else if (agent.syncStatus === 'changed') status = 'warning';
+            else if (agent.syncStatus === 'new') status = 'idle';
+            else status = 'error';
 
-                const details: string[] = [];
-                if (showingDetails) {
-                  details.push(`ID: ${agent.agentId}`);
-                  details.push(`Config: ${agent.configPath}`);
-                  if (agent.lastSynced) {
-                    details.push(`Last push: ${agent.lastSynced.toLocaleString()}`);
+            const details: string[] = [];
+            if (showingDetails) {
+              details.push(`ID: ${agent.agentId}`);
+              details.push(`Config: ${agent.configPath}`);
+              if (agent.lastSynced) {
+                details.push(`Last push: ${agent.lastSynced.toLocaleString()}`);
+              }
+              details.push(`Hash: ${agent.configHash.substring(0, 8)}...`);
+            }
+
+            return (
+              <Box key={index} marginBottom={1}>
+                <StatusCard
+                  title={isSelected ? `▶ ${agent.name}` : agent.name}
+                  status={status}
+                  message={
+                    agent.syncStatus === 'synced' ? 'Up to date' :
+                    agent.syncStatus === 'changed' ? 'Config changed - needs push' :
+                    agent.syncStatus === 'new' ? 'New agent - needs push' :
+                    'Configuration error'
                   }
-                  details.push(`Hash: ${agent.configHash.substring(0, 8)}...`);
-                }
-
-                return (
-                  <Box key={index} marginLeft={2}>
-                    <StatusCard
-                      title={isSelected ? `▶ ${agent.name}` : agent.name}
-                      status={status}
-                      message={
-                        agent.syncStatus === 'synced' ? 'Up to date' :
-                        agent.syncStatus === 'changed' ? 'Config changed - needs push' :
-                        agent.syncStatus === 'new' ? 'New agent - needs push' :
-                        'Configuration error'
-                      }
-                      details={details}
-                      borderStyle={isSelected ? 'double' : 'single'}
-                    />
-                  </Box>
-                );
-              })}
-            </Box>
-          ))}
+                  details={details}
+                  borderStyle={isSelected ? 'double' : 'single'}
+                />
+              </Box>
+            );
+          })}
         </Box>
 
         {/* Interactive Controls */}

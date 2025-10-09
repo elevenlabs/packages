@@ -212,10 +212,8 @@ describe("Test Lock File Management", () => {
       const lockData: LockFileData = {
         agents: {
           agent1: {
-            prod: {
-              id: "agent_id",
-              hash: "agent_hash",
-            },
+            id: "agent_id",
+            hash: "agent_hash",
           },
         },
         tools: {
@@ -231,7 +229,7 @@ describe("Test Lock File Management", () => {
       updateTestInLock(lockData, "test1", "test_id1", "test_hash1");
 
       // Verify agents and tools are unchanged
-      expect(lockData.agents["agent1"]["prod"]).toEqual({
+      expect(lockData.agents["agent1"]).toEqual({
         id: "agent_id",
         hash: "agent_hash",
       });
