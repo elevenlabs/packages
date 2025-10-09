@@ -82,6 +82,7 @@ import LogoutView from './ui/views/LogoutView.js';
 import ResidencyView from './ui/views/ResidencyView.js';
 import HelpView from './ui/views/HelpView.js';
 import PullToolsView from './ui/views/PullToolsView.js';
+import PullView from './ui/views/PullView.js';
 import TestView from './ui/views/TestView.js';
 import AddTestView from './ui/views/AddTestView.js';
 import { spawnSync } from 'child_process';
@@ -814,9 +815,25 @@ program
   .option('--search <term>', 'Search agents by name')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--env <environment>', 'Environment to associate pulled agents with', 'prod')
-  .action(async (options: PullOptions) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: PullOptions & { ui: boolean }) => {
     try {
-      await pullAgents(options);
+      if (options.ui !== false) {
+        // Use Ink UI for pull
+        const { waitUntilExit } = render(
+          React.createElement(PullView, {
+            agent: options.agent,
+            outputDir: options.outputDir,
+            search: options.search,
+            dryRun: options.dryRun,
+            environment: options.env
+          })
+        );
+        await waitUntilExit();
+      } else {
+        // Use existing non-UI pull
+        await pullAgents(options);
+      }
     } catch (error) {
       console.error(`Error pulling agents: ${error}`);
       process.exit(1);
