@@ -25,7 +25,7 @@ interface Command {
 const commands: Command[] = [
   {
     name: "init [path]",
-    description: "Initialize a new agent management project",
+    description: "Initialize project (use --override to recreate from scratch)",
   },
   {
     name: "login",

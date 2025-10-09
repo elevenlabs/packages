@@ -85,6 +85,9 @@ agents logout
 # 1. Initialize project
 agents init
 
+# Or override existing configuration
+agents init --override
+
 # 2. Login with API key
 agents login
 
@@ -117,11 +120,34 @@ your_project/
 
 ## Commands
 
+### Initialize Project
+
+The `agents init` command sets up the project structure for managing ElevenLabs agents:
+
+```bash
+agents init                    # Initialize in current directory
+agents init ./my-project       # Initialize in specific directory
+agents init --override         # Override existing files and recreate from scratch
+```
+
+**Default behavior**: When you run `agents init`, it will:
+- Create missing files and directories
+- Skip existing files (shown as "skipped" in output)
+- Preserve your existing configuration
+
+**Override mode** (`--override`): When you need to reset your project:
+- Overwrites all configuration files
+- Recreates directory structure from scratch
+- ⚠️ **Warning**: This will delete all existing configurations in `agent_configs/`, `tool_configs/`, and `test_configs/`
+
+Use `--override` when:
+- You want to start fresh with a clean configuration
+- Your configuration has become inconsistent
+- You're setting up a new environment and want to ensure clean state
+
 ### Core Commands
 
 ```bash
-# Initialize project
-agents init
 
 # Authentication
 agents login

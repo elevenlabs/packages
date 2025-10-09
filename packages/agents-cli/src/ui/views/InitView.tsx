@@ -7,18 +7,19 @@ import theme from '../themes/elevenlabs.js';
 
 interface InitViewProps {
   projectPath: string;
+  override?: boolean;
   onComplete?: () => void;
 }
 
 interface InitStep {
   name: string;
   description: string;
-  action: () => Promise<void>;
-  status: 'pending' | 'running' | 'completed' | 'error';
+  action: () => Promise<'created' | 'skipped'>;
+  status: 'pending' | 'running' | 'completed' | 'skipped' | 'error';
   error?: string;
 }
 
-export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) => {
+export const InitView: React.FC<InitViewProps> = ({ projectPath, override = false, onComplete }) => {
   const { exit } = useApp();
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<InitStep[]>([]);
@@ -31,7 +32,9 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       name: 'Create project directory',
       description: 'Setting up project structure',
       action: async () => {
+        const exists = await fs.pathExists(fullPath);
         await fs.ensureDir(fullPath);
+        return exists ? 'skipped' : 'created';
       },
       status: 'pending',
     },
@@ -40,9 +43,12 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       description: 'Initializing agent configuration',
       action: async () => {
         const agentsConfigPath = path.join(fullPath, 'agents.json');
-        if (!(await fs.pathExists(agentsConfigPath))) {
+        const exists = await fs.pathExists(agentsConfigPath);
+        if (override || !exists) {
           await fs.writeJson(agentsConfigPath, { agents: [] }, { spaces: 2 });
+          return 'created';
         }
+        return 'skipped';
       },
       status: 'pending',
     },
@@ -51,9 +57,12 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       description: 'Initializing tools configuration',
       action: async () => {
         const toolsConfigPath = path.join(fullPath, 'tools.json');
-        if (!(await fs.pathExists(toolsConfigPath))) {
+        const exists = await fs.pathExists(toolsConfigPath);
+        if (override || !exists) {
           await fs.writeJson(toolsConfigPath, { tools: [] }, { spaces: 2 });
+          return 'created';
         }
+        return 'skipped';
       },
       status: 'pending',
     },
@@ -62,9 +71,12 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       description: 'Initializing tests configuration',
       action: async () => {
         const testsConfigPath = path.join(fullPath, 'tests.json');
-        if (!(await fs.pathExists(testsConfigPath))) {
+        const exists = await fs.pathExists(testsConfigPath);
+        if (override || !exists) {
           await fs.writeJson(testsConfigPath, { tests: [] }, { spaces: 2 });
+          return 'created';
         }
+        return 'skipped';
       },
       status: 'pending',
     },
@@ -79,8 +91,25 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
           'tool_configs',
           'test_configs',
         ];
-        for (const dir of dirs) {
-          await fs.ensureDir(path.join(fullPath, dir));
+        if (override) {
+          // In override mode, remove and recreate directories
+          for (const dir of dirs) {
+            const dirPath = path.join(fullPath, dir);
+            await fs.remove(dirPath);
+            await fs.ensureDir(dirPath);
+          }
+          return 'created';
+        } else {
+          // In normal mode, only create if they don't exist
+          let anyCreated = false;
+          for (const dir of dirs) {
+            const dirPath = path.join(fullPath, dir);
+            if (!(await fs.pathExists(dirPath))) {
+              await fs.ensureDir(dirPath);
+              anyCreated = true;
+            }
+          }
+          return anyCreated ? 'created' : 'skipped';
         }
       },
       status: 'pending',
@@ -90,9 +119,12 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       description: 'Initializing version lock',
       action: async () => {
         const lockFilePath = path.join(fullPath, 'agents.lock');
-        if (!(await fs.pathExists(lockFilePath))) {
+        const exists = await fs.pathExists(lockFilePath);
+        if (override || !exists) {
           await fs.writeJson(lockFilePath, { agents: {}, tools: {}, tests: {} }, { spaces: 2 });
+          return 'created';
         }
+        return 'skipped';
       },
       status: 'pending',
     },
@@ -101,10 +133,13 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       description: 'Adding environment template',
       action: async () => {
         const envExamplePath = path.join(fullPath, '.env.example');
-        if (!(await fs.pathExists(envExamplePath))) {
+        const exists = await fs.pathExists(envExamplePath);
+        if (override || !exists) {
           const envContent = `# ElevenLabs API Key\nELEVENLABS_API_KEY=your_api_key_here\n`;
           await fs.writeFile(envExamplePath, envContent);
+          return 'created';
         }
+        return 'skipped';
       },
       status: 'pending',
     },
@@ -128,11 +163,11 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       ));
 
       try {
-        await step.action();
+        const result = await step.action();
         
-        // Update step status to completed
+        // Update step status based on result (completed or skipped)
         setSteps(prev => prev.map((s, i) => 
-          i === currentStep ? { ...s, status: 'completed' } : s
+          i === currentStep ? { ...s, status: result === 'created' ? 'completed' : 'skipped' } : s
         ));
         
         // Move to next step
@@ -169,6 +204,13 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
       headerMarginBottom={1}
     >
       <Box flexDirection="column">
+        {override && (
+          <Box marginBottom={1} paddingX={1}>
+            <Text color={theme.colors.warning}>
+              ⚠ Override mode: existing files will be overwritten
+            </Text>
+          </Box>
+        )}
         <Box 
           flexDirection="column" 
           borderStyle="round"
@@ -183,15 +225,21 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
           
           {steps.map((step, index) => {
             const isCompleted = step.status === 'completed';
+            const isSkipped = step.status === 'skipped';
             const isRunning = step.status === 'running';
             const isError = step.status === 'error';
             
             let icon = '○'; // gray circle for pending
             let color = theme.colors.text.muted;
+            let statusText = '';
             
             if (isCompleted) {
               icon = '✓';
               color = theme.colors.success;
+            } else if (isSkipped) {
+              icon = '○';
+              color = theme.colors.text.muted;
+              statusText = ' (skipped)';
             } else if (isRunning) {
               icon = '●';
               color = theme.colors.accent.primary;
@@ -204,7 +252,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, onComplete }) =
               <Box key={index} flexDirection="column">
                 <Box>
                   <Text color={color}>
-                    {icon} {step.name}
+                    {icon} {step.name}{statusText}
                   </Text>
                 </Box>
                 {step.error && (

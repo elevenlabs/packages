@@ -190,26 +190,30 @@ program
   .description('Initialize a new agent management project')
   .argument('[path]', 'Path to initialize the project in', '.')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (projectPath: string, options: { ui: boolean }) => {
+  .option('--override', 'Override existing files and recreate from scratch', false)
+  .action(async (projectPath: string, options: { ui: boolean; override: boolean }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for initialization
         const { waitUntilExit } = render(
-          React.createElement(InitView, { projectPath })
+          React.createElement(InitView, { projectPath, override: options.override })
         );
         await waitUntilExit();
       } else {
         // Fallback to original implementation
         const fullPath = path.resolve(projectPath);
         console.log(`Initializing project in ${fullPath}`);
+        if (options.override) {
+          console.log('⚠ Override mode: existing files will be overwritten');
+        }
         
         // Create directory if it doesn't exist
         await fs.ensureDir(fullPath);
         
         // Create agents.json file
         const agentsConfigPath = path.join(fullPath, AGENTS_CONFIG_FILE);
-        if (await fs.pathExists(agentsConfigPath)) {
-          console.log(`${AGENTS_CONFIG_FILE} already exists, skipping creation`);
+        if (!options.override && await fs.pathExists(agentsConfigPath)) {
+          console.log(`${AGENTS_CONFIG_FILE} already exists (skipped)`);
         } else {
           const initialConfig: AgentsConfig = {
             agents: []
@@ -220,8 +224,8 @@ program
         
         // Create tools.json file
         const toolsConfigPath = path.join(fullPath, TOOLS_CONFIG_FILE);
-        if (await fs.pathExists(toolsConfigPath)) {
-          console.log(`${TOOLS_CONFIG_FILE} already exists, skipping creation`);
+        if (!options.override && await fs.pathExists(toolsConfigPath)) {
+          console.log(`${TOOLS_CONFIG_FILE} already exists (skipped)`);
         } else {
           const initialToolsConfig: ToolsConfig = {
             tools: []
@@ -232,8 +236,8 @@ program
 
         // Create tests.json file
         const testsConfigPath = path.join(fullPath, TESTS_CONFIG_FILE);
-        if (await fs.pathExists(testsConfigPath)) {
-          console.log(`${TESTS_CONFIG_FILE} already exists, skipping creation`);
+        if (!options.override && await fs.pathExists(testsConfigPath)) {
+          console.log(`${TESTS_CONFIG_FILE} already exists (skipped)`);
         } else {
           const initialTestsConfig: TestsConfig = {
             tests: []
@@ -246,14 +250,18 @@ program
         const configDirs = ['agent_configs/dev', 'agent_configs/staging', 'agent_configs/prod', 'tool_configs', 'test_configs'];
         for (const dir of configDirs) {
           const dirPath = path.join(fullPath, dir);
+          if (options.override && await fs.pathExists(dirPath)) {
+            await fs.remove(dirPath);
+          }
           await fs.ensureDir(dirPath);
-          console.log(`Created directory: ${dir}`);
+          const existed = await fs.pathExists(dirPath);
+          console.log(`Created directory: ${dir}${!options.override && existed ? ' (already existed)' : ''}`);
         }
         
         // Create initial lock file
         const lockFilePath = path.join(fullPath, LOCK_FILE);
-        if (await fs.pathExists(lockFilePath)) {
-          console.log(`${LOCK_FILE} already exists, skipping creation`);
+        if (!options.override && await fs.pathExists(lockFilePath)) {
+          console.log(`${LOCK_FILE} already exists (skipped)`);
         } else {
           const initialLockData = {
             agents: {},
@@ -266,7 +274,9 @@ program
         
         // Create .env.example file
         const envExamplePath = path.join(fullPath, '.env.example');
-        if (!(await fs.pathExists(envExamplePath))) {
+        if (!options.override && await fs.pathExists(envExamplePath)) {
+          console.log('.env.example already exists (skipped)');
+        } else {
           const envExample = `# ElevenLabs API Key
 ELEVENLABS_API_KEY=your_api_key_here
 `;
