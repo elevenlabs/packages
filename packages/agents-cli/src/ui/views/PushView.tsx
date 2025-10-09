@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 
 interface PushAgent {
@@ -120,86 +118,95 @@ export const PushView: React.FC<PushViewProps> = ({
       title="ElevenLabs Agents" 
     >
       <Box flexDirection="column">
-        {/* Summary */}
-        <Box marginBottom={2}>
-          <StatusCard
-            title="Push Progress"
-            status={complete ? 'success' : 'loading'}
-            message={
-              complete 
-                ? `Completed: ${pushedCount} pushed, ${skippedCount} skipped, ${errorCount} errors`
-                : `Processing ${currentAgentIndex + 1} of ${totalAgents} agents`
-            }
-          />
-        </Box>
-
-        {/* Progress Bar */}
-        <ProgressFlow 
-          value={progress} 
-          label="Overall Progress"
-          showWave={true}
-        />
-
-        {/* Agent Status List */}
-        <Box flexDirection="column" marginTop={2}>
-          <Box marginBottom={1}>
-            <Text color={theme.colors.text.primary} bold>
-              Agents:
-            </Text>
+        {/* Agent Status List - Compact Table */}
+        <Box flexDirection="column">
+          <Text color={theme.colors.text.primary} bold>
+            Agents:
+          </Text>
+          
+          {/* Table Header */}
+          <Box marginTop={1}>
+            <Box width={30}>
+              <Text color={theme.colors.text.muted} bold>NAME</Text>
+            </Box>
+            <Box width={15}>
+              <Text color={theme.colors.text.muted} bold>ENV</Text>
+            </Box>
+            <Box width={20}>
+              <Text color={theme.colors.text.muted} bold>STATUS</Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.text.muted} bold>MESSAGE</Text>
+            </Box>
           </Box>
+          
+          {/* Separator */}
+          <Box marginY={0}>
+            <Text color={theme.colors.text.muted}>{'─'.repeat(80)}</Text>
+          </Box>
+          
+          {/* Table Rows */}
           {pushedAgents.map((agent, index) => {
-            let status: 'loading' | 'success' | 'error' | 'idle' | 'warning';
-            if (agent.status === 'checking' || agent.status === 'pushing') {
-              status = 'loading';
+            let statusColor: string;
+            let statusText: string;
+            
+            if (agent.status === 'checking') {
+              statusColor = theme.colors.text.muted;
+              statusText = '⋯ Checking';
+            } else if (agent.status === 'pushing') {
+              statusColor = theme.colors.accent.primary;
+              statusText = '↑ Pushing';
             } else if (agent.status === 'completed') {
-              status = 'success';
+              statusColor = theme.colors.success;
+              statusText = '✓ Pushed';
             } else if (agent.status === 'error') {
-              status = 'error';
+              statusColor = theme.colors.error;
+              statusText = '✗ Error';
             } else if (agent.status === 'skipped') {
-              status = 'idle';
+              statusColor = theme.colors.text.muted;
+              statusText = '○ Skipped';
             } else {
-              status = 'idle';
+              statusColor = theme.colors.text.muted;
+              statusText = '○ Pending';
             }
-
-            const title = `${agent.name} (${agent.environment})`;
-            const message = agent.status === 'pushing' 
-              ? 'Pushing to ElevenLabs...'
-              : agent.message;
 
             return (
-              <StatusCard
-                key={index}
-                title={title}
-                status={status}
-                message={message}
-                details={agent.agentId ? [`ID: ${agent.agentId}`] : []}
-                borderStyle="single"
-              />
+              <Box key={index}>
+                <Box width={30}>
+                  <Text color={theme.colors.text.primary}>{agent.name}</Text>
+                </Box>
+                <Box width={15}>
+                  <Text color={theme.colors.text.secondary}>{agent.environment}</Text>
+                </Box>
+                <Box width={20}>
+                  <Text color={statusColor}>{statusText}</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.colors.text.muted}>
+                    {agent.message || ''}
+                  </Text>
+                </Box>
+              </Box>
             );
           })}
         </Box>
 
-        {/* Completion Message */}
+        {/* Completion Summary */}
         {complete && (
           <Box marginTop={2} flexDirection="column">
-            <Text color={theme.colors.success} bold>
-              ✓ Push completed successfully!
+            <Text color={theme.colors.text.secondary}>
+              {pushedCount} agent(s) pushed
             </Text>
-            <Box marginTop={1}>
+            {skippedCount > 0 && (
               <Text color={theme.colors.text.secondary}>
-                {pushedCount} agent(s) pushed
+                {skippedCount} agent(s) already up to date
               </Text>
-              {skippedCount > 0 && (
-                <Text color={theme.colors.text.secondary}>
-                  {skippedCount} agent(s) already up to date
-                </Text>
-              )}
-              {errorCount > 0 && (
-                <Text color={theme.colors.error}>
-                  {errorCount} agent(s) failed to push
-                </Text>
-              )}
-            </Box>
+            )}
+            {errorCount > 0 && (
+              <Text color={theme.colors.error}>
+                {errorCount} agent(s) failed to push
+              </Text>
+            )}
           </Box>
         )}
       </Box>
