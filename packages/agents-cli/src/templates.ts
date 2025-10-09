@@ -3,6 +3,7 @@
  */
 
 export interface AgentConfig {
+  agent_id?: string;
   name: string;
   conversation_config: {
     agent: {

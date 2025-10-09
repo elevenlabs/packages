@@ -174,6 +174,7 @@ export const PullView: React.FC<PullViewProps> = ({
         const tags = agentDetailsTyped.tags || [];
 
         const agentConfig = {
+          agent_id: agent.agentId,
           name: agentName,
           conversation_config: conversationConfig,
           platform_settings: platformSettings,

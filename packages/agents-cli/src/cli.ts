@@ -22,6 +22,7 @@ import {
   getTemplateOptions,
   AgentConfig 
 } from './templates.js';
+import { TestConfig } from './test-templates.js';
 import {
   getElevenLabsClient,
   createAgentApi,
@@ -569,6 +570,10 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
+      // Write agent ID back to config file
+      agentConfig.agent_id = agentId;
+      await writeAgentConfig(configFilePath, agentConfig);
+      
       const newAgent: AgentDefinition = {
         name,
         config: configPath
@@ -1100,6 +1105,10 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
+    // Write tool ID back to config file
+    (toolConfig as Tool).tool_id = toolId;
+    await writeToolConfig(configFilePath, toolConfig as Tool);
+    
     // Update lock file
     const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
     updateToolInLock(lockData, name, toolId, configHash);
@@ -1168,8 +1177,12 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     // Calculate config hash
     const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
     
-    // Get agent data from lock file
-    const lockedAgent = getAgentFromLock(lockData, agentDefName);
+    // Read ID from config first, fallback to lockfile
+    let agentId = agentConfig.agent_id;
+    if (!agentId) {
+      const lockedAgent = getAgentFromLock(lockData, agentDefName);
+      agentId = lockedAgent?.id;
+    }
     
     // Always push (force override)
     console.log(`${agentDefName}: Will push (force override)`);
@@ -1181,8 +1194,6 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     
     // Perform API operation
     try {
-      const agentId = lockedAgent?.id;
-      
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
       const platformSettings = agentConfig.platform_settings;
@@ -1200,6 +1211,11 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
           tags
         );
         console.log(`Created agent ${agentDefName} (ID: ${newAgentId})`);
+        
+        // Write agent ID back to config file
+        agentConfig.agent_id = newAgentId;
+        await writeAgentConfig(configPath, agentConfig);
+        
         updateAgentInLock(lockData, agentDefName, newAgentId, configHash);
       } else {
         // Update existing agent
@@ -1491,6 +1507,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
       
       // Create agent config structure
       const agentConfig: AgentConfig = {
+        agent_id: agentId,
         name: agentNameRemote,
         conversation_config: conversationConfig as AgentConfig['conversation_config'],
         platform_settings: platformSettings,
@@ -1625,6 +1642,9 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       // Fetch detailed tool configuration
       console.log(`Pulling config for '${toolNameRemote}'...`);
       const toolDetails = await getToolApi(client, toolId);
+      
+      // Add tool_id to the config
+      (toolDetails as Tool).tool_id = toolId;
 
       // Generate config file path
       const safeName = toolNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
@@ -1804,6 +1824,10 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
 
+    // Write test ID back to config file
+    testConfig.id = testId;
+    await writeAgentConfig(configFilePath, testConfig);
+
     // Update lock file
     const configHash = calculateConfigHash(testApiConfig);
     updateTestInLock(lockData, name, testId, configHash);
@@ -1867,8 +1891,12 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     // Calculate config hash
     const configHash = calculateConfigHash(toSnakeCaseKeys(testConfig));
 
-    // Get test data from lock file
-    const lockedTest = getTestFromLock(lockData, testDefName);
+    // Read ID from config first, fallback to lockfile
+    let testId = (testConfig as TestConfig).id;
+    if (!testId) {
+      const lockedTest = getTestFromLock(lockData, testDefName);
+      testId = lockedTest?.id;
+    }
 
     // Always push (force override)
     console.log(`${testDefName}: Will push (force override)`);
@@ -1880,7 +1908,6 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
 
     // Perform API operation
     try {
-      const testId = lockedTest?.id;
       const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
 
       if (!testId) {
@@ -1888,6 +1915,11 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
         const response = await createTestApi(client!, testApiConfig);
         const newTestId = response.id;
         console.log(`Created test ${testDefName} (ID: ${newTestId})`);
+        
+        // Write test ID back to config file
+        (testConfig as TestConfig).id = newTestId;
+        await writeAgentConfig(configPath, testConfig);
+        
         updateTestInLock(lockData, testDefName, newTestId, configHash);
       } else {
         // Update existing test
@@ -1965,8 +1997,12 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     // Calculate config hash
     const configHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
 
-    // Get tool data from lock file
-    const lockedTool = getToolFromLock(lockData, toolDefName);
+    // Read ID from config first, fallback to lockfile
+    let toolId = (toolConfig as unknown as Tool).tool_id;
+    if (!toolId) {
+      const lockedTool = getToolFromLock(lockData, toolDefName);
+      toolId = lockedTool?.id;
+    }
 
     // Always push (force override)
     console.log(`${toolDefName}: Will push (force override)`);
@@ -1978,13 +2014,16 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
 
     // Perform API operation
     try {
-      const toolId = lockedTool?.id;
-
       if (!toolId) {
         // Create new tool
         const response = await createToolApi(client!, toolConfig);
         const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
         console.log(`Created tool ${toolDefName} (ID: ${newToolId})`);
+        
+        // Write tool ID back to config file
+        (toolConfig as unknown as Tool).tool_id = newToolId;
+        await writeToolConfig(configPath, toolConfig as unknown as Tool);
+        
         updateToolInLock(lockData, toolDefName, newToolId, configHash);
       } else {
         // Update existing tool
@@ -2071,6 +2110,9 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       // Fetch detailed test configuration
       console.log(`Pulling config for '${testNameRemote}'...`);
       const testDetails = await getTestApi(client, testId);
+      
+      // Add test id to the config
+      (testDetails as any).id = testId;
 
       // Generate config file path
       const safeName = testNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');

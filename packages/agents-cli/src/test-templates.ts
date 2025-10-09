@@ -3,6 +3,7 @@
  */
 
 export interface TestConfig {
+  id?: string;
   [key: string]: unknown;
   chat_history: Array<{
     role: 'user' | 'agent';

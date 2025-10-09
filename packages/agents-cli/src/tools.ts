@@ -18,6 +18,7 @@ export interface WebhookToolSchema {
 }
 
 export interface WebhookTool {
+  tool_id?: string;
   name: string;
   description: string;
   type: 'webhook';
@@ -52,6 +53,7 @@ export interface ClientToolParameter {
 }
 
 export interface ClientTool {
+  tool_id?: string;
   name: string;
   description: string;
   type: 'client';
