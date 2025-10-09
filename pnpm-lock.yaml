@@ -81,9 +81,6 @@ importers:
       '@inkjs/ui':
         specifier: ^2.0.0
         version: 2.0.0(ink@6.2.3(@types/react@19.0.0)(react@19.0.0))
-      '@jest/globals':
-        specifier: ^30.0.4
-        version: 30.0.5
       '@types/read':
         specifier: ^0.0.32
         version: 0.0.32
@@ -130,6 +127,9 @@ importers:
       '@eslint/js':
         specifier: ^9.0.0
         version: 9.33.0
+      '@jest/globals':
+        specifier: ^30.0.4
+        version: 30.0.5
       '@types/fs-extra':
         specifier: ^11.0.2
         version: 11.0.4
