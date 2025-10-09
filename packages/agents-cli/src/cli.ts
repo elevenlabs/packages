@@ -1440,17 +1440,9 @@ async function pullAgents(options: PullOptions): Promise<void> {
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
-  // Load lock file to check for existing agent IDs
+  // Load lock file for tracking (but don't skip existing)
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
-  const existingAgentIds = new Set<string>();
-  
-  // Collect all existing agent IDs
-  Object.values(lockData.agents).forEach((agentData: any) => {
-    if (agentData && agentData.id) {
-      existingAgentIds.add(agentData.id);
-    }
-  });
   
   let newAgentsAdded = 0;
   
@@ -1462,12 +1454,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
       continue;
     }
     let agentNameRemote = agentMetaTyped.name;
-    
-    // Skip if agent already exists by ID
-    if (existingAgentIds.has(agentId)) {
-      console.log(`Skipping '${agentNameRemote}' - already exists (ID: ${agentId})`);
-      continue;
-    }
     
     // Check for name conflicts
     if (existingAgentNames.has(agentNameRemote)) {
@@ -1529,7 +1515,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
       // Add to agents config
       agentsConfig.agents.push(newAgent);
       existingAgentNames.add(agentNameRemote);
-      existingAgentIds.add(agentId);
       
       // Update lock file with agent ID
       const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
@@ -1555,12 +1540,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
   }
   
   if (options.dryRun) {
-    const newAgentsCount = agentsList.filter((a: unknown) => {
-      const agent = a as { agentId?: string; agent_id?: string };
-      const id = agent.agentId || agent.agent_id;
-      return id && !existingAgentIds.has(id);
-    }).length;
-    console.log(`[DRY RUN] Would add ${newAgentsCount} new agent(s)`);
+    console.log(`[DRY RUN] Would add ${agentsList.length} agent(s)`);
   } else {
     console.log(`Successfully added ${newAgentsAdded} new agent(s)`);
     if (newAgentsAdded > 0) {
@@ -1610,17 +1590,9 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
 
   const existingToolNames = new Set(toolsConfig.tools.map(tool => tool.name));
 
-  // Load tools lock file to check for existing tool IDs
+  // Load tools lock file for tracking (but don't skip existing)
   const lockFilePath = path.resolve('tools-lock.json');
   const toolsLockData = await loadToolsLockFile(lockFilePath);
-  const existingToolIds = new Set<string>();
-
-  // Collect all existing tool IDs
-  Object.values(toolsLockData.tools).forEach(toolData => {
-    if (toolData.id) {
-      existingToolIds.add(toolData.id);
-    }
-  });
 
   let newToolsAdded = 0;
 
@@ -1632,12 +1604,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       continue;
     }
     let toolNameRemote = toolMetaTyped.name;
-
-    // Skip if tool already exists by ID
-    if (existingToolIds.has(toolId)) {
-      console.log(`Skipping '${toolNameRemote}' - already exists (ID: ${toolId})`);
-      continue;
-    }
 
     // Check for name conflicts
     if (existingToolNames.has(toolNameRemote)) {
@@ -1683,7 +1649,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       // Add to tools config
       toolsConfig.tools.push(newTool);
       existingToolNames.add(toolNameRemote);
-      existingToolIds.add(toolId);
 
       // Update tools lock file with tool ID
       const configHash = calculateConfigHash(toolDetails);
@@ -1709,12 +1674,7 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
   }
 
   if (options.dryRun) {
-    const newToolsCount = filteredTools.filter((t: unknown) => {
-      const tool = t as { tool_id?: string; toolId?: string; id?: string };
-      const id = tool.tool_id || tool.toolId || tool.id;
-      return id && !existingToolIds.has(id);
-    }).length;
-    console.log(`[DRY RUN] Would add ${newToolsCount} new tool(s)`);
+    console.log(`[DRY RUN] Would add ${filteredTools.length} tool(s)`);
   } else {
     console.log(`Successfully added ${newToolsAdded} new tool(s)`);
     if (newToolsAdded > 0) {
@@ -2076,17 +2036,9 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
   // Load existing config
   const existingTestNames = new Set(testsConfig.tests.map(test => test.name));
 
-  // Load lock file to check for existing test IDs
+  // Load lock file for tracking (but don't skip existing)
   const lockFilePath = path.resolve(LOCK_FILE);
   const lockData = await loadLockFile(lockFilePath);
-  const existingTestIds = new Set<string>();
-
-  // Collect all existing test IDs
-  Object.values(lockData.tests || {}).forEach(testData => {
-    if (testData.id) {
-      existingTestIds.add(testData.id);
-    }
-  });
 
   let newTestsAdded = 0;
 
@@ -2098,12 +2050,6 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       continue;
     }
     let testNameRemote = testMetaTyped.name;
-
-    // Skip if test already exists by ID
-    if (existingTestIds.has(testId)) {
-      console.log(`Skipping '${testNameRemote}' - already exists (ID: ${testId})`);
-      continue;
-    }
 
     // Check for name conflicts
     if (existingTestNames.has(testNameRemote)) {
@@ -2144,7 +2090,6 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       // Add to tests config
       testsConfig.tests.push(newTest);
       existingTestNames.add(testNameRemote);
-      existingTestIds.add(testId);
 
       // Update lock file with test ID
       const configHash = calculateConfigHash(toSnakeCaseKeys(testDetails));
@@ -2170,11 +2115,7 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
   }
 
   if (options.dryRun) {
-    const newTestsCount = testsList.filter((t: unknown) => {
-      const test = t as { id?: string };
-      return test.id && !existingTestIds.has(test.id);
-    }).length;
-    console.log(`[DRY RUN] Would add ${newTestsCount} new test(s)`);
+    console.log(`[DRY RUN] Would add ${testsList.length} test(s)`);
   } else {
     console.log(`Successfully added ${newTestsAdded} new test(s)`);
     if (newTestsAdded > 0) {

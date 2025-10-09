@@ -62,16 +62,10 @@ export const PullView: React.FC<PullViewProps> = ({
         const agentsConfig = await readAgentConfig<any>(agentsConfigPath);
         const existingAgentNames = new Set<string>(agentsConfig.agents.map((a: any) => a.name as string));
 
-        // Load lock file
+        // Load lock file for tracking (but don't skip existing)
         const lockFilePath = path.resolve('agents.lock');
         const lockData = await loadLockFile(lockFilePath);
         const existingAgentIds = new Set<string>();
-
-        Object.values(lockData.agents).forEach((agentData: any) => {
-          if (agentData && agentData.id) {
-            existingAgentIds.add(agentData.id);
-          }
-        });
 
         // Prepare agents for display
         const agentsToPull: PullAgent[] = [];
@@ -81,14 +75,12 @@ export const PullView: React.FC<PullViewProps> = ({
           
           if (!agentId) continue;
 
-          const status = existingAgentIds.has(agentId) ? 'skipped' : 'pending';
-          const message = existingAgentIds.has(agentId) ? 'Already exists' : undefined;
-
+          // Always set as pending (no skipping based on lockfile)
           agentsToPull.push({
             name: agentMetaTyped.name,
             agentId,
-            status: status as 'skipped' | 'pending',
-            message
+            status: 'pending',
+            message: undefined
           });
         }
 
@@ -140,13 +132,6 @@ export const PullView: React.FC<PullViewProps> = ({
     }
 
     const agent = agentsList[index];
-
-    // Skip if already exists
-    if (agent.status === 'skipped') {
-      setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingNames, existingIds, lockData, agentsConfigPath, lockFilePath);
-      return;
-    }
 
     // Update to checking
     setAgents(prev => prev.map((a, i) => i === index ? { ...a, status: 'checking' as const } : a));
