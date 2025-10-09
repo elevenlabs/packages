@@ -97,7 +97,8 @@ export type PingEvent = Ping;
 export type ClientToolCallEvent = Incoming.ClientToolCallClientEvent;
 export type VadScoreEvent = Incoming.VadScoreClientEvent;
 export type MCPToolCallClientEvent = Incoming.McpToolCallClientEvent;
-export type AgentChatResponsePartEvent = Incoming.AgentChatResponsePartClientEvent;
+export type AgentChatResponsePartEvent =
+  Incoming.AgentChatResponsePartClientEvent;
 
 // Outgoing event types
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
