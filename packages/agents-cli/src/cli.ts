@@ -1171,22 +1171,8 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     // Get agent data from lock file
     const lockedAgent = getAgentFromLock(lockData, agentDefName);
     
-    let needsUpdate = true;
-    
-    if (lockedAgent) {
-      if (lockedAgent.hash === configHash) {
-        needsUpdate = false;
-        console.log(`${agentDefName}: No changes`);
-      } else {
-        console.log(`${agentDefName}: Config changed, will update`);
-      }
-    } else {
-      console.log(`${agentDefName}: New agent detected, will create`);
-    }
-    
-    if (!needsUpdate) {
-      continue;
-    }
+    // Always push (force override)
+    console.log(`${agentDefName}: Will push (force override)`);
     
     if (dryRun) {
       console.log(`[DRY RUN] Would update agent: ${agentDefName}`);
@@ -1924,22 +1910,8 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     // Get test data from lock file
     const lockedTest = getTestFromLock(lockData, testDefName);
 
-    let needsUpdate = true;
-
-    if (lockedTest) {
-      if (lockedTest.hash === configHash) {
-        needsUpdate = false;
-        console.log(`${testDefName}: No changes`);
-      } else {
-        console.log(`${testDefName}: Config changed, will update`);
-      }
-    } else {
-      console.log(`${testDefName}: New test detected, will create`);
-    }
-
-    if (!needsUpdate) {
-      continue;
-    }
+    // Always push (force override)
+    console.log(`${testDefName}: Will push (force override)`);
 
     if (dryRun) {
       console.log(`[DRY RUN] Would update test: ${testDefName}`);
@@ -2036,22 +2008,8 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     // Get tool data from lock file
     const lockedTool = getToolFromLock(lockData, toolDefName);
 
-    let needsUpdate = true;
-
-    if (lockedTool) {
-      if (lockedTool.hash === configHash) {
-        needsUpdate = false;
-        console.log(`${toolDefName}: No changes`);
-      } else {
-        console.log(`${toolDefName}: Config changed, will update`);
-      }
-    } else {
-      console.log(`${toolDefName}: New tool detected, will create`);
-    }
-
-    if (!needsUpdate) {
-      continue;
-    }
+    // Always push (force override)
+    console.log(`${toolDefName}: Will push (force override)`);
 
     if (dryRun) {
       console.log(`[DRY RUN] Would update tool: ${toolDefName}`);
