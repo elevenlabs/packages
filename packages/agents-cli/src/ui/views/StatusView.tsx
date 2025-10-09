@@ -78,12 +78,11 @@ export const StatusView: React.FC<StatusViewProps> = ({
             if (configExists) {
               // Calculate current config hash
               const config = await readAgentConfig(fullConfigPath);
-              const { calculateConfigHash } = await import('../../utils.js');
+              const { calculateConfigHash, getAgentFromLock } = await import('../../utils.js');
               configHash = calculateConfigHash(config);
 
               // Get deployed info from lock file
-              const lockKey = `${agentDef.name}_${env}`;
-              const agentLock = lockData.agents?.[lockKey];
+              const agentLock = getAgentFromLock(lockData, agentDef.name, env);
               
               if (agentLock && typeof agentLock === 'object') {
                 if ('config_hash' in agentLock) {
