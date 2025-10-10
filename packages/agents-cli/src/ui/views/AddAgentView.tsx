@@ -4,7 +4,6 @@ import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
 import { getTemplateByName, getTemplateOptions } from '../../templates.js';
 import { writeAgentConfig } from '../../utils.js';
@@ -35,7 +34,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
 
   const templates = Object.entries(getTemplateOptions()).map(([name, description]) => ({
@@ -64,24 +62,20 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
     try {
       // Step 1: Generate config
       setStatusMessage('Generating agent configuration...');
-      setProgress(20);
       const agentConfig = getTemplateByName(agentName, selectedTemplate);
       
       // Step 2: Create directory
       setStatusMessage('Creating agent directory...');
-      setProgress(40);
       const configDir = path.resolve(`agent_configs`);
       await fs.ensureDir(configDir);
       
       // Step 3: Write config file
       setStatusMessage('Writing configuration file...');
-      setProgress(50);
       const configPath = path.join(configDir, `${agentName}.json`);
       await writeAgentConfig(configPath, agentConfig);
       
       // Step 4: Update agents.json
       setStatusMessage('Updating agents.json...');
-      setProgress(60);
       const agentsConfigPath = path.resolve('agents.json');
       const agentsConfig = await fs.readJson(agentsConfigPath);
       
@@ -98,7 +92,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       // Step 5: Upload to ElevenLabs (if not skipped)
       if (!skipUpload) {
         setStatusMessage('Uploading to ElevenLabs...');
-        setProgress(80);
         const client = await getElevenLabsClient();
         const conversationConfig = agentConfig.conversation_config || {};
         const platformSettings = agentConfig.platform_settings;
@@ -116,7 +109,6 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
         }
       }
       
-      setProgress(100);
       setSuccess(true);
       
       setTimeout(() => {
@@ -213,18 +205,11 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
         {currentStep === 'creating' && (
           <Box flexDirection="column" gap={1}>
             {!success ? (
-              <>
-                <StatusCard
-                  title="Creating Agent"
-                  status="loading"
-                  message={statusMessage}
-                />
-                <ProgressFlow 
-                  value={progress} 
-                  label="Progress"
-                  showWave={true}
-                />
-              </>
+              <StatusCard
+                title="Creating Agent"
+                status="loading"
+                message={statusMessage}
+              />
             ) : (
               <Box flexDirection="column" gap={1}>
                 <StatusCard
