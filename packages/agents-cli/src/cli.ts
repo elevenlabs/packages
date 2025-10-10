@@ -1424,10 +1424,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
-  // Load lock file for tracking (but don't skip existing)
-  const lockFilePath = path.resolve(LOCK_FILE);
-  const lockData = await loadLockFile(lockFilePath);
-  
   let newAgentsAdded = 0;
   
   for (const agentMeta of agentsList) {
@@ -1501,10 +1497,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
       agentsConfig.agents.push(newAgent);
       existingAgentNames.add(agentNameRemote);
       
-      // Update lock file with agent ID
-      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-      updateAgentInLock(lockData, agentNameRemote, agentId, configHash);
-      
       console.log(`Added '${agentNameRemote}' (config: ${configPath})`);
       newAgentsAdded++;
       
@@ -1518,10 +1510,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
     // Save updated agents.json
     await writeAgentConfig(agentsConfigPath, agentsConfig);
     
-    // Save updated lock file
-    await saveLockFile(lockFilePath, lockData);
-    
-    console.log(`Updated ${AGENTS_CONFIG_FILE} and ${LOCK_FILE}`);
+    console.log(`Updated ${AGENTS_CONFIG_FILE}`);
   }
   
   if (options.dryRun) {
@@ -2043,10 +2032,6 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
   // Load existing config
   const existingTestNames = new Set(testsConfig.tests.map(test => test.name));
 
-  // Load lock file for tracking (but don't skip existing)
-  const lockFilePath = path.resolve(LOCK_FILE);
-  const lockData = await loadLockFile(lockFilePath);
-
   let newTestsAdded = 0;
 
   for (const testMeta of testsList) {
@@ -2101,10 +2086,6 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       testsConfig.tests.push(newTest);
       existingTestNames.add(testNameRemote);
 
-      // Update lock file with test ID
-      const configHash = calculateConfigHash(toSnakeCaseKeys(testDetails));
-      updateTestInLock(lockData, testNameRemote, testId, configHash);
-
       console.log(`Added '${testNameRemote}' (config: ${configPath})`);
       newTestsAdded++;
 
@@ -2118,10 +2099,7 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
     // Save updated tests.json
     await writeAgentConfig(testsConfigPath, testsConfig);
 
-    // Save updated lock file
-    await saveLockFile(lockFilePath, lockData);
-
-    console.log(`Updated ${TESTS_CONFIG_FILE} and ${LOCK_FILE}`);
+    console.log(`Updated ${TESTS_CONFIG_FILE}`);
   }
 
   if (options.dryRun) {
