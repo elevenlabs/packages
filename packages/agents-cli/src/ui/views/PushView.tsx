@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import theme from '../themes/elevenlabs.js';
+import { getElevenLabsClient, createAgentApi, updateAgentApi } from '../../elevenlabs-api.js';
+import { readAgentConfig, writeAgentConfig } from '../../utils.js';
+import fs from 'fs-extra';
+import path from 'path';
 
 interface PushAgent {
   name: string;
@@ -47,49 +51,111 @@ export const PushView: React.FC<PushViewProps> = ({
       // Update agent status to checking
       setPushedAgents(prev => [...prev, { ...agent, status: 'checking' }]);
       
-      // Simulate checking for changes
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Randomly determine if agent needs push
-      const needsPush = Math.random() > 0.5;
-      
-      if (!needsPush) {
-        // Update to skipped
-        setPushedAgents(prev => 
-          prev.map((a, i) => i === currentAgentIndex 
-            ? { ...a, status: 'skipped', message: 'No changes detected' }
-            : a
-          )
-        );
-      } else if (dryRun) {
-        // Update to completed (dry run)
-        setPushedAgents(prev => 
-          prev.map((a, i) => i === currentAgentIndex 
-            ? { ...a, status: 'completed', message: '[DRY RUN] Would push' }
-            : a
-          )
-        );
-      } else {
-        // Update to pushing
-        setPushedAgents(prev => 
-          prev.map((a, i) => i === currentAgentIndex 
-            ? { ...a, status: 'pushing' }
-            : a
-          )
-        );
-        
-        // Simulate push operation
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Update to completed
-        const agentId = `agent_${Date.now()}`;
+      try {
+        // Check if config file exists
+        const configPath = path.resolve(agent.configPath);
+        if (!(await fs.pathExists(configPath))) {
+          setPushedAgents(prev => 
+            prev.map((a, i) => i === currentAgentIndex 
+              ? { ...a, status: 'error', message: 'Config file not found' }
+              : a
+            )
+          );
+          setCurrentAgentIndex(currentAgentIndex + 1);
+          return;
+        }
+
+        // Load agent config
+        const agentConfig = await readAgentConfig<any>(configPath);
+        const agentId = agentConfig.agent_id;
+
+        if (dryRun) {
+          // Dry run mode
+          setPushedAgents(prev => 
+            prev.map((a, i) => i === currentAgentIndex 
+              ? { 
+                  ...a, 
+                  status: 'completed', 
+                  message: agentId ? '[DRY RUN] Would update' : '[DRY RUN] Would create'
+                }
+              : a
+            )
+          );
+        } else {
+          // Update to pushing
+          setPushedAgents(prev => 
+            prev.map((a, i) => i === currentAgentIndex 
+              ? { ...a, status: 'pushing' }
+              : a
+            )
+          );
+
+          // Get ElevenLabs client
+          const client = await getElevenLabsClient();
+
+          // Extract config components
+          const conversationConfig = agentConfig.conversation_config || {};
+          const platformSettings = agentConfig.platform_settings;
+          const tags = agentConfig.tags || [];
+          const agentDisplayName = agentConfig.name || agent.name;
+
+          if (!agentId) {
+            // Create new agent
+            const newAgentId = await createAgentApi(
+              client,
+              agentDisplayName,
+              conversationConfig,
+              platformSettings,
+              tags
+            );
+
+            // Write agent ID back to config file
+            agentConfig.agent_id = newAgentId;
+            await writeAgentConfig(configPath, agentConfig);
+
+            setPushedAgents(prev => 
+              prev.map((a, i) => i === currentAgentIndex 
+                ? { 
+                    ...a, 
+                    status: 'completed', 
+                    message: 'Successfully pushed',
+                    agentId: newAgentId
+                  }
+                : a
+              )
+            );
+          } else {
+            // Update existing agent
+            await updateAgentApi(
+              client,
+              agentId,
+              agentDisplayName,
+              conversationConfig,
+              platformSettings,
+              tags
+            );
+
+            setPushedAgents(prev => 
+              prev.map((a, i) => i === currentAgentIndex 
+                ? { 
+                    ...a, 
+                    status: 'completed', 
+                    message: 'Successfully pushed',
+                    agentId
+                  }
+                : a
+              )
+            );
+          }
+        }
+      } catch (error) {
+        // Handle error
         setPushedAgents(prev => 
           prev.map((a, i) => i === currentAgentIndex 
             ? { 
                 ...a, 
-                status: 'completed', 
-                message: 'Successfully pushed',
-                agentId 
+                status: 'error', 
+                message: error instanceof Error ? error.message : 'Failed to push'
               }
             : a
           )
@@ -105,7 +171,7 @@ export const PushView: React.FC<PushViewProps> = ({
     };
 
     pushNextAgent();
-  }, [currentAgentIndex, agents, dryRun]);
+  }, [currentAgentIndex, agents, dryRun, onComplete, exit]);
 
   const totalAgents = agents.length;
   const pushedCount = pushedAgents.filter(a => a.status === 'completed').length;
