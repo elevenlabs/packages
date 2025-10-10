@@ -470,18 +470,7 @@ program
       // Load existing config
       const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
-      // Generate config path if not provided
-      let configPath = options.configPath;
-      if (!configPath) {
-        const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-        configPath = `agent_configs/${safeName}.json`;
-      }
-      
-      // Create config directory and file
-      const configFilePath = path.resolve(configPath);
-      await fs.ensureDir(path.dirname(configFilePath));
-      
-      // Create agent config using template
+      // Create agent config using template (in memory first)
       let agentConfig: AgentConfig;
       try {
         agentConfig = getTemplateByName(name, options.template);
@@ -490,10 +479,7 @@ program
         process.exit(1);
       }
       
-      await writeAgentConfig(configFilePath, agentConfig);
-      console.log(`Created config file: ${configPath} (template: ${options.template})`);
-      
-      // Create agent in ElevenLabs
+      // Create agent in ElevenLabs first to get ID
       console.log(`Creating agent '${name}' in ElevenLabs...`);
       
       const client = await getElevenLabsClient();
@@ -514,7 +500,20 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
-      // Store agent ID in index file, not in config file
+      // Generate config path using agent ID (or custom path if provided)
+      let configPath = options.configPath;
+      if (!configPath) {
+        configPath = `agent_configs/${agentId}.json`;
+      }
+      
+      // Create config directory and file
+      const configFilePath = path.resolve(configPath);
+      await fs.ensureDir(path.dirname(configFilePath));
+      
+      await writeAgentConfig(configFilePath, agentConfig);
+      console.log(`Created config file: ${configPath} (template: ${options.template})`);
+      
+      // Store agent ID in index file
       const newAgent: AgentDefinition = {
         name,
         config: configPath,
@@ -934,17 +933,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     process.exit(1);
   }
   
-  // Generate config path if not provided
-  if (!configPath) {
-    const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-    configPath = `tool_configs/${safeName}.json`;
-  }
-  
-  // Create config directory and file
-  const configFilePath = path.resolve(configPath);
-  await fs.ensureDir(path.dirname(configFilePath));
-  
-  // Create tool config using appropriate template
+  // Create tool config using appropriate template (in memory first)
   let toolConfig;
   if (type === 'webhook') {
     toolConfig = {
@@ -1004,22 +993,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     };
   }
   
-  await writeToolConfig(configFilePath, toolConfig);
-  console.log(`Created config file: ${configPath}`);
-  
-  // Add to tools.json if not already present
-  if (!existingTool) {
-    const newTool: ToolDefinition = {
-      name,
-      type,
-      config: configPath
-    };
-    toolsConfig.tools.push(newTool);
-    await writeToolsConfig(toolsConfigPath, toolsConfig);
-    console.log(`Added tool '${name}' to tools.json`);
-  }
-  
-  // Create tool in ElevenLabs
+  // Create tool in ElevenLabs first to get ID
   console.log(`Creating ${type} tool '${name}' in ElevenLabs...`);
   
   const client = await getElevenLabsClient();
@@ -1030,11 +1004,29 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
-    // Store tool ID in index file
-    const toolDef = toolsConfig.tools.find(t => t.name === name);
-    if (toolDef) {
-      toolDef.id = toolId;
+    // Generate config path using tool ID (or custom path if provided)
+    if (!configPath) {
+      configPath = `tool_configs/${toolId}.json`;
+    }
+    
+    // Create config directory and file
+    const configFilePath = path.resolve(configPath);
+    await fs.ensureDir(path.dirname(configFilePath));
+    
+    await writeToolConfig(configFilePath, toolConfig);
+    console.log(`Created config file: ${configPath}`);
+    
+    // Add to tools.json if not already present
+    if (!existingTool) {
+      const newTool: ToolDefinition = {
+        name,
+        type,
+        config: configPath,
+        id: toolId
+      };
+      toolsConfig.tools.push(newTool);
       await writeToolsConfig(toolsConfigPath, toolsConfig);
+      console.log(`Added tool '${name}' to tools.json`);
     }
     
     console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
@@ -1411,9 +1403,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
         tags
       };
       
-      // Generate config file path
-      const safeName = agentNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using agent ID
+      const configPath = `${options.outputDir}/${agentId}.json`;
       
       // Create config file
       const configFilePath = path.resolve(configPath);
@@ -1530,9 +1521,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       console.log(`Pulling config for '${toolNameRemote}'...`);
       const toolDetails = await getToolApi(client, toolId);
 
-      // Generate config file path
-      const safeName = toolNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using tool ID
+      const configPath = `${options.outputDir}/${toolId}.json`;
 
       // Create config file (without tool_id - it goes in index file)
       const configFilePath = path.resolve(configPath);
@@ -1656,32 +1646,10 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     process.exit(1);
   }
 
-  // Generate config path
-  const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-  const configPath = `test_configs/${safeName}.json`;
-
-  // Create config directory and file
-  const configFilePath = path.resolve(configPath);
-  await fs.ensureDir(path.dirname(configFilePath));
-
-  // Create test config using template
+  // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
-  await writeAgentConfig(configFilePath, testConfig);
-  console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
-  // Add to tests.json if not already present
-  if (!existingTest) {
-    const newTest: TestDefinition = {
-      name,
-      config: configPath,
-      type: templateType
-    };
-    testsConfig.tests.push(newTest);
-    await writeAgentConfig(testsConfigPath, testsConfig);
-    console.log(`Added test '${name}' to tests.json`);
-  }
-
-  // Create test in ElevenLabs
+  // Create test in ElevenLabs first to get ID
   console.log(`Creating test '${name}' in ElevenLabs...`);
 
   const client = await getElevenLabsClient();
@@ -1693,11 +1661,27 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
 
-    // Store test ID in index file
-    const testDef = testsConfig.tests.find(t => t.name === name);
-    if (testDef) {
-      testDef.id = testId;
+    // Generate config path using test ID
+    const configPath = `test_configs/${testId}.json`;
+
+    // Create config directory and file
+    const configFilePath = path.resolve(configPath);
+    await fs.ensureDir(path.dirname(configFilePath));
+
+    await writeAgentConfig(configFilePath, testConfig);
+    console.log(`Created config file: ${configPath} (template: ${templateType})`);
+
+    // Add to tests.json if not already present
+    if (!existingTest) {
+      const newTest: TestDefinition = {
+        name,
+        config: configPath,
+        type: templateType,
+        id: testId
+      };
+      testsConfig.tests.push(newTest);
       await writeAgentConfig(testsConfigPath, testsConfig);
+      console.log(`Added test '${name}' to tests.json`);
     }
 
     console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
@@ -1948,9 +1932,8 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       console.log(`Pulling config for '${testNameRemote}'...`);
       const testDetails = await getTestApi(client, testId);
 
-      // Generate config file path
-      const safeName = testNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using test ID
+      const configPath = `${options.outputDir}/${testId}.json`;
 
       // Create config file (without test ID - it goes in index file)
       const configFilePath = path.resolve(configPath);

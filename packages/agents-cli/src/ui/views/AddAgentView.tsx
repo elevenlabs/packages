@@ -58,37 +58,12 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
     setError(null);
 
     try {
-      // Step 1: Generate config
+      // Step 1: Generate config (in memory)
       setStatusMessage('Generating agent configuration...');
       const agentConfig = getTemplateByName(agentName, selectedTemplate);
       
-      // Step 2: Create directory
-      setStatusMessage('Creating agent directory...');
-      const configDir = path.resolve(`agent_configs`);
-      await fs.ensureDir(configDir);
-      
-      // Step 3: Write config file
-      setStatusMessage('Writing configuration file...');
-      const configPath = path.join(configDir, `${agentName}.json`);
-      await writeAgentConfig(configPath, agentConfig);
-      
-      // Step 4: Update agents.json
-      setStatusMessage('Updating agents.json...');
-      const agentsConfigPath = path.resolve('agents.json');
-      const agentsConfig = await fs.readJson(agentsConfigPath);
-      
-      const relativeConfigPath = `agent_configs/${agentName}.json`;
-      
-      // Add new agent
-      agentsConfig.agents.push({
-        name: agentName,
-        config: relativeConfigPath
-      });
-      
-      await fs.writeJson(agentsConfigPath, agentsConfig, { spaces: 2 });
-      
-      // Step 5: Upload to ElevenLabs
-      setStatusMessage('Uploading to ElevenLabs...');
+      // Step 2: Upload to ElevenLabs first to get ID
+      setStatusMessage('Creating agent in ElevenLabs...');
       const client = await getElevenLabsClient();
       const conversationConfig = agentConfig.conversation_config || {};
       const platformSettings = agentConfig.platform_settings;
@@ -104,6 +79,32 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       if (agentId) {
         setStatusMessage(`Agent created with ID: ${agentId}`);
       }
+      
+      // Step 3: Create directory
+      setStatusMessage('Creating agent directory...');
+      const configDir = path.resolve(`agent_configs`);
+      await fs.ensureDir(configDir);
+      
+      // Step 4: Write config file using agent ID
+      setStatusMessage('Writing configuration file...');
+      const configPath = path.join(configDir, `${agentId}.json`);
+      await writeAgentConfig(configPath, agentConfig);
+      
+      // Step 5: Update agents.json
+      setStatusMessage('Updating agents.json...');
+      const agentsConfigPath = path.resolve('agents.json');
+      const agentsConfig = await fs.readJson(agentsConfigPath);
+      
+      const relativeConfigPath = `agent_configs/${agentId}.json`;
+      
+      // Add new agent with ID
+      agentsConfig.agents.push({
+        name: agentName,
+        config: relativeConfigPath,
+        id: agentId
+      });
+      
+      await fs.writeJson(agentsConfigPath, agentsConfig, { spaces: 2 });
       
       setSuccess(true);
       

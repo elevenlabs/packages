@@ -134,7 +134,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
-      // Create test config using template
+      // Create test config using template (in memory first)
       const testConfig = getTestTemplateByName(testName, selectedTemplate, {
         userMessage,
         successCondition,
@@ -142,9 +142,17 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         toolId
       });
 
-      // Generate config file path
-      const safeName = testName.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `test_configs/${safeName}.json`;
+      // Create test in ElevenLabs first to get ID
+      const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
+      const client = await getElevenLabsClient();
+
+      const { toCamelCaseKeys } = await import('../../utils.js');
+      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
+      const response = await createTestApi(client, testApiConfig);
+      const testId = response.id;
+
+      // Generate config file path using test ID
+      const configPath = `test_configs/${testId}.json`;
       const configFilePath = path.resolve(configPath);
 
       // Ensure directory exists
@@ -155,7 +163,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
 
       // Create/update tests.json
       const testsConfigPath = path.resolve('tests.json');
-      let testsConfig: { tests: Array<{ name: string; config: string; type: string }> };
+      let testsConfig: { tests: Array<{ name: string; config: string; type: string; id?: string }> };
 
       try {
         testsConfig = await fs.readJson(testsConfigPath);
@@ -169,30 +177,19 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         testsConfig.tests[existingTestIndex] = {
           name: testName,
           config: configPath,
-          type: selectedTemplate
+          type: selectedTemplate,
+          id: testId
         };
       } else {
         testsConfig.tests.push({
           name: testName,
           config: configPath,
-          type: selectedTemplate
+          type: selectedTemplate,
+          id: testId
         });
       }
 
       await fs.writeJson(testsConfigPath, testsConfig, { spaces: 2 });
-
-      // Create test in ElevenLabs
-      const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
-      const client = await getElevenLabsClient();
-
-      const { toCamelCaseKeys } = await import('../../utils.js');
-      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
-      const response = await createTestApi(client, testApiConfig);
-      const testId = response.id;
-
-      // Write test ID back to config file
-      testConfig.id = testId;
-      await writeAgentConfig(configFilePath, testConfig);
 
       setCurrentStep('complete');
 

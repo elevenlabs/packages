@@ -170,9 +170,8 @@ export const PullView: React.FC<PullViewProps> = ({
           tags
         };
 
-        // Generate config file path
-        const safeName = agentName.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-        const configPath = `${outputDir}/${safeName}.json`;
+        // Generate config file path using agent ID
+        const configPath = `${outputDir}/${agent.agentId}.json`;
 
         // Create config file
         const configFilePath = path.resolve(configPath);
