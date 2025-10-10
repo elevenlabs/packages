@@ -23,6 +23,7 @@ import {
   updateAgentApi,
   listAgentsApi,
   getAgentApi,
+  deleteAgentApi,
   createToolApi,
   updateToolApi,
   listToolsApi,
@@ -706,6 +707,19 @@ program
       }
     } catch (error) {
       console.error(`Error listing agents: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('delete')
+  .description('Delete an agent locally and from ElevenLabs')
+  .argument('<agent_id>', 'ID of the agent to delete')
+  .action(async (agentId: string) => {
+    try {
+      await deleteAgent(agentId);
+    } catch (error) {
+      console.error(`Error deleting agent: ${error}`);
       process.exit(1);
     }
   });
@@ -2029,6 +2043,54 @@ async function runAgentTests(agentName: string): Promise<void> {
   console.log(`Running tests for agent '${agentName}'`);
   // This would be similar to runAgentTestsWithUI but without the UI component
   throw new Error('Non-UI test running not yet implemented. Use --ui mode.');
+}
+
+async function deleteAgent(agentId: string): Promise<void> {
+  // Load agents configuration
+  const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    throw new Error('agents.json not found. Run \'agents init\' first.');
+  }
+
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  
+  // Find the agent by ID
+  const agentIndex = agentsConfig.agents.findIndex(agent => agent.id === agentId);
+  
+  if (agentIndex === -1) {
+    throw new Error(`Agent with ID '${agentId}' not found in local configuration`);
+  }
+  
+  const agentDef = agentsConfig.agents[agentIndex];
+  const agentName = agentDef.name;
+  const configPath = agentDef.config;
+  
+  console.log(`Deleting agent '${agentName}' (ID: ${agentId})...`);
+  
+  // Delete from ElevenLabs (globally)
+  console.log('Deleting from ElevenLabs...');
+  const client = await getElevenLabsClient();
+  
+  try {
+    await deleteAgentApi(client, agentId);
+    console.log('✓ Successfully deleted from ElevenLabs');
+  } catch (error) {
+    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.log('Continuing with local deletion...');
+  }
+  
+  // Remove from local agents.json
+  agentsConfig.agents.splice(agentIndex, 1);
+  await writeAgentConfig(agentsConfigPath, agentsConfig);
+  console.log(`✓ Removed '${agentName}' from ${AGENTS_CONFIG_FILE}`);
+  
+  // Remove config file
+  if (configPath && await fs.pathExists(configPath)) {
+    await fs.remove(configPath);
+    console.log(`✓ Deleted config file: ${configPath}`);
+  }
+  
+  console.log(`\n✓ Successfully deleted agent '${agentName}'`);
 }
 
 // Handle SIGINT (Ctrl+C)
