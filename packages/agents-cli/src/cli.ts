@@ -1678,26 +1678,26 @@ async function generateWidget(name: string): Promise<void> {
     throw new Error('agents.json not found. Run \'agents init\' first.');
   }
   
-  // Load lock file to get agent ID
-  const lockFilePath = path.resolve(LOCK_FILE);
-  const lockData = await loadLockFile(lockFilePath);
-  
   // Check if agent exists in config
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
-  const agentExists = agentsConfig.agents.some(agent => agent.name === name);
+  const agentDef = agentsConfig.agents.find(agent => agent.name === name);
   
-  if (!agentExists) {
+  if (!agentDef) {
     throw new Error(`Agent '${name}' not found in configuration`);
   }
   
-  // Get agent data from lock file
-  const lockedAgent = getAgentFromLock(lockData, name);
-  
-  if (!lockedAgent?.id) {
-    throw new Error(`Agent '${name}' not found or not yet pushed. Run 'agents push --agent ${name}' to create the agent first`);
+  // Get agent ID from config file
+  const configPath = agentDef.config;
+  if (!configPath || !(await fs.pathExists(configPath))) {
+    throw new Error(`Config file not found for agent '${name}': ${configPath}`);
   }
   
-  const agentId = lockedAgent.id;
+  const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+  const agentId = agentConfig.agent_id;
+  
+  if (!agentId) {
+    throw new Error(`Agent '${name}' not found or not yet pushed. Run 'agents push --agent ${name}' to create the agent first`);
+  }
   
   const residency = await getResidency();
   
@@ -2148,17 +2148,6 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
     throw new Error(`Agent '${agentName}' not found in configuration`);
   }
 
-  // Get agent ID from lock file
-  const lockFilePath = path.resolve(LOCK_FILE);
-  const lockData = await loadLockFile(lockFilePath);
-  const lockedAgent = getAgentFromLock(lockData, agentName);
-
-  if (!lockedAgent?.id) {
-    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
-  }
-
-  const agentId = lockedAgent.id;
-
   // Get agent config to find attached tests
   const configPath = agentDef.config;
 
@@ -2167,6 +2156,12 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
   }
 
   const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+  const agentId = agentConfig.agent_id;
+  
+  if (!agentId) {
+    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
+  }
+  
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
