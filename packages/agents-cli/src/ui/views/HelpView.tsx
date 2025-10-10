@@ -22,112 +22,124 @@ interface Command {
   subcommands?: Command[];
 }
 
-const commands: Command[] = [
-  {
-    name: "init [path]",
-    description: "Initialize project (use --override to recreate from scratch)",
-  },
-  {
-    name: "login",
-    description: "Login with your ElevenLabs API key",
-  },
-  {
-    name: "logout",
-    description: "Logout and remove stored API key",
-  },
-  {
-    name: "whoami",
-    description: "Show current login status",
-  },
-  {
-    name: "residency [location]",
-    description: "Set the API residency location",
-  },
-  {
-    name: "add <name>",
-    description: "Add a new agent",
-  },
-  {
-    name: "add-webhook-tool <name>",
-    description: "Add a new webhook tool",
-  },
-  {
-    name: "add-client-tool <name>",
-    description: "Add a new client tool",
-  },
-  {
-    name: "templates",
-    description: "Manage agent templates",
-    subcommands: [
-      {
-        name: "list",
-        description: "List available agent templates",
-      },
-      {
-        name: "show <template>",
-        description: "Show template configuration",
-      },
-    ],
-  },
-  {
-    name: "push",
-    description: "Push agents to ElevenLabs API",
-  },
-  {
-    name: "push-tools",
-    description: "Push tools to ElevenLabs API",
-  },
-  {
-    name: "status",
-    description: "Show the status of agents",
-  },
-  {
-    name: "watch",
-    description: "Watch for config changes and auto-push",
-  },
-  {
-    name: "list",
-    description: "List all configured agents",
-  },
-  {
-    name: "pull",
-    description: "Pull agents from ElevenLabs workspace",
-  },
-  {
-    name: "pull-tools",
-    description: "Pull tools from ElevenLabs workspace",
-  },
-  {
-    name: "add-test <name>",
-    description: "Add a new test",
-  },
-  {
-    name: "push-tests",
-    description: "Push tests to ElevenLabs API",
-  },
-  {
-    name: "pull-tests",
-    description: "Pull tests from ElevenLabs workspace",
-  },
-  {
-    name: "test <agent>",
-    description: "Run tests for an agent",
-  },
-  {
-    name: "widget <name>",
-    description: "Generate HTML widget snippet for an agent",
-  },
-  {
-    name: "components",
-    description:
-      "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)",
-    subcommands: [
-      {
-        name: "add [name]",
-        description: "Add component from registry",
-      },
-    ],
-  },
+const commands: Command[][] = [
+  [
+    {
+      name: "init [path]",
+      description: "Initialize project (use --override to recreate from scratch)",
+    },
+    {
+      name: "login",
+      description: "Login with your ElevenLabs API key",
+    },
+    {
+      name: "logout",
+      description: "Logout and remove stored API key",
+    },
+    {
+      name: "whoami",
+      description: "Show current login status",
+    },
+    {
+      name: "residency [location]",
+      description: "Set the API residency location",
+    },
+  ],
+  [
+    {
+      name: "add <name>",
+      description: "Add a new agent",
+    },
+    {
+      name: "list",
+      description: "List all configured agents",
+    },
+    {
+      name: "status",
+      description: "Show the status of agents",
+    },
+    {
+      name: "push",
+      description: "Push agents to ElevenLabs API",
+    },
+    {
+      name: "pull",
+      description: "Pull agents from ElevenLabs workspace",
+    },
+  ],
+  [
+    {
+      name: "add-webhook-tool <name>",
+      description: "Add a new webhook tool",
+    },
+    {
+      name: "add-client-tool <name>",
+      description: "Add a new client tool",
+    },
+    {
+      name: "push-tools",
+      description: "Push tools to ElevenLabs API",
+    },
+    {
+      name: "pull-tools",
+      description: "Pull tools from ElevenLabs workspace",
+    },
+  ],
+  [
+    {
+      name: "add-test <name>",
+      description: "Add a new test",
+    },
+    {
+      name: "push-tests",
+      description: "Push tests to ElevenLabs API",
+    },
+    {
+      name: "pull-tests",
+      description: "Pull tests from ElevenLabs workspace",
+    },
+    {
+      name: "test <agent>",
+      description: "Run tests for an agent",
+    },
+  ],
+  [
+    {
+      name: "templates",
+      description: "Manage agent templates",
+      subcommands: [
+        {
+          name: "list",
+          description: "List available agent templates",
+        },
+        {
+          name: "show <template>",
+          description: "Show template configuration",
+        },
+      ],
+    },
+  ],
+  [
+    {
+      name: "watch",
+      description: "Watch for config changes and auto-push",
+    },
+    {
+      name: "widget <name>",
+      description: "Generate HTML widget snippet for an agent",
+    },
+    {
+      name: "components",
+      description:
+        "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)",
+      subcommands: [
+        {
+          name: "add [name]",
+          description: "Add component from registry",
+        },
+      ],
+    },
+  ],
 ];
 
 export const HelpView: React.FC = () => {
@@ -178,25 +190,29 @@ export const HelpView: React.FC = () => {
           </Text>
         </Box>
 
-        {commands.map((cmd, index) => (
-          <Box key={index} flexDirection="column" marginBottom={0.5}>
-            <Box marginLeft={2}>
-              <Box width={24}>
-                <Text color={theme.colors.text.primary}>{cmd.name}</Text>
-              </Box>
-              <Text color={theme.colors.text.secondary}>{cmd.description}</Text>
-            </Box>
-            {cmd.subcommands &&
-              cmd.subcommands.map((subcmd, subIndex) => (
-                <Box key={subIndex} marginLeft={4}>
-                  <Box width={22}>
-                    <Text color={theme.colors.text.muted}>{subcmd.name}</Text>
+        {commands.map((group, groupIndex) => (
+          <Box key={groupIndex} flexDirection="column" marginBottom={1}>
+            {group.map((cmd, cmdIndex) => (
+              <Box key={cmdIndex} flexDirection="column">
+                <Box marginLeft={2}>
+                  <Box width={24}>
+                    <Text color={theme.colors.text.primary}>{cmd.name}</Text>
                   </Box>
-                  <Text color={theme.colors.text.muted}>
-                    {subcmd.description}
-                  </Text>
+                  <Text color={theme.colors.text.secondary}>{cmd.description}</Text>
                 </Box>
-              ))}
+                {cmd.subcommands &&
+                  cmd.subcommands.map((subcmd, subIndex) => (
+                    <Box key={subIndex} marginLeft={4}>
+                      <Box width={22}>
+                        <Text color={theme.colors.text.muted}>{subcmd.name}</Text>
+                      </Box>
+                      <Text color={theme.colors.text.muted}>
+                        {subcmd.description}
+                      </Text>
+                    </Box>
+                  ))}
+              </Box>
+            ))}
           </Box>
         ))}
       </Box>
