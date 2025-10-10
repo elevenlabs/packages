@@ -88,6 +88,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
             </Box>
 
             <Box marginBottom={1}>
+              <Text color={theme.colors.text.secondary}>
+                Get your API key at: <Text color={theme.colors.accent.primary}>https://elevenlabs.io/app/developers/api-keys</Text>
+              </Text>
+            </Box>
+
+            <Box marginBottom={1}>
               <Text>
                 {/* Masked input display */}
                 <Text color={theme.colors.text.primary}>
