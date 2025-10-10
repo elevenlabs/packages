@@ -2063,6 +2063,35 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     process.exit(1);
   }
 
+  // Special handling for 'templates' command without subcommand
+  if (args[0] === 'templates' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required subcommand');
+    console.error('Usage: agents templates <list|show>');
+    console.error('');
+    console.error('Available subcommands:');
+    console.error('  list                List available agent templates');
+    console.error('  show <template>     Show configuration for a specific template');
+    console.error('');
+    console.error('Examples:');
+    console.error('  agents templates list');
+    console.error('  agents templates show default');
+    process.exit(1);
+  }
+
+  // Special handling for 'components' command without subcommand
+  if (args[0] === 'components' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required subcommand');
+    console.error('Usage: agents components <add>');
+    console.error('');
+    console.error('Available subcommands:');
+    console.error('  add [name]     Add a component from ElevenLabs UI registry');
+    console.error('');
+    console.error('Examples:');
+    console.error('  agents components add');
+    console.error('  agents components add button');
+    process.exit(1);
+  }
+
   const componentsCommand = program
     .command("components")
     .description(
