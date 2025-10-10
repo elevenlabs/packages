@@ -1,2 +1,2 @@
 // This file is auto-generated during build
-export const PACKAGE_VERSION = "0.3.3";
+export const PACKAGE_VERSION = "0.4.0";

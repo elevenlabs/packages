@@ -1,29 +1,11 @@
 /**
  * Simple credential management for CLI
- * Just basic keychain storage + secure file permissions
+ * Secure file storage with proper permissions
  */
 
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
-
-// Optional keychain import - graceful fallback if not available
-let keytar: {
-  setPassword: (service: string, account: string, password: string) => Promise<void>;
-  getPassword: (service: string, account: string) => Promise<string | null>;
-  deletePassword: (service: string, account: string) => Promise<boolean>;
-} | undefined;
-try {
-  // Skip keytar in CI environments where it might cause permission issues
-  if (!process.env.CI && !process.env.GITHUB_ACTIONS && !process.env.DOCKER_CONTAINER) {
-    keytar = require('keytar');
-  }
-} catch (error) {
-  // Keychain not available, will use file storage
-}
-
-const SERVICE_NAME = 'ElevenLabs-Agents-CLI';
-const ACCOUNT_NAME = 'api-key';
 
 /**
  * Get config directory path
@@ -56,22 +38,12 @@ async function ensureConfigDir(): Promise<void> {
  * Store API key securely
  */
 export async function storeApiKey(apiKey: string): Promise<void> {
-  // Try keychain first if available
-  if (keytar) {
-    try {
-      await keytar.setPassword(SERVICE_NAME, ACCOUNT_NAME, apiKey);
-      return;
-    } catch (error) {
-      // Fall through to file storage
-    }
-  }
-
-  // Fall back to secure file storage
+  // Store in secure file storage
   await ensureConfigDir();
   const keyFile = getApiKeyFile();
-  await fs.writeFile(keyFile, apiKey, { 
+  await fs.writeFile(keyFile, apiKey, {
     mode: 0o600,
-    encoding: 'utf-8' 
+    encoding: 'utf-8'
   });
 }
 
@@ -83,18 +55,6 @@ export async function retrieveApiKey(): Promise<string | undefined> {
   const envKey = process.env.ELEVENLABS_API_KEY;
   if (envKey) {
     return envKey;
-  }
-
-  // Try keychain if available
-  if (keytar) {
-    try {
-      const apiKey = await keytar.getPassword(SERVICE_NAME, ACCOUNT_NAME);
-      if (apiKey) {
-        return apiKey;
-      }
-    } catch (error) {
-      // Fall through to file storage
-    }
   }
 
   // Try file storage
@@ -114,15 +74,6 @@ export async function retrieveApiKey(): Promise<string | undefined> {
  * Remove API key from secure storage
  */
 export async function removeApiKey(): Promise<void> {
-  // Remove from keychain if available
-  if (keytar) {
-    try {
-      await keytar.deletePassword(SERVICE_NAME, ACCOUNT_NAME);
-    } catch (error) {
-      // Ignore errors
-    }
-  }
-
   // Remove file
   try {
     const keyFile = getApiKeyFile();

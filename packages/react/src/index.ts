@@ -116,6 +116,7 @@ export type HookCallbacks = Pick<
   | "onMCPToolCall"
   | "onMCPConnectionStatus"
   | "onAsrInitiationMetadata"
+  | "onAgentChatResponsePart"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -217,6 +218,9 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onAsrInitiationMetadata:
             options?.onAsrInitiationMetadata ||
             defaultOptions?.onAsrInitiationMetadata,
+          onAgentChatResponsePart:
+            options?.onAgentChatResponsePart ||
+            defaultOptions?.onAgentChatResponsePart,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });

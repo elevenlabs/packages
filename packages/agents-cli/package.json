@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/agents-cli",
-  "version": "0.4.3",
+  "version": "0.4.6",
   "description": "CLI tool to manage ElevenLabs agents",
   "type": "module",
   "keywords": [
@@ -42,7 +42,6 @@
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "2.15.0",
     "@inkjs/ui": "^2.0.0",
-    "@jest/globals": "^30.0.4",
     "@types/read": "^0.0.32",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
@@ -55,15 +54,14 @@
     "ink-select-input": "^6.0.0",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
-    "keytar": "^7.9.0",
     "react": "19.0.0",
     "read": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@jest/globals": "^30.0.4",
     "@types/fs-extra": "^11.0.2",
     "@types/jest": "^29.5.5",
-    "@types/keytar": "^4.4.2",
     "@types/node": "^20.8.0",
     "@types/react": "19.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",

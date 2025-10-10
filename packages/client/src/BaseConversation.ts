@@ -7,6 +7,7 @@ import type {
 } from "./utils/BaseConnection";
 import type {
   AgentAudioEvent,
+  AgentChatResponsePartEvent,
   AgentResponseEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
@@ -289,6 +290,12 @@ export class BaseConversation {
     }
   }
 
+  protected handleAgentChatResponsePart(event: AgentChatResponsePartEvent) {
+    if (this.options.onAgentChatResponsePart) {
+      this.options.onAgentChatResponsePart(event.text_response_part);
+    }
+  }
+
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
     switch (parsedEvent.type) {
       case "interruption": {
@@ -363,6 +370,11 @@ export class BaseConversation {
 
       case "asr_initiation_metadata": {
         this.handleAsrInitiationMetadata(parsedEvent);
+        return;
+      }
+
+      case "agent_chat_response_part": {
+        this.handleAgentChatResponsePart(parsedEvent);
         return;
       }
 
