@@ -113,7 +113,6 @@ interface TestsConfig {
 interface AddOptions {
   configPath?: string;
   template: string;
-  skipUpload: boolean;
 }
 
 interface PushOptions {
@@ -447,7 +446,6 @@ program
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--template <template>', 'Template type to use', 'default')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
@@ -456,8 +454,7 @@ program
         const { waitUntilExit } = render(
           React.createElement(AddAgentView, {
             initialName: name,
-            template: options.template,
-            skipUpload: options.skipUpload
+            template: options.template
           })
         );
         await waitUntilExit();
@@ -495,18 +492,6 @@ program
       
       await writeAgentConfig(configFilePath, agentConfig);
       console.log(`Created config file: ${configPath} (template: ${options.template})`);
-      
-      if (options.skipUpload) {
-        const newAgent: AgentDefinition = {
-          name,
-          config: configPath
-        };
-        agentsConfig.agents.push(newAgent);
-        await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`Added agent '${name}' to agents.json (local only)`);
-        console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to upload`);
-        return;
-      }
       
       // Create agent in ElevenLabs
       console.log(`Creating agent '${name}' in ElevenLabs...`);
@@ -554,10 +539,9 @@ program
   .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the webhook tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
-  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+  .action(async (name: string, options: { configPath?: string }) => {
     try {
-      await addTool(name, 'webhook', options.configPath, options.skipUpload);
+      await addTool(name, 'webhook', options.configPath);
     } catch (error) {
       console.error(`Error creating webhook tool: ${error}`);
       process.exit(1);
@@ -569,10 +553,9 @@ program
   .description('Add a new client tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the client tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
-  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+  .action(async (name: string, options: { configPath?: string }) => {
     try {
-      await addTool(name, 'client', options.configPath, options.skipUpload);
+      await addTool(name, 'client', options.configPath);
     } catch (error) {
       console.error(`Error creating client tool: ${error}`);
       process.exit(1);
@@ -808,21 +791,19 @@ program
   .description('Add a new test - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the test to create')
   .option('--template <template>', 'Test template type to use', 'basic-llm')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (name: string, options: { template: string; skipUpload: boolean; ui: boolean }) => {
+  .action(async (name: string, options: { template: string; ui: boolean }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for test creation
         const { waitUntilExit } = render(
           React.createElement(AddTestView, {
-            initialName: name,
-            skipUpload: options.skipUpload
+            initialName: name
           })
         );
         await waitUntilExit();
       } else {
-        await addTest(name, options.template, options.skipUpload);
+        await addTest(name, options.template);
       }
     } catch (error) {
       console.error(`Error creating test: ${error}`);
@@ -930,7 +911,7 @@ program
 
 // Helper functions
 
-async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, skipUpload = false): Promise<void> {
+async function addTool(name: string, type: 'webhook' | 'client', configPath?: string): Promise<void> {
   // Check if tools.json exists, create if not
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   let toolsConfig: ToolsConfig;
@@ -1036,11 +1017,6 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     toolsConfig.tools.push(newTool);
     await writeToolsConfig(toolsConfigPath, toolsConfig);
     console.log(`Added tool '${name}' to tools.json`);
-  }
-  
-  if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to upload`);
-    return;
   }
   
   // Create tool in ElevenLabs
@@ -1655,7 +1631,7 @@ async function generateWidget(name: string): Promise<void> {
 
 // Test helper functions
 
-async function addTest(name: string, templateType: string = "basic-llm", skipUpload = false): Promise<void> {
+async function addTest(name: string, templateType: string = "basic-llm"): Promise<void> {
   const { getTestTemplateByName } = await import('./test-templates.js');
 
   // Check if tests.json exists
@@ -1703,11 +1679,6 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
     testsConfig.tests.push(newTest);
     await writeAgentConfig(testsConfigPath, testsConfig);
     console.log(`Added test '${name}' to tests.json`);
-  }
-
-  if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to upload`);
-    return;
   }
 
   // Create test in ElevenLabs

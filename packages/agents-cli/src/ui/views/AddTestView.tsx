@@ -8,7 +8,6 @@ import theme from '../themes/elevenlabs.js';
 
 interface AddTestViewProps {
   initialName?: string;
-  skipUpload?: boolean;
   onComplete?: () => void;
 }
 
@@ -45,7 +44,6 @@ const templateOptions: TemplateOption[] = [
 
 export const AddTestView: React.FC<AddTestViewProps> = ({
   initialName = '',
-  skipUpload = false,
   onComplete
 }) => {
   const { exit } = useApp();
@@ -183,20 +181,18 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
 
       await fs.writeJson(testsConfigPath, testsConfig, { spaces: 2 });
 
-      if (!skipUpload) {
-        // Create test in ElevenLabs
-        const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
-        const client = await getElevenLabsClient();
+      // Create test in ElevenLabs
+      const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
+      const client = await getElevenLabsClient();
 
-        const { toCamelCaseKeys } = await import('../../utils.js');
-        const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
-        const response = await createTestApi(client, testApiConfig);
-        const testId = response.id;
+      const { toCamelCaseKeys } = await import('../../utils.js');
+      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
+      const response = await createTestApi(client, testApiConfig);
+      const testId = response.id;
 
-        // Write test ID back to config file
-        testConfig.id = testId;
-        await writeAgentConfig(configFilePath, testConfig);
-      }
+      // Write test ID back to config file
+      testConfig.id = testId;
+      await writeAgentConfig(configFilePath, testConfig);
 
       setCurrentStep('complete');
 
@@ -321,7 +317,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
           <Box flexDirection="column">
             <Text color={theme.colors.accent.primary} bold>Creating test...</Text>
             <Box marginTop={1}>
-              <Text color={theme.colors.text.muted}>⏳ Generating configuration and {skipUpload ? 'saving locally' : 'uploading to ElevenLabs'}...</Text>
+              <Text color={theme.colors.text.muted}>⏳ Generating configuration and uploading to ElevenLabs...</Text>
             </Box>
             {error && (
               <Box marginTop={1}>
@@ -336,13 +332,8 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
           <Box flexDirection="column">
             <Text color={theme.colors.success} bold>✅ Test created successfully!</Text>
             <Box marginTop={1}>
-              <Text color={theme.colors.text.primary}>Test "{testName}" has been created and {skipUpload ? 'saved locally' : 'uploaded to ElevenLabs'}.</Text>
+              <Text color={theme.colors.text.primary}>Test "{testName}" has been created and uploaded to ElevenLabs.</Text>
             </Box>
-            {skipUpload && (
-              <Box marginTop={1}>
-                <Text color={theme.colors.text.muted}>Run 'agents push-tests' to upload to ElevenLabs.</Text>
-              </Box>
-            )}
           </Box>
         );
 

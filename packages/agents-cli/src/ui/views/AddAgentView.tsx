@@ -15,7 +15,6 @@ import fs from 'fs-extra';
 interface AddAgentViewProps {
   initialName?: string;
   template?: string;
-  skipUpload?: boolean;
   onComplete?: () => void;
 }
 
@@ -24,7 +23,6 @@ type Step = 'name' | 'template' | 'confirm' | 'creating';
 export const AddAgentView: React.FC<AddAgentViewProps> = ({ 
   initialName,
   template = 'default',
-  skipUpload = false,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -89,24 +87,22 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       
       await fs.writeJson(agentsConfigPath, agentsConfig, { spaces: 2 });
       
-      // Step 5: Upload to ElevenLabs (if not skipped)
-      if (!skipUpload) {
-        setStatusMessage('Uploading to ElevenLabs...');
-        const client = await getElevenLabsClient();
-        const conversationConfig = agentConfig.conversation_config || {};
-        const platformSettings = agentConfig.platform_settings;
-        const tags = agentConfig.tags || [];
-        const agentId = await createAgentApi(
-          client,
-          agentName,
-          conversationConfig,
-          platformSettings,
-          tags
-        );
-        
-        if (agentId) {
-          setStatusMessage(`Agent created with ID: ${agentId}`);
-        }
+      // Step 5: Upload to ElevenLabs
+      setStatusMessage('Uploading to ElevenLabs...');
+      const client = await getElevenLabsClient();
+      const conversationConfig = agentConfig.conversation_config || {};
+      const platformSettings = agentConfig.platform_settings;
+      const tags = agentConfig.tags || [];
+      const agentId = await createAgentApi(
+        client,
+        agentName,
+        conversationConfig,
+        platformSettings,
+        tags
+      );
+      
+      if (agentId) {
+        setStatusMessage(`Agent created with ID: ${agentId}`);
       }
       
       setSuccess(true);
@@ -190,7 +186,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
                 • Template: <Text color={theme.colors.accent.primary}>{selectedTemplate}</Text>
               </Text>
               <Text color={theme.colors.text.secondary}>
-                • Upload to ElevenLabs: <Text color={theme.colors.accent.primary}>{skipUpload ? 'No' : 'Yes'}</Text>
+                • Upload to ElevenLabs: <Text color={theme.colors.accent.primary}>Yes</Text>
               </Text>
             </Box>
             <Box marginTop={2}>

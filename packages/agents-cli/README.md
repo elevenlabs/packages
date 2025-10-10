@@ -154,10 +154,10 @@ agents whoami
 agents add "Agent Name" [--template customer-service]
 
 # Create webhook tool
-agents add-webhook-tool "Tool Name" [--config-path path] [--skip-upload]
+agents add-webhook-tool "Tool Name" [--config-path path]
 
 # Create client tool
-agents add-client-tool "Tool Name" [--config-path path] [--skip-upload]
+agents add-client-tool "Tool Name" [--config-path path]
 
 # Push changes
 agents push [--agent "Agent Name"] [--dry-run]
