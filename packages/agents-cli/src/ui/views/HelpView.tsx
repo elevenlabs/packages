@@ -55,6 +55,10 @@ const commands: Command[][] = [
       description: "List all configured agents",
     },
     {
+      name: "delete <agentId>",
+      description: "Delete an agent by ID (both locally and remotely)",
+    },
+    {
       name: "status",
       description: "Show the status of agents",
     },

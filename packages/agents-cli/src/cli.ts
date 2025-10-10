@@ -5,24 +5,22 @@ import path from 'path';
 import fs from 'fs-extra';
 import dotenv from 'dotenv';
 import {
-  calculateConfigHash,
   readAgentConfig,
   writeAgentConfig,
-  toCamelCaseKeys,
-  toSnakeCaseKeys
+  toCamelCaseKeys
 } from './utils.js';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
 } from './templates.js';
-import { TestConfig } from './test-templates.js';
 import {
   getElevenLabsClient,
   createAgentApi,
   updateAgentApi,
   listAgentsApi,
   getAgentApi,
+  deleteAgentApi,
   createToolApi,
   updateToolApi,
   listToolsApi,
@@ -76,6 +74,7 @@ import PullToolsView from './ui/views/PullToolsView.js';
 import PullView from './ui/views/PullView.js';
 import TestView from './ui/views/TestView.js';
 import AddTestView from './ui/views/AddTestView.js';
+import DeleteView from './ui/views/DeleteView.js';
 import { spawnSync } from 'child_process';
 import { URL } from 'url';
 
@@ -729,6 +728,29 @@ program
   });
 
 program
+  .command('delete')
+  .description('Delete an agent by ID (both locally and remotely)')
+  .argument('<agentId>', 'ID of the agent to delete')
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (agentId: string, options: { ui: boolean }) => {
+    try {
+      if (options.ui !== false) {
+        // Use Ink UI for delete
+        const { waitUntilExit } = render(
+          React.createElement(DeleteView, { agentId })
+        );
+        await waitUntilExit();
+      } else {
+        // Fallback to non-UI delete
+        await deleteAgent(agentId);
+      }
+    } catch (error) {
+      console.error(`Error deleting agent: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('pull')
   .description('Pull all agents from ElevenLabs workspace and add them to local configuration')
   .option('--agent <name>', 'Specific agent name pattern to search for')
@@ -929,6 +951,54 @@ program
   });
 
 // Helper functions
+
+async function deleteAgent(agentId: string): Promise<void> {
+  // Load agents configuration
+  const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    throw new Error('agents.json not found. Run \'agents init\' first.');
+  }
+
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  
+  // Find agent by ID
+  const agentIndex = agentsConfig.agents.findIndex(agent => agent.id === agentId);
+  
+  if (agentIndex === -1) {
+    throw new Error(`Agent with ID '${agentId}' not found in local configuration`);
+  }
+  
+  const agentDef = agentsConfig.agents[agentIndex];
+  
+  console.log(`Deleting agent '${agentDef.name}' (ID: ${agentId})...`);
+  
+  // Delete from ElevenLabs API
+  try {
+    const client = await getElevenLabsClient();
+    await deleteAgentApi(client, agentId);
+    console.log('✓ Deleted from ElevenLabs');
+  } catch (error) {
+    console.error(`Error deleting from ElevenLabs: ${error}`);
+    throw new Error('Failed to delete agent from ElevenLabs');
+  }
+  
+  // Delete config file if it exists
+  if (agentDef.config && await fs.pathExists(agentDef.config)) {
+    try {
+      await fs.remove(agentDef.config);
+      console.log(`✓ Deleted config file: ${agentDef.config}`);
+    } catch (error) {
+      console.error(`Warning: Failed to delete config file: ${error}`);
+    }
+  }
+  
+  // Remove from agents.json
+  agentsConfig.agents.splice(agentIndex, 1);
+  await writeAgentConfig(agentsConfigPath, agentsConfig);
+  console.log('✓ Removed from agents.json');
+  
+  console.log(`\nAgent '${agentDef.name}' successfully deleted!`);
+}
 
 async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, skipUpload = false): Promise<void> {
   // Check if tools.json exists, create if not

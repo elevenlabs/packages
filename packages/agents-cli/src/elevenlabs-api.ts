@@ -330,4 +330,15 @@ export async function runTestsOnAgentApi(
 export async function getTestInvocationApi(client: ElevenLabsClient, testInvocationId: string): Promise<unknown> {
   const response = await client.conversationalAi.tests.invocations.get(testInvocationId);
   return toSnakeCaseKeys(response);
+}
+
+/**
+ * Deletes an agent using the ElevenLabs API.
+ *
+ * @param client - An initialized ElevenLabs client
+ * @param agentId - The ID of the agent to delete
+ * @returns Promise that resolves when the agent is deleted
+ */
+export async function deleteAgentApi(client: ElevenLabsClient, agentId: string): Promise<void> {
+  await client.conversationalAi.agents.delete(agentId);
 } 
