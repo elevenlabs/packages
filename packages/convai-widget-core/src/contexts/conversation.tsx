@@ -79,6 +79,8 @@ function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const receivedFirstMessageRef = useRef(false);
+  const streamingMessageIndexRef = useRef<number | null>(null);
+  const isReceivingStreamRef = useRef(false);
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
@@ -206,6 +208,11 @@ function useConversationSetup() {
                 receivedFirstMessageRef.current = true
               }
 
+              if (source === "ai" && isReceivingStreamRef.current) {
+                isReceivingStreamRef.current = false;
+                return;
+              }
+
               transcript.value = [
                 ...transcript.value,
                 {
@@ -217,9 +224,44 @@ function useConversationSetup() {
                 },
               ];
             },
+            onAgentChatResponsePart: ({ text, type }) => {
+              const currentTranscript = transcript.peek();
+
+              if (type === "start") {
+                isReceivingStreamRef.current = true;
+                streamingMessageIndexRef.current = currentTranscript.length;
+                transcript.value = [
+                  ...currentTranscript,
+                  {
+                    type: "message",
+                    role: "ai",
+                    message: "",
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  },
+                ];
+              } else if (type === "delta") {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null && currentTranscript[streamingIndex]) {
+                  const updatedTranscript = [...currentTranscript];
+                  const streamingMessage = updatedTranscript[streamingIndex];
+                  if (streamingMessage.type === "message") {
+                    updatedTranscript[streamingIndex] = {
+                      ...streamingMessage,
+                      message: streamingMessage.message + text,
+                    };
+                    transcript.value = updatedTranscript;
+                  }
+                }
+              } else if (type === "stop") {
+                streamingMessageIndexRef.current = null;
+              }
+            },
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
+              streamingMessageIndexRef.current = null;
+              isReceivingStreamRef.current = false;
               transcript.value = [
                 ...transcript.value,
                 details.reason === "error"
