@@ -162,8 +162,8 @@ export const PullView: React.FC<PullViewProps> = ({
         const platformSettings = agentDetailsTyped.platformSettings || agentDetailsTyped.platform_settings || {};
         const tags = agentDetailsTyped.tags || [];
 
+        // Create agent config structure (without agent_id - it goes in index file)
         const agentConfig = {
-          agent_id: agent.agentId,
           name: agentName,
           conversation_config: conversationConfig,
           platform_settings: platformSettings,
@@ -179,10 +179,11 @@ export const PullView: React.FC<PullViewProps> = ({
         await fs.ensureDir(path.dirname(configFilePath));
         await writeAgentConfig(configFilePath, agentConfig);
 
-        // Add to agents config
+        // Add to agents config with ID
         agentsConfig.agents.push({
           name: agentName,
-          config: configPath
+          config: configPath,
+          id: agent.agentId
         });
         existingNames.add(agentName);
 

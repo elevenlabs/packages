@@ -19,12 +19,14 @@ interface PushViewProps {
   agents: PushAgent[];
   dryRun?: boolean;
   onComplete?: () => void;
+  agentsConfigPath?: string;
 }
 
 export const PushView: React.FC<PushViewProps> = ({ 
   agents, 
   dryRun = false,
-  onComplete 
+  onComplete,
+  agentsConfigPath = 'agents.json'
 }) => {
   const { exit } = useApp();
   const [currentAgentIndex, setCurrentAgentIndex] = useState(0);
@@ -67,7 +69,8 @@ export const PushView: React.FC<PushViewProps> = ({
 
         // Load agent config
         const agentConfig = await readAgentConfig<any>(configPath);
-        const agentId = agentConfig.agent_id;
+        // Get agent ID from props (which comes from agents.json)
+        const agentId = agent.agentId;
 
         if (dryRun) {
           // Dry run mode
@@ -109,9 +112,13 @@ export const PushView: React.FC<PushViewProps> = ({
               tags
             );
 
-            // Write agent ID back to config file
-            agentConfig.agent_id = newAgentId;
-            await writeAgentConfig(configPath, agentConfig);
+            // Store agent ID in agents.json index file
+            const agentsConfig = await readAgentConfig<any>(path.resolve(agentsConfigPath));
+            const agentDef = agentsConfig.agents.find((a: any) => a.name === agent.name);
+            if (agentDef) {
+              agentDef.id = newAgentId;
+              await writeAgentConfig(path.resolve(agentsConfigPath), agentsConfig);
+            }
 
             setPushedAgents(prev => 
               prev.map((a, i) => i === currentAgentIndex 

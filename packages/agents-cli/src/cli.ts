@@ -92,6 +92,7 @@ const TESTS_CONFIG_FILE = "tests.json";
 interface AgentDefinition {
   name: string;
   config: string;
+  id?: string;
 }
 
 interface AgentsConfig {
@@ -102,6 +103,7 @@ interface TestDefinition {
   name: string;
   config: string;
   type?: string;
+  id?: string;
 }
 
 interface TestsConfig {
@@ -527,13 +529,11 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
-      // Write agent ID back to config file
-      agentConfig.agent_id = agentId;
-      await writeAgentConfig(configFilePath, agentConfig);
-      
+      // Store agent ID in index file, not in config file
       const newAgent: AgentDefinition = {
         name,
-        config: configPath
+        config: configPath,
+        id: agentId
       };
       agentsConfig.agents.push(newAgent);
       
@@ -647,7 +647,8 @@ program
         const pushAgentsData = agentsToProcess.map(agent => ({
           name: agent.name,
           configPath: agent.config,
-          status: 'pending' as const
+          status: 'pending' as const,
+          agentId: agent.id
         }));
         
         const { waitUntilExit } = render(
@@ -946,17 +947,10 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   // Check if tool already exists
   const existingTool = toolsConfig.tools.find(tool => tool.name === name);
   
-  if (existingTool && existingTool.config) {
-    // Check if the config file has a tool_id
-    try {
-      const existingConfig = await readAgentConfig(existingTool.config);
-      if ((existingConfig as unknown as Tool).tool_id) {
-        console.error(`Tool '${name}' already exists with ID: ${(existingConfig as unknown as Tool).tool_id}`);
-        process.exit(1);
-      }
-    } catch (error) {
-      // Config file doesn't exist or is invalid, allow recreation
-    }
+  if (existingTool && existingTool.id) {
+    // Check if the tool already has an ID in the index file
+    console.error(`Tool '${name}' already exists with ID: ${existingTool.id}`);
+    process.exit(1);
   }
   
   // Generate config path if not provided
@@ -1060,9 +1054,12 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
-    // Write tool ID back to config file
-    (toolConfig as Tool).tool_id = toolId;
-    await writeToolConfig(configFilePath, toolConfig as Tool);
+    // Store tool ID in index file
+    const toolDef = toolsConfig.tools.find(t => t.name === name);
+    if (toolDef) {
+      toolDef.id = toolId;
+      await writeToolsConfig(toolsConfigPath, toolsConfig);
+    }
     
     console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
     
@@ -1122,8 +1119,8 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
       continue;
     }
     
-    // Get agent ID from config
-    const agentId = agentConfig.agent_id;
+    // Get agent ID from index file
+    const agentId = agentDef.id;
     
     // Always push (force override)
     console.log(`${agentDefName}: Will push (force override)`);
@@ -1153,9 +1150,9 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
         );
         console.log(`Created agent ${agentDefName} (ID: ${newAgentId})`);
         
-        // Write agent ID back to config file
-        agentConfig.agent_id = newAgentId;
-        await writeAgentConfig(configPath, agentConfig);
+        // Store agent ID in index file
+        agentDef.id = newAgentId;
+        changesMade = true;
       } else {
         // Update existing agent
         await updateAgentApi(
@@ -1174,6 +1171,11 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     } catch (error) {
       console.log(`Error processing ${agentDefName}: ${error}`);
     }
+  }
+  
+  // Save updated agents.json if there were changes
+  if (changesMade) {
+    await writeAgentConfig(agentsConfigPath, agentsConfig);
   }
 }
 
@@ -1213,16 +1215,17 @@ async function showStatus(agentName?: string): Promise<void> {
     console.log(`\n${agentNameCurrent}`);
     console.log(`   Config: ${configPath}`);
     
+    // Get agent ID from index file
+    const agentId = agentDef.id || 'Not created yet';
+    console.log(`   Agent ID: ${agentId}`);
+    
     // Check config file status
     if (await fs.pathExists(configPath)) {
       try {
-        const agentConfig = await readAgentConfig<AgentConfig>(configPath);
-        const agentId = agentConfig.agent_id || 'Not created yet';
-        
-        console.log(`   Agent ID: ${agentId}`);
+        await readAgentConfig<AgentConfig>(configPath);
         
         // Simple status based on whether ID exists
-        if (agentConfig.agent_id) {
+        if (agentDef.id) {
           console.log(`   Status: Created (use push to update)`);
         } else {
           console.log(`   Status: Not pushed yet`);
@@ -1424,9 +1427,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
       const platformSettings = agentDetailsTyped.platformSettings || agentDetailsTyped.platform_settings || {};
       const tags = agentDetailsTyped.tags || [];
       
-      // Create agent config structure
+      // Create agent config structure (without agent_id - it goes in index file)
       const agentConfig: AgentConfig = {
-        agent_id: agentId,
         name: agentNameRemote,
         conversation_config: conversationConfig as AgentConfig['conversation_config'],
         platform_settings: platformSettings,
@@ -1442,10 +1444,11 @@ async function pullAgents(options: PullOptions): Promise<void> {
       await fs.ensureDir(path.dirname(configFilePath));
       await writeAgentConfig(configFilePath, agentConfig);
       
-      // Create new agent entry for agents.json
+      // Create new agent entry for agents.json with ID
       const newAgent: AgentDefinition = {
         name: agentNameRemote,
-        config: configPath
+        config: configPath,
+        id: agentId
       };
       
       // Add to agents config
@@ -1550,15 +1553,12 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       // Fetch detailed tool configuration
       console.log(`Pulling config for '${toolNameRemote}'...`);
       const toolDetails = await getToolApi(client, toolId);
-      
-      // Add tool_id to the config
-      (toolDetails as Tool).tool_id = toolId;
 
       // Generate config file path
       const safeName = toolNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
       const configPath = `${options.outputDir}/${safeName}.json`;
 
-      // Create config file
+      // Create config file (without tool_id - it goes in index file)
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
       await writeToolConfig(configFilePath, toolDetails as Tool);
@@ -1567,11 +1567,12 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       const toolDetailsTyped = toolDetails as { type?: string };
       const toolType = toolDetailsTyped.type || 'unknown';
 
-      // Create new tool entry for tools.json
+      // Create new tool entry for tools.json with ID
       const newTool: ToolDefinition = {
         name: toolNameRemote,
         type: toolType as 'webhook' | 'client',
-        config: configPath
+        config: configPath,
+        id: toolId
       };
 
       // Add to tools config
@@ -1673,17 +1674,10 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
   // Check if test already exists
   const existingTest = testsConfig.tests.find(test => test.name === name);
 
-  if (existingTest) {
-    // Check if the config file has an id
-    try {
-      const existingConfig = await readAgentConfig<TestConfig>(existingTest.config);
-      if (existingConfig.id) {
-        console.error(`Test '${name}' already exists with ID: ${existingConfig.id}`);
-        process.exit(1);
-      }
-    } catch (error) {
-      // Config file doesn't exist or is invalid, allow recreation
-    }
+  if (existingTest && existingTest.id) {
+    // Check if the test already has an ID in the index file
+    console.error(`Test '${name}' already exists with ID: ${existingTest.id}`);
+    process.exit(1);
   }
 
   // Generate config path
@@ -1728,9 +1722,12 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
 
-    // Write test ID back to config file
-    testConfig.id = testId;
-    await writeAgentConfig(configFilePath, testConfig);
+    // Store test ID in index file
+    const testDef = testsConfig.tests.find(t => t.name === name);
+    if (testDef) {
+      testDef.id = testId;
+      await writeAgentConfig(testsConfigPath, testsConfig);
+    }
 
     console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
 
@@ -1785,8 +1782,8 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
       continue;
     }
 
-    // Get test ID from config
-    const testId = (testConfig as TestConfig).id;
+    // Get test ID from index file
+    const testId = testDef.id;
 
     // Always push (force override)
     console.log(`${testDefName}: Will push (force override)`);
@@ -1806,9 +1803,9 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
         const newTestId = response.id;
         console.log(`Created test ${testDefName} (ID: ${newTestId})`);
         
-        // Write test ID back to config file
-        (testConfig as TestConfig).id = newTestId;
-        await writeAgentConfig(configPath, testConfig);
+        // Store test ID in index file
+        testDef.id = newTestId;
+        changesMade = true;
       } else {
         // Update existing test
         await updateTestApi(client!, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
@@ -1820,6 +1817,11 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     } catch (error) {
       console.log(`Error processing ${testDefName}: ${error}`);
     }
+  }
+  
+  // Save updated tests.json if there were changes
+  if (changesMade) {
+    await writeAgentConfig(testsConfigPath, testsConfig);
   }
 }
 
@@ -1873,8 +1875,8 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
       continue;
     }
 
-    // Get tool ID from config
-    const toolId = (toolConfig as unknown as Tool).tool_id;
+    // Get tool ID from index file
+    const toolId = toolDef.id;
 
     // Always push (force override)
     console.log(`${toolDefName}: Will push (force override)`);
@@ -1892,9 +1894,9 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
         const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
         console.log(`Created tool ${toolDefName} (ID: ${newToolId})`);
         
-        // Write tool ID back to config file
-        (toolConfig as unknown as Tool).tool_id = newToolId;
-        await writeToolConfig(configPath, toolConfig as unknown as Tool);
+        // Store tool ID in index file
+        toolDef.id = newToolId;
+        changesMade = true;
       } else {
         // Update existing tool
         await updateToolApi(client!, toolId, toolConfig);
@@ -1906,6 +1908,11 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     } catch (error) {
       console.log(`Error processing ${toolDefName}: ${error}`);
     }
+  }
+  
+  // Save updated tools.json if there were changes
+  if (changesMade) {
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
   }
 }
 
@@ -1969,23 +1976,21 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       // Fetch detailed test configuration
       console.log(`Pulling config for '${testNameRemote}'...`);
       const testDetails = await getTestApi(client, testId);
-      
-      // Add test id to the config
-      (testDetails as any).id = testId;
 
       // Generate config file path
       const safeName = testNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
       const configPath = `${options.outputDir}/${safeName}.json`;
 
-      // Create config file
+      // Create config file (without test ID - it goes in index file)
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
       await writeAgentConfig(configFilePath, testDetails);
 
-      // Create new test entry for tests.json
+      // Create new test entry for tests.json with ID
       const newTest: TestDefinition = {
         name: testNameRemote,
-        config: configPath
+        config: configPath,
+        id: testId
       };
 
       // Add to tests config

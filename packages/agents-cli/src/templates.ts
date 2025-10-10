@@ -3,7 +3,8 @@
  */
 
 export interface AgentConfig {
-  agent_id?: string;
+  // Note: agent_id is now stored in agents.json, not in individual config files
+  agent_id?: string; // @deprecated - for backwards compatibility only
   name: string;
   conversation_config: {
     agent: {

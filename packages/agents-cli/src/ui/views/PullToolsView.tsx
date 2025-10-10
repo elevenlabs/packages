@@ -198,7 +198,8 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
         const newTool: ToolDefinition = {
           name: toolToPull.name,
           type: toolType as 'webhook' | 'client',
-          config: configPath
+          config: configPath,
+          id: toolToPull.id
         };
 
         toolsConfig.tools.push(newTool);

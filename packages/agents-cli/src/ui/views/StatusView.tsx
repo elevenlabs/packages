@@ -56,13 +56,10 @@ export const StatusView: React.FC<StatusViewProps> = ({
           const configExists = await fs.pathExists(fullConfigPath);
           
           let status: AgentStatus['status'] = 'missing';
-          let agentId: string | undefined;
+          // Get agent ID from index file
+          const agentId: string | undefined = (agentDef as any).id;
 
           if (configExists) {
-            // Read agent ID from config
-            const config = await readAgentConfig(fullConfigPath);
-            agentId = (config as any).agent_id;
-            
             // Simple status based on whether ID exists
             if (agentId) {
               status = 'created';
