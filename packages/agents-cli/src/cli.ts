@@ -2048,15 +2048,18 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     process.exit(0);
   })();
 } else {
-  // Special handling for 'add' command without subcommand
+  // Special handling for 'add' command without name argument
   if (args[0] === 'add' && (args.length === 1 || args[1].startsWith('-'))) {
-    console.error('Error: Missing required subcommand');
-    console.error('Usage: agents add <agent|webhook-tool|client-tool> [options]');
+    console.error('Error: Missing required argument');
+    console.error('Usage: agents add <name> [options]');
     console.error('');
-    console.error('Available subcommands:');
-    console.error('  agent          Add a new agent');
-    console.error('  webhook-tool   Add a new webhook tool');
-    console.error('  client-tool    Add a new client tool');
+    console.error('Example:');
+    console.error('  agents add "My Agent"');
+    console.error('  agents add "My Agent" --template advanced');
+    console.error('');
+    console.error('For other commands, see:');
+    console.error('  agents add-webhook-tool <name>');
+    console.error('  agents add-client-tool <name>');
     process.exit(1);
   }
 

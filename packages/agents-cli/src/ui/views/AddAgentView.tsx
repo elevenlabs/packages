@@ -33,6 +33,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
 
   const templates = Object.entries(getTemplateOptions()).map(([name, description]) => ({
     label: `${name} - ${description}`,
@@ -78,6 +79,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       
       if (agentId) {
         setStatusMessage(`Agent created with ID: ${agentId}`);
+        setCreatedAgentId(agentId);
       }
       
       // Step 3: Create directory
@@ -216,7 +218,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
                 />
                 <Box marginTop={1}>
                   <Text color={theme.colors.text.secondary}>
-                    Configuration saved to: agent_configs/{agentName}.json
+                    Configuration saved to: agent_configs/{createdAgentId}.json
                   </Text>
                 </Box>
               </Box>
