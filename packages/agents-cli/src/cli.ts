@@ -1229,7 +1229,6 @@ async function showStatus(agentName?: string): Promise<void> {
   }
   
   const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
-  const lockData = await loadLockFile(path.resolve(LOCK_FILE));
   
   if (agentsConfig.agents.length === 0) {
     console.log('No agents configured');
@@ -1256,30 +1255,22 @@ async function showStatus(agentName?: string): Promise<void> {
       continue;
     }
     
-    // Get agent ID from lock file
-    const lockedAgent = getAgentFromLock(lockData, agentNameCurrent);
-    const agentId = lockedAgent?.id || 'Not created yet';
-    
     console.log(`\n${agentNameCurrent}`);
-    console.log(`   Agent ID: ${agentId}`);
     console.log(`   Config: ${configPath}`);
     
     // Check config file status
     if (await fs.pathExists(configPath)) {
       try {
-        const agentConfig = await readAgentConfig(configPath);
-        const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-        console.log(`   Config Hash: ${configHash.substring(0, 8)}...`);
+        const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+        const agentId = agentConfig.agent_id || 'Not created yet';
         
-        // Check lock status
-        if (lockedAgent) {
-          if (lockedAgent.hash === configHash) {
-            console.log(`   Status: Synced`);
-          } else {
-            console.log(`   Status: Config changed (needs push)`);
-          }
+        console.log(`   Agent ID: ${agentId}`);
+        
+        // Simple status based on whether ID exists
+        if (agentConfig.agent_id) {
+          console.log(`   Status: Created (use push to update)`);
         } else {
-          console.log(`   Status: New (needs push)`);
+          console.log(`   Status: Not pushed yet`);
         }
         
       } catch (error) {
