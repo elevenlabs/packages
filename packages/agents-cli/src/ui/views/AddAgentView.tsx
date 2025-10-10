@@ -85,20 +85,13 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       const agentsConfigPath = path.resolve('agents.json');
       const agentsConfig = await fs.readJson(agentsConfigPath);
       
-      // Check if agent already exists
-      let existingAgent = agentsConfig.agents.find((agent: any) => agent.name === agentName);
       const relativeConfigPath = `agent_configs/${agentName}.json`;
       
-      if (existingAgent) {
-        // Update existing agent
-        throw new Error(`Agent '${agentName}' already exists in agents.json`);
-      } else {
-        // Add new agent
-        agentsConfig.agents.push({
-          name: agentName,
-          config: relativeConfigPath
-        });
-      }
+      // Add new agent
+      agentsConfig.agents.push({
+        name: agentName,
+        config: relativeConfigPath
+      });
       
       await fs.writeJson(agentsConfigPath, agentsConfig, { spaces: 2 });
       

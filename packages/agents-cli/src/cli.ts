@@ -496,24 +496,6 @@ program
       // Load existing config
       const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
-      // Load lock file
-      const lockFilePath = path.resolve(LOCK_FILE);
-      const lockData = await loadLockFile(lockFilePath);
-      
-      // Check if agent already exists
-      const lockedAgent = getAgentFromLock(lockData, name);
-      if (lockedAgent?.id) {
-        console.error(`Agent '${name}' already exists`);
-        process.exit(1);
-      }
-      
-      // Check if agent name exists in agents.json
-      const existingAgent = agentsConfig.agents.find(agent => agent.name === name);
-      if (existingAgent) {
-        console.error(`Agent '${name}' already exists in agents.json`);
-        process.exit(1);
-      }
-      
       // Generate config path if not provided
       let configPath = options.configPath;
       if (!configPath) {
@@ -583,11 +565,6 @@ program
       // Save updated agents.json
       await writeAgentConfig(agentsConfigPath, agentsConfig);
       console.log(`Added agent '${name}' to agents.json`);
-      
-      // Update lock file with agent ID
-      const configHash = calculateConfigHash(toSnakeCaseKeys(agentConfig));
-      updateAgentInLock(lockData, name, agentId, configHash);
-      await saveLockFile(lockFilePath, lockData);
       
       console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to update`);
       
