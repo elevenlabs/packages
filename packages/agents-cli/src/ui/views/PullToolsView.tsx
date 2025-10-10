@@ -9,14 +9,10 @@ import {
   readToolsConfig,
   writeToolsConfig,
   writeToolConfig,
-  loadToolsLockFile,
-  saveToolsLockFile,
-  updateToolInLock,
   ToolsConfig,
   ToolDefinition,
   type Tool
 } from '../../tools.js';
-import { calculateConfigHash } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -90,15 +86,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
 
         // Check existing tools
         const existingToolNames = new Set(toolsConfig.tools.map(t => t.name));
-        const lockFilePath = path.resolve('tools-lock.json');
-        const toolsLockData = await loadToolsLockFile(lockFilePath);
-        const existingToolIds = new Set<string>();
-
-        Object.values(toolsLockData.tools).forEach(toolData => {
-          if (toolData.id) {
-            existingToolIds.add(toolData.id);
-          }
-        });
 
         // Prepare tools list
         const toolsToPull: PullTool[] = filteredTools
@@ -107,17 +94,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
             let toolName = toolItem.name;
 
             if (!toolId) return null;
-
-            // Check if already exists
-            if (existingToolIds.has(toolId)) {
-              return {
-                name: toolName,
-                id: toolId,
-                type: toolItem.type,
-                status: 'skipped' as const,
-                message: 'Already exists'
-              };
-            }
 
             // Handle name conflicts
             if (existingToolNames.has(toolName)) {
@@ -227,13 +203,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
 
         toolsConfig.tools.push(newTool);
         await writeToolsConfig(toolsConfigPath, toolsConfig);
-
-        // Update lock file
-        const lockFilePath = path.resolve('tools-lock.json');
-        const toolsLockData = await loadToolsLockFile(lockFilePath);
-        const configHash = calculateConfigHash(toolDetails);
-        updateToolInLock(toolsLockData, toolToPull.name, toolToPull.id, configHash);
-        await saveToolsLockFile(lockFilePath, toolsLockData);
 
         setTools(prev => prev.map((t, i) =>
           i === currentToolIndex

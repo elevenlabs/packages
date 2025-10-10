@@ -11,11 +11,6 @@ import {
   writeToolConfig,
   readToolsConfig,
   ToolsConfig,
-  loadToolsLockFile,
-  saveToolsLockFile,
-  updateToolInLock,
-  getToolFromLock,
-  ToolsLockFile,
 } from "../tools";
 import * as elevenLabsApi from "../elevenlabs-api";
 import * as config from "../config";
@@ -41,7 +36,6 @@ const mockedOs = os as jest.Mocked<typeof os>;
 describe("Push Tools Integration Tests", () => {
   let tempDir: string;
   let toolsConfigPath: string;
-  let lockFilePath: string;
 
   beforeEach(async () => {
     // Create a temporary directory
@@ -49,7 +43,6 @@ describe("Push Tools Integration Tests", () => {
       path.join(os.tmpdir(), "agents-sync-tools-test-")
     );
     toolsConfigPath = path.join(tempDir, "tools.json");
-    lockFilePath = path.join(tempDir, "agents.lock");
 
     // Set up mocks
     mockedOs.homedir.mockReturnValue("/mock/home");
@@ -176,31 +169,6 @@ describe("Push Tools Integration Tests", () => {
       expect(readConfig.tools[0].type).toBe("client");
     });
 
-    it("should handle lock file operations for tools", async () => {
-      const lockData: ToolsLockFile = {
-        tools: {},
-      };
-
-      // Test updating tool in lock
-      updateToolInLock(lockData, "test-tool", "tool_123", "hash123");
-      expect(lockData.tools["test-tool"]).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
-
-      // Test getting tool from lock
-      const lockedTool = getToolFromLock(lockData, "test-tool");
-      expect(lockedTool).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
-
-      // Test getting non-existent tool from lock
-      const nonExistentTool = getToolFromLock(lockData, "non-existent");
-
-      expect(nonExistentTool).toBeUndefined();
-    });
-
     it("should calculate config hash correctly", async () => {
       const toolConfig = {
         name: "test-tool",
@@ -221,35 +189,6 @@ describe("Push Tools Integration Tests", () => {
       };
       const hash3 = calculateConfigHash(toSnakeCaseKeys(modifiedConfig));
       expect(hash1).not.toBe(hash3);
-    });
-
-    it("should detect config changes correctly", async () => {
-      const toolConfig = {
-        name: "test-tool",
-        description: "Test tool",
-        type: "webhook",
-      };
-
-      const initialHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
-
-      const lockData: ToolsLockFile = {
-        tools: {},
-      };
-
-      updateToolInLock(lockData, "test-tool", "tool_123", initialHash);
-
-      // Same config should not need update
-      const currentHash = calculateConfigHash(toSnakeCaseKeys(toolConfig));
-      const lockedTool = getToolFromLock(lockData, "test-tool");
-      expect(lockedTool?.hash).toBe(currentHash);
-
-      // Modified config should need update
-      const modifiedConfig = {
-        ...toolConfig,
-        description: "Modified test tool",
-      };
-      const modifiedHash = calculateConfigHash(toSnakeCaseKeys(modifiedConfig));
-      expect(lockedTool?.hash).not.toBe(modifiedHash);
     });
   });
 
@@ -346,27 +285,6 @@ describe("Push Tools Integration Tests", () => {
 
       // The push function should handle missing config files gracefully
       // by logging a warning and continuing with other tools
-    });
-
-    it("should save and load lock file correctly", async () => {
-      const lockData = {
-        agents: {},
-        tools: {
-          "test-tool": {
-            id: "tool_123",
-            hash: "hash123",
-          },
-        },
-        tests: {},
-      };
-
-      await saveToolsLockFile(lockFilePath, lockData);
-
-      const loadedLockData = await loadToolsLockFile(lockFilePath);
-      expect(loadedLockData.tools["test-tool"]).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
     });
   });
 });

@@ -9,7 +9,6 @@ export * from './elevenlabs-api.js';
 export * from './config.js';
 
 // Re-export main types
-export type { LockFileData, LockFileAgent } from './utils.js';
 export type { AgentConfig } from './templates.js';
 export type { CliConfig } from './config.js';
 

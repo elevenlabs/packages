@@ -4,7 +4,6 @@ import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
 import { readAgentConfig } from '../../utils.js';
-import { loadLockFile } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -12,10 +11,8 @@ interface AgentStatus {
   name: string;
   configPath: string;
   configExists: boolean;
-  configHash?: string;
-  deployedHash?: string;
   agentId?: string;
-  status: 'synced' | 'modified' | 'not-deployed' | 'missing';
+  status: 'created' | 'not-pushed' | 'missing';
 }
 
 interface StatusViewProps {
@@ -42,8 +39,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
         }
 
         const agentsConfig = await readAgentConfig<any>(agentsConfigPath);
-        const lockFilePath = path.resolve('agents.lock');
-        const lockData = await loadLockFile(lockFilePath);
 
         const statusList: AgentStatus[] = [];
 
@@ -61,35 +56,18 @@ export const StatusView: React.FC<StatusViewProps> = ({
           const configExists = await fs.pathExists(fullConfigPath);
           
           let status: AgentStatus['status'] = 'missing';
-          let configHash: string | undefined;
-          let deployedHash: string | undefined;
           let agentId: string | undefined;
 
           if (configExists) {
-            // Calculate current config hash
+            // Read agent ID from config
             const config = await readAgentConfig(fullConfigPath);
-            const { calculateConfigHash, getAgentFromLock } = await import('../../utils.js');
-            configHash = calculateConfigHash(config);
-
-            // Get deployed info from lock file
-            const agentLock = getAgentFromLock(lockData, agentDef.name);
+            agentId = (config as any).agent_id;
             
-            if (agentLock && typeof agentLock === 'object') {
-              if ('config_hash' in agentLock) {
-                deployedHash = (agentLock as any).config_hash;
-                agentId = (agentLock as any).id;
-              } else if ('hash' in agentLock) {
-                deployedHash = (agentLock as any).hash;
-                agentId = (agentLock as any).id;
-              }
-
-              if (configHash === deployedHash) {
-                status = 'synced';
-              } else {
-                status = 'modified';
-              }
+            // Simple status based on whether ID exists
+            if (agentId) {
+              status = 'created';
             } else {
-              status = 'not-deployed';
+              status = 'not-pushed';
             }
           }
 
@@ -97,8 +75,6 @@ export const StatusView: React.FC<StatusViewProps> = ({
             name: agentDef.name,
             configPath,
             configExists,
-            configHash,
-            deployedHash,
             agentId,
             status
           });
@@ -126,9 +102,8 @@ export const StatusView: React.FC<StatusViewProps> = ({
     return () => clearTimeout(timer);
   }, [agentName, exit, onComplete]);
 
-  const syncedCount = agents.filter(a => a.status === 'synced').length;
-  const modifiedCount = agents.filter(a => a.status === 'modified').length;
-  const notDeployedCount = agents.filter(a => a.status === 'not-deployed').length;
+  const createdCount = agents.filter(a => a.status === 'created').length;
+  const notPushedCount = agents.filter(a => a.status === 'not-pushed').length;
   const missingCount = agents.filter(a => a.status === 'missing').length;
 
   return (
@@ -160,12 +135,11 @@ export const StatusView: React.FC<StatusViewProps> = ({
             <Box marginBottom={1}>
               <StatusCard
                 title="Status Summary"
-                status={modifiedCount > 0 ? 'warning' : 'success'}
+                status={notPushedCount > 0 ? 'warning' : 'success'}
                 message={`${agents.length} agent(s) found`}
                 details={[
-                  `✓ ${syncedCount} synced`,
-                  `! ${modifiedCount} modified`,
-                  `○ ${notDeployedCount} not deployed`,
+                  `✓ ${createdCount} created`,
+                  `○ ${notPushedCount} not pushed`,
                   `✗ ${missingCount} missing`
                 ]}
               />
@@ -201,17 +175,13 @@ export const StatusView: React.FC<StatusViewProps> = ({
                 let statusText: string;
 
                 switch (agent.status) {
-                  case 'synced':
+                  case 'created':
                     statusColor = theme.colors.success;
-                    statusText = '✓ Synced';
+                    statusText = '✓ Created';
                     break;
-                  case 'modified':
-                    statusColor = theme.colors.warning;
-                    statusText = '! Modified';
-                    break;
-                  case 'not-deployed':
+                  case 'not-pushed':
                     statusColor = theme.colors.text.muted;
-                    statusText = '○ Not deployed';
+                    statusText = '○ Not pushed';
                     break;
                   case 'missing':
                     statusColor = theme.colors.error;

@@ -3,16 +3,10 @@ import {
   ClientTool,
   readToolsConfig,
   writeToolsConfig,
-  loadToolsLockFile,
-  saveToolsLockFile,
   ToolsConfig,
 } from "../tools";
 import {
-  updateToolInLock,
-  getToolFromLock,
   calculateConfigHash,
-  LockFileData,
-  LockFileAgent,
 } from "../utils";
 import {
   getElevenLabsClient,
@@ -33,107 +27,6 @@ const mockListToolsApi = listToolsApi as jest.MockedFunction<
   typeof listToolsApi
 >;
 const mockGetToolApi = getToolApi as jest.MockedFunction<typeof getToolApi>;
-
-describe("Tool Lock File Management", () => {
-  describe("updateToolInLock", () => {
-    it("should update tool in lock data", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: {},
-        tests: {},
-      };
-
-      updateToolInLock(lockData, "test-tool", "tool_123", "hash123");
-
-      expect(lockData.tools["test-tool"]).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
-    });
-
-    it("should initialize tools object if not present", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: undefined as unknown as Record<string, LockFileAgent>,
-        tests: {},
-      };
-
-      updateToolInLock(lockData, "test-tool", "tool_123", "hash123");
-
-      expect(lockData.tools).toBeDefined();
-      expect(lockData.tools["test-tool"]).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
-    });
-
-    it("should overwrite existing tool data", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: {
-          "test-tool": {
-            id: "old_id",
-            hash: "old_hash",
-          },
-        },
-        tests: {},
-      };
-
-      updateToolInLock(lockData, "test-tool", "new_id", "new_hash");
-
-      expect(lockData.tools["test-tool"]).toEqual({
-        id: "new_id",
-        hash: "new_hash",
-      });
-    });
-  });
-
-  describe("getToolFromLock", () => {
-    it("should return tool data when it exists", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: {
-          "test-tool": {
-            id: "tool_123",
-            hash: "hash123",
-          },
-        },
-        tests: {},
-      };
-
-      const result = getToolFromLock(lockData, "test-tool");
-
-      expect(result).toEqual({
-        id: "tool_123",
-        hash: "hash123",
-      });
-    });
-
-    it("should return undefined when tool does not exist", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: {},
-        tests: {},
-      };
-
-      const result = getToolFromLock(lockData, "non-existent-tool");
-
-      expect(result).toBeUndefined();
-    });
-
-    it("should return undefined when tools object is not present", () => {
-      const lockData: LockFileData = {
-        agents: {},
-        tools: undefined as unknown as Record<string, LockFileAgent>,
-        tests: {},
-      };
-
-      const result = getToolFromLock(lockData, "test-tool");
-
-      expect(result).toBeUndefined();
-    });
-  });
-});
 
 describe("Tool Configuration Hash Generation", () => {
   describe("Webhook Tool Hash", () => {
@@ -617,36 +510,6 @@ describe("Tool Fetching", () => {
       const config = await readToolsConfig(configPath);
 
       expect(config).toEqual({ tools: [] });
-    });
-  });
-
-  describe("Tools Lock File Management", () => {
-    it("should create and read tools lock file", async () => {
-      const toolsLockData = {
-        tools: {
-          "test-webhook": {
-            id: "tool_123",
-            hash: "hash123",
-          },
-          "test-client": {
-            id: "tool_456",
-            hash: "hash456",
-          },
-        },
-      };
-
-      const lockPath = path.join(tempDir, "tools-lock.json");
-      await saveToolsLockFile(lockPath, toolsLockData);
-
-      const readLockData = await loadToolsLockFile(lockPath);
-      expect(readLockData).toEqual(toolsLockData);
-    });
-
-    it("should return empty lock data when file does not exist", async () => {
-      const lockPath = path.join(tempDir, "nonexistent-tools-lock.json");
-      const lockData = await loadToolsLockFile(lockPath);
-
-      expect(lockData).toEqual({ tools: {} });
     });
   });
 

@@ -49,11 +49,7 @@ import {
   writeToolConfig,
   ToolsConfig,
   ToolDefinition,
-  type Tool,
-  loadToolsLockFile,
-  saveToolsLockFile,
-  updateToolInLock,
-  getToolFromLock
+  type Tool
 } from './tools.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -1523,10 +1519,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
 
   const existingToolNames = new Set(toolsConfig.tools.map(tool => tool.name));
 
-  // Load tools lock file for tracking (but don't skip existing)
-  const lockFilePath = path.resolve('tools-lock.json');
-  const toolsLockData = await loadToolsLockFile(lockFilePath);
-
   let newToolsAdded = 0;
 
   for (const toolMeta of filteredTools) {
@@ -1586,10 +1578,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       toolsConfig.tools.push(newTool);
       existingToolNames.add(toolNameRemote);
 
-      // Update tools lock file with tool ID
-      const configHash = calculateConfigHash(toolDetails);
-      updateToolInLock(toolsLockData, toolNameRemote, toolId, configHash);
-
       console.log(`Added '${toolNameRemote}' (config: ${configPath}, type: ${toolType})`);
       newToolsAdded++;
 
@@ -1603,10 +1591,7 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
     // Save updated tools.json
     await writeToolsConfig(toolsConfigPath, toolsConfig);
 
-    // Save updated tools lock file
-    await saveToolsLockFile(lockFilePath, toolsLockData);
-
-    console.log(`Updated ${TOOLS_CONFIG_FILE} and tools-lock.json`);
+    console.log(`Updated ${TOOLS_CONFIG_FILE}`);
   }
 
   if (options.dryRun) {

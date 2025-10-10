@@ -133,10 +133,6 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       const fs = await import('fs-extra');
       const {
         writeAgentConfig,
-        loadLockFile,
-        saveLockFile,
-        updateTestInLock,
-        calculateConfigHash,
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
@@ -197,12 +193,9 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         const response = await createTestApi(client, testApiConfig);
         const testId = response.id;
 
-        // Update lock file
-        const lockFilePath = path.resolve('agents.lock');
-        const lockData = await loadLockFile(lockFilePath);
-        const configHash = calculateConfigHash(testApiConfig);
-        updateTestInLock(lockData, testName, testId, configHash);
-        await saveLockFile(lockFilePath, lockData);
+        // Write test ID back to config file
+        testConfig.id = testId;
+        await writeAgentConfig(configFilePath, testConfig);
       }
 
       setCurrentStep('complete');

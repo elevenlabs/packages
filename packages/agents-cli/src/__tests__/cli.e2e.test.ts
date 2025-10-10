@@ -126,15 +126,11 @@ describe("CLI End-to-End Tests", () => {
       const agentsJsonExists = await fs.pathExists(
         path.join(tempDir, "agents.json")
       );
-      const lockFileExists = await fs.pathExists(
-        path.join(tempDir, "agents.lock")
-      );
       const envExampleExists = await fs.pathExists(
         path.join(tempDir, ".env.example")
       );
 
       expect(agentsJsonExists).toBe(true);
-      expect(lockFileExists).toBe(true);
       expect(envExampleExists).toBe(true);
 
       // Check directory structure
@@ -245,18 +241,6 @@ describe("CLI End-to-End Tests", () => {
       const parsed = JSON.parse(content);
 
       expect(parsed).toEqual({ agents: [] });
-    });
-
-    it("should handle lock file operations", async () => {
-      // Initialize project
-      await runCli(["init"]);
-
-      // Check that lock file was created with correct structure
-      const lockFilePath = path.join(tempDir, "agents.lock");
-      const content = await fs.readFile(lockFilePath, "utf-8");
-      const parsed = JSON.parse(content);
-
-      expect(parsed).toEqual({ agents: {}, tools: {}, tests: {} });
     });
   });
 

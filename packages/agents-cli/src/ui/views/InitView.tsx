@@ -113,20 +113,6 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, override = fals
       status: 'pending',
     },
     {
-      name: 'Create lock file',
-      description: 'Initializing version lock',
-      action: async () => {
-        const lockFilePath = path.join(fullPath, 'agents.lock');
-        const exists = await fs.pathExists(lockFilePath);
-        if (override || !exists) {
-          await fs.writeJson(lockFilePath, { agents: {}, tools: {}, tests: {} }, { spaces: 2 });
-          return 'created';
-        }
-        return 'skipped';
-      },
-      status: 'pending',
-    },
-    {
       name: 'Create .env.example',
       description: 'Adding environment template',
       action: async () => {
