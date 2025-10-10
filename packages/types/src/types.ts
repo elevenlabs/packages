@@ -70,6 +70,9 @@ export type Callbacks = {
   onInterruption?: (
     props: Generated.Interruption["interruption_event"]
   ) => void;
+  onAgentChatResponsePart?: (
+    props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
+  ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };

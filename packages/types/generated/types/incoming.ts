@@ -1,5 +1,6 @@
 // Auto-generated barrel for incoming payloads
 export type {
+  AgentChatResponsePartClientEvent,
   AgentResponseClientEvent,
   AgentResponseCorrectionClientEvent,
   AgentToolResponseClientEvent,

@@ -124,6 +124,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "audio"
   | "agent_response"
   | "agent_response_correction"
+  | "agent_chat_response_part"
   | "interruption"
   | "user_transcript"
   | "tentative_user_transcript"
@@ -193,6 +194,18 @@ export interface AgentResponseCorrectionEvent {
   corrected_agent_response: string;
   event_id: number;
 }
+
+export interface AgentChatResponsePart {
+  type: "agent_chat_response_part";
+  text_response_part: TextResponsePart;
+}
+
+export interface TextResponsePart {
+  text: string;
+  type: TextResponsePartType;
+}
+
+export type TextResponsePartType = "start" | "delta" | "stop";
 
 export interface Interruption {
   type: "interruption";
@@ -438,6 +451,11 @@ export interface AgentResponseClientEvent {
 export interface AgentResponseCorrectionClientEvent {
   type: "agent_response_correction";
   agent_response_correction_event: AgentResponseCorrectionEvent;
+}
+
+export interface AgentChatResponsePartClientEvent {
+  type: "agent_chat_response_part";
+  text_response_part: TextResponsePart;
 }
 
 export interface ClientToolCallClientEvent {

@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react-native",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "ElevenLabs React Native SDK for Conversational AI",
   "main": "./dist/lib.js",
   "module": "./dist/lib.module.js",

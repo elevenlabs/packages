@@ -16,6 +16,9 @@ const CLIENT_TOOL_PARAMETERS = { some: "param" };
 const CUSTOM_PROMPT = "CUSTOM_PROMPT";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
 const TEST_USER_ID = "test-user-123";
+const AGENT_CHAT_RESPONSE_CHUNK_1 = "Hello";
+const AGENT_CHAT_RESPONSE_CHUNK_2 = ", how";
+const AGENT_CHAT_RESPONSE_CHUNK_3 = " can I help?";
 
 const ConversationTypes = ["voice", "text"] as const;
 
@@ -884,6 +887,231 @@ describe("WebRTC Volume Control", () => {
     expect(mockElement.parentNode.removeChild).toHaveBeenCalledWith(
       mockElement
     );
+  });
+});
+
+describe("Agent Chat Response Part Streaming", () => {
+  it("handles streaming text chunks with start, delta, and stop events", async () => {
+    const server = new Server("wss://api.elevenlabs.io/text/streaming-test");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const onAgentChatResponsePart = vi.fn();
+    const streamChunks: Array<{ text: string; type: string }> = [];
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/streaming-test",
+      textOnly: true,
+      onAgentChatResponsePart: chunk => {
+        onAgentChatResponsePart(chunk);
+        streamChunks.push({ text: chunk.text, type: chunk.type });
+      },
+      connectionDelay: { default: 0 },
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    await sleep(100);
+
+    // Send START event
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: "",
+          type: "start",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Send DELTA events with text chunks
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_1,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_2,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_3,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Send STOP event
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: "",
+          type: "stop",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Verify callback was called for each event
+    expect(onAgentChatResponsePart).toHaveBeenCalledTimes(5);
+
+    // Verify the sequence of events
+    expect(streamChunks).toHaveLength(5);
+    expect(streamChunks[0]).toEqual({ text: "", type: "start" });
+    expect(streamChunks[1]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_1,
+      type: "delta",
+    });
+    expect(streamChunks[2]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_2,
+      type: "delta",
+    });
+    expect(streamChunks[3]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_3,
+      type: "delta",
+    });
+    expect(streamChunks[4]).toEqual({ text: "", type: "stop" });
+
+    // Verify the callback received correct data
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(1, {
+      text: "",
+      type: "start",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(2, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_1,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(3, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_2,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(4, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_3,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(5, {
+      text: "",
+      type: "stop",
+    });
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("handles streaming without onAgentChatResponsePart callback", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/text/streaming-no-callback"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    // Start conversation without the callback
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/streaming-no-callback",
+      textOnly: true,
+      connectionDelay: { default: 0 },
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    await sleep(100);
+
+    // Send streaming events - should not throw even without callback
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "",
+            type: "start",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await sleep(50);
+
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "Hello",
+            type: "delta",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await sleep(50);
+
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "",
+            type: "stop",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await conversation.endSession();
+    server.close();
   });
 });
 

@@ -148,6 +148,9 @@ export const MessageHandler = ({
       case "client_tool_call":
         handleClientToolCall(message);
         break;
+      case "agent_chat_response_part":
+        callbacks.onAgentChatResponsePart?.(message.text_response_part);
+        break;
       default:
         callbacks.onDebug?.(message);
         break;
