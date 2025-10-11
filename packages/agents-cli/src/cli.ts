@@ -870,13 +870,15 @@ program
           name: tool.name,
           type: tool.type,
           configPath: tool.config || `tool_configs/${tool.name}.json`,
-          status: 'pending' as const
+          status: 'pending' as const,
+          toolId: tool.id
         }));
 
         const { waitUntilExit } = render(
           React.createElement(PushToolsView, {
             tools: pushToolsData,
-            dryRun: options.dryRun
+            dryRun: options.dryRun,
+            toolsConfigPath: toolsConfigPath
           })
         );
         await waitUntilExit();
