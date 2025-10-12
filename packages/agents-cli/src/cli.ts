@@ -896,8 +896,10 @@ program
   .description('Pull all tests from ElevenLabs workspace and add them to local configuration')
   .option('--output-dir <dir>', 'Directory to store pulled test configs', 'test_configs')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
-  .action(async (options: { outputDir: string; dryRun: boolean }) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { outputDir: string; dryRun: boolean; ui: boolean }) => {
     try {
+      // For now, always use non-UI mode (UI can be added later if needed)
       await pullTests(options);
     } catch (error) {
       console.error(`Error pulling tests: ${error}`);
