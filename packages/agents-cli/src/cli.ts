@@ -1599,14 +1599,8 @@ async function generateWidget(name: string): Promise<void> {
     throw new Error(`Agent '${name}' not found in configuration`);
   }
   
-  // Get agent ID from config file
-  const configPath = agentDef.config;
-  if (!configPath || !(await fs.pathExists(configPath))) {
-    throw new Error(`Config file not found for agent '${name}': ${configPath}`);
-  }
-  
-  const agentConfig = await readAgentConfig<AgentConfig>(configPath);
-  const agentId = agentConfig.agent_id;
+  // Get agent ID from index file (agents.json)
+  const agentId = agentDef.id;
   
   if (!agentId) {
     throw new Error(`Agent '${name}' not found or not yet pushed. Run 'agents push --agent ${name}' to create the agent first`);
