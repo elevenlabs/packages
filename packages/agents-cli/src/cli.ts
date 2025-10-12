@@ -1998,6 +1998,13 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
     throw new Error(`Agent '${agentName}' not found in configuration`);
   }
 
+  // Get agent ID from index file (agents.json)
+  const agentId = agentDef.id;
+  
+  if (!agentId) {
+    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
+  }
+
   // Get agent config to find attached tests
   const configPath = agentDef.config;
 
@@ -2006,12 +2013,6 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
   }
 
   const agentConfig = await readAgentConfig<AgentConfig>(configPath);
-  const agentId = agentConfig.agent_id;
-  
-  if (!agentId) {
-    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
-  }
-  
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
