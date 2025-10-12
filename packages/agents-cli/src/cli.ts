@@ -921,6 +921,61 @@ program
     }
   });
 
+const componentsCommand = program
+  .command('components')
+  .description('Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)');
+
+componentsCommand
+  .command('add')
+  .description('Add a new component from the ElevenLabs UI registry')
+  .argument('[name]', 'Name of the component')
+  .action(async (name?: string) => {
+    function getCommandPrefix(): string {
+      if (process.env.npm_config_user_agent) {
+        const userAgent = process.env.npm_config_user_agent;
+
+        if (userAgent.includes('pnpm')) {
+          return 'pnpm dlx';
+        }
+        if (userAgent.includes('yarn')) {
+          return 'yarn dlx';
+        }
+        if (userAgent.includes('bun')) {
+          return 'bunx';
+        }
+      }
+
+      return 'npx -y';
+    }
+
+    const commandPrefix = getCommandPrefix();
+
+    const component = name || 'all';
+
+    const targetUrl = new URL(
+      `/r/${component}.json`,
+      'https://ui.elevenlabs.io'
+    ).toString();
+
+    const fullCommand = `${commandPrefix} shadcn@latest add ${targetUrl}`;
+
+    console.log(`Installing ${component} from ElevenLabs UI registry...`);
+    console.log(`Running: ${fullCommand}`);
+
+    const result = spawnSync(fullCommand, {
+      stdio: 'inherit',
+      shell: true,
+    });
+
+    if (result.error) {
+      console.error('Failed to execute command:', result.error.message);
+      process.exit(1);
+    } else if (result.status !== 0) {
+      console.error(`Command failed with exit code ${result.status}`);
+      process.exit(1);
+    }
+  });
+
 // Helper functions
 
 async function addTool(name: string, type: 'webhook' | 'client', configPath?: string): Promise<void> {
@@ -2250,63 +2305,6 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.error('  agents components add button');
     process.exit(1);
   }
-
-  const componentsCommand = program
-    .command("components")
-    .description(
-      "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)"
-    );
-
-  componentsCommand
-    .command("add")
-    .description("Add a new component from the ElevenLabs UI registry")
-    .argument("[name]", "Name of the component")
-    .action(async (name?: string) => {
-      function getCommandPrefix(): string {
-        if (process.env.npm_config_user_agent) {
-          const userAgent = process.env.npm_config_user_agent;
-
-          if (userAgent.includes("pnpm")) {
-            return "pnpm dlx";
-          }
-          if (userAgent.includes("yarn")) {
-            return "yarn dlx";
-          }
-          if (userAgent.includes("bun")) {
-            return "bunx";
-          }
-        }
-
-        return "npx -y";
-      }
-
-      const commandPrefix = getCommandPrefix();
-
-      const component = name || "all";
-
-      const targetUrl = new URL(
-        `/r/${component}.json`,
-        "https://ui.elevenlabs.io"
-      ).toString();
-
-      const fullCommand = `${commandPrefix} shadcn@latest add ${targetUrl}`;
-
-      console.log(`Installing ${component} from ElevenLabs UI registry...`);
-      console.log(`Running: ${fullCommand}`);
-
-      const result = spawnSync(fullCommand, {
-        stdio: "inherit",
-        shell: true,
-      });
-
-      if (result.error) {
-        console.error("Failed to execute command:", result.error.message);
-        process.exit(1);
-      } else if (result.status !== 0) {
-        console.error(`Command failed with exit code ${result.status}`);
-        process.exit(1);
-      }
-    });
 
   program.parse();
 }
