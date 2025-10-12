@@ -826,8 +826,10 @@ program
   .description('Push tests to ElevenLabs API when configs change')
   .option('--test <name>', 'Specific test name to push (defaults to all tests)')
   .option('--dry-run', 'Show what would be done without making changes', false)
-  .action(async (options: { test?: string; dryRun: boolean }) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (options: { test?: string; dryRun: boolean; ui: boolean }) => {
     try {
+      // For now, always use non-UI mode (UI can be added later if needed)
       await pushTests(options.test, options.dryRun);
     } catch (error) {
       console.error(`Error during test push: ${error}`);
