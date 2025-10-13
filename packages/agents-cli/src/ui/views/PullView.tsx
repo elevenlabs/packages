@@ -11,6 +11,7 @@ interface PullAgent {
   name: string;
   agentId: string;
   status: 'pending' | 'checking' | 'pulling' | 'completed' | 'error' | 'skipped';
+  action?: 'create' | 'update' | 'skip';
   message?: string;
   configPath?: string;
 }
@@ -19,6 +20,9 @@ interface PullViewProps {
   agent?: string; // Agent ID to pull specifically
   outputDir: string;
   dryRun: boolean;
+  update?: boolean;
+  all?: boolean;
+  yes?: boolean;
   onComplete?: () => void;
 }
 
@@ -26,6 +30,9 @@ export const PullView: React.FC<PullViewProps> = ({
   agent,
   outputDir,
   dryRun,
+  update,
+  all,
+  yes,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -70,8 +77,13 @@ export const PullView: React.FC<PullViewProps> = ({
         // Load existing config
         const agentsConfig = await readConfig<any>(agentsConfigPath);
         const existingAgentNames = new Set<string>(agentsConfig.agents.map((a: any) => a.name as string));
+        
+        // Build ID-based map for existing agents
+        const existingAgentIds = new Map<string, any>(
+          agentsConfig.agents.map((agent: any) => [agent.id as string, agent])
+        );
 
-        // Prepare agents for display
+        // Prepare agents for display with action determination
         const agentsToPull: PullAgent[] = [];
         for (const agentMeta of agentsList) {
           const agentMetaTyped = agentMeta as { agentId?: string; agent_id?: string; name: string };
@@ -79,11 +91,51 @@ export const PullView: React.FC<PullViewProps> = ({
           
           if (!agentId) continue;
 
+          let agentName = agentMetaTyped.name;
+          const existingEntry = existingAgentIds.get(agentId);
+          let action: 'create' | 'update' | 'skip';
+          let status: 'pending' | 'skipped' = 'pending';
+
+          if (existingEntry) {
+            // Agent with this ID already exists locally
+            if (update || all) {
+              // --update or --all: update existing
+              action = 'update';
+              status = 'pending';
+            } else {
+              // Default: skip existing
+              action = 'skip';
+              status = 'skipped';
+            }
+          } else {
+            // New agent (not present locally)
+            if (update) {
+              // --update mode: skip new items (only update existing)
+              action = 'skip';
+              status = 'skipped';
+            } else {
+              // Default or --all: create new items
+              // Check for name conflicts
+              if (existingAgentNames.has(agentName)) {
+                let counter = 1;
+                const originalName = agentName;
+                while (existingAgentNames.has(agentName)) {
+                  agentName = `${originalName}_${counter}`;
+                  counter++;
+                }
+              }
+              action = 'create';
+              status = 'pending';
+              existingAgentNames.add(agentName);
+            }
+          }
+
           agentsToPull.push({
-            name: agentMetaTyped.name,
+            name: agentName,
             agentId,
-            status: 'pending',
-            message: undefined
+            action,
+            status,
+            message: status === 'skipped' ? 'Skipped' : undefined
           });
         }
 
@@ -92,7 +144,7 @@ export const PullView: React.FC<PullViewProps> = ({
         // Start processing if there are agents to pull
         if (agentsToPull.some(a => a.status === 'pending')) {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          processNextAgent(agentsToPull, 0, agentsConfig, existingAgentNames, agentsConfigPath);
+          processNextAgent(agentsToPull, 0, agentsConfig, existingAgentIds, agentsConfigPath);
         } else {
           setComplete(true);
           setTimeout(() => {
@@ -114,7 +166,7 @@ export const PullView: React.FC<PullViewProps> = ({
     agentsList: PullAgent[],
     index: number,
     agentsConfig: any,
-    existingNames: Set<string>,
+    existingAgentIds: Map<string, any>,
     agentsConfigPath: string
   ): Promise<void> => {
     if (index >= agentsList.length) {
@@ -132,27 +184,26 @@ export const PullView: React.FC<PullViewProps> = ({
 
     const agent = agentsList[index];
 
+    // Skip if already marked as skipped
+    if (agent.status === 'skipped') {
+      setCurrentIndex(index + 1);
+      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
+      return;
+    }
+
     // Update to checking
     setAgents(prev => prev.map((a, i) => i === index ? { ...a, status: 'checking' as const } : a));
     await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
       const client = await getElevenLabsClient();
-      let agentName = agent.name;
-
-      // Check for name conflicts
-      if (existingNames.has(agentName)) {
-        let counter = 1;
-        const originalName = agentName;
-        while (existingNames.has(agentName)) {
-          agentName = `${originalName}_${counter}`;
-          counter++;
-        }
-      }
+      const agentName = agent.name;
+      const existingEntry = existingAgentIds.get(agent.agentId);
 
       if (dryRun) {
+        const dryRunMsg = agent.action === 'create' ? '[DRY RUN] Would create' : '[DRY RUN] Would update';
         setAgents(prev => prev.map((a, i) => 
-          i === index ? { ...a, status: 'completed' as const, message: '[DRY RUN] Would pull' } : a
+          i === index ? { ...a, status: 'completed' as const, message: dryRunMsg } : a
         ));
       } else {
         // Update to pulling
@@ -180,34 +231,50 @@ export const PullView: React.FC<PullViewProps> = ({
           tags
         };
 
-        // Generate config file path using agent name
-        const configPath = await generateUniqueFilename(outputDir, agentName);
+        let configPath: string;
+        
+        if (agent.action === 'update' && existingEntry && existingEntry.config) {
+          // Update existing agent: use existing config path
+          configPath = existingEntry.config;
+          const configFilePath = path.resolve(configPath);
+          await fs.ensureDir(path.dirname(configFilePath));
+          await writeConfig(configFilePath, agentConfig);
+          
+          setAgents(prev => prev.map((a, i) => 
+            i === index ? { 
+              ...a, 
+              status: 'completed' as const, 
+              message: 'Updated successfully',
+              configPath 
+            } : a
+          ));
+        } else {
+          // Create new agent
+          configPath = await generateUniqueFilename(outputDir, agentName);
+          const configFilePath = path.resolve(configPath);
+          await fs.ensureDir(path.dirname(configFilePath));
+          await writeConfig(configFilePath, agentConfig);
 
-        // Create config file
-        const configFilePath = path.resolve(configPath);
-        await fs.ensureDir(path.dirname(configFilePath));
-        await writeConfig(configFilePath, agentConfig);
+          // Add to agents config with ID
+          agentsConfig.agents.push({
+            name: agentName,
+            config: configPath,
+            id: agent.agentId
+          });
 
-        // Add to agents config with ID
-        agentsConfig.agents.push({
-          name: agentName,
-          config: configPath,
-          id: agent.agentId
-        });
-        existingNames.add(agentName);
-
-        setAgents(prev => prev.map((a, i) => 
-          i === index ? { 
-            ...a, 
-            status: 'completed' as const, 
-            message: 'Pulled successfully',
-            configPath 
-          } : a
-        ));
+          setAgents(prev => prev.map((a, i) => 
+            i === index ? { 
+              ...a, 
+              status: 'completed' as const, 
+              message: 'Created successfully',
+              configPath 
+            } : a
+          ));
+        }
       }
 
       setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingNames, agentsConfigPath);
+      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
 
     } catch (err) {
       setAgents(prev => prev.map((a, i) => 
@@ -218,7 +285,7 @@ export const PullView: React.FC<PullViewProps> = ({
         } : a
       ));
       setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingNames, agentsConfigPath);
+      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
     }
   };
 
