@@ -60,6 +60,10 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
     if (key.escape) {
       exit();
     }
+    
+    if (currentStep === 'confirm' && key.return) {
+      handleConfirm();
+    }
   });
 
   const handleNameSubmit = (name: string) => {
@@ -338,12 +342,6 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         return null;
     }
   };
-
-  useInput((input, key) => {
-    if (currentStep === 'confirm' && key.return) {
-      handleConfirm();
-    }
-  });
 
   return (
     <App>
