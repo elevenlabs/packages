@@ -6,7 +6,7 @@ import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
 import { getTemplateByName, getTemplateOptions } from '../../templates.js';
-import { writeConfig } from '../../utils.js';
+import { writeConfig, generateUniqueFilename } from '../../utils.js';
 import { createAgentApi } from '../../elevenlabs-api.js';
 import { getElevenLabsClient } from '../../elevenlabs-api.js';
 import path from 'path';
@@ -34,6 +34,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
   const [success, setSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
+  const [createdConfigPath, setCreatedConfigPath] = useState<string | null>(null);
 
   const templates = Object.entries(getTemplateOptions()).map(([name, description]) => ({
     label: `${name} - ${description}`,
@@ -87,17 +88,17 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       const configDir = path.resolve(`agent_configs`);
       await fs.ensureDir(configDir);
       
-      // Step 4: Write config file using agent ID
+      // Step 4: Write config file using agent name
       setStatusMessage('Writing configuration file...');
-      const configPath = path.join(configDir, `${agentId}.json`);
+      const relativeConfigPath = await generateUniqueFilename('agent_configs', agentName);
+      const configPath = path.resolve(relativeConfigPath);
       await writeConfig(configPath, agentConfig);
+      setCreatedConfigPath(relativeConfigPath);
       
       // Step 5: Update agents.json
       setStatusMessage('Updating agents.json...');
       const agentsConfigPath = path.resolve('agents.json');
       const agentsConfig = await fs.readJson(agentsConfigPath);
-      
-      const relativeConfigPath = `agent_configs/${agentId}.json`;
       
       // Add new agent with ID
       agentsConfig.agents.push({
@@ -218,7 +219,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
                 />
                 <Box marginTop={1}>
                   <Text color={theme.colors.text.secondary}>
-                    Configuration saved to: agent_configs/{createdAgentId}.json
+                    Configuration saved to: {createdConfigPath || 'agent_configs/'}
                   </Text>
                 </Box>
               </Box>

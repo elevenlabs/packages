@@ -499,10 +499,10 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
-      // Generate config path using agent ID (or custom path if provided)
+      // Generate config path using agent name (or custom path if provided)
       let configPath = options.configPath;
       if (!configPath) {
-        configPath = `agent_configs/${agentId}.json`;
+        configPath = await generateUniqueFilename('agent_configs', name);
       }
       
       // Create config directory and file
@@ -1077,9 +1077,9 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
-    // Generate config path using tool ID (or custom path if provided)
+    // Generate config path using tool name (or custom path if provided)
     if (!configPath) {
-      configPath = `tool_configs/${toolId}.json`;
+      configPath = await generateUniqueFilename('tool_configs', name);
     }
     
     // Create config directory and file
@@ -1742,8 +1742,8 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
 
-    // Generate config path using test ID
-    const configPath = `test_configs/${testId}.json`;
+    // Generate config path using test name
+    const configPath = await generateUniqueFilename('test_configs', name);
 
     // Create config directory and file
     const configFilePath = path.resolve(configPath);
