@@ -22,7 +22,6 @@ interface PullViewProps {
   dryRun: boolean;
   update?: boolean;
   all?: boolean;
-  yes?: boolean;
   onComplete?: () => void;
 }
 
@@ -32,7 +31,6 @@ export const PullView: React.FC<PullViewProps> = ({
   dryRun,
   update,
   all,
-  yes,
   onComplete 
 }) => {
   const { exit } = useApp();

@@ -33,7 +33,6 @@ interface PullToolsViewProps {
   dryRun?: boolean;
   update?: boolean;
   all?: boolean;
-  yes?: boolean;
   onComplete?: () => void;
 }
 
@@ -45,7 +44,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
   dryRun = false,
   update,
   all,
-  yes,
   onComplete
 }) => {
   const { exit } = useApp();

@@ -134,7 +134,6 @@ interface PullOptions {
   dryRun: boolean;
   update?: boolean; // Update existing items only
   all?: boolean; // Pull all (new + existing)
-  yes?: boolean; // Skip confirmation prompts
 }
 
 interface PullToolsOptions {
@@ -143,7 +142,6 @@ interface PullToolsOptions {
   dryRun: boolean;
   update?: boolean; // Update existing items only
   all?: boolean; // Pull all (new + existing)
-  yes?: boolean; // Skip confirmation prompts
 }
 
 // Widget options interface removed - no longer needed
@@ -733,7 +731,6 @@ program
   .option('--output-dir <dir>', 'Directory to store pulled agent configs', 'agent_configs')
   .option('--update', 'Update existing agents only (skip new)', false)
   .option('--all', 'Pull all agents (new + existing)', false)
-  .option('-y, --yes', 'Skip confirmation prompts', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: PullOptions & { ui: boolean }) => {
@@ -746,8 +743,7 @@ program
             outputDir: options.outputDir,
             dryRun: options.dryRun,
             update: options.update,
-            all: options.all,
-            yes: options.yes
+            all: options.all
           })
         );
         await waitUntilExit();
@@ -768,7 +764,6 @@ program
   .option('--output-dir <dir>', 'Directory to store pulled tool configs', 'tool_configs')
   .option('--update', 'Update existing tools only (skip new)', false)
   .option('--all', 'Pull all tools (new + existing)', false)
-  .option('-y, --yes', 'Skip confirmation prompts', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI', false)
   .action(async (options: PullToolsOptions & { ui: boolean }) => {
@@ -781,8 +776,7 @@ program
             outputDir: options.outputDir,
             dryRun: options.dryRun,
             update: options.update,
-            all: options.all,
-            yes: options.yes
+            all: options.all
           })
         );
         await waitUntilExit();
@@ -911,10 +905,9 @@ program
   .option('--output-dir <dir>', 'Directory to store pulled test configs', 'test_configs')
   .option('--update', 'Update existing tests only (skip new)', false)
   .option('--all', 'Pull all tests (new + existing)', false)
-  .option('-y, --yes', 'Skip confirmation prompts', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; yes?: boolean; ui: boolean }) => {
+  .action(async (options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; ui: boolean }) => {
     try {
       // For now, always use non-UI mode (UI can be added later if needed)
       await pullTests(options);
@@ -1546,8 +1539,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
     }
   }
 
-  // Prompt for confirmation if not --yes or --dry-run
-  if (!options.yes && !options.dryRun && (operations.create > 0 || operations.update > 0)) {
+  // Prompt for confirmation if not --dry-run
+  if (!options.dryRun && (operations.create > 0 || operations.update > 0)) {
     const confirmed = await promptForConfirmation('Proceed?');
     if (!confirmed) {
       console.log('Pull cancelled');
@@ -1777,8 +1770,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
     }
   }
 
-  // Prompt for confirmation if not --yes or --dry-run
-  if (!options.yes && !options.dryRun && (operations.create > 0 || operations.update > 0)) {
+  // Prompt for confirmation if not --dry-run
+  if (!options.dryRun && (operations.create > 0 || operations.update > 0)) {
     const confirmed = await promptForConfirmation('Proceed?');
     if (!confirmed) {
       console.log('Pull cancelled');
@@ -2161,7 +2154,7 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function pullTests(options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; yes?: boolean }): Promise<void> {
+async function pullTests(options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean }): Promise<void> {
   // Check if tests.json exists
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   let testsConfig: TestsConfig;
@@ -2281,8 +2274,8 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
     }
   }
 
-  // Prompt for confirmation if not --yes or --dry-run
-  if (!options.yes && !options.dryRun && (operations.create > 0 || operations.update > 0)) {
+  // Prompt for confirmation if not --dry-run
+  if (!options.dryRun && (operations.create > 0 || operations.update > 0)) {
     const confirmed = await promptForConfirmation('Proceed?');
     if (!confirmed) {
       console.log('Pull cancelled');
