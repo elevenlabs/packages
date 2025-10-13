@@ -11,6 +11,16 @@ import * as config from "../config";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { readConfig, writeConfig } from "../utils";
 
+interface AgentDefinition {
+  name: string;
+  config: string;
+  id?: string;
+}
+
+interface AgentsConfig {
+  agents: AgentDefinition[];
+}
+
 // Mock the entire elevenlabs-api module
 jest.mock("../elevenlabs-api");
 const mockedElevenLabsApi = elevenLabsApi as jest.Mocked<typeof elevenLabsApi>;
@@ -102,7 +112,7 @@ describe("Pull Agents Integration Tests", () => {
       // Verify: Agent should be identified by ID, not name
       // The local name is "existing-agent" but remote name is "renamed-agent"
       // Since ID matches (agent_123), it should be treated as the same agent
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents[0].id).toBe("agent_123");
       expect(config.agents[0].name).toBe("existing-agent");
     });
@@ -133,7 +143,7 @@ describe("Pull Agents Integration Tests", () => {
 
       // Verify: Agent without ID should be treated as non-existing
       // and a new agent should be pulled (name conflict will add _1)
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents[0].id).toBeUndefined();
     });
   });
@@ -199,7 +209,9 @@ describe("Pull Agents Integration Tests", () => {
       // - new-agent.json should be created
 
       // Verify existing config was not modified
-      const existingConfig = await readConfig<any>(existingConfigPath);
+      const existingConfig = await readConfig<{
+        conversation_config: { agent: { prompt: { prompt: string } } };
+      }>(existingConfigPath);
       expect(existingConfig.conversation_config.agent.prompt.prompt).toBe(
         "old prompt"
       );
@@ -315,7 +327,7 @@ describe("Pull Agents Integration Tests", () => {
       // - existing-agent.json should be updated with new prompt
       // - new-agent.json should NOT be created
       
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents).toHaveLength(1);
       expect(config.agents[0].id).toBe("agent_123");
     });
@@ -351,7 +363,7 @@ describe("Pull Agents Integration Tests", () => {
 
       // Expected: agents.json should remain unchanged with --update
       // because all remote agents are new (no matching IDs)
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents).toHaveLength(1);
       expect(config.agents[0].id).toBe("agent_111");
     });
@@ -399,7 +411,7 @@ describe("Pull Agents Integration Tests", () => {
       });
 
       // Expected: config path should remain "agent_configs/custom-path.json"
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents[0].config).toBe("agent_configs/custom-path.json");
     });
   });
@@ -480,7 +492,7 @@ describe("Pull Agents Integration Tests", () => {
       // - new-agent.json should be created
       
       // Verify the config structure is set up correctly
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents).toHaveLength(1); // Initially 1 agent
     });
 
@@ -527,7 +539,7 @@ describe("Pull Agents Integration Tests", () => {
       mockedElevenLabsApi.listAgentsApi.mockResolvedValue(mockRemoteAgents);
 
       // Verify initial state
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents).toHaveLength(2);
     });
   });
@@ -563,11 +575,11 @@ describe("Pull Agents Integration Tests", () => {
       mockedElevenLabsApi.listAgentsApi.mockResolvedValue(mockRemoteAgents);
 
       // Expected: Only one entry should exist for agent_123
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       
       // Count how many entries have the same ID
       const entriesWithId = config.agents.filter(
-        (a: any) => a.id === "agent_123"
+        (a: AgentDefinition) => a.id === "agent_123"
       );
       
       // Should have exactly 1 entry (no duplicates)
@@ -623,7 +635,7 @@ describe("Pull Agents Integration Tests", () => {
       await writeConfig(agentsConfigPath, agentsConfig);
 
       // This should not crash - the logic should handle it gracefully
-      const config = await readConfig<any>(agentsConfigPath);
+      const config = await readConfig<AgentsConfig>(agentsConfigPath);
       expect(config.agents[0].config).toBeUndefined();
     });
   });

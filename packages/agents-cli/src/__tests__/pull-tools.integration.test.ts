@@ -13,6 +13,7 @@ import {
   readToolsConfig,
   writeToolsConfig,
   ToolsConfig,
+  ToolDefinition,
 } from "../tools";
 
 // Mock the entire elevenlabs-api module
@@ -96,7 +97,7 @@ describe("Pull Tools Integration Tests", () => {
             type: "webhook",
             config: "tool_configs/tool-no-id.json",
             // Missing id field
-          } as any,
+          } as Partial<ToolDefinition> as ToolDefinition,
         ],
       };
       await writeToolsConfig(toolsConfigPath, toolsConfig);
@@ -376,7 +377,7 @@ describe("Pull Tools Integration Tests", () => {
             type: "webhook",
             id: "tool_123",
             // Missing config field
-          } as any,
+          } as Partial<ToolDefinition> as ToolDefinition,
         ],
       };
       await writeToolsConfig(toolsConfigPath, toolsConfig);
@@ -395,7 +396,7 @@ describe("Pull Tools Integration Tests", () => {
             config: "tool_configs/tool-no-type.json",
             id: "tool_123",
             // Missing type field
-          } as any,
+          } as Partial<ToolDefinition> as ToolDefinition,
         ],
       };
       await writeToolsConfig(toolsConfigPath, toolsConfig);
