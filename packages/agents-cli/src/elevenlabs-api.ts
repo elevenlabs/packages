@@ -193,28 +193,40 @@ export async function deleteAgentApi(client: ElevenLabsClient, agentId: string):
 
 /**
  * Creates a new tool using the ElevenLabs API.
- * 
+ *
  * @param client - An initialized ElevenLabs client
  * @param toolConfig - The tool configuration object
  * @returns Promise that resolves to the created tool object
  */
-export async function createToolApi(client: ElevenLabsClient, toolConfig: unknown): Promise<unknown> {
-  // Mock implementation until SDK supports tools API
-  const toolId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  return { toolId, ...(toolConfig as Record<string, unknown>) };
+export async function createToolApi(client: ElevenLabsClient, toolConfig: Record<string, unknown>): Promise<ElevenLabs.ToolResponseModel> {
+  // Determine the type based on the properties present
+  const type = 'type' in toolConfig ? 'webhook' : 'client';
+
+  const normalizedConfig = toCamelCaseKeys(toolConfig);
+
+  return await client.conversationalAi.tools.create({
+    toolConfig: {
+      ...normalizedConfig,
+      type
+    } as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**
  * Updates an existing tool using the ElevenLabs API.
- * 
+ *
  * @param client - An initialized ElevenLabs client
  * @param toolId - The ID of the tool to update
  * @param toolConfig - The updated tool configuration object
  * @returns Promise that resolves to the updated tool object
  */
-export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: unknown): Promise<unknown> {
-  // Mock implementation until SDK supports tools API
-  return { toolId, ...(toolConfig as Record<string, unknown>) };
+export async function updateToolApi(client: ElevenLabsClient, toolId: string, toolConfig: Record<string, unknown>): Promise<ElevenLabs.ToolResponseModel> {
+  // Normalize to camelCase for API
+  const normalizedConfig = toCamelCaseKeys(toolConfig);
+
+  return await client.conversationalAi.tools.update(toolId, {
+    toolConfig: normalizedConfig as unknown as ElevenLabs.ToolRequestModelToolConfig
+  })
 }
 
 /**
