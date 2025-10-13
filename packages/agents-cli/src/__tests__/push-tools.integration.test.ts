@@ -14,7 +14,7 @@ import {
 } from "../tools";
 import * as elevenLabsApi from "../elevenlabs-api";
 import * as config from "../config";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { ElevenLabs, ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 // Mock the entire elevenlabs-api module
 jest.mock("../elevenlabs-api");
@@ -201,12 +201,16 @@ describe("Push Tools Integration Tests", () => {
 
     it("should call createToolApi for new tools", async () => {
       const mockResponse = {
-        toolId: "tool_new_123",
-        name: "new-tool",
-        description: "New tool",
-        type: "webhook" as const,
+        id: "tool_new_123",
+        toolConfig: {
+          name: "new-tool",
+          description: "New tool",
+          type: "webhook" as const,
+        },
+        accessInfo: {},
+        usageStats: {},
       };
-      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse as any);
+      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse as ElevenLabs.ToolResponseModel);
 
       const toolConfig = {
         name: "new-tool",
@@ -230,12 +234,16 @@ describe("Push Tools Integration Tests", () => {
 
     it("should call updateToolApi for existing tools", async () => {
       const mockResponse = {
-        toolId: "tool_existing_123",
-        name: "existing-tool",
-        description: "Updated existing tool",
-        type: "webhook" as const,
+        id: "tool_existing_123",
+        toolConfig: {
+          name: "existing-tool",
+          description: "Updated existing tool",
+          type: "webhook" as const,
+        },
+        accessInfo: {},
+        usageStats: {},
       };
-      mockedElevenLabsApi.updateToolApi.mockResolvedValue(mockResponse as any);
+      mockedElevenLabsApi.updateToolApi.mockResolvedValue(mockResponse as ElevenLabs.ToolResponseModel);
 
       const toolConfig = {
         name: "existing-tool",
