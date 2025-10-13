@@ -257,7 +257,7 @@ describe("CLI End-to-End Tests", () => {
       expect(result.exitCode).toBe(0);
       expect(result.stderr).not.toContain("unknown command");
       // Should show dry-run mode output
-      expect(result.stdout.toLowerCase()).toContain("push completed successfully");
+      expect(result.stdout.toLowerCase()).toContain("tool(s) pushed");
     });
 
     it("should show help for push-tools command", async () => {
@@ -286,7 +286,7 @@ describe("CLI End-to-End Tests", () => {
       expect(result.exitCode).toBe(0);
       // Should get expected success, not unknown option error
       expect(result.stderr).not.toContain("unknown option");
-      expect(result.stdout.toLowerCase()).toContain("push completed successfully");
+      expect(result.stdout.toLowerCase()).toContain("tool(s) pushed");
     });
 
     it("should handle specific tool name option", async () => {
@@ -337,7 +337,7 @@ describe("CLI End-to-End Tests", () => {
       // Should succeed (exit code 0) since files exist
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain("test-webhook (webhook)");
-      expect(result.stdout).toContain("Push completed successfully");
+      expect(result.stdout).toContain("tool(s) pushed");
     });
 
     it("should handle missing config files gracefully", async () => {
