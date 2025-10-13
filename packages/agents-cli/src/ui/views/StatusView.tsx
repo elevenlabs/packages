@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
-import { readAgentConfig } from '../../utils.js';
+import { readConfig } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -38,7 +38,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
           throw new Error('agents.json not found. Run "agents init" first.');
         }
 
-        const agentsConfig = await readAgentConfig<any>(agentsConfigPath);
+        const agentsConfig = await readConfig<any>(agentsConfigPath);
 
         const statusList: AgentStatus[] = [];
 

@@ -5,8 +5,8 @@ import path from 'path';
 import fs from 'fs-extra';
 import dotenv from 'dotenv';
 import {
-  readAgentConfig,
-  writeAgentConfig,
+  readConfig,
+  writeConfig,
   toCamelCaseKeys
 } from './utils.js';
 import { 
@@ -199,7 +199,7 @@ program
           const initialConfig: AgentsConfig = {
             agents: []
           };
-          await writeAgentConfig(agentsConfigPath, initialConfig);
+          await writeConfig(agentsConfigPath, initialConfig);
           console.log(`Created ${AGENTS_CONFIG_FILE}`);
         }
         
@@ -223,7 +223,7 @@ program
           const initialTestsConfig: TestsConfig = {
             tests: []
           };
-          await writeAgentConfig(testsConfigPath, initialTestsConfig);
+          await writeConfig(testsConfigPath, initialTestsConfig);
           console.log(`Created ${TESTS_CONFIG_FILE}`);
         }
         
@@ -466,7 +466,7 @@ program
       }
       
       // Load existing config
-      const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+      const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
       
       // Create agent config using template (in memory first)
       let agentConfig: AgentConfig;
@@ -508,7 +508,7 @@ program
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
       
-      await writeAgentConfig(configFilePath, agentConfig);
+      await writeConfig(configFilePath, agentConfig);
       console.log(`Created config file: ${configPath} (template: ${options.template})`);
       
       // Store agent ID in index file
@@ -520,7 +520,7 @@ program
       agentsConfig.agents.push(newAgent);
       
       // Save updated agents.json
-      await writeAgentConfig(agentsConfigPath, agentsConfig);
+      await writeConfig(agentsConfigPath, agentsConfig);
       console.log(`Added agent '${name}' to agents.json`);
       
       console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to update`);
@@ -612,7 +612,7 @@ program
           throw new Error('agents.json not found. Run \'init\' first.');
         }
         
-        const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+        const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
         
         // Filter agents if specific agent name provided
         let agentsToProcess = agentsConfig.agents;
@@ -1116,7 +1116,7 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   
   // Initialize ElevenLabs client
   let client;
@@ -1153,7 +1153,7 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     // Load agent config
     let agentConfig: AgentConfig;
     try {
-      agentConfig = await readAgentConfig<AgentConfig>(configPath);
+      agentConfig = await readConfig<AgentConfig>(configPath);
     } catch (error) {
       console.log(`Error reading config for ${agentDefName}: ${error}`);
       continue;
@@ -1215,7 +1215,7 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
   
   // Save updated agents.json if there were changes
   if (changesMade) {
-    await writeAgentConfig(agentsConfigPath, agentsConfig);
+    await writeConfig(agentsConfigPath, agentsConfig);
   }
 }
 
@@ -1225,7 +1225,7 @@ async function showStatus(agentName?: string): Promise<void> {
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   
   if (agentsConfig.agents.length === 0) {
     console.log('No agents configured');
@@ -1262,7 +1262,7 @@ async function showStatus(agentName?: string): Promise<void> {
     // Check config file status
     if (await fs.pathExists(configPath)) {
       try {
-        await readAgentConfig<AgentConfig>(configPath);
+        await readConfig<AgentConfig>(configPath);
         
         // Simple status based on whether ID exists
         if (agentDef.id) {
@@ -1311,7 +1311,7 @@ async function watchForChanges(agentName?: string, interval = 5): Promise<void> 
     }
     
     try {
-      const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+      const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
       
       // Filter agents if specific agent name provided
       let agentsToWatch = agentsConfig.agents;
@@ -1377,7 +1377,7 @@ async function listConfiguredAgents(): Promise<void> {
     throw new Error('agents.json not found. Run \'init\' first.');
   }
   
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   
   if (agentsConfig.agents.length === 0) {
     console.log('No agents configured');
@@ -1419,7 +1419,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
   console.log(`Found ${agentsList.length} agent(s)`);
   
   // Load existing config
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
   let newAgentsAdded = 0;
@@ -1481,7 +1481,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
       // Create config file
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeAgentConfig(configFilePath, agentConfig);
+      await writeConfig(configFilePath, agentConfig);
       
       // Create new agent entry for agents.json with ID
       const newAgent: AgentDefinition = {
@@ -1505,7 +1505,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
   
   if (!options.dryRun && newAgentsAdded > 0) {
     // Save updated agents.json
-    await writeAgentConfig(agentsConfigPath, agentsConfig);
+    await writeConfig(agentsConfigPath, agentsConfig);
     
     console.log(`Updated ${AGENTS_CONFIG_FILE}`);
   }
@@ -1651,7 +1651,7 @@ async function generateWidget(name: string): Promise<void> {
   }
   
   // Check if agent exists in config
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   const agentDef = agentsConfig.agents.find(agent => agent.name === name);
   
   if (!agentDef) {
@@ -1695,11 +1695,11 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
   let testsConfig: TestsConfig;
 
   try {
-    testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+    testsConfig = await readConfig<TestsConfig>(testsConfigPath);
   } catch (error) {
     // Initialize tests.json if it doesn't exist
     testsConfig = { tests: [] };
-    await writeAgentConfig(testsConfigPath, testsConfig);
+    await writeConfig(testsConfigPath, testsConfig);
     console.log(`Created ${TESTS_CONFIG_FILE}`);
   }
 
@@ -1734,7 +1734,7 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     const configFilePath = path.resolve(configPath);
     await fs.ensureDir(path.dirname(configFilePath));
 
-    await writeAgentConfig(configFilePath, testConfig);
+    await writeConfig(configFilePath, testConfig);
     console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
     // Add to tests.json if not already present
@@ -1746,7 +1746,7 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
         id: testId
       };
       testsConfig.tests.push(newTest);
-      await writeAgentConfig(testsConfigPath, testsConfig);
+      await writeConfig(testsConfigPath, testsConfig);
       console.log(`Added test '${name}' to tests.json`);
     }
 
@@ -1765,7 +1765,7 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     throw new Error('tests.json not found. Run \'agents add-test\' first.');
   }
 
-  const testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+  const testsConfig = await readConfig<TestsConfig>(testsConfigPath);
 
   // Initialize ElevenLabs client
   let client;
@@ -1797,7 +1797,7 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     // Load test config
     let testConfig;
     try {
-      testConfig = await readAgentConfig(configPath);
+      testConfig = await readConfig(configPath);
     } catch (error) {
       console.log(`Error reading config for ${testDefName}: ${error}`);
       continue;
@@ -1842,7 +1842,7 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
   
   // Save updated tests.json if there were changes
   if (changesMade) {
-    await writeAgentConfig(testsConfigPath, testsConfig);
+    await writeConfig(testsConfigPath, testsConfig);
   }
 }
 
@@ -1890,7 +1890,7 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     // Load tool config
     let toolConfig;
     try {
-      toolConfig = await readAgentConfig(configPath);
+      toolConfig = await readConfig(configPath);
     } catch (error) {
       console.log(`Error reading config for ${toolDefName}: ${error}`);
       continue;
@@ -1943,10 +1943,10 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
   let testsConfig: TestsConfig;
 
   try {
-    testsConfig = await readAgentConfig<TestsConfig>(testsConfigPath);
+    testsConfig = await readConfig<TestsConfig>(testsConfigPath);
   } catch (error) {
     testsConfig = { tests: [] };
-    await writeAgentConfig(testsConfigPath, testsConfig);
+    await writeConfig(testsConfigPath, testsConfig);
     console.log(`Created ${TESTS_CONFIG_FILE}`);
   }
 
@@ -2004,7 +2004,7 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       // Create config file (without test ID - it goes in index file)
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeAgentConfig(configFilePath, testDetails);
+      await writeConfig(configFilePath, testDetails);
 
       // Create new test entry for tests.json with ID
       const newTest: TestDefinition = {
@@ -2028,7 +2028,7 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
 
   if (!options.dryRun && newTestsAdded > 0) {
     // Save updated tests.json
-    await writeAgentConfig(testsConfigPath, testsConfig);
+    await writeConfig(testsConfigPath, testsConfig);
 
     console.log(`Updated ${TESTS_CONFIG_FILE}`);
   }
@@ -2050,7 +2050,7 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
     throw new Error('agents.json not found. Run \'agents init\' first.');
   }
 
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   const agentDef = agentsConfig.agents.find(agent => agent.name === agentName);
 
   if (!agentDef) {
@@ -2071,7 +2071,7 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
     throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
   }
 
-  const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+  const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
@@ -2098,7 +2098,7 @@ async function runAgentTests(agentName: string): Promise<void> {
     throw new Error('agents.json not found. Run \'agents init\' first.');
   }
 
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   const agentDef = agentsConfig.agents.find(agent => agent.name === agentName);
 
   if (!agentDef) {
@@ -2119,7 +2119,7 @@ async function runAgentTests(agentName: string): Promise<void> {
     throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
   }
 
-  const agentConfig = await readAgentConfig<AgentConfig>(configPath);
+  const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
@@ -2208,7 +2208,7 @@ async function deleteAgent(agentId: string): Promise<void> {
     throw new Error('agents.json not found. Run \'agents init\' first.');
   }
 
-  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   
   // Find the agent by ID
   const agentIndex = agentsConfig.agents.findIndex(agent => agent.id === agentId);
@@ -2237,7 +2237,7 @@ async function deleteAgent(agentId: string): Promise<void> {
   
   // Remove from local agents.json
   agentsConfig.agents.splice(agentIndex, 1);
-  await writeAgentConfig(agentsConfigPath, agentsConfig);
+  await writeConfig(agentsConfigPath, agentsConfig);
   console.log(`✓ Removed '${agentName}' from ${AGENTS_CONFIG_FILE}`);
   
   // Remove config file

@@ -135,8 +135,8 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       const fsModule = await import('fs-extra');
       const fs = fsModule.default;
       const {
-        writeAgentConfig,
-        readAgentConfig,
+        writeConfig,
+        readConfig,
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
@@ -165,14 +165,14 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       await fs.ensureDir(path.dirname(configFilePath));
 
       // Write test config file
-      await writeAgentConfig(configFilePath, testConfig);
+      await writeConfig(configFilePath, testConfig);
 
       // Create/update tests.json
       const testsConfigPath = path.resolve('tests.json');
       let testsConfig: { tests: Array<{ name: string; config: string; type: string; id?: string }> };
 
       try {
-        testsConfig = await readAgentConfig(testsConfigPath);
+        testsConfig = await readConfig(testsConfigPath);
       } catch {
         testsConfig = { tests: [] };
       }
@@ -195,7 +195,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         });
       }
 
-      await writeAgentConfig(testsConfigPath, testsConfig);
+      await writeConfig(testsConfigPath, testsConfig);
 
       setCurrentStep('complete');
 

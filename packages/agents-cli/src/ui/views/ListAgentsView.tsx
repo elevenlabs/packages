@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
-import { readAgentConfig } from '../../utils.js';
+import { readConfig } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -33,7 +33,7 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
           return;
         }
 
-        const agentsConfig = await readAgentConfig<{ agents: Agent[] }>(agentsConfigPath);
+        const agentsConfig = await readConfig<{ agents: Agent[] }>(agentsConfigPath);
         setAgents(agentsConfig.agents || []);
         setLoading(false);
       } catch (err) {

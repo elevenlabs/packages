@@ -47,13 +47,13 @@ export function calculateConfigHash(config: unknown): string {
 }
 
 /**
- * Reads an agent configuration file.
+ * Reads a JSON configuration file.
  *
  * @param filePath - The path to the JSON configuration file
- * @returns A promise that resolves to the agent configuration object
+ * @returns A promise that resolves to the configuration object
  * @throws {Error} If the configuration file is not found or contains invalid JSON
  */
-export async function readAgentConfig<T = Record<string, unknown>>(
+export async function readConfig<T = Record<string, unknown>>(
   filePath: string
 ): Promise<T> {
   try {
@@ -71,13 +71,13 @@ export async function readAgentConfig<T = Record<string, unknown>>(
 }
 
 /**
- * Writes an agent configuration to a file.
+ * Writes a configuration object to a JSON file.
  *
  * @param filePath - The path to write the JSON configuration file
- * @param config - The object containing the agent configuration
+ * @param config - The configuration object to write
  * @throws {Error} If there is an error writing the file
  */
-export async function writeAgentConfig(
+export async function writeConfig(
   filePath: string,
   config: unknown
 ): Promise<void> {

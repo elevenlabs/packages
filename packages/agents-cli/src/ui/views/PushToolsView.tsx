@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import theme from '../themes/elevenlabs.js';
 import { getElevenLabsClient, createToolApi, updateToolApi } from '../../elevenlabs-api.js';
-import { readAgentConfig, writeAgentConfig } from '../../utils.js';
+import { readConfig, writeConfig } from '../../utils.js';
 import fs from 'fs-extra';
 import path from 'path';
 
@@ -69,7 +69,7 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
         }
 
         // Load tool config
-        const toolConfig = await readAgentConfig<any>(configPath);
+        const toolConfig = await readConfig<any>(configPath);
         // Get tool ID from props (which comes from tools.json)
         const toolId = tool.toolId;
 
@@ -103,11 +103,11 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
             const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
 
             // Store tool ID in tools.json index file
-            const toolsConfig = await readAgentConfig<any>(path.resolve(toolsConfigPath));
+            const toolsConfig = await readConfig<any>(path.resolve(toolsConfigPath));
             const toolDef = toolsConfig.tools.find((t: any) => t.name === tool.name);
             if (toolDef) {
               toolDef.id = newToolId;
-              await writeAgentConfig(path.resolve(toolsConfigPath), toolsConfig);
+              await writeConfig(path.resolve(toolsConfigPath), toolsConfig);
             }
 
             setPushedTools(prev => 
