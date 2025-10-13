@@ -5,18 +5,15 @@ import path from 'path';
 import fs from 'fs-extra';
 import dotenv from 'dotenv';
 import {
-  calculateConfigHash,
   readAgentConfig,
   writeAgentConfig,
-  toCamelCaseKeys,
-  toSnakeCaseKeys
+  toCamelCaseKeys
 } from './utils.js';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
 } from './templates.js';
-import { TestConfig } from './test-templates.js';
 import {
   getElevenLabsClient,
   createAgentApi,
