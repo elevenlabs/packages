@@ -200,8 +200,13 @@ describe("Push Tools Integration Tests", () => {
     });
 
     it("should call createToolApi for new tools", async () => {
-      const mockResponse = { toolId: "tool_new_123" };
-      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse);
+      const mockResponse = {
+        toolId: "tool_new_123",
+        name: "new-tool",
+        description: "New tool",
+        type: "webhook" as const,
+      };
+      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse as any);
 
       const toolConfig = {
         name: "new-tool",
@@ -224,7 +229,13 @@ describe("Push Tools Integration Tests", () => {
     });
 
     it("should call updateToolApi for existing tools", async () => {
-      mockedElevenLabsApi.updateToolApi.mockResolvedValue({});
+      const mockResponse = {
+        toolId: "tool_existing_123",
+        name: "existing-tool",
+        description: "Updated existing tool",
+        type: "webhook" as const,
+      };
+      mockedElevenLabsApi.updateToolApi.mockResolvedValue(mockResponse as any);
 
       const toolConfig = {
         name: "existing-tool",
