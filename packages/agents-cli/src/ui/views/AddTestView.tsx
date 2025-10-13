@@ -132,9 +132,11 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
 
     try {
       const path = await import('path');
-      const fs = await import('fs-extra');
+      const fsModule = await import('fs-extra');
+      const fs = fsModule.default;
       const {
         writeAgentConfig,
+        readAgentConfig,
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
@@ -170,7 +172,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       let testsConfig: { tests: Array<{ name: string; config: string; type: string; id?: string }> };
 
       try {
-        testsConfig = await fs.readJson(testsConfigPath);
+        testsConfig = await readAgentConfig(testsConfigPath);
       } catch {
         testsConfig = { tests: [] };
       }
@@ -193,7 +195,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         });
       }
 
-      await fs.writeJson(testsConfigPath, testsConfig, { spaces: 2 });
+      await writeAgentConfig(testsConfigPath, testsConfig);
 
       setCurrentStep('complete');
 
