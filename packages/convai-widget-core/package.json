@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "postinstall": "npm run generate-version",
     "prebuild": "npm run generate-version",
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
     "dev": "npm run generate-version && vite",
