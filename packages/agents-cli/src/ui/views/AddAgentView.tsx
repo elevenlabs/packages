@@ -6,7 +6,7 @@ import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
 import { getTemplateByName, getTemplateOptions } from '../../templates.js';
-import { writeAgentConfig } from '../../utils.js';
+import { writeConfig } from '../../utils.js';
 import { createAgentApi } from '../../elevenlabs-api.js';
 import { getElevenLabsClient } from '../../elevenlabs-api.js';
 import path from 'path';
@@ -90,7 +90,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       // Step 4: Write config file using agent ID
       setStatusMessage('Writing configuration file...');
       const configPath = path.join(configDir, `${agentId}.json`);
-      await writeAgentConfig(configPath, agentConfig);
+      await writeConfig(configPath, agentConfig);
       
       // Step 5: Update agents.json
       setStatusMessage('Updating agents.json...');

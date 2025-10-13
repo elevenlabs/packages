@@ -130,7 +130,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       const path = await import('path');
       const fs = await import('fs-extra');
       const {
-        writeAgentConfig,
+        writeConfig,
       } = await import('../../utils.js');
       const { getTestTemplateByName } = await import('../../test-templates.js');
 
@@ -159,7 +159,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       await fs.ensureDir(path.dirname(configFilePath));
 
       // Write test config file
-      await writeAgentConfig(configFilePath, testConfig);
+      await writeConfig(configFilePath, testConfig);
 
       // Create/update tests.json
       const testsConfigPath = path.resolve('tests.json');

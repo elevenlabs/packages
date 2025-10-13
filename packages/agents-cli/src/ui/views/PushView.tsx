@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import theme from '../themes/elevenlabs.js';
 import { getElevenLabsClient, createAgentApi, updateAgentApi } from '../../elevenlabs-api.js';
-import { readAgentConfig, writeAgentConfig } from '../../utils.js';
+import { readConfig, writeConfig } from '../../utils.js';
 import fs from 'fs-extra';
 import path from 'path';
 
@@ -68,7 +68,7 @@ export const PushView: React.FC<PushViewProps> = ({
         }
 
         // Load agent config
-        const agentConfig = await readAgentConfig<any>(configPath);
+        const agentConfig = await readConfig<any>(configPath);
         // Get agent ID from props (which comes from agents.json)
         const agentId = agent.agentId;
 
@@ -113,11 +113,11 @@ export const PushView: React.FC<PushViewProps> = ({
             );
 
             // Store agent ID in agents.json index file
-            const agentsConfig = await readAgentConfig<any>(path.resolve(agentsConfigPath));
+            const agentsConfig = await readConfig<any>(path.resolve(agentsConfigPath));
             const agentDef = agentsConfig.agents.find((a: any) => a.name === agent.name);
             if (agentDef) {
               agentDef.id = newAgentId;
-              await writeAgentConfig(path.resolve(agentsConfigPath), agentsConfig);
+              await writeConfig(path.resolve(agentsConfigPath), agentsConfig);
             }
 
             setPushedAgents(prev => 

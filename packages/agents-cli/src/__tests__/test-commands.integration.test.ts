@@ -32,8 +32,8 @@ interface TestConfigWithMethods {
   }>;
 }
 import {
-  readAgentConfig,
-  writeAgentConfig,
+  readConfig,
+  writeConfig,
   calculateConfigHash,
   toSnakeCaseKeys,
 } from "../utils";
@@ -107,30 +107,30 @@ describe("Test Commands Integration", () => {
       expect(await fs.pathExists(testsConfigPath)).toBe(false);
 
       const initialConfig = { tests: [] };
-      await writeAgentConfig(testsConfigPath, initialConfig);
+      await writeConfig(testsConfigPath, initialConfig);
 
       expect(await fs.pathExists(testsConfigPath)).toBe(true);
 
-      const config = await readAgentConfig(testsConfigPath);
+      const config = await readConfig(testsConfigPath);
       expect(config).toEqual(initialConfig);
     });
 
     it("should add test to tests.json", async () => {
       // Initialize tests.json
       const initialConfig = { tests: [] };
-      await writeAgentConfig(testsConfigPath, initialConfig);
+      await writeConfig(testsConfigPath, initialConfig);
 
       // Add a test
-      const config = await readAgentConfig(testsConfigPath);
+      const config = await readConfig(testsConfigPath);
       (config as unknown as TestsConfig).tests.push({
         name: "Test 1",
         config: "test_configs/test_1.json",
         type: "basic-llm",
       });
-      await writeAgentConfig(testsConfigPath, config);
+      await writeConfig(testsConfigPath, config);
 
       // Verify test was added
-      const updatedConfig = await readAgentConfig(testsConfigPath);
+      const updatedConfig = await readConfig(testsConfigPath);
       expect((updatedConfig as unknown as TestsConfig).tests).toHaveLength(1);
       expect((updatedConfig as unknown as TestsConfig).tests[0].name).toBe(
         "Test 1"
@@ -145,12 +145,12 @@ describe("Test Commands Integration", () => {
       // Create test config using template
       const testConfig = getBasicLLMTestTemplate(testName);
       await fs.ensureDir(path.dirname(fullConfigPath));
-      await writeAgentConfig(fullConfigPath, testConfig);
+      await writeConfig(fullConfigPath, testConfig);
 
       // Verify config file exists and has correct content
       expect(await fs.pathExists(fullConfigPath)).toBe(true);
 
-      const savedConfig = await readAgentConfig(fullConfigPath);
+      const savedConfig = await readConfig(fullConfigPath);
       expect((savedConfig as TestConfigWithMethods).name).toBe(testName);
       expect((savedConfig as TestConfigWithMethods).type).toBe("llm");
       expect((savedConfig as TestConfigWithMethods).chat_history).toHaveLength(
@@ -206,7 +206,7 @@ describe("Test Commands Integration", () => {
       // Create test config file
       const testConfig = getBasicLLMTestTemplate("Test");
       const configPath = path.join(testConfigDir, "test.json");
-      await writeAgentConfig(configPath, testConfig);
+      await writeConfig(configPath, testConfig);
 
       expect(await fs.pathExists(configPath)).toBe(true);
     });
@@ -233,7 +233,7 @@ describe("Test Commands Integration", () => {
       // Should not throw when trying to load non-existent file
       await expect(async () => {
         try {
-          await readAgentConfig(testsConfigPath);
+          await readConfig(testsConfigPath);
         } catch (error) {
           expect((error as Error).message).toContain(
             "Configuration file not found"
@@ -247,7 +247,7 @@ describe("Test Commands Integration", () => {
 
       // Should create directory structure when writing config
       const testConfig = getBasicLLMTestTemplate("Test");
-      await writeAgentConfig(configPath, testConfig);
+      await writeConfig(configPath, testConfig);
 
       expect(await fs.pathExists(configPath)).toBe(true);
       expect(await fs.pathExists(path.dirname(configPath))).toBe(true);

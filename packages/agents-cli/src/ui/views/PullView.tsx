@@ -4,7 +4,7 @@ import App from '../App.js';
 import theme from '../themes/elevenlabs.js';
 import path from 'path';
 import fs from 'fs-extra';
-import { readAgentConfig, writeAgentConfig } from '../../utils.js';
+import { readConfig, writeConfig } from '../../utils.js';
 import { getElevenLabsClient, listAgentsApi, getAgentApi } from '../../elevenlabs-api.js';
 
 interface PullAgent {
@@ -58,7 +58,7 @@ export const PullView: React.FC<PullViewProps> = ({
         }
 
         // Load existing config
-        const agentsConfig = await readAgentConfig<any>(agentsConfigPath);
+        const agentsConfig = await readConfig<any>(agentsConfigPath);
         const existingAgentNames = new Set<string>(agentsConfig.agents.map((a: any) => a.name as string));
 
         // Prepare agents for display
@@ -110,7 +110,7 @@ export const PullView: React.FC<PullViewProps> = ({
     if (index >= agentsList.length) {
       // Save files after all agents are processed (if not dry run)
       if (!dryRun) {
-        await writeAgentConfig(agentsConfigPath, agentsConfig);
+        await writeConfig(agentsConfigPath, agentsConfig);
       }
       setComplete(true);
       setTimeout(() => {
@@ -176,7 +176,7 @@ export const PullView: React.FC<PullViewProps> = ({
         // Create config file
         const configFilePath = path.resolve(configPath);
         await fs.ensureDir(path.dirname(configFilePath));
-        await writeAgentConfig(configFilePath, agentConfig);
+        await writeConfig(configFilePath, agentConfig);
 
         // Add to agents config with ID
         agentsConfig.agents.push({
