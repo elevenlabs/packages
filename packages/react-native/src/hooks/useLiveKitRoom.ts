@@ -27,7 +27,6 @@ export const useLiveKitRoom = (
   // Fire onConnect when both participant and room are fully ready
   useEffect(() => {
     if (localParticipant && roomConnected && !hasCalledOnConnectRef.current) {
-      // Both state updates have been committed, safe to fire callback
       hasCalledOnConnectRef.current = true;
       callbacksRef.current.onConnect?.({ conversationId });
     }
@@ -35,7 +34,6 @@ export const useLiveKitRoom = (
 
   const handleParticipantReady = useCallback(
     (participant: LocalParticipant) => {
-      // Only proceed if we haven't already set the participant
       if (localParticipant) {
         return;
       }
