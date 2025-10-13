@@ -402,16 +402,20 @@ describe("Tool Fetching", () => {
     it("should fetch tools from ElevenLabs API", async () => {
       const mockTools = [
         {
-          tool_id: "tool_123",
-          name: "Test Webhook Tool",
-          type: "webhook",
-          description: "A test webhook tool",
+          id: "tool_123",
+          tool_config: {
+            name: "Test Webhook Tool",
+            type: "webhook",
+            description: "A test webhook tool",
+          },
         },
         {
-          tool_id: "tool_456",
-          name: "Test Client Tool",
-          type: "client",
-          description: "A test client tool",
+          id: "tool_456",
+          tool_config: {
+            name: "Test Client Tool",
+            type: "client",
+            description: "A test client tool",
+          },
         },
       ];
 
@@ -518,9 +522,11 @@ describe("Tool Fetching", () => {
       // Mock API responses
       const mockToolsList = [
         {
-          tool_id: "tool_123",
-          name: "Webhook Tool",
-          type: "webhook",
+          id: "tool_123",
+          tool_config: {
+            name: "Webhook Tool",
+            type: "webhook",
+          },
         },
       ];
 
@@ -560,7 +566,7 @@ describe("Tool Fetching", () => {
       const toolsList = await listToolsApi(client);
 
       expect(toolsList).toHaveLength(1);
-      expect((toolsList[0] as { tool_id: string }).tool_id).toBe("tool_123");
+      expect((toolsList[0] as { id: string }).id).toBe("tool_123");
 
       // Simulate getting tool details
       const toolDetails = await getToolApi(client, "tool_123");
@@ -575,19 +581,25 @@ describe("Tool Fetching", () => {
     it("should filter tools by search term", async () => {
       const mockToolsList = [
         {
-          tool_id: "tool_123",
-          name: "Webhook Tool",
-          type: "webhook",
+          id: "tool_123",
+          tool_config: {
+            name: "Webhook Tool",
+            type: "webhook",
+          },
         },
         {
-          tool_id: "tool_456",
-          name: "Client Tool",
-          type: "client",
+          id: "tool_456",
+          tool_config: {
+            name: "Client Tool",
+            type: "client",
+          },
         },
         {
-          tool_id: "tool_789",
-          name: "Another Webhook",
-          type: "webhook",
+          id: "tool_789",
+          tool_config: {
+            name: "Another Webhook",
+            type: "webhook",
+          },
         },
       ];
 
@@ -598,12 +610,12 @@ describe("Tool Fetching", () => {
 
       // Simulate filtering by search term 'webhook'
       const webhookTools = allTools.filter((tool: unknown) =>
-        (tool as { name: string }).name.toLowerCase().includes("webhook")
+        (tool as { tool_config?: { name?: string } }).tool_config?.name?.toLowerCase().includes("webhook")
       );
 
       expect(webhookTools).toHaveLength(2);
-      expect((webhookTools[0] as { name: string }).name).toBe("Webhook Tool");
-      expect((webhookTools[1] as { name: string }).name).toBe(
+      expect((webhookTools[0] as { tool_config: { name: string } }).tool_config.name).toBe("Webhook Tool");
+      expect((webhookTools[1] as { tool_config: { name: string } }).tool_config.name).toBe(
         "Another Webhook"
       );
     });

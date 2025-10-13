@@ -1553,8 +1553,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
   let filteredTools = toolsList;
   if (searchTerm) {
     filteredTools = toolsList.filter((tool: unknown) => {
-      const toolTyped = tool as { name?: string };
-      return toolTyped.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const toolTyped = tool as { tool_config?: { name?: string } };
+      return toolTyped.tool_config?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     });
     console.log(`Filtered to ${filteredTools.length} tool(s) matching "${searchTerm}"`);
   }
@@ -1564,13 +1564,18 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
   let newToolsAdded = 0;
 
   for (const toolMeta of filteredTools) {
-    const toolMetaTyped = toolMeta as { tool_id?: string; toolId?: string; id?: string; name: string };
+    const toolMetaTyped = toolMeta as { tool_id?: string; toolId?: string; id?: string; tool_config?: { name?: string } };
     const toolId = toolMetaTyped.tool_id || toolMetaTyped.toolId || toolMetaTyped.id;
+    const toolName = toolMetaTyped.tool_config?.name;
     if (!toolId) {
-      console.log(`Warning: Skipping tool '${toolMetaTyped.name}' - no tool ID found`);
+      console.log(`Warning: Skipping tool '${toolName || 'unknown'}' - no tool ID found`);
       continue;
     }
-    let toolNameRemote = toolMetaTyped.name;
+    if (!toolName) {
+      console.log(`Warning: Skipping tool with ID '${toolId}' - no tool name found`);
+      continue;
+    }
+    let toolNameRemote = toolName;
 
     // Check for name conflicts
     if (existingToolNames.has(toolNameRemote)) {
@@ -1599,11 +1604,20 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       // Create config file (without tool_id - it goes in index file)
       const configFilePath = path.resolve(configPath);
       await fs.ensureDir(path.dirname(configFilePath));
-      await writeToolConfig(configFilePath, toolDetails as Tool);
+      
+      // Extract the tool_config from the response
+      const toolDetailsTyped = toolDetails as { tool_config?: Tool & { type?: string } };
+      const toolConfig = toolDetailsTyped.tool_config;
+      
+      if (!toolConfig) {
+        console.log(`Warning: No tool_config found for '${toolNameRemote}' - skipping`);
+        continue;
+      }
+      
+      await writeToolConfig(configFilePath, toolConfig as Tool);
 
-      // Determine tool type from the details
-      const toolDetailsTyped = toolDetails as { type?: string };
-      const toolType = toolDetailsTyped.type || 'unknown';
+      // Determine tool type from the tool_config
+      const toolType = toolConfig.type || 'unknown';
 
       // Create new tool entry for tools.json with ID
       const newTool: ToolDefinition = {
