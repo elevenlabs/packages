@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AudioSession } from "@livekit/react-native";
 import type { LocalParticipant } from "livekit-client";
 import type { ConversationStatus, Callbacks } from "../types";
@@ -11,6 +11,7 @@ export const useLiveKitRoom = (
   const [roomConnected, setRoomConnected] = useState(false);
   const [localParticipant, setLocalParticipant] =
     useState<LocalParticipant | null>(null);
+  const hasCalledOnConnectRef = useRef(false);
 
   useEffect(() => {
     const start = async () => {
@@ -23,23 +24,37 @@ export const useLiveKitRoom = (
     };
   }, []);
 
+  // Fire onConnect when both participant and room are fully ready
+  useEffect(() => {
+    if (localParticipant && roomConnected && !hasCalledOnConnectRef.current) {
+      // Both state updates have been committed, safe to fire callback
+      hasCalledOnConnectRef.current = true;
+      callbacksRef.current.onConnect?.({ conversationId });
+    }
+  }, [localParticipant, roomConnected, conversationId, callbacksRef]);
+
   const handleParticipantReady = useCallback(
     (participant: LocalParticipant) => {
+      // Only proceed if we haven't already set the participant
+      if (localParticipant) {
+        return;
+      }
+
       setLocalParticipant(participant);
+      setStatus("connected");
     },
-    []
+    [localParticipant, setStatus]
   );
 
   const handleConnected = useCallback(() => {
     setRoomConnected(true);
-    setStatus("connected");
-    callbacksRef.current.onConnect?.({ conversationId });
-  }, [conversationId, callbacksRef, setStatus]);
+  }, []);
 
   const handleDisconnected = useCallback(() => {
     setRoomConnected(false);
     setStatus("disconnected");
     setLocalParticipant(null);
+    hasCalledOnConnectRef.current = false;
     callbacksRef.current.onDisconnect?.({ reason: "user" });
   }, [callbacksRef, setStatus]);
 

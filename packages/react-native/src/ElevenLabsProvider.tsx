@@ -205,16 +205,24 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
     handleParticipantReady(participant);
 
-    if (localParticipant) {
-      const overridesEvent = constructOverrides({
-        overrides,
-        customLlmExtraBody,
-        dynamicVariables,
-        userId,
-      });
-      sendMessage(overridesEvent);
+    const overridesEvent = constructOverrides({
+      overrides,
+      customLlmExtraBody,
+      dynamicVariables,
+      userId,
+    });
+
+    if (overridesEvent) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(overridesEvent));
+        participant.publishData(data, { reliable: true });
+      } catch (error) {
+        console.error("Failed to send overrides:", error);
+        callbacksRef.current.onError?.(error as string);
+      }
     }
-  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, userId, sendMessage]);
+  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
 
   const conversation: Conversation = {
     startSession,
