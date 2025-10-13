@@ -47,7 +47,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
   onComplete
 }) => {
   const { exit } = useApp();
-  const [currentStep, setCurrentStep] = useState<StepType>('name');
+  const [currentStep, setCurrentStep] = useState<StepType>(initialName ? 'template' : 'name');
   const [testName, setTestName] = useState(initialName);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [userMessage, setUserMessage] = useState('Hello');
