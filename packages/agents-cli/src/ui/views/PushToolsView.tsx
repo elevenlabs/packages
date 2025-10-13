@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
-import StatusCard from '../components/StatusCard.js';
-import ProgressFlow from '../components/ProgressFlow.js';
 import theme from '../themes/elevenlabs.js';
+import { getElevenLabsClient, createToolApi, updateToolApi } from '../../elevenlabs-api.js';
+import { readAgentConfig, writeAgentConfig } from '../../utils.js';
+import fs from 'fs-extra';
+import path from 'path';
 
 interface PushTool {
   name: string;
@@ -18,12 +20,14 @@ interface PushToolsViewProps {
   tools: PushTool[];
   dryRun?: boolean;
   onComplete?: () => void;
+  toolsConfigPath?: string;
 }
 
-export const PushToolsView: React.FC<PushToolsViewProps> = ({
-  tools,
+export const PushToolsView: React.FC<PushToolsViewProps> = ({ 
+  tools, 
   dryRun = false,
-  onComplete
+  onComplete,
+  toolsConfigPath = 'tools.json'
 }) => {
   const { exit } = useApp();
   const [currentToolIndex, setCurrentToolIndex] = useState(0);
@@ -46,69 +50,118 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
       }
 
       const tool = tools[currentToolIndex];
-
+      
       // Update tool status to checking
       setPushedTools(prev => [...prev, { ...tool, status: 'checking' }]);
+      
+      try {
+        // Check if config file exists
+        const configPath = path.resolve(tool.configPath);
+        if (!(await fs.pathExists(configPath))) {
+          setPushedTools(prev => 
+            prev.map((t, i) => i === currentToolIndex 
+              ? { ...t, status: 'error', message: 'Config file not found' }
+              : t
+            )
+          );
+          setCurrentToolIndex(currentToolIndex + 1);
+          return;
+        }
 
-      // Simulate checking for changes
-      await new Promise(resolve => setTimeout(resolve, 500));
+        // Load tool config
+        const toolConfig = await readAgentConfig<any>(configPath);
+        // Get tool ID from props (which comes from tools.json)
+        const toolId = tool.toolId;
 
-      // Randomly determine if tool needs push
-      const needsPush = Math.random() > 0.5;
+        if (dryRun) {
+          // Dry run mode
+          setPushedTools(prev => 
+            prev.map((t, i) => i === currentToolIndex 
+              ? { 
+                  ...t, 
+                  status: 'completed', 
+                  message: toolId ? '[DRY RUN] Would update' : '[DRY RUN] Would create'
+                }
+              : t
+            )
+          );
+        } else {
+          // Update to pushing
+          setPushedTools(prev => 
+            prev.map((t, i) => i === currentToolIndex 
+              ? { ...t, status: 'pushing' }
+              : t
+            )
+          );
 
-      if (!needsPush) {
-        // Update to skipped
-        setPushedTools(prev =>
-          prev.map((t, i) => i === currentToolIndex
-            ? { ...t, status: 'skipped', message: 'No changes detected' }
-            : t
-          )
-        );
-      } else if (dryRun) {
-        // Update to completed (dry run)
-        setPushedTools(prev =>
-          prev.map((t, i) => i === currentToolIndex
-            ? { ...t, status: 'completed', message: '[DRY RUN] Would push' }
-            : t
-          )
-        );
-      } else {
-        // Update to pushing
-        setPushedTools(prev =>
-          prev.map((t, i) => i === currentToolIndex
-            ? { ...t, status: 'pushing' }
-            : t
-          )
-        );
+          // Get ElevenLabs client
+          const client = await getElevenLabsClient();
 
-        // Simulate push operation
-        await new Promise(resolve => setTimeout(resolve, 1500));
+          if (!toolId) {
+            // Create new tool
+            const response = await createToolApi(client, toolConfig);
+            const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
 
-        // Update to completed
-        const toolId = `tool_${Date.now()}`;
-        setPushedTools(prev =>
-          prev.map((t, i) => i === currentToolIndex
-            ? {
-                ...t,
-                status: 'completed',
-                message: 'Successfully pushed',
-                toolId
+            // Store tool ID in tools.json index file
+            const toolsConfig = await readAgentConfig<any>(path.resolve(toolsConfigPath));
+            const toolDef = toolsConfig.tools.find((t: any) => t.name === tool.name);
+            if (toolDef) {
+              toolDef.id = newToolId;
+              await writeAgentConfig(path.resolve(toolsConfigPath), toolsConfig);
+            }
+
+            setPushedTools(prev => 
+              prev.map((t, i) => i === currentToolIndex 
+                ? { 
+                    ...t, 
+                    status: 'completed', 
+                    message: 'Successfully pushed',
+                    toolId: newToolId
+                  }
+                : t
+              )
+            );
+          } else {
+            // Update existing tool
+            await updateToolApi(client, toolId, toolConfig);
+
+            setPushedTools(prev => 
+              prev.map((t, i) => i === currentToolIndex 
+                ? { 
+                    ...t, 
+                    status: 'completed', 
+                    message: 'Successfully pushed',
+                    toolId
+                  }
+                : t
+              )
+            );
+          }
+        }
+      } catch (error) {
+        // Handle error
+        setPushedTools(prev => 
+          prev.map((t, i) => i === currentToolIndex 
+            ? { 
+                ...t, 
+                status: 'error', 
+                message: error instanceof Error ? error.message : 'Failed to push'
               }
             : t
           )
         );
       }
-
+      
       // Update progress
       const newProgress = Math.round(((currentToolIndex + 1) / tools.length) * 100);
       setProgress(newProgress);
-
+      
       // Move to next tool
       setCurrentToolIndex(currentToolIndex + 1);
     };
 
     pushNextTool();
-  }, [currentToolIndex, tools, dryRun]);
+  }, [currentToolIndex, tools, dryRun, onComplete, exit]);
 
   const totalTools = tools.length;
   const pushedCount = pushedTools.filter(t => t.status === 'completed').length;
@@ -116,90 +169,99 @@ export const PushToolsView: React.FC<PushToolsViewProps> = ({
   const errorCount = pushedTools.filter(t => t.status === 'error').length;
 
   return (
-    <App
-      title="ElevenLabs Agents"
+    <App 
+      title="ElevenLabs Agents" 
     >
       <Box flexDirection="column">
-        {/* Summary */}
-        <Box marginBottom={2}>
-          <StatusCard
-            title="Push Progress"
-            status={complete ? 'success' : 'loading'}
-            message={
-              complete
-                ? `Completed: ${pushedCount} pushed, ${skippedCount} skipped, ${errorCount} errors`
-                : `Processing ${currentToolIndex + 1} of ${totalTools} tools`
-            }
-          />
-        </Box>
-
-        {/* Progress Bar */}
-        <ProgressFlow
-          value={progress}
-          label="Overall Progress"
-          showWave={true}
-        />
-
-        {/* Tool Status List */}
-        <Box flexDirection="column" marginTop={2}>
-          <Box marginBottom={1}>
-            <Text color={theme.colors.text.primary} bold>
-              Tools:
-            </Text>
+        {/* Tool Status List - Compact Table */}
+        <Box flexDirection="column">
+          <Text color={theme.colors.text.primary} bold>
+            Tools:
+          </Text>
+          
+          {/* Table Header */}
+          <Box marginTop={1}>
+            <Box width={30}>
+              <Text color={theme.colors.text.muted} bold>NAME</Text>
+            </Box>
+            <Box width={20}>
+              <Text color={theme.colors.text.muted} bold>STATUS</Text>
+            </Box>
+            <Box>
+              <Text color={theme.colors.text.muted} bold>MESSAGE</Text>
+            </Box>
           </Box>
+          
+          {/* Separator */}
+          <Box marginY={0}>
+            <Text color={theme.colors.text.muted}>{'─'.repeat(80)}</Text>
+          </Box>
+          
+          {/* Table Rows */}
           {pushedTools.map((tool, index) => {
-            let status: 'loading' | 'success' | 'error' | 'idle' | 'warning';
-            if (tool.status === 'checking' || tool.status === 'pushing') {
-              status = 'loading';
+            let statusColor: string;
+            let statusText: string;
+            
+            if (tool.status === 'checking') {
+              statusColor = theme.colors.text.muted;
+              statusText = '⋯ Checking';
+            } else if (tool.status === 'pushing') {
+              statusColor = theme.colors.accent.primary;
+              statusText = '↑ Pushing';
             } else if (tool.status === 'completed') {
-              status = 'success';
+              statusColor = theme.colors.success;
+              statusText = '✓ Pushed';
             } else if (tool.status === 'error') {
-              status = 'error';
+              statusColor = theme.colors.error;
+              statusText = '✗ Error';
             } else if (tool.status === 'skipped') {
-              status = 'idle';
+              statusColor = theme.colors.text.muted;
+              statusText = '○ Skipped';
             } else {
-              status = 'idle';
+              statusColor = theme.colors.text.muted;
+              statusText = '○ Pending';
             }
 
-            const title = `${tool.name} (${tool.type})`;
-            const message = tool.status === 'pushing'
-              ? 'Pushing to ElevenLabs...'
-              : tool.message;
+            const displayMessage = tool.message || '';
+            const displayName = `${tool.name} (${tool.type})`;
+            const messageWithId = tool.toolId 
+              ? `${displayMessage}${displayMessage && tool.toolId ? ' · ' : ''}ID: ${tool.toolId}`
+              : displayMessage;
 
             return (
-              <StatusCard
-                key={index}
-                title={title}
-                status={status}
-                message={message}
-                details={tool.toolId ? [`ID: ${tool.toolId}`] : []}
-                borderStyle="single"
-              />
+              <Box key={index}>
+                <Box width={30}>
+                  <Text color={theme.colors.text.primary}>{displayName}</Text>
+                </Box>
+                <Box width={20}>
+                  <Text color={statusColor}>{statusText}</Text>
+                </Box>
+                <Box>
+                  <Text color={theme.colors.text.muted}>
+                    {messageWithId}
+                  </Text>
+                </Box>
+              </Box>
             );
           })}
         </Box>
 
-        {/* Completion Message */}
+        {/* Completion Summary */}
         {complete && (
           <Box marginTop={2} flexDirection="column">
-            <Text color={theme.colors.success} bold>
-              ✓ Push completed successfully!
+            <Text color={theme.colors.text.secondary}>
+              {pushedCount} tool(s) pushed
             </Text>
-            <Box marginTop={1}>
+            {skippedCount > 0 && (
               <Text color={theme.colors.text.secondary}>
-                {pushedCount} tool(s) pushed
+                {skippedCount} tool(s) already up to date
               </Text>
-              {skippedCount > 0 && (
-                <Text color={theme.colors.text.secondary}>
-                  {skippedCount} tool(s) already up to date
-                </Text>
-              )}
-              {errorCount > 0 && (
-                <Text color={theme.colors.error}>
-                  {errorCount} tool(s) failed to push
-                </Text>
-              )}
-            </Box>
+            )}
+            {errorCount > 0 && (
+              <Text color={theme.colors.error}>
+                {errorCount} tool(s) failed to push
+              </Text>
+            )}
           </Box>
         )}
       </Box>

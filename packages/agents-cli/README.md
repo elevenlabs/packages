@@ -154,10 +154,10 @@ agents whoami
 agents add "Agent Name" [--template customer-service]
 
 # Create webhook tool
-agents add-webhook-tool "Tool Name" [--config-path path] [--skip-upload]
+agents add-webhook-tool "Tool Name" [--config-path path]
 
 # Create client tool
-agents add-client-tool "Tool Name" [--config-path path] [--skip-upload]
+agents add-client-tool "Tool Name" [--config-path path]
 
 # Push changes
 agents push [--agent "Agent Name"] [--dry-run]
@@ -191,6 +191,9 @@ agents widget "Agent Name"
 
 # List agents
 agents list
+
+# Delete agent (removes locally and from ElevenLabs)
+agents delete <agent_id>
 
 # Add componenents from [ui.elevenlabs.io](https://ui.elevenlabs.io)
 agents components add "Component Name"
@@ -291,6 +294,16 @@ agents push
 ```bash
 agents watch --interval 5
 # Edit configs in another terminal - auto-pushes!
+```
+
+**Delete Agent:**
+
+```bash
+# List agents to find the agent ID
+agents list
+
+# Delete agent by ID (removes locally and from ElevenLabs)
+agents delete agent_123456789
 ```
 
 ## Troubleshooting

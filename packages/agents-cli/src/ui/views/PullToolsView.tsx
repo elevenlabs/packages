@@ -179,9 +179,8 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
         const client = await getElevenLabsClient();
         const toolDetails = await getToolApi(client, toolToPull.id);
 
-        // Generate config file path
-        const safeName = toolToPull.name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-        const configPath = `${outputDir}/${safeName}.json`;
+        // Generate config file path using tool ID
+        const configPath = `${outputDir}/${toolToPull.id}.json`;
         const configFilePath = path.resolve(configPath);
 
         // Create config file

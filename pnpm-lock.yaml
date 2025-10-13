@@ -76,8 +76,8 @@ importers:
   packages/agents-cli:
     dependencies:
       '@elevenlabs/elevenlabs-js':
-        specifier: 2.15.0
-        version: 2.15.0(encoding@0.1.13)
+        specifier: 2.18.0
+        version: 2.18.0(encoding@0.1.13)
       '@inkjs/ui':
         specifier: ^2.0.0
         version: 2.0.0(ink@6.2.3(@types/react@19.0.0)(react@19.0.0))
@@ -1463,8 +1463,8 @@ packages:
       react: '>16.8.0'
       react-dom: '>16.8.0'
 
-  '@elevenlabs/elevenlabs-js@2.15.0':
-    resolution: {integrity: sha512-YCeWBFh3FSd4Qaf2j8a1Ko1+QwT1cphktSrPL5yxUrBP73fQGjkXlwuCddm7eB/XO3VifYajt39x9eleBKO8Mw==}
+  '@elevenlabs/elevenlabs-js@2.18.0':
+    resolution: {integrity: sha512-nHePkqhcxon43Oms87EhrAYHBhZ7Lhdiw4TkQiwM3zSDFzJ/8tWlrwUAFnS2oZi6fRQAdAwON1NJsz3yStKsQg==}
     engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.25.9':
@@ -12778,7 +12778,7 @@ snapshots:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
-  '@elevenlabs/elevenlabs-js@2.15.0(encoding@0.1.13)':
+  '@elevenlabs/elevenlabs-js@2.18.0(encoding@0.1.13)':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0(encoding@0.1.13)

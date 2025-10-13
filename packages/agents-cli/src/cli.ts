@@ -5,24 +5,22 @@ import path from 'path';
 import fs from 'fs-extra';
 import dotenv from 'dotenv';
 import {
-  calculateConfigHash,
   readAgentConfig,
   writeAgentConfig,
-  toCamelCaseKeys,
-  toSnakeCaseKeys
+  toCamelCaseKeys
 } from './utils.js';
 import { 
   getTemplateByName, 
   getTemplateOptions,
   AgentConfig 
 } from './templates.js';
-import { TestConfig } from './test-templates.js';
 import {
   getElevenLabsClient,
   createAgentApi,
   updateAgentApi,
   listAgentsApi,
   getAgentApi,
+  deleteAgentApi,
   createToolApi,
   updateToolApi,
   listToolsApi,
@@ -113,7 +111,6 @@ interface TestsConfig {
 interface AddOptions {
   configPath?: string;
   template: string;
-  skipUpload: boolean;
 }
 
 interface PushOptions {
@@ -447,7 +444,6 @@ program
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--template <template>', 'Template type to use', 'default')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
@@ -456,8 +452,7 @@ program
         const { waitUntilExit } = render(
           React.createElement(AddAgentView, {
             initialName: name,
-            template: options.template,
-            skipUpload: options.skipUpload
+            template: options.template
           })
         );
         await waitUntilExit();
@@ -473,18 +468,7 @@ program
       // Load existing config
       const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
       
-      // Generate config path if not provided
-      let configPath = options.configPath;
-      if (!configPath) {
-        const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-        configPath = `agent_configs/${safeName}.json`;
-      }
-      
-      // Create config directory and file
-      const configFilePath = path.resolve(configPath);
-      await fs.ensureDir(path.dirname(configFilePath));
-      
-      // Create agent config using template
+      // Create agent config using template (in memory first)
       let agentConfig: AgentConfig;
       try {
         agentConfig = getTemplateByName(name, options.template);
@@ -493,22 +477,7 @@ program
         process.exit(1);
       }
       
-      await writeAgentConfig(configFilePath, agentConfig);
-      console.log(`Created config file: ${configPath} (template: ${options.template})`);
-      
-      if (options.skipUpload) {
-        const newAgent: AgentDefinition = {
-          name,
-          config: configPath
-        };
-        agentsConfig.agents.push(newAgent);
-        await writeAgentConfig(agentsConfigPath, agentsConfig);
-        console.log(`Added agent '${name}' to agents.json (local only)`);
-        console.log(`Edit ${configPath} to customize your agent, then run 'agents push' to upload`);
-        return;
-      }
-      
-      // Create agent in ElevenLabs
+      // Create agent in ElevenLabs first to get ID
       console.log(`Creating agent '${name}' in ElevenLabs...`);
       
       const client = await getElevenLabsClient();
@@ -529,7 +498,20 @@ program
       
       console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
       
-      // Store agent ID in index file, not in config file
+      // Generate config path using agent ID (or custom path if provided)
+      let configPath = options.configPath;
+      if (!configPath) {
+        configPath = `agent_configs/${agentId}.json`;
+      }
+      
+      // Create config directory and file
+      const configFilePath = path.resolve(configPath);
+      await fs.ensureDir(path.dirname(configFilePath));
+      
+      await writeAgentConfig(configFilePath, agentConfig);
+      console.log(`Created config file: ${configPath} (template: ${options.template})`);
+      
+      // Store agent ID in index file
       const newAgent: AgentDefinition = {
         name,
         config: configPath,
@@ -554,10 +536,9 @@ program
   .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the webhook tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
-  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+  .action(async (name: string, options: { configPath?: string }) => {
     try {
-      await addTool(name, 'webhook', options.configPath, options.skipUpload);
+      await addTool(name, 'webhook', options.configPath);
     } catch (error) {
       console.error(`Error creating webhook tool: ${error}`);
       process.exit(1);
@@ -569,10 +550,9 @@ program
   .description('Add a new client tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the client tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
-  .action(async (name: string, options: { configPath?: string; skipUpload: boolean }) => {
+  .action(async (name: string, options: { configPath?: string }) => {
     try {
-      await addTool(name, 'client', options.configPath, options.skipUpload);
+      await addTool(name, 'client', options.configPath);
     } catch (error) {
       console.error(`Error creating client tool: ${error}`);
       process.exit(1);
@@ -729,6 +709,19 @@ program
   });
 
 program
+  .command('delete')
+  .description('Delete an agent locally and from ElevenLabs')
+  .argument('<agent_id>', 'ID of the agent to delete')
+  .action(async (agentId: string) => {
+    try {
+      await deleteAgent(agentId);
+    } catch (error) {
+      console.error(`Error deleting agent: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
   .command('pull')
   .description('Pull all agents from ElevenLabs workspace and add them to local configuration')
   .option('--agent <name>', 'Specific agent name pattern to search for')
@@ -808,21 +801,19 @@ program
   .description('Add a new test - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the test to create')
   .option('--template <template>', 'Test template type to use', 'basic-llm')
-  .option('--skip-upload', 'Create config file only, don\'t upload to ElevenLabs', false)
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (name: string, options: { template: string; skipUpload: boolean; ui: boolean }) => {
+  .action(async (name: string, options: { template: string; ui: boolean }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for test creation
         const { waitUntilExit } = render(
           React.createElement(AddTestView, {
-            initialName: name,
-            skipUpload: options.skipUpload
+            initialName: name
           })
         );
         await waitUntilExit();
       } else {
-        await addTest(name, options.template, options.skipUpload);
+        await addTest(name, options.template);
       }
     } catch (error) {
       console.error(`Error creating test: ${error}`);
@@ -876,13 +867,15 @@ program
           name: tool.name,
           type: tool.type,
           configPath: tool.config || `tool_configs/${tool.name}.json`,
-          status: 'pending' as const
+          status: 'pending' as const,
+          toolId: tool.id
         }));
 
         const { waitUntilExit } = render(
           React.createElement(PushToolsView, {
             tools: pushToolsData,
-            dryRun: options.dryRun
+            dryRun: options.dryRun,
+            toolsConfigPath: toolsConfigPath
           })
         );
         await waitUntilExit();
@@ -930,7 +923,7 @@ program
 
 // Helper functions
 
-async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, skipUpload = false): Promise<void> {
+async function addTool(name: string, type: 'webhook' | 'client', configPath?: string): Promise<void> {
   // Check if tools.json exists, create if not
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   let toolsConfig: ToolsConfig;
@@ -953,17 +946,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     process.exit(1);
   }
   
-  // Generate config path if not provided
-  if (!configPath) {
-    const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-    configPath = `tool_configs/${safeName}.json`;
-  }
-  
-  // Create config directory and file
-  const configFilePath = path.resolve(configPath);
-  await fs.ensureDir(path.dirname(configFilePath));
-  
-  // Create tool config using appropriate template
+  // Create tool config using appropriate template (in memory first)
   let toolConfig;
   if (type === 'webhook') {
     toolConfig = {
@@ -1023,27 +1006,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     };
   }
   
-  await writeToolConfig(configFilePath, toolConfig);
-  console.log(`Created config file: ${configPath}`);
-  
-  // Add to tools.json if not already present
-  if (!existingTool) {
-    const newTool: ToolDefinition = {
-      name,
-      type,
-      config: configPath
-    };
-    toolsConfig.tools.push(newTool);
-    await writeToolsConfig(toolsConfigPath, toolsConfig);
-    console.log(`Added tool '${name}' to tools.json`);
-  }
-  
-  if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to upload`);
-    return;
-  }
-  
-  // Create tool in ElevenLabs
+  // Create tool in ElevenLabs first to get ID
   console.log(`Creating ${type} tool '${name}' in ElevenLabs...`);
   
   const client = await getElevenLabsClient();
@@ -1054,11 +1017,29 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
     
-    // Store tool ID in index file
-    const toolDef = toolsConfig.tools.find(t => t.name === name);
-    if (toolDef) {
-      toolDef.id = toolId;
+    // Generate config path using tool ID (or custom path if provided)
+    if (!configPath) {
+      configPath = `tool_configs/${toolId}.json`;
+    }
+    
+    // Create config directory and file
+    const configFilePath = path.resolve(configPath);
+    await fs.ensureDir(path.dirname(configFilePath));
+    
+    await writeToolConfig(configFilePath, toolConfig);
+    console.log(`Created config file: ${configPath}`);
+    
+    // Add to tools.json if not already present
+    if (!existingTool) {
+      const newTool: ToolDefinition = {
+        name,
+        type,
+        config: configPath,
+        id: toolId
+      };
+      toolsConfig.tools.push(newTool);
       await writeToolsConfig(toolsConfigPath, toolsConfig);
+      console.log(`Added tool '${name}' to tools.json`);
     }
     
     console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
@@ -1435,9 +1416,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
         tags
       };
       
-      // Generate config file path
-      const safeName = agentNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using agent ID
+      const configPath = `${options.outputDir}/${agentId}.json`;
       
       // Create config file
       const configFilePath = path.resolve(configPath);
@@ -1554,9 +1534,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
       console.log(`Pulling config for '${toolNameRemote}'...`);
       const toolDetails = await getToolApi(client, toolId);
 
-      // Generate config file path
-      const safeName = toolNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using tool ID
+      const configPath = `${options.outputDir}/${toolId}.json`;
 
       // Create config file (without tool_id - it goes in index file)
       const configFilePath = path.resolve(configPath);
@@ -1655,7 +1634,7 @@ async function generateWidget(name: string): Promise<void> {
 
 // Test helper functions
 
-async function addTest(name: string, templateType: string = "basic-llm", skipUpload = false): Promise<void> {
+async function addTest(name: string, templateType: string = "basic-llm"): Promise<void> {
   const { getTestTemplateByName } = await import('./test-templates.js');
 
   // Check if tests.json exists
@@ -1680,37 +1659,10 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
     process.exit(1);
   }
 
-  // Generate config path
-  const safeName = name.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-  const configPath = `test_configs/${safeName}.json`;
-
-  // Create config directory and file
-  const configFilePath = path.resolve(configPath);
-  await fs.ensureDir(path.dirname(configFilePath));
-
-  // Create test config using template
+  // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
-  await writeAgentConfig(configFilePath, testConfig);
-  console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
-  // Add to tests.json if not already present
-  if (!existingTest) {
-    const newTest: TestDefinition = {
-      name,
-      config: configPath,
-      type: templateType
-    };
-    testsConfig.tests.push(newTest);
-    await writeAgentConfig(testsConfigPath, testsConfig);
-    console.log(`Added test '${name}' to tests.json`);
-  }
-
-  if (skipUpload) {
-    console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to upload`);
-    return;
-  }
-
-  // Create test in ElevenLabs
+  // Create test in ElevenLabs first to get ID
   console.log(`Creating test '${name}' in ElevenLabs...`);
 
   const client = await getElevenLabsClient();
@@ -1722,11 +1674,27 @@ async function addTest(name: string, templateType: string = "basic-llm", skipUpl
 
     console.log(`Created test in ElevenLabs with ID: ${testId}`);
 
-    // Store test ID in index file
-    const testDef = testsConfig.tests.find(t => t.name === name);
-    if (testDef) {
-      testDef.id = testId;
+    // Generate config path using test ID
+    const configPath = `test_configs/${testId}.json`;
+
+    // Create config directory and file
+    const configFilePath = path.resolve(configPath);
+    await fs.ensureDir(path.dirname(configFilePath));
+
+    await writeAgentConfig(configFilePath, testConfig);
+    console.log(`Created config file: ${configPath} (template: ${templateType})`);
+
+    // Add to tests.json if not already present
+    if (!existingTest) {
+      const newTest: TestDefinition = {
+        name,
+        config: configPath,
+        type: templateType,
+        id: testId
+      };
+      testsConfig.tests.push(newTest);
       await writeAgentConfig(testsConfigPath, testsConfig);
+      console.log(`Added test '${name}' to tests.json`);
     }
 
     console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
@@ -1977,9 +1945,8 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
       console.log(`Pulling config for '${testNameRemote}'...`);
       const testDetails = await getTestApi(client, testId);
 
-      // Generate config file path
-      const safeName = testNameRemote.toLowerCase().replace(/\s+/g, '_').replace(/[[\]]/g, '');
-      const configPath = `${options.outputDir}/${safeName}.json`;
+      // Generate config file path using test ID
+      const configPath = `${options.outputDir}/${testId}.json`;
 
       // Create config file (without test ID - it goes in index file)
       const configFilePath = path.resolve(configPath);
@@ -2077,6 +2044,54 @@ async function runAgentTests(agentName: string): Promise<void> {
   throw new Error('Non-UI test running not yet implemented. Use --ui mode.');
 }
 
+async function deleteAgent(agentId: string): Promise<void> {
+  // Load agents configuration
+  const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    throw new Error('agents.json not found. Run \'agents init\' first.');
+  }
+
+  const agentsConfig = await readAgentConfig<AgentsConfig>(agentsConfigPath);
+  
+  // Find the agent by ID
+  const agentIndex = agentsConfig.agents.findIndex(agent => agent.id === agentId);
+  
+  if (agentIndex === -1) {
+    throw new Error(`Agent with ID '${agentId}' not found in local configuration`);
+  }
+  
+  const agentDef = agentsConfig.agents[agentIndex];
+  const agentName = agentDef.name;
+  const configPath = agentDef.config;
+  
+  console.log(`Deleting agent '${agentName}' (ID: ${agentId})...`);
+  
+  // Delete from ElevenLabs (globally)
+  console.log('Deleting from ElevenLabs...');
+  const client = await getElevenLabsClient();
+  
+  try {
+    await deleteAgentApi(client, agentId);
+    console.log('✓ Successfully deleted from ElevenLabs');
+  } catch (error) {
+    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.log('Continuing with local deletion...');
+  }
+  
+  // Remove from local agents.json
+  agentsConfig.agents.splice(agentIndex, 1);
+  await writeAgentConfig(agentsConfigPath, agentsConfig);
+  console.log(`✓ Removed '${agentName}' from ${AGENTS_CONFIG_FILE}`);
+  
+  // Remove config file
+  if (configPath && await fs.pathExists(configPath)) {
+    await fs.remove(configPath);
+    console.log(`✓ Deleted config file: ${configPath}`);
+  }
+  
+  console.log(`\n✓ Successfully deleted agent '${agentName}'`);
+}
+
 // Handle SIGINT (Ctrl+C)
 process.on('SIGINT', () => {
   console.log('\nExiting...');
@@ -2094,15 +2109,47 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     process.exit(0);
   })();
 } else {
-  // Special handling for 'add' command without subcommand
+  // Special handling for 'add' command without name argument
   if (args[0] === 'add' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required argument');
+    console.error('Usage: agents add <name> [options]');
+    console.error('');
+    console.error('Example:');
+    console.error('  agents add "My Agent"');
+    console.error('  agents add "My Agent" --template advanced');
+    console.error('');
+    console.error('For other commands, see:');
+    console.error('  agents add-webhook-tool <name>');
+    console.error('  agents add-client-tool <name>');
+    process.exit(1);
+  }
+
+  // Special handling for 'templates' command without subcommand
+  if (args[0] === 'templates' && (args.length === 1 || args[1].startsWith('-'))) {
     console.error('Error: Missing required subcommand');
-    console.error('Usage: agents add <agent|webhook-tool|client-tool> [options]');
+    console.error('Usage: agents templates <list|show>');
     console.error('');
     console.error('Available subcommands:');
-    console.error('  agent          Add a new agent');
-    console.error('  webhook-tool   Add a new webhook tool');
-    console.error('  client-tool    Add a new client tool');
+    console.error('  list                List available agent templates');
+    console.error('  show <template>     Show configuration for a specific template');
+    console.error('');
+    console.error('Examples:');
+    console.error('  agents templates list');
+    console.error('  agents templates show default');
+    process.exit(1);
+  }
+
+  // Special handling for 'components' command without subcommand
+  if (args[0] === 'components' && (args.length === 1 || args[1].startsWith('-'))) {
+    console.error('Error: Missing required subcommand');
+    console.error('Usage: agents components <add>');
+    console.error('');
+    console.error('Available subcommands:');
+    console.error('  add [name]     Add a component from ElevenLabs UI registry');
+    console.error('');
+    console.error('Examples:');
+    console.error('  agents components add');
+    console.error('  agents components add button');
     process.exit(1);
   }
 

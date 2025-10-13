@@ -68,3 +68,6 @@ turbo-*.log
 out/
 build
 dist
+
+# Auto-generated version files
+**/src/version.ts

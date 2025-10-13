@@ -48,11 +48,15 @@ const commands: Command[][] = [
   [
     {
       name: "add <name>",
-      description: "Add a new agent",
+      description: "Create a new agent and push to remote",
     },
     {
       name: "list",
-      description: "List all configured agents",
+      description: "List all local agents",
+    },
+    {
+      name: "delete <agent_id>",
+      description: "Delete agent locally and from ElevenLabs",
     },
     {
       name: "status",
@@ -60,11 +64,11 @@ const commands: Command[][] = [
     },
     {
       name: "push",
-      description: "Push agents to ElevenLabs API",
+      description: "Push agents to ElevenLabs",
     },
     {
       name: "pull",
-      description: "Pull agents from ElevenLabs workspace",
+      description: "Pull agents from ElevenLabs",
     },
   ],
   [

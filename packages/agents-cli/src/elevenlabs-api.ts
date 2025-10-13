@@ -181,6 +181,17 @@ export async function getAgentApi(client: ElevenLabsClient, agentId: string): Pr
 }
 
 /**
+ * Deletes an agent using the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param agentId - The ID of the agent to delete
+ * @returns Promise that resolves when the agent is deleted
+ */
+export async function deleteAgentApi(client: ElevenLabsClient, agentId: string): Promise<void> {
+  await client.conversationalAi.agents.delete(agentId);
+}
+
+/**
  * Creates a new tool using the ElevenLabs API.
  * 
  * @param client - An initialized ElevenLabs client
