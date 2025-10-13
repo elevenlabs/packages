@@ -16,9 +16,8 @@ interface PullAgent {
 }
 
 interface PullViewProps {
-  agent?: string;
+  agent?: string; // Agent ID to pull specifically
   outputDir: string;
-  search?: string;
   dryRun: boolean;
   onComplete?: () => void;
 }
@@ -26,7 +25,6 @@ interface PullViewProps {
 export const PullView: React.FC<PullViewProps> = ({ 
   agent,
   outputDir,
-  search,
   dryRun,
   onComplete 
 }) => {
@@ -46,10 +44,22 @@ export const PullView: React.FC<PullViewProps> = ({
         }
 
         const client = await getElevenLabsClient();
-        const searchTerm = agent || search;
 
-        // Fetch agents list
-        const agentsList = await listAgentsApi(client, 30, searchTerm);
+        // Fetch agents list - either specific agent by ID or all agents
+        let agentsList: unknown[];
+        if (agent) {
+          // Pull specific agent by ID
+          const agentDetails = await getAgentApi(client, agent);
+          const agentDetailsTyped = agentDetails as { agentId?: string; agent_id?: string; name: string };
+          const agentId = agentDetailsTyped.agentId || agentDetailsTyped.agent_id || agent;
+          agentsList = [{ 
+            agentId: agentId,
+            agent_id: agentId,
+            name: agentDetailsTyped.name 
+          }];
+        } else {
+          agentsList = await listAgentsApi(client, 30);
+        }
 
         if (agentsList.length === 0) {
           setError('No agents found in your ElevenLabs workspace.');

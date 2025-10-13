@@ -129,16 +129,14 @@ interface WatchOptions {
 }
 
 interface PullOptions {
-  agent?: string;
+  agent?: string; // Agent ID to pull specifically
   outputDir: string;
-  search?: string;
   dryRun: boolean;
 }
 
 interface PullToolsOptions {
-  tool?: string;
+  tool?: string; // Tool ID to pull specifically
   outputDir: string;
-  search?: string;
   dryRun: boolean;
 }
 
@@ -725,9 +723,8 @@ program
 program
   .command('pull')
   .description('Pull all agents from ElevenLabs workspace and add them to local configuration')
-  .option('--agent <name>', 'Specific agent name pattern to search for')
+  .option('--agent <id>', 'Specific agent ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled agent configs', 'agent_configs')
-  .option('--search <term>', 'Search agents by name')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: PullOptions & { ui: boolean }) => {
@@ -738,7 +735,6 @@ program
           React.createElement(PullView, {
             agent: options.agent,
             outputDir: options.outputDir,
-            search: options.search,
             dryRun: options.dryRun
           })
         );
@@ -756,9 +752,8 @@ program
 program
   .command('pull-tools')
   .description('Pull all tools from ElevenLabs workspace and add them to local configuration')
-  .option('--tool <name>', 'Specific tool name pattern to search for')
+  .option('--tool <id>', 'Specific tool ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled tool configs', 'tool_configs')
-  .option('--search <term>', 'Search tools by name')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI', false)
   .action(async (options: PullToolsOptions & { ui: boolean }) => {
@@ -769,7 +764,6 @@ program
           React.createElement(PullToolsView, {
             tool: options.tool,
             outputDir: options.outputDir,
-            search: options.search,
             dryRun: options.dryRun
           })
         );
@@ -895,10 +889,11 @@ program
 program
   .command('pull-tests')
   .description('Pull all tests from ElevenLabs workspace and add them to local configuration')
+  .option('--test <id>', 'Specific test ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled test configs', 'test_configs')
   .option('--dry-run', 'Show what would be pulled without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: { outputDir: string; dryRun: boolean; ui: boolean }) => {
+  .action(async (options: { test?: string; outputDir: string; dryRun: boolean; ui: boolean }) => {
     try {
       // For now, always use non-UI mode (UI can be added later if needed)
       await pullTests(options);
@@ -1405,23 +1400,40 @@ async function pullAgents(options: PullOptions): Promise<void> {
   
   const client = await getElevenLabsClient();
   
-  // Use agent option as search term if provided, otherwise use search parameter
-  const searchTerm = options.agent || options.search;
-  
-  // Pull all agents from ElevenLabs
-  console.log('Pulling agents from ElevenLabs...');
-  const agentsList = await listAgentsApi(client, 30, searchTerm);
-  
-  if (agentsList.length === 0) {
-    console.log('No agents found in your ElevenLabs workspace.');
-    return;
-  }
-  
-  console.log(`Found ${agentsList.length} agent(s)`);
-  
   // Load existing config
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
+  
+  let agentsList: unknown[];
+  
+  if (options.agent) {
+    // Pull specific agent by ID
+    console.log(`Pulling agent with ID: ${options.agent}...`);
+    try {
+      const agentDetails = await getAgentApi(client, options.agent);
+      const agentDetailsTyped = agentDetails as { agentId?: string; agent_id?: string; name: string };
+      const agentId = agentDetailsTyped.agentId || agentDetailsTyped.agent_id || options.agent;
+      agentsList = [{ 
+        agentId: agentId,
+        agent_id: agentId,
+        name: agentDetailsTyped.name 
+      }];
+      console.log(`Found agent: ${agentDetailsTyped.name}`);
+    } catch (error) {
+      throw new Error(`Failed to fetch agent with ID '${options.agent}': ${error}`);
+    }
+  } else {
+    // Pull all agents from ElevenLabs
+    console.log('Pulling all agents from ElevenLabs...');
+    agentsList = await listAgentsApi(client, 30);
+    
+    if (agentsList.length === 0) {
+      console.log('No agents found in your ElevenLabs workspace.');
+      return;
+    }
+    
+    console.log(`Found ${agentsList.length} agent(s)`);
+  }
   
   let newAgentsAdded = 0;
   
@@ -1536,31 +1548,46 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
 
   const client = await getElevenLabsClient();
 
-  // Use tool option as search term if provided, otherwise use search parameter
-  const searchTerm = options.tool || options.search;
-
-  // Pull all tools from ElevenLabs
-  console.log('Pulling tools from ElevenLabs...');
-  const toolsList = await listToolsApi(client);
-
-  if (toolsList.length === 0) {
-    console.log('No tools found in your ElevenLabs workspace.');
-    return;
-  }
-
-  console.log(`Found ${toolsList.length} tool(s)`);
-
-  // Filter tools by search term if provided
-  let filteredTools = toolsList;
-  if (searchTerm) {
-    filteredTools = toolsList.filter((tool: unknown) => {
-      const toolTyped = tool as { tool_config?: { name?: string } };
-      return toolTyped.tool_config?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    });
-    console.log(`Filtered to ${filteredTools.length} tool(s) matching "${searchTerm}"`);
-  }
-
   const existingToolNames = new Set(toolsConfig.tools.map(tool => tool.name));
+
+  let filteredTools: unknown[];
+
+  if (options.tool) {
+    // Pull specific tool by ID
+    console.log(`Pulling tool with ID: ${options.tool}...`);
+    try {
+      const toolDetails = await getToolApi(client, options.tool);
+      const toolDetailsTyped = toolDetails as { tool_id?: string; toolId?: string; id?: string; tool_config?: { name?: string } & Tool };
+      const toolId = toolDetailsTyped.tool_id || toolDetailsTyped.toolId || toolDetailsTyped.id || options.tool;
+      const toolName = toolDetailsTyped.tool_config?.name;
+      
+      if (!toolName) {
+        throw new Error(`Tool with ID '${options.tool}' has no name`);
+      }
+      
+      filteredTools = [{
+        tool_id: toolId,
+        toolId: toolId,
+        id: toolId,
+        tool_config: toolDetailsTyped.tool_config
+      }];
+      console.log(`Found tool: ${toolName}`);
+    } catch (error) {
+      throw new Error(`Failed to fetch tool with ID '${options.tool}': ${error}`);
+    }
+  } else {
+    // Pull all tools from ElevenLabs
+    console.log('Pulling all tools from ElevenLabs...');
+    const toolsList = await listToolsApi(client);
+
+    if (toolsList.length === 0) {
+      console.log('No tools found in your ElevenLabs workspace.');
+      return;
+    }
+
+    console.log(`Found ${toolsList.length} tool(s)`);
+    filteredTools = toolsList;
+  }
 
   let newToolsAdded = 0;
 
@@ -1952,7 +1979,7 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function pullTests(options: { outputDir: string; dryRun: boolean }): Promise<void> {
+async function pullTests(options: { test?: string; outputDir: string; dryRun: boolean }): Promise<void> {
   // Check if tests.json exists
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   let testsConfig: TestsConfig;
@@ -1967,19 +1994,38 @@ async function pullTests(options: { outputDir: string; dryRun: boolean }): Promi
 
   const client = await getElevenLabsClient();
 
-  // Fetch all tests from ElevenLabs
-  console.log('Fetching tests from ElevenLabs...');
-  const testsList = await listTestsApi(client, 30);
-
-  if (testsList.length === 0) {
-    console.log('No tests found in your ElevenLabs workspace.');
-    return;
-  }
-
-  console.log(`Found ${testsList.length} test(s)`);
-
   // Load existing config
   const existingTestNames = new Set(testsConfig.tests.map(test => test.name));
+
+  let testsList: unknown[];
+
+  if (options.test) {
+    // Pull specific test by ID
+    console.log(`Pulling test with ID: ${options.test}...`);
+    try {
+      const testDetails = await getTestApi(client, options.test);
+      const testDetailsTyped = testDetails as { id?: string; name: string };
+      const testId = testDetailsTyped.id || options.test;
+      testsList = [{
+        id: testId,
+        name: testDetailsTyped.name
+      }];
+      console.log(`Found test: ${testDetailsTyped.name}`);
+    } catch (error) {
+      throw new Error(`Failed to fetch test with ID '${options.test}': ${error}`);
+    }
+  } else {
+    // Fetch all tests from ElevenLabs
+    console.log('Fetching all tests from ElevenLabs...');
+    testsList = await listTestsApi(client, 30);
+
+    if (testsList.length === 0) {
+      console.log('No tests found in your ElevenLabs workspace.');
+      return;
+    }
+
+    console.log(`Found ${testsList.length} test(s)`);
+  }
 
   let newTestsAdded = 0;
 

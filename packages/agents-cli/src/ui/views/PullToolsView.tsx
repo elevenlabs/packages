@@ -27,9 +27,8 @@ interface PullTool {
 }
 
 interface PullToolsViewProps {
-  tool?: string;
+  tool?: string; // Tool ID to pull specifically
   outputDir: string;
-  search?: string;
   dryRun?: boolean;
   onComplete?: () => void;
 }
@@ -39,7 +38,6 @@ const TOOLS_CONFIG_FILE = "tools.json";
 export const PullToolsView: React.FC<PullToolsViewProps> = ({
   tool,
   outputDir = 'tool_configs',
-  search,
   dryRun = false,
   onComplete
 }) => {
@@ -69,24 +67,40 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
         }
 
         const client = await getElevenLabsClient();
-        const toolsList = await listToolsApi(client);
-
-        if (toolsList.length === 0) {
-          setState(prev => ({ ...prev, error: 'No tools found in your ElevenLabs workspace.', loading: false }));
-          return;
-        }
-
-        // Filter tools by search criteria
-        const searchTerm = tool || search;
-        let filteredTools = toolsList;
-        if (searchTerm) {
-          filteredTools = toolsList.filter((toolItem: any) => {
-            return toolItem.tool_config?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-          });
-        }
 
         // Check existing tools
         const existingToolNames = new Set(toolsConfig.tools.map(t => t.name));
+
+        // Fetch tools - either specific tool by ID or all tools
+        let filteredTools: unknown[];
+        if (tool) {
+          // Pull specific tool by ID
+          const toolDetails = await getToolApi(client, tool);
+          const toolDetailsTyped = toolDetails as { tool_id?: string; toolId?: string; id?: string; tool_config?: { name?: string } };
+          const toolId = toolDetailsTyped.tool_id || toolDetailsTyped.toolId || toolDetailsTyped.id || tool;
+          const toolName = toolDetailsTyped.tool_config?.name;
+          
+          if (!toolName) {
+            setState(prev => ({ ...prev, error: `Tool with ID '${tool}' has no name`, loading: false }));
+            return;
+          }
+          
+          filteredTools = [{
+            tool_id: toolId,
+            toolId: toolId,
+            id: toolId,
+            tool_config: toolDetailsTyped.tool_config
+          }];
+        } else {
+          const toolsList = await listToolsApi(client);
+
+          if (toolsList.length === 0) {
+            setState(prev => ({ ...prev, error: 'No tools found in your ElevenLabs workspace.', loading: false }));
+            return;
+          }
+
+          filteredTools = toolsList;
+        }
 
         // Prepare tools list
         const toolsToPull: PullTool[] = filteredTools
@@ -133,7 +147,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
     };
 
     initializePull();
-  }, [tool, search]);
+  }, [tool]);
 
   useEffect(() => {
     if (state.phase !== 'pulling' || currentToolIndex >= tools.length) {
