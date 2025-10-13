@@ -10,6 +10,11 @@ import * as elevenLabsApi from "../elevenlabs-api";
 import * as config from "../config";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { readConfig, writeConfig } from "../utils";
+import {
+  setupPullTestEnvironment,
+  setupCommonMocks,
+  clearAllMocks,
+} from "./helpers/pull-test-helpers";
 
 interface AgentDefinition {
   name: string;
@@ -42,28 +47,24 @@ describe("Pull Agents Integration Tests", () => {
   let agentConfigsDir: string;
 
   beforeEach(async () => {
-    // Create a temporary directory
-    tempDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), "agents-pull-test-")
-    );
-    agentsConfigPath = path.join(tempDir, "agents.json");
-    agentConfigsDir = path.join(tempDir, "agent_configs");
-    await fs.ensureDir(agentConfigsDir);
+    // Create a temporary directory using helper
+    const env = await setupPullTestEnvironment({
+      resourceType: 'agents',
+      tempDirPrefix: 'agents-pull-test-',
+    });
+    
+    tempDir = env.tempDir;
+    agentsConfigPath = env.configPath;
+    agentConfigsDir = env.configsDir;
 
-    // Set up mocks
-    mockedOs.homedir.mockReturnValue("/mock/home");
-    mockedConfig.getApiKey.mockResolvedValue("test-api-key");
-    mockedConfig.isLoggedIn.mockResolvedValue(true);
-    mockedConfig.getResidency.mockResolvedValue("us");
-
-    const mockClient = {} as ElevenLabsClient;
-    mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient);
+    // Set up common mocks
+    setupCommonMocks(mockedConfig, mockedOs, mockedElevenLabsApi);
   });
 
   afterEach(async () => {
     // Clean up temp directory
     await fs.remove(tempDir);
-    jest.clearAllMocks();
+    clearAllMocks();
   });
 
   describe("ID-based agent matching", () => {

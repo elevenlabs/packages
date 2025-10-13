@@ -15,6 +15,11 @@ import {
   ToolsConfig,
   ToolDefinition,
 } from "../tools";
+import {
+  setupPullTestEnvironment,
+  setupCommonMocks,
+  clearAllMocks,
+} from "./helpers/pull-test-helpers";
 
 // Mock the entire elevenlabs-api module
 jest.mock("../elevenlabs-api");
@@ -37,26 +42,24 @@ describe("Pull Tools Integration Tests", () => {
   let toolConfigsDir: string;
 
   beforeEach(async () => {
-    // Create a temporary directory
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tools-pull-test-"));
-    toolsConfigPath = path.join(tempDir, "tools.json");
-    toolConfigsDir = path.join(tempDir, "tool_configs");
-    await fs.ensureDir(toolConfigsDir);
+    // Create a temporary directory using helper
+    const env = await setupPullTestEnvironment({
+      resourceType: 'tools',
+      tempDirPrefix: 'tools-pull-test-',
+    });
+    
+    tempDir = env.tempDir;
+    toolsConfigPath = env.configPath;
+    toolConfigsDir = env.configsDir;
 
-    // Set up mocks
-    mockedOs.homedir.mockReturnValue("/mock/home");
-    mockedConfig.getApiKey.mockResolvedValue("test-api-key");
-    mockedConfig.isLoggedIn.mockResolvedValue(true);
-    mockedConfig.getResidency.mockResolvedValue("us");
-
-    const mockClient = {} as ElevenLabsClient;
-    mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient);
+    // Set up common mocks
+    setupCommonMocks(mockedConfig, mockedOs, mockedElevenLabsApi);
   });
 
   afterEach(async () => {
     // Clean up temp directory
     await fs.remove(tempDir);
-    jest.clearAllMocks();
+    clearAllMocks();
   });
 
   describe("ID-based tool matching", () => {
