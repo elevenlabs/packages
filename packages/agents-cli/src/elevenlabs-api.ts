@@ -199,16 +199,10 @@ export async function deleteAgentApi(client: ElevenLabsClient, agentId: string):
  * @returns Promise that resolves to the created tool object
  */
 export async function createToolApi(client: ElevenLabsClient, toolConfig: Record<string, unknown>): Promise<ElevenLabs.ToolResponseModel> {
-  // Determine the type based on the properties present
-  const type = 'type' in toolConfig ? 'webhook' : 'client';
-
   const normalizedConfig = toCamelCaseKeys(toolConfig);
 
   return await client.conversationalAi.tools.create({
-    toolConfig: {
-      ...normalizedConfig,
-      type
-    } as ElevenLabs.ToolRequestModelToolConfig
+    toolConfig: normalizedConfig as unknown as ElevenLabs.ToolRequestModelToolConfig
   })
 }
 
