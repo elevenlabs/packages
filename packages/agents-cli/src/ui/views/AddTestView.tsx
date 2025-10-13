@@ -152,13 +152,13 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
       const client = await getElevenLabsClient();
 
-      const { toCamelCaseKeys } = await import('../../utils.js');
+      const { toCamelCaseKeys, generateUniqueFilename } = await import('../../utils.js');
       const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
       const response = await createTestApi(client, testApiConfig);
       const testId = response.id;
 
-      // Generate config file path using test ID
-      const configPath = `test_configs/${testId}.json`;
+      // Generate config file path using test name
+      const configPath = await generateUniqueFilename('test_configs', testName);
       const configFilePath = path.resolve(configPath);
 
       // Ensure directory exists
