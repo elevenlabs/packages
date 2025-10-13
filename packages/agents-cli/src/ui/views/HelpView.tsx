@@ -69,6 +69,32 @@ const commands: Command[][] = [
     {
       name: "pull",
       description: "Pull agents from ElevenLabs",
+      subcommands: [
+        {
+          name: "(default)",
+          description: "Pull new items only, skip existing",
+        },
+        {
+          name: "--update",
+          description: "Update existing items only, skip new",
+        },
+        {
+          name: "--all",
+          description: "Pull everything (new + existing)",
+        },
+        {
+          name: "",
+          description: "",
+        },
+        {
+          name: "-y, --yes",
+          description: "Skip confirmation prompts",
+        },
+        {
+          name: "--dry-run",
+          description: "Preview changes without executing",
+        },
+      ],
     },
   ],
   [
@@ -86,7 +112,7 @@ const commands: Command[][] = [
     },
     {
       name: "pull-tools",
-      description: "Pull tools from ElevenLabs workspace",
+      description: "Pull tools from ElevenLabs (see pull for options)",
     },
   ],
   [
@@ -100,7 +126,7 @@ const commands: Command[][] = [
     },
     {
       name: "pull-tests",
-      description: "Pull tests from ElevenLabs workspace",
+      description: "Pull tests from ElevenLabs (see pull for options)",
     },
     {
       name: "test <agent>",
