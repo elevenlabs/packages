@@ -206,7 +206,8 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
       }, 2000);
 
     } catch (err) {
-      setError(`Failed to create test: ${err}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`Failed to create test: ${errorMessage}`);
       setCurrentStep('confirm');
     }
   };
@@ -307,6 +308,11 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
               <Text color={theme.colors.text.primary}>Success Condition: {successCondition}</Text>
               {toolName && <Text color={theme.colors.text.primary}>Tool: {toolName}</Text>}
             </Box>
+            {error && (
+              <Box marginTop={1}>
+                <Text color={theme.colors.error}>{error}</Text>
+              </Box>
+            )}
             <Box marginTop={2}>
               <Text color={theme.colors.text.muted}>Press Enter to create test, or Esc to cancel</Text>
             </Box>
