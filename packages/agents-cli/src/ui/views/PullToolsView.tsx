@@ -15,6 +15,7 @@ import {
 } from '../../tools.js';
 import path from 'path';
 import fs from 'fs-extra';
+import { generateUniqueFilename } from '../../utils.js';
 
 interface PullTool {
   name: string;
@@ -179,13 +180,6 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
         const client = await getElevenLabsClient();
         const toolDetails = await getToolApi(client, toolToPull.id);
 
-        // Generate config file path using tool ID
-        const configPath = `${outputDir}/${toolToPull.id}.json`;
-        const configFilePath = path.resolve(configPath);
-
-        // Create config file
-        await fs.ensureDir(path.dirname(configFilePath));
-        
         // Extract the tool_config from the response
         const toolDetailsTyped = toolDetails as { tool_config?: Tool & { type?: string } };
         const toolConfig = toolDetailsTyped.tool_config;
@@ -193,6 +187,13 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
         if (!toolConfig) {
           throw new Error('No tool_config found in response');
         }
+
+        // Generate config file path using tool name
+        const configPath = await generateUniqueFilename(outputDir, toolToPull.name);
+        const configFilePath = path.resolve(configPath);
+
+        // Create config file
+        await fs.ensureDir(path.dirname(configFilePath));
         
         await writeToolConfig(configFilePath, toolConfig as Tool);
 

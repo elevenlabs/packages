@@ -150,3 +150,82 @@ export function toSnakeCaseKeys<T = unknown>(value: T): T {
   }
   return value;
 }
+
+/**
+ * Sanitizes a name to be filesystem-safe
+ * @param name - The name to sanitize
+ * @returns A filesystem-safe name
+ */
+function sanitizeFilename(name: string): string {
+  if (!name || name.trim().length === 0) {
+    return 'unnamed';
+  }
+
+  let sanitized = name.trim();
+  
+  // Check if name starts with a dot before sanitization
+  const startsWithDot = sanitized.startsWith('.');
+  
+  // Replace filesystem-unsafe characters with hyphens
+  sanitized = sanitized.replace(/[/\\:*?"<>|]/g, '-');
+  
+  // Replace spaces with hyphens
+  sanitized = sanitized.replace(/\s+/g, '-');
+  
+  // Replace multiple consecutive hyphens with a single hyphen
+  sanitized = sanitized.replace(/-+/g, '-');
+  
+  // Remove leading/trailing hyphens and dots
+  sanitized = sanitized.replace(/^[.-]+|[.-]+$/g, '');
+  
+  // If the name is now empty, use fallback
+  if (sanitized.length === 0) {
+    return 'unnamed';
+  }
+  
+  // If name originally started with a dot, prefix with underscore
+  if (startsWithDot) {
+    sanitized = '_' + sanitized;
+  }
+  
+  // Truncate to 100 characters to avoid extremely long filenames
+  if (sanitized.length > 100) {
+    sanitized = sanitized.substring(0, 100);
+  }
+  
+  return sanitized;
+}
+
+/**
+ * Generates a unique filename in the specified directory.
+ * If a file with the given name already exists, appends a number suffix (-1, -2, etc.)
+ * 
+ * @param outputDir - The directory where the file will be created
+ * @param entityName - The name of the entity (agent/tool/test)
+ * @param extension - The file extension (default: '.json')
+ * @returns A relative path to a unique filename
+ */
+export async function generateUniqueFilename(
+  outputDir: string,
+  entityName: string,
+  extension: string = '.json'
+): Promise<string> {
+  const sanitized = sanitizeFilename(entityName);
+  let filename = `${sanitized}${extension}`;
+  let filePath = path.join(outputDir, filename);
+  
+  // Check if file exists on disk
+  if (!(await fs.pathExists(filePath))) {
+    return filePath;
+  }
+  
+  // File exists, try numbered variants
+  let counter = 1;
+  while (await fs.pathExists(filePath)) {
+    filename = `${sanitized}-${counter}${extension}`;
+    filePath = path.join(outputDir, filename);
+    counter++;
+  }
+  
+  return filePath;
+}

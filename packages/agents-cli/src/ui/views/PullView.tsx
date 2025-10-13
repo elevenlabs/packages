@@ -4,7 +4,7 @@ import App from '../App.js';
 import theme from '../themes/elevenlabs.js';
 import path from 'path';
 import fs from 'fs-extra';
-import { readConfig, writeConfig } from '../../utils.js';
+import { readConfig, writeConfig, generateUniqueFilename } from '../../utils.js';
 import { getElevenLabsClient, listAgentsApi, getAgentApi } from '../../elevenlabs-api.js';
 
 interface PullAgent {
@@ -170,8 +170,8 @@ export const PullView: React.FC<PullViewProps> = ({
           tags
         };
 
-        // Generate config file path using agent ID
-        const configPath = `${outputDir}/${agent.agentId}.json`;
+        // Generate config file path using agent name
+        const configPath = await generateUniqueFilename(outputDir, agentName);
 
         // Create config file
         const configFilePath = path.resolve(configPath);
