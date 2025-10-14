@@ -1,0 +1,76 @@
+name: CLI Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/agents-cli/**'
+  pull_request:
+    paths:
+      - 'packages/agents-cli/**'
+
+jobs:
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm --filter @elevenlabs/agents-cli build
+      
+      - name: Run unit tests
+        run: pnpm --filter @elevenlabs/agents-cli test:unit
+
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    # Only run on main branch or when manually triggered
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build
+        run: pnpm --filter @elevenlabs/agents-cli build
+      
+      - name: Run E2E tests
+        run: pnpm --filter @elevenlabs/agents-cli test:e2e:force
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY }}
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: packages/agents-cli/coverage/

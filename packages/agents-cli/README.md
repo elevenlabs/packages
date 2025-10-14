@@ -356,6 +356,33 @@ pnpm test
 pnpm run lint
 ```
 
+## Testing
+
+### Unit Tests
+```bash
+npm test
+```
+
+### E2E Tests
+
+⚠️ **CRITICAL**: E2E tests require a **dedicated, empty test account**. 
+
+**DO NOT use your production account!** E2E tests will create, modify, and **delete agents** during testing. Any existing agents could be permanently lost.
+
+**Setup:**
+
+1. Create a new ElevenLabs account (separate from production)
+2. Verify the account is completely empty (no deployed agents)
+3. Generate an API key for this test account
+4. Copy `.env.example` to `.env` and add the test account API key
+5. Run: `npm run test:e2e`
+
+**Quick safety check before running tests:**
+```bash
+npm run dev -- whoami --no-ui  # Verify you're using test account
+npm run dev -- list --no-ui     # Should be empty or only test agents
+```
+
 ## Security
 
 The CLI stores your API key securely with multiple fallback options:
