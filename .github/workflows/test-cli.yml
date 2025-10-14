@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'packages/agents-cli/**'
+  pull_request:
+    paths:
+      - 'packages/agents-cli/**'
   workflow_dispatch:
 
 jobs:
