@@ -436,12 +436,26 @@ describe("CLI End-to-End Tests", () => {
 
   // Tests that require API key - No UI Mode
   describeIfApiKey("API Integration Tests - No UI", () => {
+    const createdAgentIds: string[] = [];
+
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-"));
     });
 
     afterEach(async () => {
+      // Clean up any agents that were created during the test
+      for (const agentId of createdAgentIds) {
+        try {
+          await runCli(["delete", agentId, "--no-ui"], {
+            includeApiKey: true,
+          });
+        } catch (error) {
+          // Agent might already be deleted, that's OK
+        }
+      }
+      createdAgentIds.length = 0; // Clear the array
+
       // Clean up temp directory
       await fs.remove(tempDir);
     });
@@ -513,11 +527,20 @@ describe("CLI End-to-End Tests", () => {
       expect(agentsConfig.agents[0].name).toBe(agentName);
       expect(agentsConfig.agents[0].id).toBeTruthy();
 
-      // Clean up: delete the agent
+      // Track agent for cleanup (in case delete fails)
       const agentId = agentsConfig.agents[0].id;
+      createdAgentIds.push(agentId);
+
+      // Clean up: delete the agent
       await runCli(["delete", agentId, "--no-ui"], {
         includeApiKey: true,
       });
+      
+      // Remove from tracking since it was successfully deleted
+      const index = createdAgentIds.indexOf(agentId);
+      if (index > -1) {
+        createdAgentIds.splice(index, 1);
+      }
     });
 
     it("should pull agents from workspace (--no-ui)", async () => {
@@ -567,12 +590,26 @@ describe("CLI End-to-End Tests", () => {
 
   // Tests that require API key - With UI Mode
   describeIfApiKey("API Integration Tests - With UI", () => {
+    const createdAgentIds: string[] = [];
+
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-ui-"));
     });
 
     afterEach(async () => {
+      // Clean up any agents that were created during the test
+      for (const agentId of createdAgentIds) {
+        try {
+          await runCli(["delete", agentId, "--no-ui"], {
+            includeApiKey: true,
+          });
+        } catch (error) {
+          // Agent might already be deleted, that's OK
+        }
+      }
+      createdAgentIds.length = 0; // Clear the array
+
       // Clean up temp directory
       await fs.remove(tempDir);
     });

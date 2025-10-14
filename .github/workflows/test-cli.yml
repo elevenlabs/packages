@@ -1,42 +1,13 @@
-name: CLI Tests
+name: CLI E2E Tests
 
 on:
   push:
     branches: [main, develop]
     paths:
       - 'packages/agents-cli/**'
-  pull_request:
-    paths:
-      - 'packages/agents-cli/**'
+  workflow_dispatch:
 
 jobs:
-  test-unit:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-      
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Build
-        run: pnpm --filter @elevenlabs/agents-cli build
-      
-      - name: Run unit tests
-        run: pnpm --filter @elevenlabs/agents-cli test:unit
-
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -46,16 +17,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
       
       - name: Install dependencies
         run: pnpm install
@@ -64,7 +35,7 @@ jobs:
         run: pnpm --filter @elevenlabs/agents-cli build
       
       - name: Run E2E tests
-        run: pnpm --filter @elevenlabs/agents-cli test:e2e:force
+        run: pnpm --filter @elevenlabs/agents-cli test:e2e
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY }}
           

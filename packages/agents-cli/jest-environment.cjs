@@ -2,20 +2,10 @@ const { TestEnvironment } = require('jest-environment-node');
 const { resolve } = require('path');
 const os = require('os');
 const fs = require('fs');
-const dotenv = require('dotenv');
 
 class CustomTestEnvironment extends TestEnvironment {
   constructor(config, context) {
     super(config, context);
-
-    // Load .env file from the project root
-    const envPath = resolve(__dirname, '.env');
-    if (fs.existsSync(envPath)) {
-      const envConfig = dotenv.config({ path: envPath });
-      if (envConfig.parsed && envConfig.parsed.ELEVENLABS_API_KEY) {
-        process.env.ELEVENLABS_API_KEY = envConfig.parsed.ELEVENLABS_API_KEY;
-      }
-    }
 
     // Create a safe working directory
     const testWorkDir = resolve(os.tmpdir(), 'agents-cli-test-wd');

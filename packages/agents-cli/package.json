@@ -37,9 +37,7 @@
     "prepublishOnly": "npm run build",
     "test": "jest --testPathIgnorePatterns='e2e'",
     "test:unit": "jest --testPathIgnorePatterns='e2e'",
-    "test:e2e:verify": "bash scripts/verify-test-account.sh",
-    "test:e2e": "npm run test:e2e:verify && jest --testPathPattern='e2e'",
-    "test:e2e:force": "jest --testPathPattern='e2e'",
+    "test:e2e": "jest --testPathPattern='e2e'",
     "test:all": "jest",
     "lint": "eslint src -c eslint.config.js",
     "format": "prettier --write src/**/*.ts"
