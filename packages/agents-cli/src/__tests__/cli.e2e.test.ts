@@ -1,7 +1,7 @@
 /**
  * End-to-end tests for CLI functionality
  * 
- * ⚠️  CRITICAL SAFETY WARNING ⚠️
+ * CRITICAL SAFETY WARNING
  * 
  * These tests require an ELEVENLABS_API_KEY environment variable.
  * 
@@ -56,12 +56,12 @@ describe("CLI End-to-End Tests", () => {
     
     // Log test mode and safety warnings
     if (!hasApiKey) {
-      console.log('⚠️  ELEVENLABS_API_KEY not found - skipping API-dependent tests');
+      console.log('ELEVENLABS_API_KEY not found - skipping API-dependent tests');
       console.log('   To run full e2e tests: copy .env.example to .env and add your test API key');
     } else {
-      console.log('✓ Running full e2e tests with API key');
+      console.log('Running full e2e tests with API key');
       console.log('');
-      console.log('⚠️  SAFETY REMINDER: Ensure you are using a DEDICATED TEST ACCOUNT');
+      console.log('SAFETY REMINDER: Ensure you are using a DEDICATED TEST ACCOUNT');
       console.log('   These tests will create, modify, and DELETE agents.');
       console.log('   DO NOT use an account with existing deployed agents!');
       console.log('');

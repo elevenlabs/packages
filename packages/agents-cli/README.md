@@ -365,7 +365,7 @@ npm test
 
 ### E2E Tests
 
-⚠️ **CRITICAL**: E2E tests require a **dedicated, empty test account**. 
+**CRITICAL**: E2E tests require a **dedicated, empty test account**. 
 
 **DO NOT use your production account!** E2E tests will create, modify, and **delete agents** during testing. Any existing agents could be permanently lost.
 
