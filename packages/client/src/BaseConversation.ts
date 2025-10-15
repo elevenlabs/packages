@@ -299,13 +299,14 @@ export class BaseConversation {
 
   protected handleErrorEvent(event: ErrorMessageEvent) {
     const errorType = event.error_event.error_type;
-    const message = event.error_event.message || event.error_event.reason || "Unknown error";
-    
+    const message =
+      event.error_event.message || event.error_event.reason || "Unknown error";
+
     if (errorType === "max_duration_exceeded") {
       this.endSessionWithDetails({
-        reason: "agent",
+        reason: "error",
         message: message,
-        context: event,
+        context: new Event("max_duration_exceeded"),
       });
       return;
     }
