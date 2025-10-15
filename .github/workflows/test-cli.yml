@@ -1,9 +1,6 @@
 name: CLI E2E Tests
 
 on:
-  push:
-    paths:
-      - 'packages/agents-cli/**'
   pull_request:
     paths:
       - 'packages/agents-cli/**'
