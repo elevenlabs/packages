@@ -29,6 +29,12 @@ const BASIC_CONFIG: WidgetConfig = {
   use_rtc: false,
 };
 
+const FILIPINO_CONFIG: WidgetConfig = {
+  ...BASIC_CONFIG,
+  language: "tl",
+  supported_language_overrides: ["en", "tl"],
+};
+
 export const AGENTS = {
   basic: BASIC_CONFIG,
   text_only: {
@@ -39,6 +45,7 @@ export const AGENTS = {
     ...BASIC_CONFIG,
     use_rtc: true,
   },
+  filipino: FILIPINO_CONFIG,
   fail: BASIC_CONFIG,
 } as const satisfies Record<string, WidgetConfig>;
 

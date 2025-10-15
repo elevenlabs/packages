@@ -191,6 +191,17 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  it("should display widget with Filipino language", async () => {
+    setupWebComponent({ "agent-id": "filipino" });
+
+    const startButton = page.getByRole("button", { name: "Start a call" });
+    await expect.element(startButton).toBeInTheDocument();
+
+    // Widget should be visible and functional
+    await startButton.click();
+    await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+  });
+
   describe("expansion events", () => {
     it("should expand and collapse widget when elevenlabs-agent:expand event is dispatched", async () => {
       setupWebComponent({

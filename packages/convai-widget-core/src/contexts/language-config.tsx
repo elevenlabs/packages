@@ -34,17 +34,55 @@ export function LanguageConfigProvider({
   const languageCode = useSignal(
     languageAttribute.peek() ?? widgetConfig.peek().language
   );
-  const supportedOverrides = useComputed(() =>
-    (widgetConfig.value.supported_language_overrides ?? []).filter(
-      isValidLanguage
-    )
-  );
+  const supportedOverrides = useComputed(() => {
+    const overrides = widgetConfig.value.supported_language_overrides ?? [];
+    const validOverrides = overrides.filter(isValidLanguage);
 
-  const options = useComputed(() =>
-    supportedOverrides.value
-      .map(code => Languages[code])
-      .sort((a, b) => a.name.localeCompare(b.name))
-  );
+    // Log any invalid language codes
+    const invalidOverrides = overrides.filter(code => !isValidLanguage(code));
+    if (invalidOverrides.length > 0) {
+      console.warn(
+        `[ConversationalAI] Invalid language codes in supported_language_overrides:`,
+        invalidOverrides
+      );
+    }
+
+    return validOverrides;
+  });
+
+  // Compute language options from supported overrides
+  // Note: We filter out any undefined values that might occur if a language code
+  // doesn't exist in the Languages object, and add error handling for sorting
+  // to prevent the widget from crashing if there are any unexpected issues
+  const options = useComputed(() => {
+    try {
+      return supportedOverrides.value
+        .map(code => Languages[code])
+        .filter(lang => {
+          if (lang === undefined) {
+            console.error(
+              `[ConversationalAI] Language mapping failed for a supported override`
+            );
+            return false;
+          }
+          return true;
+        })
+        .sort((a, b) => {
+          try {
+            return a.name.localeCompare(b.name);
+          } catch (e) {
+            console.error(`[ConversationalAI] Error sorting languages:`, e, {
+              a,
+              b,
+            });
+            return 0;
+          }
+        });
+    } catch (e) {
+      console.error(`[ConversationalAI] Error computing language options:`, e);
+      return [];
+    }
+  });
 
   const value = useMemo(
     () => ({
