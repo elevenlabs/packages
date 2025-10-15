@@ -1145,7 +1145,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     const response = await createToolApi(client, toolConfig);
     const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
     
-    console.log(`Created tool in ElevenLabs with ID: ${toolId}`);
+    console.log(`Created ${type} tool in ElevenLabs with ID: ${toolId}`);
     
     // Generate config path using tool name (or custom path if provided)
     if (!configPath) {
