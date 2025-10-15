@@ -55,8 +55,8 @@ const commands: Command[][] = [
       description: "List all local agents",
     },
     {
-      name: "delete <agent_id>",
-      description: "Delete agent locally and from ElevenLabs",
+      name: "delete [agent_id]",
+      description: "Delete agent (use --all to delete all agents)",
     },
     {
       name: "status",

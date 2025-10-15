@@ -714,10 +714,25 @@ program
 program
   .command('delete')
   .description('Delete an agent locally and from ElevenLabs')
-  .argument('<agent_id>', 'ID of the agent to delete')
-  .action(async (agentId: string) => {
+  .argument('[agent_id]', 'ID of the agent to delete (omit with --all to delete all agents)')
+  .option('--all', 'Delete all agents', false)
+  .action(async (agentId: string | undefined, options: { all: boolean }) => {
     try {
-      await deleteAgent(agentId);
+      if (options.all && agentId) {
+        console.error('Error: Cannot specify both agent_id and --all flag');
+        process.exit(1);
+      }
+      
+      if (!options.all && !agentId) {
+        console.error('Error: Must specify either agent_id or --all flag');
+        process.exit(1);
+      }
+      
+      if (options.all) {
+        await deleteAllAgents();
+      } else {
+        await deleteAgent(agentId!);
+      }
     } catch (error) {
       console.error(`Error deleting agent: ${error}`);
       process.exit(1);
@@ -2555,6 +2570,80 @@ async function deleteAgent(agentId: string): Promise<void> {
   }
   
   console.log(`\n✓ Successfully deleted agent '${agentName}'`);
+}
+
+async function deleteAllAgents(): Promise<void> {
+  // Load agents configuration
+  const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    throw new Error('agents.json not found. Run \'agents init\' first.');
+  }
+
+  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
+  
+  if (agentsConfig.agents.length === 0) {
+    console.log('No agents found to delete');
+    return;
+  }
+  
+  // Show what will be deleted
+  console.log(`\nFound ${agentsConfig.agents.length} agent(s) to delete:`);
+  agentsConfig.agents.forEach((agent, i) => {
+    console.log(`  ${i + 1}. ${agent.name} (${agent.id})`);
+  });
+  
+  // Confirm deletion
+  console.log('\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.');
+  const confirmed = await promptForConfirmation('Are you sure you want to delete all agents?');
+  
+  if (!confirmed) {
+    console.log('Deletion cancelled');
+    return;
+  }
+  
+  console.log('\nDeleting all agents...\n');
+  
+  const client = await getElevenLabsClient();
+  let successCount = 0;
+  let failCount = 0;
+  
+  // Delete each agent
+  for (const agentDef of agentsConfig.agents) {
+    try {
+      console.log(`Deleting '${agentDef.name}' (${agentDef.id})...`);
+      
+      // Delete from ElevenLabs
+      if (agentDef.id) {
+        try {
+          await deleteAgentApi(client, agentDef.id);
+          console.log(`  ✓ Deleted from ElevenLabs`);
+        } catch (error) {
+          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+        }
+      } else {
+        console.log(`  Warning: No agent ID found, skipping ElevenLabs deletion`);
+      }
+      
+      // Remove config file
+      if (agentDef.config && await fs.pathExists(agentDef.config)) {
+        await fs.remove(agentDef.config);
+        console.log(`  ✓ Deleted config file: ${agentDef.config}`);
+      }
+      
+      successCount++;
+    } catch (error) {
+      console.error(`  Failed to delete '${agentDef.name}': ${error}`);
+      failCount++;
+    }
+  }
+  
+  // Clear agents array and save
+  agentsConfig.agents = [];
+  await writeConfig(agentsConfigPath, agentsConfig);
+  console.log(`\n✓ Cleared ${AGENTS_CONFIG_FILE}`);
+  
+  // Summary
+  console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
 }
 
 // Handle SIGINT (Ctrl+C)
