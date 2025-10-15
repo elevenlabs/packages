@@ -20,6 +20,7 @@ import type {
   ConversationMetadataEvent,
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
+  ErrorMessageEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -296,6 +297,27 @@ export class BaseConversation {
     }
   }
 
+  protected handleErrorEvent(event: ErrorMessageEvent) {
+    const errorType = event.error_event.error_type;
+    const message = event.error_event.message || event.error_event.reason || "Unknown error";
+    
+    if (errorType === "max_duration_exceeded") {
+      this.endSessionWithDetails({
+        reason: "agent",
+        message: message,
+        context: event,
+      });
+      return;
+    }
+
+    this.onError(`Server error: ${message}`, {
+      errorType,
+      code: event.error_event.code,
+      debugMessage: event.error_event.debug_message,
+      details: event.error_event.details,
+    });
+  }
+
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
     switch (parsedEvent.type) {
       case "interruption": {
@@ -378,7 +400,11 @@ export class BaseConversation {
         return;
       }
 
-      // unhandled events are expected to be internal events
+      case "error": {
+        this.handleErrorEvent(parsedEvent);
+        return;
+      }
+
       default: {
         if (this.options.onDebug) {
           this.options.onDebug(parsedEvent);

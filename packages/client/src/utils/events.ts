@@ -8,6 +8,7 @@ import {
   Audio,
   ClientToolCallMessage,
   ConversationMetadata,
+  ErrorMessage,
   Interruption,
   McpConnectionStatusClientEvent,
   McpToolCall,
@@ -35,6 +36,7 @@ export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
+export type ErrorMessageEvent = ErrorMessage;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
@@ -52,7 +54,8 @@ export type IncomingSocketEvent =
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
-  | AgentChatResponsePartEvent;
+  | AgentChatResponsePartEvent
+  | ErrorMessageEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
