@@ -716,7 +716,8 @@ program
   .description('Delete an agent locally and from ElevenLabs')
   .argument('[agent_id]', 'ID of the agent to delete (omit with --all to delete all agents)')
   .option('--all', 'Delete all agents', false)
-  .action(async (agentId: string | undefined, options: { all: boolean }) => {
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (agentId: string | undefined, options: { all: boolean; ui: boolean }) => {
     try {
       if (options.all && agentId) {
         console.error('Error: Cannot specify both agent_id and --all flag');
@@ -729,7 +730,7 @@ program
       }
       
       if (options.all) {
-        await deleteAllAgents();
+        await deleteAllAgents(options.ui);
       } else {
         await deleteAgent(agentId!);
       }
@@ -2572,7 +2573,7 @@ async function deleteAgent(agentId: string): Promise<void> {
   console.log(`\n✓ Successfully deleted agent '${agentName}'`);
 }
 
-async function deleteAllAgents(): Promise<void> {
+async function deleteAllAgents(ui: boolean = true): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -2592,13 +2593,15 @@ async function deleteAllAgents(): Promise<void> {
     console.log(`  ${i + 1}. ${agent.name} (${agent.id})`);
   });
   
-  // Confirm deletion
-  console.log('\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.');
-  const confirmed = await promptForConfirmation('Are you sure you want to delete all agents?');
-  
-  if (!confirmed) {
-    console.log('Deletion cancelled');
-    return;
+  // Confirm deletion (skip if --no-ui)
+  if (ui) {
+    console.log('\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.');
+    const confirmed = await promptForConfirmation('Are you sure you want to delete all agents?');
+    
+    if (!confirmed) {
+      console.log('Deletion cancelled');
+      return;
+    }
   }
   
   console.log('\nDeleting all agents...\n');
