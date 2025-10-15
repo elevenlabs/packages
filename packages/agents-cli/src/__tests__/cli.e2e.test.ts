@@ -654,5 +654,110 @@ describe("CLI End-to-End Tests", () => {
         includeApiKey: true,
       });
     });
+
+    it("should complete full cycle: create -> pull -> compare -> delete -> verify empty (--no-ui)", async () => {
+      const agentName = `e2e-full-cycle-${Date.now()}`;
+      const agentsJsonPath = path.join(pushPullTempDir, "agents.json");
+      
+      // Step 1: Create agent locally using add command
+      const addResult = await runCli([
+        "add",
+        agentName,
+        "--template",
+        "minimal",
+        "--no-ui",
+      ], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      expect(addResult.exitCode).toBe(0);
+      expect(addResult.stdout).toContain(`Created agent in ElevenLabs`);
+
+      // Read the created agent config
+      let agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      expect(agentsConfig.agents).toHaveLength(1);
+      const createdAgent = agentsConfig.agents[0];
+      const createdAgentId = createdAgent.id;
+      const createdAgentConfigPath = path.join(pushPullTempDir, createdAgent.config);
+      const originalConfig = JSON.parse(
+        await fs.readFile(createdAgentConfigPath, "utf-8")
+      );
+
+      console.log(`✓ Created agent '${agentName}' with ID ${createdAgentId}`);
+      
+      // Step 2: Clear local agents.json and config files to simulate fresh environment
+      await fs.writeFile(
+        agentsJsonPath,
+        JSON.stringify({ agents: [] }, null, 2)
+      );
+      await fs.remove(createdAgentConfigPath);
+
+      // Step 3: Pull all agents from remote
+      const pullResult = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n", // Answer the "Proceed?" prompt
+      });
+
+      expect(pullResult.exitCode).toBe(0);
+      console.log(`✓ Pulled agents from remote`);
+
+      // Step 4: Compare pulled agent matches created agent
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      expect(agentsConfig.agents).toHaveLength(1);
+      const pulledAgent = agentsConfig.agents[0];
+      expect(pulledAgent.name).toBe(agentName);
+      expect(pulledAgent.id).toBe(createdAgentId);
+
+      // Compare config files
+      const pulledConfigPath = path.join(pushPullTempDir, pulledAgent.config);
+      expect(await fs.pathExists(pulledConfigPath)).toBe(true);
+      const pulledConfig = JSON.parse(
+        await fs.readFile(pulledConfigPath, "utf-8")
+      );
+
+      // Compare key fields (name and conversation config structure)
+      expect(pulledConfig.name).toBe(originalConfig.name);
+      expect(pulledConfig.conversation_config).toBeDefined();
+      expect(pulledConfig.platform_settings).toBeDefined();
+
+      console.log(`✓ Pulled agent config matches original`);
+
+      // Step 5: Delete the agent
+      const deleteResult = await runCli(["delete", createdAgentId, "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      expect(deleteResult.exitCode).toBe(0);
+      console.log(`✓ Deleted agent '${agentName}'`);
+
+      // Step 6: Pull again and verify no agents exist
+      await fs.writeFile(
+        agentsJsonPath,
+        JSON.stringify({ agents: [] }, null, 2)
+      );
+
+      const finalPullResult = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(finalPullResult.exitCode).toBe(0);
+
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      expect(agentsConfig.agents).toHaveLength(0);
+      console.log(`✓ Verified no agents exist after deletion`);
+    });
   });
 });
