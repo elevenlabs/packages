@@ -38,26 +38,14 @@ describe("Tool Configuration Hash Generation", () => {
         api_schema: {
           url: "https://api.example.com/webhook",
           method: "POST",
-          path_params_schema: [],
-          query_params_schema: [],
           request_body_schema: {
-            id: "body",
             type: "object",
-            value_type: "llm_prompt",
             description: "Request body",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-            properties: [],
+            properties: {}
           },
-          request_headers: [
-            {
-              type: "value",
-              name: "Content-Type",
-              value: "application/json",
-            },
-          ],
-          auth_connection: null,
+          request_headers: {
+            'Content-Type': "application/json",
+          }
         },
         response_timeout_secs: 30,
         dynamic_variables: {
@@ -86,26 +74,14 @@ describe("Tool Configuration Hash Generation", () => {
         api_schema: {
           url: "https://api.example.com/webhook1",
           method: "POST",
-          path_params_schema: [],
-          query_params_schema: [],
           request_body_schema: {
-            id: "body",
             type: "object",
-            value_type: "llm_prompt",
             description: "Request body",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-            properties: [],
+            properties: {}
           },
-          request_headers: [
-            {
-              type: "value",
-              name: "Content-Type",
-              value: "application/json",
-            },
-          ],
-          auth_connection: null,
+          request_headers: {
+            'Content-Type': "application/json",
+          }
         },
         response_timeout_secs: 30,
         dynamic_variables: {
@@ -139,31 +115,17 @@ describe("Tool Configuration Hash Generation", () => {
         api_schema: {
           url: "https://secure.api.com/webhook",
           method: "POST",
-          path_params_schema: [],
-          query_params_schema: [],
           request_body_schema: {
-            id: "body",
             type: "object",
-            value_type: "llm_prompt",
             description: "Request body",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-            properties: [],
+            properties: {}
           },
-          request_headers: [
-            {
-              type: "value",
-              name: "Content-Type",
-              value: "application/json",
-            },
-            {
-              type: "secret",
-              name: "Authorization",
+          request_headers: {
+            'Content-Type': "application/json",
+            'Authorization': {
               secret_id: "auth_secret_123",
             },
-          ],
-          auth_connection: null,
+          }
         },
         response_timeout_secs: 60,
         dynamic_variables: {
@@ -302,26 +264,14 @@ describe("Tool Configuration Structure", () => {
       api_schema: {
         url: "https://api.example.com/webhook",
         method: "POST",
-        path_params_schema: [],
-        query_params_schema: [],
         request_body_schema: {
-          id: "body",
           type: "object",
-          value_type: "llm_prompt",
           description: "Request body for the webhook",
-          dynamic_variable: "",
-          constant_value: "",
-          required: true,
-          properties: [],
+          properties: {}
         },
-        request_headers: [
-          {
-            type: "value",
-            name: "Content-Type",
-            value: "application/json",
-          },
-        ],
-        auth_connection: null,
+        request_headers: {
+          'Content-Type': "application/json",
+        }
       },
       response_timeout_secs: 30,
       dynamic_variables: {
@@ -448,26 +398,14 @@ describe("Tool Fetching", () => {
         api_schema: {
           url: "https://api.example.com/webhook",
           method: "POST",
-          path_params_schema: [],
-          query_params_schema: [],
           request_body_schema: {
-            id: "body",
             type: "object",
-            value_type: "llm_prompt",
             description: "Request body",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-            properties: [],
+            properties: {}
           },
-          request_headers: [
-            {
-              type: "value",
-              name: "Content-Type",
-              value: "application/json",
-            },
-          ],
-          auth_connection: null,
+          request_headers: {
+            'Content-Type': "application/json",
+          }
         },
         response_timeout_secs: 30,
         dynamic_variables: {
@@ -537,20 +475,11 @@ describe("Tool Fetching", () => {
         api_schema: {
           url: "https://api.example.com/webhook",
           method: "POST",
-          path_params_schema: [],
-          query_params_schema: [],
           request_body_schema: {
-            id: "body",
             type: "object",
-            value_type: "llm_prompt",
             description: "Request body",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-            properties: [],
-          },
-          request_headers: [],
-          auth_connection: null,
+            properties: {}
+          }
         },
         response_timeout_secs: 30,
         dynamic_variables: {
@@ -621,3 +550,4 @@ describe("Tool Fetching", () => {
     });
   });
 });
+

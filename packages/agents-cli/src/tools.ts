@@ -26,21 +26,27 @@ export interface WebhookTool {
   api_schema: {
     url: string;
     method: string;
-    path_params_schema: unknown[];
-    query_params_schema: unknown[];
-    request_body_schema: WebhookToolSchema;
-    request_headers: Array<{
-      type: 'value' | 'secret';
-      name: string;
-      value?: string;
-      secret_id?: string;
-    }>;
-    auth_connection: unknown;
+    path_params_schema?: Record<string, unknown>;
+    query_params_schema?: {
+      properties: Record<string, unknown>;
+      required?: string[];
+    };
+    request_body_schema?: {
+      type?: string;
+      required?: string[];
+      description?: string;
+      properties?: Record<string, unknown>;
+    } | null;
+    request_headers?: Record<string, string | { secret_id: string } | { variable_name: string }>;
+    auth_connection?: unknown;
   };
   response_timeout_secs: number;
   dynamic_variables: {
     dynamic_variable_placeholders: Record<string, unknown>;
   };
+  assignments?: unknown[];
+  disable_interruptions?: boolean;
+  force_pre_tool_speech?: boolean;
 }
 
 export interface ClientToolParameter {
@@ -91,31 +97,22 @@ export function createDefaultWebhookTool(name: string): WebhookTool {
     api_schema: {
       url: 'https://api.example.com/webhook',
       method: 'POST',
-      path_params_schema: [],
-      query_params_schema: [],
       request_body_schema: {
-        id: 'body',
         type: 'object',
-        value_type: 'llm_prompt',
         description: 'Request body for the webhook',
-        dynamic_variable: '',
-        constant_value: '',
-        required: true,
-        properties: []
+        properties: {}
       },
-      request_headers: [
-        {
-          type: 'value',
-          name: 'Content-Type',
-          value: 'application/json'
-        }
-      ],
-      auth_connection: null
+      request_headers: {
+        'Content-Type': 'application/json'
+      }
     },
     response_timeout_secs: 30,
     dynamic_variables: {
       dynamic_variable_placeholders: {}
-    }
+    },
+    assignments: [],
+    disable_interruptions: false,
+    force_pre_tool_speech: false
   };
 }
 

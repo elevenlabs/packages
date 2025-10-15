@@ -1101,31 +1101,22 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
       api_schema: {
         url: 'https://api.example.com/webhook',
         method: 'POST',
-        path_params_schema: [],
-        query_params_schema: [],
         request_body_schema: {
-          id: 'body',
           type: 'object',
-          value_type: 'llm_prompt',
           description: 'Request body for the webhook',
-          dynamic_variable: '',
-          constant_value: '',
-          required: true,
-          properties: []
+          properties: {}
         },
-        request_headers: [
-          {
-            type: 'value' as const,
-            name: 'Content-Type',
-            value: 'application/json'
-          }
-        ],
-        auth_connection: null
+        request_headers: {
+          'Content-Type': 'application/json'
+        }
       },
       response_timeout_secs: 30,
       dynamic_variables: {
         dynamic_variable_placeholders: {}
-      }
+      },
+      assignments: [],
+      disable_interruptions: false,
+      force_pre_tool_speech: false
     };
   } else {
     toolConfig = {
