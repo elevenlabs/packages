@@ -569,4 +569,184 @@ describe("CLI End-to-End Tests", () => {
       expect(result.stdout).toBeTruthy();
     });
   });
+
+  // Push/Pull Integration Tests
+  describeIfApiKey("Push/Pull Integration Tests", () => {
+    const createdAgentIds: string[] = [];
+    let pushPullTempDir: string;
+
+    beforeAll(async () => {
+      // One-time cleanup: Pull all agents and delete them to ensure clean state
+      console.log("One-time cleanup: Removing all remote agents before tests...");
+      
+      // Create temporary directory for cleanup
+      const cleanupTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-cleanup-"));
+      
+      try {
+        // Initialize project
+        await runCli(["init", "--no-ui"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+        });
+
+        // Login
+        const apiKey = process.env.ELEVENLABS_API_KEY!;
+        await runCli(["login", "--no-ui"], {
+          cwd: cleanupTempDir,
+          input: `${apiKey}\n`,
+          includeApiKey: true,
+        });
+
+        // Pull all agents from remote
+        await runCli(["pull", "--all", "--no-ui"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+
+        // Delete all agents at once
+        try {
+          await runCli(["delete", "--all", "--no-ui"], {
+            cwd: cleanupTempDir,
+            includeApiKey: true,
+            input: "y\n", // Answer the "Are you sure?" prompt
+          });
+          console.log("✓ Cleaned up all agents, starting with empty state");
+        } catch (error) {
+          console.warn(`Failed to delete agents: ${error}`);
+        }
+      } finally {
+        // Clean up temporary directory
+        await fs.remove(cleanupTempDir);
+      }
+    });
+
+    beforeEach(async () => {
+      // Create a temporary directory for each test
+      pushPullTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-pushpull-"));
+
+      // Initialize project
+      await runCli(["init", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      // Login
+      const apiKey = process.env.ELEVENLABS_API_KEY!;
+      await runCli(["login", "--no-ui"], {
+        cwd: pushPullTempDir,
+        input: `${apiKey}\n`,
+        includeApiKey: true,
+      });
+    });
+
+    afterEach(async () => {
+      // Skip cleanup if beforeEach failed before creating temp directory
+      if (!pushPullTempDir) {
+        return;
+      }
+
+      // Clean up agents created during the test
+      console.log("Cleaning up agents after test...");
+      
+      // Pull all agents to ensure we have the current server state
+      try {
+        await runCli(["pull", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+      } catch (error) {
+        console.warn(`Failed to pull agents: ${error}`);
+      }
+
+      // Delete all agents at once
+      try {
+        await runCli(["delete", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Are you sure?" prompt
+        });
+        console.log("Deleted all agents");
+      } catch (error) {
+        console.warn(`Failed to delete agents: ${error}`);
+      }
+
+      createdAgentIds.length = 0; // Clear the array
+
+      // Clean up temp directory
+      await fs.remove(pushPullTempDir);
+    });
+
+    it("should verify agent created by add is the only one after pull (--no-ui)", async () => {
+      // Create an agent using add command
+      const agentName = `e2e-pushpull-test-${Date.now()}`;
+      const addResult = await runCli([
+        "add",
+        agentName,
+        "--template",
+        "minimal",
+        "--no-ui",
+      ], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      expect(addResult.exitCode).toBe(0);
+      expect(addResult.stdout).toContain(`Created agent in ElevenLabs`);
+
+      // Read agents.json to get the agent ID
+      const agentsJsonPath = path.join(pushPullTempDir, "agents.json");
+      let agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      expect(agentsConfig.agents).toHaveLength(1);
+      const createdAgent = agentsConfig.agents[0];
+      expect(createdAgent.name).toBe(agentName);
+      expect(createdAgent.id).toBeTruthy();
+
+      // Track agent for cleanup
+      createdAgentIds.push(createdAgent.id);
+
+      // Clear local agents.json to simulate fresh pull
+      await fs.writeFile(
+        agentsJsonPath,
+        JSON.stringify({ agents: [] }, null, 2)
+      );
+
+      // Pull all agents from remote
+      const pullResult = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n", // Answer the "Proceed?" prompt
+      });
+
+      expect(pullResult.exitCode).toBe(0);
+
+      // Read agents.json again after pull
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      // Verify exactly 1 agent exists (the one we created)
+      expect(agentsConfig.agents).toHaveLength(1);
+      expect(agentsConfig.agents[0].name).toBe(agentName);
+      expect(agentsConfig.agents[0].id).toBe(createdAgent.id);
+
+      console.log(`✓ Verified agent '${agentName}' is the only agent after pull`);
+
+      // Clean up: delete the agent
+      await runCli(["delete", createdAgent.id, "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+      
+      // Remove from tracking since it was successfully deleted
+      const index = createdAgentIds.indexOf(createdAgent.id);
+      if (index > -1) {
+        createdAgentIds.splice(index, 1);
+      }
+    });
+  });
 });
