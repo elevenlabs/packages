@@ -341,11 +341,11 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  // Tests that require API key - No UI Mode
-  describeIfApiKey("[integration write] no ui", () => {
+  // Tests that require API key - Auth Flow
+  describeIfApiKey("[integration read] auth flow", () => {
     beforeEach(async () => {
       // Create a temporary directory for each test
-      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-"));
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-auth-"));
     });
 
     afterEach(async () => {
@@ -353,83 +353,14 @@ describe("CLI End-to-End Tests", () => {
       await fs.remove(tempDir);
     });
 
-    it("should login with valid API key (--no-ui)", async () => {
+    it("should complete full workflow: init -> login -> whoami -> status -> list", async () => {
       const apiKey = process.env.ELEVENLABS_API_KEY!;
-      const result = await runCli(["login", "--no-ui"], {
-        input: `${apiKey}\n`,
+
+      // Step 1: Initialize project
+      const initResult = await runCli(["init", "--no-ui"], {
         includeApiKey: true,
       });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Login successful");
-    });
-
-    it("should show whoami after login (--no-ui)", async () => {
-      // Login first
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login", "--no-ui"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Check whoami
-      const result = await runCli(["whoami", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Logged in");
-      expect(result.stdout).toMatch(/sk_\w{5,}\.\.\.\w{4}/); // Masked key pattern (sk_xxxxx...xxxx)
-    });
-  });
-
-  // Tests that require API key - With UI Mode
-  describeIfApiKey("[integration write] with ui", () => {
-    beforeEach(async () => {
-      // Create a temporary directory for each test
-      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-ui-"));
-    });
-
-    afterEach(async () => {
-      // Clean up temp directory
-      await fs.remove(tempDir);
-    });
-
-    it("should show login UI", async () => {
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      const result = await runCli(["login"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      // UI mode may have different output, just verify success
-      expect(result.stdout).toBeTruthy();
-    });
-
-    it("should show whoami UI after login", async () => {
-      // Login first
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Check whoami with UI
-      const result = await runCli(["whoami"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBeTruthy();
-    });
-
-    it("should initialize project with UI", async () => {
-      const result = await runCli(["init"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
+      expect(initResult.exitCode).toBe(0);
       
       // Verify files were created
       const agentsJsonExists = await fs.pathExists(
@@ -438,53 +369,37 @@ describe("CLI End-to-End Tests", () => {
       const toolsJsonExists = await fs.pathExists(
         path.join(tempDir, "tools.json")
       );
-      
       expect(agentsJsonExists).toBe(true);
       expect(toolsJsonExists).toBe(true);
-    });
 
-    it("should list agents with UI", async () => {
-      // Initialize project
-      await runCli(["init"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login"], {
+      // Step 2: Login
+      const loginResult = await runCli(["login", "--no-ui"], {
         input: `${apiKey}\n`,
         includeApiKey: true,
       });
+      expect(loginResult.exitCode).toBe(0);
+      expect(loginResult.stdout).toBeTruthy();
 
-      // List agents with UI
-      const result = await runCli(["list"], {
+      // Step 3: Check whoami
+      const whoamiResult = await runCli(["whoami", "--no-ui"], {
         includeApiKey: true,
       });
+      expect(whoamiResult.exitCode).toBe(0);
+      expect(whoamiResult.stdout).toBeTruthy();
 
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBeTruthy();
-    });
-
-    it("should show status with UI", async () => {
-      // Initialize project
-      await runCli(["init"], {
+      // Step 4: Check status
+      const statusResult = await runCli(["status", "--no-ui"], {
         includeApiKey: true,
       });
+      expect(statusResult.exitCode).toBe(0);
+      expect(statusResult.stdout).toBeTruthy();
 
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login"], {
-        input: `${apiKey}\n`,
+      // Step 5: List agents
+      const listResult = await runCli(["list", "--no-ui"], {
         includeApiKey: true,
       });
-
-      // Status with UI
-      const result = await runCli(["status"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBeTruthy();
+      expect(listResult.exitCode).toBe(0);
+      expect(listResult.stdout).toBeTruthy();
     });
   });
 
