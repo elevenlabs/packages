@@ -86,10 +86,6 @@ const commands: Command[][] = [
           name: "",
           description: "",
         },
-        {
-          name: "--dry-run",
-          description: "Preview changes without executing",
-        },
       ],
     },
   ],
