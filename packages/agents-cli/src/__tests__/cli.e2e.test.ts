@@ -503,7 +503,7 @@ describe("CLI End-to-End Tests", () => {
       });
 
       // Create an agent
-      const agentName = `test-agent-${Date.now()}`;
+      const agentName = `e2e-test-agent-${Date.now()}`;
       const addResult = await runCli([
         "add",
         agentName,
