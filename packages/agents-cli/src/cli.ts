@@ -1125,17 +1125,11 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
       type: 'client' as const,
       expects_response: false,
       response_timeout_secs: 30,
-      parameters: [
-        {
-          id: 'input',
-          type: 'string',
-          value_type: 'llm_prompt',
-          description: 'Input parameter for the client tool',
-          dynamic_variable: '',
-          constant_value: '',
-          required: true
-        }
-      ],
+      parameters: {
+        type: 'object',
+        description: 'Parameters for the client tool',
+        properties: {}
+      },
       dynamic_variables: {
         dynamic_variable_placeholders: {}
       }

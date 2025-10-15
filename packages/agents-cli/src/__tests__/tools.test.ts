@@ -148,17 +148,11 @@ describe("Tool Configuration Hash Generation", () => {
         type: "client",
         expects_response: false,
         response_timeout_secs: 30,
-        parameters: [
-          {
-            id: "input",
-            type: "string",
-            value_type: "llm_prompt",
-            description: "Input parameter",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-          },
-        ],
+        parameters: {
+          type: "object",
+          description: "Input parameter",
+          properties: {}
+        },
         dynamic_variables: {
           dynamic_variable_placeholders: {},
         },
@@ -182,17 +176,11 @@ describe("Tool Configuration Hash Generation", () => {
         type: "client",
         expects_response: false,
         response_timeout_secs: 30,
-        parameters: [
-          {
-            id: "input",
-            type: "string",
-            value_type: "llm_prompt",
-            description: "Input parameter",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
-          },
-        ],
+        parameters: {
+          type: "object",
+          description: "Input parameter",
+          properties: {}
+        },
         dynamic_variables: {
           dynamic_variable_placeholders: {},
         },
@@ -220,26 +208,21 @@ describe("Tool Configuration Hash Generation", () => {
         type: "client",
         expects_response: true,
         response_timeout_secs: 45,
-        parameters: [
-          {
-            id: "name",
-            type: "string",
-            value_type: "llm_prompt",
-            description: "Name parameter",
-            dynamic_variable: "",
-            constant_value: "",
-            required: true,
+        parameters: {
+          type: "object",
+          description: "Parameters for the tool",
+          properties: {
+            name: {
+              type: "string",
+              description: "Name parameter"
+            },
+            age: {
+              type: "number",
+              description: "Age parameter"
+            }
           },
-          {
-            id: "age",
-            type: "number",
-            value_type: "llm_prompt",
-            description: "Age parameter",
-            dynamic_variable: "",
-            constant_value: "",
-            required: false,
-          },
-        ],
+          required: ["name"]
+        },
         dynamic_variables: {
           dynamic_variable_placeholders: {
             user_id: "current_user_id",
@@ -295,17 +278,11 @@ describe("Tool Configuration Structure", () => {
       type: "client",
       expects_response: false,
       response_timeout_secs: 30,
-      parameters: [
-        {
-          id: "input",
-          type: "string",
-          value_type: "llm_prompt",
-          description: "Input parameter for the client tool",
-          dynamic_variable: "",
-          constant_value: "",
-          required: true,
-        },
-      ],
+      parameters: {
+        type: "object",
+        description: "Input parameter for the client tool",
+        properties: {}
+      },
       dynamic_variables: {
         dynamic_variable_placeholders: {},
       },
@@ -314,7 +291,7 @@ describe("Tool Configuration Structure", () => {
     // Test that the structure is valid
     expect(clientTool.type).toBe("client");
     expect(clientTool.parameters).toBeDefined();
-    expect(clientTool.parameters.length).toBeGreaterThan(0);
+    expect(clientTool.parameters?.type).toBe("object");
     expect(clientTool.expects_response).toBe(false);
     expect(clientTool.response_timeout_secs).toBeGreaterThan(0);
     expect(clientTool.dynamic_variables).toBeDefined();

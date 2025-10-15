@@ -49,28 +49,26 @@ export interface WebhookTool {
   force_pre_tool_speech?: boolean;
 }
 
-export interface ClientToolParameter {
-  id: string;
-  type: string;
-  value_type: string;
-  description: string;
-  dynamic_variable: string;
-  constant_value: string;
-  required: boolean;
-}
-
 export interface ClientTool {
   // Note: tool_id is now stored in tools.json, not in individual config files
   tool_id?: string; // @deprecated - for backwards compatibility only
   name: string;
   description: string;
   type: 'client';
-  expects_response: boolean;
-  response_timeout_secs: number;
-  parameters: ClientToolParameter[];
-  dynamic_variables: {
+  expects_response?: boolean;
+  response_timeout_secs?: number;
+  parameters?: {
+    type?: string;
+    required?: string[];
+    description?: string;
+    properties?: Record<string, unknown>;
+  };
+  dynamic_variables?: {
     dynamic_variable_placeholders: Record<string, unknown>;
   };
+  assignments?: unknown[];
+  disable_interruptions?: boolean;
+  force_pre_tool_speech?: boolean;
 }
 
 export type Tool = WebhookTool | ClientTool;
@@ -126,17 +124,11 @@ export function createDefaultClientTool(name: string): ClientTool {
     type: 'client',
     expects_response: false,
     response_timeout_secs: 30,
-    parameters: [
-      {
-        id: 'input',
-        type: 'string',
-        value_type: 'llm_prompt',
-        description: 'Input parameter for the client tool',
-        dynamic_variable: '',
-        constant_value: '',
-        required: true
-      }
-    ],
+    parameters: {
+      type: 'object',
+      description: 'Parameters for the client tool',
+      properties: {}
+    },
     dynamic_variables: {
       dynamic_variable_placeholders: {}
     }
