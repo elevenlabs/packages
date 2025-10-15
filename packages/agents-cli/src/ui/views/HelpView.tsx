@@ -99,6 +99,10 @@ const commands: Command[][] = [
       description: "Add a new client tool",
     },
     {
+      name: "delete-tool [tool_id]",
+      description: "Delete tool (use --all to delete all tools)",
+    },
+    {
       name: "push-tools",
       description: "Push tools to ElevenLabs API",
     },
@@ -111,6 +115,10 @@ const commands: Command[][] = [
     {
       name: "add-test <name>",
       description: "Add a new test",
+    },
+    {
+      name: "delete-test [test_id]",
+      description: "Delete test (use --all to delete all tests)",
     },
     {
       name: "push-tests",

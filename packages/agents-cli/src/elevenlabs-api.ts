@@ -192,6 +192,28 @@ export async function deleteAgentApi(client: ElevenLabsClient, agentId: string):
 }
 
 /**
+ * Deletes a tool using the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param toolId - The ID of the tool to delete
+ * @returns Promise that resolves when the tool is deleted
+ */
+export async function deleteToolApi(client: ElevenLabsClient, toolId: string): Promise<void> {
+  await client.conversationalAi.tools.delete(toolId);
+}
+
+/**
+ * Deletes a test using the ElevenLabs API.
+ * 
+ * @param client - An initialized ElevenLabs client
+ * @param testId - The ID of the test to delete
+ * @returns Promise that resolves when the test is deleted
+ */
+export async function deleteTestApi(client: ElevenLabsClient, testId: string): Promise<void> {
+  await client.conversationalAi.tests.delete(testId);
+}
+
+/**
  * Creates a new tool using the ElevenLabs API.
  *
  * @param client - An initialized ElevenLabs client

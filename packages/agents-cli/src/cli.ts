@@ -26,10 +26,12 @@ import {
   updateToolApi,
   listToolsApi,
   getToolApi,
+  deleteToolApi,
   createTestApi,
   getTestApi,
   listTestsApi,
-  updateTestApi
+  updateTestApi,
+  deleteTestApi
 } from './elevenlabs-api.js';
 import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
 import { 
@@ -736,6 +738,64 @@ program
       }
     } catch (error) {
       console.error(`Error deleting agent: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('delete-tool')
+  .description('Delete a tool locally and from ElevenLabs')
+  .argument('[tool_id]', 'ID of the tool to delete (omit with --all to delete all tools)')
+  .option('--all', 'Delete all tools', false)
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (toolId: string | undefined, options: { all: boolean; ui: boolean }) => {
+    try {
+      if (options.all && toolId) {
+        console.error('Error: Cannot specify both tool_id and --all flag');
+        process.exit(1);
+      }
+      
+      if (!options.all && !toolId) {
+        console.error('Error: Must specify either tool_id or --all flag');
+        process.exit(1);
+      }
+      
+      if (options.all) {
+        await deleteAllTools(options.ui);
+      } else {
+        await deleteTool(toolId!);
+      }
+    } catch (error) {
+      console.error(`Error deleting tool: ${error}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('delete-test')
+  .description('Delete a test locally and from ElevenLabs')
+  .argument('[test_id]', 'ID of the test to delete (omit with --all to delete all tests)')
+  .option('--all', 'Delete all tests', false)
+  .option('--no-ui', 'Disable interactive UI')
+  .action(async (testId: string | undefined, options: { all: boolean; ui: boolean }) => {
+    try {
+      if (options.all && testId) {
+        console.error('Error: Cannot specify both test_id and --all flag');
+        process.exit(1);
+      }
+      
+      if (!options.all && !testId) {
+        console.error('Error: Must specify either test_id or --all flag');
+        process.exit(1);
+      }
+      
+      if (options.all) {
+        await deleteAllTests(options.ui);
+      } else {
+        await deleteTest(testId!);
+      }
+    } catch (error) {
+      console.error(`Error deleting test: ${error}`);
       process.exit(1);
     }
   });
@@ -2644,6 +2704,254 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
   agentsConfig.agents = [];
   await writeConfig(agentsConfigPath, agentsConfig);
   console.log(`\n✓ Cleared ${AGENTS_CONFIG_FILE}`);
+  
+  // Summary
+  console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
+}
+
+async function deleteTool(toolId: string): Promise<void> {
+  // Load tools configuration
+  const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+  if (!(await fs.pathExists(toolsConfigPath))) {
+    throw new Error('tools.json not found. Run \'agents init\' first.');
+  }
+
+  const toolsConfig = await readToolsConfig(toolsConfigPath);
+  
+  // Find the tool by ID
+  const toolIndex = toolsConfig.tools.findIndex(tool => tool.id === toolId);
+  
+  if (toolIndex === -1) {
+    throw new Error(`Tool with ID '${toolId}' not found in local configuration`);
+  }
+  
+  const toolDef = toolsConfig.tools[toolIndex];
+  const toolName = toolDef.name;
+  const configPath = toolDef.config;
+  
+  console.log(`Deleting tool '${toolName}' (ID: ${toolId})...`);
+  
+  // Delete from ElevenLabs
+  console.log('Deleting from ElevenLabs...');
+  const client = await getElevenLabsClient();
+  
+  try {
+    await deleteToolApi(client, toolId);
+    console.log('✓ Successfully deleted from ElevenLabs');
+  } catch (error) {
+    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.log('Continuing with local deletion...');
+  }
+  
+  // Remove from local tools.json
+  toolsConfig.tools.splice(toolIndex, 1);
+  await writeToolsConfig(toolsConfigPath, toolsConfig);
+  console.log(`✓ Removed '${toolName}' from ${TOOLS_CONFIG_FILE}`);
+  
+  // Remove config file
+  if (configPath && await fs.pathExists(configPath)) {
+    await fs.remove(configPath);
+    console.log(`✓ Deleted config file: ${configPath}`);
+  }
+  
+  console.log(`\n✓ Successfully deleted tool '${toolName}'`);
+}
+
+async function deleteAllTools(ui: boolean = true): Promise<void> {
+  // Load tools configuration
+  const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
+  if (!(await fs.pathExists(toolsConfigPath))) {
+    throw new Error('tools.json not found. Run \'agents init\' first.');
+  }
+
+  const toolsConfig = await readToolsConfig(toolsConfigPath);
+  
+  if (toolsConfig.tools.length === 0) {
+    console.log('No tools found to delete');
+    return;
+  }
+  
+  // Show what will be deleted
+  console.log(`\nFound ${toolsConfig.tools.length} tool(s) to delete:`);
+  toolsConfig.tools.forEach((tool, i) => {
+    console.log(`  ${i + 1}. ${tool.name} (${tool.id})`);
+  });
+  
+  // Confirm deletion (skip if --no-ui)
+  if (ui) {
+    console.log('\nWARNING: This will delete ALL tools from both local configuration and ElevenLabs.');
+    const confirmed = await promptForConfirmation('Are you sure you want to delete all tools?');
+    
+    if (!confirmed) {
+      console.log('Deletion cancelled');
+      return;
+    }
+  }
+  
+  console.log('\nDeleting all tools...\n');
+  
+  const client = await getElevenLabsClient();
+  let successCount = 0;
+  let failCount = 0;
+  
+  // Delete each tool
+  for (const toolDef of toolsConfig.tools) {
+    try {
+      console.log(`Deleting '${toolDef.name}' (${toolDef.id})...`);
+      
+      // Delete from ElevenLabs
+      if (toolDef.id) {
+        try {
+          await deleteToolApi(client, toolDef.id);
+          console.log(`  ✓ Deleted from ElevenLabs`);
+        } catch (error) {
+          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+        }
+      } else {
+        console.log(`  Warning: No tool ID found, skipping ElevenLabs deletion`);
+      }
+      
+      // Remove config file
+      if (toolDef.config && await fs.pathExists(toolDef.config)) {
+        await fs.remove(toolDef.config);
+        console.log(`  ✓ Deleted config file: ${toolDef.config}`);
+      }
+      
+      successCount++;
+    } catch (error) {
+      console.error(`  Failed to delete '${toolDef.name}': ${error}`);
+      failCount++;
+    }
+  }
+  
+  // Clear tools array and save
+  toolsConfig.tools = [];
+  await writeToolsConfig(toolsConfigPath, toolsConfig);
+  console.log(`\n✓ Cleared ${TOOLS_CONFIG_FILE}`);
+  
+  // Summary
+  console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
+}
+
+async function deleteTest(testId: string): Promise<void> {
+  // Load tests configuration
+  const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
+  if (!(await fs.pathExists(testsConfigPath))) {
+    throw new Error('tests.json not found. Run \'agents init\' first.');
+  }
+
+  const testsConfig = await readConfig<TestsConfig>(testsConfigPath);
+  
+  // Find the test by ID
+  const testIndex = testsConfig.tests.findIndex(test => test.id === testId);
+  
+  if (testIndex === -1) {
+    throw new Error(`Test with ID '${testId}' not found in local configuration`);
+  }
+  
+  const testDef = testsConfig.tests[testIndex];
+  const testName = testDef.name;
+  const configPath = testDef.config;
+  
+  console.log(`Deleting test '${testName}' (ID: ${testId})...`);
+  
+  // Delete from ElevenLabs
+  console.log('Deleting from ElevenLabs...');
+  const client = await getElevenLabsClient();
+  
+  try {
+    await deleteTestApi(client, testId);
+    console.log('✓ Successfully deleted from ElevenLabs');
+  } catch (error) {
+    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.log('Continuing with local deletion...');
+  }
+  
+  // Remove from local tests.json
+  testsConfig.tests.splice(testIndex, 1);
+  await writeConfig(testsConfigPath, testsConfig);
+  console.log(`✓ Removed '${testName}' from ${TESTS_CONFIG_FILE}`);
+  
+  // Remove config file
+  if (configPath && await fs.pathExists(configPath)) {
+    await fs.remove(configPath);
+    console.log(`✓ Deleted config file: ${configPath}`);
+  }
+  
+  console.log(`\n✓ Successfully deleted test '${testName}'`);
+}
+
+async function deleteAllTests(ui: boolean = true): Promise<void> {
+  // Load tests configuration
+  const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
+  if (!(await fs.pathExists(testsConfigPath))) {
+    throw new Error('tests.json not found. Run \'agents init\' first.');
+  }
+
+  const testsConfig = await readConfig<TestsConfig>(testsConfigPath);
+  
+  if (testsConfig.tests.length === 0) {
+    console.log('No tests found to delete');
+    return;
+  }
+  
+  // Show what will be deleted
+  console.log(`\nFound ${testsConfig.tests.length} test(s) to delete:`);
+  testsConfig.tests.forEach((test, i) => {
+    console.log(`  ${i + 1}. ${test.name} (${test.id})`);
+  });
+  
+  // Confirm deletion (skip if --no-ui)
+  if (ui) {
+    console.log('\nWARNING: This will delete ALL tests from both local configuration and ElevenLabs.');
+    const confirmed = await promptForConfirmation('Are you sure you want to delete all tests?');
+    
+    if (!confirmed) {
+      console.log('Deletion cancelled');
+      return;
+    }
+  }
+  
+  console.log('\nDeleting all tests...\n');
+  
+  const client = await getElevenLabsClient();
+  let successCount = 0;
+  let failCount = 0;
+  
+  // Delete each test
+  for (const testDef of testsConfig.tests) {
+    try {
+      console.log(`Deleting '${testDef.name}' (${testDef.id})...`);
+      
+      // Delete from ElevenLabs
+      if (testDef.id) {
+        try {
+          await deleteTestApi(client, testDef.id);
+          console.log(`  ✓ Deleted from ElevenLabs`);
+        } catch (error) {
+          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+        }
+      } else {
+        console.log(`  Warning: No test ID found, skipping ElevenLabs deletion`);
+      }
+      
+      // Remove config file
+      if (testDef.config && await fs.pathExists(testDef.config)) {
+        await fs.remove(testDef.config);
+        console.log(`  ✓ Deleted config file: ${testDef.config}`);
+      }
+      
+      successCount++;
+    } catch (error) {
+      console.error(`  Failed to delete '${testDef.name}': ${error}`);
+      failCount++;
+    }
+  }
+  
+  // Clear tests array and save
+  testsConfig.tests = [];
+  await writeConfig(testsConfigPath, testsConfig);
+  console.log(`\n✓ Cleared ${TESTS_CONFIG_FILE}`);
   
   // Summary
   console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
