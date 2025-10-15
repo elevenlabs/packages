@@ -148,7 +148,7 @@ describe("CLI End-to-End Tests", () => {
     });
   };
 
-  describe("help and version", () => {
+  describe("[local] help and version", () => {
     it("should show help", async () => {
       const result = await runCli(["--help"]);
       expect(result.exitCode).toBe(0);
@@ -163,7 +163,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("init command", () => {
+  describe("[local] init command", () => {
     it("should initialize a new project", async () => {
       const result = await runCli(["init"]);
 
@@ -217,7 +217,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("templates command", () => {
+  describe("[local] templates command", () => {
     it("should list available templates", async () => {
       const result = await runCli(["templates", "list"]);
 
@@ -244,7 +244,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("whoami command", () => {
+  describe("[local] whoami command", () => {
     it("should show not logged in when no API key", async () => {
       const result = await runCli(["whoami"]);
 
@@ -253,7 +253,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("project workflow", () => {
+  describe("[local] project workflow", () => {
     it("should handle basic project workflow without API key", async () => {
       // Initialize project
       let result = await runCli(["init"]);
@@ -261,7 +261,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("error handling", () => {
+  describe("[local] error handling", () => {
     it("should handle missing command gracefully", async () => {
       const result = await runCli(["nonexistent-command"]);
 
@@ -279,7 +279,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("configuration handling", () => {
+  describe("[local] configuration handling", () => {
     it("should handle agents.json operations", async () => {
       // Initialize project
       await runCli(["init"]);
@@ -293,7 +293,7 @@ describe("CLI End-to-End Tests", () => {
     });
   });
 
-  describe("push-tools command", () => {
+  describe("[local] push-tools command", () => {
     beforeEach(async () => {
       // Initialize project for each test
       await runCli(["init"]);
@@ -342,7 +342,7 @@ describe("CLI End-to-End Tests", () => {
   });
 
   // Tests that require API key - No UI Mode
-  describeIfApiKey("API Integration Tests - No UI", () => {
+  describeIfApiKey("[integration write] no ui", () => {
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-"));
@@ -384,7 +384,7 @@ describe("CLI End-to-End Tests", () => {
   });
 
   // Tests that require API key - With UI Mode
-  describeIfApiKey("API Integration Tests - With UI", () => {
+  describeIfApiKey("[integration write] with ui", () => {
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-ui-"));
@@ -489,7 +489,7 @@ describe("CLI End-to-End Tests", () => {
   });
 
   // Push/Pull Integration Tests
-  describeIfApiKey("Push/Pull Integration Tests", () => {
+  describeIfApiKey("[integration write] full cycle", () => {
     let pushPullTempDir: string;
 
     beforeAll(async () => {
