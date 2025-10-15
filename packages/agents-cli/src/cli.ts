@@ -1143,7 +1143,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   
   try {
     const response = await createToolApi(client, toolConfig);
-    const toolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
+    const toolId = response.id;
     
     console.log(`Created ${type} tool in ElevenLabs with ID: ${toolId}`);
     
