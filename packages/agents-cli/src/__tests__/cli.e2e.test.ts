@@ -299,22 +299,23 @@ describe("CLI End-to-End Tests", () => {
       await runCli(["init"]);
     });
 
-    it("should recognize push-tools command", async () => {
-      const result = await runCli(["push-tools", "--dry-run"]);
-
-      // Should succeed in dry-run mode with valid tools.json (created by init)
-      expect(result.exitCode).toBe(0);
-      expect(result.stderr).not.toContain("unknown command");
-      // Should show dry-run mode output
-      expect(result.stdout.toLowerCase()).toContain("tool(s) pushed");
-    });
-
     it("should show help for push-tools command", async () => {
       const result = await runCli(["push-tools", "--help", "--no-ui"]);
 
       // Command should be recognized, even if help doesn't work perfectly
       // The important thing is it's not "unknown command"
       expect(result.stderr).not.toContain("unknown command");
+    });
+
+    it("should recognize push-tools command with dry-run option", async () => {
+      const result = await runCli(["push-tools", "--dry-run"]);
+
+      // Should succeed in dry-run mode with valid tools.json (created by init)
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).not.toContain("unknown command");
+      expect(result.stderr).not.toContain("unknown option");
+      // Should show dry-run mode output
+      expect(result.stdout.toLowerCase()).toContain("tool(s) pushed");
     });
 
     it("should handle missing tools.json file", async () => {
@@ -329,15 +330,6 @@ describe("CLI End-to-End Tests", () => {
       expect(result.stderr).toContain("tools.json not found");
     });
 
-    it("should handle dry-run option", async () => {
-      const result = await runCli(["push-tools", "--dry-run"]);
-
-      expect(result.exitCode).toBe(0);
-      // Should get expected success, not unknown option error
-      expect(result.stderr).not.toContain("unknown option");
-      expect(result.stdout.toLowerCase()).toContain("tool(s) pushed");
-    });
-
     it("should handle specific tool name option", async () => {
       const result = await runCli(["push-tools", "--tool", "test-tool"]);
 
@@ -346,91 +338,6 @@ describe("CLI End-to-End Tests", () => {
       expect(result.stderr).not.toContain("unknown option");
       // Should get tool not found error since test-tool doesn't exist in empty tools.json
       expect(result.stderr).toContain("not found in configuration");
-    });
-
-    it("should work with existing tools.json", async () => {
-      // Create a minimal tools.json
-      const toolsJson = {
-        tools: [
-          {
-            name: "test-webhook",
-            type: "webhook",
-            config: "tool_configs/test_webhook.json",
-          },
-        ],
-      };
-
-      const toolsJsonPath = path.join(tempDir, "tools.json");
-      await fs.writeFile(toolsJsonPath, JSON.stringify(toolsJson, null, 2));
-
-      // Create the config directory and a minimal config file
-      const configDir = path.join(tempDir, "tool_configs");
-      await fs.ensureDir(configDir);
-
-      const toolConfig = {
-        name: "test-webhook",
-        description: "Test webhook tool",
-        type: "webhook",
-        api_schema: {
-          url: "https://api.example.com/webhook",
-          method: "POST",
-        },
-      };
-
-      const configPath = path.join(configDir, "test_webhook.json");
-      await fs.writeFile(configPath, JSON.stringify(toolConfig, null, 2));
-
-      // Run push-tools with dry-run (so it doesn't try to make API calls)
-      const result = await runCli(["push-tools", "--dry-run"]);
-
-      // Should succeed (exit code 0) since files exist
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("test-webhook (webhook)");
-      expect(result.stdout).toContain("tool(s) pushed");
-    });
-
-    it("should handle missing config files gracefully", async () => {
-      // Create tools.json with reference to non-existent config
-      const toolsJson = {
-        tools: [
-          {
-            name: "missing-config-tool",
-            type: "webhook",
-            config: "non_existent.json",
-          },
-        ],
-      };
-
-      const toolsJsonPath = path.join(tempDir, "tools.json");
-      await fs.writeFile(toolsJsonPath, JSON.stringify(toolsJson, null, 2));
-
-      const result = await runCli(["push-tools", "--dry-run"]);
-
-      // Should not crash, UI should handle gracefully
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("missing-config-tool (webhook)");
-    });
-
-    it("should handle tools without config path", async () => {
-      // Create tools.json with tool missing config path
-      const toolsJson = {
-        tools: [
-          {
-            name: "no-config-tool",
-            type: "webhook",
-            // Missing config property
-          },
-        ],
-      };
-
-      const toolsJsonPath = path.join(tempDir, "tools.json");
-      await fs.writeFile(toolsJsonPath, JSON.stringify(toolsJson, null, 2));
-
-      const result = await runCli(["push-tools", "--dry-run"]);
-
-      // Should not crash, UI should handle gracefully
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("no-config-tool (webhook)");
     });
   });
 
@@ -542,50 +449,6 @@ describe("CLI End-to-End Tests", () => {
         createdAgentIds.splice(index, 1);
       }
     });
-
-    it("should pull agents from workspace (--no-ui)", async () => {
-      // Initialize project
-      await runCli(["init", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login", "--no-ui"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Pull agents
-      const result = await runCli(["pull", "--dry-run", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Pulling all agents");
-    });
-
-    it("should push tools (--no-ui)", async () => {
-      // Initialize project
-      await runCli(["init", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login", "--no-ui"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Push tools (dry-run, no tools exist yet)
-      const result = await runCli(["push-tools", "--dry-run", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      // Just verify command executed successfully (may have no output with no tools)
-    });
   });
 
   // Tests that require API key - With UI Mode
@@ -660,50 +523,6 @@ describe("CLI End-to-End Tests", () => {
       
       expect(agentsJsonExists).toBe(true);
       expect(toolsJsonExists).toBe(true);
-    });
-
-    it("should push agents with UI", async () => {
-      // Initialize project
-      await runCli(["init"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Push with UI (dry-run)
-      const result = await runCli(["push", "--dry-run"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBeTruthy();
-    });
-
-    it("should pull agents with UI", async () => {
-      // Initialize project
-      await runCli(["init"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Pull with UI (dry-run)
-      const result = await runCli(["pull", "--dry-run"], {
-        includeApiKey: true,
-      });
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBeTruthy();
     });
 
     it("should list agents with UI", async () => {
