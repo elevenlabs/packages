@@ -343,26 +343,12 @@ describe("CLI End-to-End Tests", () => {
 
   // Tests that require API key - No UI Mode
   describeIfApiKey("API Integration Tests - No UI", () => {
-    const createdAgentIds: string[] = [];
-
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-"));
     });
 
     afterEach(async () => {
-      // Clean up any agents that were created during the test
-      for (const agentId of createdAgentIds) {
-        try {
-          await runCli(["delete", agentId, "--no-ui"], {
-            includeApiKey: true,
-          });
-        } catch (error) {
-          // Agent might already be deleted, that's OK
-        }
-      }
-      createdAgentIds.length = 0; // Clear the array
-
       // Clean up temp directory
       await fs.remove(tempDir);
     });
@@ -395,84 +381,16 @@ describe("CLI End-to-End Tests", () => {
       expect(result.stdout).toContain("Logged in");
       expect(result.stdout).toMatch(/sk_\w{5,}\.\.\.\w{4}/); // Masked key pattern (sk_xxxxx...xxxx)
     });
-
-    it("should create and push an agent (--no-ui)", async () => {
-      // Initialize project
-      await runCli(["init", "--no-ui"], {
-        includeApiKey: true,
-      });
-
-      // Login
-      const apiKey = process.env.ELEVENLABS_API_KEY!;
-      await runCli(["login", "--no-ui"], {
-        input: `${apiKey}\n`,
-        includeApiKey: true,
-      });
-
-      // Create an agent
-      const agentName = `e2e-test-agent-${Date.now()}`;
-      const addResult = await runCli([
-        "add",
-        agentName,
-        "--template",
-        "minimal",
-        "--no-ui",
-      ], {
-        includeApiKey: true,
-      });
-
-      expect(addResult.exitCode).toBe(0);
-      expect(addResult.stdout).toContain(`Created agent in ElevenLabs`);
-
-      // Verify agent was added to config
-      const agentsJsonPath = path.join(tempDir, "agents.json");
-      const agentsConfig = JSON.parse(
-        await fs.readFile(agentsJsonPath, "utf-8")
-      );
-
-      expect(agentsConfig.agents).toHaveLength(1);
-      expect(agentsConfig.agents[0].name).toBe(agentName);
-      expect(agentsConfig.agents[0].id).toBeTruthy();
-
-      // Track agent for cleanup (in case delete fails)
-      const agentId = agentsConfig.agents[0].id;
-      createdAgentIds.push(agentId);
-
-      // Clean up: delete the agent
-      await runCli(["delete", agentId, "--no-ui"], {
-        includeApiKey: true,
-      });
-      
-      // Remove from tracking since it was successfully deleted
-      const index = createdAgentIds.indexOf(agentId);
-      if (index > -1) {
-        createdAgentIds.splice(index, 1);
-      }
-    });
   });
 
   // Tests that require API key - With UI Mode
   describeIfApiKey("API Integration Tests - With UI", () => {
-    const createdAgentIds: string[] = [];
-
     beforeEach(async () => {
       // Create a temporary directory for each test
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-api-ui-"));
     });
 
     afterEach(async () => {
-      // Clean up any agents that were created during the test
-      for (const agentId of createdAgentIds) {
-        try {
-          await runCli(["delete", agentId, "--no-ui"], {
-            includeApiKey: true,
-          });
-        } catch (error) {
-          // Agent might already be deleted, that's OK
-        }
-      }
-      createdAgentIds.length = 0; // Clear the array
-
       // Clean up temp directory
       await fs.remove(tempDir);
     });
@@ -572,7 +490,6 @@ describe("CLI End-to-End Tests", () => {
 
   // Push/Pull Integration Tests
   describeIfApiKey("Push/Pull Integration Tests", () => {
-    const createdAgentIds: string[] = [];
     let pushPullTempDir: string;
 
     beforeAll(async () => {
@@ -672,8 +589,6 @@ describe("CLI End-to-End Tests", () => {
         console.warn(`Failed to delete agents: ${error}`);
       }
 
-      createdAgentIds.length = 0; // Clear the array
-
       // Clean up temp directory
       await fs.remove(pushPullTempDir);
     });
@@ -705,9 +620,6 @@ describe("CLI End-to-End Tests", () => {
       const createdAgent = agentsConfig.agents[0];
       expect(createdAgent.name).toBe(agentName);
       expect(createdAgent.id).toBeTruthy();
-
-      // Track agent for cleanup
-      createdAgentIds.push(createdAgent.id);
 
       // Clear local agents.json to simulate fresh pull
       await fs.writeFile(
@@ -741,12 +653,6 @@ describe("CLI End-to-End Tests", () => {
         cwd: pushPullTempDir,
         includeApiKey: true,
       });
-      
-      // Remove from tracking since it was successfully deleted
-      const index = createdAgentIds.indexOf(createdAgent.id);
-      if (index > -1) {
-        createdAgentIds.splice(index, 1);
-      }
     });
   });
 });
