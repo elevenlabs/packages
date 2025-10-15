@@ -674,5 +674,236 @@ describe("CLI End-to-End Tests", () => {
       expect(agentsConfig.agents).toHaveLength(0);
       console.log(`✓ Verified no agents exist after deletion`);
     });
+
+    it("should handle complex pull scenarios with local modifications and deletions (--no-ui)", async () => {
+      const timestamp = Date.now();
+      const agentNames = [
+        `e2e-complex-first-${timestamp}`,
+        `e2e-complex-second-${timestamp}`,
+        `e2e-complex-third-${timestamp}`,
+      ];
+      const agentsJsonPath = path.join(pushPullTempDir, "agents.json");
+
+      // Step (a) & (b): Create 3 agents using agents add command
+      console.log("Step (a) & (b): Creating 3 agents...");
+      
+      for (const agentName of agentNames) {
+        const addResult = await runCli([
+          "add",
+          agentName,
+          "--template",
+          "minimal",
+          "--no-ui",
+        ], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        });
+        expect(addResult.exitCode).toBe(0);
+      }
+
+      // Read agents.json to get the assigned IDs and config paths
+      let agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      expect(agentsConfig.agents).toHaveLength(3);
+      const agent1Id = agentsConfig.agents[0].id;
+      const agent2Id = agentsConfig.agents[1].id;
+      const agent3Id = agentsConfig.agents[2].id;
+      expect(agent1Id).toBeTruthy();
+      expect(agent2Id).toBeTruthy();
+      expect(agent3Id).toBeTruthy();
+      
+      const configPaths = [
+        path.join(pushPullTempDir, agentsConfig.agents[0].config),
+        path.join(pushPullTempDir, agentsConfig.agents[1].config),
+        path.join(pushPullTempDir, agentsConfig.agents[2].config),
+      ];
+      
+      console.log(`✓ Created 3 agents with IDs: ${agent1Id}, ${agent2Id}, ${agent3Id}`);
+
+      // Step (c): Modify first agent locally
+      console.log("Step (c): Modifying first agent locally...");
+      const agent1Config = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      agent1Config.conversation_config.agent.prompt.prompt = "MODIFIED LOCALLY";
+      await fs.writeFile(configPaths[0], JSON.stringify(agent1Config, null, 2));
+
+      // Step (d): Pull -> check that nothing changed
+      console.log("Step (d): Pulling without --all, expecting no changes...");
+      const pullResult1 = await runCli(["pull", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(pullResult1.exitCode).toBe(0);
+
+      // Verify first agent still has local modifications
+      const agent1ConfigAfterPull1 = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      expect(agent1ConfigAfterPull1.conversation_config.agent.prompt.prompt).toBe(
+        "MODIFIED LOCALLY"
+      );
+      console.log(`✓ First agent retained local modifications`);
+
+      // Step (e): Remove local version of third agent
+      console.log("Step (e): Removing local version of third agent...");
+      await fs.remove(configPaths[2]);
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      agentsConfig.agents = agentsConfig.agents.filter(
+        (a: any) => a.name !== agentNames[2]
+      );
+      await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
+
+      // Step (f): Pull -> check that first two didn't change, third was pulled
+      console.log(
+        "Step (f): Pulling to restore third agent, first two unchanged..."
+      );
+      const pullResult2 = await runCli(["pull", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(pullResult2.exitCode).toBe(0);
+
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      expect(agentsConfig.agents).toHaveLength(3);
+
+      // First agent should still have modifications
+      const agent1ConfigAfterPull2 = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      expect(agent1ConfigAfterPull2.conversation_config.agent.prompt.prompt).toBe(
+        "MODIFIED LOCALLY"
+      );
+
+      // Third agent should be pulled back
+      expect(await fs.pathExists(configPaths[2])).toBe(true);
+      console.log(`✓ Third agent restored, first two unchanged`);
+
+      // Step (g): Remove local version of third agent again
+      console.log("Step (g): Removing local version of third agent again...");
+      await fs.remove(configPaths[2]);
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      agentsConfig.agents = agentsConfig.agents.filter(
+        (a: any) => a.name !== agentNames[2]
+      );
+      await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
+
+      // Step (h): Pull --update -> check that first got overridden, second didn't change, third didn't appear
+      console.log(
+        "Step (h): Pulling with --update, expecting first to be overridden..."
+      );
+      const pullResult3 = await runCli(["pull", "--update", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(pullResult3.exitCode).toBe(0);
+
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      // Should still have only 2 agents (first and second)
+      expect(agentsConfig.agents).toHaveLength(2);
+
+      // First agent should be overridden (no longer has local modifications)
+      const agent1ConfigAfterUpdate = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      expect(
+        agent1ConfigAfterUpdate.conversation_config.agent.prompt.prompt
+      ).not.toBe("MODIFIED LOCALLY");
+      expect(agent1ConfigAfterUpdate.conversation_config.agent.prompt.prompt).toBe(
+        `You are ${agentNames[0]}, a helpful AI assistant.`
+      );
+
+      // Third agent should NOT be pulled (--update doesn't add missing agents)
+      expect(await fs.pathExists(configPaths[2])).toBe(false);
+      console.log(
+        `✓ First agent overridden, second unchanged, third not restored`
+      );
+
+      // Step (i): Modify first two locally, remove local version of third
+      console.log("Step (i): Modifying first two locally...");
+      const agent1ConfigMod = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      agent1ConfigMod.conversation_config.agent.prompt.prompt =
+        "MODIFIED AGAIN LOCALLY";
+      await fs.writeFile(configPaths[0], JSON.stringify(agent1ConfigMod, null, 2));
+
+      const agent2Config = JSON.parse(
+        await fs.readFile(configPaths[1], "utf-8")
+      );
+      agent2Config.conversation_config.agent.prompt.prompt =
+        "MODIFIED LOCALLY TOO";
+      await fs.writeFile(configPaths[1], JSON.stringify(agent2Config, null, 2));
+
+      // Third is already removed from step (g)
+
+      // Step (j): Pull --all -> check that first two got overridden, third was pulled
+      console.log(
+        "Step (j): Pulling with --all, expecting all overridden and third restored..."
+      );
+      const pullResult4 = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(pullResult4.exitCode).toBe(0);
+
+      agentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+      expect(agentsConfig.agents).toHaveLength(3);
+
+      // First agent should be overridden
+      const agent1ConfigFinal = JSON.parse(
+        await fs.readFile(configPaths[0], "utf-8")
+      );
+      expect(agent1ConfigFinal.conversation_config.agent.prompt.prompt).not.toBe(
+        "MODIFIED AGAIN LOCALLY"
+      );
+      expect(agent1ConfigFinal.conversation_config.agent.prompt.prompt).toBe(
+        `You are ${agentNames[0]}, a helpful AI assistant.`
+      );
+
+      // Second agent should be overridden
+      const agent2ConfigFinal = JSON.parse(
+        await fs.readFile(configPaths[1], "utf-8")
+      );
+      expect(agent2ConfigFinal.conversation_config.agent.prompt.prompt).not.toBe(
+        "MODIFIED LOCALLY TOO"
+      );
+      expect(agent2ConfigFinal.conversation_config.agent.prompt.prompt).toBe(
+        `You are ${agentNames[1]}, a helpful AI assistant.`
+      );
+
+      // Third agent should be pulled back
+      expect(await fs.pathExists(configPaths[2])).toBe(true);
+      const agent3ConfigFinal = JSON.parse(
+        await fs.readFile(configPaths[2], "utf-8")
+      );
+      expect(agent3ConfigFinal.conversation_config.agent.prompt.prompt).toBe(
+        `You are ${agentNames[2]}, a helpful AI assistant.`
+      );
+
+      console.log(
+        `✓ All agents overridden to remote state, third agent restored`
+      );
+      console.log(`✓ Complex pull scenario test completed successfully`);
+    });
   });
 });
