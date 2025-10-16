@@ -8,6 +8,7 @@ import theme from '../themes/elevenlabs.js';
 
 interface AddTestViewProps {
   initialName?: string;
+  environment?: string;
   onComplete?: () => void;
 }
 
@@ -44,6 +45,7 @@ const templateOptions: TemplateOption[] = [
 
 export const AddTestView: React.FC<AddTestViewProps> = ({
   initialName = '',
+  environment = 'prod',
   onComplete
 }) => {
   const { exit } = useApp();
@@ -150,7 +152,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
 
       // Create test in ElevenLabs first to get ID
       const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
-      const client = await getElevenLabsClient();
+      const client = await getElevenLabsClient(environment);
 
       const { toCamelCaseKeys, generateUniqueFilename } = await import('../../utils.js');
       const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
@@ -169,7 +171,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
 
       // Create/update tests.json
       const testsConfigPath = path.resolve('tests.json');
-      let testsConfig: { tests: Array<{ name: string; config: string; type: string; id?: string }> };
+      let testsConfig: { tests: Array<{ config: string; type: string; id?: string; env?: string }> };
 
       try {
         testsConfig = await readConfig(testsConfigPath);
@@ -177,21 +179,21 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         testsConfig = { tests: [] };
       }
 
-      // Check if test already exists
-      const existingTestIndex = testsConfig.tests.findIndex(test => test.name === testName);
+      // Check if test already exists by ID
+      const existingTestIndex = testsConfig.tests.findIndex((test: any) => test.id === testId);
       if (existingTestIndex >= 0) {
         testsConfig.tests[existingTestIndex] = {
-          name: testName,
           config: configPath,
           type: selectedTemplate,
-          id: testId
+          id: testId,
+          env: environment
         };
       } else {
         testsConfig.tests.push({
-          name: testName,
           config: configPath,
           type: selectedTemplate,
-          id: testId
+          id: testId,
+          env: environment
         });
       }
 

@@ -976,7 +976,8 @@ program
         // Use Ink UI for test creation
         const { waitUntilExit } = render(
           React.createElement(AddTestView, {
-            initialName: name
+            initialName: name,
+            environment: options.env || 'prod'
           })
         );
         await waitUntilExit();
