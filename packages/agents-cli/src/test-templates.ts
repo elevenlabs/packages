@@ -3,8 +3,6 @@
  */
 
 export interface TestConfig {
-  // Note: id is now stored in tests.json, not in individual config files
-  id?: string; // @deprecated - for backwards compatibility only
   [key: string]: unknown;
   chat_history: Array<{
     role: 'user' | 'agent';
