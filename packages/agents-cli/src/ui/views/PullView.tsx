@@ -10,6 +10,7 @@ import { getElevenLabsClient, listAgentsApi, getAgentApi } from '../../elevenlab
 interface PullAgent {
   name: string;
   agentId: string;
+  env: string;
   status: 'pending' | 'checking' | 'pulling' | 'completed' | 'error' | 'skipped';
   action?: 'create' | 'update' | 'skip';
   message?: string;
@@ -22,7 +23,7 @@ interface PullViewProps {
   dryRun: boolean;
   update?: boolean;
   all?: boolean;
-  environment: string;
+  environments: string[]; // Array of environments to pull from
   onComplete?: () => void;
 }
 
@@ -32,7 +33,7 @@ export const PullView: React.FC<PullViewProps> = ({
   dryRun,
   update,
   all,
-  environment,
+  environments,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -50,101 +51,101 @@ export const PullView: React.FC<PullViewProps> = ({
           throw new Error('agents.json not found. Run "agents init" first.');
         }
 
-        const client = await getElevenLabsClient(environment);
-
-        // Fetch agents list - either specific agent by ID or all agents
-        let agentsList: unknown[];
-        if (agent) {
-          // Pull specific agent by ID
-          const agentDetails = await getAgentApi(client, agent);
-          const agentDetailsTyped = agentDetails as { agentId?: string; agent_id?: string; name: string };
-          const agentId = agentDetailsTyped.agentId || agentDetailsTyped.agent_id || agent;
-          agentsList = [{ 
-            agentId: agentId,
-            agent_id: agentId,
-            name: agentDetailsTyped.name 
-          }];
-        } else {
-          agentsList = await listAgentsApi(client, 30);
-        }
-
-        if (agentsList.length === 0) {
-          setError('No agents found in your ElevenLabs workspace.');
-          setComplete(true);
-          return;
-        }
-
         // Load existing config
         const agentsConfig = await readConfig<any>(agentsConfigPath);
         const existingAgentNames = new Set<string>(agentsConfig.agents.map((a: any) => a.name as string));
         
-        // Build ID-based map for existing agents
-        const existingAgentIds = new Map<string, any>(
-          agentsConfig.agents.map((agent: any) => [agent.id as string, agent])
-        );
+        // Collect all agents from all environments
+        const allAgentsToPull: PullAgent[] = [];
 
-        // Prepare agents for display with action determination
-        const agentsToPull: PullAgent[] = [];
-        for (const agentMeta of agentsList) {
-          const agentMetaTyped = agentMeta as { agentId?: string; agent_id?: string; name: string };
-          const agentId = agentMetaTyped.agentId || agentMetaTyped.agent_id;
-          
-          if (!agentId) continue;
+        // Loop through each environment
+        for (const environment of environments) {
+          const client = await getElevenLabsClient(environment);
 
-          let agentName = agentMetaTyped.name;
-          const existingEntry = existingAgentIds.get(agentId);
-          let action: 'create' | 'update' | 'skip';
-          let status: 'pending' | 'skipped' = 'pending';
-
-          if (existingEntry) {
-            // Agent with this ID already exists locally
-            if (update || all) {
-              // --update or --all: update existing
-              action = 'update';
-              status = 'pending';
-            } else {
-              // Default: skip existing
-              action = 'skip';
-              status = 'skipped';
-            }
+          // Fetch agents list - either specific agent by ID or all agents
+          let agentsList: unknown[];
+          if (agent) {
+            // Pull specific agent by ID
+            const agentDetails = await getAgentApi(client, agent);
+            const agentDetailsTyped = agentDetails as { agentId?: string; agent_id?: string; name: string };
+            const agentId = agentDetailsTyped.agentId || agentDetailsTyped.agent_id || agent;
+            agentsList = [{ 
+              agentId: agentId,
+              agent_id: agentId,
+              name: agentDetailsTyped.name 
+            }];
           } else {
-            // New agent (not present locally)
-            if (update) {
-              // --update mode: skip new items (only update existing)
-              action = 'skip';
-              status = 'skipped';
-            } else {
-              // Default or --all: create new items
-              // Check for name conflicts
-              if (existingAgentNames.has(agentName)) {
-                let counter = 1;
-                const originalName = agentName;
-                while (existingAgentNames.has(agentName)) {
-                  agentName = `${originalName}_${counter}`;
-                  counter++;
-                }
-              }
-              action = 'create';
-              status = 'pending';
-              existingAgentNames.add(agentName);
-            }
+            agentsList = await listAgentsApi(client, 30);
           }
 
-          agentsToPull.push({
-            name: agentName,
-            agentId,
-            action,
-            status,
-            message: status === 'skipped' ? 'Skipped' : undefined
-          });
+          if (agentsList.length === 0) continue;
+
+          // Build ID-based map for existing agents in this environment
+          const existingAgentIds = new Map<string, any>(
+            agentsConfig.agents
+              .filter((a: any) => (a.env || 'prod') === environment)
+              .map((agent: any) => [agent.id as string, agent])
+          );
+
+          // Prepare agents for display with action determination
+          for (const agentMeta of agentsList) {
+            const agentMetaTyped = agentMeta as { agentId?: string; agent_id?: string; name: string };
+            const agentId = agentMetaTyped.agentId || agentMetaTyped.agent_id;
+            
+            if (!agentId) continue;
+
+            let agentName = agentMetaTyped.name;
+            const existingEntry = existingAgentIds.get(agentId);
+            let action: 'create' | 'update' | 'skip';
+            let status: 'pending' | 'skipped' = 'pending';
+
+            if (existingEntry) {
+              // Agent with this ID already exists locally
+              if (update || all) {
+                // --update or --all: update existing
+                action = 'update';
+                status = 'pending';
+              } else {
+                // Default: skip existing
+                action = 'skip';
+                status = 'skipped';
+              }
+            } else {
+              // New agent (not present locally)
+              if (update) {
+                // --update mode: skip new items (only update existing)
+                action = 'skip';
+                status = 'skipped';
+              } else {
+                // Default or --all: create new items
+                action = 'create';
+                status = 'pending';
+              }
+            }
+
+            allAgentsToPull.push({
+              name: agentName,
+              agentId,
+              env: environment,
+              action,
+              status,
+              message: status === 'skipped' ? 'Skipped' : undefined
+            });
+          }
         }
 
-        setAgents(agentsToPull);
+        if (allAgentsToPull.length === 0) {
+          setError('No agents found in any environment.');
+          setComplete(true);
+          return;
+        }
+
+        setAgents(allAgentsToPull);
         
         // Start processing if there are agents to pull
-        if (agentsToPull.some(a => a.status === 'pending')) {
+        if (allAgentsToPull.some(a => a.status === 'pending')) {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          processNextAgent(agentsToPull, 0, agentsConfig, existingAgentIds, agentsConfigPath);
+          processNextAgent(allAgentsToPull, 0, agentsConfig, agentsConfigPath);
         } else {
           setComplete(true);
           setTimeout(() => {
@@ -166,7 +167,6 @@ export const PullView: React.FC<PullViewProps> = ({
     agentsList: PullAgent[],
     index: number,
     agentsConfig: any,
-    existingAgentIds: Map<string, any>,
     agentsConfigPath: string
   ): Promise<void> => {
     if (index >= agentsList.length) {
@@ -187,7 +187,7 @@ export const PullView: React.FC<PullViewProps> = ({
     // Skip if already marked as skipped
     if (agent.status === 'skipped') {
       setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
+      processNextAgent(agentsList, index + 1, agentsConfig, agentsConfigPath);
       return;
     }
 
@@ -196,9 +196,13 @@ export const PullView: React.FC<PullViewProps> = ({
     await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
-      const client = await getElevenLabsClient(environment);
+      const client = await getElevenLabsClient(agent.env);
       const agentName = agent.name;
-      const existingEntry = existingAgentIds.get(agent.agentId);
+      
+      // Find existing entry for this agent ID in this environment
+      const existingEntry = agentsConfig.agents.find((a: any) => 
+        a.id === agent.agentId && (a.env || 'prod') === agent.env
+      );
 
       if (dryRun) {
         const dryRunMsg = agent.action === 'create' ? '[DRY RUN] Would create' : '[DRY RUN] Would update';
@@ -259,7 +263,7 @@ export const PullView: React.FC<PullViewProps> = ({
           agentsConfig.agents.push({
             config: configPath,
             id: agent.agentId,
-            env: environment
+            env: agent.env
           });
 
           setAgents(prev => prev.map((a, i) => 
@@ -274,7 +278,7 @@ export const PullView: React.FC<PullViewProps> = ({
       }
 
       setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
+      processNextAgent(agentsList, index + 1, agentsConfig, agentsConfigPath);
 
     } catch (err) {
       setAgents(prev => prev.map((a, i) => 
@@ -285,7 +289,7 @@ export const PullView: React.FC<PullViewProps> = ({
         } : a
       ));
       setCurrentIndex(index + 1);
-      processNextAgent(agentsList, index + 1, agentsConfig, existingAgentIds, agentsConfigPath);
+      processNextAgent(agentsList, index + 1, agentsConfig, agentsConfigPath);
     }
   };
 
@@ -304,6 +308,12 @@ export const PullView: React.FC<PullViewProps> = ({
           <>
             {/* Agent Status List - Compact Table */}
             <Box flexDirection="column">
+              <Box marginBottom={1}>
+                <Text color={theme.colors.text.primary} bold>
+                  Pulling from {environments.length} environment{environments.length > 1 ? 's' : ''}: 
+                </Text>
+                <Text color={theme.colors.accent.secondary}> {environments.join(', ')}</Text>
+              </Box>
               <Text color={theme.colors.text.primary} bold>
                 Agents:
               </Text>
@@ -313,10 +323,13 @@ export const PullView: React.FC<PullViewProps> = ({
                 <Box width={30}>
                   <Text color={theme.colors.text.muted} bold>NAME</Text>
                 </Box>
-                <Box width={25}>
-                  <Text color={theme.colors.text.muted} bold>AGENT ID</Text>
+                <Box width={10}>
+                  <Text color={theme.colors.text.muted} bold>ENV</Text>
                 </Box>
                 <Box width={20}>
+                  <Text color={theme.colors.text.muted} bold>AGENT ID</Text>
+                </Box>
+                <Box width={15}>
                   <Text color={theme.colors.text.muted} bold>STATUS</Text>
                 </Box>
                 <Box>
@@ -359,10 +372,13 @@ export const PullView: React.FC<PullViewProps> = ({
                     <Box width={30}>
                       <Text color={theme.colors.text.primary}>{agent.name}</Text>
                     </Box>
-                    <Box width={25}>
-                      <Text color={theme.colors.text.muted}>{agent.agentId.slice(0, 20)}...</Text>
+                    <Box width={10}>
+                      <Text color={theme.colors.accent.secondary}>{agent.env}</Text>
                     </Box>
                     <Box width={20}>
+                      <Text color={theme.colors.text.muted}>{agent.agentId.slice(0, 18)}...</Text>
+                    </Box>
+                    <Box width={15}>
                       <Text color={statusColor}>{statusText}</Text>
                     </Box>
                     <Box>

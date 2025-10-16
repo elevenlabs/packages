@@ -20,6 +20,7 @@ import { generateUniqueFilename } from '../../utils.js';
 interface PullTool {
   name: string;
   id: string;
+  env: string;
   type?: string;
   status: 'pending' | 'pulling' | 'completed' | 'error' | 'skipped';
   action?: 'create' | 'update' | 'skip';
@@ -33,7 +34,7 @@ interface PullToolsViewProps {
   dryRun?: boolean;
   update?: boolean;
   all?: boolean;
-  environment: string;
+  environments: string[];
   onComplete?: () => void;
 }
 
@@ -45,7 +46,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
   dryRun = false,
   update,
   all,
-  environment,
+  environments,
   onComplete
 }) => {
   const { exit } = useApp();
@@ -73,51 +74,49 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
           toolsConfig = await readToolsConfig(toolsConfigPath);
         }
 
-        const client = await getElevenLabsClient(environment);
+        // Collect all tools from all environments
+        const allToolsToPull: PullTool[] = [];
 
-        // Build ID-based map for existing tools
-        const existingToolIds = new Map(
-          toolsConfig.tools.map((tool: ToolDefinition) => [tool.id, tool])
-        );
+        // Loop through each environment
+        for (const environment of environments) {
+          const client = await getElevenLabsClient(environment);
 
-        // Fetch tools - either specific tool by ID or all tools
-        let filteredTools: unknown[];
-        if (tool) {
-          // Pull specific tool by ID
-          const toolDetails = await getToolApi(client, tool);
-          const toolDetailsTyped = toolDetails as { tool_id?: string; toolId?: string; id?: string; tool_config?: { name?: string } };
-          const toolId = toolDetailsTyped.tool_id || toolDetailsTyped.toolId || toolDetailsTyped.id || tool;
-          const toolName = toolDetailsTyped.tool_config?.name;
-          
-          if (!toolName) {
-            setState(prev => ({ ...prev, error: `Tool with ID '${tool}' has no name`, loading: false }));
-            return;
+          // Build ID-based map for existing tools in this environment
+          const existingToolIds = new Map(
+            toolsConfig.tools
+              .filter((t: ToolDefinition) => (t.env || 'prod') === environment)
+              .map((tool: ToolDefinition) => [tool.id, tool])
+          );
+
+          // Fetch tools - either specific tool by ID or all tools
+          let filteredTools: unknown[];
+          if (tool) {
+            // Pull specific tool by ID
+            const toolDetails = await getToolApi(client, tool);
+            const toolDetailsTyped = toolDetails as { tool_id?: string; toolId?: string; id?: string; tool_config?: { name?: string } };
+            const toolId = toolDetailsTyped.tool_id || toolDetailsTyped.toolId || toolDetailsTyped.id || tool;
+            const toolName = toolDetailsTyped.tool_config?.name;
+            
+            if (!toolName) continue;
+            
+            filteredTools = [{
+              tool_id: toolId,
+              toolId: toolId,
+              id: toolId,
+              tool_config: toolDetailsTyped.tool_config
+            }];
+          } else {
+            const toolsList = await listToolsApi(client);
+            if (toolsList.length === 0) continue;
+            filteredTools = toolsList;
           }
-          
-          filteredTools = [{
-            tool_id: toolId,
-            toolId: toolId,
-            id: toolId,
-            tool_config: toolDetailsTyped.tool_config
-          }];
-        } else {
-          const toolsList = await listToolsApi(client);
 
-          if (toolsList.length === 0) {
-            setState(prev => ({ ...prev, error: 'No tools found in your ElevenLabs workspace.', loading: false }));
-            return;
-          }
+          // Prepare tools list with action determination
+          for (const toolItem of filteredTools) {
+            const toolId = (toolItem as any).tool_id || (toolItem as any).toolId || (toolItem as any).id;
+            let toolName = (toolItem as any).tool_config?.name;
 
-          filteredTools = toolsList;
-        }
-
-        // Prepare tools list with action determination
-        const toolsToPull: PullTool[] = filteredTools
-          .map((toolItem: any) => {
-            const toolId = toolItem.tool_id || toolItem.toolId || toolItem.id;
-            let toolName = toolItem.tool_config?.name;
-
-            if (!toolId || !toolName) return null;
+            if (!toolId || !toolName) continue;
 
             const existingEntry = existingToolIds.get(toolId);
             let action: 'create' | 'update' | 'skip';
@@ -126,42 +125,44 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
             if (existingEntry) {
               // Tool with this ID already exists locally
               if (update || all) {
-                // --update or --all: update existing
                 action = 'update';
                 status = 'pending';
               } else {
-                // Default: skip existing
                 action = 'skip';
                 status = 'skipped';
               }
             } else {
               // New tool (not present locally)
               if (update) {
-                // --update mode: skip new items (only update existing)
                 action = 'skip';
                 status = 'skipped';
               } else {
-                // Default or --all: create new items
                 action = 'create';
                 status = 'pending';
               }
             }
 
-            return {
+            allToolsToPull.push({
               name: toolName,
               id: toolId,
-              type: toolItem.tool_config?.type || toolItem.type,
+              env: environment,
+              type: (toolItem as any).tool_config?.type || (toolItem as any).type,
               action,
               status,
               message: status === 'skipped' ? 'Skipped' : undefined
-            };
-          })
-          .filter(Boolean) as PullTool[];
+            });
+          }
+        }
 
-        setTools(toolsToPull);
+        if (allToolsToPull.length === 0) {
+          setState(prev => ({ ...prev, error: 'No tools found in any environment.', loading: false }));
+          return;
+        }
+
+        setTools(allToolsToPull);
         setState(prev => ({ ...prev, loading: false, phase: 'pulling' }));
 
-        if (toolsToPull.filter(t => t.status === 'pending').length === 0) {
+        if (allToolsToPull.filter(t => t.status === 'pending').length === 0) {
           setState(prev => ({ ...prev, error: 'No tools to pull with current options.', phase: 'complete' }));
           return;
         }
@@ -220,7 +221,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
       }
 
       try {
-        const client = await getElevenLabsClient(environment);
+        const client = await getElevenLabsClient(toolToPull.env);
         const toolDetails = await getToolApi(client, toolToPull.id);
 
         // Extract the tool_config from the response
@@ -277,7 +278,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
             type: toolType as 'webhook' | 'client',
             config: configPath,
             id: toolToPull.id,
-            env: environment
+            env: toolToPull.env
           };
 
           toolsConfig.tools.push(newTool);
@@ -335,6 +336,15 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
       title="ElevenLabs Agents CLI"
     >
       <Box flexDirection="column" gap={1}>
+        {!state.loading && !state.error && (
+          <Box marginBottom={1}>
+            <Text color={theme.colors.text.primary} bold>
+              Pulling from {environments.length} environment{environments.length > 1 ? 's' : ''}: 
+            </Text>
+            <Text color={theme.colors.accent.secondary}> {environments.join(', ')}</Text>
+          </Box>
+        )}
+        
         {state.loading ? (
           <StatusCard
             title="Initializing"
@@ -402,7 +412,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
                       <StatusCard
                         title={tool.name}
                         status={getStatusType(tool.status)}
-                        message={tool.message || `Type: ${tool.type || 'unknown'}`}
+                        message={tool.message || `Type: ${tool.type || 'unknown'} | Env: ${tool.env}`}
                         borderStyle="single"
                       />
                     </Box>
