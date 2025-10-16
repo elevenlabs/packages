@@ -405,12 +405,10 @@ describe("Tool Fetching", () => {
       const toolsConfig: ToolsConfig = {
         tools: [
           {
-            name: "test-webhook",
             type: "webhook",
             config: "tool_configs/test-webhook.json",
           },
           {
-            name: "test-client",
             type: "client",
             config: "tool_configs/test-client.json",
           },

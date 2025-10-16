@@ -22,6 +22,7 @@ interface PullViewProps {
   dryRun: boolean;
   update?: boolean;
   all?: boolean;
+  environment: string;
   onComplete?: () => void;
 }
 
@@ -31,6 +32,7 @@ export const PullView: React.FC<PullViewProps> = ({
   dryRun,
   update,
   all,
+  environment,
   onComplete 
 }) => {
   const { exit } = useApp();
@@ -48,7 +50,7 @@ export const PullView: React.FC<PullViewProps> = ({
           throw new Error('agents.json not found. Run "agents init" first.');
         }
 
-        const client = await getElevenLabsClient();
+        const client = await getElevenLabsClient(environment);
 
         // Fetch agents list - either specific agent by ID or all agents
         let agentsList: unknown[];
@@ -194,7 +196,7 @@ export const PullView: React.FC<PullViewProps> = ({
     await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
-      const client = await getElevenLabsClient();
+      const client = await getElevenLabsClient(environment);
       const agentName = agent.name;
       const existingEntry = existingAgentIds.get(agent.agentId);
 
@@ -255,9 +257,9 @@ export const PullView: React.FC<PullViewProps> = ({
 
           // Add to agents config with ID
           agentsConfig.agents.push({
-            name: agentName,
             config: configPath,
-            id: agent.agentId
+            id: agent.agentId,
+            env: environment
           });
 
           setAgents(prev => prev.map((a, i) => 

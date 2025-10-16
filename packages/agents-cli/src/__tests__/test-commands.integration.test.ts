@@ -12,9 +12,10 @@ import { tmpdir } from "os";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 interface TestDefinition {
-  name: string;
   config: string;
   type?: string;
+  id?: string;
+  env?: string;
 }
 
 interface TestsConfig {
@@ -123,7 +124,6 @@ describe("Test Commands Integration", () => {
       // Add a test
       const config = await readConfig(testsConfigPath);
       (config as unknown as TestsConfig).tests.push({
-        name: "Test 1",
         config: "test_configs/test_1.json",
         type: "basic-llm",
       });
@@ -132,8 +132,8 @@ describe("Test Commands Integration", () => {
       // Verify test was added
       const updatedConfig = await readConfig(testsConfigPath);
       expect((updatedConfig as unknown as TestsConfig).tests).toHaveLength(1);
-      expect((updatedConfig as unknown as TestsConfig).tests[0].name).toBe(
-        "Test 1"
+      expect((updatedConfig as unknown as TestsConfig).tests[0].config).toBe(
+        "test_configs/test_1.json"
       );
     });
 

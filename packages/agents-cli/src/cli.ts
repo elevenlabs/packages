@@ -117,7 +117,6 @@ async function getAgentName(configPath: string): Promise<string> {
 }
 
 interface TestDefinition {
-  name: string;
   config: string;
   type?: string;
   id?: string;
@@ -495,7 +494,8 @@ program
         const { waitUntilExit } = render(
           React.createElement(AddAgentView, {
             initialName: name,
-            template: options.template
+            template: options.template,
+            environment: options.env || 'prod'
           })
         );
         await waitUntilExit();
@@ -849,7 +849,8 @@ program
             outputDir: options.outputDir,
             dryRun: options.dryRun,
             update: options.update,
-            all: options.all
+            all: options.all,
+            environment: options.env
           })
         );
         await waitUntilExit();
@@ -883,7 +884,8 @@ program
             outputDir: options.outputDir,
             dryRun: options.dryRun,
             update: options.update,
-            all: options.all
+            all: options.all,
+            environment: options.env
           })
         );
         await waitUntilExit();
@@ -939,7 +941,7 @@ program
 program
   .command('push-tests')
   .description('Push tests to ElevenLabs API when configs change')
-  .option('--test <name>', 'Specific test name to push (defaults to all tests)')
+  .option('--test <id>', 'Specific test ID to push (defaults to all tests)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: { test?: string; dryRun: boolean; ui: boolean }) => {
@@ -955,7 +957,7 @@ program
 program
   .command('push-tools')
   .description('Push tools to ElevenLabs API when configs change')
-  .option('--tool <name>', 'Specific tool name to push (defaults to all tools)')
+  .option('--tool <id>', 'Specific tool ID to push (defaults to all tools)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: { tool?: string; dryRun: boolean; ui: boolean }) => {
@@ -969,23 +971,34 @@ program
 
         const toolsConfig = await readToolsConfig(toolsConfigPath);
 
-        // Filter tools if specific tool name provided
+        // Filter tools if specific tool ID provided
         let toolsToProcess = toolsConfig.tools;
         if (options.tool) {
-          toolsToProcess = toolsConfig.tools.filter(tool => tool.name === options.tool);
+          toolsToProcess = toolsConfig.tools.filter(tool => tool.id === options.tool);
           if (toolsToProcess.length === 0) {
-            throw new Error(`Tool '${options.tool}' not found in configuration`);
+            throw new Error(`Tool with ID '${options.tool}' not found in configuration`);
           }
         }
 
 
-        // Prepare tools for UI
-        const pushToolsData = toolsToProcess.map(tool => ({
-          name: tool.name,
-          type: tool.type,
-          configPath: tool.config || `tool_configs/${tool.name}.json`,
-          status: 'pending' as const,
-          toolId: tool.id
+        // Prepare tools for UI - read names from config files
+        const pushToolsData = await Promise.all(toolsToProcess.map(async tool => {
+          let name = tool.id || 'Unknown';
+          if (tool.config && await fs.pathExists(tool.config)) {
+            try {
+              const toolConfig = await readConfig(tool.config) as { name?: string };
+              name = toolConfig.name || tool.id || 'Unknown';
+            } catch {
+              // Use ID if config read fails
+            }
+          }
+          return {
+            name,
+            type: tool.type,
+            configPath: tool.config || `tool_configs/${tool.id}.json`,
+            status: 'pending' as const,
+            toolId: tool.id
+          };
         }));
 
         const { waitUntilExit } = render(
@@ -1186,7 +1199,6 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     
     // Add to tools.json
     const newTool: ToolDefinition = {
-      name,
       type,
       config: configPath,
       id: toolId,
@@ -1875,7 +1887,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
         await writeToolConfig(configFilePath, toolConfig as Tool);
         
         const newTool: ToolDefinition = {
-          name: tool.name,
           type: toolType as 'webhook' | 'client',
           config: configPath,
           id: tool.id,
@@ -1993,7 +2004,6 @@ async function addTest(name: string, templateType: string = "basic-llm", environ
 
     // Add to tests.json if not already present
     const newTest: TestDefinition = {
-      name,
       config: configPath,
       type: templateType,
       id: testId,
@@ -2011,7 +2021,7 @@ async function addTest(name: string, templateType: string = "basic-llm", environ
   }
 }
 
-async function pushTests(testName?: string, dryRun = false): Promise<void> {
+async function pushTests(testId?: string, dryRun = false): Promise<void> {
   // Load tests configuration
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   if (!(await fs.pathExists(testsConfigPath))) {
@@ -2020,36 +2030,37 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
 
   const testsConfig = await readConfig<TestsConfig>(testsConfigPath);
 
-  // Filter tests if specific test name provided
+  // Filter tests if specific test ID provided
   let testsToProcess = testsConfig.tests;
-  if (testName) {
-    testsToProcess = testsConfig.tests.filter(test => test.name === testName);
+  if (testId) {
+    testsToProcess = testsConfig.tests.filter(test => test.id === testId);
     if (testsToProcess.length === 0) {
-      throw new Error(`Test '${testName}' not found in configuration`);
+      throw new Error(`Test with ID '${testId}' not found in configuration`);
     }
   }
 
   let changesMade = false;
 
   for (const testDef of testsToProcess) {
-    const testDefName = testDef.name;
     const configPath = testDef.config;
     const environment = testDef.env || 'prod';
 
     // Check if config file exists
     if (!(await fs.pathExists(configPath))) {
-      console.log(`Warning: Config file not found for ${testDefName}: ${configPath}`);
+      console.log(`Warning: Config file not found: ${configPath}`);
       continue;
     }
 
     // Load test config
-    let testConfig;
+    let testConfig: { name?: string };
     try {
       testConfig = await readConfig(configPath);
     } catch (error) {
-      console.log(`Error reading config for ${testDefName}: ${error}`);
+      console.log(`Error reading config from ${configPath}: ${error}`);
       continue;
     }
+
+    const testDefName = testConfig.name || 'Unnamed Test';
 
     // Get test ID from index file
     const testId = testDef.id;
@@ -2104,7 +2115,7 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function pushTools(toolName?: string, dryRun = false): Promise<void> {
+async function pushTools(toolId?: string, dryRun = false): Promise<void> {
   // Load tools configuration
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   if (!(await fs.pathExists(toolsConfigPath))) {
@@ -2113,41 +2124,42 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
 
   const toolsConfig = await readToolsConfig(toolsConfigPath);
 
-  // Filter tools if specific tool name provided
+  // Filter tools if specific tool ID provided
   let toolsToProcess = toolsConfig.tools;
-  if (toolName) {
-    toolsToProcess = toolsConfig.tools.filter(tool => tool.name === toolName);
+  if (toolId) {
+    toolsToProcess = toolsConfig.tools.filter(tool => tool.id === toolId);
     if (toolsToProcess.length === 0) {
-      throw new Error(`Tool '${toolName}' not found in configuration`);
+      throw new Error(`Tool with ID '${toolId}' not found in configuration`);
     }
   }
 
   let changesMade = false;
 
   for (const toolDef of toolsToProcess) {
-    const toolDefName = toolDef.name;
     const configPath = toolDef.config;
     const environment = toolDef.env || 'prod';
 
     if (!configPath) {
-      console.log(`Warning: No config path specified for ${toolDefName}`);
+      console.log(`Warning: No config path specified`);
       continue;
     }
 
     // Check if config file exists
     if (!(await fs.pathExists(configPath))) {
-      console.log(`Warning: Config file not found for ${toolDefName}: ${configPath}`);
+      console.log(`Warning: Config file not found: ${configPath}`);
       continue;
     }
 
     // Load tool config
-    let toolConfig;
+    let toolConfig: { name?: string };
     try {
       toolConfig = await readConfig(configPath);
     } catch (error) {
-      console.log(`Error reading config for ${toolDefName}: ${error}`);
+      console.log(`Error reading config from ${configPath}: ${error}`);
       continue;
     }
+
+    const toolDefName = toolConfig.name || 'Unnamed Tool';
 
     // Get tool ID from index file
     const toolId = toolDef.id;
@@ -2336,6 +2348,7 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
       // Fetch detailed test configuration
       console.log(`${action === 'update' ? '↻ Updating' : '+ Pulling'} config for '${test.name}'...`);
       const testDetails = await getTestApi(client, test.id);
+      const testDetailsTyped = testDetails as { type?: string };
       
       if (action === 'update' && existingEntry) {
         // Update existing entry - overwrite the config file
@@ -2351,9 +2364,9 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
         await writeConfig(configFilePath, testDetails);
         
         const newTest: TestDefinition = {
-          name: test.name,
           config: configPath,
           id: test.id,
+          type: testDetailsTyped.type || 'conversational',
           env: environment
         };
         
@@ -2684,9 +2697,19 @@ async function deleteTool(toolId: string): Promise<void> {
   }
   
   const toolDef = toolsConfig.tools[toolIndex];
-  const toolName = toolDef.name;
   const configPath = toolDef.config;
   const environment = toolDef.env || 'prod';
+  
+  // Read tool name from config if available
+  let toolName = toolId;
+  if (configPath && await fs.pathExists(configPath)) {
+    try {
+      const toolConfig = await readConfig(configPath) as { name?: string };
+      toolName = toolConfig.name || toolId;
+    } catch {
+      // If reading fails, just use ID
+    }
+  }
   
   console.log(`Deleting tool '${toolName}' (ID: ${toolId}) [${environment}]...`);
   
@@ -2732,9 +2755,19 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
   
   // Show what will be deleted
   console.log(`\nFound ${toolsConfig.tools.length} tool(s) to delete:`);
-  toolsConfig.tools.forEach((tool, i) => {
-    console.log(`  ${i + 1}. ${tool.name} (${tool.id})`);
-  });
+  for (let i = 0; i < toolsConfig.tools.length; i++) {
+    const tool = toolsConfig.tools[i];
+    let toolName = tool.id || 'Unknown';
+    if (tool.config && await fs.pathExists(tool.config)) {
+      try {
+        const toolConfig = await readConfig(tool.config) as { name?: string };
+        toolName = toolConfig.name || tool.id || 'Unknown';
+      } catch {
+        // Use ID if config read fails
+      }
+    }
+    console.log(`  ${i + 1}. ${toolName} (${tool.id})`);
+  }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
@@ -2756,7 +2789,19 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
   for (const toolDef of toolsConfig.tools) {
     try {
       const environment = toolDef.env || 'prod';
-      console.log(`Deleting '${toolDef.name}' (${toolDef.id}) [${environment}]...`);
+      
+      // Read tool name from config if available
+      let toolName = toolDef.id || 'Unknown';
+      if (toolDef.config && await fs.pathExists(toolDef.config)) {
+        try {
+          const toolConfig = await readConfig(toolDef.config) as { name?: string };
+          toolName = toolConfig.name || toolDef.id || 'Unknown';
+        } catch {
+          // If reading fails, just use ID
+        }
+      }
+      
+      console.log(`Deleting '${toolName}' (${toolDef.id}) [${environment}]...`);
       
       // Delete from ElevenLabs
       if (toolDef.id) {
@@ -2779,7 +2824,7 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
       
       successCount++;
     } catch (error) {
-      console.error(`  Failed to delete '${toolDef.name}': ${error}`);
+      console.error(`  Failed to delete tool: ${error}`);
       failCount++;
     }
   }
@@ -2810,9 +2855,19 @@ async function deleteTest(testId: string): Promise<void> {
   }
   
   const testDef = testsConfig.tests[testIndex];
-  const testName = testDef.name;
   const configPath = testDef.config;
   const environment = testDef.env || 'prod';
+  
+  // Read test name from config if available
+  let testName = testId;
+  if (configPath && await fs.pathExists(configPath)) {
+    try {
+      const testConfig = await readConfig(configPath) as { name?: string };
+      testName = testConfig.name || testId;
+    } catch {
+      // If reading fails, just use ID
+    }
+  }
   
   console.log(`Deleting test '${testName}' (ID: ${testId}) [${environment}]...`);
   
@@ -2858,9 +2913,19 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
   
   // Show what will be deleted
   console.log(`\nFound ${testsConfig.tests.length} test(s) to delete:`);
-  testsConfig.tests.forEach((test, i) => {
-    console.log(`  ${i + 1}. ${test.name} (${test.id})`);
-  });
+  for (let i = 0; i < testsConfig.tests.length; i++) {
+    const test = testsConfig.tests[i];
+    let testName = test.id || 'Unknown';
+    if (test.config && await fs.pathExists(test.config)) {
+      try {
+        const testConfig = await readConfig(test.config) as { name?: string };
+        testName = testConfig.name || test.id || 'Unknown';
+      } catch {
+        // Use ID if config read fails
+      }
+    }
+    console.log(`  ${i + 1}. ${testName} (${test.id})`);
+  }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
@@ -2882,7 +2947,19 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
   for (const testDef of testsConfig.tests) {
     try {
       const environment = testDef.env || 'prod';
-      console.log(`Deleting '${testDef.name}' (${testDef.id}) [${environment}]...`);
+      
+      // Read test name from config if available
+      let testName = testDef.id || 'Unknown';
+      if (testDef.config && await fs.pathExists(testDef.config)) {
+        try {
+          const testConfig = await readConfig(testDef.config) as { name?: string };
+          testName = testConfig.name || testDef.id || 'Unknown';
+        } catch {
+          // If reading fails, just use ID
+        }
+      }
+      
+      console.log(`Deleting '${testName}' (${testDef.id}) [${environment}]...`);
       
       // Delete from ElevenLabs
       if (testDef.id) {
@@ -2905,7 +2982,7 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
       
       successCount++;
     } catch (error) {
-      console.error(`  Failed to delete '${testDef.name}': ${error}`);
+      console.error(`  Failed to delete test: ${error}`);
       failCount++;
     }
   }

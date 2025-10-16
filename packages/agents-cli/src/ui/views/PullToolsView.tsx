@@ -33,6 +33,7 @@ interface PullToolsViewProps {
   dryRun?: boolean;
   update?: boolean;
   all?: boolean;
+  environment: string;
   onComplete?: () => void;
 }
 
@@ -44,6 +45,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
   dryRun = false,
   update,
   all,
+  environment,
   onComplete
 }) => {
   const { exit } = useApp();
@@ -71,11 +73,8 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
           toolsConfig = await readToolsConfig(toolsConfigPath);
         }
 
-        const client = await getElevenLabsClient();
+        const client = await getElevenLabsClient(environment);
 
-        // Check existing tools
-        const existingToolNames = new Set(toolsConfig.tools.map(t => t.name));
-        
         // Build ID-based map for existing tools
         const existingToolIds = new Map(
           toolsConfig.tools.map((tool: ToolDefinition) => [tool.id, tool])
@@ -143,18 +142,8 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
                 status = 'skipped';
               } else {
                 // Default or --all: create new items
-                // Handle name conflicts
-                if (existingToolNames.has(toolName)) {
-                  let counter = 1;
-                  const originalName = toolName;
-                  while (existingToolNames.has(toolName)) {
-                    toolName = `${originalName}_${counter}`;
-                    counter++;
-                  }
-                }
                 action = 'create';
                 status = 'pending';
-                existingToolNames.add(toolName);
               }
             }
 
@@ -231,7 +220,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
       }
 
       try {
-        const client = await getElevenLabsClient();
+        const client = await getElevenLabsClient(environment);
         const toolDetails = await getToolApi(client, toolToPull.id);
 
         // Extract the tool_config from the response
@@ -256,7 +245,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
           // Update existing tool: use existing config path
           const existingTool = toolsConfig.tools[existingToolIndex];
           if (!existingTool.config) {
-            throw new Error(`Existing tool ${existingTool.name} has no config path`);
+            throw new Error(`Existing tool with ID ${existingTool.id} has no config path`);
           }
           configPath = existingTool.config;
           
@@ -285,10 +274,10 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
           await writeToolConfig(configFilePath, toolConfig as Tool);
 
           const newTool: ToolDefinition = {
-            name: toolToPull.name,
             type: toolType as 'webhook' | 'client',
             config: configPath,
-            id: toolToPull.id
+            id: toolToPull.id,
+            env: environment
           };
 
           toolsConfig.tools.push(newTool);

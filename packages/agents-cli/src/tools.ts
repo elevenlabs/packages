@@ -72,7 +72,6 @@ export interface ClientTool {
 export type Tool = WebhookTool | ClientTool;
 
 export interface ToolDefinition {
-  name: string;
   type: 'webhook' | 'client';
   config?: string;
   id?: string;

@@ -95,7 +95,6 @@ describe("Push Tools Integration Tests", () => {
       const toolsConfig: ToolsConfig = {
         tools: [
           {
-            name: "test-webhook",
             type: "webhook",
             config: "tool_configs/test_webhook.json",
           },
@@ -107,8 +106,8 @@ describe("Push Tools Integration Tests", () => {
       // Test that config can be read back
       const readConfig = await readToolsConfig(toolsConfigPath);
       expect(readConfig.tools).toHaveLength(1);
-      expect(readConfig.tools[0].name).toBe("test-webhook");
       expect(readConfig.tools[0].type).toBe("webhook");
+      expect(readConfig.tools[0].config).toBe("tool_configs/test_webhook.json");
     });
 
     it("should create client tool config correctly", async () => {
@@ -135,7 +134,6 @@ describe("Push Tools Integration Tests", () => {
       const toolsConfig: ToolsConfig = {
         tools: [
           {
-            name: "test-client",
             type: "client",
             config: "tool_configs/test_client.json",
           },
@@ -147,8 +145,8 @@ describe("Push Tools Integration Tests", () => {
       // Test that config can be read back
       const readConfig = await readToolsConfig(toolsConfigPath);
       expect(readConfig.tools).toHaveLength(1);
-      expect(readConfig.tools[0].name).toBe("test-client");
       expect(readConfig.tools[0].type).toBe("client");
+      expect(readConfig.tools[0].config).toBe("tool_configs/test_client.json");
     });
 
     it("should calculate config hash correctly", async () => {
@@ -272,7 +270,6 @@ describe("Push Tools Integration Tests", () => {
       const toolsConfig: ToolsConfig = {
         tools: [
           {
-            name: "missing-config-tool",
             type: "webhook",
             config: "non_existent_config.json",
           },
