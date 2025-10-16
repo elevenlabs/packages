@@ -1495,7 +1495,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
   
   // Load existing config
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
-  const existingAgentNames = new Set(agentsConfig.agents.map(agent => agent.name));
   
   let agentsList: unknown[];
   
@@ -1573,18 +1572,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
         operations.skip++;
       } else {
         // Default or --all: create new items
-        // Check for name conflicts
-        if (existingAgentNames.has(agentNameRemote)) {
-          let counter = 1;
-          const originalName = agentNameRemote;
-          while (existingAgentNames.has(agentNameRemote)) {
-            agentNameRemote = `${originalName}_${counter}`;
-            counter++;
-          }
-        }
         itemsToProcess.push({ action: 'create', agent: { id: agentId, name: agentNameRemote } });
         operations.create++;
-        existingAgentNames.add(agentNameRemote);
       }
     }
   }
@@ -1713,8 +1702,6 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
 
   const client = await getElevenLabsClient();
 
-  const existingToolNames = new Set(toolsConfig.tools.map(tool => tool.name));
-
   let filteredTools: unknown[];
 
   if (options.tool) {
@@ -1804,18 +1791,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
         operations.skip++;
       } else {
         // Default or --all: create new items
-        // Check for name conflicts
-        if (existingToolNames.has(toolNameRemote)) {
-          let counter = 1;
-          const originalName = toolNameRemote;
-          while (existingToolNames.has(toolNameRemote)) {
-            toolNameRemote = `${originalName}_${counter}`;
-            counter++;
-          }
-        }
         itemsToProcess.push({ action: 'create', tool: { id: toolId, name: toolNameRemote } });
         operations.create++;
-        existingToolNames.add(toolNameRemote);
       }
     }
   }
@@ -2230,9 +2207,6 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
 
   const client = await getElevenLabsClient();
 
-  // Load existing config
-  const existingTestNames = new Set(testsConfig.tests.map(test => test.name));
-
   let testsList: unknown[];
 
   if (options.test) {
@@ -2308,18 +2282,8 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
         operations.skip++;
       } else {
         // Default or --all: create new items
-        // Check for name conflicts
-        if (existingTestNames.has(testNameRemote)) {
-          let counter = 1;
-          const originalName = testNameRemote;
-          while (existingTestNames.has(testNameRemote)) {
-            testNameRemote = `${originalName}_${counter}`;
-            counter++;
-          }
-        }
         itemsToProcess.push({ action: 'create', test: { id: testId, name: testNameRemote } });
         operations.create++;
-        existingTestNames.add(testNameRemote);
       }
     }
   }
