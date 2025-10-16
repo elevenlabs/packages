@@ -1531,6 +1531,132 @@ describe("CLI End-to-End Tests", () => {
       );
       console.log(`✓ Complex pull scenario test completed successfully`);
     });
+
+    it("should preserve duplicate test names when pulling (only deduplicate filenames)", async () => {
+      const duplicateName = `e2e-duplicate-test-name-${Date.now()}`;
+      const testsJsonPath = path.join(pushPullTempDir, "tests.json");
+
+      console.log(
+        `Creating two tests with the same name '${duplicateName}'...`
+      );
+
+      // Step 1: Create first test with the name
+      const addResult1 = await runCli(
+        ["add-test", duplicateName, "--template", "basic-llm", "--no-ui"],
+        {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        }
+      );
+
+      expect(addResult1.exitCode).toBe(0);
+      expect(addResult1.stdout).toContain(`Created test in ElevenLabs`);
+
+      // Step 2: Create second test with the same name
+      const addResult2 = await runCli(
+        ["add-test", duplicateName, "--template", "basic-llm", "--no-ui"],
+        {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        }
+      );
+
+      expect(addResult2.exitCode).toBe(0);
+      expect(addResult2.stdout).toContain(`Created test in ElevenLabs`);
+
+      // Read tests.json to verify both tests were created
+      let testsConfig = JSON.parse(
+        await fs.readFile(testsJsonPath, "utf-8")
+      );
+
+      expect(testsConfig.tests).toHaveLength(2);
+      const test1 = testsConfig.tests[0];
+      const test2 = testsConfig.tests[1];
+
+      expect(test1.name).toBe(duplicateName);
+      expect(test2.name).toBe(duplicateName);
+      expect(test1.id).toBeTruthy();
+      expect(test2.id).toBeTruthy();
+      expect(test1.id).not.toBe(test2.id); // Different IDs
+
+      console.log(
+        `✓ Created two tests: '${test1.name}' (${test1.id}) and '${test2.name}' (${test2.id})`
+      );
+
+      // Step 3: Delete the first test locally (remove from tests.json and delete config file)
+      const test1ConfigPath = path.join(pushPullTempDir, test1.config);
+      await fs.remove(test1ConfigPath);
+
+      testsConfig.tests = testsConfig.tests.filter(
+        (t: any) => t.id !== test1.id
+      );
+      await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
+
+      console.log(`✓ Deleted first test locally (ID: ${test1.id})`);
+
+      // Verify only one test remains locally
+      testsConfig = JSON.parse(
+        await fs.readFile(testsJsonPath, "utf-8")
+      );
+      expect(testsConfig.tests).toHaveLength(1);
+      expect(testsConfig.tests[0].id).toBe(test2.id);
+
+      // Step 4: Pull tests from remote
+      console.log(`Pulling tests from remote...`);
+      const pullResult = await runCli(["pull-tests", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n", // Answer the "Proceed?" prompt
+      });
+
+      expect(pullResult.exitCode).toBe(0);
+
+      // Step 5: Verify both tests are now present locally with the same name
+      testsConfig = JSON.parse(
+        await fs.readFile(testsJsonPath, "utf-8")
+      );
+
+      expect(testsConfig.tests).toHaveLength(2);
+
+      // Find the pulled tests by ID
+      const pulledTest1 = testsConfig.tests.find(
+        (t: any) => t.id === test1.id
+      );
+      const pulledTest2 = testsConfig.tests.find(
+        (t: any) => t.id === test2.id
+      );
+
+      expect(pulledTest1).toBeTruthy();
+      expect(pulledTest2).toBeTruthy();
+
+      // CRITICAL: Both should have the same name (not deduplicated like test_1, test_2)
+      expect(pulledTest1.name).toBe(duplicateName);
+      expect(pulledTest2.name).toBe(duplicateName);
+
+      console.log(
+        `✓ Both tests preserved the same name: '${pulledTest1.name}' and '${pulledTest2.name}'`
+      );
+
+      // Step 6: Verify filenames are deduplicated (e.g., test.json and test-1.json)
+      const configPath1 = pulledTest1.config;
+      const configPath2 = pulledTest2.config;
+
+      expect(configPath1).not.toBe(configPath2); // Different config file paths
+      expect(await fs.pathExists(path.join(pushPullTempDir, configPath1))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(pushPullTempDir, configPath2))).toBe(
+        true
+      );
+
+      console.log(
+        `✓ Config filenames are different: '${configPath1}' and '${configPath2}'`
+      );
+
+      console.log(
+        `✓ Test completed: Duplicate test names preserved, filenames deduplicated`
+      );
+    });
   });
 
   // Push/Pull Integration Tests - Tools
@@ -2018,6 +2144,159 @@ describe("CLI End-to-End Tests", () => {
         );
         console.log(`✓ Complex pull scenario test completed successfully for ${toolType} tools`);
       });
+    });
+
+    it("should preserve duplicate tool names when pulling (only deduplicate filenames)", async () => {
+      const duplicateName = `e2e-duplicate-tool-name-${Date.now()}`;
+      const toolsJsonPath = path.join(pushPullTempDir, "tools.json");
+
+      console.log(
+        `Creating two tools with the same name '${duplicateName}'...`
+      );
+
+      // Step 1: Create first tool with the name
+      const addResult1 = await runCli(
+        ["add-webhook-tool", duplicateName],
+        {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        }
+      );
+
+      expect(addResult1.exitCode).toBe(0);
+      expect(addResult1.stdout).toContain(`Created webhook tool in ElevenLabs`);
+
+      // Step 2: Create second tool with the same name
+      const addResult2 = await runCli(
+        ["add-webhook-tool", duplicateName],
+        {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        }
+      );
+
+      expect(addResult2.exitCode).toBe(0);
+      expect(addResult2.stdout).toContain(`Created webhook tool in ElevenLabs`);
+
+      // Read tools.json to verify both tools were created
+      let toolsConfig = JSON.parse(
+        await fs.readFile(toolsJsonPath, "utf-8")
+      );
+
+      expect(toolsConfig.tools.length).toBeGreaterThanOrEqual(2);
+      
+      // Find our duplicate tools
+      const duplicateTools = toolsConfig.tools.filter(
+        (t: any) => t.name === duplicateName
+      );
+      expect(duplicateTools).toHaveLength(2);
+      
+      const tool1 = duplicateTools[0];
+      const tool2 = duplicateTools[1];
+
+      expect(tool1.name).toBe(duplicateName);
+      expect(tool2.name).toBe(duplicateName);
+      expect(tool1.id).toBeTruthy();
+      expect(tool2.id).toBeTruthy();
+      expect(tool1.id).not.toBe(tool2.id); // Different IDs
+
+      console.log(
+        `✓ Created two tools: '${tool1.name}' (${tool1.id}) and '${tool2.name}' (${tool2.id})`
+      );
+
+      // Step 3: Delete the first tool locally (remove from tools.json and delete config file)
+      const tool1ConfigPath = path.join(pushPullTempDir, tool1.config);
+      await fs.remove(tool1ConfigPath);
+
+      toolsConfig.tools = toolsConfig.tools.filter(
+        (t: any) => t.id !== tool1.id
+      );
+      await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
+
+      console.log(`✓ Deleted first tool locally (ID: ${tool1.id})`);
+
+      // Verify the first tool is no longer in tools.json
+      toolsConfig = JSON.parse(
+        await fs.readFile(toolsJsonPath, "utf-8")
+      );
+      const remainingDuplicateTools = toolsConfig.tools.filter(
+        (t: any) => t.name === duplicateName
+      );
+      expect(remainingDuplicateTools).toHaveLength(1);
+      expect(remainingDuplicateTools[0].id).toBe(tool2.id);
+
+      // Step 4: Pull tools from remote
+      console.log(`Pulling tools from remote...`);
+      const pullResult = await runCli(["pull-tools", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n", // Answer the "Proceed?" prompt
+      });
+
+      expect(pullResult.exitCode).toBe(0);
+
+      // Step 5: Verify both tools are now present locally with the same name
+      toolsConfig = JSON.parse(
+        await fs.readFile(toolsJsonPath, "utf-8")
+      );
+
+      const allDuplicateTools = toolsConfig.tools.filter(
+        (t: any) => t.name === duplicateName
+      );
+      expect(allDuplicateTools).toHaveLength(2);
+
+      // Find the pulled tools by ID
+      const pulledTool1 = toolsConfig.tools.find(
+        (t: any) => t.id === tool1.id
+      );
+      const pulledTool2 = toolsConfig.tools.find(
+        (t: any) => t.id === tool2.id
+      );
+
+      expect(pulledTool1).toBeTruthy();
+      expect(pulledTool2).toBeTruthy();
+
+      // CRITICAL: Both should have the same name (not deduplicated like tool_1, tool_2)
+      expect(pulledTool1.name).toBe(duplicateName);
+      expect(pulledTool2.name).toBe(duplicateName);
+
+      console.log(
+        `✓ Both tools preserved the same name: '${pulledTool1.name}' and '${pulledTool2.name}'`
+      );
+
+      // Step 6: Verify filenames are deduplicated (e.g., tool.json and tool-1.json)
+      const pulledConfigPath1 = pulledTool1.config;
+      const pulledConfigPath2 = pulledTool2.config;
+
+      expect(pulledConfigPath1).not.toBe(pulledConfigPath2); // Different config file paths
+      expect(await fs.pathExists(path.join(pushPullTempDir, pulledConfigPath1))).toBe(
+        true
+      );
+      expect(await fs.pathExists(path.join(pushPullTempDir, pulledConfigPath2))).toBe(
+        true
+      );
+
+      console.log(
+        `✓ Config filenames are different: '${pulledConfigPath1}' and '${pulledConfigPath2}'`
+      );
+
+      // Verify the configs also have the same name field
+      const config1 = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledConfigPath1), "utf-8")
+      );
+      const config2 = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledConfigPath2), "utf-8")
+      );
+
+      expect(config1.name).toBe(duplicateName);
+      expect(config2.name).toBe(duplicateName);
+
+      console.log(
+        `✓ Tool names preserved in config files: '${config1.name}' and '${config2.name}'`
+      );
+      console.log(
+        `✓ Test completed: Duplicate tool names preserved, filenames deduplicated`
+      );
     });
   });
 });

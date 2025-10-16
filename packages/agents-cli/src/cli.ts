@@ -1068,15 +1068,6 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     console.log(`Created ${TOOLS_CONFIG_FILE}`);
   }
   
-  // Check if tool already exists
-  const existingTool = toolsConfig.tools.find(tool => tool.name === name);
-  
-  if (existingTool && existingTool.id) {
-    // Check if the tool already has an ID in the index file
-    console.error(`Tool '${name}' already exists with ID: ${existingTool.id}`);
-    process.exit(1);
-  }
-  
   // Create tool config using appropriate template (in memory first)
   let toolConfig;
   if (type === 'webhook') {
@@ -1145,18 +1136,16 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     await writeToolConfig(configFilePath, toolConfig);
     console.log(`Created config file: ${configPath}`);
     
-    // Add to tools.json if not already present
-    if (!existingTool) {
-      const newTool: ToolDefinition = {
-        name,
-        type,
-        config: configPath,
-        id: toolId
-      };
-      toolsConfig.tools.push(newTool);
-      await writeToolsConfig(toolsConfigPath, toolsConfig);
-      console.log(`Added tool '${name}' to tools.json`);
-    }
+    // Add to tools.json
+    const newTool: ToolDefinition = {
+      name,
+      type,
+      config: configPath,
+      id: toolId
+    };
+    toolsConfig.tools.push(newTool);
+    await writeToolsConfig(toolsConfigPath, toolsConfig);
+    console.log(`Added tool '${name}' to tools.json`);
     
     console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
     
@@ -1915,15 +1904,6 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     console.log(`Created ${TESTS_CONFIG_FILE}`);
   }
 
-  // Check if test already exists
-  const existingTest = testsConfig.tests.find(test => test.name === name);
-
-  if (existingTest && existingTest.id) {
-    // Check if the test already has an ID in the index file
-    console.error(`Test '${name}' already exists with ID: ${existingTest.id}`);
-    process.exit(1);
-  }
-
   // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
 
@@ -1950,17 +1930,15 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
     // Add to tests.json if not already present
-    if (!existingTest) {
-      const newTest: TestDefinition = {
-        name,
-        config: configPath,
-        type: templateType,
-        id: testId
-      };
-      testsConfig.tests.push(newTest);
-      await writeConfig(testsConfigPath, testsConfig);
-      console.log(`Added test '${name}' to tests.json`);
-    }
+    const newTest: TestDefinition = {
+      name,
+      config: configPath,
+      type: templateType,
+      id: testId
+    };
+    testsConfig.tests.push(newTest);
+    await writeConfig(testsConfigPath, testsConfig);
+    console.log(`Added test '${name}' to tests.json`);
 
     console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
 
