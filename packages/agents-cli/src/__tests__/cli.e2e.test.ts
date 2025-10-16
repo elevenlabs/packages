@@ -1392,4 +1392,492 @@ describe("CLI End-to-End Tests", () => {
       console.log(`✓ Complex pull scenario test completed successfully`);
     });
   });
+
+  // Push/Pull Integration Tests - Tools
+  describeIfApiKey("[integration write] full cycle tools", () => {
+    let pushPullTempDir: string;
+
+    beforeAll(async () => {
+      // One-time cleanup: Pull all tools and delete them to ensure clean state
+      console.log("One-time cleanup: Removing all remote tools before tests...");
+      
+      // Create temporary directory for cleanup
+      const cleanupTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tools-e2e-cleanup-"));
+      
+      try {
+        // Initialize project
+        await runCli(["init", "--no-ui"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+        });
+
+        // Login
+        const apiKey = process.env.ELEVENLABS_API_KEY!;
+        await runCli(["login", "--no-ui"], {
+          cwd: cleanupTempDir,
+          input: `${apiKey}\n`,
+          includeApiKey: true,
+        });
+
+        // Pull all tools from remote
+        await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+
+        // Delete all tools at once
+        try {
+          await runCli(["delete-tool", "--all", "--no-ui"], {
+            cwd: cleanupTempDir,
+            includeApiKey: true,
+            input: "y\n", // Answer the "Are you sure?" prompt
+          });
+          console.log("✓ Cleaned up all tools, starting with empty state");
+        } catch (error) {
+          console.warn(`Failed to delete tools: ${error}`);
+        }
+      } finally {
+        // Clean up temporary directory
+        await fs.remove(cleanupTempDir);
+      }
+    });
+
+    beforeEach(async () => {
+      // Create a temporary directory for each test
+      pushPullTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tools-e2e-pushpull-"));
+
+      // Initialize project
+      await runCli(["init", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      // Login
+      const apiKey = process.env.ELEVENLABS_API_KEY!;
+      await runCli(["login", "--no-ui"], {
+        cwd: pushPullTempDir,
+        input: `${apiKey}\n`,
+        includeApiKey: true,
+      });
+    });
+
+    afterEach(async () => {
+      // Skip cleanup if beforeEach failed before creating temp directory
+      if (!pushPullTempDir) {
+        return;
+      }
+
+      // Clean up tools created during the test
+      console.log("Cleaning up tools after test...");
+      
+      // Pull all tools to ensure we have the current server state
+      try {
+        await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+      } catch (error) {
+        console.warn(`Failed to pull tools: ${error}`);
+      }
+
+      // Delete all tools at once
+      try {
+        await runCli(["delete-tool", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Are you sure?" prompt
+        });
+        console.log("Deleted all tools");
+      } catch (error) {
+        console.warn(`Failed to delete tools: ${error}`);
+      }
+
+      // Clean up temp directory
+      await fs.remove(pushPullTempDir);
+    });
+
+    // Helper to get the add command for a tool type
+    const getAddCommand = (toolType: 'webhook' | 'client') => 
+      toolType === 'webhook' ? 'add-webhook-tool' : 'add-client-tool';
+
+    // Test 1: Run for both webhook and client tools
+    (['webhook', 'client'] as const).forEach((toolType) => {
+      it(`should verify ${toolType} tool created by add is the only one after pull (--no-ui)`, async () => {
+        // Create a tool using add command
+        const toolName = `e2e-pushpull-${toolType}-${Date.now()}`;
+        const addResult = await runCli([
+          getAddCommand(toolType),
+          toolName,
+        ], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        });
+
+        expect(addResult.exitCode).toBe(0);
+        expect(addResult.stdout).toContain(`Created ${toolType} tool`);
+
+        // Read tools.json to get the tool ID
+        const toolsJsonPath = path.join(pushPullTempDir, "tools.json");
+        let toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+
+        expect(toolsConfig.tools).toHaveLength(1);
+        const createdTool = toolsConfig.tools[0];
+        expect(createdTool.name).toBe(toolName);
+        expect(createdTool.id).toBeTruthy();
+
+        // Clear local tools.json to simulate fresh pull
+        await fs.writeFile(
+          toolsJsonPath,
+          JSON.stringify({ tools: [] }, null, 2)
+        );
+
+        // Pull all tools from remote
+        const pullResult = await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+
+        expect(pullResult.exitCode).toBe(0);
+
+        // Read tools.json again after pull
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+
+        // Verify exactly 1 tool exists (the one we created)
+        expect(toolsConfig.tools).toHaveLength(1);
+        expect(toolsConfig.tools[0].name).toBe(toolName);
+        expect(toolsConfig.tools[0].id).toBe(createdTool.id);
+
+        console.log(`✓ Verified ${toolType} tool '${toolName}' is the only tool after pull`);
+
+        // Clean up: delete the tool
+        await runCli(["delete-tool", createdTool.id, "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        });
+      });
+    });
+
+    // Test 2: Run for both webhook and client tools
+    (['webhook', 'client'] as const).forEach((toolType) => {
+      it(`should complete full cycle for ${toolType} tool: create -> pull -> compare -> delete -> verify empty (--no-ui)`, async () => {
+        const toolName = `e2e-full-cycle-${toolType}-${Date.now()}`;
+        const toolsJsonPath = path.join(pushPullTempDir, "tools.json");
+        
+        // Step 1: Create tool locally using add command
+        const addResult = await runCli([
+          getAddCommand(toolType),
+          toolName,
+        ], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        });
+
+        expect(addResult.exitCode).toBe(0);
+        expect(addResult.stdout).toContain(`Created ${toolType} tool`);
+
+        // Read the created tool config
+        let toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        expect(toolsConfig.tools).toHaveLength(1);
+        const createdTool = toolsConfig.tools[0];
+        const createdToolId = createdTool.id;
+        const createdToolConfigPath = path.join(pushPullTempDir, createdTool.config);
+        const originalConfig = JSON.parse(
+          await fs.readFile(createdToolConfigPath, "utf-8")
+        );
+
+        console.log(`✓ Created ${toolType} tool '${toolName}' with ID ${createdToolId}`);
+        
+        // Step 2: Clear local tools.json and config files to simulate fresh environment
+        await fs.writeFile(
+          toolsJsonPath,
+          JSON.stringify({ tools: [] }, null, 2)
+        );
+        await fs.remove(createdToolConfigPath);
+
+        // Step 3: Pull all tools from remote
+        const pullResult = await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n", // Answer the "Proceed?" prompt
+        });
+
+        expect(pullResult.exitCode).toBe(0);
+        console.log(`✓ Pulled tools from remote`);
+
+        // Step 4: Compare pulled tool matches created tool
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+
+        expect(toolsConfig.tools).toHaveLength(1);
+        const pulledTool = toolsConfig.tools[0];
+        expect(pulledTool.name).toBe(toolName);
+        expect(pulledTool.id).toBe(createdToolId);
+
+        // Compare config files
+        const pulledConfigPath = path.join(pushPullTempDir, pulledTool.config);
+        expect(await fs.pathExists(pulledConfigPath)).toBe(true);
+        const pulledConfig = JSON.parse(
+          await fs.readFile(pulledConfigPath, "utf-8")
+        );
+
+        // Compare key fields (name and type)
+        expect(pulledConfig.name).toBe(originalConfig.name);
+        expect(pulledConfig.type).toBe(toolType);
+        expect(pulledConfig.description).toBeDefined();
+
+        console.log(`✓ Pulled ${toolType} tool config matches original`);
+
+        // Step 5: Delete the tool
+        const deleteResult = await runCli(["delete-tool", createdToolId, "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+        });
+
+        expect(deleteResult.exitCode).toBe(0);
+        console.log(`✓ Deleted ${toolType} tool '${toolName}'`);
+
+        // Step 6: Pull again and verify no tools exist
+        await fs.writeFile(
+          toolsJsonPath,
+          JSON.stringify({ tools: [] }, null, 2)
+        );
+
+        const finalPullResult = await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        expect(finalPullResult.exitCode).toBe(0);
+
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+
+        expect(toolsConfig.tools).toHaveLength(0);
+        console.log(`✓ Verified no tools exist after deletion`);
+      });
+    });
+
+    // Test 3: Run for both webhook and client tools
+    (['webhook', 'client'] as const).forEach((toolType) => {
+      it(`should handle complex pull scenarios for ${toolType} tools with local modifications and deletions (--no-ui)`, async () => {
+        const timestamp = Date.now();
+        const toolNames = [
+          `e2e-complex-first-${toolType}-${timestamp}`,
+          `e2e-complex-second-${toolType}-${timestamp}`,
+          `e2e-complex-third-${toolType}-${timestamp}`,
+        ];
+        const toolsJsonPath = path.join(pushPullTempDir, "tools.json");
+
+        // Step (a) & (b): Create 3 tools using add command
+        console.log(`Step (a) & (b): Creating 3 ${toolType} tools...`);
+        
+        for (const toolName of toolNames) {
+          const addResult = await runCli([
+            getAddCommand(toolType),
+            toolName,
+          ], {
+            cwd: pushPullTempDir,
+            includeApiKey: true,
+          });
+          expect(addResult.exitCode).toBe(0);
+        }
+
+        // Read tools.json to get the assigned IDs and config paths
+        let toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        expect(toolsConfig.tools).toHaveLength(3);
+        const tool1Id = toolsConfig.tools[0].id;
+        const tool2Id = toolsConfig.tools[1].id;
+        const tool3Id = toolsConfig.tools[2].id;
+        expect(tool1Id).toBeTruthy();
+        expect(tool2Id).toBeTruthy();
+        expect(tool3Id).toBeTruthy();
+        
+        const configPaths = [
+          path.join(pushPullTempDir, toolsConfig.tools[0].config),
+          path.join(pushPullTempDir, toolsConfig.tools[1].config),
+          path.join(pushPullTempDir, toolsConfig.tools[2].config),
+        ];
+        
+        console.log(`✓ Created 3 ${toolType} tools with IDs: ${tool1Id}, ${tool2Id}, ${tool3Id}`);
+
+        // Step (c): Modify first tool locally
+        console.log("Step (c): Modifying first tool locally...");
+        const tool1Config = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        tool1Config.description = "MODIFIED LOCALLY";
+        await fs.writeFile(configPaths[0], JSON.stringify(tool1Config, null, 2));
+
+        // Step (d): Pull -> check that nothing changed
+        console.log("Step (d): Pulling without --all, expecting no changes...");
+        const pullResult1 = await runCli(["pull-tools", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        expect(pullResult1.exitCode).toBe(0);
+
+        // Verify first tool still has local modifications
+        const tool1ConfigAfterPull1 = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        expect(tool1ConfigAfterPull1.description).toBe("MODIFIED LOCALLY");
+        console.log(`✓ First tool retained local modifications`);
+
+        // Step (e): Remove local version of third tool
+        console.log("Step (e): Removing local version of third tool...");
+        await fs.remove(configPaths[2]);
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        toolsConfig.tools = toolsConfig.tools.filter(
+          (t: any) => t.name !== toolNames[2]
+        );
+        await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
+
+        // Step (f): Pull -> check that first two didn't change, third was pulled
+        console.log(
+          "Step (f): Pulling to restore third tool, first two unchanged..."
+        );
+        const pullResult2 = await runCli(["pull-tools", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        expect(pullResult2.exitCode).toBe(0);
+
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        expect(toolsConfig.tools).toHaveLength(3);
+
+        // First tool should still have modifications
+        const tool1ConfigAfterPull2 = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        expect(tool1ConfigAfterPull2.description).toBe("MODIFIED LOCALLY");
+
+        // Third tool should be pulled back
+        expect(await fs.pathExists(configPaths[2])).toBe(true);
+        console.log(`✓ Third tool restored, first two unchanged`);
+
+        // Step (g): Remove local version of third tool again
+        console.log("Step (g): Removing local version of third tool again...");
+        await fs.remove(configPaths[2]);
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        toolsConfig.tools = toolsConfig.tools.filter(
+          (t: any) => t.name !== toolNames[2]
+        );
+        await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
+
+        // Step (h): Pull --update -> check that first got overridden, second didn't change, third didn't appear
+        console.log(
+          "Step (h): Pulling with --update, expecting first to be overridden..."
+        );
+        const pullResult3 = await runCli(["pull-tools", "--update", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        expect(pullResult3.exitCode).toBe(0);
+
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        // Should still have only 2 tools (first and second)
+        expect(toolsConfig.tools).toHaveLength(2);
+
+        // First tool should be overridden (no longer has local modifications)
+        const tool1ConfigAfterUpdate = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        expect(tool1ConfigAfterUpdate.description).not.toBe("MODIFIED LOCALLY");
+        expect(tool1ConfigAfterUpdate.description).toBe(`${toolNames[0]} ${toolType} tool`);
+
+        // Third tool should NOT be pulled (--update doesn't add missing tools)
+        expect(await fs.pathExists(configPaths[2])).toBe(false);
+        console.log(
+          `✓ First tool overridden, second unchanged, third not restored`
+        );
+
+        // Step (i): Modify first two locally, remove local version of third
+        console.log("Step (i): Modifying first two locally...");
+        const tool1ConfigMod = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        tool1ConfigMod.description = "MODIFIED AGAIN LOCALLY";
+        await fs.writeFile(configPaths[0], JSON.stringify(tool1ConfigMod, null, 2));
+
+        const tool2Config = JSON.parse(
+          await fs.readFile(configPaths[1], "utf-8")
+        );
+        tool2Config.description = "MODIFIED LOCALLY TOO";
+        await fs.writeFile(configPaths[1], JSON.stringify(tool2Config, null, 2));
+
+        // Third is already removed from step (g)
+
+        // Step (j): Pull --all -> check that first two got overridden, third was pulled
+        console.log(
+          "Step (j): Pulling with --all, expecting all overridden and third restored..."
+        );
+        const pullResult4 = await runCli(["pull-tools", "--all", "--no-ui"], {
+          cwd: pushPullTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        expect(pullResult4.exitCode).toBe(0);
+
+        toolsConfig = JSON.parse(
+          await fs.readFile(toolsJsonPath, "utf-8")
+        );
+        expect(toolsConfig.tools).toHaveLength(3);
+
+        // First tool should be overridden
+        const tool1ConfigFinal = JSON.parse(
+          await fs.readFile(configPaths[0], "utf-8")
+        );
+        expect(tool1ConfigFinal.description).not.toBe("MODIFIED AGAIN LOCALLY");
+        expect(tool1ConfigFinal.description).toBe(`${toolNames[0]} ${toolType} tool`);
+
+        // Second tool should be overridden
+        const tool2ConfigFinal = JSON.parse(
+          await fs.readFile(configPaths[1], "utf-8")
+        );
+        expect(tool2ConfigFinal.description).not.toBe("MODIFIED LOCALLY TOO");
+        expect(tool2ConfigFinal.description).toBe(`${toolNames[1]} ${toolType} tool`);
+
+        // Third tool should be pulled back
+        expect(await fs.pathExists(configPaths[2])).toBe(true);
+        const tool3ConfigFinal = JSON.parse(
+          await fs.readFile(configPaths[2], "utf-8")
+        );
+        expect(tool3ConfigFinal.description).toBe(`${toolNames[2]} ${toolType} tool`);
+
+        console.log(
+          `✓ All ${toolType} tools overridden to remote state, third tool restored`
+        );
+        console.log(`✓ Complex pull scenario test completed successfully for ${toolType} tools`);
+      });
+    });
+  });
 });
