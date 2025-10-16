@@ -7,9 +7,10 @@ import { isLoggedIn, removeApiKey } from '../../config.js';
 
 interface LogoutViewProps {
   onComplete?: () => void;
+  environment?: string;
 }
 
-export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
+export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete, environment = 'prod' }) => {
   const { exit } = useApp();
   const [confirming, setConfirming] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -29,7 +30,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const loggedIn = await isLoggedIn();
+      const loggedIn = await isLoggedIn(environment);
       if (!loggedIn) {
         setNotLoggedIn(true);
         setConfirming(false);
@@ -44,14 +45,14 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
     };
 
     checkLoginStatus();
-  }, [exit, onComplete]);
+  }, [exit, onComplete, environment]);
 
   const handleLogout = async () => {
     setConfirming(false);
     setProcessing(true);
 
     try {
-      await removeApiKey();
+      await removeApiKey(environment);
       setProcessing(false);
       setSuccess(true);
 
@@ -78,7 +79,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
             <StatusCard
               title="Not Logged In"
               status="warning"
-              message="You are not currently logged in"
+              message={`You are not logged in to environment '${environment}'`}
             />
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
@@ -91,10 +92,10 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
             <StatusCard
               title="Confirm Logout"
               status="warning"
-              message="Are you sure you want to logout?"
+              message={`Logout from environment '${environment}'?`}
               details={[
-                "This will remove your stored API key",
-                "You'll need to login again to use the CLI"
+                "This will remove your stored API key for this environment",
+                "You'll need to login again to use the CLI with this environment"
               ]}
             />
             
@@ -108,14 +109,14 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
           <StatusCard
             title="Logging Out"
             status="loading"
-            message="Removing stored credentials..."
+            message={`Removing credentials for '${environment}'...`}
           />
         ) : success ? (
           <>
             <StatusCard
               title="Logout Successful"
               status="success"
-              message="You have been logged out"
+              message={`Logged out from '${environment}'`}
             />
             
             <Box marginTop={1}>
@@ -126,7 +127,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete }) => {
             
             <Box marginTop={1}>
               <Text color={theme.colors.text.secondary}>
-                Run 'agents login' to authenticate again
+                Run 'agents login --env {environment}' to authenticate again
               </Text>
             </Box>
           </>

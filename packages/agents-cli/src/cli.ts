@@ -351,25 +351,28 @@ program
 program
   .command('logout')
   .description('Logout and remove stored API key')
+  .option('--env <environment>', 'Environment to logout from', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: { ui: boolean }) => {
+  .action(async (options: { ui: boolean; env: string }) => {
     try {
+      const environment = options.env || 'prod';
+      
       if (options.ui !== false) {
         // Use Ink UI for logout
         const { waitUntilExit } = render(
-          React.createElement(LogoutView)
+          React.createElement(LogoutView, { environment })
         );
         await waitUntilExit();
       } else {
         // Fallback to text-based logout
-        const loggedIn = await isLoggedIn();
+        const loggedIn = await isLoggedIn(environment);
         if (!loggedIn) {
-          console.log('You are not logged in');
+          console.log(`You are not logged in to environment '${environment}'`);
           return;
         }
         
-        await removeApiKey();
-        console.log('Logged out successfully. API key removed.');
+        await removeApiKey(environment);
+        console.log(`Logged out successfully from environment '${environment}'. API key removed.`);
       }
     } catch (error) {
       console.error(`Error during logout: ${error}`);
@@ -391,25 +394,35 @@ program
         await waitUntilExit();
       } else {
         // Fallback to text-based output
-        const loggedIn = await isLoggedIn();
-        const apiKey = await getApiKey();
+        const { listEnvironments } = await import('./config.js');
         const residency = await getResidency();
         
-        if (loggedIn && apiKey) {
-          const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
-          console.log(`Logged in with API key: ${maskedKey}`);
-          
-          // Show source of API key
-          if (process.env.ELEVENLABS_API_KEY) {
-            console.log('Source: Environment variable');
-          } else {
-            console.log('Source: Config file');
-          }
-          
+        // Check if using environment variable
+        if (process.env.ELEVENLABS_API_KEY) {
+          const maskedKey = process.env.ELEVENLABS_API_KEY.slice(0, 8) + '...' + process.env.ELEVENLABS_API_KEY.slice(-4);
+          console.log('Logged in with API key from environment variable:');
+          console.log(`  prod: ${maskedKey}`);
           console.log(`Residency: ${residency}`);
         } else {
-          console.log('Not logged in');
-          console.log('Use "agents login" to authenticate');
+          // Load all configured environments
+          const environments = await listEnvironments();
+          
+          if (environments.length > 0) {
+            console.log(`Logged in to ${environments.length} environment${environments.length > 1 ? 's' : ''}:`);
+            
+            for (const env of environments) {
+              const apiKey = await getApiKey(env);
+              if (apiKey) {
+                const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+                console.log(`  ${env}: ${maskedKey}`);
+              }
+            }
+            
+            console.log(`Residency: ${residency}`);
+          } else {
+            console.log('Not logged in');
+            console.log('Use "agents login" to authenticate');
+          }
         }
       }
     } catch (error) {

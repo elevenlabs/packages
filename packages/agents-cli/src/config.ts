@@ -10,8 +10,11 @@ import {
   storeApiKey,
   retrieveApiKey,
   removeApiKey as removeStoredApiKey,
-  hasApiKey
+  hasApiKey,
+  listEnvironments
 } from './auth.js';
+
+export { listEnvironments };
 export const LOCATIONS = ["us", "global", "eu-residency", "in-residency"] as const;
 export type Location = (typeof LOCATIONS)[number];
 

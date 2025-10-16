@@ -3,35 +3,54 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import theme from '../themes/elevenlabs.js';
-import { isLoggedIn, getApiKey, getResidency } from '../../config.js';
+import { getApiKey, getResidency, listEnvironments } from '../../config.js';
 
 interface WhoamiViewProps {
   onComplete?: () => void;
 }
 
+interface EnvironmentInfo {
+  name: string;
+  maskedKey: string;
+}
+
 export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
   const { exit } = useApp();
   const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [maskedKey, setMaskedKey] = useState<string | null>(null);
+  const [environments, setEnvironments] = useState<EnvironmentInfo[]>([]);
   const [residency, setResidency] = useState<string | null>(null);
+  const [usingEnvVar, setUsingEnvVar] = useState(false);
 
   useEffect(() => {
     const loadStatus = async () => {
       try {
-        const isLogged = await isLoggedIn();
-        setLoggedIn(isLogged);
+        // Check if using environment variable
+        const hasEnvVar = !!process.env.ELEVENLABS_API_KEY;
+        setUsingEnvVar(hasEnvVar);
         
-        if (isLogged) {
-          const apiKey = await getApiKey();
-          if (apiKey) {
-            // Mask the API key for security
-            setMaskedKey(apiKey.slice(0, 8) + '...' + apiKey.slice(-4));
+        if (hasEnvVar) {
+          // If using env var, show it for prod environment only
+          const apiKey = process.env.ELEVENLABS_API_KEY!;
+          const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+          setEnvironments([{ name: 'prod (from env)', maskedKey }]);
+        } else {
+          // Load all configured environments
+          const envs = await listEnvironments();
+          const envInfo: EnvironmentInfo[] = [];
+          
+          for (const env of envs) {
+            const apiKey = await getApiKey(env);
+            if (apiKey) {
+              const maskedKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+              envInfo.push({ name: env, maskedKey });
+            }
           }
           
-          const res = await getResidency();
-          setResidency(res);
+          setEnvironments(envInfo);
         }
+        
+        const res = await getResidency();
+        setResidency(res);
         
         setLoading(false);
       } catch (error) {
@@ -64,41 +83,50 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
             status="loading"
             message="Checking authentication status..."
           />
-        ) : loggedIn ? (
+        ) : environments.length > 0 ? (
           <>
             <StatusCard
               title="Authentication Status"
               status="success"
-              message="Logged in to ElevenLabs"
+              message={`Logged in to ${environments.length} environment${environments.length > 1 ? 's' : ''}`}
               details={[
-                `API Key: ${maskedKey}`,
-                `Residency: ${residency || 'Not set'}`
+                `Total environments: ${environments.length}`,
+                `Residency: ${residency || 'Global'}`
               ]}
             />
             
             <Box marginTop={1} flexDirection="column" gap={1}>
               <Box>
                 <Text color={theme.colors.text.primary}>
-                  Account Details:
+                  Configured Environments:
                 </Text>
               </Box>
               
               <Box marginLeft={2} flexDirection="column">
-                <Text color={theme.colors.text.secondary}>
-                  • API Key: <Text color={theme.colors.accent.primary}>{maskedKey}</Text>
-                </Text>
-                <Text color={theme.colors.text.secondary}>
-                  • Region: <Text color={theme.colors.accent.primary}>{residency || 'Global'}</Text>
-                </Text>
-                <Text color={theme.colors.text.secondary}>
-                  • Status: <Text color={theme.colors.success}>Active</Text>
-                </Text>
+                {environments.map((env, index) => (
+                  <Text key={index} color={theme.colors.text.secondary}>
+                    • <Text color={theme.colors.accent.primary} bold>{env.name}</Text>
+                    {': '}
+                    <Text color={theme.colors.text.muted}>{env.maskedKey}</Text>
+                  </Text>
+                ))}
               </Box>
+            </Box>
+
+            <Box marginTop={1} flexDirection="column">
+              <Text color={theme.colors.text.secondary}>
+                • Region: <Text color={theme.colors.accent.primary}>{residency || 'Global'}</Text>
+              </Text>
+              {usingEnvVar && (
+                <Text color={theme.colors.warning}>
+                  • Source: <Text color={theme.colors.accent.primary}>Environment Variable</Text>
+                </Text>
+              )}
             </Box>
 
             <Box marginTop={1}>
               <Text color={theme.colors.text.muted}>
-                Use 'agents logout' to sign out
+                Use 'agents logout --env &lt;name&gt;' to sign out from specific environment
               </Text>
             </Box>
           </>
