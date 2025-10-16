@@ -114,7 +114,7 @@ export const PushView: React.FC<PushViewProps> = ({
 
             // Store agent ID in agents.json index file
             const agentsConfig = await readConfig<any>(path.resolve(agentsConfigPath));
-            const agentDef = agentsConfig.agents.find((a: any) => a.name === agent.name);
+            const agentDef = agentsConfig.agents.find((a: any) => a.config === agent.configPath);
             if (agentDef) {
               agentDef.id = newAgentId;
               await writeConfig(path.resolve(agentsConfigPath), agentsConfig);

@@ -1045,6 +1045,161 @@ describe("CLI End-to-End Tests", () => {
         `✓ Test completed: Duplicate names preserved, filenames deduplicated`
       );
     });
+
+    it("should preserve duplicate names through push-pull cycle", async () => {
+      const duplicateName = `e2e-pushpull-dup-${Date.now()}`;
+      const agentsJsonPath = path.join(pushPullTempDir, "agents.json");
+
+      console.log(
+        `Testing push-pull cycle with duplicate agent names '${duplicateName}'...`
+      );
+
+      // Step 1: Create local config files for two agents with same name
+      const configDir = path.join(pushPullTempDir, "agent_configs");
+      await fs.ensureDir(configDir);
+
+      const config1Path = path.join(configDir, `${duplicateName}.json`);
+      const config2Path = path.join(configDir, `${duplicateName}-1.json`);
+
+      const agentConfig1 = {
+        name: duplicateName,
+        conversation_config: {
+          agent: {
+            prompt: {
+              prompt: `You are ${duplicateName}, a helpful AI assistant.`,
+              temperature: 0.8,
+            },
+          },
+          conversation: {
+            text_only: false,
+          },
+        },
+        platform_settings: {},
+        tags: [],
+      };
+
+      const agentConfig2 = { ...agentConfig1 };
+
+      await fs.writeFile(config1Path, JSON.stringify(agentConfig1, null, 2));
+      await fs.writeFile(config2Path, JSON.stringify(agentConfig2, null, 2));
+
+      // Step 2: Create agents.json with both agents (no IDs yet)
+      const agentsConfig = {
+        agents: [
+          {
+            name: duplicateName,
+            config: `agent_configs/${duplicateName}.json`,
+          },
+          {
+            name: duplicateName,
+            config: `agent_configs/${duplicateName}-1.json`,
+          },
+        ],
+      };
+
+      await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
+
+      console.log(`✓ Created two local agents with the same name`);
+
+      // Step 3: Push to create them remotely and get IDs
+      const pushResult = await runCli(["push", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+      });
+
+      expect(pushResult.exitCode).toBe(0);
+
+      // Read agents.json to get the assigned IDs
+      let pushedAgentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      const agent1 = pushedAgentsConfig.agents[0];
+      const agent2 = pushedAgentsConfig.agents[1];
+
+      expect(agent1.id).toBeTruthy();
+      expect(agent2.id).toBeTruthy();
+      expect(agent1.id).not.toBe(agent2.id);
+      expect(agent1.name).toBe(duplicateName);
+      expect(agent2.name).toBe(duplicateName);
+
+      console.log(
+        `✓ Pushed both agents: '${agent1.name}' (${agent1.id}) and '${agent2.name}' (${agent2.id})`
+      );
+
+      // Step 4: Remove local config files and agents.json
+      await fs.remove(config1Path);
+      await fs.remove(config2Path);
+      await fs.writeFile(
+        agentsJsonPath,
+        JSON.stringify({ agents: [] }, null, 2)
+      );
+
+      console.log(`✓ Removed local config files and cleared agents.json`);
+
+      // Step 5: Pull agents back from remote
+      const pullResult = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: pushPullTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      expect(pullResult.exitCode).toBe(0);
+
+      console.log(`✓ Pulled agents back from remote`);
+
+      // Step 6: Verify both agents are present with the same name
+      const pulledAgentsConfig = JSON.parse(
+        await fs.readFile(agentsJsonPath, "utf-8")
+      );
+
+      expect(pulledAgentsConfig.agents).toHaveLength(2);
+
+      const pulledAgent1 = pulledAgentsConfig.agents.find(
+        (a: any) => a.id === agent1.id
+      );
+      const pulledAgent2 = pulledAgentsConfig.agents.find(
+        (a: any) => a.id === agent2.id
+      );
+
+      expect(pulledAgent1).toBeTruthy();
+      expect(pulledAgent2).toBeTruthy();
+
+      // CRITICAL: Both should still have the same name (not deduplicated)
+      expect(pulledAgent1.name).toBe(duplicateName);
+      expect(pulledAgent2.name).toBe(duplicateName);
+
+      // Config paths should be different (deduplicated filenames)
+      expect(pulledAgent1.config).not.toBe(pulledAgent2.config);
+
+      console.log(
+        `✓ Both agents preserved the same name: '${pulledAgent1.name}' and '${pulledAgent2.name}'`
+      );
+      console.log(
+        `✓ Config paths are different: '${pulledAgent1.config}' and '${pulledAgent2.config}'`
+      );
+
+      // Verify config files exist and have the correct name
+      const pulledConfig1 = JSON.parse(
+        await fs.readFile(
+          path.join(pushPullTempDir, pulledAgent1.config),
+          "utf-8"
+        )
+      );
+      const pulledConfig2 = JSON.parse(
+        await fs.readFile(
+          path.join(pushPullTempDir, pulledAgent2.config),
+          "utf-8"
+        )
+      );
+
+      expect(pulledConfig1.name).toBe(duplicateName);
+      expect(pulledConfig2.name).toBe(duplicateName);
+
+      console.log(
+        `✓ Test completed: Duplicate names preserved through push-pull cycle`
+      );
+    });
   });
 
   // Push/Pull Integration Tests - Tests
