@@ -147,7 +147,7 @@ describe("Residency-specific API Client", () => {
     mockedOs.homedir.mockReturnValue(tempDir);
 
     await expect(getElevenLabsClient()).rejects.toThrow(
-      "No API key found. Use 'agents login' to authenticate or set ELEVENLABS_API_KEY environment variable."
+      "No API key found for environment 'prod'. Use 'agents login --env prod' to authenticate or set ELEVENLABS_API_KEY environment variable."
     );
   });
 });
