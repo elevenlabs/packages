@@ -760,8 +760,9 @@ program
   .description('Delete an agent locally and from ElevenLabs')
   .argument('[agent_id]', 'ID of the agent to delete (omit with --all to delete all agents)')
   .option('--all', 'Delete all agents', false)
+  .option('--env <environment>', 'Filter agents by environment (use with --all)')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (agentId: string | undefined, options: { all: boolean; ui: boolean }) => {
+  .action(async (agentId: string | undefined, options: { all: boolean; env?: string; ui: boolean }) => {
     try {
       if (options.all && agentId) {
         console.error('Error: Cannot specify both agent_id and --all flag');
@@ -772,9 +773,14 @@ program
         console.error('Error: Must specify either agent_id or --all flag');
         process.exit(1);
       }
+
+      if (options.env && !options.all) {
+        console.error('Error: --env flag can only be used with --all');
+        process.exit(1);
+      }
       
       if (options.all) {
-        await deleteAllAgents(options.ui);
+        await deleteAllAgents(options.ui, options.env);
       } else {
         await deleteAgent(agentId!);
       }
@@ -789,8 +795,9 @@ program
   .description('Delete a tool locally and from ElevenLabs')
   .argument('[tool_id]', 'ID of the tool to delete (omit with --all to delete all tools)')
   .option('--all', 'Delete all tools', false)
+  .option('--env <environment>', 'Filter tools by environment (use with --all)')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (toolId: string | undefined, options: { all: boolean; ui: boolean }) => {
+  .action(async (toolId: string | undefined, options: { all: boolean; env?: string; ui: boolean }) => {
     try {
       if (options.all && toolId) {
         console.error('Error: Cannot specify both tool_id and --all flag');
@@ -801,9 +808,14 @@ program
         console.error('Error: Must specify either tool_id or --all flag');
         process.exit(1);
       }
+
+      if (options.env && !options.all) {
+        console.error('Error: --env flag can only be used with --all');
+        process.exit(1);
+      }
       
       if (options.all) {
-        await deleteAllTools(options.ui);
+        await deleteAllTools(options.ui, options.env);
       } else {
         await deleteTool(toolId!);
       }
@@ -818,8 +830,9 @@ program
   .description('Delete a test locally and from ElevenLabs')
   .argument('[test_id]', 'ID of the test to delete (omit with --all to delete all tests)')
   .option('--all', 'Delete all tests', false)
+  .option('--env <environment>', 'Filter tests by environment (use with --all)')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (testId: string | undefined, options: { all: boolean; ui: boolean }) => {
+  .action(async (testId: string | undefined, options: { all: boolean; env?: string; ui: boolean }) => {
     try {
       if (options.all && testId) {
         console.error('Error: Cannot specify both test_id and --all flag');
@@ -830,9 +843,14 @@ program
         console.error('Error: Must specify either test_id or --all flag');
         process.exit(1);
       }
+
+      if (options.env && !options.all) {
+        console.error('Error: --env flag can only be used with --all');
+        process.exit(1);
+      }
       
       if (options.all) {
-        await deleteAllTests(options.ui);
+        await deleteAllTests(options.ui, options.env);
       } else {
         await deleteTest(testId!);
       }
@@ -2771,7 +2789,7 @@ async function deleteAgent(agentId: string): Promise<void> {
   console.log(`\n✓ Successfully deleted agent '${agentName}'`);
 }
 
-async function deleteAllAgents(ui: boolean = true): Promise<void> {
+async function deleteAllAgents(ui: boolean = true, env?: string): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -2784,19 +2802,34 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
     console.log('No agents found to delete');
     return;
   }
+
+  // Filter agents by environment if specified
+  const agentsToDelete = env 
+    ? agentsConfig.agents.filter(agent => (agent.env || 'prod') === env)
+    : agentsConfig.agents;
+  
+  if (agentsToDelete.length === 0) {
+    console.log(env ? `No agents found in environment '${env}'` : 'No agents found to delete');
+    return;
+  }
   
   // Show what will be deleted
-  console.log(`\nFound ${agentsConfig.agents.length} agent(s) to delete:`);
-  for (let i = 0; i < agentsConfig.agents.length; i++) {
-    const agent = agentsConfig.agents[i];
+  const envInfo = env ? ` in environment '${env}'` : '';
+  console.log(`\nFound ${agentsToDelete.length} agent(s) to delete${envInfo}:`);
+  for (let i = 0; i < agentsToDelete.length; i++) {
+    const agent = agentsToDelete[i];
     const agentName = await getAgentName(agent.config);
-    console.log(`  ${i + 1}. ${agentName} (${agent.id})`);
+    const agentEnv = agent.env || 'prod';
+    console.log(`  ${i + 1}. ${agentName} (${agent.id}) [${agentEnv}]`);
   }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
-    console.log('\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.');
-    const confirmed = await promptForConfirmation('Are you sure you want to delete all agents?');
+    const warningMsg = env 
+      ? `\nWARNING: This will delete ${agentsToDelete.length} agent(s) from environment '${env}' in both local configuration and ElevenLabs.`
+      : '\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.';
+    console.log(warningMsg);
+    const confirmed = await promptForConfirmation('Are you sure you want to delete these agents?');
     
     if (!confirmed) {
       console.log('Deletion cancelled');
@@ -2804,13 +2837,14 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
     }
   }
   
-  console.log('\nDeleting all agents...\n');
+  console.log('\nDeleting agents...\n');
   
   let successCount = 0;
   let failCount = 0;
+  const deletedIds = new Set<string>();
   
   // Delete each agent
-  for (const agentDef of agentsConfig.agents) {
+  for (const agentDef of agentsToDelete) {
     try {
       const agentName = await getAgentName(agentDef.config);
       const environment = agentDef.env || 'prod';
@@ -2835,6 +2869,9 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
         console.log(`  ✓ Deleted config file: ${agentDef.config}`);
       }
       
+      if (agentDef.id) {
+        deletedIds.add(agentDef.id);
+      }
       successCount++;
     } catch (error) {
       const agentName = await getAgentName(agentDef.config);
@@ -2843,10 +2880,10 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
     }
   }
   
-  // Clear agents array and save
-  agentsConfig.agents = [];
+  // Remove deleted agents from config (only the ones that were successfully deleted)
+  agentsConfig.agents = agentsConfig.agents.filter(agent => !deletedIds.has(agent.id || ''));
   await writeConfig(agentsConfigPath, agentsConfig);
-  console.log(`\n✓ Cleared ${AGENTS_CONFIG_FILE}`);
+  console.log(`\n✓ Updated ${AGENTS_CONFIG_FILE}`);
   
   // Summary
   console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
@@ -2911,7 +2948,7 @@ async function deleteTool(toolId: string): Promise<void> {
   console.log(`\n✓ Successfully deleted tool '${toolName}'`);
 }
 
-async function deleteAllTools(ui: boolean = true): Promise<void> {
+async function deleteAllTools(ui: boolean = true, env?: string): Promise<void> {
   // Load tools configuration
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   if (!(await fs.pathExists(toolsConfigPath))) {
@@ -2924,11 +2961,22 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
     console.log('No tools found to delete');
     return;
   }
+
+  // Filter tools by environment if specified
+  const toolsToDelete = env 
+    ? toolsConfig.tools.filter(tool => (tool.env || 'prod') === env)
+    : toolsConfig.tools;
+  
+  if (toolsToDelete.length === 0) {
+    console.log(env ? `No tools found in environment '${env}'` : 'No tools found to delete');
+    return;
+  }
   
   // Show what will be deleted
-  console.log(`\nFound ${toolsConfig.tools.length} tool(s) to delete:`);
-  for (let i = 0; i < toolsConfig.tools.length; i++) {
-    const tool = toolsConfig.tools[i];
+  const envInfo = env ? ` in environment '${env}'` : '';
+  console.log(`\nFound ${toolsToDelete.length} tool(s) to delete${envInfo}:`);
+  for (let i = 0; i < toolsToDelete.length; i++) {
+    const tool = toolsToDelete[i];
     let toolName = tool.id || 'Unknown';
     if (tool.config && await fs.pathExists(tool.config)) {
       try {
@@ -2938,13 +2986,17 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
         // Use ID if config read fails
       }
     }
-    console.log(`  ${i + 1}. ${toolName} (${tool.id})`);
+    const toolEnv = tool.env || 'prod';
+    console.log(`  ${i + 1}. ${toolName} (${tool.id}) [${toolEnv}]`);
   }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
-    console.log('\nWARNING: This will delete ALL tools from both local configuration and ElevenLabs.');
-    const confirmed = await promptForConfirmation('Are you sure you want to delete all tools?');
+    const warningMsg = env 
+      ? `\nWARNING: This will delete ${toolsToDelete.length} tool(s) from environment '${env}' in both local configuration and ElevenLabs.`
+      : '\nWARNING: This will delete ALL tools from both local configuration and ElevenLabs.';
+    console.log(warningMsg);
+    const confirmed = await promptForConfirmation('Are you sure you want to delete these tools?');
     
     if (!confirmed) {
       console.log('Deletion cancelled');
@@ -2952,13 +3004,14 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
     }
   }
   
-  console.log('\nDeleting all tools...\n');
+  console.log('\nDeleting tools...\n');
   
   let successCount = 0;
   let failCount = 0;
+  const deletedIds = new Set<string>();
   
   // Delete each tool
-  for (const toolDef of toolsConfig.tools) {
+  for (const toolDef of toolsToDelete) {
     try {
       const environment = toolDef.env || 'prod';
       
@@ -2994,6 +3047,9 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
         console.log(`  ✓ Deleted config file: ${toolDef.config}`);
       }
       
+      if (toolDef.id) {
+        deletedIds.add(toolDef.id);
+      }
       successCount++;
     } catch (error) {
       console.error(`  Failed to delete tool: ${error}`);
@@ -3001,10 +3057,10 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
     }
   }
   
-  // Clear tools array and save
-  toolsConfig.tools = [];
+  // Remove deleted tools from config (only the ones that were successfully deleted)
+  toolsConfig.tools = toolsConfig.tools.filter(tool => !deletedIds.has(tool.id || ''));
   await writeToolsConfig(toolsConfigPath, toolsConfig);
-  console.log(`\n✓ Cleared ${TOOLS_CONFIG_FILE}`);
+  console.log(`\n✓ Updated ${TOOLS_CONFIG_FILE}`);
   
   // Summary
   console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
@@ -3069,7 +3125,7 @@ async function deleteTest(testId: string): Promise<void> {
   console.log(`\n✓ Successfully deleted test '${testName}'`);
 }
 
-async function deleteAllTests(ui: boolean = true): Promise<void> {
+async function deleteAllTests(ui: boolean = true, env?: string): Promise<void> {
   // Load tests configuration
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   if (!(await fs.pathExists(testsConfigPath))) {
@@ -3082,11 +3138,22 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
     console.log('No tests found to delete');
     return;
   }
+
+  // Filter tests by environment if specified
+  const testsToDelete = env 
+    ? testsConfig.tests.filter(test => (test.env || 'prod') === env)
+    : testsConfig.tests;
+  
+  if (testsToDelete.length === 0) {
+    console.log(env ? `No tests found in environment '${env}'` : 'No tests found to delete');
+    return;
+  }
   
   // Show what will be deleted
-  console.log(`\nFound ${testsConfig.tests.length} test(s) to delete:`);
-  for (let i = 0; i < testsConfig.tests.length; i++) {
-    const test = testsConfig.tests[i];
+  const envInfo = env ? ` in environment '${env}'` : '';
+  console.log(`\nFound ${testsToDelete.length} test(s) to delete${envInfo}:`);
+  for (let i = 0; i < testsToDelete.length; i++) {
+    const test = testsToDelete[i];
     let testName = test.id || 'Unknown';
     if (test.config && await fs.pathExists(test.config)) {
       try {
@@ -3096,13 +3163,17 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
         // Use ID if config read fails
       }
     }
-    console.log(`  ${i + 1}. ${testName} (${test.id})`);
+    const testEnv = test.env || 'prod';
+    console.log(`  ${i + 1}. ${testName} (${test.id}) [${testEnv}]`);
   }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
-    console.log('\nWARNING: This will delete ALL tests from both local configuration and ElevenLabs.');
-    const confirmed = await promptForConfirmation('Are you sure you want to delete all tests?');
+    const warningMsg = env 
+      ? `\nWARNING: This will delete ${testsToDelete.length} test(s) from environment '${env}' in both local configuration and ElevenLabs.`
+      : '\nWARNING: This will delete ALL tests from both local configuration and ElevenLabs.';
+    console.log(warningMsg);
+    const confirmed = await promptForConfirmation('Are you sure you want to delete these tests?');
     
     if (!confirmed) {
       console.log('Deletion cancelled');
@@ -3110,13 +3181,14 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
     }
   }
   
-  console.log('\nDeleting all tests...\n');
+  console.log('\nDeleting tests...\n');
   
   let successCount = 0;
   let failCount = 0;
+  const deletedIds = new Set<string>();
   
   // Delete each test
-  for (const testDef of testsConfig.tests) {
+  for (const testDef of testsToDelete) {
     try {
       const environment = testDef.env || 'prod';
       
@@ -3152,6 +3224,9 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
         console.log(`  ✓ Deleted config file: ${testDef.config}`);
       }
       
+      if (testDef.id) {
+        deletedIds.add(testDef.id);
+      }
       successCount++;
     } catch (error) {
       console.error(`  Failed to delete test: ${error}`);
@@ -3159,10 +3234,10 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
     }
   }
   
-  // Clear tests array and save
-  testsConfig.tests = [];
+  // Remove deleted tests from config (only the ones that were successfully deleted)
+  testsConfig.tests = testsConfig.tests.filter(test => !deletedIds.has(test.id || ''));
   await writeConfig(testsConfigPath, testsConfig);
-  console.log(`\n✓ Cleared ${TESTS_CONFIG_FILE}`);
+  console.log(`\n✓ Updated ${TESTS_CONFIG_FILE}`);
   
   // Summary
   console.log(`\n✓ Deletion complete: ${successCount} succeeded, ${failCount} failed`);
