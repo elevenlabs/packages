@@ -72,29 +72,29 @@ export async function saveConfig(config: CliConfig): Promise<void> {
 /**
  * Get API key from storage or environment variable
  */
-export async function getApiKey(): Promise<string | undefined> {
-  return await retrieveApiKey();
+export async function getApiKey(environment: string = 'prod'): Promise<string | undefined> {
+  return await retrieveApiKey(environment);
 }
 
 /**
  * Set API key in secure storage
  */
-export async function setApiKey(apiKey: string): Promise<void> {
-  await storeApiKey(apiKey);
+export async function setApiKey(apiKey: string, environment: string = 'prod'): Promise<void> {
+  await storeApiKey(apiKey, environment);
 }
 
 /**
  * Remove API key from storage
  */
-export async function removeApiKey(): Promise<void> {
-  await removeStoredApiKey();
+export async function removeApiKey(environment: string = 'prod'): Promise<void> {
+  await removeStoredApiKey(environment);
 }
 
 /**
  * Check if user is logged in (has API key)
  */
-export async function isLoggedIn(): Promise<boolean> {
-  return await hasApiKey();
+export async function isLoggedIn(environment: string = 'prod'): Promise<boolean> {
+  return await hasApiKey(environment);
 }
 
 /**

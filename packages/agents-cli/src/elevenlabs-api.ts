@@ -36,13 +36,14 @@ function getApiBaseUrl(residency?: Location): string {
 /**
  * Retrieves the ElevenLabs API key from config or environment variables and returns an API client.
  * 
+ * @param environment - The environment to get the API key for (defaults to 'prod')
  * @throws {Error} If no API key is found
  * @returns An instance of the ElevenLabs client
  */
-export async function getElevenLabsClient(): Promise<ElevenLabsClient> {
-  const apiKey = await getApiKey();
+export async function getElevenLabsClient(environment: string = 'prod'): Promise<ElevenLabsClient> {
+  const apiKey = await getApiKey(environment);
   if (!apiKey) {
-    throw new Error("No API key found. Use 'agents login' to authenticate or set ELEVENLABS_API_KEY environment variable.");
+    throw new Error(`No API key found for environment '${environment}'. Use 'agents login --env ${environment}' to authenticate or set ELEVENLABS_API_KEY environment variable.`);
   }
   
   const config = await loadConfig();

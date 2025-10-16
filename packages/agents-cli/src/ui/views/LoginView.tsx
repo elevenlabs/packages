@@ -7,9 +7,10 @@ import { setApiKey } from '../../config.js';
 
 interface LoginViewProps {
   onComplete?: () => void;
+  environment?: string;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ onComplete, environment = 'prod' }) => {
   const { exit } = useApp();
   const [apiKey, setApiKeyInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +59,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
     setError(null);
 
     try {
-      await setApiKey(apiKey);
+      await setApiKey(apiKey, environment);
       setSuccess(true);
       
       setTimeout(() => {
@@ -83,7 +84,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
           <>
             <Box marginBottom={1}>
               <Text color={theme.colors.text.primary}>
-                Enter your ElevenLabs API key:
+                Enter your ElevenLabs API key for environment: <Text color={theme.colors.accent.primary}>{environment}</Text>
               </Text>
             </Box>
 
@@ -136,12 +137,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete }) => {
             <StatusCard
               title="Login Successful"
               status="success"
-              message="Your API key has been securely stored"
+              message={`Your API key has been securely stored for environment '${environment}'`}
             />
             
             <Box marginTop={1}>
               <Text color={theme.colors.success}>
-                ✓ You are now logged in to ElevenLabs
+                ✓ You are now logged in to ElevenLabs ({environment})
               </Text>
             </Box>
           </Box>

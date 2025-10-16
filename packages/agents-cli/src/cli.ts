@@ -93,6 +93,7 @@ const TESTS_CONFIG_FILE = "tests.json";
 interface AgentDefinition {
   config: string;
   id?: string;
+  env?: string;
 }
 
 interface AgentsConfig {
@@ -120,6 +121,7 @@ interface TestDefinition {
   config: string;
   type?: string;
   id?: string;
+  env?: string;
 }
 
 interface TestsConfig {
@@ -151,6 +153,7 @@ interface PullOptions {
   dryRun: boolean;
   update?: boolean; // Update existing items only
   all?: boolean; // Pull all (new + existing)
+  env?: string; // Environment to pull from
 }
 
 interface PullToolsOptions {
@@ -159,6 +162,7 @@ interface PullToolsOptions {
   dryRun: boolean;
   update?: boolean; // Update existing items only
   all?: boolean; // Pull all (new + existing)
+  env?: string; // Environment to pull from
 }
 
 // Widget options interface removed - no longer needed
@@ -289,19 +293,23 @@ ELEVENLABS_API_KEY=your_api_key_here
 program
   .command('login')
   .description('Login with your ElevenLabs API key')
+  .option('--env <environment>', 'Environment name', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: { ui: boolean }) => {
+  .action(async (options: { ui: boolean; env: string }) => {
     try {
+      const environment = options.env || 'prod';
+      
       if (options.ui !== false) {
         // Use Ink UI for login
         const { waitUntilExit } = render(
-          React.createElement(LoginView)
+          React.createElement(LoginView, { environment })
         );
         await waitUntilExit();
       } else {
         // Fallback to text-based login
         const { read } = await import('read');
         
+        console.log(`Logging in to environment: ${environment}`);
         const apiKey = await read({
           prompt: 'Enter your ElevenLabs API key: ',
           silent: true,
@@ -315,7 +323,7 @@ program
         
         // Test the API key by making a simple request
         process.env.ELEVENLABS_API_KEY = apiKey.trim();
-        const client = await getElevenLabsClient();
+        const client = await getElevenLabsClient(environment);
         try {
           await listAgentsApi(client, 1);
           console.log('API key verified successfully');
@@ -331,8 +339,8 @@ program
           process.exit(1);
         }
         
-        await setApiKey(apiKey.trim());
-        console.log('Login successful! API key saved securely.');
+        await setApiKey(apiKey.trim(), environment);
+        console.log(`Login successful! API key saved securely for environment '${environment}'.`);
       }
     } catch (error) {
       console.error(`Error during login: ${error}`);
@@ -497,10 +505,10 @@ program
         process.exit(1);
       }
       
-      // Create agent in ElevenLabs first to get ID
-      console.log(`Creating agent '${name}' in ElevenLabs...`);
+      // Create agent in ElevenLabs first to get ID (defaults to 'prod' environment)
+      console.log(`Creating agent '${name}' in ElevenLabs (environment: prod)...`);
       
-      const client = await getElevenLabsClient();
+      const client = await getElevenLabsClient('prod');
       
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
@@ -531,10 +539,11 @@ program
       await writeConfig(configFilePath, agentConfig);
       console.log(`Created config file: ${configPath} (template: ${options.template})`);
       
-      // Store agent ID in index file
+      // Store agent ID in index file (defaults to 'prod' environment)
       const newAgent: AgentDefinition = {
         config: configPath,
-        id: agentId
+        id: agentId,
+        env: 'prod'
       };
       agentsConfig.agents.push(newAgent);
       
@@ -810,8 +819,9 @@ program
   .option('--update', 'Update existing agents only (skip new)', false)
   .option('--all', 'Pull all agents (new + existing)', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
+  .option('--env <environment>', 'Environment to pull from', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: PullOptions & { ui: boolean }) => {
+  .action(async (options: PullOptions & { ui: boolean; env: string }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for pull
@@ -843,8 +853,9 @@ program
   .option('--update', 'Update existing tools only (skip new)', false)
   .option('--all', 'Pull all tools (new + existing)', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
+  .option('--env <environment>', 'Environment to pull from', 'prod')
   .option('--no-ui', 'Disable interactive UI', false)
-  .action(async (options: PullToolsOptions & { ui: boolean }) => {
+  .action(async (options: PullToolsOptions & { ui: boolean; env: string }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for pull-tools
@@ -984,8 +995,9 @@ program
   .option('--update', 'Update existing tests only (skip new)', false)
   .option('--all', 'Pull all tests (new + existing)', false)
   .option('--dry-run', 'Show what would be pulled without making changes', false)
+  .option('--env <environment>', 'Environment to pull from', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; ui: boolean }) => {
+  .action(async (options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; ui: boolean; env: string }) => {
     try {
       // For now, always use non-UI mode (UI can be added later if needed)
       await pullTests(options);
@@ -1129,10 +1141,10 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     };
   }
   
-  // Create tool in ElevenLabs first to get ID
-  console.log(`Creating ${type} tool '${name}' in ElevenLabs...`);
+  // Create tool in ElevenLabs first to get ID (defaults to 'prod' environment)
+  console.log(`Creating ${type} tool '${name}' in ElevenLabs (environment: prod)...`);
   
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient('prod');
   
   try {
     const response = await createToolApi(client, toolConfig);
@@ -1152,12 +1164,13 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     await writeToolConfig(configFilePath, toolConfig);
     console.log(`Created config file: ${configPath}`);
     
-    // Add to tools.json
+    // Add to tools.json (defaults to 'prod' environment)
     const newTool: ToolDefinition = {
       name,
       type,
       config: configPath,
-      id: toolId
+      id: toolId,
+      env: 'prod'
     };
     toolsConfig.tools.push(newTool);
     await writeToolsConfig(toolsConfigPath, toolsConfig);
@@ -1180,18 +1193,13 @@ async function pushAgents(dryRun = false): Promise<void> {
   
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
   
-  // Initialize ElevenLabs client
-  let client;
-  if (!dryRun) {
-    client = await getElevenLabsClient();
-  }
-  
   const agentsToProcess = agentsConfig.agents;
   
   let changesMade = false;
   
   for (const agentDef of agentsToProcess) {
     const configPath = agentDef.config;
+    const environment = agentDef.env || 'prod';
     
     if (!configPath) {
       console.log(`Warning: No config path found for agent`);
@@ -1219,10 +1227,20 @@ async function pushAgents(dryRun = false): Promise<void> {
     const agentId = agentDef.id;
     
     // Always push (force override)
-    console.log(`${agentDefName}: Will push (force override)`);
+    console.log(`${agentDefName} [${environment}]: Will push (force override)`);
     
     if (dryRun) {
-      console.log(`[DRY RUN] Would update agent: ${agentDefName}`);
+      console.log(`[DRY RUN] Would update agent: ${agentDefName} [${environment}]`);
+      continue;
+    }
+    
+    // Initialize ElevenLabs client for this agent's environment
+    let client;
+    try {
+      client = await getElevenLabsClient(environment);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      console.log(`Skipping agent ${agentDefName} - environment '${environment}' not configured`);
       continue;
     }
     
@@ -1238,13 +1256,13 @@ async function pushAgents(dryRun = false): Promise<void> {
       if (!agentId) {
         // Create new agent
         const newAgentId = await createAgentApi(
-          client!,
+          client,
           agentDisplayName,
           conversationConfig,
           platformSettings,
           tags
         );
-        console.log(`Created agent ${agentDefName} (ID: ${newAgentId})`);
+        console.log(`Created agent ${agentDefName} (ID: ${newAgentId}) [${environment}]`);
         
         // Store agent ID in index file
         agentDef.id = newAgentId;
@@ -1252,14 +1270,14 @@ async function pushAgents(dryRun = false): Promise<void> {
       } else {
         // Update existing agent
         await updateAgentApi(
-          client!,
+          client,
           agentId,
           agentDisplayName,
           conversationConfig,
           platformSettings,
           tags
         );
-        console.log(`Updated agent ${agentDefName} (ID: ${agentId})`);
+        console.log(`Updated agent ${agentDefName} (ID: ${agentId}) [${environment}]`);
       }
       
       changesMade = true;
@@ -1463,7 +1481,8 @@ async function pullAgents(options: PullOptions): Promise<void> {
     throw new Error('agents.json not found. Run \'agents init\' first.');
   }
   
-  const client = await getElevenLabsClient();
+  const environment = options.env || 'prod';
+  const client = await getElevenLabsClient(environment);
   
   // Load existing config
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
@@ -1626,11 +1645,12 @@ async function pullAgents(options: PullOptions): Promise<void> {
         
         const newAgent: AgentDefinition = {
           config: configPath,
-          id: agent.id
+          id: agent.id,
+          env: environment
         };
         
         agentsConfig.agents.push(newAgent);
-        console.log(`  ✓ Added '${agent.name}' (config: ${configPath})`);
+        console.log(`  ✓ Added '${agent.name}' (config: ${configPath}) [${environment}]`);
       }
       
       itemsProcessed++;
@@ -1671,7 +1691,8 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
     toolsConfig = await readToolsConfig(toolsConfigPath);
   }
 
-  const client = await getElevenLabsClient();
+  const environment = options.env || 'prod';
+  const client = await getElevenLabsClient(environment);
 
   let filteredTools: unknown[];
 
@@ -1837,11 +1858,12 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
           name: tool.name,
           type: toolType as 'webhook' | 'client',
           config: configPath,
-          id: tool.id
+          id: tool.id,
+          env: environment
         };
         
         toolsConfig.tools.push(newTool);
-        console.log(`  ✓ Added '${tool.name}' (config: ${configPath}, type: ${toolType})`);
+        console.log(`  ✓ Added '${tool.name}' (config: ${configPath}, type: ${toolType}) [${environment}]`);
       }
       
       itemsProcessed++;
@@ -1926,10 +1948,10 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
   // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
 
-  // Create test in ElevenLabs first to get ID
-  console.log(`Creating test '${name}' in ElevenLabs...`);
+  // Create test in ElevenLabs first to get ID (defaults to 'prod' environment)
+  console.log(`Creating test '${name}' in ElevenLabs (environment: prod)...`);
 
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient('prod');
 
   try {
     const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
@@ -1948,12 +1970,13 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     await writeConfig(configFilePath, testConfig);
     console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
-    // Add to tests.json if not already present
+    // Add to tests.json if not already present (defaults to 'prod' environment)
     const newTest: TestDefinition = {
       name,
       config: configPath,
       type: templateType,
-      id: testId
+      id: testId,
+      env: 'prod'
     };
     testsConfig.tests.push(newTest);
     await writeConfig(testsConfigPath, testsConfig);
@@ -1976,12 +1999,6 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
 
   const testsConfig = await readConfig<TestsConfig>(testsConfigPath);
 
-  // Initialize ElevenLabs client
-  let client;
-  if (!dryRun) {
-    client = await getElevenLabsClient();
-  }
-
   // Filter tests if specific test name provided
   let testsToProcess = testsConfig.tests;
   if (testName) {
@@ -1996,6 +2013,7 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
   for (const testDef of testsToProcess) {
     const testDefName = testDef.name;
     const configPath = testDef.config;
+    const environment = testDef.env || 'prod';
 
     // Check if config file exists
     if (!(await fs.pathExists(configPath))) {
@@ -2016,10 +2034,20 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
     const testId = testDef.id;
 
     // Always push (force override)
-    console.log(`${testDefName}: Will push (force override)`);
+    console.log(`${testDefName} [${environment}]: Will push (force override)`);
 
     if (dryRun) {
-      console.log(`[DRY RUN] Would update test: ${testDefName}`);
+      console.log(`[DRY RUN] Would update test: ${testDefName} [${environment}]`);
+      continue;
+    }
+
+    // Initialize ElevenLabs client for this test's environment
+    let client;
+    try {
+      client = await getElevenLabsClient(environment);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      console.log(`Skipping test ${testDefName} - environment '${environment}' not configured`);
       continue;
     }
 
@@ -2029,17 +2057,17 @@ async function pushTests(testName?: string, dryRun = false): Promise<void> {
 
       if (!testId) {
         // Create new test
-        const response = await createTestApi(client!, testApiConfig);
+        const response = await createTestApi(client, testApiConfig);
         const newTestId = response.id;
-        console.log(`Created test ${testDefName} (ID: ${newTestId})`);
+        console.log(`Created test ${testDefName} (ID: ${newTestId}) [${environment}]`);
         
         // Store test ID in index file
         testDef.id = newTestId;
         changesMade = true;
       } else {
         // Update existing test
-        await updateTestApi(client!, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
-        console.log(`Updated test ${testDefName} (ID: ${testId})`);
+        await updateTestApi(client, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
+        console.log(`Updated test ${testDefName} (ID: ${testId}) [${environment}]`);
       }
 
       changesMade = true;
@@ -2064,12 +2092,6 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
 
   const toolsConfig = await readToolsConfig(toolsConfigPath);
 
-  // Initialize ElevenLabs client
-  let client;
-  if (!dryRun) {
-    client = await getElevenLabsClient();
-  }
-
   // Filter tools if specific tool name provided
   let toolsToProcess = toolsConfig.tools;
   if (toolName) {
@@ -2084,6 +2106,7 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
   for (const toolDef of toolsToProcess) {
     const toolDefName = toolDef.name;
     const configPath = toolDef.config;
+    const environment = toolDef.env || 'prod';
 
     if (!configPath) {
       console.log(`Warning: No config path specified for ${toolDefName}`);
@@ -2109,10 +2132,20 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     const toolId = toolDef.id;
 
     // Always push (force override)
-    console.log(`${toolDefName}: Will push (force override)`);
+    console.log(`${toolDefName} [${environment}]: Will push (force override)`);
 
     if (dryRun) {
-      console.log(`[DRY RUN] Would update tool: ${toolDefName}`);
+      console.log(`[DRY RUN] Would update tool: ${toolDefName} [${environment}]`);
+      continue;
+    }
+
+    // Initialize ElevenLabs client for this tool's environment
+    let client;
+    try {
+      client = await getElevenLabsClient(environment);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      console.log(`Skipping tool ${toolDefName} - environment '${environment}' not configured`);
       continue;
     }
 
@@ -2120,17 +2153,17 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
     try {
       if (!toolId) {
         // Create new tool
-        const response = await createToolApi(client!, toolConfig);
+        const response = await createToolApi(client, toolConfig);
         const newToolId = (response as { toolId?: string }).toolId || `tool_${Date.now()}`;
-        console.log(`Created tool ${toolDefName} (ID: ${newToolId})`);
+        console.log(`Created tool ${toolDefName} (ID: ${newToolId}) [${environment}]`);
         
         // Store tool ID in index file
         toolDef.id = newToolId;
         changesMade = true;
       } else {
         // Update existing tool
-        await updateToolApi(client!, toolId, toolConfig);
-        console.log(`Updated tool ${toolDefName} (ID: ${toolId})`);
+        await updateToolApi(client, toolId, toolConfig);
+        console.log(`Updated tool ${toolDefName} (ID: ${toolId}) [${environment}]`);
       }
 
       changesMade = true;
@@ -2146,7 +2179,7 @@ async function pushTools(toolName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function pullTests(options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean }): Promise<void> {
+async function pullTests(options: { test?: string; outputDir: string; dryRun: boolean; update?: boolean; all?: boolean; env?: string }): Promise<void> {
   // Check if tests.json exists
   const testsConfigPath = path.resolve(TESTS_CONFIG_FILE);
   let testsConfig: TestsConfig;
@@ -2159,7 +2192,8 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
     console.log(`Created ${TESTS_CONFIG_FILE}`);
   }
 
-  const client = await getElevenLabsClient();
+  const environment = options.env || 'prod';
+  const client = await getElevenLabsClient(environment);
 
   let testsList: unknown[];
 
@@ -2298,11 +2332,12 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
         const newTest: TestDefinition = {
           name: test.name,
           config: configPath,
-          id: test.id
+          id: test.id,
+          env: environment
         };
         
         testsConfig.tests.push(newTest);
-        console.log(`  ✓ Added '${test.name}' (config: ${configPath})`);
+        console.log(`  ✓ Added '${test.name}' (config: ${configPath}) [${environment}]`);
       }
       
       itemsProcessed++;
@@ -2404,12 +2439,15 @@ async function runAgentTests(agentId: string): Promise<void> {
   }
 
   const testIds = attachedTests.map(test => test.test_id);
+  
+  // Get agent environment
+  const environment = agentDef.env || 'prod';
 
-  console.log(`Running ${testIds.length} test(s) for agent '${agentName}'...`);
+  console.log(`Running ${testIds.length} test(s) for agent '${agentName}' [${environment}]...`);
   console.log('');
 
   // Run tests without UI
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient(environment);
   
   try {
     // Import the API functions we need
@@ -2497,12 +2535,13 @@ async function deleteAgent(agentId: string): Promise<void> {
   const agentDef = agentsConfig.agents[agentIndex];
   const agentName = await getAgentName(agentDef.config);
   const configPath = agentDef.config;
+  const environment = agentDef.env || 'prod';
   
-  console.log(`Deleting agent '${agentName}' (ID: ${agentId})...`);
+  console.log(`Deleting agent '${agentName}' (ID: ${agentId}) [${environment}]...`);
   
   // Delete from ElevenLabs (globally)
   console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient(environment);
   
   try {
     await deleteAgentApi(client, agentId);
@@ -2561,7 +2600,6 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
   
   console.log('\nDeleting all agents...\n');
   
-  const client = await getElevenLabsClient();
   let successCount = 0;
   let failCount = 0;
   
@@ -2569,11 +2607,13 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
   for (const agentDef of agentsConfig.agents) {
     try {
       const agentName = await getAgentName(agentDef.config);
-      console.log(`Deleting '${agentName}' (${agentDef.id})...`);
+      const environment = agentDef.env || 'prod';
+      console.log(`Deleting '${agentName}' (${agentDef.id}) [${environment}]...`);
       
       // Delete from ElevenLabs
       if (agentDef.id) {
         try {
+          const client = await getElevenLabsClient(environment);
           await deleteAgentApi(client, agentDef.id);
           console.log(`  ✓ Deleted from ElevenLabs`);
         } catch (error) {
@@ -2625,12 +2665,13 @@ async function deleteTool(toolId: string): Promise<void> {
   const toolDef = toolsConfig.tools[toolIndex];
   const toolName = toolDef.name;
   const configPath = toolDef.config;
+  const environment = toolDef.env || 'prod';
   
-  console.log(`Deleting tool '${toolName}' (ID: ${toolId})...`);
+  console.log(`Deleting tool '${toolName}' (ID: ${toolId}) [${environment}]...`);
   
   // Delete from ElevenLabs
   console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient(environment);
   
   try {
     await deleteToolApi(client, toolId);
@@ -2687,18 +2728,19 @@ async function deleteAllTools(ui: boolean = true): Promise<void> {
   
   console.log('\nDeleting all tools...\n');
   
-  const client = await getElevenLabsClient();
   let successCount = 0;
   let failCount = 0;
   
   // Delete each tool
   for (const toolDef of toolsConfig.tools) {
     try {
-      console.log(`Deleting '${toolDef.name}' (${toolDef.id})...`);
+      const environment = toolDef.env || 'prod';
+      console.log(`Deleting '${toolDef.name}' (${toolDef.id}) [${environment}]...`);
       
       // Delete from ElevenLabs
       if (toolDef.id) {
         try {
+          const client = await getElevenLabsClient(environment);
           await deleteToolApi(client, toolDef.id);
           console.log(`  ✓ Deleted from ElevenLabs`);
         } catch (error) {
@@ -2749,12 +2791,13 @@ async function deleteTest(testId: string): Promise<void> {
   const testDef = testsConfig.tests[testIndex];
   const testName = testDef.name;
   const configPath = testDef.config;
+  const environment = testDef.env || 'prod';
   
-  console.log(`Deleting test '${testName}' (ID: ${testId})...`);
+  console.log(`Deleting test '${testName}' (ID: ${testId}) [${environment}]...`);
   
   // Delete from ElevenLabs
   console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient();
+  const client = await getElevenLabsClient(environment);
   
   try {
     await deleteTestApi(client, testId);
@@ -2811,18 +2854,19 @@ async function deleteAllTests(ui: boolean = true): Promise<void> {
   
   console.log('\nDeleting all tests...\n');
   
-  const client = await getElevenLabsClient();
   let successCount = 0;
   let failCount = 0;
   
   // Delete each test
   for (const testDef of testsConfig.tests) {
     try {
-      console.log(`Deleting '${testDef.name}' (${testDef.id})...`);
+      const environment = testDef.env || 'prod';
+      console.log(`Deleting '${testDef.name}' (${testDef.id}) [${environment}]...`);
       
       // Delete from ElevenLabs
       if (testDef.id) {
         try {
+          const client = await getElevenLabsClient(environment);
           await deleteTestApi(client, testDef.id);
           console.log(`  ✓ Deleted from ElevenLabs`);
         } catch (error) {

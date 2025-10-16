@@ -76,6 +76,7 @@ export interface ToolDefinition {
   type: 'webhook' | 'client';
   config?: string;
   id?: string;
+  env?: string;
 }
 
 export interface ToolsConfig {

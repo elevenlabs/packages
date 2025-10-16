@@ -765,7 +765,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(agentsJsonPath, "utf-8")
       );
       agentsConfig.agents = agentsConfig.agents.filter(
-        (a: any) => a.name !== agentNames[2]
+        (a: any) => a.id !== agent3Id
       );
       await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
 
@@ -805,7 +805,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(agentsJsonPath, "utf-8")
       );
       agentsConfig.agents = agentsConfig.agents.filter(
-        (a: any) => a.name !== agentNames[2]
+        (a: any) => a.id !== agent3Id
       );
       await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
 
