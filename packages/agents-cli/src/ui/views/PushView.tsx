@@ -100,7 +100,7 @@ export const PushView: React.FC<PushViewProps> = ({
           const conversationConfig = agentConfig.conversation_config || {};
           const platformSettings = agentConfig.platform_settings;
           const tags = agentConfig.tags || [];
-          const agentDisplayName = agentConfig.name || agent.name;
+          const agentDisplayName = agentConfig.name || 'Unnamed Agent';
 
           if (!agentId) {
             // Create new agent

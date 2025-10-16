@@ -52,7 +52,16 @@ export const StatusView: React.FC<StatusViewProps> = ({
           // Get agent ID from index file
           const agentId: string | undefined = (agentDef as any).id;
 
+          // Read agent name from config file
+          let agentName = 'Unknown Agent';
           if (configExists) {
+            try {
+              const config = await readConfig<any>(fullConfigPath);
+              agentName = config.name || 'Unnamed Agent';
+            } catch (error) {
+              // If can't read config, keep "Unknown Agent"
+            }
+
             // Simple status based on whether ID exists
             if (agentId) {
               status = 'created';
@@ -62,7 +71,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
           }
 
           statusList.push({
-            name: agentDef.name,
+            name: agentName,
             configPath,
             configExists,
             agentId,

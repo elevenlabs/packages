@@ -33,8 +33,28 @@ export const ListAgentsView: React.FC<ListAgentsViewProps> = ({ onComplete }) =>
           return;
         }
 
-        const agentsConfig = await readConfig<{ agents: Agent[] }>(agentsConfigPath);
-        setAgents(agentsConfig.agents || []);
+        const agentsConfig = await readConfig<{ agents: { config: string; id?: string }[] }>(agentsConfigPath);
+        
+        // Read names from individual config files
+        const agentsWithNames = await Promise.all(
+          (agentsConfig.agents || []).map(async (agentDef) => {
+            let name = 'Unknown Agent';
+            if (agentDef.config && await fs.pathExists(agentDef.config)) {
+              try {
+                const config = await readConfig<any>(agentDef.config);
+                name = config.name || 'Unnamed Agent';
+              } catch (error) {
+                // Keep 'Unknown Agent' if can't read
+              }
+            }
+            return {
+              name,
+              config: agentDef.config
+            };
+          })
+        );
+        
+        setAgents(agentsWithNames);
         setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load agents');

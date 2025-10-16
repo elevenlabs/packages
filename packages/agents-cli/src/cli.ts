@@ -91,13 +91,28 @@ const TOOLS_CONFIG_FILE = "tools.json";
 const TESTS_CONFIG_FILE = "tests.json";
 
 interface AgentDefinition {
-  name: string;
   config: string;
   id?: string;
 }
 
 interface AgentsConfig {
   agents: AgentDefinition[];
+}
+
+/**
+ * Helper function to read agent name from config file
+ */
+async function getAgentName(configPath: string): Promise<string> {
+  try {
+    const fullPath = path.resolve(configPath);
+    if (await fs.pathExists(fullPath)) {
+      const config = await readConfig<AgentConfig>(fullPath);
+      return config.name || 'Unnamed Agent';
+    }
+    return 'Unknown Agent';
+  } catch (error) {
+    return 'Unknown Agent';
+  }
 }
 
 interface TestDefinition {
@@ -518,7 +533,6 @@ program
       
       // Store agent ID in index file
       const newAgent: AgentDefinition = {
-        name,
         config: configPath,
         id: agentId
       };
@@ -619,12 +633,14 @@ program
         const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
         
         // Prepare agents for UI
-        const pushAgentsData = agentsConfig.agents.map(agent => ({
-          name: agent.name,
-          configPath: agent.config,
-          status: 'pending' as const,
-          agentId: agent.id
-        }));
+        const pushAgentsData = await Promise.all(
+          agentsConfig.agents.map(async agent => ({
+            name: await getAgentName(agent.config),
+            configPath: agent.config,
+            status: 'pending' as const,
+            agentId: agent.id
+          }))
+        );
         
         const { waitUntilExit } = render(
           React.createElement(PushView, { 
@@ -1175,17 +1191,16 @@ async function pushAgents(dryRun = false): Promise<void> {
   let changesMade = false;
   
   for (const agentDef of agentsToProcess) {
-    const agentDefName = agentDef.name;
     const configPath = agentDef.config;
     
     if (!configPath) {
-      console.log(`Warning: No config path found for agent '${agentDefName}'`);
+      console.log(`Warning: No config path found for agent`);
       continue;
     }
     
     // Check if config file exists
     if (!(await fs.pathExists(configPath))) {
-      console.log(`Warning: Config file not found for ${agentDefName}: ${configPath}`);
+      console.log(`Warning: Config file not found: ${configPath}`);
       continue;
     }
     
@@ -1194,9 +1209,11 @@ async function pushAgents(dryRun = false): Promise<void> {
     try {
       agentConfig = await readConfig<AgentConfig>(configPath);
     } catch (error) {
-      console.log(`Error reading config for ${agentDefName}: ${error}`);
+      console.log(`Error reading config for ${configPath}: ${error}`);
       continue;
     }
+
+    const agentDefName = agentConfig.name || 'Unnamed Agent';
     
     // Get agent ID from index file
     const agentId = agentDef.id;
@@ -1216,7 +1233,7 @@ async function pushAgents(dryRun = false): Promise<void> {
       const platformSettings = agentConfig.platform_settings;
       const tags = agentConfig.tags || [];
       
-      const agentDisplayName = agentConfig.name || agentDefName;
+      const agentDisplayName = agentConfig.name;
       
       if (!agentId) {
         // Create new agent
@@ -1277,7 +1294,7 @@ async function showStatus(): Promise<void> {
   console.log('='.repeat(50));
   
   for (const agentDef of agentsToShow) {
-    const agentNameCurrent = agentDef.name;
+    const agentNameCurrent = await getAgentName(agentDef.config);
     const configPath = agentDef.config;
     
     if (!configPath) {
@@ -1411,12 +1428,14 @@ async function listConfiguredAgents(): Promise<void> {
   console.log('Configured Agents:');
   console.log('='.repeat(30));
   
-  agentsConfig.agents.forEach((agentDef, i) => {
-    console.log(`${i + 1}. ${agentDef.name}`);
+  for (let i = 0; i < agentsConfig.agents.length; i++) {
+    const agentDef = agentsConfig.agents[i];
+    const agentName = await getAgentName(agentDef.config);
+    console.log(`${i + 1}. ${agentName}`);
     const configPath = agentDef.config || 'No config path';
     console.log(`   Config: ${configPath}`);
     console.log();
-  });
+  }
 }
 
 /**
@@ -1606,7 +1625,6 @@ async function pullAgents(options: PullOptions): Promise<void> {
         await writeConfig(configFilePath, agentConfig);
         
         const newAgent: AgentDefinition = {
-          name: agent.name,
           config: configPath,
           id: agent.id
         };
@@ -1879,7 +1897,8 @@ async function generateWidget(agentId: string): Promise<void> {
   htmlSnippet += `></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
   
-  console.log(`HTML Widget for agent '${agentDef.name}' (residency: ${residency}):`);
+  const agentName = await getAgentName(agentDef.config);
+  console.log(`HTML Widget for agent '${agentName}' (residency: ${residency}):`);
   console.log('='.repeat(60));
   console.log(htmlSnippet);
   console.log('='.repeat(60));
@@ -2329,14 +2348,16 @@ async function runAgentTestsWithUI(agentId: string): Promise<void> {
   const configPath = agentDef.config;
 
   if (!configPath || !(await fs.pathExists(configPath))) {
-    throw new Error(`Config file not found for agent '${agentDef.name}': ${configPath}`);
+    const agentName = await getAgentName(configPath);
+    throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
   }
 
   const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
+  const agentName = agentConfig.name || 'Unnamed Agent';
 
   if (attachedTests.length === 0) {
-    throw new Error(`No tests attached to agent '${agentDef.name}'. Add tests to the agent's testing configuration.`);
+    throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
   }
 
   const testIds = attachedTests.map(test => test.test_id);
@@ -2344,7 +2365,7 @@ async function runAgentTestsWithUI(agentId: string): Promise<void> {
   // Use TestView UI
   const { waitUntilExit } = render(
     React.createElement(TestView, {
-      agentName: agentDef.name,
+      agentName,
       agentId,
       testIds
     })
@@ -2370,19 +2391,21 @@ async function runAgentTests(agentId: string): Promise<void> {
   const configPath = agentDef.config;
 
   if (!configPath || !(await fs.pathExists(configPath))) {
-    throw new Error(`Config file not found for agent '${agentDef.name}': ${configPath}`);
+    const agentName = await getAgentName(configPath);
+    throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
   }
 
   const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
+  const agentName = agentConfig.name || 'Unnamed Agent';
 
   if (attachedTests.length === 0) {
-    throw new Error(`No tests attached to agent '${agentDef.name}'. Add tests to the agent's testing configuration.`);
+    throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
   }
 
   const testIds = attachedTests.map(test => test.test_id);
 
-  console.log(`Running ${testIds.length} test(s) for agent '${agentDef.name}'...`);
+  console.log(`Running ${testIds.length} test(s) for agent '${agentName}'...`);
   console.log('');
 
   // Run tests without UI
@@ -2472,7 +2495,7 @@ async function deleteAgent(agentId: string): Promise<void> {
   }
   
   const agentDef = agentsConfig.agents[agentIndex];
-  const agentName = agentDef.name;
+  const agentName = await getAgentName(agentDef.config);
   const configPath = agentDef.config;
   
   console.log(`Deleting agent '${agentName}' (ID: ${agentId})...`);
@@ -2519,9 +2542,11 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
   
   // Show what will be deleted
   console.log(`\nFound ${agentsConfig.agents.length} agent(s) to delete:`);
-  agentsConfig.agents.forEach((agent, i) => {
-    console.log(`  ${i + 1}. ${agent.name} (${agent.id})`);
-  });
+  for (let i = 0; i < agentsConfig.agents.length; i++) {
+    const agent = agentsConfig.agents[i];
+    const agentName = await getAgentName(agent.config);
+    console.log(`  ${i + 1}. ${agentName} (${agent.id})`);
+  }
   
   // Confirm deletion (skip if --no-ui)
   if (ui) {
@@ -2543,7 +2568,8 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
   // Delete each agent
   for (const agentDef of agentsConfig.agents) {
     try {
-      console.log(`Deleting '${agentDef.name}' (${agentDef.id})...`);
+      const agentName = await getAgentName(agentDef.config);
+      console.log(`Deleting '${agentName}' (${agentDef.id})...`);
       
       // Delete from ElevenLabs
       if (agentDef.id) {
@@ -2565,7 +2591,8 @@ async function deleteAllAgents(ui: boolean = true): Promise<void> {
       
       successCount++;
     } catch (error) {
-      console.error(`  Failed to delete '${agentDef.name}': ${error}`);
+      const agentName = await getAgentName(agentDef.config);
+      console.error(`  Failed to delete '${agentName}': ${error}`);
       failCount++;
     }
   }
