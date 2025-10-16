@@ -605,7 +605,6 @@ templatesCommand
 program
   .command('push')
   .description('Push agents to ElevenLabs API when configs change')
-  .option('--agent <name>', 'Specific agent name to push (defaults to all agents)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: PushOptions & { ui: boolean }) => {
@@ -619,17 +618,8 @@ program
         
         const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
         
-        // Filter agents if specific agent name provided
-        let agentsToProcess = agentsConfig.agents;
-        if (options.agent) {
-          agentsToProcess = agentsConfig.agents.filter(agent => agent.name === options.agent);
-          if (agentsToProcess.length === 0) {
-            throw new Error(`Agent '${options.agent}' not found in configuration`);
-          }
-        }
-        
         // Prepare agents for UI
-        const pushAgentsData = agentsToProcess.map(agent => ({
+        const pushAgentsData = agentsConfig.agents.map(agent => ({
           name: agent.name,
           configPath: agent.config,
           status: 'pending' as const,
@@ -645,7 +635,7 @@ program
         await waitUntilExit();
       } else {
         // Use existing non-UI push
-        await pushAgents(options.agent, options.dryRun);
+        await pushAgents(options.dryRun);
       }
     } catch (error) {
       console.error(`Error during push: ${error}`);
@@ -656,20 +646,17 @@ program
 program
   .command('status')
   .description('Show the status of agents')
-  .option('--agent <name>', 'Specific agent name to check (defaults to all agents)')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: StatusOptions & { ui: boolean }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for status display
         const { waitUntilExit } = render(
-          React.createElement(StatusView, {
-            agentName: options.agent
-          })
+          React.createElement(StatusView, {})
         );
         await waitUntilExit();
       } else {
-        await showStatus(options.agent);
+        await showStatus();
       }
     } catch (error) {
       console.error(`Error showing status: ${error}`);
@@ -680,11 +667,10 @@ program
 program
   .command('watch')
   .description('Watch for config changes and auto-push agents')
-  .option('--agent <name>', 'Specific agent name to watch (defaults to all agents)')
   .option('--interval <seconds>', 'Check interval in seconds', '5')
   .action(async (options: WatchOptions) => {
     try {
-      await watchForChanges(options.agent, parseInt(options.interval));
+      await watchForChanges(parseInt(options.interval));
     } catch (error) {
       console.error(`Error in watch mode: ${error}`);
       process.exit(1);
@@ -869,10 +855,10 @@ program
 program
   .command('widget')
   .description('Generate HTML widget snippet for an agent')
-  .argument('<name>', 'Name of the agent to generate widget for')
-  .action(async (name: string) => {
+  .argument('<id>', 'ID of the agent to generate widget for')
+  .action(async (id: string) => {
     try {
-      await generateWidget(name);
+      await generateWidget(id);
     } catch (error) {
       console.error(`Error generating widget: ${error}`);
       process.exit(1);
@@ -996,14 +982,14 @@ program
 program
   .command('test')
   .description('Run tests attached to an agent')
-  .argument('<agentName>', 'Name of the agent to test')
+  .argument('<id>', 'ID of the agent to test')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (agentName: string, options: { ui: boolean }) => {
+  .action(async (id: string, options: { ui: boolean }) => {
     try {
       if (options.ui !== false) {
-        await runAgentTestsWithUI(agentName);
+        await runAgentTestsWithUI(id);
       } else {
-        await runAgentTests(agentName);
+        await runAgentTests(id);
       }
     } catch (error) {
       console.error(`Error running tests: ${error}`);
@@ -1180,7 +1166,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
   }
 }
 
-async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
+async function pushAgents(dryRun = false): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1195,14 +1181,7 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
     client = await getElevenLabsClient();
   }
   
-  // Filter agents if specific agent name provided
-  let agentsToProcess = agentsConfig.agents;
-  if (agentName) {
-    agentsToProcess = agentsConfig.agents.filter(agent => agent.name === agentName);
-    if (agentsToProcess.length === 0) {
-      throw new Error(`Agent '${agentName}' not found in configuration`);
-    }
-  }
+  const agentsToProcess = agentsConfig.agents;
   
   let changesMade = false;
   
@@ -1290,7 +1269,7 @@ async function pushAgents(agentName?: string, dryRun = false): Promise<void> {
   }
 }
 
-async function showStatus(agentName?: string): Promise<void> {
+async function showStatus(): Promise<void> {
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
     throw new Error('agents.json not found. Run \'init\' first.');
@@ -1303,14 +1282,7 @@ async function showStatus(agentName?: string): Promise<void> {
     return;
   }
   
-  // Filter agents if specific agent name provided
-  let agentsToShow = agentsConfig.agents;
-  if (agentName) {
-    agentsToShow = agentsConfig.agents.filter(agent => agent.name === agentName);
-    if (agentsToShow.length === 0) {
-      throw new Error(`Agent '${agentName}' not found in configuration`);
-    }
-  }
+  const agentsToShow = agentsConfig.agents;
   
   console.log('Agent Status:');
   console.log('='.repeat(50));
@@ -1351,13 +1323,9 @@ async function showStatus(agentName?: string): Promise<void> {
   }
 }
 
-async function watchForChanges(agentName?: string, interval = 5): Promise<void> {
+async function watchForChanges(interval = 5): Promise<void> {
   console.log(`Watching for config changes (checking every ${interval}s)...`);
-  if (agentName) {
-    console.log(`Agent: ${agentName}`);
-  } else {
-    console.log('Agent: All agents');
-  }
+  console.log('Agent: All agents');
   console.log('Press Ctrl+C to stop');
   
   // Track file modification times
@@ -1384,11 +1352,7 @@ async function watchForChanges(agentName?: string, interval = 5): Promise<void> 
     try {
       const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
       
-      // Filter agents if specific agent name provided
-      let agentsToWatch = agentsConfig.agents;
-      if (agentName) {
-        agentsToWatch = agentsConfig.agents.filter(agent => agent.name === agentName);
-      }
+      const agentsToWatch = agentsConfig.agents;
       
       // Check agents.json itself
       const agentsMtime = await getFileMtime(agentsConfigPath);
@@ -1425,7 +1389,7 @@ async function watchForChanges(agentName?: string, interval = 5): Promise<void> 
       if (await checkForChanges()) {
         console.log('Running push...');
         try {
-          await pushAgents(agentName, false);
+          await pushAgents(false);
         } catch (error) {
           console.log(`Error during push: ${error}`);
         }
@@ -1898,7 +1862,7 @@ async function pullTools(options: PullToolsOptions): Promise<void> {
   }
 }
 
-async function generateWidget(name: string): Promise<void> {
+async function generateWidget(agentId: string): Promise<void> {
   // Load agents configuration
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -1907,17 +1871,10 @@ async function generateWidget(name: string): Promise<void> {
   
   // Check if agent exists in config
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
-  const agentDef = agentsConfig.agents.find(agent => agent.name === name);
+  const agentDef = agentsConfig.agents.find(agent => agent.id === agentId);
   
   if (!agentDef) {
-    throw new Error(`Agent '${name}' not found in configuration`);
-  }
-  
-  // Get agent ID from index file (agents.json)
-  const agentId = agentDef.id;
-  
-  if (!agentId) {
-    throw new Error(`Agent '${name}' not found or not yet pushed. Run 'agents push --agent ${name}' to create the agent first`);
+    throw new Error(`Agent with ID '${agentId}' not found in configuration`);
   }
   
   const residency = await getResidency();
@@ -1933,7 +1890,7 @@ async function generateWidget(name: string): Promise<void> {
   htmlSnippet += `></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
   
-  console.log(`HTML Widget for '${name}' (residency: ${residency}):`);
+  console.log(`HTML Widget for agent '${agentDef.name}' (residency: ${residency}):`);
   console.log('='.repeat(60));
   console.log(htmlSnippet);
   console.log('='.repeat(60));
@@ -2376,7 +2333,7 @@ async function pullTests(options: { test?: string; outputDir: string; dryRun: bo
   }
 }
 
-async function runAgentTestsWithUI(agentName: string): Promise<void> {
+async function runAgentTestsWithUI(agentId: string): Promise<void> {
   // Load agents configuration and get agent details
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -2384,31 +2341,24 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
   }
 
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
-  const agentDef = agentsConfig.agents.find(agent => agent.name === agentName);
+  const agentDef = agentsConfig.agents.find(agent => agent.id === agentId);
 
   if (!agentDef) {
-    throw new Error(`Agent '${agentName}' not found in configuration`);
-  }
-
-  // Get agent ID from index file (agents.json)
-  const agentId = agentDef.id;
-  
-  if (!agentId) {
-    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
+    throw new Error(`Agent with ID '${agentId}' not found in configuration`);
   }
 
   // Get agent config to find attached tests
   const configPath = agentDef.config;
 
   if (!configPath || !(await fs.pathExists(configPath))) {
-    throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
+    throw new Error(`Config file not found for agent '${agentDef.name}': ${configPath}`);
   }
 
   const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
-    throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
+    throw new Error(`No tests attached to agent '${agentDef.name}'. Add tests to the agent's testing configuration.`);
   }
 
   const testIds = attachedTests.map(test => test.test_id);
@@ -2416,7 +2366,7 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
   // Use TestView UI
   const { waitUntilExit } = render(
     React.createElement(TestView, {
-      agentName,
+      agentName: agentDef.name,
       agentId,
       testIds
     })
@@ -2424,7 +2374,7 @@ async function runAgentTestsWithUI(agentName: string): Promise<void> {
   await waitUntilExit();
 }
 
-async function runAgentTests(agentName: string): Promise<void> {
+async function runAgentTests(agentId: string): Promise<void> {
   // Load agents configuration and get agent details
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
   if (!(await fs.pathExists(agentsConfigPath))) {
@@ -2432,36 +2382,29 @@ async function runAgentTests(agentName: string): Promise<void> {
   }
 
   const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
-  const agentDef = agentsConfig.agents.find(agent => agent.name === agentName);
+  const agentDef = agentsConfig.agents.find(agent => agent.id === agentId);
 
   if (!agentDef) {
-    throw new Error(`Agent '${agentName}' not found in configuration`);
-  }
-
-  // Get agent ID from index file (agents.json)
-  const agentId = agentDef.id;
-  
-  if (!agentId) {
-    throw new Error(`Agent '${agentName}' not found or not yet pushed. Run 'agents push --agent ${agentName}' to create the agent first`);
+    throw new Error(`Agent with ID '${agentId}' not found in configuration`);
   }
 
   // Get agent config to find attached tests
   const configPath = agentDef.config;
 
   if (!configPath || !(await fs.pathExists(configPath))) {
-    throw new Error(`Config file not found for agent '${agentName}': ${configPath}`);
+    throw new Error(`Config file not found for agent '${agentDef.name}': ${configPath}`);
   }
 
   const agentConfig = await readConfig<AgentConfig>(configPath);
   const attachedTests = agentConfig.platform_settings?.testing?.attached_tests || [];
 
   if (attachedTests.length === 0) {
-    throw new Error(`No tests attached to agent '${agentName}'. Add tests to the agent's testing configuration.`);
+    throw new Error(`No tests attached to agent '${agentDef.name}'. Add tests to the agent's testing configuration.`);
   }
 
   const testIds = attachedTests.map(test => test.test_id);
 
-  console.log(`Running ${testIds.length} test(s) for agent '${agentName}'...`);
+  console.log(`Running ${testIds.length} test(s) for agent '${agentDef.name}'...`);
   console.log('');
 
   // Run tests without UI
