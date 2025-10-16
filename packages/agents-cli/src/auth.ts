@@ -130,10 +130,12 @@ export async function storeApiKey(apiKey: string, environment: string = 'prod'):
  * Retrieve API key from secure storage for a specific environment
  */
 export async function retrieveApiKey(environment: string = 'prod'): Promise<string | undefined> {
-  // Environment variable takes highest priority
-  const envKey = process.env.ELEVENLABS_API_KEY;
-  if (envKey) {
-    return envKey;
+  // Environment variable only applies to 'prod' environment
+  if (environment === 'prod') {
+    const envKey = process.env.ELEVENLABS_API_KEY;
+    if (envKey) {
+      return envKey;
+    }
   }
 
   // Try file storage

@@ -19,7 +19,7 @@ function isPlatformSettings(settings: unknown): settings is AgentPlatformSetting
 /**
  * Gets the API base URL based on residency configuration
  */
-function getApiBaseUrl(residency?: Location): string {
+export function getApiBaseUrl(residency?: Location): string {
   switch (residency) {
     case 'eu-residency':
       return 'https://api.eu.residency.elevenlabs.io';

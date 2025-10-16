@@ -1372,7 +1372,6 @@ describe("CLI End-to-End Tests", () => {
 
       expect(testsConfig.tests).toHaveLength(1);
       const createdTest = testsConfig.tests[0];
-      expect(createdTest.name).toBe(testName);
       expect(createdTest.id).toBeTruthy();
 
       // Clear local tests.json to simulate fresh pull
@@ -1397,7 +1396,6 @@ describe("CLI End-to-End Tests", () => {
 
       // Verify exactly 1 test exists (the one we created)
       expect(testsConfig.tests).toHaveLength(1);
-      expect(testsConfig.tests[0].name).toBe(testName);
       expect(testsConfig.tests[0].id).toBe(createdTest.id);
 
       console.log(`✓ Verified test '${testName}' is the only test after pull`);
@@ -1466,7 +1464,6 @@ describe("CLI End-to-End Tests", () => {
 
       expect(testsConfig.tests).toHaveLength(1);
       const pulledTest = testsConfig.tests[0];
-      expect(pulledTest.name).toBe(testName);
       expect(pulledTest.id).toBe(createdTestId);
 
       // Compare config files
@@ -1594,7 +1591,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(testsJsonPath, "utf-8")
       );
       testsConfig.tests = testsConfig.tests.filter(
-        (t: any) => t.name !== testNames[2]
+        (t: any) => t.id !== test3Id
       );
       await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
 
@@ -1632,7 +1629,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(testsJsonPath, "utf-8")
       );
       testsConfig.tests = testsConfig.tests.filter(
-        (t: any) => t.name !== testNames[2]
+        (t: any) => t.id !== test3Id
       );
       await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
 
@@ -1768,14 +1765,16 @@ describe("CLI End-to-End Tests", () => {
       const test1 = testsConfig.tests[0];
       const test2 = testsConfig.tests[1];
 
-      expect(test1.name).toBe(duplicateName);
-      expect(test2.name).toBe(duplicateName);
       expect(test1.id).toBeTruthy();
       expect(test2.id).toBeTruthy();
       expect(test1.id).not.toBe(test2.id); // Different IDs
 
+      // Read names from config files for logging
+      const test1Config = JSON.parse(await fs.readFile(path.join(pushPullTempDir, test1.config), "utf-8"));
+      const test2Config = JSON.parse(await fs.readFile(path.join(pushPullTempDir, test2.config), "utf-8"));
+
       console.log(
-        `✓ Created two tests: '${test1.name}' (${test1.id}) and '${test2.name}' (${test2.id})`
+        `✓ Created two tests: '${test1Config.name}' (${test1.id}) and '${test2Config.name}' (${test2.id})`
       );
 
       // Step 3: Delete the first test locally (remove from tests.json and delete config file)
@@ -1824,12 +1823,20 @@ describe("CLI End-to-End Tests", () => {
       expect(pulledTest1).toBeTruthy();
       expect(pulledTest2).toBeTruthy();
 
-      // CRITICAL: Both should have the same name (not deduplicated like test_1, test_2)
-      expect(pulledTest1.name).toBe(duplicateName);
-      expect(pulledTest2.name).toBe(duplicateName);
+      // Names are stored in individual config files, not in tests.json
+      // Read the actual names from config files
+      const pulledTest1Config = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledTest1.config), "utf-8")
+      );
+      const pulledTest2Config = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledTest2.config), "utf-8")
+      );
+
+      expect(pulledTest1Config.name).toBe(duplicateName);
+      expect(pulledTest2Config.name).toBe(duplicateName);
 
       console.log(
-        `✓ Both tests preserved the same name: '${pulledTest1.name}' and '${pulledTest2.name}'`
+        `✓ Both tests preserved the same name: '${pulledTest1Config.name}' and '${pulledTest2Config.name}'`
       );
 
       // Step 6: Verify filenames are deduplicated (e.g., test.json and test-1.json)
@@ -1987,7 +1994,6 @@ describe("CLI End-to-End Tests", () => {
 
         expect(toolsConfig.tools).toHaveLength(1);
         const createdTool = toolsConfig.tools[0];
-        expect(createdTool.name).toBe(toolName);
         expect(createdTool.id).toBeTruthy();
 
         // Clear local tools.json to simulate fresh pull
@@ -2012,7 +2018,6 @@ describe("CLI End-to-End Tests", () => {
 
         // Verify exactly 1 tool exists (the one we created)
         expect(toolsConfig.tools).toHaveLength(1);
-        expect(toolsConfig.tools[0].name).toBe(toolName);
         expect(toolsConfig.tools[0].id).toBe(createdTool.id);
 
         console.log(`✓ Verified ${toolType} tool '${toolName}' is the only tool after pull`);
@@ -2081,7 +2086,6 @@ describe("CLI End-to-End Tests", () => {
 
         expect(toolsConfig.tools).toHaveLength(1);
         const pulledTool = toolsConfig.tools[0];
-        expect(pulledTool.name).toBe(toolName);
         expect(pulledTool.id).toBe(createdToolId);
 
         // Compare config files
@@ -2207,7 +2211,7 @@ describe("CLI End-to-End Tests", () => {
           await fs.readFile(toolsJsonPath, "utf-8")
         );
         toolsConfig.tools = toolsConfig.tools.filter(
-          (t: any) => t.name !== toolNames[2]
+          (t: any) => t.id !== tool3Id
         );
         await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
 
@@ -2245,7 +2249,7 @@ describe("CLI End-to-End Tests", () => {
           await fs.readFile(toolsJsonPath, "utf-8")
         );
         toolsConfig.tools = toolsConfig.tools.filter(
-          (t: any) => t.name !== toolNames[2]
+          (t: any) => t.id !== tool3Id
         );
         await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
 
@@ -2380,23 +2384,24 @@ describe("CLI End-to-End Tests", () => {
 
       expect(toolsConfig.tools.length).toBeGreaterThanOrEqual(2);
       
-      // Find our duplicate tools
-      const duplicateTools = toolsConfig.tools.filter(
-        (t: any) => t.name === duplicateName
-      );
-      expect(duplicateTools).toHaveLength(2);
-      
-      const tool1 = duplicateTools[0];
-      const tool2 = duplicateTools[1];
+      // Get the last two tools (the ones we just created)
+      // Names are no longer stored in tools.json, need to read from config files
+      const tool1 = toolsConfig.tools[toolsConfig.tools.length - 2];
+      const tool2 = toolsConfig.tools[toolsConfig.tools.length - 1];
 
-      expect(tool1.name).toBe(duplicateName);
-      expect(tool2.name).toBe(duplicateName);
       expect(tool1.id).toBeTruthy();
       expect(tool2.id).toBeTruthy();
       expect(tool1.id).not.toBe(tool2.id); // Different IDs
 
+      // Read names from config files to verify they're the same
+      const tool1Config = JSON.parse(await fs.readFile(path.join(pushPullTempDir, tool1.config), "utf-8"));
+      const tool2Config = JSON.parse(await fs.readFile(path.join(pushPullTempDir, tool2.config), "utf-8"));
+
+      expect(tool1Config.name).toBe(duplicateName);
+      expect(tool2Config.name).toBe(duplicateName);
+
       console.log(
-        `✓ Created two tools: '${tool1.name}' (${tool1.id}) and '${tool2.name}' (${tool2.id})`
+        `✓ Created two tools: '${tool1Config.name}' (${tool1.id}) and '${tool2Config.name}' (${tool2.id})`
       );
 
       // Step 3: Delete the first tool locally (remove from tools.json and delete config file)
@@ -2414,11 +2419,9 @@ describe("CLI End-to-End Tests", () => {
       toolsConfig = JSON.parse(
         await fs.readFile(toolsJsonPath, "utf-8")
       );
-      const remainingDuplicateTools = toolsConfig.tools.filter(
-        (t: any) => t.name === duplicateName
-      );
-      expect(remainingDuplicateTools).toHaveLength(1);
-      expect(remainingDuplicateTools[0].id).toBe(tool2.id);
+      const remainingTool = toolsConfig.tools.find((t: any) => t.id === tool2.id);
+      expect(remainingTool).toBeTruthy();
+      expect(toolsConfig.tools.find((t: any) => t.id === tool1.id)).toBeUndefined();
 
       // Step 4: Pull tools from remote
       console.log(`Pulling tools from remote...`);
@@ -2430,15 +2433,10 @@ describe("CLI End-to-End Tests", () => {
 
       expect(pullResult.exitCode).toBe(0);
 
-      // Step 5: Verify both tools are now present locally with the same name
+      // Step 5: Verify both tools are now present locally
       toolsConfig = JSON.parse(
         await fs.readFile(toolsJsonPath, "utf-8")
       );
-
-      const allDuplicateTools = toolsConfig.tools.filter(
-        (t: any) => t.name === duplicateName
-      );
-      expect(allDuplicateTools).toHaveLength(2);
 
       // Find the pulled tools by ID
       const pulledTool1 = toolsConfig.tools.find(
@@ -2451,12 +2449,20 @@ describe("CLI End-to-End Tests", () => {
       expect(pulledTool1).toBeTruthy();
       expect(pulledTool2).toBeTruthy();
 
+      // Read names from config files and verify they're the same
+      const pulledTool1Config = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledTool1.config), "utf-8")
+      );
+      const pulledTool2Config = JSON.parse(
+        await fs.readFile(path.join(pushPullTempDir, pulledTool2.config), "utf-8")
+      );
+
       // CRITICAL: Both should have the same name (not deduplicated like tool_1, tool_2)
-      expect(pulledTool1.name).toBe(duplicateName);
-      expect(pulledTool2.name).toBe(duplicateName);
+      expect(pulledTool1Config.name).toBe(duplicateName);
+      expect(pulledTool2Config.name).toBe(duplicateName);
 
       console.log(
-        `✓ Both tools preserved the same name: '${pulledTool1.name}' and '${pulledTool2.name}'`
+        `✓ Both tools preserved the same name: '${pulledTool1Config.name}' and '${pulledTool2Config.name}'`
       );
 
       // Step 6: Verify filenames are deduplicated (e.g., tool.json and tool-1.json)
@@ -2492,6 +2498,311 @@ describe("CLI End-to-End Tests", () => {
       console.log(
         `✓ Test completed: Duplicate tool names preserved, filenames deduplicated`
       );
+    });
+  });
+
+  describeIfApiKey("[integration write] multi-environment workflow", () => {
+    let multiEnvTempDir: string;
+    const hasTestApiKey = !!process.env.ELEVENLABS_TEST_API_KEY;
+    
+    // Skip this test suite if TEST API key is not provided
+    const testFn = hasTestApiKey ? it : it.skip;
+
+    beforeAll(async () => {
+      if (!hasTestApiKey) {
+        console.log("Skipping multi-environment tests: ELEVENLABS_TEST_API_KEY not found");
+        console.log("   To run these tests, add ELEVENLABS_TEST_API_KEY to your .env file");
+        return;
+      }
+
+      // One-time cleanup for both environments
+      console.log("One-time cleanup: Removing all remote agents from both environments...");
+      
+      const cleanupTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-multienv-cleanup-"));
+      
+      try {
+        // Initialize project
+        await runCli(["init", "--no-ui"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+        });
+
+        // Cleanup prod environment
+        const prodApiKey = process.env.ELEVENLABS_API_KEY!;
+        await runCli(["login", "--no-ui", "--env", "prod"], {
+          cwd: cleanupTempDir,
+          input: `${prodApiKey}\n`,
+          includeApiKey: true,
+        });
+
+        await runCli(["pull", "--all", "--no-ui", "--env", "prod"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        try {
+          await runCli(["delete", "--all", "--no-ui", "--env", "prod"], {
+            cwd: cleanupTempDir,
+            includeApiKey: true,
+            input: "y\n",
+          });
+          console.log("✓ Cleaned up prod environment");
+        } catch (error) {
+          console.warn(`Failed to delete prod agents: ${error}`);
+        }
+
+        // Cleanup test environment
+        const testApiKey = process.env.ELEVENLABS_TEST_API_KEY!;
+        await runCli(["login", "--no-ui", "--env", "test"], {
+          cwd: cleanupTempDir,
+          input: `${testApiKey}\n`,
+          includeApiKey: true,
+        });
+
+        await runCli(["pull", "--all", "--no-ui", "--env", "test"], {
+          cwd: cleanupTempDir,
+          includeApiKey: true,
+          input: "y\n",
+        });
+
+        try {
+          await runCli(["delete", "--all", "--no-ui", "--env", "test"], {
+            cwd: cleanupTempDir,
+            includeApiKey: true,
+            input: "y\n",
+          });
+          console.log("✓ Cleaned up test environment");
+        } catch (error) {
+          console.warn(`Failed to delete test agents: ${error}`);
+        }
+      } finally {
+        await fs.remove(cleanupTempDir);
+      }
+    });
+
+    beforeEach(async () => {
+      multiEnvTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-e2e-multienv-"));
+    });
+
+    afterEach(async () => {
+      await fs.remove(multiEnvTempDir);
+    });
+
+    testFn("should handle complete multi-environment workflow", async () => {
+      const prodApiKey = process.env.ELEVENLABS_API_KEY!;
+      const testApiKey = process.env.ELEVENLABS_TEST_API_KEY!;
+
+      // Step 1: Initialize project
+      console.log("Step 1: Initializing project...");
+      const initResult = await runCli(["init", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+      });
+      expect(initResult.exitCode).toBe(0);
+
+      // Step 2: Login to prod environment
+      console.log("Step 2: Login to prod environment...");
+      const loginProdResult = await runCli(["login", "--no-ui", "--env", "prod"], {
+        cwd: multiEnvTempDir,
+        input: `${prodApiKey}\n`,
+        includeApiKey: true,
+      });
+      expect(loginProdResult.exitCode).toBe(0);
+
+      // Step 3: Login to test environment
+      console.log("Step 3: Login to test environment...");
+      const loginTestResult = await runCli(["login", "--no-ui", "--env", "test"], {
+        cwd: multiEnvTempDir,
+        input: `${testApiKey}\n`,
+        includeApiKey: true,
+      });
+      expect(loginTestResult.exitCode).toBe(0);
+
+      // Verify both environments are logged in
+      // Don't include API key env var so whoami reads from stored keys
+      const whoamiResult = await runCli(["whoami", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: false,
+      });
+      expect(whoamiResult.exitCode).toBe(0);
+      expect(whoamiResult.stdout).toContain("prod");
+      expect(whoamiResult.stdout).toContain("test");
+
+      // Step 4: Add agent to prod (default)
+      console.log("Step 4: Adding agent to prod environment...");
+      const addProdResult = await runCli(["add", "prod-agent", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+      });
+      expect(addProdResult.exitCode).toBe(0);
+
+      // Step 5: Add agent to test environment
+      console.log("Step 5: Adding agent to test environment...");
+      const addTestResult = await runCli(["add", "test-agent", "--no-ui", "--env", "test"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+      });
+      expect(addTestResult.exitCode).toBe(0);
+
+      // Verify both agents exist in agents.json with correct environments
+      let agentsJsonPath = path.join(multiEnvTempDir, "agents.json");
+      let agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(2);
+      
+      const prodAgent = agentsConfig.agents.find((a: any) => (a.env || 'prod') === 'prod');
+      const testAgent = agentsConfig.agents.find((a: any) => a.env === 'test');
+      expect(prodAgent).toBeTruthy();
+      expect(testAgent).toBeTruthy();
+      
+      const prodAgentId = prodAgent.id;
+      const testAgentId = testAgent.id;
+      console.log(`✓ Created prod agent (${prodAgentId}) and test agent (${testAgentId})`);
+
+      // Step 6: Delete local files
+      console.log("Step 6: Deleting local files...");
+      await fs.remove(agentsJsonPath);
+      await fs.remove(path.join(multiEnvTempDir, "agent_configs"));
+
+      // Step 7: Pull from test environment only
+      console.log("Step 7: Pulling from test environment...");
+      const pullTestResult = await runCli(["pull", "--all", "--no-ui", "--env", "test"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+      if (pullTestResult.exitCode !== 0) {
+        console.log("Pull stderr:", pullTestResult.stderr);
+        console.log("Pull stdout:", pullTestResult.stdout);
+      }
+      expect(pullTestResult.exitCode).toBe(0);
+
+      // Step 8: Check that only one agent was pulled (test agent)
+      console.log("Step 8: Verifying only test agent was pulled...");
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(1);
+      expect(agentsConfig.agents[0].env).toBe("test");
+      expect(agentsConfig.agents[0].id).toBe(testAgentId);
+      console.log("✓ Only test agent was pulled");
+
+      // Step 9: Pull from prod environment
+      console.log("Step 9: Pulling from prod environment...");
+      const pullProdResult = await runCli(["pull", "--all", "--no-ui", "--env", "prod"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+      expect(pullProdResult.exitCode).toBe(0);
+
+      // Step 10: Check both agents exist
+      console.log("Step 10: Verifying both agents exist...");
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(2);
+      
+      const pulledProdAgent = agentsConfig.agents.find((a: any) => a.id === prodAgentId);
+      const pulledTestAgent = agentsConfig.agents.find((a: any) => a.id === testAgentId);
+      expect(pulledProdAgent).toBeTruthy();
+      expect(pulledTestAgent).toBeTruthy();
+      expect(pulledProdAgent.env || 'prod').toBe('prod');
+      expect(pulledTestAgent.env).toBe('test');
+      console.log("✓ Both agents exist with correct environments");
+
+      // Step 11: Modify both agents
+      console.log("Step 11: Modifying both agents...");
+      const prodConfigPath = path.join(multiEnvTempDir, pulledProdAgent.config);
+      const testConfigPath = path.join(multiEnvTempDir, pulledTestAgent.config);
+      
+      const prodConfig = JSON.parse(await fs.readFile(prodConfigPath, "utf-8"));
+      const testConfig = JSON.parse(await fs.readFile(testConfigPath, "utf-8"));
+      
+      prodConfig.name = "modified-prod-agent";
+      testConfig.name = "modified-test-agent";
+      
+      await fs.writeFile(prodConfigPath, JSON.stringify(prodConfig, null, 2));
+      await fs.writeFile(testConfigPath, JSON.stringify(testConfig, null, 2));
+      console.log("✓ Modified both agents");
+
+      // Step 12: Push changes
+      console.log("Step 12: Pushing changes...");
+      const pushResult = await runCli(["push", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+      });
+      expect(pushResult.exitCode).toBe(0);
+      console.log("✓ Pushed changes");
+
+      // Step 13: Remove local files again
+      console.log("Step 13: Removing local files...");
+      await fs.remove(agentsJsonPath);
+      await fs.remove(path.join(multiEnvTempDir, "agent_configs"));
+
+      // Step 14: Pull from test environment
+      console.log("Step 14: Pulling from test environment...");
+      await runCli(["pull", "--all", "--no-ui", "--env", "test"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      // Step 15: Confirm test agent was modified
+      console.log("Step 15: Verifying test agent was modified...");
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(1);
+      const modifiedTestConfig = JSON.parse(
+        await fs.readFile(path.join(multiEnvTempDir, agentsConfig.agents[0].config), "utf-8")
+      );
+      expect(modifiedTestConfig.name).toBe("modified-test-agent");
+      console.log("✓ Test agent was modified");
+
+      // Step 16: Pull from prod environment
+      console.log("Step 16: Pulling from prod environment...");
+      await runCli(["pull", "--all", "--no-ui", "--env", "prod"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+
+      // Step 17: Confirm prod agent was modified
+      console.log("Step 17: Verifying prod agent was modified...");
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(2);
+      const modifiedProdAgent = agentsConfig.agents.find((a: any) => a.id === prodAgentId);
+      const modifiedProdConfig = JSON.parse(
+        await fs.readFile(path.join(multiEnvTempDir, modifiedProdAgent.config), "utf-8")
+      );
+      expect(modifiedProdConfig.name).toBe("modified-prod-agent");
+      console.log("✓ Prod agent was modified");
+
+      // Step 18: Delete all agents
+      console.log("Step 18: Deleting all agents...");
+      const deleteAllResult = await runCli(["delete", "--all", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+      expect(deleteAllResult.exitCode).toBe(0);
+
+      // Verify agents.json is empty
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(0);
+      console.log("✓ All agents deleted");
+
+      // Step 19: Pull from both environments
+      console.log("Step 19: Pulling from both environments...");
+      const finalPullResult = await runCli(["pull", "--all", "--no-ui"], {
+        cwd: multiEnvTempDir,
+        includeApiKey: true,
+        input: "y\n",
+      });
+      expect(finalPullResult.exitCode).toBe(0);
+
+      // Step 20: Confirm nothing was pulled
+      console.log("Step 20: Verifying nothing was pulled...");
+      agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
+      expect(agentsConfig.agents).toHaveLength(0);
+      console.log("✓ No agents pulled (both environments empty)");
+
+      console.log("✓ Multi-environment workflow test completed successfully");
     });
   });
 });

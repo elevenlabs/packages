@@ -17,6 +17,7 @@ import {
 } from './templates.js';
 import {
   getElevenLabsClient,
+  getApiBaseUrl,
   createAgentApi,
   updateAgentApi,
   listAgentsApi,
@@ -33,7 +34,7 @@ import {
   updateTestApi,
   deleteTestApi
 } from './elevenlabs-api.js';
-import { ElevenLabs } from '@elevenlabs/elevenlabs-js';
+import { ElevenLabs, ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -42,6 +43,7 @@ import {
   getResidency,
   setResidency,
   listEnvironments,
+  loadConfig,
   Location,
   LOCATIONS
 } from './config.js';
@@ -323,10 +325,19 @@ program
         }
         
         // Test the API key by making a simple request
-        process.env.ELEVENLABS_API_KEY = apiKey.trim();
-        const client = await getElevenLabsClient(environment);
+        // Create client directly with the provided API key for validation
+        const config = await loadConfig();
+        const baseURL = getApiBaseUrl(config.residency);
+        const testClient = new ElevenLabsClient({
+          apiKey: apiKey.trim(),
+          baseUrl: baseURL,
+          headers: {
+            'X-Source': 'agents-cli'
+          }
+        });
+        
         try {
-          await listAgentsApi(client, 1);
+          await listAgentsApi(testClient, 1);
           console.log('API key verified successfully');
         } catch (error: unknown) {
           const err = error as { statusCode?: number; message?: string; code?: string };
@@ -1588,11 +1599,7 @@ async function promptForConfirmation(message: string): Promise<boolean> {
 }
 
 async function pullAgents(options: PullOptions): Promise<void> {
-  // Check if agents.json exists
   const agentsConfigPath = path.resolve(AGENTS_CONFIG_FILE);
-  if (!(await fs.pathExists(agentsConfigPath))) {
-    throw new Error('agents.json not found. Run \'agents init\' first.');
-  }
   
   // Determine which environments to pull from
   const environmentsToPull: string[] = options.env 
@@ -1622,7 +1629,15 @@ async function pullAgentsFromEnvironment(options: PullOptions, environment: stri
   const client = await getElevenLabsClient(environment);
   
   // Load existing config
-  const agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
+  let agentsConfig: AgentsConfig;
+  
+  if (!(await fs.pathExists(agentsConfigPath))) {
+    console.log(`${AGENTS_CONFIG_FILE} not found. Creating initial agents configuration...`);
+    agentsConfig = { agents: [] };
+    await writeConfig(agentsConfigPath, agentsConfig);
+  } else {
+    agentsConfig = await readConfig<AgentsConfig>(agentsConfigPath);
+  }
   
   let agentsList: unknown[];
   

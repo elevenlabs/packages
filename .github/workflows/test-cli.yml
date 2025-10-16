@@ -35,6 +35,7 @@ jobs:
         run: pnpm --filter @elevenlabs/agents-cli test:e2e
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY }}
+          ELEVENLABS_TEST_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY_SECONDARY }}
           
       - name: Upload test results
         if: always()
