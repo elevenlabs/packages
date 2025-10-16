@@ -131,6 +131,7 @@ interface TestsConfig {
 interface AddOptions {
   configPath?: string;
   template: string;
+  env?: string;
 }
 
 interface PushOptions {
@@ -485,6 +486,7 @@ program
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--template <template>', 'Template type to use', 'default')
+  .option('--env <environment>', 'Environment to create agent in', 'prod')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (name: string, options: AddOptions & { ui: boolean }) => {
     try {
@@ -518,10 +520,11 @@ program
         process.exit(1);
       }
       
-      // Create agent in ElevenLabs first to get ID (defaults to 'prod' environment)
-      console.log(`Creating agent '${name}' in ElevenLabs (environment: prod)...`);
+      // Create agent in ElevenLabs first to get ID
+      const environment = options.env || 'prod';
+      console.log(`Creating agent '${name}' in ElevenLabs (environment: ${environment})...`);
       
-      const client = await getElevenLabsClient('prod');
+      const client = await getElevenLabsClient(environment);
       
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
@@ -552,11 +555,11 @@ program
       await writeConfig(configFilePath, agentConfig);
       console.log(`Created config file: ${configPath} (template: ${options.template})`);
       
-      // Store agent ID in index file (defaults to 'prod' environment)
+      // Store agent ID in index file
       const newAgent: AgentDefinition = {
         config: configPath,
         id: agentId,
-        env: 'prod'
+        env: environment
       };
       agentsConfig.agents.push(newAgent);
       
@@ -577,9 +580,10 @@ program
   .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the webhook tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .action(async (name: string, options: { configPath?: string }) => {
+  .option('--env <environment>', 'Environment to create tool in', 'prod')
+  .action(async (name: string, options: { configPath?: string; env?: string }) => {
     try {
-      await addTool(name, 'webhook', options.configPath);
+      await addTool(name, 'webhook', options.configPath, options.env);
     } catch (error) {
       console.error(`Error creating webhook tool: ${error}`);
       process.exit(1);
@@ -591,9 +595,10 @@ program
   .description('Add a new client tool - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the client tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
-  .action(async (name: string, options: { configPath?: string }) => {
+  .option('--env <environment>', 'Environment to create tool in', 'prod')
+  .action(async (name: string, options: { configPath?: string; env?: string }) => {
     try {
-      await addTool(name, 'client', options.configPath);
+      await addTool(name, 'client', options.configPath, options.env);
     } catch (error) {
       console.error(`Error creating client tool: ${error}`);
       process.exit(1);
@@ -910,8 +915,9 @@ program
   .description('Add a new test - creates config and uploads to ElevenLabs')
   .argument('<name>', 'Name of the test to create')
   .option('--template <template>', 'Test template type to use', 'basic-llm')
+  .option('--env <environment>', 'Environment to create test in', 'prod')
   .option('--no-ui', 'Disable interactive UI')
-  .action(async (name: string, options: { template: string; ui: boolean }) => {
+  .action(async (name: string, options: { template: string; ui: boolean; env?: string }) => {
     try {
       if (options.ui !== false) {
         // Use Ink UI for test creation
@@ -922,7 +928,7 @@ program
         );
         await waitUntilExit();
       } else {
-        await addTest(name, options.template);
+        await addTest(name, options.template, options.env);
       }
     } catch (error) {
       console.error(`Error creating test: ${error}`);
@@ -1095,7 +1101,7 @@ componentsCommand
 
 // Helper functions
 
-async function addTool(name: string, type: 'webhook' | 'client', configPath?: string): Promise<void> {
+async function addTool(name: string, type: 'webhook' | 'client', configPath?: string, environment?: string): Promise<void> {
   // Check if tools.json exists, create if not
   const toolsConfigPath = path.resolve(TOOLS_CONFIG_FILE);
   let toolsConfig: ToolsConfig;
@@ -1154,10 +1160,11 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     };
   }
   
-  // Create tool in ElevenLabs first to get ID (defaults to 'prod' environment)
-  console.log(`Creating ${type} tool '${name}' in ElevenLabs (environment: prod)...`);
+  // Create tool in ElevenLabs first to get ID
+  const env = environment || 'prod';
+  console.log(`Creating ${type} tool '${name}' in ElevenLabs (environment: ${env})...`);
   
-  const client = await getElevenLabsClient('prod');
+  const client = await getElevenLabsClient(env);
   
   try {
     const response = await createToolApi(client, toolConfig);
@@ -1177,13 +1184,13 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     await writeToolConfig(configFilePath, toolConfig);
     console.log(`Created config file: ${configPath}`);
     
-    // Add to tools.json (defaults to 'prod' environment)
+    // Add to tools.json
     const newTool: ToolDefinition = {
       name,
       type,
       config: configPath,
       id: toolId,
-      env: 'prod'
+      env: env
     };
     toolsConfig.tools.push(newTool);
     await writeToolsConfig(toolsConfigPath, toolsConfig);
@@ -1942,7 +1949,7 @@ async function generateWidget(agentId: string): Promise<void> {
 
 // Test helper functions
 
-async function addTest(name: string, templateType: string = "basic-llm"): Promise<void> {
+async function addTest(name: string, templateType: string = "basic-llm", environment?: string): Promise<void> {
   const { getTestTemplateByName } = await import('./test-templates.js');
 
   // Check if tests.json exists
@@ -1961,10 +1968,11 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
   // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
 
-  // Create test in ElevenLabs first to get ID (defaults to 'prod' environment)
-  console.log(`Creating test '${name}' in ElevenLabs (environment: prod)...`);
+  // Create test in ElevenLabs first to get ID
+  const env = environment || 'prod';
+  console.log(`Creating test '${name}' in ElevenLabs (environment: ${env})...`);
 
-  const client = await getElevenLabsClient('prod');
+  const client = await getElevenLabsClient(env);
 
   try {
     const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
@@ -1983,13 +1991,13 @@ async function addTest(name: string, templateType: string = "basic-llm"): Promis
     await writeConfig(configFilePath, testConfig);
     console.log(`Created config file: ${configPath} (template: ${templateType})`);
 
-    // Add to tests.json if not already present (defaults to 'prod' environment)
+    // Add to tests.json if not already present
     const newTest: TestDefinition = {
       name,
       config: configPath,
       type: templateType,
       id: testId,
-      env: 'prod'
+      env: env
     };
     testsConfig.tests.push(newTest);
     await writeConfig(testsConfigPath, testsConfig);
