@@ -78,6 +78,61 @@ agents residency global  # or 'us'
 agents logout
 ```
 
+### Multi-Environment Management
+
+The CLI supports managing agents, tools, and tests across multiple isolated environments (e.g., dev, staging, prod).
+
+#### Login to Multiple Environments
+
+```bash
+# Login to production
+agents login --env prod
+
+# Login to staging
+agents login --env staging
+
+# Login to development
+agents login --env dev
+```
+
+Each environment stores its API key securely and independently.
+
+#### Check All Environments
+
+```bash
+agents whoami
+# Shows all configured environments and their authentication status
+```
+
+#### Logout from Specific Environment
+
+```bash
+agents logout --env dev
+```
+
+#### Environment Field in Configurations
+
+Agent, tool, and test definitions include an `env` field:
+
+```json
+{
+  "agents": [
+    {
+      "config": "agent_configs/support_bot.json",
+      "id": "agent_123",
+      "env": "prod"
+    },
+    {
+      "config": "agent_configs/support_bot_dev.json", 
+      "id": "agent_456",
+      "env": "dev"
+    }
+  ]
+}
+```
+
+When `env` is not specified, it defaults to `prod`.
+
 ## Quick Start
 
 ```bash
@@ -87,7 +142,7 @@ agents init
 # Or override existing configuration
 agents init --override
 
-# 2. Login with API key
+# 2. Login with API key (defaults to 'prod' environment)
 agents login
 
 # 3. Create agent with template
@@ -102,16 +157,18 @@ agents push
 agents watch
 ```
 
+> **Note**: This example uses the default 'prod' environment. For multi-environment workflows, see [Multi-Environment Management](#multi-environment-management) and [Multi-Environment Workflows](#multi-environment-workflows).
+
 ## Directory Structure
 
 ```
 your_project/
-├── agents.json              # Central configuration
-├── tools.json               # Tool configurations
+├── agents.json              # Central configuration with env field per agent
+├── tools.json               # Tool configurations with env field per tool
+├── tests.json               # Test configurations with env field per test
 ├── agent_configs/           # Agent configuration files
 ├── tool_configs/            # Tool configurations
-├── agents.lock              # Agent IDs and hashes
-└── tools-lock.json          # Tool IDs and hashes
+└── test_configs/            # Test configurations
 ```
 
 ## Commands
@@ -151,22 +208,22 @@ agents logout
 agents whoami
 
 # Create agent
-agents add "Agent Name" [--template customer-service]
+agents add "Agent Name" [--template customer-service] [--env prod]
 
 # Create webhook tool
-agents add-webhook-tool "Tool Name" [--config-path path]
+agents add-webhook-tool "Tool Name" [--config-path path] [--env prod]
 
 # Create client tool
-agents add-client-tool "Tool Name" [--config-path path]
+agents add-client-tool "Tool Name" [--config-path path] [--env prod]
 
-# Push changes
-agents push [--agent "Agent Name"] [--dry-run]
+# Push changes (operates on all environments by default)
+agents push [--agent "Agent Name"] [--env prod] [--dry-run]
 
-# Sync tools
-agents push-tools [--tool "Tool Name"] [--dry-run]
+# Sync tools (operates on all environments by default)
+agents push-tools [--tool "Tool Name"] [--env prod] [--dry-run]
 
-# Sync tests
-agents push-tests [--dry-run]
+# Sync tests (operates on all environments by default)
+agents push-tests [--env prod] [--dry-run]
 
 # Check status
 agents status [--agent "Agent Name"]
@@ -174,14 +231,17 @@ agents status [--agent "Agent Name"]
 # Watch for changes
 agents watch [--agent "Agent Name"] [--interval 5]
 
-# Pull agents from ElevenLabs
-agents pull [--search "term"] [--dry-run]
+# Pull agents from ElevenLabs (pulls from all environments by default)
+agents pull [--search "term"] [--env prod] [--dry-run]
 
-# Pull tools from ElevenLabs
-agents pull-tools [--search "term"] [--tool "tool-name"] [--dry-run] [--output-dir tool_configs]
+# Pull tools from ElevenLabs (pulls from all environments by default)
+agents pull-tools [--search "term"] [--tool "tool-name"] [--env prod] [--dry-run] [--output-dir tool_configs]
 
-# Import tests from ElevenLabs
-agents pull-tests [--output-dir test_configs] [--dry-run]
+# Import tests from ElevenLabs (pulls from all environments by default)
+agents pull-tests [--output-dir test_configs] [--env prod] [--dry-run]
+
+# Create and run test
+agents add-test "Test Name" [--template basic-llm] [--env prod]
 
 # Run tests
 agents test "Agent Name"
@@ -194,6 +254,24 @@ agents list
 
 # Delete agent (removes locally and from ElevenLabs)
 agents delete <agent_id>
+
+# Delete tool locally and from ElevenLabs
+agents delete-tool <tool_id>
+
+# Delete all tools
+agents delete-tool --all
+
+# Delete all tools in specific environment
+agents delete-tool --all --env prod
+
+# Delete test locally and from ElevenLabs
+agents delete-test <test_id>
+
+# Delete all tests
+agents delete-test --all
+
+# Delete all tests in specific environment
+agents delete-test --all --env dev
 
 # Add componenents from [ui.elevenlabs.io](https://ui.elevenlabs.io)
 agents components add "Component Name"
@@ -285,6 +363,7 @@ agents init
 agents login
 agents pull-tools
 # Edit tool configs in tool_configs/
+# Tools will have 'env' field - modify if needed
 # Reference tools in your agent configurations
 agents push
 ```
@@ -304,6 +383,74 @@ agents list
 
 # Delete agent by ID (removes locally and from ElevenLabs)
 agents delete agent_123456789
+```
+
+> **Tip**: When `--env` is not specified, most commands operate across all configured environments.
+
+## Multi-Environment Workflows
+
+**Setup Multiple Environments:**
+
+```bash
+# Initialise project
+agents init
+
+# Login to all environments
+agents login --env dev
+agents login --env staging
+agents login --env prod
+
+# Verify all environments
+agents whoami
+```
+
+**Develop and Promote Agents:**
+
+```bash
+# Create agent in dev environment
+agents add "My Agent" --template assistant --env dev
+
+# Edit and test in dev
+# Edit agent_configs/my_agent.json
+agents push --env dev
+
+# Pull to promote to staging
+agents pull --env dev
+# Update env field in agents.json from "dev" to "staging"
+agents push --env staging
+
+# Promote to production
+# Update env field to "prod"
+agents push --env prod
+```
+
+**Environment-Specific Operations:**
+
+```bash
+# Push only dev agents
+agents push --env dev
+
+# Pull only prod agents
+agents pull --env prod
+
+# Delete all dev tools
+agents delete-tool --all --env dev
+
+# Pull tests from staging
+agents pull-tests --env staging
+```
+
+**Cross-Environment Management:**
+
+```bash
+# List all agents across all environments
+agents list
+
+# Push all agents to their respective environments
+agents push
+
+# Pull agents from all configured environments
+agents pull
 ```
 
 ## Troubleshooting
@@ -329,13 +476,12 @@ export ELEVENLABS_API_KEY="your_api_key_here"
 **Push Issues:**
 
 - Preview: `agents push --dry-run`
-- Check: `cat agents.lock`
+- Check: `agents status`
 
 **Reset Project:**
 
 ```bash
-rm agents.lock
-agents init
+agents init --override
 agents login
 agents push
 ```
