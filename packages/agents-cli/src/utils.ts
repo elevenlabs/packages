@@ -125,10 +125,12 @@ export function toCamelCaseKeys<T = unknown>(value: T, skipHeaderConversion = fa
   if (isPlainObject(value)) {
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value)) {
-      // Skip camelCase conversion for HTTP header names in request_headers arrays
-      if (k === 'name' && skipHeaderConversion) {
-        result[k] = v;
+      if (skipHeaderConversion) {
+        // Inside request_headers: preserve all keys as-is to avoid converting
+        // header names like "X-Api-Key" or nested keys like "secret_id"
+        result[k] = toCamelCaseKeys(v, true);
       } else {
+        // Normal conversion
         result[toCamelCaseKey(k)] = toCamelCaseKeys(v, k === 'request_headers');
       }
     }

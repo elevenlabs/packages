@@ -294,6 +294,60 @@ describe("Utils", () => {
       });
     });
 
+    it("should preserve secret_id and other keys in request_headers object format", () => {
+      const input = {
+        conversation_config: {
+          agent: {
+            prompt: {
+              tools: [
+                {
+                  type: "webhook",
+                  api_schema: {
+                    url: "https://example.com/webhook",
+                    method: "GET",
+                    request_headers: {
+                      "Content-Type": "application/json",
+                      "X-Api-Key": {
+                        secret_id: "abc"
+                      },
+                      "foo_bar": "baz"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      const result = toCamelCaseKeys(input);
+
+      expect(result).toEqual({
+        conversationConfig: {
+          agent: {
+            prompt: {
+              tools: [
+                {
+                  type: "webhook",
+                  apiSchema: {
+                    url: "https://example.com/webhook",
+                    method: "GET",
+                    requestHeaders: {
+                      "Content-Type": "application/json",
+                      "X-Api-Key": {
+                        secret_id: "abc" // Should NOT be converted to secretId
+                      },
+                      "foo_bar": "baz" // Should NOT be converted to fooBar
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      });
+    });
+
     it("should still convert other name fields that are not in request_headers", () => {
       const input = {
         user_name: "john",
