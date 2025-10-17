@@ -130,6 +130,12 @@ async function main() {
       if (emitted.has(m.modelName)) continue;
       emitted.add(m.modelName);
 
+      // Validate that the generated code looks reasonable
+      if (!m.result || m.result.trim().length === 0) {
+        console.error(`Warning: Empty result for model ${m.modelName}`);
+        continue;
+      }
+
       // Add `export` to top-level declarations (interface | type | enum)
       const exported = m.result
         .replace(/^(\s*)(interface\s+)/m, "$1export $2")
