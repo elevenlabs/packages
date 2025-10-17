@@ -35,6 +35,24 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
+// Type definitions for test configurations
+interface AgentConfigEntry {
+  id?: string;
+  name?: string;
+  config: string;
+  env?: string;
+}
+
+interface TestConfigEntry {
+  id?: string;
+  config: string;
+}
+
+interface ToolConfigEntry {
+  id?: string;
+  config: string;
+}
+
 // Check if API key is available for real E2E tests
 const hasApiKey = !!process.env.ELEVENLABS_API_KEY;
 const describeIfApiKey = hasApiKey ? describe : describe.skip;
@@ -765,7 +783,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(agentsJsonPath, "utf-8")
       );
       agentsConfig.agents = agentsConfig.agents.filter(
-        (a: any) => a.id !== agent3Id
+        (a: AgentConfigEntry) => a.id !== agent3Id
       );
       await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
 
@@ -805,7 +823,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(agentsJsonPath, "utf-8")
       );
       agentsConfig.agents = agentsConfig.agents.filter(
-        (a: any) => a.id !== agent3Id
+        (a: AgentConfigEntry) => a.id !== agent3Id
       );
       await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
 
@@ -980,7 +998,7 @@ describe("CLI End-to-End Tests", () => {
       await fs.remove(agent1ConfigPath);
 
       agentsConfig.agents = agentsConfig.agents.filter(
-        (a: any) => a.id !== agent1.id
+        (a: AgentConfigEntry) => a.id !== agent1.id
       );
       await fs.writeFile(agentsJsonPath, JSON.stringify(agentsConfig, null, 2));
 
@@ -1012,10 +1030,10 @@ describe("CLI End-to-End Tests", () => {
 
       // Find the pulled agents by ID
       const pulledAgent1 = agentsConfig.agents.find(
-        (a: any) => a.id === agent1.id
+        (a: AgentConfigEntry) => a.id === agent1.id
       );
       const pulledAgent2 = agentsConfig.agents.find(
-        (a: any) => a.id === agent2.id
+        (a: AgentConfigEntry) => a.id === agent2.id
       );
 
       expect(pulledAgent1).toBeTruthy();
@@ -1189,10 +1207,10 @@ describe("CLI End-to-End Tests", () => {
       expect(pulledAgentsConfig.agents).toHaveLength(2);
 
       const pulledAgent1 = pulledAgentsConfig.agents.find(
-        (a: any) => a.id === agent1.id
+        (a: AgentConfigEntry) => a.id === agent1.id
       );
       const pulledAgent2 = pulledAgentsConfig.agents.find(
-        (a: any) => a.id === agent2.id
+        (a: AgentConfigEntry) => a.id === agent2.id
       );
 
       expect(pulledAgent1).toBeTruthy();
@@ -1591,7 +1609,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(testsJsonPath, "utf-8")
       );
       testsConfig.tests = testsConfig.tests.filter(
-        (t: any) => t.id !== test3Id
+        (t: TestConfigEntry) => t.id !== test3Id
       );
       await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
 
@@ -1629,7 +1647,7 @@ describe("CLI End-to-End Tests", () => {
         await fs.readFile(testsJsonPath, "utf-8")
       );
       testsConfig.tests = testsConfig.tests.filter(
-        (t: any) => t.id !== test3Id
+        (t: TestConfigEntry) => t.id !== test3Id
       );
       await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
 
@@ -1782,7 +1800,7 @@ describe("CLI End-to-End Tests", () => {
       await fs.remove(test1ConfigPath);
 
       testsConfig.tests = testsConfig.tests.filter(
-        (t: any) => t.id !== test1.id
+        (t: TestConfigEntry) => t.id !== test1.id
       );
       await fs.writeFile(testsJsonPath, JSON.stringify(testsConfig, null, 2));
 
@@ -1814,10 +1832,10 @@ describe("CLI End-to-End Tests", () => {
 
       // Find the pulled tests by ID
       const pulledTest1 = testsConfig.tests.find(
-        (t: any) => t.id === test1.id
+        (t: TestConfigEntry) => t.id === test1.id
       );
       const pulledTest2 = testsConfig.tests.find(
-        (t: any) => t.id === test2.id
+        (t: TestConfigEntry) => t.id === test2.id
       );
 
       expect(pulledTest1).toBeTruthy();
@@ -2211,7 +2229,7 @@ describe("CLI End-to-End Tests", () => {
           await fs.readFile(toolsJsonPath, "utf-8")
         );
         toolsConfig.tools = toolsConfig.tools.filter(
-          (t: any) => t.id !== tool3Id
+          (t: ToolConfigEntry) => t.id !== tool3Id
         );
         await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
 
@@ -2249,7 +2267,7 @@ describe("CLI End-to-End Tests", () => {
           await fs.readFile(toolsJsonPath, "utf-8")
         );
         toolsConfig.tools = toolsConfig.tools.filter(
-          (t: any) => t.id !== tool3Id
+          (t: ToolConfigEntry) => t.id !== tool3Id
         );
         await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
 
@@ -2409,7 +2427,7 @@ describe("CLI End-to-End Tests", () => {
       await fs.remove(tool1ConfigPath);
 
       toolsConfig.tools = toolsConfig.tools.filter(
-        (t: any) => t.id !== tool1.id
+        (t: ToolConfigEntry) => t.id !== tool1.id
       );
       await fs.writeFile(toolsJsonPath, JSON.stringify(toolsConfig, null, 2));
 
@@ -2419,9 +2437,9 @@ describe("CLI End-to-End Tests", () => {
       toolsConfig = JSON.parse(
         await fs.readFile(toolsJsonPath, "utf-8")
       );
-      const remainingTool = toolsConfig.tools.find((t: any) => t.id === tool2.id);
+      const remainingTool = toolsConfig.tools.find((t: ToolConfigEntry) => t.id === tool2.id);
       expect(remainingTool).toBeTruthy();
-      expect(toolsConfig.tools.find((t: any) => t.id === tool1.id)).toBeUndefined();
+      expect(toolsConfig.tools.find((t: ToolConfigEntry) => t.id === tool1.id)).toBeUndefined();
 
       // Step 4: Pull tools from remote
       console.log(`Pulling tools from remote...`);
@@ -2440,10 +2458,10 @@ describe("CLI End-to-End Tests", () => {
 
       // Find the pulled tools by ID
       const pulledTool1 = toolsConfig.tools.find(
-        (t: any) => t.id === tool1.id
+        (t: ToolConfigEntry) => t.id === tool1.id
       );
       const pulledTool2 = toolsConfig.tools.find(
-        (t: any) => t.id === tool2.id
+        (t: ToolConfigEntry) => t.id === tool2.id
       );
 
       expect(pulledTool1).toBeTruthy();
@@ -2650,8 +2668,8 @@ describe("CLI End-to-End Tests", () => {
       let agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
       expect(agentsConfig.agents).toHaveLength(2);
       
-      const prodAgent = agentsConfig.agents.find((a: any) => (a.env || 'prod') === 'prod');
-      const testAgent = agentsConfig.agents.find((a: any) => a.env === 'test');
+      const prodAgent = agentsConfig.agents.find((a: AgentConfigEntry) => (a.env || 'prod') === 'prod');
+      const testAgent = agentsConfig.agents.find((a: AgentConfigEntry) => a.env === 'test');
       expect(prodAgent).toBeTruthy();
       expect(testAgent).toBeTruthy();
       
@@ -2699,8 +2717,8 @@ describe("CLI End-to-End Tests", () => {
       agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
       expect(agentsConfig.agents).toHaveLength(2);
       
-      const pulledProdAgent = agentsConfig.agents.find((a: any) => a.id === prodAgentId);
-      const pulledTestAgent = agentsConfig.agents.find((a: any) => a.id === testAgentId);
+      const pulledProdAgent = agentsConfig.agents.find((a: AgentConfigEntry) => a.id === prodAgentId);
+      const pulledTestAgent = agentsConfig.agents.find((a: AgentConfigEntry) => a.id === testAgentId);
       expect(pulledProdAgent).toBeTruthy();
       expect(pulledTestAgent).toBeTruthy();
       expect(pulledProdAgent.env || 'prod').toBe('prod');
@@ -2766,7 +2784,7 @@ describe("CLI End-to-End Tests", () => {
       console.log("Step 17: Verifying prod agent was modified...");
       agentsConfig = JSON.parse(await fs.readFile(agentsJsonPath, "utf-8"));
       expect(agentsConfig.agents).toHaveLength(2);
-      const modifiedProdAgent = agentsConfig.agents.find((a: any) => a.id === prodAgentId);
+      const modifiedProdAgent = agentsConfig.agents.find((a: AgentConfigEntry) => a.id === prodAgentId);
       const modifiedProdConfig = JSON.parse(
         await fs.readFile(path.join(multiEnvTempDir, modifiedProdAgent.config), "utf-8")
       );
