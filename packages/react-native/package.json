@@ -40,8 +40,8 @@
   "license": "MIT",
   "peerDependencies": {
     "@livekit/react-native": "^2.9.2",
-    "@livekit/react-native-webrtc": "^125.0.0",
-    "livekit-client": "^2.11.0",
+    "@livekit/react-native-webrtc": "^137.0.1",
+    "livekit-client": "^2.15.4",
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
   },
