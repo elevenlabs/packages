@@ -117,7 +117,7 @@ export const MessageHandler = ({
     if (messageText !== null) {
       callbacks.onMessage?.({
         message: messageText,
-        source: msg.from?.isAgent ? "ai" : "user",
+        source: message.type === "user_transcript" ? "user" : "ai",
       });
     }
 
