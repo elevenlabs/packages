@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -17,8 +17,7 @@
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "postinstall": "pnpm run generate-version",
-    "prebuild": "pnpm run generate-version",
+    "prebuild": "npm run generate-version",
     "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "pnpm run clean && pnpm run generate-version && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
