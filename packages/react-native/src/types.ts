@@ -9,6 +9,7 @@ import type {
   Mode as ConversationMode,
   Status,
   Callbacks,
+  AsrInitiationMetadataEvent as AsrMetadataEvent,
 } from "@elevenlabs/types";
 export type { Callbacks } from "@elevenlabs/types";
 
@@ -97,6 +98,10 @@ export type PingEvent = Ping;
 export type ClientToolCallEvent = Incoming.ClientToolCallClientEvent;
 export type VadScoreEvent = Incoming.VadScoreClientEvent;
 export type MCPToolCallClientEvent = Incoming.McpToolCallClientEvent;
+export type MCPConnectionStatusEvent = Incoming.McpConnectionStatusClientEvent;
+export type AgentToolResponseEvent = Incoming.AgentToolResponseClientEvent;
+export type ConversationMetadataEvent = ConversationMetadata;
+export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type AgentChatResponsePartEvent =
   Incoming.AgentChatResponsePartClientEvent;
 
@@ -127,4 +132,8 @@ export type ConversationEvent =
   | ClientToolCallEvent
   | VadScoreEvent
   | MCPToolCallClientEvent
+  | MCPConnectionStatusEvent
+  | AgentToolResponseEvent
+  | ConversationMetadataEvent
+  | AsrInitiationMetadataEvent
   | AgentChatResponsePartEvent;

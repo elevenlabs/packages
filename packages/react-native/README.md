@@ -253,12 +253,41 @@ const conversation = useConversation({
 
 ### Callback Options
 
-Pass to `useConversation` hook:
+**Note:** Not all client events are enabled by default for an agent. If you have enabled a callback but aren’t seeing events come through, ensure that your ElevenLabs agent has the corresponding event enabled. You can do this in the “Advanced” tab of the agent settings in the ElevenLabs dashboard.
 
-- `onConnect: () => void` - Called when connected
-- `onDisconnect: (details?: unknown) => void` - Called when disconnected
-- `onMessage: (message: unknown) => void` - Called when message received
-- `onError: (error: unknown) => void` - Called on error
+Pass to `useConversation` hook to handle various conversation events:
+
+#### Connection & Status
+- `onConnect?: (props: { conversationId: string }) => void` - Called when successfully connected to a conversation
+- `onDisconnect?: (details: DisconnectionDetails) => void` - Called when disconnected (includes reason: "user", "agent", or "error")
+- `onStatusChange?: (props: { status: Status }) => void` - Called when connection status changes ("disconnected", "connecting", "connected", "disconnecting")
+- `onError?: (message: string, context?: any) => void` - Called when an error occurs
+
+#### Messages & Transcription
+- `onMessage?: (props: { message: string; source: Role }) => void` - Called when a message is received from user or AI
+- `onModeChange?: (props: { mode: Mode }) => void` - Called when conversation mode changes ("speaking" or "listening")
+
+#### Audio & Voice Activity
+- `onAudio?: (base64Audio: string) => void` - Called when audio chunks are received from the agent
+- `onVadScore?: (props: { vadScore: number }) => void` - Called with Voice Activity Detection scores
+
+#### Conversation Events
+- `onInterruption?: (props: Interruption) => void` - Called when the conversation is interrupted
+- `onAgentChatResponsePart?: (props: AgentChatResponsePart) => void` - Called for streaming agent response parts
+- `onConversationMetadata?: (props: ConversationMetadata) => void` - Called with conversation initiation metadata
+- `onAsrInitiationMetadata?: (props: AsrInitiationMetadata) => void` - Called with ASR (speech recognition) initialization metadata
+
+#### Feedback
+- `onCanSendFeedbackChange?: (props: { canSendFeedback: boolean }) => void` - Called when feedback availability changes
+
+#### Tools & MCP
+- `onUnhandledClientToolCall?: (props: ClientToolCall) => void` - Called when a client tool is invoked but not defined
+- `onMCPToolCall?: (props: McpToolCall) => void` - Called when an MCP (Model Context Protocol) tool is invoked
+- `onMCPConnectionStatus?: (props: McpConnectionStatus) => void` - Called when MCP connection status changes
+- `onAgentToolResponse?: (props: AgentToolResponse) => void` - Called when the agent receives a tool execution response
+
+#### Debug
+- `onDebug?: (props: any) => void` - Called with debug information (internal events)
 
 ## Requirements
 

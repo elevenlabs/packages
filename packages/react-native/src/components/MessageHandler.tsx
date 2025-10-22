@@ -18,8 +18,8 @@ interface MessageHandlerProps {
   updateCurrentEventId?: (eventId: number) => void;
 }
 
-export function isValidEvent(event: any): event is ConversationEvent {
-  return !!event.type;
+export function isValidEvent(event: unknown): event is ConversationEvent {
+  return typeof event === "object" && event !== null && "type" in event;
 }
 
 function extractMessageText(event: ConversationEvent): string | null {
@@ -53,12 +53,7 @@ export const MessageHandler = ({
   }, [isConnected, localParticipant, onReady]);
 
   const handleClientToolCall = async (clientToolCall: ClientToolCallEvent) => {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        clientTools,
-        clientToolCall.client_tool_call.tool_name
-      )
-    ) {
+    if (clientToolCall.client_tool_call.tool_name in clientTools) {
       try {
         const result =
           (await clientTools[clientToolCall.client_tool_call.tool_name](
@@ -147,6 +142,36 @@ export const MessageHandler = ({
         break;
       case "client_tool_call":
         handleClientToolCall(message);
+        break;
+      case "audio":
+        callbacks.onAudio?.(message.audio_event.audio_base_64);
+        break;
+      case "vad_score":
+        callbacks.onVadScore?.({
+          vadScore: message.vad_score_event.vad_score,
+        });
+        break;
+      case "interruption":
+        callbacks.onInterruption?.(message.interruption_event);
+        break;
+      case "mcp_tool_call":
+        callbacks.onMCPToolCall?.(message.mcp_tool_call);
+        break;
+      case "mcp_connection_status":
+        callbacks.onMCPConnectionStatus?.(message.mcp_connection_status);
+        break;
+      case "agent_tool_response":
+        callbacks.onAgentToolResponse?.(message.agent_tool_response);
+        break;
+      case "conversation_initiation_metadata":
+        callbacks.onConversationMetadata?.(
+          message.conversation_initiation_metadata_event
+        );
+        break;
+      case "asr_initiation_metadata":
+        callbacks.onAsrInitiationMetadata?.(
+          message.asr_initiation_metadata_event
+        );
         break;
       case "agent_chat_response_part":
         callbacks.onAgentChatResponsePart?.(message.text_response_part);
