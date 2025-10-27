@@ -32,6 +32,16 @@ export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
 
+// Scribe exports
+export {
+  Scribe,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+  RealtimeConnection,
+} from "./scribe";
+export type { AudioOptions, MicrophoneOptions } from "./scribe";
+
 export class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {
     return options.textOnly
