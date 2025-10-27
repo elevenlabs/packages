@@ -1,3 +1,8 @@
+> [!WARNING]
+> **This package has been deprecated and is no longer maintained.**
+>
+> Please use the official [ElevenLabs CLI](https://github.com/elevenlabs/cli) instead.
+
 # ElevenLabs Agents CLI - Agents as Code
 
 ![hero](../../assets/hero.png)
