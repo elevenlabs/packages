@@ -122,7 +122,16 @@ export class VoiceConversation extends BaseConversation {
 
   protected override handleInterruption(event: InterruptionEvent) {
     super.handleInterruption(event);
-    this.fadeOutAudio();
+
+    const interruptionType =
+      event.interruption_event?.interruption_type ?? "user";
+
+    if (interruptionType === "tool_sound") {
+      this.output.worklet.port.postMessage({ type: "interrupt" });
+      this.output.worklet.port.postMessage({ type: "clearInterrupted" });
+    } else {
+      this.fadeOutAudio();
+    }
   }
 
   protected override handleAudio(event: AgentAudioEvent) {

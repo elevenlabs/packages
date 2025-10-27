@@ -214,7 +214,10 @@ export interface Interruption {
 
 export interface InterruptionEvent {
   event_id: number;
+  interruption_type?: InterruptionEventInterruptionType;
 }
+
+export type InterruptionEventInterruptionType = "user" | "tool_sound";
 
 export interface ConversationMetadata {
   type: "conversation_initiation_metadata";

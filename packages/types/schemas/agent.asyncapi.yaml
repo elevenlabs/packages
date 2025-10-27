@@ -325,6 +325,16 @@ components:
         - internal_tentative_agent_response
       description: Types of events that can be sent from server to client
 
+    InterruptionType:
+      type: string
+      enum:
+        - user
+        - tool_sound
+      description: |
+        Type of interruption:
+        - user: User interrupted the agent (default)
+        - tool_sound: Tool call sound stopping
+
     Language:
       type: string
       enum:
@@ -823,6 +833,9 @@ components:
       properties:
         event_id:
           type: integer
+        interruption_type:
+          $ref: "#/components/schemas/InterruptionType"
+          description: Type of interruption. Defaults to 'user' if not specified.
 
     ConversationMetadataData:
       type: object
