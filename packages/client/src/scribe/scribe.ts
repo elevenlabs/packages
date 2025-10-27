@@ -88,15 +88,21 @@ export interface MicrophoneOptions extends BaseOptions {
  * Real-time speech-to-text transcription client for browser environments.
  * Supports microphone streaming and manual audio chunk transmission.
  */
-export class ScribeRealtime {
-  private baseUri: string = "wss://api.elevenlabs.io";
 
-  private getWebSocketUri(baseUri: string = this.baseUri): string {
+// biome-ignore lint/complexity/noStaticOnlyClass: This class is static only because it is a singleton
+export class ScribeRealtime {
+  private static readonly DEFAULT_BASE_URI = "wss://api.elevenlabs.io";
+
+  private static getWebSocketUri(
+    baseUri: string = ScribeRealtime.DEFAULT_BASE_URI
+  ): string {
     return `${baseUri}/v1/speech-to-text/realtime-beta`;
   }
 
-  private buildWebSocketUri(options: AudioOptions | MicrophoneOptions): string {
-    const baseUri = this.getWebSocketUri(options.baseUri);
+  private static buildWebSocketUri(
+    options: AudioOptions | MicrophoneOptions
+  ): string {
+    const baseUri = ScribeRealtime.getWebSocketUri(options.baseUri);
     const params = new URLSearchParams();
 
     // Model ID is required, so no check required
@@ -163,13 +169,12 @@ export class ScribeRealtime {
    * Establishes a WebSocket connection for real-time speech-to-text transcription.
    *
    * @param options - Configuration options for the connection
-   * @returns A promise that resolves to a RealtimeConnection instance
+   * @returns A RealtimeConnection instance
    *
    * @example
    * ```typescript
    * // Manual audio streaming
-   * const scribe = new ScribeRealtime();
-   * const connection = await scribe.connect({
+   * const connection = Scribe.connect({
    *     token: "...",
    *     modelId: "scribe_realtime_v2",
    *     audioFormat: AudioFormat.PCM_16000,
@@ -177,7 +182,7 @@ export class ScribeRealtime {
    * });
    *
    * // Automatic microphone streaming
-   * const connection = await scribe.connect({
+   * const connection = Scribe.connect({
    *     token: "...",
    *     modelId: "scribe_realtime_v2",
    *     microphone: {
@@ -187,9 +192,9 @@ export class ScribeRealtime {
    * });
    * ```
    */
-  public async connect(
+  public static connect(
     options: AudioOptions | MicrophoneOptions
-  ): Promise<RealtimeConnection> {
+  ): RealtimeConnection {
     if (!options.modelId) {
       throw new Error("modelId is required");
     }
@@ -202,14 +207,17 @@ export class ScribeRealtime {
     const connection = new RealtimeConnection(sampleRate);
 
     // Build WebSocket URI with query parameters
-    const uri = this.buildWebSocketUri(options);
+    const uri = ScribeRealtime.buildWebSocketUri(options);
 
     const websocket = new WebSocket(uri);
 
     // If microphone mode, set up streaming handler
     if ("microphone" in options && options.microphone) {
       websocket.addEventListener("open", () => {
-        this.streamFromMicrophone(options as MicrophoneOptions, connection);
+        ScribeRealtime.streamFromMicrophone(
+          options as MicrophoneOptions,
+          connection
+        );
       });
     }
 
@@ -218,7 +226,7 @@ export class ScribeRealtime {
     return connection;
   }
 
-  private async streamFromMicrophone(
+  private static async streamFromMicrophone(
     options: MicrophoneOptions,
     connection: RealtimeConnection
   ): Promise<void> {

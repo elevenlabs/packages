@@ -82,6 +82,22 @@ export type {
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 
+// Scribe exports
+export {
+  useScribe,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+} from "./scribe";
+export type {
+  ScribeStatus,
+  TranscriptSegment,
+  ScribeCallbacks,
+  ScribeHookOptions,
+  UseScribeReturn,
+  RealtimeConnection,
+} from "./scribe";
+
 export type HookOptions = Partial<
   SessionConfig &
     HookCallbacks &

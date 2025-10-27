@@ -10,3 +10,11 @@ export { RealtimeEvents } from "./connection";
 
 // Export types
 export type { AudioOptions, MicrophoneOptions } from "./scribe";
+export type {
+  WebSocketMessage,
+  PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  ErrorMessage,
+  AuthErrorMessage,
+} from "./connection";

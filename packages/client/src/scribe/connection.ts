@@ -5,11 +5,11 @@ interface InputAudioChunk {
   sample_rate: number;
 }
 
-interface SessionStartedMessage {
+export interface SessionStartedMessage {
   message_type: "session_started";
 }
 
-interface PartialTranscriptMessage {
+export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
   language_code?: string;
@@ -17,7 +17,7 @@ interface PartialTranscriptMessage {
   words?: unknown[];
 }
 
-interface FinalTranscriptMessage {
+export interface FinalTranscriptMessage {
   message_type: "final_transcript";
   text: string;
   language_code?: string;
@@ -25,7 +25,7 @@ interface FinalTranscriptMessage {
   words?: unknown[];
 }
 
-interface FinalTranscriptWithTimestampsMessage {
+export interface FinalTranscriptWithTimestampsMessage {
   message_type: "final_transcript_with_timestamps";
   text: string;
   language_code?: string;
@@ -33,17 +33,17 @@ interface FinalTranscriptWithTimestampsMessage {
   words?: unknown[];
 }
 
-interface ErrorMessage {
+export interface ErrorMessage {
   message_type: "error";
   error: string;
 }
 
-interface AuthErrorMessage {
+export interface AuthErrorMessage {
   message_type: "auth_error";
   error: string;
 }
 
-type WebSocketMessage =
+export type WebSocketMessage =
   | SessionStartedMessage
   | PartialTranscriptMessage
   | FinalTranscriptMessage

@@ -40,7 +40,16 @@ export {
   RealtimeEvents,
   RealtimeConnection,
 } from "./scribe";
-export type { AudioOptions, MicrophoneOptions } from "./scribe";
+export type {
+  AudioOptions,
+  MicrophoneOptions,
+  WebSocketMessage,
+  PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  ErrorMessage,
+  AuthErrorMessage,
+} from "./scribe";
 
 export class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {
