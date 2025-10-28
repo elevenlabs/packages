@@ -527,7 +527,9 @@ console.log(canSendFeedback); // boolean
 
 ### useScribe
 
-React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe.
+React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe Realtime v2.
+
+**Note:** Scribe Realtime v2 is currently in closed beta. For access please [contact sales](https://elevenlabs.io/contact-sales).
 
 #### Quick Start
 
@@ -597,6 +599,8 @@ app.get("/scribe-token", yourAuthMiddleware, async (req, res) => {
   res.json({ token: data.token });
 });
 ```
+
+**Warning:** Your ElevenLabs API key is sensitive, do not leak it to the client. Always generate the token on the server.
 
 ```tsx
 // Client
@@ -703,7 +707,7 @@ function MicrophoneTranscription() {
 Transcribe pre-recorded audio files:
 
 ```tsx
-import { AudioFormat } from "@elevenlabs/react";
+import { useScribe, AudioFormat } from "@elevenlabs/react";
 
 function FileTranscription() {
   const [file, setFile] = useState<File | null>(null);
