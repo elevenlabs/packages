@@ -152,7 +152,7 @@ components:
       type: object
       description: Word-level transcription data with timing information
       properties:
-        word:
+        text:
           type: string
           description: The transcribed word
         start:
@@ -161,9 +161,24 @@ components:
         end:
           type: number
           description: End time in seconds
-        confidence:
+        type:
+          type: string
+          description: The type of word
+          enum:
+            - word
+            - spacing
+        speaker_id:
+          type: string
+          description: The ID of the speaker (if available)
+        logprob:
           type: number
           description: Confidence score for this word
+        characters:
+          type: array
+          description: The characters in the word
+          items:
+            type: string
+            description: The character
 
     # ===== CLIENT MESSAGE PAYLOADS =====
 

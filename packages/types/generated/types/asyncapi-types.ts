@@ -602,11 +602,16 @@ export interface PartialTranscript {
 }
 
 export interface WordsItem {
-  word?: string;
+  text?: string;
   start?: number;
   end?: number;
-  confidence?: number;
+  type?: WordsItemType;
+  speaker_id?: string;
+  logprob?: number;
+  characters?: string[];
 }
+
+export type WordsItemType = "word" | "spacing";
 
 export interface FinalTranscript {
   message_type: "final_transcript";
