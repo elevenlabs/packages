@@ -552,31 +552,26 @@ connection.commit();
 #### Example: Transcribing an Audio File
 
 ```js
-// Read and decode audio file
+// Get file from input element
+const fileInput = document.querySelector('input[type="file"]');
+const audioFile = fileInput.files[0];
+
+// Read file as ArrayBuffer
 const arrayBuffer = await audioFile.arrayBuffer();
-const audioContext = new AudioContext({ sampleRate: 16000 });
-const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+const audioData = new Uint8Array(arrayBuffer);
 
-// Convert to PCM16
-const channelData = audioBuffer.getChannelData(0);
-const pcmData = new Int16Array(channelData.length);
-
-for (let i = 0; i < channelData.length; i++) {
-  const sample = Math.max(-1, Math.min(1, channelData[i]));
-  pcmData[i] = sample < 0 ? sample * 32768 : sample * 32767;
-}
-
-// Send in chunks
-const chunkSize = 4096;
-for (let offset = 0; offset < pcmData.length; offset += chunkSize) {
-  const chunk = pcmData.slice(offset, offset + chunkSize);
-  const bytes = new Uint8Array(chunk.buffer);
-  const base64 = btoa(String.fromCharCode(...bytes));
+// Convert to base64 and send in chunks
+const chunkSize = 8192; // 8KB chunks
+for (let i = 0; i < audioData.length; i += chunkSize) {
+  const chunk = audioData.slice(i, i + chunkSize);
+  const base64 = btoa(String.fromCharCode(...chunk));
   connection.send({ audioBase64: base64 });
-  await new Promise((resolve) => setTimeout(resolve, 50)); // Simulate real-time
+
+  // Optional: Add delay to simulate real-time streaming
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
-// Commit when done
+// Signal end of audio
 connection.commit();
 ```
 

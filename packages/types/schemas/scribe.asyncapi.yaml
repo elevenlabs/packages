@@ -1,0 +1,339 @@
+asyncapi: "2.6.0"
+info:
+  title: ElevenLabs Scribe Contract
+  version: "1.0.0"
+  description: |
+    Real-time speech-to-text transcription service.
+    This WebSocket API enables streaming audio input and receiving transcription results.
+
+    ## Event Flow
+    - Audio chunks are sent as input_audio_chunk messages
+    - Transcription results are streamed back in various formats (partial, final, with timestamps)
+    - Supports manual commit or VAD-based automatic commit strategies
+  contact:
+    name: ElevenLabs API Support
+    url: https://elevenlabs.io/docs
+    email: support@elevenlabs.io
+
+servers:
+  production:
+    url: wss://api.elevenlabs.io
+    protocol: ws
+    description: Production WebSocket server (US/Global)
+  eu-residency:
+    url: wss://api.eu.residency.elevenlabs.io
+    protocol: ws
+    description: EU residency WebSocket server for GDPR compliance
+  in-residency:
+    url: wss://api.in.residency.elevenlabs.io
+    protocol: ws
+    description: India residency WebSocket server for data locality
+  development:
+    url: ws://localhost:8080
+    protocol: ws
+    description: Local development server
+
+channels:
+  ScribeMessages:
+    description: Main WebSocket channel for real-time transcription
+    publish:
+      summary: Messages sent from server to client
+      message:
+        oneOf:
+          # Server -> Client messages
+          - $ref: "#/components/messages/SessionStarted"
+          - $ref: "#/components/messages/PartialTranscript"
+          - $ref: "#/components/messages/FinalTranscript"
+          - $ref: "#/components/messages/FinalTranscriptWithTimestamps"
+          - $ref: "#/components/messages/Error"
+          - $ref: "#/components/messages/AuthError"
+    subscribe:
+      summary: Messages received from client to server
+      message:
+        oneOf:
+          # Client -> Server messages
+          - $ref: "#/components/messages/InputAudioChunk"
+
+components:
+  messages:
+    # ===== CLIENT → SERVER MESSAGES =====
+
+    InputAudioChunk:
+      name: InputAudioChunk
+      title: Input Audio Chunk
+      summary: Audio data from client
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/InputAudioChunkPayload"
+
+    # ===== SERVER → CLIENT MESSAGES =====
+
+    SessionStarted:
+      name: SessionStartedMessage
+      title: Session Started
+      summary: Sent when the transcription session is successfully started
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/SessionStartedPayload"
+
+    PartialTranscript:
+      name: PartialTranscriptMessage
+      title: Partial Transcript
+      summary: Interim transcription result (may change)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PartialTranscriptPayload"
+
+    FinalTranscript:
+      name: FinalTranscriptMessage
+      title: Final Transcript
+      summary: Final transcription result
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FinalTranscriptPayload"
+
+    FinalTranscriptWithTimestamps:
+      name: FinalTranscriptWithTimestampsMessage
+      title: Final Transcript with Timestamps
+      summary: Final transcription result with word-level timestamps
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FinalTranscriptWithTimestampsPayload"
+
+    Error:
+      name: ScribeErrorMessage
+      title: Scribe Error Message
+      summary: Error event during transcription
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeErrorPayload"
+
+    AuthError:
+      name: ScribeAuthErrorMessage
+      title: Scribe Authentication Error
+      summary: Authentication failed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeAuthErrorPayload"
+
+  schemas:
+    MessageType:
+      type: string
+      enum:
+        - session_started
+        - partial_transcript
+        - final_transcript
+        - final_transcript_with_timestamps
+        - error
+        - auth_error
+        - input_audio_chunk
+      description: Types of messages that can be exchanged
+
+    AudioFormat:
+      type: string
+      enum:
+        - pcm_8000
+        - pcm_16000
+        - pcm_22050
+        - pcm_24000
+        - pcm_44100
+        - pcm_48000
+        - ulaw_8000
+      description: Audio encoding format
+
+    CommitStrategy:
+      type: string
+      enum:
+        - manual
+        - vad
+      description: Strategy for committing transcriptions
+
+    Word:
+      type: object
+      description: Word-level transcription data with timing information
+      properties:
+        word:
+          type: string
+          description: The transcribed word
+        start:
+          type: number
+          description: Start time in seconds
+        end:
+          type: number
+          description: End time in seconds
+        confidence:
+          type: number
+          description: Confidence score for this word
+
+    # ===== CLIENT MESSAGE PAYLOADS =====
+
+    InputAudioChunkPayload:
+      type: object
+      required: [message_type, audio_base_64, commit, sample_rate]
+      properties:
+        message_type:
+          type: string
+          const: input_audio_chunk
+        audio_base_64:
+          type: string
+          description: Base64-encoded audio data
+          format: base64
+        commit:
+          type: boolean
+          description: Whether to commit the transcription after this chunk
+        sample_rate:
+          type: integer
+          description: Sample rate of the audio in Hz
+
+    # ===== SERVER MESSAGE PAYLOADS =====
+
+    SessionStartedPayload:
+      type: object
+      required: [message_type, session_id, config]
+      properties:
+        message_type:
+          type: string
+          const: session_started
+        session_id:
+          type: string
+          description: Session ID
+        config:
+          type: object
+          description: Configuration for the transcription session
+          properties:
+            sample_rate:
+              type: integer
+              description: Sample rate of the audio in Hz
+            audio_format:
+              $ref: "#/components/schemas/AudioFormat"
+            language_code:
+              type: string
+              description: Language code in ISO 639-1 or ISO 639-3 format
+            timestamps_granularity:
+              type: string
+              description: Granularity of timestamps
+            vad_commit_strategy:
+              type: string
+              enum:
+                - manual
+                - vad
+              description: Strategy for committing transcriptions
+            vad_silence_threshold_secs:
+              type: number
+              description: Silence threshold in seconds
+            vad_threshold:
+              type: number
+              description: Threshold for voice activity detection
+            min_speech_duration_ms:
+              type: integer
+              description: Minimum speech duration in milliseconds
+            min_silence_duration_ms:
+              type: integer
+              description: Minimum silence duration in milliseconds
+            max_tokens_to_recompute:
+              type: integer
+              description: Maximum number of tokens to recompute
+            model_id:
+              type: string
+              description: ID of the model to use for transcription
+            disable_logging:
+              type: boolean
+              description: Whether to disable logging
+
+    PartialTranscriptPayload:
+      type: object
+      required: [message_type, text]
+      properties:
+        message_type:
+          type: string
+          const: partial_transcript
+        text:
+          type: string
+          description: Partial transcription text
+        language_code:
+          type: string
+          nullable: true
+          description: Detected or specified language code
+        logprob:
+          type: number
+          nullable: true
+          description: Log probability score for the transcription
+        words:
+          type: array
+          nullable: true
+          description: Word-level information (if available)
+          items:
+            $ref: "#/components/schemas/Word"
+
+    FinalTranscriptPayload:
+      type: object
+      required: [message_type, text]
+      properties:
+        message_type:
+          type: string
+          const: final_transcript
+        text:
+          type: string
+          description: Final transcription text
+        language_code:
+          type: string
+          nullable: true
+          description: Detected or specified language code
+        logprob:
+          type: number
+          nullable: true
+          description: Log probability score for the transcription
+        words:
+          type: array
+          nullable: true
+          description: Word-level information (if available)
+          items:
+            $ref: "#/components/schemas/Word"
+
+    FinalTranscriptWithTimestampsPayload:
+      type: object
+      required: [message_type, text]
+      properties:
+        message_type:
+          type: string
+          const: final_transcript_with_timestamps
+        text:
+          type: string
+          description: Final transcription text
+        language_code:
+          type: string
+          nullable: true
+          description: Detected or specified language code
+        logprob:
+          type: number
+          nullable: true
+          description: Log probability score for the transcription
+        words:
+          type: array
+          nullable: true
+          description: Word-level information with timestamps
+          items:
+            $ref: "#/components/schemas/Word"
+
+    ScribeErrorPayload:
+      type: object
+      required: [message_type, error]
+      properties:
+        message_type:
+          type: string
+          const: error
+        error:
+          type: string
+          description: Error message describing what went wrong
+
+    ScribeAuthErrorPayload:
+      type: object
+      required: [message_type, error]
+      properties:
+        message_type:
+          type: string
+          const: auth_error
+        error:
+          type: string
+          description: Authentication error details
+

@@ -3,6 +3,7 @@ export type {
   ClientToolResultClientToOrchestratorEvent,
   ContextualUpdateClientToOrchestratorEvent,
   ConversationInitiationClientToOrchestratorEvent,
+  InputAudioChunk,
   McpToolApprovalResultClientToOrchestratorEvent,
   PongClientToOrchestratorEvent,
   UserActivityClientToOrchestratorEvent,

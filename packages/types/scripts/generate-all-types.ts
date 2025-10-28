@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "fs";
 import path from "path";
 import { TypeScriptGenerator } from "@asyncapi/modelina";
 import * as AsyncAPIParser from "@asyncapi/parser";
@@ -12,7 +12,7 @@ const roleArg = (
 ).split("=")[1] as Role;
 const role: Role = roleArg === "server" ? "server" : "client";
 
-const asyncapiPath = path.resolve(process.cwd(), "schemas/agent.asyncapi.yaml");
+const schemasDir = path.resolve(process.cwd(), "schemas");
 const outDir = path.resolve(process.cwd(), "generated/types");
 const outTypesPath = path.join(outDir, "asyncapi-types.ts");
 const outIncomingPath = path.join(outDir, "incoming.ts");
@@ -41,15 +41,35 @@ type PayloadItem = {
   dir?: Dir;
 };
 
-async function collectPayloads(raw: string): Promise<PayloadItem[]> {
-  const doc = await parseAsyncAPIDoc(raw);
-  const json = typeof doc?.json === "function" ? doc.json() : doc;
+async function collectPayloads(
+  raw: string,
+  schemaFile: string
+): Promise<PayloadItem[]> {
+  let doc: { json?: () => unknown } | unknown;
+  try {
+    doc = await parseAsyncAPIDoc(raw);
+  } catch (err) {
+    throw new Error(
+      `Failed to parse AsyncAPI schema in ${schemaFile}: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+
+  const json =
+    typeof (doc as { json?: () => unknown })?.json === "function"
+      ? (doc as { json: () => unknown }).json()
+      : doc;
+
+  if (!json) {
+    throw new Error(
+      `AsyncAPI parser returned invalid document for ${schemaFile}`
+    );
+  }
 
   const seen = new Set<string>();
   const items: PayloadItem[] = [];
 
   // A) components.messages
-  const cm = json?.components?.messages ?? {};
+  const cm = (json as Record<string, any>)?.components?.messages ?? {};
   for (const [msgName, message] of Object.entries<any>(cm)) {
     const payload = (message as any)?.payload;
     if (!payload) continue;
@@ -60,7 +80,7 @@ async function collectPayloads(raw: string): Promise<PayloadItem[]> {
   }
 
   // B) channels: publish & subscribe (handle oneOf)
-  const channels = json?.channels ?? {};
+  const channels = (json as Record<string, any>)?.channels ?? {};
   for (const [chName, ch] of Object.entries<any>(channels)) {
     for (const opKind of ["publish", "subscribe"] as const) {
       const op = (ch as any)[opKind];
@@ -96,7 +116,20 @@ async function collectPayloads(raw: string): Promise<PayloadItem[]> {
 
 async function main() {
   mkdirSync(outDir, { recursive: true });
-  const raw = readFileSync(asyncapiPath, "utf8");
+
+  // Find all AsyncAPI schema files in the schemas directory
+  const schemaFiles = readdirSync(schemasDir)
+    .filter(file => file.endsWith(".asyncapi.yaml"))
+    .map(file => path.join(schemasDir, file));
+
+  if (schemaFiles.length === 0) {
+    throw new Error(`No AsyncAPI schema files found in ${schemasDir}`);
+  }
+
+  console.log(`Processing ${schemaFiles.length} schema file(s):`);
+  for (const file of schemaFiles) {
+    console.log(`  - ${path.basename(file)}`);
+  }
 
   const generator = new TypeScriptGenerator({
     modelType: "interface",
@@ -110,33 +143,50 @@ async function main() {
     },
   });
 
-  const payloads = await collectPayloads(raw);
-
   // Deduplicate across all payloads by modelName
   const emitted = new Set<string>();
   const pieces: string[] = [];
   const incomingNames = new Set<string>();
   const outgoingNames = new Set<string>();
 
-  for (const { schema, dir } of payloads) {
-    const models = await generator.generate(schema);
+  // Process each schema file
+  for (const schemaFile of schemaFiles) {
+    const fileName = path.basename(schemaFile);
+    console.log(`\nProcessing ${fileName}...`);
 
-    // Record root for barrels (first model matches $id)
-    const root = models[0]?.modelName;
-    if (root && dir)
-      (dir === "incoming" ? incomingNames : outgoingNames).add(root);
+    try {
+      const raw = readFileSync(schemaFile, "utf8");
+      const payloads = await collectPayloads(raw, fileName);
 
-    for (const m of models) {
-      if (emitted.has(m.modelName)) continue;
-      emitted.add(m.modelName);
+      console.log(`  Found ${payloads.length} payload(s) in ${fileName}`);
 
-      // Add `export` to top-level declarations (interface | type | enum)
-      const exported = m.result
-        .replace(/^(\s*)(interface\s+)/m, "$1export $2")
-        .replace(/^(\s*)(type\s+)/m, "$1export $2")
-        .replace(/^(\s*)(enum\s+)/m, "$1export $2");
+      for (const { schema, dir } of payloads) {
+        const models = await generator.generate(schema);
 
-      pieces.push(exported);
+        // Record root for barrels (first model matches $id)
+        const root = models[0]?.modelName;
+        if (root && dir)
+          (dir === "incoming" ? incomingNames : outgoingNames).add(root);
+
+        for (const m of models) {
+          if (emitted.has(m.modelName)) continue;
+          emitted.add(m.modelName);
+
+          // Add `export` to top-level declarations (interface | type | enum)
+          const exported = m.result
+            .replace(/^(\s*)(interface\s+)/m, "$1export $2")
+            .replace(/^(\s*)(type\s+)/m, "$1export $2")
+            .replace(/^(\s*)(enum\s+)/m, "$1export $2");
+
+          pieces.push(exported);
+        }
+      }
+    } catch (err) {
+      console.error(`\n❌ ERROR processing ${fileName}:`);
+      console.error(
+        `   ${err instanceof Error ? err.message : String(err)}\n`
+      );
+      throw err; // Re-throw to fail the build
     }
   }
 
@@ -156,9 +206,10 @@ async function main() {
   writeFileSync(outIncomingPath, toBarrel(incomingNames, "incoming"), "utf8");
   writeFileSync(outOutgoingPath, toBarrel(outgoingNames, "outgoing"), "utf8");
 
-  console.log(`Wrote ${outTypesPath}`);
-  console.log(`Wrote ${outIncomingPath} (${incomingNames.size} types)`);
-  console.log(`Wrote ${outOutgoingPath} (${outgoingNames.size} types)`);
+  console.log(`\n✅ Successfully generated types:`);
+  console.log(`   ${outTypesPath} (${emitted.size} types)`);
+  console.log(`   ${outIncomingPath} (${incomingNames.size} types)`);
+  console.log(`   ${outOutgoingPath} (${outgoingNames.size} types)`);
 }
 
 main().catch(err => {

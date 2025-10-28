@@ -553,3 +553,123 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   user_id?: string;
   source_info?: SourceInfo;
 }
+
+export interface InputAudioChunk {
+  message_type: "input_audio_chunk";
+  audio_base_64: string;
+  commit: boolean;
+  sample_rate: number;
+}
+
+export interface SessionStarted {
+  message_type: "session_started";
+  session_id: string;
+  config: Config;
+}
+
+export interface Config {
+  sample_rate?: number;
+  audio_format?: ConfigAudioFormat;
+  language_code?: string;
+  timestamps_granularity?: string;
+  vad_commit_strategy?: ConfigVadCommitStrategy;
+  vad_silence_threshold_secs?: number;
+  vad_threshold?: number;
+  min_speech_duration_ms?: number;
+  min_silence_duration_ms?: number;
+  max_tokens_to_recompute?: number;
+  model_id?: string;
+  disable_logging?: boolean;
+}
+
+export type ConfigAudioFormat =
+  | "pcm_8000"
+  | "pcm_16000"
+  | "pcm_22050"
+  | "pcm_24000"
+  | "pcm_44100"
+  | "pcm_48000"
+  | "ulaw_8000";
+
+export type ConfigVadCommitStrategy = "manual" | "vad";
+
+export interface PartialTranscript {
+  message_type: "partial_transcript";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface WordsItem {
+  word?: string;
+  start?: number;
+  end?: number;
+  confidence?: number;
+}
+
+export interface FinalTranscript {
+  message_type: "final_transcript";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface FinalTranscriptWithTimestamps {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface Error {
+  message_type: "error";
+  error: string;
+}
+
+export interface AuthError {
+  message_type: "auth_error";
+  error: string;
+}
+
+export interface SessionStartedMessage {
+  message_type: "session_started";
+  session_id: string;
+  config: Config;
+}
+
+export interface PartialTranscriptMessage {
+  message_type: "partial_transcript";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface FinalTranscriptMessage {
+  message_type: "final_transcript";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface FinalTranscriptWithTimestampsMessage {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  logprob?: number;
+  words?: WordsItem[];
+}
+
+export interface ScribeErrorMessage {
+  message_type: "error";
+  error: string;
+}
+
+export interface ScribeAuthErrorMessage {
+  message_type: "auth_error";
+  error: string;
+}

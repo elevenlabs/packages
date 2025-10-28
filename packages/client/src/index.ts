@@ -47,8 +47,8 @@ export type {
   PartialTranscriptMessage,
   FinalTranscriptMessage,
   FinalTranscriptWithTimestampsMessage,
-  ErrorMessage,
-  AuthErrorMessage,
+  ScribeErrorMessage,
+  ScribeAuthErrorMessage,
 } from "./scribe";
 
 export class Conversation extends BaseConversation {

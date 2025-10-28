@@ -1,55 +1,30 @@
-interface InputAudioChunk {
-  message_type: "input_audio_chunk";
-  audio_base_64: string;
-  commit: boolean;
-  sample_rate: number;
-}
+import type {
+  InputAudioChunk,
+  SessionStartedMessage,
+  PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  ScribeErrorMessage,
+  ScribeAuthErrorMessage,
+} from "@elevenlabs/types";
 
-export interface SessionStartedMessage {
-  message_type: "session_started";
-}
-
-export interface PartialTranscriptMessage {
-  message_type: "partial_transcript";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: unknown[];
-}
-
-export interface FinalTranscriptMessage {
-  message_type: "final_transcript";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: unknown[];
-}
-
-export interface FinalTranscriptWithTimestampsMessage {
-  message_type: "final_transcript_with_timestamps";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: unknown[];
-}
-
-export interface ErrorMessage {
-  message_type: "error";
-  error: string;
-}
-
-export interface AuthErrorMessage {
-  message_type: "auth_error";
-  error: string;
-}
+// Re-export types for public API
+export type {
+  SessionStartedMessage,
+  PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  ScribeErrorMessage,
+  ScribeAuthErrorMessage,
+};
 
 export type WebSocketMessage =
   | SessionStartedMessage
   | PartialTranscriptMessage
   | FinalTranscriptMessage
   | FinalTranscriptWithTimestampsMessage
-  | ErrorMessage
-  | AuthErrorMessage;
+  | ScribeErrorMessage
+  | ScribeAuthErrorMessage;
 
 /**
  * Simple EventEmitter implementation for browser compatibility.

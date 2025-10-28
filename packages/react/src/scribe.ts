@@ -9,8 +9,8 @@ import type {
   PartialTranscriptMessage,
   FinalTranscriptMessage,
   FinalTranscriptWithTimestampsMessage,
-  ErrorMessage,
-  AuthErrorMessage,
+  ScribeErrorMessage,
+  ScribeAuthErrorMessage,
 } from "@elevenlabs/client";
 
 // ============= Types =============
@@ -270,14 +270,14 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         );
 
         connection.on(RealtimeEvents.ERROR, (err: unknown) => {
-          const message = err as ErrorMessage;
+          const message = err as ScribeErrorMessage;
           setError(message.error);
           setStatus("error");
           onError?.(new Error(message.error));
         });
 
         connection.on(RealtimeEvents.AUTH_ERROR, (data: unknown) => {
-          const message = data as AuthErrorMessage;
+          const message = data as ScribeAuthErrorMessage;
           setError(message.error);
           setStatus("error");
           onAuthError?.(message);
