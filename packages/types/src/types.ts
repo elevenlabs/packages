@@ -30,7 +30,7 @@ export type DisconnectionDetails =
     }
   | {
       reason: "agent";
-      context: CloseEvent;
+      context?: CloseEvent;
     }
   | {
       reason: "user";

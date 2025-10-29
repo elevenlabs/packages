@@ -14,6 +14,7 @@ interface MessageHandlerProps {
   isConnected: boolean;
   callbacks: Callbacks;
   sendMessage: (message: unknown) => void;
+  onEndSession: (reason: "user" | "agent") => void;
   clientTools?: ClientToolsConfig["clientTools"];
   updateCurrentEventId?: (eventId: number) => void;
 }
@@ -40,11 +41,19 @@ export const MessageHandler = ({
   sendMessage,
   clientTools = {},
   updateCurrentEventId,
+  onEndSession,
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
 
   // Track agent response count for synthetic event IDs (WebRTC mode)
   const agentResponseCountRef = React.useRef(1);
+
+  // Reset agent response count when connection status changes
+  useEffect(() => {
+    if (!isConnected) {
+      agentResponseCountRef.current = 1;
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     if (isConnected && localParticipant) {
@@ -162,6 +171,11 @@ export const MessageHandler = ({
         break;
       case "agent_tool_response":
         callbacks.onAgentToolResponse?.(message.agent_tool_response);
+
+        if (message.agent_tool_response.tool_name === "end_call") {
+          // End the call
+          onEndSession("agent");
+        }
         break;
       case "conversation_initiation_metadata":
         callbacks.onConversationMetadata?.(

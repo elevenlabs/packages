@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/client",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "ElevenLabs JavaScript Client Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",

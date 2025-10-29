@@ -53,6 +53,7 @@ export const useConversationSession = (
             config.agentId,
             urlToUse
           );
+          console.log("Conversation token:", conversationToken);
         } else {
           throw new Error("Either conversationToken or agentId is required");
         }
@@ -80,18 +81,29 @@ export const useConversationSession = (
     ]
   );
 
-  const endSession = useCallback(async () => {
-    try {
-      setConnect(false);
-      setToken("");
-      setStatus("disconnected");
-      callbacksRef.current.onStatusChange?.({ status: "disconnected" });
-      callbacksRef.current.onDisconnect?.({ reason: "user" });
-    } catch (error) {
-      callbacksRef.current.onError?.(error as string);
-      throw error;
-    }
-  }, [callbacksRef, setConnect, setToken, setStatus]);
+  const endSession = useCallback(
+    async (reason: "user" | "agent" = "user") => {
+      try {
+        setConnect(false);
+        setToken("");
+        setStatus("disconnected");
+
+        // Reset session configuration state
+        setOverrides({});
+        setCustomLlmExtraBody(null);
+        setDynamicVariables({});
+        setUserId(undefined);
+        setConversationId("");
+
+        callbacksRef.current.onStatusChange?.({ status: "disconnected" });
+        callbacksRef.current.onDisconnect?.({ reason });
+      } catch (error) {
+        callbacksRef.current.onError?.(error as string);
+        throw error;
+      }
+    },
+    [callbacksRef, setConnect, setToken, setStatus, setConversationId]
+  );
 
   return {
     startSession,

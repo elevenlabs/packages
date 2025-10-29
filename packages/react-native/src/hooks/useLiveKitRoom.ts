@@ -6,12 +6,22 @@ import type { ConversationStatus, Callbacks } from "../types";
 export const useLiveKitRoom = (
   callbacksRef: { current: Callbacks },
   setStatus: (status: ConversationStatus) => void,
-  conversationId: string
+  conversationId: string,
+  status: ConversationStatus
 ) => {
   const [roomConnected, setRoomConnected] = useState(false);
   const [localParticipant, setLocalParticipant] =
     useState<LocalParticipant | null>(null);
   const hasCalledOnConnectRef = useRef(false);
+
+  // Reset room state when conversationId changes (new session starting)
+  useEffect(() => {
+    if (conversationId) {
+      setRoomConnected(false);
+      setLocalParticipant(null);
+      hasCalledOnConnectRef.current = false;
+    }
+  }, [conversationId]);
 
   useEffect(() => {
     const start = async () => {
@@ -49,12 +59,17 @@ export const useLiveKitRoom = (
   }, []);
 
   const handleDisconnected = useCallback(() => {
+    // If already disconnected, endSession already handled the disconnect callback
+    if (status === "disconnected") {
+      return;
+    }
+
     setRoomConnected(false);
     setStatus("disconnected");
     setLocalParticipant(null);
     hasCalledOnConnectRef.current = false;
     callbacksRef.current.onDisconnect?.({ reason: "user" });
-  }, [callbacksRef, setStatus]);
+  }, [callbacksRef, setStatus, status]);
 
   const handleError = useCallback(
     (error: Error) => {

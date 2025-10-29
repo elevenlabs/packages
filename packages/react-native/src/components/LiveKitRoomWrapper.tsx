@@ -18,6 +18,7 @@ interface LiveKitRoomWrapperProps {
   onParticipantReady: (participant: LocalParticipant) => void;
   sendMessage: (message: unknown) => void;
   clientTools: ClientToolsConfig['clientTools'];
+  onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
 }
 
@@ -35,6 +36,7 @@ export const LiveKitRoomWrapper = ({
   sendMessage,
   clientTools,
   updateCurrentEventId,
+  onEndSession,
 }: LiveKitRoomWrapperProps) => {
   return (
     <LiveKitRoom
@@ -57,6 +59,7 @@ export const LiveKitRoomWrapper = ({
         sendMessage={sendMessage}
         clientTools={clientTools}
         updateCurrentEventId={updateCurrentEventId}
+        onEndSession={onEndSession}
       />
       {children as any}
     </LiveKitRoom>

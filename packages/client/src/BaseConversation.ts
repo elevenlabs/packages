@@ -272,6 +272,13 @@ export class BaseConversation {
   }
 
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
+    if (event.agent_tool_response.tool_name === "end_call") {
+      this.endSessionWithDetails({
+        reason: "agent",
+        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+      });
+    }
+
     if (this.options.onAgentToolResponse) {
       this.options.onAgentToolResponse(event.agent_tool_response);
     }
