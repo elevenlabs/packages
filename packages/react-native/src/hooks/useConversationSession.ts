@@ -53,7 +53,6 @@ export const useConversationSession = (
             config.agentId,
             urlToUse
           );
-          console.log("Conversation token:", conversationToken);
         } else {
           throw new Error("Either conversationToken or agentId is required");
         }
