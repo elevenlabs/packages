@@ -3,6 +3,9 @@ import { InOutTransition } from "../components/InOutTransition";
 import { clsx } from "clsx";
 import { useAvatarConfig } from "../contexts/avatar-config";
 import { useTextContents } from "../contexts/text-contents";
+import { useWidgetConfig } from "../contexts/widget-config";
+import { FeedbackComponent } from "../components/FeedbackComponent";
+import { useSignal } from "@preact/signals";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -16,6 +19,13 @@ export function TranscriptMessage({
   const text = useTextContents();
   const { previewUrl } = useAvatarConfig();
   const { lastId } = useConversation();
+  const config = useWidgetConfig();
+  const feedbackSubmitted = useSignal(false);
+
+  const handleFeedbackSubmit = (rating: number) => {
+    console.log("Feedback submitted:", rating);
+  };
+
   return (
     <InOutTransition initial={!animateIn} active={true}>
       {entry.type === "message" ? (
@@ -47,16 +57,26 @@ export function TranscriptMessage({
           </div>
         </div>
       ) : entry.type === "disconnection" ? (
-        <div className="mt-2 px-8 text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
-          {entry.role === "user"
-            ? text.user_ended_conversation
-            : text.agent_ended_conversation}
-          <br />
-          {lastId.value && (
-            <span className="break-all">
-              {text.conversation_id}: {lastId.value}
-            </span>
-          )}
+        <div className="mt-2 px-8 flex flex-col">
+          {entry.role !== "user" &&
+            config.value.collect_feedback &&
+            !feedbackSubmitted.value && (
+              <FeedbackComponent
+                onSubmit={handleFeedbackSubmit}
+                message={text.initiate_feedback}
+              />
+            )}
+          <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
+            {entry.role === "user"
+              ? text.user_ended_conversation
+              : text.agent_ended_conversation}
+            <br />
+            {lastId.value && (
+              <span className="break-all">
+                {text.conversation_id}: {lastId.value}
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <div className="mt-2 px-8 text-xs text-base-error text-center transition-opacity duration-200 data-hidden:opacity-0">
