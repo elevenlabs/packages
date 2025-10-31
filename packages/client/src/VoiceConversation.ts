@@ -161,6 +161,9 @@ export class VoiceConversation extends BaseConversation {
   };
 
   private addAudioBase64Chunk = (chunk: string) => {
+    this.output.gain.gain.cancelScheduledValues(
+      this.output.context.currentTime
+    );
     this.output.gain.gain.value = this.volume;
     this.output.worklet.port.postMessage({ type: "clearInterrupted" });
     this.output.worklet.port.postMessage({
