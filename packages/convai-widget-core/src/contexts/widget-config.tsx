@@ -48,8 +48,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     let conversationSignature: string | undefined;
     if (signedUrl.value) {
       const params = new URL(signedUrl.value).searchParams;
-      currentAgentId = params.get('agent_id') ?? agentId.value;
-      conversationSignature = params.get('conversation_signature') ?? undefined;
+      currentAgentId = params.get("agent_id") ?? agentId.value;
+      conversationSignature = params.get("conversation_signature") ?? undefined;
     }
 
     if (!currentAgentId) {
@@ -58,7 +58,12 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     }
 
     const abort = new AbortController();
-    fetchConfig(currentAgentId, serverUrl.value, abort.signal, conversationSignature)
+    fetchConfig(
+      currentAgentId,
+      serverUrl.value,
+      abort.signal,
+      conversationSignature
+    )
       .then(config => {
         if (!abort.signal.aborted) {
           fetchedConfig.value = config;
@@ -88,6 +93,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const alwaysExpanded = useAttribute("always-expanded");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
+  const collectFeedback = useAttribute("collect-feedback");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -121,8 +127,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       fetchedConfig.value.default_expanded ??
       false;
     const patchedUseRtc =
-      parseBoolAttribute(useRtc.value) ??
-      fetchedConfig.value.use_rtc ??
+      parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
+    const patchedCollectFeedback =
+      parseBoolAttribute(collectFeedback.value) ??
+      fetchedConfig.value.collect_feedback ??
       false;
 
     return {
@@ -136,6 +144,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
       use_rtc: patchedUseRtc,
+      collect_feedback: patchedCollectFeedback,
     };
   });
 
@@ -196,7 +205,7 @@ async function fetchConfig(
   conversationSignature?: string
 ): Promise<WidgetConfig> {
   const response = await fetch(
-    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ''}`,
+    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ""}`,
     {
       signal,
     }
