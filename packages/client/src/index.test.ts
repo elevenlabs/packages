@@ -538,6 +538,7 @@ describe("Volume Control", () => {
   beforeAll(() => {
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
@@ -545,7 +546,10 @@ describe("Volume Control", () => {
       })),
       createGain: vi.fn(() => ({
         connect: vi.fn(),
-        gain: { value: 1 },
+        gain: {
+          value: 1,
+          cancelScheduledValues: vi.fn(),
+        },
       })),
       createMediaStreamSource: vi.fn(() => ({
         connect: vi.fn(),
@@ -612,7 +616,10 @@ describe("Volume Control", () => {
 
     // Create a shared gain node that we can test
     const mockGainNode = {
-      gain: { value: 1 },
+      gain: {
+        value: 1,
+        cancelScheduledValues: vi.fn(),
+      },
       connect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
@@ -620,6 +627,7 @@ describe("Volume Control", () => {
     // Override the AudioContext mock for this test
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
@@ -727,7 +735,10 @@ describe("Volume Control", () => {
 
     // Create a shared gain node that we can test
     const mockGainNode = {
-      gain: { value: 1 },
+      gain: {
+        value: 1,
+        cancelScheduledValues: vi.fn(),
+      },
       connect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
@@ -735,6 +746,7 @@ describe("Volume Control", () => {
     // Override the AudioContext mock for this test
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
