@@ -129,3 +129,25 @@ export const Rating = ({
     </div>
   );
 };
+
+
+export const RatingResult = ({ rating, min = 1, max = 5 }: { rating: number, min?: number, max?: number }) => {
+  const stars = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+  return (
+    <div className="flex no-wrap cursor-default">
+
+      {stars.map(starValue => (
+        <RatingButton
+          key={starValue}
+          value={starValue}
+          isFilled={rating >= starValue}
+          isHovered={false}
+          onClick={() => {}}
+          onHover={() => {}}
+          onKeyDown={() => {}}
+          iconName="star"
+        />
+      ))}
+    </div>
+  );
+};

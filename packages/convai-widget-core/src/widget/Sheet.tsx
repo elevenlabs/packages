@@ -17,6 +17,8 @@ import { SheetActions } from "./SheetActions";
 import { Transcript } from "./Transcript";
 import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
+import { useSheetContent } from "../contexts/sheet-content";
+import { FeedbackPage } from "./FeedbackPage";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -40,6 +42,7 @@ export function Sheet({ open }: SheetProps) {
   const { isDisconnected, startSession, transcript, conversationIndex } =
     useConversation();
   const firstMessage = useFirstMessage();
+  const { currentContent } = useSheetContent();
 
   const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
     if (textOnly.value || isConversationTextOnly.value) {
@@ -97,10 +100,14 @@ export function Sheet({ open }: SheetProps) {
             <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
-        <Transcript
-          transcript={filteredTranscript}
-          scrollPinned={scrollPinned}
-        />
+        {currentContent.value === "transcript" && (
+          <Transcript
+            transcript={filteredTranscript}
+            scrollPinned={scrollPinned}
+          />
+        )}
+        {currentContent.value === "feedback" && <FeedbackPage />}
+
         <SheetActions
           scrollPinned={scrollPinned}
           showTranscript={showTranscript}
