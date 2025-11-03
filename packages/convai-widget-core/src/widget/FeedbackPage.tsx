@@ -1,33 +1,49 @@
+import { useCallback } from "preact/compat";
 import { useTextContents } from "../contexts/text-contents";
 import { Avatar } from "../components/Avatar";
 import { TextArea } from "../components/TextArea";
 import { RatingResult } from "../components/Rating";
-
-const FeedbackResult = ({ rating }: { rating: number }) => {
-  const text = useTextContents();
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <Avatar size="sm" />
-      <RatingResult rating={rating} min={1} max={5} />
-      <div className="text-center">
-        <p className="text-sm text-base-primary font-medium">
-          {text.thanks_for_feedback}
-        </p>
-        <p className="text-sm text-base-subtle">
-          {text.thanks_for_feedback_details}
-        </p>
-      </div>
-    </div>
-  );
-};
+import { useFeedback } from "../contexts/feedback";
+import { Icon } from "../components/Icon";
 
 export function FeedbackPage() {
   const text = useTextContents();
+  const { rating, feedbackText } = useFeedback();
+
+  const handleTextChange = useCallback(
+    (e: Event) => {
+      const target = e.currentTarget as HTMLTextAreaElement;
+      feedbackText.value = target.value;
+    },
+    [feedbackText]
+  );
 
   return (
-    <div className="grow flex flex-col items-center justify-center px-4 gap-8">
-      <FeedbackResult rating={4} />
-      <TextArea className="w-full min-h-[3lh]" placeholder={text.follow_up_feedback_placeholder} rows={3} />
+    <div className="grow flex flex-col overflow-y-auto overflow-x-hidden px-4">
+      <div className="flex flex-col gap-8 min-h-full pt-4">
+        <div className="flex flex-col items-center justify-center gap-3">
+         
+          <Icon name="feedback" size="lg" />
+          {rating.value !== null && (
+            <RatingResult rating={rating.value} min={1} max={5} />
+          )}
+          <div className="text-center">
+            <p className="text-sm text-base-primary font-medium">
+              {text.thanks_for_feedback}
+            </p>
+            <p className="text-sm text-base-subtle">
+              {text.thanks_for_feedback_details}
+            </p>
+          </div>
+        </div>
+        <TextArea
+          className="w-full min-h-[6lh]"
+          placeholder={text.follow_up_feedback_placeholder}
+          rows={6}
+          value={feedbackText}
+          onInput={handleTextChange}
+        />
+      </div>
     </div>
   );
 }
