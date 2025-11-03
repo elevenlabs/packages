@@ -1,3 +1,4 @@
+// @ts-nocheck - pnpm hoisting causes duplicate React type definitions
 import React from 'react';
 import { LiveKitRoom } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
@@ -17,6 +18,7 @@ interface LiveKitRoomWrapperProps {
   onParticipantReady: (participant: LocalParticipant) => void;
   sendMessage: (message: unknown) => void;
   clientTools: ClientToolsConfig['clientTools'];
+  onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
 }
 
@@ -34,6 +36,7 @@ export const LiveKitRoomWrapper = ({
   sendMessage,
   clientTools,
   updateCurrentEventId,
+  onEndSession,
 }: LiveKitRoomWrapperProps) => {
   return (
     <LiveKitRoom
@@ -56,8 +59,9 @@ export const LiveKitRoomWrapper = ({
         sendMessage={sendMessage}
         clientTools={clientTools}
         updateCurrentEventId={updateCurrentEventId}
+        onEndSession={onEndSession}
       />
-      {children}
+      {children as any}
     </LiveKitRoom>
   );
 };

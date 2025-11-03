@@ -1,8 +1,10 @@
-# ElevenLabs React Library
+![hero](../../assets/hero.png)
 
-An SDK library for using ElevenLabs in React based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
+# ElevenLabs Agents React SDK
 
-> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.
+Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+
+An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
 
 ![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
 [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
@@ -64,6 +66,19 @@ const conversation = useConversation({
 - **onDisconnect** - handler called when the conversation connection has ended.
 - **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
 - **onError** - handler called when a error is encountered.
+- **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
+- **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
+- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
+- **onUnhandledClientToolCall** - handler called when a client tool is invoked but no corresponding client tool was defined.
+- **onDebug** - handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.
+- **onAudio** - handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.
+- **onInterruption** - handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.
+- **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
+- **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
+- **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
+- **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
+- **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
 
 ##### Client Tools
 
@@ -177,6 +192,25 @@ const conversation = useConversation({
 });
 ```
 
+#### Data Residency
+
+The React SDK supports data residency for compliance with regional regulations. You can specify the server location when initializing the conversation:
+
+```ts
+const conversation = useConversation({
+  serverLocation: "eu-residency", // "us", "global", "eu-residency", or "in-residency"
+});
+```
+
+Available locations:
+
+- `"us"` (default) - United States servers
+- `"global"` - Global servers (same as US)
+- `"eu-residency"` - European Union residency servers
+- `"in-residency"` - India residency servers
+
+The SDK automatically routes both WebSocket and WebRTC connections to the appropriate regional servers based on your selection. This ensures that all conversation data, including audio streams, remain within the specified geographic region.
+
 #### Methods
 
 ##### startConversation
@@ -233,7 +267,9 @@ app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
 const response = await fetch("/signed-url", yourAuthHeaders);
 const signedUrl = await response.text();
 
-const conversation = await Conversation.startSession({
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
   signedUrl,
   connectionType: "websocket",
 });
@@ -271,11 +307,28 @@ app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
 const response = await fetch("/conversation-token", yourAuthHeaders);
 const conversationToken = await response.text();
 
-const conversation = await Conversation.startSession({
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
   conversationToken,
   connectionType: "webrtc",
 });
 ```
+
+You can provide a device ID to start the conversation using the input/output device of your choice. If the device ID is invalid, the default input and output devices will be used.
+
+```js
+const { conversation } = useConversation();
+
+const conversationId = await conversation.startSession({
+  conversationToken,
+  connectionType: "webrtc",
+  inputDeviceId: "<new-input-device-id>",
+  outputDeviceId: "<new-input-device-id>",
+});
+```
+
+**Note:** Device switching only works for voice conversations. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
 
 ##### endSession
 
@@ -407,13 +460,11 @@ setMicMuted(false);
 
 Switch the audio input device during an active voice conversation. This method is only available for voice conversations.
 
+**Note:** In WebRTC mode the input format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the input device is a no-op.
+
 ```js
-import { useConversation } from "@elevenlabs/react";
-
-const { changeInputDevice } = useConversation();
-
 // Change to a specific input device
-await changeInputDevice({
+await conversation.changeInputDevice({
   sampleRate: 16000,
   format: "pcm",
   preferHeadphonesForIosDevices: true,
@@ -425,13 +476,11 @@ await changeInputDevice({
 
 Switch the audio output device during an active voice conversation. This method is only available for voice conversations.
 
+**Note:** In WebRTC mode the output format and sample rate are hardcoded to `pcm` and `48000` respectively. Changing those values when changing the output device is a no-op.
+
 ```js
-import { useConversation } from "@elevenlabs/react";
-
-const { changeOutputDevice } = useConversation();
-
 // Change to a specific output device
-await changeOutputDevice({
+await conversation.changeOutputDevice({
   sampleRate: 16000,
   format: "pcm",
   outputDeviceId: "your-device-id", // Optional: specific device ID
@@ -439,6 +488,12 @@ await changeOutputDevice({
 ```
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
+##### getInputByteFrequencyData / getOutputByteFrequencyData
+
+Methods that return `Uint8Array`s containing the current input/output frequency data. See [AnalyserNode.getByteFrequencyData](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData) for more information.
+
+**Note:** These methods are only available for voice conversations. In WebRTC mode the audio is hardcoded to use `pcm_48000`, meaning any visualization using the returned data might show different patterns to WebSocket connections.
 
 ##### status
 
@@ -468,6 +523,551 @@ This is helpful to conditionally show the feedback button in your UI.
 ```js
 const { canSendFeedback } = useConversation();
 console.log(canSendFeedback); // boolean
+```
+
+### useScribe
+
+React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe Realtime v2.
+
+**Note:** Scribe Realtime v2 is currently in closed beta. For access please [contact sales](https://elevenlabs.io/contact-sales).
+
+#### Quick Start
+
+```tsx
+import { useScribe } from "@elevenlabs/react";
+
+function MyComponent() {
+  const scribe = useScribe({
+    modelId: "scribe_realtime_v2",
+    onPartialTranscript: (data) => {
+      console.log("Partial:", data.text);
+    },
+    onFinalTranscript: (data) => {
+      console.log("Final:", data.text);
+    },
+  });
+
+  const handleStart = async () => {
+    const token = await fetchTokenFromServer();
+    await scribe.connect({
+      token,
+      microphone: {
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleStart} disabled={scribe.isConnected}>
+        Start Recording
+      </button>
+      <button onClick={scribe.disconnect} disabled={!scribe.isConnected}>
+        Stop
+      </button>
+
+      {scribe.partialTranscript && <p>Live: {scribe.partialTranscript}</p>}
+
+      <div>
+        {scribe.finalTranscripts.map((t) => (
+          <p key={t.id}>{t.text}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### Getting a Token
+
+Scribe requires a single-use token for authentication. Create an API endpoint on your server:
+
+```js
+// Node.js server
+app.get("/scribe-token", yourAuthMiddleware, async (req, res) => {
+  const response = await fetch(
+    "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
+    {
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      },
+    }
+  );
+
+  const data = await response.json();
+  res.json({ token: data.token });
+});
+```
+
+**Warning:** Your ElevenLabs API key is sensitive, do not leak it to the client. Always generate the token on the server.
+
+```tsx
+// Client
+const fetchToken = async () => {
+  const response = await fetch("/scribe-token");
+  const { token } = await response.json();
+  return token;
+};
+```
+
+#### Hook Options
+
+Configure the hook with default options and callbacks:
+
+```tsx
+const scribe = useScribe({
+  // Connection options (can be overridden in connect())
+  token: "optional-default-token",
+  modelId: "scribe_realtime_v2",
+  baseUri: "wss://api.elevenlabs.io",
+
+  // VAD options
+  commitStrategy: CommitStrategy.AUTOMATIC,
+  vadSilenceThresholdSecs: 0.5,
+  vadThreshold: 0.5,
+  minSpeechDurationMs: 100,
+  minSilenceDurationMs: 500,
+  languageCode: "en",
+
+  // Microphone options (for automatic mode)
+  microphone: {
+    deviceId: "optional-device-id",
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  },
+
+  // Manual audio options (for file transcription)
+  audioFormat: AudioFormat.PCM_16000,
+  sampleRate: 16000,
+
+  // Auto-connect on mount
+  autoConnect: false,
+
+  // Event callbacks
+  onSessionStarted: () => console.log("Session started"),
+  onPartialTranscript: (data) => console.log("Partial:", data.text),
+  onFinalTranscript: (data) => console.log("Final:", data.text),
+  onFinalTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
+  onError: (error) => console.error("Error:", error),
+  onAuthError: (data) => console.error("Auth error:", data.error),
+  onConnect: () => console.log("Connected"),
+  onDisconnect: () => console.log("Disconnected"),
+});
+```
+
+#### Microphone Mode
+
+Stream audio directly from the user's microphone:
+
+```tsx
+function MicrophoneTranscription() {
+  const scribe = useScribe({
+    modelId: "scribe_realtime_v2",
+  });
+
+  const startRecording = async () => {
+    const token = await fetchToken();
+    await scribe.connect({
+      token,
+      microphone: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={startRecording} disabled={scribe.isConnected}>
+        {scribe.status === "connecting" ? "Connecting..." : "Start"}
+      </button>
+      <button onClick={scribe.disconnect} disabled={!scribe.isConnected}>
+        Stop
+      </button>
+
+      {scribe.partialTranscript && (
+        <div>
+          <strong>Speaking:</strong> {scribe.partialTranscript}
+        </div>
+      )}
+
+      {scribe.finalTranscripts.map((transcript) => (
+        <div key={transcript.id}>{transcript.text}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Manual Audio Mode (File Transcription)
+
+Transcribe pre-recorded audio files:
+
+```tsx
+import { useScribe, AudioFormat } from "@elevenlabs/react";
+
+function FileTranscription() {
+  const [file, setFile] = useState<File | null>(null);
+  const scribe = useScribe({
+    modelId: "scribe_realtime_v2",
+    audioFormat: AudioFormat.PCM_16000,
+    sampleRate: 16000,
+  });
+
+  const transcribeFile = async () => {
+    if (!file) return;
+
+    const token = await fetchToken();
+    await scribe.connect({ token });
+
+    // Decode audio file
+    const arrayBuffer = await file.arrayBuffer();
+    const audioContext = new AudioContext({ sampleRate: 16000 });
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    // Convert to PCM16
+    const channelData = audioBuffer.getChannelData(0);
+    const pcmData = new Int16Array(channelData.length);
+
+    for (let i = 0; i < channelData.length; i++) {
+      const sample = Math.max(-1, Math.min(1, channelData[i]));
+      pcmData[i] = sample < 0 ? sample * 32768 : sample * 32767;
+    }
+
+    // Send in chunks
+    const chunkSize = 4096;
+    for (let offset = 0; offset < pcmData.length; offset += chunkSize) {
+      const chunk = pcmData.slice(offset, offset + chunkSize);
+      const bytes = new Uint8Array(chunk.buffer);
+      const base64 = btoa(String.fromCharCode(...bytes));
+
+      scribe.sendAudio(base64);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    // Commit transcription
+    scribe.commit();
+  };
+
+  return (
+    <div>
+      <input
+        type="file"
+        accept="audio/*"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+      <button onClick={transcribeFile} disabled={!file || scribe.isConnected}>
+        Transcribe
+      </button>
+
+      {scribe.finalTranscripts.map((transcript) => (
+        <div key={transcript.id}>{transcript.text}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Hook Return Values
+
+##### State
+
+- **status** - Current connection status: `"disconnected"`, `"connecting"`, `"connected"`, `"transcribing"`, or `"error"`
+- **isConnected** - Boolean indicating if connected
+- **isTranscribing** - Boolean indicating if actively transcribing
+- **partialTranscript** - Current partial (interim) transcript
+- **finalTranscripts** - Array of completed transcript segments
+- **error** - Current error message, or null
+
+```tsx
+const scribe = useScribe(/* options */);
+
+console.log(scribe.status); // "connected"
+console.log(scribe.isConnected); // true
+console.log(scribe.partialTranscript); // "hello world"
+console.log(scribe.finalTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
+console.log(scribe.error); // null or error string
+```
+
+##### Methods
+
+###### connect(options?)
+
+Connect to Scribe. Options provided here override hook defaults:
+
+```tsx
+await scribe.connect({
+  token: "your-token", // Required
+  microphone: { /* ... */ }, // For microphone mode
+  // OR
+  audioFormat: AudioFormat.PCM_16000, // For manual mode
+  sampleRate: 16000,
+});
+```
+
+###### disconnect()
+
+Disconnect and clean up resources:
+
+```tsx
+scribe.disconnect();
+```
+
+###### sendAudio(audioBase64, options?)
+
+Send audio data (manual mode only):
+
+```tsx
+scribe.sendAudio(base64AudioChunk, {
+  commit: false, // Optional: commit immediately
+  sampleRate: 16000, // Optional: override sample rate
+});
+```
+
+###### commit()
+
+Manually commit the current transcription:
+
+```tsx
+scribe.commit();
+```
+
+###### clearTranscripts()
+
+Clear all transcripts from state:
+
+```tsx
+scribe.clearTranscripts();
+```
+
+###### getConnection()
+
+Get the underlying connection instance:
+
+```tsx
+const connection = scribe.getConnection();
+// Returns RealtimeConnection | null
+```
+
+#### Transcript Segment Type
+
+Each final transcript segment has the following structure:
+
+```typescript
+interface TranscriptSegment {
+  id: string; // Unique identifier
+  text: string; // Transcript text
+  timestamp: number; // Unix timestamp
+  isFinal: boolean; // Always true for final transcripts
+}
+```
+
+#### Event Callbacks
+
+All event callbacks are optional and can be provided as hook options:
+
+```tsx
+const scribe = useScribe({
+  onSessionStarted: () => {
+    console.log("Session started");
+  },
+  onPartialTranscript: (data: { text: string }) => {
+    console.log("Partial:", data.text);
+  },
+  onFinalTranscript: (data: { text: string }) => {
+    console.log("Final:", data.text);
+  },
+  onFinalTranscriptWithTimestamps: (data: {
+    text: string;
+    timestamps?: { start: number; end: number }[];
+  }) => {
+    console.log("Text:", data.text);
+    console.log("Word timestamps:", data.timestamps);
+  },
+  onError: (error: Error | Event) => {
+    console.error("Connection error:", error);
+  },
+  onAuthError: (data: { error: string }) => {
+    console.error("Auth error:", data.error);
+  },
+  onConnect: () => {
+    console.log("WebSocket opened");
+  },
+  onDisconnect: () => {
+    console.log("WebSocket closed");
+  },
+});
+```
+
+#### Commit Strategies
+
+Control when transcriptions are finalized:
+
+```tsx
+import { CommitStrategy } from "@elevenlabs/react";
+
+// Automatic (default) - API detects speech end
+const scribe = useScribe({
+  commitStrategy: CommitStrategy.AUTOMATIC,
+});
+
+// Manual - you control when to commit
+const scribe = useScribe({
+  commitStrategy: CommitStrategy.MANUAL,
+});
+
+// Later...
+scribe.commit(); // Finalize transcription
+```
+
+#### Complete Example
+
+```tsx
+import { useScribe, AudioFormat, CommitStrategy } from "@elevenlabs/react";
+import { useState } from "react";
+
+function ScribeDemo() {
+  const [mode, setMode] = useState<"microphone" | "file">("microphone");
+
+  const scribe = useScribe({
+    modelId: "scribe_realtime_v2",
+    commitStrategy: CommitStrategy.AUTOMATIC,
+    onSessionStarted: () => console.log("Started"),
+    onFinalTranscript: (data) => console.log("Final:", data.text),
+    onError: (error) => console.error("Error:", error),
+  });
+
+  const startMicrophone = async () => {
+    const token = await fetchToken();
+    await scribe.connect({
+      token,
+      microphone: {
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+    });
+  };
+
+  return (
+    <div>
+      <h1>Scribe Demo</h1>
+
+      {/* Status */}
+      <div>
+        Status: {scribe.status}
+        {scribe.error && <span>Error: {scribe.error}</span>}
+      </div>
+
+      {/* Controls */}
+      <div>
+        {!scribe.isConnected ? (
+          <button onClick={startMicrophone}>Start Recording</button>
+        ) : (
+          <button onClick={scribe.disconnect}>Stop</button>
+        )}
+        <button onClick={scribe.clearTranscripts}>Clear</button>
+      </div>
+
+      {/* Live Transcript */}
+      {scribe.partialTranscript && (
+        <div>
+          <strong>Live:</strong> {scribe.partialTranscript}
+        </div>
+      )}
+
+      {/* Final Transcripts */}
+      <div>
+        <h2>Transcripts ({scribe.finalTranscripts.length})</h2>
+        {scribe.finalTranscripts.map((t) => (
+          <div key={t.id}>
+            <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
+            <p>{t.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### TypeScript Support
+
+Full TypeScript types are included:
+
+```typescript
+import {
+  useScribe,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+  type UseScribeReturn,
+  type ScribeHookOptions,
+  type ScribeStatus,
+  type TranscriptSegment,
+  type RealtimeConnection,
+} from "@elevenlabs/react";
+
+const scribe: UseScribeReturn = useScribe({
+  modelId: "scribe_realtime_v2",
+  microphone: {
+    echoCancellation: true,
+  },
+});
+```
+
+## CSP compliance
+
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
+
+Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
+
+Add the worklet files to your public folder eg `public/elevenlabs`.
+
+```
+@elevenlabs/client/scripts/
+```
+
+Then call start with
+
+```ts
+      await conversation.startSession({
+...
+        workletPaths: {
+          'rawAudioProcessor': '/elevenlabs/rawAudioProcessor.worklet.js',
+          'audioConcatProcessor':
+            '/elevenlabs/audioConcatProcessor.worklet.js',
+        },
+      });
+```
+
+It is recommended to update the scripts with a build script like
+
+```js
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { createRequire } from 'node:module';
+import path from 'path';
+
+const require = createRequire(import.meta.url);
+
+export default {
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audioConcatProcessor.js',
+          dest: 'dist',
+        },
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/rawAudioProcessor.js',
+          dest: 'dist',
+        },
+      ],
+    }),
+  ],
+}
 ```
 
 ## Development

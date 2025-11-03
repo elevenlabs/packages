@@ -1,20 +1,37 @@
-import { useEffect } from 'react';
-import { useLocalParticipant, useDataChannel } from '@livekit/react-native';
-import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig, ClientToolCallEvent, ConversationEvent } from '../types';
-import React from 'react';
+import { useEffect } from "react";
+import { useLocalParticipant, useDataChannel } from "@livekit/react-native";
+import type { LocalParticipant } from "livekit-client";
+import type {
+  Callbacks,
+  ClientToolsConfig,
+  ClientToolCallEvent,
+  ConversationEvent,
+} from "../types";
+import React from "react";
 
 interface MessageHandlerProps {
   onReady: (participant: LocalParticipant) => void;
   isConnected: boolean;
   callbacks: Callbacks;
   sendMessage: (message: unknown) => void;
-  clientTools?: ClientToolsConfig['clientTools'];
+  onEndSession: (reason: "user" | "agent") => void;
+  clientTools?: ClientToolsConfig["clientTools"];
   updateCurrentEventId?: (eventId: number) => void;
 }
 
-export function isValidEvent(event: any): event is ConversationEvent {
-  return !!event.type;
+export function isValidEvent(event: unknown): event is ConversationEvent {
+  return typeof event === "object" && event !== null && "type" in event;
+}
+
+function extractMessageText(event: ConversationEvent): string | null {
+  switch (event.type) {
+    case "user_transcript":
+      return event.user_transcription_event.user_transcript;
+    case "agent_response":
+      return event.agent_response_event.agent_response;
+    default:
+      return null;
+  }
 }
 
 export const MessageHandler = ({
@@ -23,12 +40,20 @@ export const MessageHandler = ({
   callbacks,
   sendMessage,
   clientTools = {},
-  updateCurrentEventId
+  updateCurrentEventId,
+  onEndSession,
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
 
   // Track agent response count for synthetic event IDs (WebRTC mode)
   const agentResponseCountRef = React.useRef(1);
+
+  // Reset agent response count when connection status changes
+  useEffect(() => {
+    if (!isConnected) {
+      agentResponseCountRef.current = 1;
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     if (isConnected && localParticipant) {
@@ -37,12 +62,7 @@ export const MessageHandler = ({
   }, [isConnected, localParticipant, onReady]);
 
   const handleClientToolCall = async (clientToolCall: ClientToolCallEvent) => {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        clientTools,
-        clientToolCall.client_tool_call.tool_name
-      )
-    ) {
+    if (clientToolCall.client_tool_call.tool_name in clientTools) {
       try {
         const result =
           (await clientTools[clientToolCall.client_tool_call.tool_name](
@@ -73,7 +93,7 @@ export const MessageHandler = ({
       }
     } else {
       if (callbacks.onUnhandledClientToolCall) {
-        callbacks.onUnhandledClientToolCall(clientToolCall);
+        callbacks.onUnhandledClientToolCall(clientToolCall.client_tool_call);
         return;
       }
 
@@ -90,7 +110,7 @@ export const MessageHandler = ({
     }
   };
 
-  const _ = useDataChannel((msg) => {
+  const _ = useDataChannel(msg => {
     const decoder = new TextDecoder();
     const message = JSON.parse(decoder.decode(msg.payload));
 
@@ -102,14 +122,17 @@ export const MessageHandler = ({
       return;
     }
 
-    callbacks.onMessage?.({
-      message,
-      source: msg.from?.isAgent ? 'ai' : 'user',
-    });
+    const messageText = extractMessageText(message);
+    if (messageText !== null) {
+      callbacks.onMessage?.({
+        message: messageText,
+        source: message.type === "user_transcript" ? "user" : "ai",
+      });
+    }
 
     if (msg.from?.isAgent) {
       callbacks.onModeChange?.({
-        mode: msg.from?.isSpeaking ? 'speaking' : 'listening'
+        mode: msg.from?.isSpeaking ? "speaking" : "listening",
       });
 
       // Track agent responses for feedback (WebRTC mode needs synthetic event IDs)
@@ -128,6 +151,44 @@ export const MessageHandler = ({
         break;
       case "client_tool_call":
         handleClientToolCall(message);
+        break;
+      case "audio":
+        callbacks.onAudio?.(message.audio_event.audio_base_64);
+        break;
+      case "vad_score":
+        callbacks.onVadScore?.({
+          vadScore: message.vad_score_event.vad_score,
+        });
+        break;
+      case "interruption":
+        callbacks.onInterruption?.(message.interruption_event);
+        break;
+      case "mcp_tool_call":
+        callbacks.onMCPToolCall?.(message.mcp_tool_call);
+        break;
+      case "mcp_connection_status":
+        callbacks.onMCPConnectionStatus?.(message.mcp_connection_status);
+        break;
+      case "agent_tool_response":
+        callbacks.onAgentToolResponse?.(message.agent_tool_response);
+
+        if (message.agent_tool_response.tool_name === "end_call") {
+          // End the call
+          onEndSession("agent");
+        }
+        break;
+      case "conversation_initiation_metadata":
+        callbacks.onConversationMetadata?.(
+          message.conversation_initiation_metadata_event
+        );
+        break;
+      case "asr_initiation_metadata":
+        callbacks.onAsrInitiationMetadata?.(
+          message.asr_initiation_metadata_event
+        );
+        break;
+      case "agent_chat_response_part":
+        callbacks.onAgentChatResponsePart?.(message.text_response_part);
         break;
       default:
         callbacks.onDebug?.(message);

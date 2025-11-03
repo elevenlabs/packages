@@ -1,39 +1,53 @@
-import { loadAudioConcatProcessor } from "./audioConcatProcessor";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
 import type { FormatConfig } from "./connection";
+import type { AudioWorkletConfig } from "../BaseConversation";
+
+export type OutputConfig = {
+  outputDeviceId?: string;
+};
 
 export class Output {
   public static async create({
     sampleRate,
     format,
     outputDeviceId,
-  }: FormatConfig): Promise<Output> {
+    workletPaths,
+  }: FormatConfig & OutputConfig & AudioWorkletConfig): Promise<Output> {
     let context: AudioContext | null = null;
     let audioElement: HTMLAudioElement | null = null;
-    let audioSource: MediaElementAudioSourceNode | null = null;
     try {
       context = new AudioContext({ sampleRate });
       const analyser = context.createAnalyser();
       const gain = context.createGain();
+
+      // Always create an audio element for device switching capability
+      audioElement = new Audio();
+      audioElement.src = "";
+      audioElement.load();
+      audioElement.autoplay = true;
+      audioElement.style.display = "none";
+
+      document.body.appendChild(audioElement);
+
+      // Create media stream destination to route audio to the element
+      const destination = context.createMediaStreamDestination();
+      audioElement.srcObject = destination.stream;
+
       gain.connect(analyser);
-      analyser.connect(context.destination);
+      analyser.connect(destination);
 
-      if (outputDeviceId) {
-        audioElement = new Audio();
-        audioElement.src = "";
-        audioElement.load();
-
-        audioSource = context.createMediaElementSource(audioElement);
-        audioSource.connect(gain);
-      }
-
-      await loadAudioConcatProcessor(context.audioWorklet);
-      const worklet = new AudioWorkletNode(context, "audio-concat-processor");
+      await loadAudioConcatProcessor(
+        context.audioWorklet,
+        workletPaths?.["audioConcatProcessor"]
+      );
+      const worklet = new AudioWorkletNode(context, "audioConcatProcessor");
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 
       await context.resume();
 
-      if (outputDeviceId && audioElement?.setSinkId) {
+      // Set initial output device if provided
+      if (outputDeviceId && audioElement.setSinkId) {
         await audioElement.setSinkId(outputDeviceId);
       }
 
@@ -42,13 +56,15 @@ export class Output {
         analyser,
         gain,
         worklet,
-        audioElement,
-        audioSource
+        audioElement
       );
 
       return newOutput;
     } catch (error) {
-      audioSource?.disconnect();
+      // Clean up audio element from DOM
+      if (audioElement?.parentNode) {
+        audioElement.parentNode.removeChild(audioElement);
+      }
       audioElement?.pause();
       if (context && context.state !== "closed") {
         await context.close();
@@ -63,13 +79,24 @@ export class Output {
     public readonly analyser: AnalyserNode,
     public readonly gain: GainNode,
     public readonly worklet: AudioWorkletNode,
-    public readonly audioElement: HTMLAudioElement | null,
-    public readonly audioSource: MediaElementAudioSourceNode | null
+    public readonly audioElement: HTMLAudioElement
   ) {}
 
+  public async setOutputDevice(deviceId?: string): Promise<void> {
+    if (!("setSinkId" in HTMLAudioElement.prototype)) {
+      throw new Error("setSinkId is not supported in this browser");
+    }
+
+    // If deviceId is undefined, use empty string which resets to default device
+    await this.audioElement.setSinkId(deviceId || "");
+  }
+
   public async close() {
-    this.audioSource?.disconnect();
-    this.audioElement?.pause();
+    // Remove audio element from DOM
+    if (this.audioElement.parentNode) {
+      this.audioElement.parentNode.removeChild(this.audioElement);
+    }
+    this.audioElement.pause();
     await this.context.close();
   }
 }

@@ -18,7 +18,7 @@ interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
 
 export interface Conversation {
   startSession: (config: ConversationConfig) => Promise<void>;
-  endSession: () => Promise<void>;
+  endSession: (reason?: "user" | "agent") => Promise<void>;
   status: ConversationStatus;
   isSpeaking: boolean;
   // TODO: Implement setVolume when LiveKit React Native supports it
@@ -131,7 +131,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleConnected,
     handleDisconnected,
     handleError,
-  } = useLiveKitRoom(callbacksRef, setStatus, conversationId);
+  } = useLiveKitRoom(callbacksRef, setStatus, conversationId, status);
 
   // Enhanced connection handler to initialize feedback state
   const handleConnectedWithFeedback = React.useCallback(() => {
@@ -147,6 +147,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   // Enhanced disconnection handler to reset feedback state
   const handleDisconnectedWithFeedback = React.useCallback(() => {
     setCanSendFeedback(false);
+    setIsSpeaking(false);
     handleDisconnected();
   }, [handleDisconnected]);
 
@@ -205,16 +206,24 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
     handleParticipantReady(participant);
 
-    if (localParticipant) {
-      const overridesEvent = constructOverrides({
-        overrides,
-        customLlmExtraBody,
-        dynamicVariables,
-        userId,
-      });
-      sendMessage(overridesEvent);
+    const overridesEvent = constructOverrides({
+      overrides,
+      customLlmExtraBody,
+      dynamicVariables,
+      userId,
+    });
+
+    if (overridesEvent) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(overridesEvent));
+        participant.publishData(data, { reliable: true });
+      } catch (error) {
+        console.error("Failed to send overrides:", error);
+        callbacksRef.current.onError?.(error as string);
+      }
     }
-  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, userId, sendMessage]);
+  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
 
   const conversation: Conversation = {
     startSession,
@@ -265,6 +274,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   return (
     <ElevenLabsContext.Provider value={contextValue}>
       <LiveKitRoomWrapper
+        key={conversationId || 'disconnected'}
         serverUrl={serverUrl}
         token={token}
         connect={connect}
@@ -277,6 +287,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         sendMessage={sendMessage}
         clientTools={clientToolsRef.current}
         updateCurrentEventId={updateCurrentEventId}
+        onEndSession={endSession}
       >
         {children}
       </LiveKitRoomWrapper>

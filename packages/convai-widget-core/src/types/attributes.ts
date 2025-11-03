@@ -38,6 +38,7 @@ export const CustomAttributeList = [
   "default-expanded",
   "always-expanded",
   "user-id",
+  "use-rtc",
 ] as const;
 
 export type CustomAttributes = {

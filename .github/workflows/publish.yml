@@ -41,6 +41,85 @@ jobs:
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
           echo "PUBLISH_TAG=$PUBLISH_TAG" >> $GITHUB_ENV
 
+      - name: Validate tag matches package.json version
+        run: |
+          TAG_VERSION=$(echo "${{ github.event.release.tag_name }}" | rev | cut -d'@' -f1 | rev)
+          PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
+          PACKAGE_JSON_VERSION=$(node -p "require('./$PACKAGE_PATH/package.json').version")
+
+          echo "Tag version: $TAG_VERSION"
+          echo "package.json version: $PACKAGE_JSON_VERSION"
+
+          if [ "$TAG_VERSION" != "$PACKAGE_JSON_VERSION" ]; then
+            echo "ERROR: Version mismatch!"
+            echo "Git tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_JSON_VERSION)"
+            echo "Please ensure the git tag matches the version in $PACKAGE_PATH/package.json"
+            exit 1
+          fi
+
+          echo "Version check passed: $TAG_VERSION"
+
+      - name: Validate workspace dependencies are published
+        run: |
+          PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
+
+          # Get all workspace dependencies from package.json (excluding private packages)
+          WORKSPACE_DEPS=$(node -p "
+            const pkg = require('./$PACKAGE_PATH/package.json');
+            const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
+            Object.entries(deps)
+              .filter(([_, version]) => version.startsWith('workspace:'))
+              .map(([name, version]) => {
+                const pkgPath = 'packages/' + name.replace('@elevenlabs/', '') + '/package.json';
+                try {
+                  const depPkg = require('./' + pkgPath);
+                  // Skip private packages (they are not published to npm)
+                  if (depPkg.private) return null;
+                  return name + '@' + depPkg.version;
+                } catch (e) {
+                  return null;
+                }
+              })
+              .filter(Boolean)
+              .join(' ');
+          " 2>/dev/null || echo "")
+
+          if [ -z "$WORKSPACE_DEPS" ]; then
+            echo "No workspace dependencies to check"
+            exit 0
+          fi
+
+          echo "Checking workspace dependencies are published on npm:"
+          MISSING_DEPS=()
+
+          for DEP in $WORKSPACE_DEPS; do
+            DEP_NAME=$(echo "$DEP" | cut -d'@' -f1-2)
+            DEP_VERSION=$(echo "$DEP" | cut -d'@' -f3)
+            echo "Checking $DEP_NAME@$DEP_VERSION..."
+
+            # Check if the specific version exists on npm
+            if npm view "$DEP_NAME@$DEP_VERSION" version &>/dev/null; then
+              echo "  $DEP_NAME@$DEP_VERSION is published"
+            else
+              echo "  $DEP_NAME@$DEP_VERSION is NOT published"
+              MISSING_DEPS+=("$DEP_NAME@$DEP_VERSION")
+            fi
+          done
+
+          if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+            echo ""
+            echo "ERROR: Some workspace dependencies are not published to npm:"
+            for DEP in "${MISSING_DEPS[@]}"; do
+              echo "  - $DEP"
+            done
+            echo ""
+            echo "Please publish these dependencies first before publishing $PACKAGE_NAME"
+            exit 1
+          fi
+
+          echo ""
+          echo "All workspace dependencies are published"
+
       - name: Print package name and publish tag
         run: |
           echo "Package name is $PACKAGE_NAME"

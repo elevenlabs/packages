@@ -108,7 +108,7 @@ export function SheetActions({
       <div className="flex h-11 items-center">
         <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
         <SizeTransition
-          visible={!textOnly.value && (!isDisconnected.value || showTranscript)}
+          visible={!isDisconnected.value || showTranscript}
           className="p-1"
         >
           <CallButton

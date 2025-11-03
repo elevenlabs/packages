@@ -26,6 +26,7 @@ const BASIC_CONFIG: WidgetConfig = {
   text_only: false,
   supports_text_only: true,
   first_message: "Agent response",
+  use_rtc: false,
 };
 
 export const AGENTS = {
@@ -33,6 +34,10 @@ export const AGENTS = {
   text_only: {
     ...BASIC_CONFIG,
     text_only: true,
+  },
+  webrtc: {
+    ...BASIC_CONFIG,
+    use_rtc: true,
   },
   fail: BASIC_CONFIG,
 } as const satisfies Record<string, WidgetConfig>;

@@ -10,8 +10,10 @@ export type {
   ClientToolsConfig,
   Callbacks,
   Status,
+  AudioWorkletConfig,
 } from "./BaseConversation";
 export type { InputConfig } from "./utils/input";
+export type { OutputConfig } from "./utils/output";
 export { Input } from "./utils/input";
 export { Output } from "./utils/output";
 export type { IncomingSocketEvent, VadScoreEvent } from "./utils/events";
@@ -28,6 +30,26 @@ export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { VoiceConversation } from "./VoiceConversation";
+export { TextConversation } from "./TextConversation";
+
+// Scribe exports
+export {
+  Scribe,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+  RealtimeConnection,
+} from "./scribe";
+export type {
+  AudioOptions,
+  MicrophoneOptions,
+  WebSocketMessage,
+  PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  ScribeErrorMessage,
+  ScribeAuthErrorMessage,
+} from "./scribe";
 
 export class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {

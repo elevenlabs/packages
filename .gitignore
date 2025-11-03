@@ -39,14 +39,36 @@ yarn-error.log
 testem.log
 /typings
 
+# TypeScript incremental compilation cache
+*.tsbuildinfo
+
 # System Files
 .DS_Store
 Thumbs.db
 
 # env
+.env
 .env.local
 .env.*.local
 venv
 
 # formatters
 .ruff_cache
+
+# turbo
+.turbo
+*.turbo
+turbo-*.log
+.turbo-cookies
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+# Auto-generated version files
+**/src/version.ts

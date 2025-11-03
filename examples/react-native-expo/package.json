@@ -7,7 +7,8 @@
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && npm start",
     "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && npm start",
     "build:android": "expo build:android",
-    "build:ios": "expo build:ios"
+    "build:ios": "expo build:ios",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^12.0.0",

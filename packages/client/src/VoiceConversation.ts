@@ -1,5 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
-import { Input, InputConfig } from "./utils/input";
+import { Input, type InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
@@ -11,6 +11,7 @@ import {
   type Options,
   type PartialOptions,
 } from "./BaseConversation";
+import { WebSocketConnection } from "./utils/WebSocketConnection";
 
 export class VoiceConversation extends BaseConversation {
   public static async startSession(
@@ -34,7 +35,7 @@ export class VoiceConversation extends BaseConversation {
     if (options.useWakeLock ?? true) {
       try {
         wakeLock = await navigator.wakeLock.request("screen");
-      } catch (e) {
+      } catch (_e) {
         // Wake Lock is not required for the conversation to work
       }
     }
@@ -53,14 +54,19 @@ export class VoiceConversation extends BaseConversation {
           ...connection.inputFormat,
           preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
           inputDeviceId: options.inputDeviceId,
+          workletPaths: options.workletPaths,
+          libsampleratePath: options.libsampleratePath,
         }),
         Output.create({
           ...connection.outputFormat,
           outputDeviceId: options.outputDeviceId,
+          workletPaths: options.workletPaths,
         }),
       ]);
 
-      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      preliminaryInputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
       preliminaryInputStream = null;
 
       return new VoiceConversation(
@@ -74,14 +80,16 @@ export class VoiceConversation extends BaseConversation {
       if (fullOptions.onStatusChange) {
         fullOptions.onStatusChange({ status: "disconnected" });
       }
-      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      preliminaryInputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
       connection?.close();
       await input?.close();
       await output?.close();
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch (e) {}
+      } catch (_e) {}
       throw error;
     }
   }
@@ -107,7 +115,7 @@ export class VoiceConversation extends BaseConversation {
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch (e) {}
+    } catch (_e) {}
 
     await this.input.close();
     await this.output.close();
@@ -155,6 +163,9 @@ export class VoiceConversation extends BaseConversation {
 
   private addAudioBase64Chunk = (chunk: string) => {
     this.output.gain.gain.value = this.isMuted ? 0 : this.volume;
+    this.output.gain.gain.cancelScheduledValues(
+      this.output.context.currentTime
+    );
     this.output.worklet.port.postMessage({ type: "clearInterrupted" });
     this.output.worklet.port.postMessage({
       type: "buffer",
@@ -213,6 +224,16 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public getOutputByteFrequencyData(): Uint8Array<ArrayBuffer> {
+    // Use WebRTC analyser if available
+    if (this.connection instanceof WebRTCConnection) {
+      const webrtcData = this.connection.getOutputByteFrequencyData();
+      if (webrtcData) {
+        return webrtcData as Uint8Array<ArrayBuffer>;
+      }
+      // Fallback to empty array if WebRTC analyser not ready
+      return new Uint8Array(1024) as Uint8Array<ArrayBuffer>;
+    }
+
     this.outputFrequencyData ??= new Uint8Array(
       this.output.analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
@@ -261,16 +282,39 @@ export class VoiceConversation extends BaseConversation {
     inputDeviceId,
   }: FormatConfig & InputConfig): Promise<Input> {
     try {
+      // For WebSocket connections, try to change device on existing input first
+      if (this.connection instanceof WebSocketConnection) {
+        try {
+          await this.input.setInputDevice(inputDeviceId);
+          return this.input;
+        } catch (error) {
+          console.warn(
+            "Failed to change device on existing input, recreating:",
+            error
+          );
+          // Fall back to recreating the input
+        }
+      }
+
+      // Handle WebRTC connections differently
+      if (this.connection instanceof WebRTCConnection) {
+        await this.connection.setAudioInputDevice(inputDeviceId || "");
+      }
+
+      // Fallback: recreate the input
       await this.input.close();
 
       const newInput = await Input.create({
-        sampleRate,
-        format,
+        sampleRate: sampleRate ?? this.connection.inputFormat.sampleRate,
+        format: format ?? this.connection.inputFormat.format,
         preferHeadphonesForIosDevices,
         inputDeviceId,
+        workletPaths: this.options.workletPaths,
+        libsampleratePath: this.options.libsampleratePath,
       });
 
       this.input = newInput;
+      this.input.worklet.port.onmessage = this.onInputWorkletMessage;
 
       return this.input;
     } catch (error) {
@@ -285,12 +329,33 @@ export class VoiceConversation extends BaseConversation {
     outputDeviceId,
   }: FormatConfig): Promise<Output> {
     try {
+      // For WebSocket connections, try to change device on existing output first
+      if (this.connection instanceof WebSocketConnection) {
+        try {
+          await this.output.setOutputDevice(outputDeviceId);
+          return this.output;
+        } catch (error) {
+          console.warn(
+            "Failed to change device on existing output, recreating:",
+            error
+          );
+          // Fall back to recreating the output
+        }
+      }
+
+      // Handle WebRTC connections differently
+      if (this.connection instanceof WebRTCConnection) {
+        await this.connection.setAudioOutputDevice(outputDeviceId || "");
+      }
+
+      // Fallback: recreate the output
       await this.output.close();
 
       const newOutput = await Output.create({
-        sampleRate,
-        format,
+        sampleRate: sampleRate ?? this.connection.outputFormat.sampleRate,
+        format: format ?? this.connection.outputFormat.format,
         outputDeviceId,
+        workletPaths: this.options.workletPaths,
       });
 
       this.output = newOutput;

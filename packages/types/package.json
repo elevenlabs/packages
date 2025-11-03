@@ -1,0 +1,37 @@
+{
+  "name": "@elevenlabs/types",
+  "version": "0.1.1",
+  "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "generated"
+  ],
+  "scripts": {
+    "generate": "tsx ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
+    "build": "pnpm generate && tsc",
+    "dev": "pnpm generate",
+    "clean": "rm -rf dist generated/types",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@asyncapi/cli": "^2.17.0",
+    "@asyncapi/modelina": "^4.4.3",
+    "@asyncapi/parser": "^3.4.0",
+    "@elevenlabs/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.20.0",
+    "glob": "^11.0.3",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.2"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  }
+}

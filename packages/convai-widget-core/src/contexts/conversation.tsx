@@ -78,6 +78,9 @@ export function useConversation() {
 function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  const receivedFirstMessageRef = useRef(false);
+  const streamingMessageIndexRef = useRef<number | null>(null);
+  const isReceivingStreamRef = useRef(false);
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
@@ -177,7 +180,8 @@ function useConversationSetup() {
               client: {
                 ...processedConfig.overrides?.client,
                 source: processedConfig.overrides?.client?.source || "widget",
-                version: processedConfig.overrides?.client?.version || PACKAGE_VERSION,
+                version:
+                  processedConfig.overrides?.client?.version || PACKAGE_VERSION,
               },
             },
             onModeChange: props => {
@@ -193,11 +197,19 @@ function useConversationSetup() {
               if (
                 conversationTextOnly.peek() === true &&
                 source === "ai" &&
-                message === firstMessage.peek()
+                !receivedFirstMessageRef.current
               ) {
+                receivedFirstMessageRef.current = true
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
+                return;
+              } else if (source === "ai") {
+                receivedFirstMessageRef.current = true
+              }
+
+              if (source === "ai" && isReceivingStreamRef.current) {
+                isReceivingStreamRef.current = false;
                 return;
               }
 
@@ -212,8 +224,44 @@ function useConversationSetup() {
                 },
               ];
             },
+            onAgentChatResponsePart: ({ text, type }) => {
+              const currentTranscript = transcript.peek();
+
+              if (type === "start") {
+                isReceivingStreamRef.current = true;
+                streamingMessageIndexRef.current = currentTranscript.length;
+                transcript.value = [
+                  ...currentTranscript,
+                  {
+                    type: "message",
+                    role: "ai",
+                    message: "",
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  },
+                ];
+              } else if (type === "delta") {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null && currentTranscript[streamingIndex]) {
+                  const updatedTranscript = [...currentTranscript];
+                  const streamingMessage = updatedTranscript[streamingIndex];
+                  if (streamingMessage.type === "message") {
+                    updatedTranscript[streamingIndex] = {
+                      ...streamingMessage,
+                      message: streamingMessage.message + text,
+                    };
+                    transcript.value = updatedTranscript;
+                  }
+                }
+              } else if (type === "stop") {
+                streamingMessageIndexRef.current = null;
+              }
+            },
             onDisconnect: details => {
+              receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
+              streamingMessageIndexRef.current = null;
+              isReceivingStreamRef.current = false;
               transcript.value = [
                 ...transcript.value,
                 details.reason === "error"

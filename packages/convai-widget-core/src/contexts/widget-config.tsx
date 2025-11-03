@@ -27,6 +27,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const { serverUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const overrideConfig = useAttribute("override-config");
+  const signedUrl = useAttribute("signed-url");
   const fetchedConfig = useSignal<WidgetConfig | null>(null);
 
   useSignalEffect(() => {
@@ -43,14 +44,21 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
         );
       }
     }
+    let currentAgentId: string | undefined = agentId.value;
+    let conversationSignature: string | undefined;
+    if (signedUrl.value) {
+      const params = new URL(signedUrl.value).searchParams;
+      currentAgentId = params.get('agent_id') ?? agentId.value;
+      conversationSignature = params.get('conversation_signature') ?? undefined;
+    }
 
-    if (!agentId.value) {
+    if (!currentAgentId) {
       fetchedConfig.value = null;
       return;
     }
 
     const abort = new AbortController();
-    fetchConfig(agentId.value, serverUrl.value, abort.signal)
+    fetchConfig(currentAgentId, serverUrl.value, abort.signal, conversationSignature)
       .then(config => {
         if (!abort.signal.aborted) {
           fetchedConfig.value = config;
@@ -79,6 +87,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const defaultExpanded = useAttribute("default-expanded");
   const alwaysExpanded = useAttribute("always-expanded");
   const overrideTextOnly = useAttribute("override-text-only");
+  const useRtc = useAttribute("use-rtc");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -111,6 +120,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(defaultExpanded.value) ??
       fetchedConfig.value.default_expanded ??
       false;
+    const patchedUseRtc =
+      parseBoolAttribute(useRtc.value) ??
+      fetchedConfig.value.use_rtc ??
+      false;
 
     return {
       ...fetchedConfig.value,
@@ -122,6 +135,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       text_input_enabled: textOnly || patchedTextInput,
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
+      use_rtc: patchedUseRtc,
     };
   });
 
@@ -178,10 +192,11 @@ export function useWebRTC() {
 async function fetchConfig(
   agentId: string,
   serverUrl: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  conversationSignature?: string
 ): Promise<WidgetConfig> {
   const response = await fetch(
-    `${serverUrl}/v1/convai/agents/${agentId}/widget`,
+    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ''}`,
     {
       signal,
     }
