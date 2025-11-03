@@ -4,10 +4,7 @@ import { clsx } from "clsx";
 import { useAvatarConfig } from "../contexts/avatar-config";
 import { useTextContents } from "../contexts/text-contents";
 import { useWidgetConfig } from "../contexts/widget-config";
-import { FeedbackComponent } from "../components/FeedbackComponent";
-import { useSignal } from "@preact/signals";
-import { useSheetContent } from "../contexts/sheet-content";
-import { useFeedback } from "../contexts/feedback";
+import { Feedback } from "../components/Feedback";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -22,14 +19,6 @@ export function TranscriptMessage({
   const { previewUrl } = useAvatarConfig();
   const { lastId } = useConversation();
   const config = useWidgetConfig();
-  const feedbackSubmitted = useSignal(false);
-  const { setCurrentContent } = useSheetContent();
-  const { submitRating } = useFeedback();
-
-  const handleFeedbackSubmit = (ratingValue: number) => {
-    submitRating(ratingValue);
-    setCurrentContent("feedback");
-  };
 
   return (
     <InOutTransition initial={!animateIn} active={true}>
@@ -63,14 +52,9 @@ export function TranscriptMessage({
         </div>
       ) : entry.type === "disconnection" ? (
         <div className="mt-2 px-8 flex flex-col">
-          {entry.role !== "user" &&
-            config.value.collect_feedback &&
-            !feedbackSubmitted.value && (
-              <FeedbackComponent
-                onSubmit={handleFeedbackSubmit}
-                message={text.initiate_feedback}
-              />
-            )}
+          {entry.role !== "user" && config.value.collect_feedback && (
+            <Feedback />
+          )}
           <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
             {entry.role === "user"
               ? text.user_ended_conversation
