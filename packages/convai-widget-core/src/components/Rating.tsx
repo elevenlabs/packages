@@ -3,14 +3,26 @@ import { clsx } from "clsx";
 import { Icon, type IconName } from "./Icon";
 import { Signalish } from "../utils/signalish";
 
-interface RatingProps {
-  rating: number | null;
-  onRate: (rating: number) => void;
-  ariaLabel: Signalish<string>;
-  min?: number;
-  max?: number;
-  icon?: IconName;
+const generateRatingValues = (min: number, max: number): number[] =>
+  Array.from({ length: max - min + 1 }, (_, i) => i + min);
+
+interface RatingIconProps {
+  isFilled: boolean;
+  iconName: IconName;
 }
+
+const RatingIcon = ({ isFilled, iconName }: RatingIconProps) => {
+  const className = clsx(
+    "w-8 h-8 grid place-content-center",
+    isFilled ? "text-base-primary" : "text-base-subtle"
+  );
+
+  return (
+    <span className={className}>
+      <Icon name={iconName} size="lg" />
+    </span>
+  );
+};
 
 interface RatingButtonProps {
   value: number;
@@ -61,6 +73,15 @@ const RatingButton = ({
   );
 };
 
+interface RatingProps {
+  rating: number | null;
+  onRate: (rating: number) => void;
+  ariaLabel: Signalish<string>;
+  min?: number;
+  max?: number;
+  icon?: IconName;
+}
+
 export const Rating = ({
   rating,
   onRate,
@@ -70,7 +91,7 @@ export const Rating = ({
   icon = "star",
 }: RatingProps) => {
   const hoverRating = useSignal<number | null>(null);
-  const stars = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+  const stars = generateRatingValues(min, max);
 
   const handleHover = (value: number) => {
     hoverRating.value = value;
@@ -131,22 +152,28 @@ export const Rating = ({
 };
 
 
-export const RatingResult = ({ rating, min = 1, max = 5 }: { rating: number, min?: number, max?: number }) => {
-  const stars = Array.from({ length: max - min + 1 }, (_, i) => i + min);
-  return (
-    <div className="flex no-wrap cursor-default">
+interface RatingResultProps {
+  rating: number;
+  min?: number;
+  max?: number;
+  icon?: IconName;
+}
 
-      {stars.map(starValue => (
-        <RatingButton
-          key={starValue}
-          value={starValue}
-          isFilled={rating >= starValue}
-          isHovered={false}
-          onClick={() => {}}
-          onHover={() => {}}
-          onKeyDown={() => {}}
-          iconName="star"
-        />
+export const RatingResult = ({
+  rating,
+  min = 1,
+  max = 5,
+  icon = "star",
+}: RatingResultProps) => {
+  const values = generateRatingValues(min, max);
+  return (
+    <div
+      className="flex no-wrap"
+      role="img"
+      aria-label={`Rating: ${rating} out of ${max}`}
+    >
+      {values.map((value) => (
+        <RatingIcon key={value} isFilled={rating >= value} iconName={icon} />
       ))}
     </div>
   );
