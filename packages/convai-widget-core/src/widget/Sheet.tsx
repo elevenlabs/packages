@@ -20,6 +20,7 @@ import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
 import { useSheetContent } from "../contexts/sheet-content";
 import { FeedbackPage } from "./FeedbackPage";
+import { Icon } from "../components/Icon";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -43,7 +44,7 @@ export function Sheet({ open }: SheetProps) {
   const { isDisconnected, startSession, transcript, conversationIndex } =
     useConversation();
   const firstMessage = useFirstMessage();
-  const { currentContent } = useSheetContent();
+  const { currentContent, setCurrentContent } = useSheetContent();
 
   const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
     if (textOnly.value || isConversationTextOnly.value) {
@@ -97,9 +98,21 @@ export function Sheet({ open }: SheetProps) {
       >
         <div className="bg-base shrink-0 flex gap-2 p-4 items-start">
           <div className="relative w-16 h-16" />
-          <InOutTransition active={showTranscript && !isDisconnected.value}>
-            <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
-          </InOutTransition>
+          <div className="flex flex-col gap-2 flex-1">
+            {currentContent.value === "feedback" && (
+              <button
+                onClick={() => setCurrentContent("transcript")}
+                aria-label="Go back"
+                className="flex items-center gap-1 text-sm text-base-primary hover:text-base-subtle transition-colors self-start"
+              >
+                <Icon name="chevron-up" className="-rotate-90" size="sm" />
+                <span>Back</span>
+              </button>
+            )}
+            <InOutTransition active={showTranscript && !isDisconnected.value}>
+              <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
+            </InOutTransition>
+          </div>
         </div>
         {currentContent.value === "transcript" && (
           <>
@@ -113,12 +126,12 @@ export function Sheet({ open }: SheetProps) {
             />
           </>
         )}
-        {currentContent.value === "feedback" && (
-          <>
+        <InOutTransition active={currentContent.value === "feedback"}>
+          <div className="absolute inset-0 top-[88px] flex flex-col bg-base transition-transform duration-300 ease-out data-hidden:translate-x-full">
             <FeedbackPage />
             <FeedbackActions />
-          </>
-        )}
+          </div>
+        </InOutTransition>
         <InOutTransition active={!showTranscript || isDisconnected.value}>
           <div className="absolute top-0 left-0 right-0 p-4 flex justify-center transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
             <SheetLanguageSelect />
