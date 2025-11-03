@@ -12,7 +12,7 @@ const SheetContentContext = createContext<{
 } | null>(null);
 
 export function SheetContentProvider({
-  defaultContent = "feedback",
+  defaultContent = "transcript",
   children,
 }: {
   defaultContent?: SheetContentType;
