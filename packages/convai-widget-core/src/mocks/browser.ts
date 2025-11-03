@@ -27,6 +27,7 @@ const BASIC_CONFIG: WidgetConfig = {
   supports_text_only: true,
   first_message: "Agent response",
   use_rtc: false,
+  collect_feedback: false,
 };
 
 export const AGENTS = {

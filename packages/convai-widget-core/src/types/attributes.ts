@@ -39,6 +39,7 @@ export const CustomAttributeList = [
   "always-expanded",
   "user-id",
   "use-rtc",
+  "collect-feedback",
 ] as const;
 
 export type CustomAttributes = {
