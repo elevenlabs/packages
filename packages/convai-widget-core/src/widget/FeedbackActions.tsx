@@ -7,23 +7,12 @@ import { useFeedback } from "../contexts/feedback";
 export function FeedbackActions() {
   const text = useTextContents();
   const { setCurrentContent } = useSheetContent();
-  const { rating, feedbackText } = useFeedback();
+  const { submitFeedback } = useFeedback();
 
   const handleSubmit = useCallback(() => {
-    // TODO: Actually submit the feedback data to backend
-    const feedbackData = {
-      rating: rating.value,
-      feedbackText: feedbackText.value,
-    };
-    console.log("Submitting feedback:", feedbackData);
-
-    // Navigate back to transcript
+    submitFeedback();
     setCurrentContent("transcript");
-
-    // Reset feedback state
-    rating.value = null;
-    feedbackText.value = "";
-  }, [setCurrentContent, rating, feedbackText]);
+  }, [setCurrentContent, submitFeedback]);
 
   return (
     <div className="shrink-0 overflow-hidden flex p-3 items-end justify-end">
@@ -33,4 +22,3 @@ export function FeedbackActions() {
     </div>
   );
 }
-

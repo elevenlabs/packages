@@ -7,6 +7,7 @@ import { useWidgetConfig } from "../contexts/widget-config";
 import { FeedbackComponent } from "../components/FeedbackComponent";
 import { useSignal } from "@preact/signals";
 import { useSheetContent } from "../contexts/sheet-content";
+import { useFeedback } from "../contexts/feedback";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -23,9 +24,10 @@ export function TranscriptMessage({
   const config = useWidgetConfig();
   const feedbackSubmitted = useSignal(false);
   const { setCurrentContent } = useSheetContent();
+  const { submitRating } = useFeedback();
 
-  const handleFeedbackSubmit = (rating: number) => {
-    console.log("Feedback submitted:", rating);
+  const handleFeedbackSubmit = (ratingValue: number) => {
+    submitRating(ratingValue);
     setCurrentContent("feedback");
   };
 

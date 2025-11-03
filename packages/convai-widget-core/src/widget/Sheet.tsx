@@ -14,6 +14,7 @@ import { StatusLabel } from "./StatusLabel";
 import { Placement } from "../types/config";
 import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { SheetActions } from "./SheetActions";
+import { FeedbackActions } from "./FeedbackActions";
 import { Transcript } from "./Transcript";
 import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
@@ -101,17 +102,23 @@ export function Sheet({ open }: SheetProps) {
           </InOutTransition>
         </div>
         {currentContent.value === "transcript" && (
-          <Transcript
-            transcript={filteredTranscript}
-            scrollPinned={scrollPinned}
-          />
+          <>
+            <Transcript
+              transcript={filteredTranscript}
+              scrollPinned={scrollPinned}
+            />
+            <SheetActions
+              scrollPinned={scrollPinned}
+              showTranscript={showTranscript}
+            />
+          </>
         )}
-        {currentContent.value === "feedback" && <FeedbackPage />}
-
-        <SheetActions
-          scrollPinned={scrollPinned}
-          showTranscript={showTranscript}
-        />
+        {currentContent.value === "feedback" && (
+          <>
+            <FeedbackPage />
+            <FeedbackActions />
+          </>
+        )}
         <InOutTransition active={!showTranscript || isDisconnected.value}>
           <div className="absolute top-0 left-0 right-0 p-4 flex justify-center transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
             <SheetLanguageSelect />
