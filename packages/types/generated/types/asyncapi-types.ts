@@ -571,13 +571,11 @@ export interface Config {
   sample_rate?: number;
   audio_format?: ConfigAudioFormat;
   language_code?: string;
-  timestamps_granularity?: string;
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
-  max_tokens_to_recompute?: number;
   model_id?: string;
   disable_logging?: boolean;
 }
@@ -597,7 +595,18 @@ export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
   language_code?: string;
-  logprob?: number;
+}
+
+export interface FinalTranscript {
+  message_type: "final_transcript";
+  text: string;
+  language_code?: string;
+}
+
+export interface FinalTranscriptWithTimestamps {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
   words?: WordsItem[];
 }
 
@@ -612,22 +621,6 @@ export interface WordsItem {
 }
 
 export type WordsItemType = "word" | "spacing";
-
-export interface FinalTranscript {
-  message_type: "final_transcript";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
-
-export interface FinalTranscriptWithTimestamps {
-  message_type: "final_transcript_with_timestamps";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
 
 export interface Error {
   message_type: "error";
@@ -649,23 +642,18 @@ export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
   language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
 export interface FinalTranscriptMessage {
   message_type: "final_transcript";
   text: string;
   language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
 export interface FinalTranscriptWithTimestampsMessage {
   message_type: "final_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  logprob?: number;
   words?: WordsItem[];
 }
 
