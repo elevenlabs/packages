@@ -224,9 +224,6 @@ components:
             language_code:
               type: string
               description: Language code in ISO 639-1 or ISO 639-3 format
-            timestamps_granularity:
-              type: string
-              description: Granularity of timestamps
             vad_commit_strategy:
               type: string
               enum:
@@ -245,9 +242,6 @@ components:
             min_silence_duration_ms:
               type: integer
               description: Minimum silence duration in milliseconds
-            max_tokens_to_recompute:
-              type: integer
-              description: Maximum number of tokens to recompute
             model_id:
               type: string
               description: ID of the model to use for transcription
@@ -269,16 +263,6 @@ components:
           type: string
           nullable: true
           description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
 
     FinalTranscriptPayload:
       type: object
@@ -294,16 +278,6 @@ components:
           type: string
           nullable: true
           description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
 
     FinalTranscriptWithTimestampsPayload:
       type: object
@@ -319,10 +293,6 @@ components:
           type: string
           nullable: true
           description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
         words:
           type: array
           nullable: true
