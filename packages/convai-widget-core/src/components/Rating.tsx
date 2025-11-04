@@ -12,13 +12,13 @@ interface RatingIconProps {
 }
 
 const RatingIcon = ({ isFilled, iconName }: RatingIconProps) => {
-  const className = clsx(
-    "w-8 h-8 grid place-content-center",
-    isFilled ? "text-base-primary" : "text-base-subtle"
-  );
-
   return (
-    <span className={className}>
+    <span
+      className={clsx(
+        "w-8 h-8 grid place-content-center text-base-primary",
+        !isFilled && "opacity-15"
+      )}
+    >
       <Icon name={iconName} size="lg" />
     </span>
   );
@@ -52,11 +52,6 @@ const RatingButton = ({
     onKeyDown(e, value);
   };
 
-  const className = clsx(
-    "w-8 h-8 grid place-content-center transition-colors",
-    isFilled || isHovered ? "text-base-primary" : "text-base-subtle"
-  );
-
   return (
     <span
       role="radio"
@@ -66,7 +61,10 @@ const RatingButton = ({
       onMouseEnter={() => onHover(value)}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={className}
+      className={clsx(
+        "w-8 h-8 grid place-content-center text-base-primary transition-opacity",
+        !isFilled && !isHovered && "opacity-15"
+      )}
     >
       <Icon name={iconName} size="lg" />
     </span>
