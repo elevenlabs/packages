@@ -106,6 +106,7 @@ export const Rating = ({
   const handleKeyDown = (e: KeyboardEvent, value: number) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      rating.value = value;
       onRate(value);
     } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
       e.preventDefault();
