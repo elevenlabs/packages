@@ -93,7 +93,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const alwaysExpanded = useAttribute("always-expanded");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
-  const collectFeedback = useAttribute("collect-feedback");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -128,10 +127,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       false;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
-    const patchedCollectFeedback =
-      parseBoolAttribute(collectFeedback.value) ??
-      fetchedConfig.value.collect_feedback ??
-      false;
 
     return {
       ...fetchedConfig.value,
@@ -144,7 +139,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
       use_rtc: patchedUseRtc,
-      collect_feedback: patchedCollectFeedback,
     };
   });
 
@@ -196,6 +190,21 @@ export function useFirstMessage() {
 export function useWebRTC() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.use_rtc ?? false);
+}
+
+export function useFeedbackMode() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.feedback_mode ?? "none");
+}
+
+export function useFeedbackType() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.feedback_type ?? "rating");
+}
+
+export function useShouldShowFeedbackAtEnd() {
+  const config = useWidgetConfig();
+  return useComputed(() => (config.value.feedback_mode) === "end");
 }
 
 async function fetchConfig(

@@ -25,7 +25,6 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
-  const [collectFeedback, setCollectFeedback] = useState(false);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("")
   const [expanded, setExpanded] = useState(false);
 
@@ -105,14 +104,6 @@ function Playground() {
           />{" "}
           Always expanded
         </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={collectFeedback}
-            onChange={e => setCollectFeedback(e.currentTarget.checked)}
-          />{" "}
-          Collect feedback
-        </label>
         <label className="flex flex-col">
           Dynamic variables (i.e., new-line separated name=value)
           <textarea
@@ -162,7 +153,6 @@ function Playground() {
           mic-muting={JSON.stringify(micMuting)}
           override-text-only={JSON.stringify(textOnly)}
           always-expanded={JSON.stringify(alwaysExpanded)}
-          collect-feedback={JSON.stringify(collectFeedback)}
           dynamic-variables={JSON.stringify(dynamicVariables)}
           server-location={location}
         />

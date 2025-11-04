@@ -11,6 +11,7 @@ const BASIC_CONFIG: WidgetConfig = {
     color_2: "#ffffff",
   },
   feedback_mode: "end",
+  feedback_type: "rating",
   language: "en",
   mic_muting_enabled: false,
   transcript_enabled: false,
@@ -27,7 +28,6 @@ const BASIC_CONFIG: WidgetConfig = {
   supports_text_only: true,
   first_message: "Agent response",
   use_rtc: false,
-  collect_feedback: false,
 };
 
 export const AGENTS = {

@@ -25,12 +25,14 @@ export function parsePlacement(placement: string | undefined): Placement {
 }
 
 export type FeedbackMode = "none" | "during" | "end";
+export type FeedbackType = "thumbs" | "rating";
 
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
+  feedback_type: FeedbackType;
   language: Language;
   supported_language_overrides?: Language[];
   terms_html?: string;
@@ -57,7 +59,6 @@ export interface WidgetConfig {
   supports_text_only: boolean;
   first_message?: string;
   use_rtc?: boolean;
-  collect_feedback: boolean;
 }
 
 export type AvatarConfig =
