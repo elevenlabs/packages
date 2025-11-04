@@ -40,7 +40,7 @@ export function SheetHeader({
         )}
         <div className="flex flex-col gap-2 flex-1">
           <InOutTransition active={showStatusLabel}>
-            <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
+            <StatusLabel className="transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
       </div>
