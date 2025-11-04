@@ -4,7 +4,7 @@ import { Avatar } from "../components/Avatar";
 import { TextArea } from "../components/TextArea";
 import { RatingResult } from "../components/Rating";
 import { useFeedback } from "../contexts/feedback";
-import { Icon } from "../components/Icon";
+import { FeedbackIcon, Icon } from "../components/Icon";
 
 export function FeedbackPage() {
   const text = useTextContents();
@@ -23,7 +23,12 @@ export function FeedbackPage() {
       <div className="flex flex-col gap-8 min-h-full pt-4">
         <div className="flex flex-col items-center justify-center gap-3">
          
-          <Icon name="feedback" size="lg" />
+          <FeedbackIcon 
+            orbColor="var(--el-base-subtle)" 
+            circleBackgroundColor="var(--el-base)"
+            starColor="var(--el-base-primary)" 
+            className="w-20 h-22"
+          />
           {rating.value !== null && (
             <RatingResult rating={rating.value} min={1} max={5} />
           )}
