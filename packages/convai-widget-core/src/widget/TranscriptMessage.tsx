@@ -20,9 +20,9 @@ export function TranscriptMessage({
   const { lastId } = useConversation();
   const shouldShowFeedbackAtEnd = useShouldShowFeedbackAtEnd();
 
-  return (
-    <InOutTransition initial={!animateIn} active={true}>
-      {entry.type === "message" ? (
+  function render() {
+    if (entry.type === "message") {
+      return (
         <div
           className={clsx(
             "flex gap-2.5 transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:scale-75",
@@ -50,7 +50,11 @@ export function TranscriptMessage({
             {entry.message}
           </div>
         </div>
-      ) : entry.type === "disconnection" ? (
+      );
+    }
+
+    if (entry.type === "disconnection") {
+      return (
         <div className="mt-2 px-8 flex flex-col">
           {entry.role !== "user" && shouldShowFeedbackAtEnd.value && (
             <Feedback />
@@ -67,21 +71,29 @@ export function TranscriptMessage({
             )}
           </div>
         </div>
-      ) : (
-        <div className="mt-2 px-8 text-xs text-base-error text-center transition-opacity duration-200 data-hidden:opacity-0">
-          {text.error_occurred}
-          <br />
-          {entry.message}
-          {lastId.value && (
-            <>
-              <br />
-              <span className="text-base-subtle break-all">
-                {text.conversation_id}: {lastId.value}
-              </span>
-            </>
-          )}
-        </div>
-      )}
+      );
+    }
+
+    return (
+      <div className="mt-2 px-8 text-xs text-base-error text-center transition-opacity duration-200 data-hidden:opacity-0">
+        {text.error_occurred}
+        <br />
+        {entry.message}
+        {lastId.value && (
+          <>
+            <br />
+            <span className="text-base-subtle break-all">
+              {text.conversation_id}: {lastId.value}
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <InOutTransition initial={!animateIn} active={true}>
+      {render()}
     </InOutTransition>
   );
 }
