@@ -259,10 +259,6 @@ components:
         text:
           type: string
           description: Partial transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
 
     FinalTranscriptPayload:
       type: object
@@ -274,10 +270,6 @@ components:
         text:
           type: string
           description: Final transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
 
     FinalTranscriptWithTimestampsPayload:
       type: object
