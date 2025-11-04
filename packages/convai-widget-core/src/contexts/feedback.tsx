@@ -1,24 +1,28 @@
+import { postOverallFeedback } from "@elevenlabs/client";
 import { signal, Signal } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
+
 import { useContextSafely } from "../utils/useContextSafely";
-import { useConversation } from "./conversation";
 import { useAttribute } from "./attributes";
+import { useConversation } from "./conversation";
+import { useServerLocation } from "./server-location";
 
 interface FeedbackProgress {
   hasSubmittedRating: boolean;
   hasSubmittedFollowUp: boolean;
 }
 
-interface FeedbackData {
+interface FeedbackStore {
   rating: Signal<number | null>;
   feedbackText: Signal<string>;
   feedbackProgress: Signal<FeedbackProgress>;
   submitRating: (rating: number) => void;
   submitFeedback: () => void;
+  reset: () => void;
 }
 
-const FeedbackContext = createContext<FeedbackData | null>(null);
+const FeedbackContext = createContext<FeedbackStore | null>(null);
 
 export function FeedbackProvider({
   children,
@@ -34,8 +38,9 @@ export function FeedbackProvider({
 
   const { lastId } = useConversation();
   const agentId = useAttribute("agent-id");
+  const { serverUrl } = useServerLocation();
 
-  const submitRating = (ratingValue: number) => {
+  const submitRating = async (ratingValue: number) => {
     const conversationId = lastId.value;
     const currentAgentId = agentId.value;
 
@@ -44,50 +49,71 @@ export function FeedbackProvider({
       return;
     }
 
-    // TODO: Actually submit the rating to backend
-    const ratingData = {
-      rating: ratingValue,
-      agent_id: currentAgentId,
-      conversation_id: conversationId,
-    };
-    console.log("Submitting rating:", ratingData);
-
-    // Set rating and mark as submitted
-    rating.value = ratingValue;
-    feedbackProgress.value = {
-      ...feedbackProgress.value,
-      hasSubmittedRating: true,
-    };
+    try {
+      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
+        type: "rating",
+        rating: ratingValue,
+      });
+      rating.value = ratingValue;
+      feedbackProgress.value = {
+        ...feedbackProgress.value,
+        hasSubmittedRating: true,
+      };
+    } catch (error) {
+      console.error("Failed to submit rating:", error);
+    }
   };
 
-  const submitFeedback = () => {
+  const submitFeedback = async () => {
     const conversationId = lastId.value;
     const currentAgentId = agentId.value;
 
     if (!conversationId || !currentAgentId) {
-      console.warn("Cannot submit feedback: missing agent_id or conversation_id");
+      console.warn(
+        "Cannot submit feedback: missing agent_id or conversation_id"
+      );
       return;
     }
 
-    // TODO: Actually submit the feedback data to backend
-    const feedbackData = {
-      rating: rating.value,
-      feedbackText: feedbackText.value,
-      agent_id: currentAgentId,
-      conversation_id: conversationId,
-    };
-    console.log("Submitting feedback:", feedbackData);
+    if (rating.value === null) {
+      console.warn("Cannot submit feedback: rating not set");
+      return;
+    }
 
-    // Mark follow-up as submitted
+    try {
+      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
+        type: "rating",
+        rating: rating.value,
+        comment: feedbackText.value || undefined,
+      });
+      feedbackProgress.value = {
+        ...feedbackProgress.value,
+        hasSubmittedFollowUp: true,
+      };
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+    }
+  };
+
+  const reset = () => {
+    rating.value = null;
+    feedbackText.value = "";
     feedbackProgress.value = {
-      ...feedbackProgress.value,
-      hasSubmittedFollowUp: true,
+      hasSubmittedRating: false,
+      hasSubmittedFollowUp: false,
     };
   };
 
   return (
     <FeedbackContext.Provider
-      value={{ rating, feedbackText, feedbackProgress, submitRating, submitFeedback }}
+      value={{
+        rating,
+        feedbackText,
+        feedbackProgress,
+        submitRating,
+        submitFeedback,
+        reset,
+      }}
     >
       {children}
     </FeedbackContext.Provider>
