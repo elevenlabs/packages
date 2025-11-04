@@ -594,13 +594,11 @@ export type ConfigVadCommitStrategy = "manual" | "vad";
 export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
-  language_code?: string;
 }
 
 export interface FinalTranscript {
   message_type: "final_transcript";
   text: string;
-  language_code?: string;
 }
 
 export interface FinalTranscriptWithTimestamps {
@@ -641,13 +639,11 @@ export interface SessionStartedMessage {
 export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
-  language_code?: string;
 }
 
 export interface FinalTranscriptMessage {
   message_type: "final_transcript";
   text: string;
-  language_code?: string;
 }
 
 export interface FinalTranscriptWithTimestampsMessage {
