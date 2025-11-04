@@ -12,15 +12,14 @@ import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { StatusLabel } from "./StatusLabel";
 import { Placement } from "../types/config";
-import { SheetLanguageSelect } from "./SheetLanguageSelect";
-import { SheetActions } from "./SheetActions";
-import { FeedbackActions } from "./FeedbackActions";
 import { Transcript } from "./Transcript";
+import { SheetActions } from "./SheetActions";
+import { FeedbackPage } from "./FeedbackPage";
+import { FeedbackActions } from "./FeedbackActions";
 import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
+import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
-import { FeedbackPage } from "./FeedbackPage";
-import { Icon } from "../components/Icon";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -44,7 +43,7 @@ export function Sheet({ open }: SheetProps) {
   const { isDisconnected, startSession, transcript, conversationIndex } =
     useConversation();
   const firstMessage = useFirstMessage();
-  const { currentContent, setCurrentContent } = useSheetContent();
+  const { currentContent, currentConfig } = useSheetContent();
 
   const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
     if (textOnly.value || isConversationTextOnly.value) {
@@ -79,6 +78,7 @@ export function Sheet({ open }: SheetProps) {
     filteredTranscript.value.length > 0 ||
     (!isDisconnected.value && config.value.transcript_enabled);
   const scrollPinned = useSignal(true);
+  const showAvatar = currentContent.value !== "feedback";
 
   return (
     <InOutTransition initial={false} active={open}>
@@ -96,24 +96,16 @@ export function Sheet({ open }: SheetProps) {
               : "bottom-20"
         )}
       >
-        <div className="bg-base shrink-0 flex gap-2 p-4 items-start">
-          <div className="relative w-16 h-16" />
-          <div className="flex flex-col gap-2 flex-1">
-            {currentContent.value === "feedback" && (
-              <button
-                onClick={() => setCurrentContent("transcript")}
-                aria-label="Go back"
-                className="flex items-center gap-1 text-sm text-base-primary hover:text-base-subtle transition-colors self-start"
-              >
-                <Icon name="chevron-up" className="-rotate-90" size="sm" />
-                <span>Back</span>
-              </button>
-            )}
-            <InOutTransition active={showTranscript && !isDisconnected.value}>
-              <StatusLabel className="rounded-bl-[calc(var(--el-bubble-radius)/3)] transition-opacity data-hidden:opacity-0" />
-            </InOutTransition>
-          </div>
-        </div>
+        <SheetHeader
+          showBackButton={currentConfig.value.showHeaderBack}
+          onBackClick={currentConfig.value.onHeaderBack}
+          showStatusLabel={showTranscript && !isDisconnected.value}
+          showShadow={showTranscript}
+          showLanguageSelector={
+            currentContent.value !== "feedback" &&
+            (!showTranscript || isDisconnected.value)
+          }
+        />
         {currentContent.value === "transcript" && (
           <>
             <Transcript
@@ -132,38 +124,35 @@ export function Sheet({ open }: SheetProps) {
             <FeedbackActions />
           </div>
         </InOutTransition>
-        <InOutTransition active={!showTranscript || isDisconnected.value}>
-          <div className="absolute top-0 left-0 right-0 p-4 flex justify-center transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
-            <SheetLanguageSelect />
-          </div>
-        </InOutTransition>
-        <div
-          className={clsx(
-            "absolute origin-top-left transition-[transform,left,top] duration-200 z-1",
-            showTranscript
-              ? "top-4 left-4 scale-[0.333]"
-              : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
-          )}
-        >
-          <Avatar size="lg" />
-          <InOutTransition
-            active={!showTranscript && isDisconnected.value && !textOnly.value}
+        {showAvatar && (
+          <div
+            className={clsx(
+              "absolute origin-top-left transition-[transform,left,top] duration-200 z-1",
+              showTranscript
+                ? "top-4 left-4 scale-[0.1667]" // ~32px size
+                : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
+            )}
           >
-            <div className="absolute bottom-0 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
-              <Button
-                aria-label={text.start_call}
-                variant="primary"
-                icon="phone"
-                onClick={e => startSession(e.currentTarget)}
-              />
-            </div>
-          </InOutTransition>
-          <InOutTransition active={!showTranscript && !isDisconnected.value}>
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
-              <StatusLabel />
-            </div>
-          </InOutTransition>
-        </div>
+            <Avatar size="lg" />
+            <InOutTransition
+              active={!showTranscript && isDisconnected.value && !textOnly.value}
+            >
+              <div className="absolute bottom-0 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
+                <Button
+                  aria-label={text.start_call}
+                  variant="primary"
+                  icon="phone"
+                  onClick={e => startSession(e.currentTarget)}
+                />
+              </div>
+            </InOutTransition>
+            <InOutTransition active={!showTranscript && !isDisconnected.value}>
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
+                <StatusLabel />
+              </div>
+            </InOutTransition>
+          </div>
+        )}
       </div>
     </InOutTransition>
   );

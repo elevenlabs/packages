@@ -133,7 +133,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
           }
         }
       }}
-      className="px-4 pb-3 grow flex flex-col gap-3 overflow-x-hidden overflow-y-auto"
+      className="px-4 pt-3 pb-3 grow flex flex-col gap-3 overflow-x-hidden overflow-y-auto"
     >
       {transcript.value.map((entry, index) => (
         <TranscriptMessage

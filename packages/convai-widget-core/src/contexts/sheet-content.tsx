@@ -1,4 +1,4 @@
-import { signal, Signal } from "@preact/signals";
+import { signal, Signal, computed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 
@@ -6,9 +6,16 @@ import { useContextSafely } from "../utils/useContextSafely";
 
 type SheetContentType = "transcript" | "feedback";
 
+export interface PageConfig {
+  id: SheetContentType;
+  showHeaderBack: boolean;
+  onHeaderBack?: () => void;
+}
+
 const SheetContentContext = createContext<{
   currentContent: Signal<SheetContentType>;
   setCurrentContent: (content: SheetContentType) => void;
+  currentConfig: Signal<PageConfig>;
 } | null>(null);
 
 export function SheetContentProvider({
@@ -23,8 +30,27 @@ export function SheetContentProvider({
     currentContent.value = content;
   };
 
+  const currentConfig = computed<PageConfig>(() => {
+    const contentType = currentContent.value;
+
+    if (contentType === "feedback") {
+      return {
+        id: "feedback",
+        showHeaderBack: true,
+        onHeaderBack: () => setCurrentContent("transcript"),
+      };
+    }
+
+    return {
+      id: "transcript",
+      showHeaderBack: false,
+    };
+  });
+
   return (
-    <SheetContentContext.Provider value={{ currentContent, setCurrentContent }}>
+    <SheetContentContext.Provider
+      value={{ currentContent, setCurrentContent, currentConfig }}
+    >
       {children}
     </SheetContentContext.Provider>
   );
