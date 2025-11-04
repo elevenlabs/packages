@@ -74,7 +74,6 @@ const RatingButton = ({
 };
 
 interface RatingProps {
-  rating: number | null;
   onRate: (rating: number) => void;
   ariaLabel: Signalish<string>;
   min?: number;
@@ -83,13 +82,13 @@ interface RatingProps {
 }
 
 export const Rating = ({
-  rating,
   onRate,
   min = 1,
   max = 5,
   ariaLabel,
   icon = "star",
 }: RatingProps) => {
+  const rating = useSignal<number | null>(null);
   const hoverRating = useSignal<number | null>(null);
   const stars = generateRatingValues(min, max);
 
@@ -102,6 +101,7 @@ export const Rating = ({
   };
 
   const handleClick = (value: number) => {
+    rating.value = value;
     onRate(value);
   };
 
@@ -139,7 +139,7 @@ export const Rating = ({
         <RatingButton
           key={starValue}
           value={starValue}
-          isFilled={rating !== null && starValue <= rating}
+          isFilled={rating.value !== null && starValue <= rating.value}
           isHovered={hoverRating.value !== null && starValue <= hoverRating.value}
           onClick={handleClick}
           onHover={handleHover}

@@ -3,7 +3,7 @@ import { InOutTransition } from "../components/InOutTransition";
 import { clsx } from "clsx";
 import { useAvatarConfig } from "../contexts/avatar-config";
 import { useTextContents } from "../contexts/text-contents";
-import { useWidgetConfig } from "../contexts/widget-config";
+import { useShouldShowFeedbackAtEnd } from "../contexts/widget-config";
 import { Feedback } from "../components/Feedback";
 
 interface TranscriptMessageProps {
@@ -18,7 +18,7 @@ export function TranscriptMessage({
   const text = useTextContents();
   const { previewUrl } = useAvatarConfig();
   const { lastId } = useConversation();
-  const config = useWidgetConfig();
+  const shouldShowFeedbackAtEnd = useShouldShowFeedbackAtEnd();
 
   return (
     <InOutTransition initial={!animateIn} active={true}>
@@ -52,7 +52,7 @@ export function TranscriptMessage({
         </div>
       ) : entry.type === "disconnection" ? (
         <div className="mt-2 px-8 flex flex-col">
-          {entry.role !== "user" && config.value.collect_feedback && (
+          {entry.role !== "user" && shouldShowFeedbackAtEnd.value && (
             <Feedback />
           )}
           <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">

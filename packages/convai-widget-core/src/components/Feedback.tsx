@@ -7,9 +7,10 @@ import { useFeedback } from "../contexts/feedback";
 
 interface FeedbackProps {
   icon?: IconName;
+  variant?: "rating" | "thumbs";
 }
 
-export const Feedback = ({ icon = "star" }: FeedbackProps) => {
+export const Feedback = ({ icon = "star", variant = "rating" }: FeedbackProps) => {
   const text = useTextContents();
   const { setCurrentContent } = useSheetContent();
   const { rating, feedbackProgress, submitRating } = useFeedback();
@@ -23,7 +24,6 @@ export const Feedback = ({ icon = "star" }: FeedbackProps) => {
     setCurrentContent("feedback");
   };
 
-  // State 1: No rating submitted yet - show rating selector
   if (!feedbackProgress.value.hasSubmittedRating) {
     return (
       <div className="flex flex-col items-center">
@@ -32,7 +32,6 @@ export const Feedback = ({ icon = "star" }: FeedbackProps) => {
         </div>
         <div className="py-4">
           <Rating
-            rating={null}
             onRate={handleFeedbackSubmit}
             ariaLabel={text.initiate_feedback}
             icon={icon}
@@ -42,7 +41,6 @@ export const Feedback = ({ icon = "star" }: FeedbackProps) => {
     );
   }
 
-  // State 2 & 3: Rating submitted - show thank you + rating result
   return (
     <div className="flex flex-col items-center gap-3 mb-4">
       <div className="text-sm text-base-primary font-medium">
