@@ -17,8 +17,8 @@ interface FeedbackStore {
   rating: Signal<number | null>;
   feedbackText: Signal<string>;
   feedbackProgress: Signal<FeedbackProgress>;
-  submitRating: (rating: number) => void;
-  submitFeedback: () => void;
+  submitRating: (rating: number) => Promise<void>;
+  submitFeedback: () => Promise<void>;
   reset: () => void;
 }
 
@@ -50,15 +50,15 @@ export function FeedbackProvider({
     }
 
     try {
-      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
-        type: "rating",
-        rating: ratingValue,
-      });
       rating.value = ratingValue;
       feedbackProgress.value = {
         ...feedbackProgress.value,
         hasSubmittedRating: true,
       };
+      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
+        type: "rating",
+        rating: ratingValue,
+      });
     } catch (error) {
       console.error("Failed to submit rating:", error);
     }
@@ -81,15 +81,15 @@ export function FeedbackProvider({
     }
 
     try {
+      feedbackProgress.value = {
+        ...feedbackProgress.value,
+        hasSubmittedFollowUp: true,
+      };
       await postOverallFeedback(conversationId, undefined, serverUrl.value, {
         type: "rating",
         rating: rating.value,
         comment: feedbackText.value || undefined,
       });
-      feedbackProgress.value = {
-        ...feedbackProgress.value,
-        hasSubmittedFollowUp: true,
-      };
     } catch (error) {
       console.error("Failed to submit feedback:", error);
     }
