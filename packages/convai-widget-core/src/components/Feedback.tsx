@@ -66,25 +66,26 @@ function FeedbackResult({
 export function Feedback({ icon = "star" }: FeedbackProps) {
   const { currentContent } = useSheetContent();
   const { rating, feedbackProgress, submitRating } = useFeedback();
-
+  const hasSubmittedRating =
+    feedbackProgress.value !== "initial" && rating.value !== null;
   const handleFeedbackSubmit = useCallback(
     (ratingValue: number) => {
       submitRating(ratingValue);
       currentContent.value = "feedback";
     },
-    [submitRating, currentContent]
+    [submitRating]
   );
 
   const handleFollowUpClick = useCallback(() => {
     currentContent.value = "feedback";
-  }, [currentContent]);
+  }, []);
 
-  if (feedbackProgress.value.hasSubmittedRating && rating.value !== null) {
+  if (hasSubmittedRating) {
     return (
       <FeedbackResult
         icon={icon}
-        rating={rating.value}
-        showFollowUpButton={!feedbackProgress.value.hasSubmittedFollowUp}
+        rating={rating.value ?? 0}
+        showFollowUpButton={feedbackProgress.value !== "submitted-follow-up"}
         onFollowUpClick={handleFollowUpClick}
       />
     );

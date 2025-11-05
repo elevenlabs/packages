@@ -12,7 +12,7 @@ export function FeedbackActions() {
   const handleSubmit = useCallback(() => {
     submitFeedback();
     currentContent.value = "transcript";
-  }, [currentContent, submitFeedback]);
+  }, [submitFeedback]);
 
   return (
     <div className="shrink-0 overflow-hidden flex p-3 items-end justify-end">

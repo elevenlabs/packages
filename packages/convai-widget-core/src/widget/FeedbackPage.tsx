@@ -13,7 +13,7 @@ export function FeedbackPage() {
     (e: TargetedEvent<HTMLTextAreaElement>) => {
       feedbackText.value = e.currentTarget.value;
     },
-    [feedbackText.value]
+    []
   );
 
   return (
