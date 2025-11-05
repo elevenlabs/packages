@@ -39,6 +39,12 @@ export const CustomAttributeList = [
   "always-expanded",
   "user-id",
   "use-rtc",
+  "action-text",
+  "start-call-text",
+  "end-call-text",
+  "expand-text",
+  "listening-text",
+  "speaking-text",
 ] as const;
 
 export type CustomAttributes = {
