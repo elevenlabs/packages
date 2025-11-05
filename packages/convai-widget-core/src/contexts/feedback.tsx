@@ -1,6 +1,6 @@
 import { postOverallFeedback } from "@elevenlabs/client";
-import { signal, Signal } from "@preact/signals";
-import { ComponentChildren } from "preact";
+import { type Signal, signal } from "@preact/signals";
+import type { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 
 import { useContextSafely } from "../utils/useContextSafely";
@@ -56,7 +56,6 @@ export function FeedbackProvider({
         hasSubmittedRating: true,
       };
       await postOverallFeedback(conversationId, undefined, serverUrl.value, {
-        type: "rating",
         rating: ratingValue,
       });
     } catch (error) {
@@ -86,7 +85,6 @@ export function FeedbackProvider({
         hasSubmittedFollowUp: true,
       };
       await postOverallFeedback(conversationId, undefined, serverUrl.value, {
-        type: "rating",
         rating: rating.value,
         comment: feedbackText.value || undefined,
       });

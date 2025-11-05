@@ -1,17 +1,11 @@
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
-interface ThumbsFeedback {
-  type: "thumbs";
-  feedback: "like" | "dislike";
-}
-
-interface RatingFeedback {
-  type: "rating";
+export interface RatingFeedback {
   rating: number;
   comment?: string;
 }
 
-type Feedback = ThumbsFeedback | RatingFeedback;
+type Feedback = RatingFeedback;
 
 export function postOverallFeedback(
   conversationId: string,
@@ -19,15 +13,31 @@ export function postOverallFeedback(
   origin: string = HTTPS_API_ORIGIN,
   feedback?: Feedback
 ) {
-  let body: Feedback;
+  const hasThumbsFeedback = like !== undefined;
+  const hasRatingFeedback = feedback !== undefined;
 
-  if (feedback) {
-    body = feedback;
-  } else if (like !== undefined) {
-    // for backward compatibility
-    body = { type: "thumbs", feedback: like ? "like" : "dislike" };
-  } else {
+  if (!hasThumbsFeedback && !hasRatingFeedback) {
     throw new Error("Either 'like' or 'feedback' must be provided");
+  }
+  if (hasThumbsFeedback && hasRatingFeedback) {
+    throw new Error("Cannot provide both 'like' and 'feedback'");
+  }
+
+  const body: {
+    feedback?: "like" | "dislike";
+    rating?: number;
+    comment?: string;
+  } = {};
+
+  if (hasThumbsFeedback) {
+    body.feedback = like ? "like" : "dislike";
+  }
+
+  if (hasRatingFeedback) {
+    body.rating = feedback.rating;
+    if (feedback.comment) {
+      body.comment = feedback.comment;
+    }
   }
 
   return fetch(`${origin}/v1/convai/conversations/${conversationId}/feedback`, {
