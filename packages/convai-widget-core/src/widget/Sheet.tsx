@@ -106,8 +106,8 @@ export function Sheet({ open }: SheetProps) {
             (!showTranscript || isDisconnected.value)
           }
         />
-        {currentContent.value === "transcript" && (
-          <>
+        <InOutTransition active={currentContent.value === "transcript"}>
+          <div className="grow flex flex-col min-h-0 transition-opacity duration-300 ease-out data-hidden:opacity-0">
             <Transcript
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
@@ -116,18 +116,19 @@ export function Sheet({ open }: SheetProps) {
               scrollPinned={scrollPinned}
               showTranscript={showTranscript}
             />
-          </>
-        )}
+          </div>
+        </InOutTransition>
         <InOutTransition active={currentContent.value === "feedback"}>
           <div className="absolute inset-0 top-[88px] flex flex-col bg-base transition-transform duration-300 ease-out data-hidden:translate-x-full">
             <FeedbackPage />
             <FeedbackActions />
           </div>
         </InOutTransition>
-        {showAvatar && (
+        <InOutTransition active={showAvatar}>
           <div
             className={clsx(
-              "absolute origin-top-left transition-[transform,left,top] duration-200 z-1",
+              "absolute origin-top-left transition-[transform,left,top,opacity,scale] duration-200 z-1",
+              "data-hidden:opacity-0",
               showTranscript
                 ? "top-4 left-4 scale-[0.1667]" // ~32px size
                 : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
@@ -135,7 +136,9 @@ export function Sheet({ open }: SheetProps) {
           >
             <Avatar size="lg" />
             <InOutTransition
-              active={!showTranscript && isDisconnected.value && !textOnly.value}
+              active={
+                !showTranscript && isDisconnected.value && !textOnly.value
+              }
             >
               <div className="absolute bottom-0 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
                 <Button
@@ -152,7 +155,7 @@ export function Sheet({ open }: SheetProps) {
               </div>
             </InOutTransition>
           </div>
-        )}
+        </InOutTransition>
       </div>
     </InOutTransition>
   );

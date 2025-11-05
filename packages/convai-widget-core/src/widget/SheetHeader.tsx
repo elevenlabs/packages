@@ -35,6 +35,7 @@ export function SheetHeader({
             variant="ghost"
             onClick={onBackClick}
             aria-label={text.go_back}
+            className="!h-8 !w-8"
           >
             <Icon name="chevron-up" className="-rotate-90" size="sm" />
           </Button>
