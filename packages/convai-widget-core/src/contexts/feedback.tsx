@@ -55,9 +55,9 @@ export function FeedbackProvider({
         ...feedbackProgress.value,
         hasSubmittedRating: true,
       };
-      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
+      await postOverallFeedback(conversationId, {
         rating: ratingValue,
-      });
+      }, serverUrl.value);
     } catch (error) {
       console.error("Failed to submit rating:", error);
     }
@@ -84,10 +84,10 @@ export function FeedbackProvider({
         ...feedbackProgress.value,
         hasSubmittedFollowUp: true,
       };
-      await postOverallFeedback(conversationId, undefined, serverUrl.value, {
+      await postOverallFeedback(conversationId, {
         rating: rating.value,
         comment: feedbackText.value || undefined,
-      });
+      }, serverUrl.value);
     } catch (error) {
       console.error("Failed to submit feedback:", error);
     }

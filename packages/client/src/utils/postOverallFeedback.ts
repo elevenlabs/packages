@@ -9,35 +9,30 @@ type Feedback = RatingFeedback;
 
 export function postOverallFeedback(
   conversationId: string,
-  like?: boolean,
-  origin: string = HTTPS_API_ORIGIN,
-  feedback?: Feedback
-) {
-  const hasThumbsFeedback = like !== undefined;
-  const hasRatingFeedback = feedback !== undefined;
-
-  if (!hasThumbsFeedback && !hasRatingFeedback) {
-    throw new Error("Either 'like' or 'feedback' must be provided");
-  }
-  if (hasThumbsFeedback && hasRatingFeedback) {
-    throw new Error("Cannot provide both 'like' and 'feedback'");
-  }
-
+  like: boolean,
+  origin?: string
+): Promise<Response>;
+export function postOverallFeedback(
+  conversationId: string,
+  feedback: Feedback,
+  origin?: string
+): Promise<Response>;
+export function postOverallFeedback(
+  conversationId: string,
+  likeOrFeedback: boolean | Feedback,
+  origin: string = HTTPS_API_ORIGIN
+): Promise<Response> {
   const body: {
     feedback?: "like" | "dislike";
     rating?: number;
     comment?: string;
   } = {};
 
-  if (hasThumbsFeedback) {
-    body.feedback = like ? "like" : "dislike";
-  }
-
-  if (hasRatingFeedback) {
-    body.rating = feedback.rating;
-    if (feedback.comment) {
-      body.comment = feedback.comment;
-    }
+  if (typeof likeOrFeedback === "boolean") {
+    body.feedback = likeOrFeedback ? "like" : "dislike";
+  } else {
+    body.rating = likeOrFeedback.rating;
+    body.comment = likeOrFeedback.comment;
   }
 
   return fetch(`${origin}/v1/convai/conversations/${conversationId}/feedback`, {
