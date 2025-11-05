@@ -115,6 +115,7 @@ export const DefaultTextContents = {
     "Your feedback helps us improve our service and better support you in the future.",
   follow_up_feedback_placeholder: "Tell us more about your experience...",
   submit: "Submit",
+  go_back: "Go back",
 };
 
 export const TextKeys = Object.keys(
