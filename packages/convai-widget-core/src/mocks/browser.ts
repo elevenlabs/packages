@@ -11,7 +11,9 @@ const BASIC_CONFIG: WidgetConfig = {
     color_2: "#ffffff",
   },
   feedback_mode: "end",
-  feedback_type: "rating",
+  end_feedback: {
+    type: "rating",
+  },
   language: "en",
   mic_muting_enabled: false,
   transcript_enabled: false,

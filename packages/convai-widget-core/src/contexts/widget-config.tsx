@@ -199,12 +199,12 @@ export function useFeedbackMode() {
 
 export function useFeedbackType() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.feedback_type ?? "rating");
+  return useComputed(() => config.value.end_feedback?.type ?? "rating");
 }
 
 export function useShouldShowFeedbackAtEnd() {
   const config = useWidgetConfig();
-  return useComputed(() => (config.value.feedback_mode) === "end");
+  return useComputed(() => config.value.end_feedback !== undefined);
 }
 
 async function fetchConfig(
