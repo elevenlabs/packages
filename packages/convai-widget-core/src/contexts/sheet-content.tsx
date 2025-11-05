@@ -1,21 +1,20 @@
-import { signal, Signal, computed } from "@preact/signals";
-import { ComponentChildren } from "preact";
+import { type Signal, useSignal } from "@preact/signals";
+import type { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
+import { useMemo } from "preact/hooks";
 
 import { useContextSafely } from "../utils/useContextSafely";
 
 type SheetContentType = "transcript" | "feedback";
 
 export interface PageConfig {
-  id: SheetContentType;
   showHeaderBack: boolean;
   onHeaderBack?: () => void;
 }
 
 const SheetContentContext = createContext<{
   currentContent: Signal<SheetContentType>;
-  setCurrentContent: (content: SheetContentType) => void;
-  currentConfig: Signal<PageConfig>;
+  currentConfig: PageConfig;
 } | null>(null);
 
 export function SheetContentProvider({
@@ -25,32 +24,28 @@ export function SheetContentProvider({
   defaultContent?: SheetContentType;
   children: ComponentChildren;
 }) {
-  const currentContent = signal<SheetContentType>(defaultContent);
-  const setCurrentContent = (content: SheetContentType) => {
-    currentContent.value = content;
-  };
+  const currentContent = useSignal<SheetContentType>(defaultContent);
 
-  const currentConfig = computed<PageConfig>(() => {
+  const value = useMemo(() => {
     const contentType = currentContent.value;
 
-    if (contentType === "feedback") {
-      return {
-        id: "feedback",
-        showHeaderBack: true,
-        onHeaderBack: () => setCurrentContent("transcript"),
-      };
-    }
+    const currentConfig: PageConfig =
+      contentType === "feedback"
+        ? {
+            showHeaderBack: true,
+            onHeaderBack: () => {
+              currentContent.value = "transcript";
+            },
+          }
+        : {
+            showHeaderBack: false,
+          };
 
-    return {
-      id: "transcript",
-      showHeaderBack: false,
-    };
-  });
+    return { currentContent, currentConfig };
+  }, [currentContent.value]);
 
   return (
-    <SheetContentContext.Provider
-      value={{ currentContent, setCurrentContent, currentConfig }}
-    >
+    <SheetContentContext.Provider value={value}>
       {children}
     </SheetContentContext.Provider>
   );

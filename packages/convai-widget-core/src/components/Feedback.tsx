@@ -12,16 +12,16 @@ interface FeedbackProps {
 
 export const Feedback = ({ icon = "star", variant = "rating" }: FeedbackProps) => {
   const text = useTextContents();
-  const { setCurrentContent } = useSheetContent();
+  const { currentContent } = useSheetContent();
   const { rating, feedbackProgress, submitRating } = useFeedback();
 
   const handleFeedbackSubmit = (ratingValue: number) => {
     submitRating(ratingValue);
-    setCurrentContent("feedback");
+    currentContent.value = "feedback";
   };
 
   const handleTellUsMore = () => {
-    setCurrentContent("feedback");
+    currentContent.value = "feedback";
   };
 
   if (!feedbackProgress.value.hasSubmittedRating) {

@@ -6,13 +6,13 @@ import { useFeedback } from "../contexts/feedback";
 
 export function FeedbackActions() {
   const text = useTextContents();
-  const { setCurrentContent } = useSheetContent();
+  const { currentContent } = useSheetContent();
   const { submitFeedback } = useFeedback();
 
   const handleSubmit = useCallback(() => {
     submitFeedback();
-    setCurrentContent("transcript");
-  }, [setCurrentContent, submitFeedback]);
+    currentContent.value = "transcript";
+  }, [currentContent, submitFeedback]);
 
   return (
     <div className="shrink-0 overflow-hidden flex p-3 items-end justify-end">

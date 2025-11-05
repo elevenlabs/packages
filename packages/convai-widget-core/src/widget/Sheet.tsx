@@ -97,8 +97,8 @@ export function Sheet({ open }: SheetProps) {
         )}
       >
         <SheetHeader
-          showBackButton={currentConfig.value.showHeaderBack}
-          onBackClick={currentConfig.value.onHeaderBack}
+          showBackButton={currentConfig.showHeaderBack}
+          onBackClick={currentConfig.onHeaderBack}
           showStatusLabel={showTranscript && !isDisconnected.value}
           showShadow={showTranscript}
           showLanguageSelector={
