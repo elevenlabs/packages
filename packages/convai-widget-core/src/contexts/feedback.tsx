@@ -1,5 +1,5 @@
 import { postOverallFeedback } from "@elevenlabs/client";
-import { type Signal, useSignal } from "@preact/signals";
+import { type Signal, useSignal, useSignalEffect } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { createContext, useCallback, useMemo } from "preact/compat";
 
@@ -76,6 +76,11 @@ export function FeedbackProvider({
       return;
     }
 
+    if (!feedbackText.value) {
+      // Do nothing if the user has not provided any feedback
+      return;
+    }
+
     try {
       feedbackProgress.value = "submitted-follow-up";
       await postOverallFeedback(
@@ -96,6 +101,13 @@ export function FeedbackProvider({
     feedbackText.value = "";
     feedbackProgress.value = "initial";
   }, []);
+
+  useSignalEffect(() => {
+    const currentLastId = lastId.value;
+    if (currentLastId !== null) {
+      reset();
+    }
+  });
 
   const store = useMemo<FeedbackStore>(
     () => ({
