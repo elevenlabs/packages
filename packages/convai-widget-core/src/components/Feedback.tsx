@@ -1,60 +1,94 @@
-import { Rating, RatingResult } from "./Rating";
-import { Button } from "./Button";
-import { IconName } from "./Icon";
-import { useTextContents } from "../contexts/text-contents";
-import { useSheetContent } from "../contexts/sheet-content";
+import { useCallback } from "preact/hooks";
 import { useFeedback } from "../contexts/feedback";
+import { useSheetContent } from "../contexts/sheet-content";
+import { useTextContents } from "../contexts/text-contents";
+import { Button } from "./Button";
+import type { IconName } from "./Icon";
+import { Rating, RatingResult } from "./Rating";
 
 interface FeedbackProps {
   icon?: IconName;
-  variant?: "rating" | "thumbs";
 }
 
-export const Feedback = ({ icon = "star", variant = "rating" }: FeedbackProps) => {
+function FeedbackRating({
+  icon,
+  onRate,
+}: {
+  icon: IconName;
+  onRate: (rating: number) => void;
+}) {
   const text = useTextContents();
-  const { currentContent } = useSheetContent();
-  const { rating, feedbackProgress, submitRating } = useFeedback();
 
-  const handleFeedbackSubmit = (ratingValue: number) => {
-    submitRating(ratingValue);
-    currentContent.value = "feedback";
-  };
-
-  const handleTellUsMore = () => {
-    currentContent.value = "feedback";
-  };
-
-  if (!feedbackProgress.value.hasSubmittedRating) {
-    return (
-      <div className="flex flex-col items-center">
-        <div className="text-sm text-base-primary font-medium">
-          {text.initiate_feedback}
-        </div>
-        <div className="py-4">
-          <Rating
-            onRate={handleFeedbackSubmit}
-            ariaLabel={text.initiate_feedback}
-            icon={icon}
-          />
-        </div>
+  return (
+    <div className="flex flex-col items-center">
+      <div className="text-sm text-base-primary font-medium">
+        {text.initiate_feedback}
       </div>
-    );
-  }
+      <div className="py-4">
+        <Rating
+          onRate={onRate}
+          ariaLabel={text.initiate_feedback}
+          icon={icon}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FeedbackResult({
+  icon,
+  rating,
+  showFollowUpButton,
+  onFollowUpClick,
+}: {
+  icon: IconName;
+  rating: number;
+  showFollowUpButton: boolean;
+  onFollowUpClick: () => void;
+}) {
+  const text = useTextContents();
 
   return (
     <div className="flex flex-col items-center gap-3 mb-4">
       <div className="text-sm text-base-primary font-medium">
         {text.thanks_for_feedback}
       </div>
-      {rating.value !== null && (
-        <RatingResult rating={rating.value} min={1} max={5} icon={icon} />
-      )}
-      {!feedbackProgress.value.hasSubmittedFollowUp && (
-        <Button variant="secondary" onClick={handleTellUsMore}>
+      <RatingResult rating={rating} min={1} max={5} icon={icon} />
+      {showFollowUpButton && (
+        <Button variant="secondary" onClick={onFollowUpClick}>
           {text.request_follow_up_feedback}
         </Button>
       )}
     </div>
   );
-};
+}
 
+export function Feedback({ icon = "star" }: FeedbackProps) {
+  const { currentContent } = useSheetContent();
+  const { rating, feedbackProgress, submitRating } = useFeedback();
+
+  const handleFeedbackSubmit = useCallback(
+    (ratingValue: number) => {
+      submitRating(ratingValue);
+      currentContent.value = "feedback";
+    },
+    [submitRating, currentContent]
+  );
+
+  const handleFollowUpClick = useCallback(() => {
+    currentContent.value = "feedback";
+  }, [currentContent]);
+
+  if (feedbackProgress.value.hasSubmittedRating && rating.value !== null) {
+    return (
+      <FeedbackResult
+        icon={icon}
+        rating={rating.value}
+        showFollowUpButton={!feedbackProgress.value.hasSubmittedFollowUp}
+        onFollowUpClick={handleFollowUpClick}
+      />
+    );
+  }
+
+  return <FeedbackRating icon={icon} onRate={handleFeedbackSubmit} />;
+}
