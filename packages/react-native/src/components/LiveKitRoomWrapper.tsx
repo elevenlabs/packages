@@ -6,7 +6,7 @@ import type { Callbacks, ClientToolsConfig } from '../types';
 import { MessageHandler } from './MessageHandler';
 
 interface LiveKitRoomWrapperProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   serverUrl: string;
   token: string;
   connect: boolean;
@@ -20,6 +20,7 @@ interface LiveKitRoomWrapperProps {
   clientTools: ClientToolsConfig['clientTools'];
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
+  key?: string;
 }
 
 export const LiveKitRoomWrapper = ({
