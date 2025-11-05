@@ -1,22 +1,19 @@
 import { postOverallFeedback } from "@elevenlabs/client";
-import { type Signal, signal } from "@preact/signals";
+import { type Signal, useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
-import { createContext } from "preact/compat";
+import { createContext, useCallback, useMemo } from "preact/compat";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useAttribute } from "./attributes";
 import { useConversation } from "./conversation";
 import { useServerLocation } from "./server-location";
 
-interface FeedbackProgress {
-  hasSubmittedRating: boolean;
-  hasSubmittedFollowUp: boolean;
-}
+type FeedbackStep = "initial" | "submitted-rating" | "submitted-follow-up";
 
 interface FeedbackStore {
   rating: Signal<number | null>;
   feedbackText: Signal<string>;
-  feedbackProgress: Signal<FeedbackProgress>;
+  feedbackProgress: Signal<FeedbackStep>;
   submitRating: (rating: number) => Promise<void>;
   submitFeedback: () => Promise<void>;
   reset: () => void;
@@ -29,90 +26,91 @@ export function FeedbackProvider({
 }: {
   children: ComponentChildren;
 }) {
-  const rating = signal<number | null>(null);
-  const feedbackText = signal<string>("");
-  const feedbackProgress = signal<FeedbackProgress>({
-    hasSubmittedRating: false,
-    hasSubmittedFollowUp: false,
-  });
+  const rating = useSignal<number | null>(null);
+  const feedbackText = useSignal<string>("");
+  const feedbackProgress = useSignal<FeedbackStep>("initial");
 
   const { lastId } = useConversation();
   const agentId = useAttribute("agent-id");
   const { serverUrl } = useServerLocation();
 
-  const submitRating = async (ratingValue: number) => {
-    const conversationId = lastId.value;
-    const currentAgentId = agentId.value;
-
-    if (!conversationId || !currentAgentId) {
-      console.warn("Cannot submit rating: missing agent_id or conversation_id");
-      return;
-    }
-
-    try {
-      rating.value = ratingValue;
-      feedbackProgress.value = {
-        ...feedbackProgress.value,
-        hasSubmittedRating: true,
-      };
-      await postOverallFeedback(conversationId, {
-        rating: ratingValue,
-      }, serverUrl.value);
-    } catch (error) {
-      console.error("Failed to submit rating:", error);
-    }
-  };
-
-  const submitFeedback = async () => {
+  const submitRating = useCallback(async (ratingValue: number) => {
     const conversationId = lastId.value;
     const currentAgentId = agentId.value;
 
     if (!conversationId || !currentAgentId) {
       console.warn(
-        "Cannot submit feedback: missing agent_id or conversation_id"
+        "[ConversationalAI] Cannot submit rating: missing agent_id or conversation_id"
+      );
+      return;
+    }
+
+    try {
+      rating.value = ratingValue;
+      feedbackProgress.value = "submitted-rating";
+      await postOverallFeedback(
+        conversationId,
+        {
+          rating: ratingValue,
+        },
+        serverUrl.value
+      );
+    } catch (error) {
+      console.error("[ConversationalAI] Failed to submit rating:", error);
+    }
+  }, []);
+
+  const submitFeedback = useCallback(async () => {
+    const conversationId = lastId.value;
+    const currentAgentId = agentId.value;
+
+    if (!conversationId || !currentAgentId) {
+      console.warn(
+        "[ConversationalAI] Cannot submit feedback: missing agent_id or conversation_id"
       );
       return;
     }
 
     if (rating.value === null) {
-      console.warn("Cannot submit feedback: rating not set");
+      console.warn("[ConversationalAI] Cannot submit feedback: rating not set");
       return;
     }
 
     try {
-      feedbackProgress.value = {
-        ...feedbackProgress.value,
-        hasSubmittedFollowUp: true,
-      };
-      await postOverallFeedback(conversationId, {
-        rating: rating.value,
-        comment: feedbackText.value || undefined,
-      }, serverUrl.value);
+      feedbackProgress.value = "submitted-follow-up";
+      await postOverallFeedback(
+        conversationId,
+        {
+          rating: rating.value,
+          comment: feedbackText.value || undefined,
+        },
+        serverUrl.value
+      );
     } catch (error) {
-      console.error("Failed to submit feedback:", error);
+      console.error("[ConversationalAI] Failed to submit feedback:", error);
     }
-  };
+  }, []);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     rating.value = null;
     feedbackText.value = "";
-    feedbackProgress.value = {
-      hasSubmittedRating: false,
-      hasSubmittedFollowUp: false,
-    };
-  };
+    feedbackProgress.value = "initial";
+  }, []);
+
+  const store = useMemo<FeedbackStore>(
+    () => ({
+      rating,
+      feedbackText,
+      feedbackProgress,
+      submitRating,
+      submitFeedback,
+      reset,
+    }),
+    [submitRating, submitFeedback, reset]
+  );
 
   return (
-    <FeedbackContext.Provider
-      value={{
-        rating,
-        feedbackText,
-        feedbackProgress,
-        submitRating,
-        submitFeedback,
-        reset,
-      }}
-    >
+    <FeedbackContext.Provider value={store}>
       {children}
     </FeedbackContext.Provider>
   );
