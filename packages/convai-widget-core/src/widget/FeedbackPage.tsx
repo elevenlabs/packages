@@ -1,26 +1,24 @@
-import { useCallback } from "preact/compat";
-import { useTextContents } from "../contexts/text-contents";
-import { Avatar } from "../components/Avatar";
-import { TextArea } from "../components/TextArea";
+import { type TargetedEvent, useCallback } from "preact/compat";
+import { FeedbackIcon } from "../components/Icon";
 import { RatingResult } from "../components/Rating";
+import { TextArea } from "../components/TextArea";
 import { useFeedback } from "../contexts/feedback";
-import { FeedbackIcon, Icon } from "../components/Icon";
+import { useTextContents } from "../contexts/text-contents";
 
 export function FeedbackPage() {
   const text = useTextContents();
   const { rating, feedbackText } = useFeedback();
 
   const handleTextChange = useCallback(
-    (e: Event) => {
-      const target = e.currentTarget as HTMLTextAreaElement;
-      feedbackText.value = target.value;
+    (e: TargetedEvent<HTMLTextAreaElement>) => {
+      feedbackText.value = e.currentTarget.value;
     },
-    [feedbackText]
+    [feedbackText.value]
   );
 
   return (
     <div className="grow flex flex-col overflow-y-auto overflow-x-hidden px-4">
-      <div className="flex flex-col gap-8 min-h-full pt-4">
+      <div className="flex flex-col gap-8 min-h-full pt-4 pb-2">
         <div className="flex flex-col items-center justify-center gap-3">
          
           <FeedbackIcon 
@@ -42,7 +40,7 @@ export function FeedbackPage() {
           </div>
         </div>
         <TextArea
-          className="w-full min-h-[6lh]"
+          className="w-full min-h-[2lh]"
           placeholder={text.follow_up_feedback_placeholder}
           rows={6}
           value={feedbackText}
