@@ -192,16 +192,6 @@ export function useWebRTC() {
   return useComputed(() => config.value.use_rtc ?? false);
 }
 
-export function useFeedbackMode() {
-  const config = useWidgetConfig();
-  return useComputed(() => config.value.feedback_mode ?? "none");
-}
-
-export function useFeedbackType() {
-  const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback?.type ?? "rating");
-}
-
 export function useShouldShowFeedbackAtEnd() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.end_feedback !== undefined);
