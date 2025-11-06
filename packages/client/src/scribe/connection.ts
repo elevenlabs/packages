@@ -2,8 +2,8 @@ import type {
   InputAudioChunk,
   SessionStartedMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
 } from "@elevenlabs/types";
@@ -12,8 +12,8 @@ import type {
 export type {
   SessionStartedMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
 };
@@ -21,8 +21,8 @@ export type {
 export type WebSocketMessage =
   | SessionStartedMessage
   | PartialTranscriptMessage
-  | FinalTranscriptMessage
-  | FinalTranscriptWithTimestampsMessage
+  | CommittedTranscriptMessage
+  | CommittedTranscriptWithTimestampsMessage
   | ScribeErrorMessage
   | ScribeAuthErrorMessage;
 
@@ -68,9 +68,9 @@ export enum RealtimeEvents {
   /** Emitted when a partial (interim) transcript is available */
   PARTIAL_TRANSCRIPT = "partial_transcript",
   /** Emitted when a final transcript is available */
-  FINAL_TRANSCRIPT = "final_transcript",
+  COMMITTED_TRANSCRIPT = "committed_transcript",
   /** Emitted when a final transcript with timestamps is available */
-  FINAL_TRANSCRIPT_WITH_TIMESTAMPS = "final_transcript_with_timestamps",
+  COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS = "committed_transcript_with_timestamps",
   /** Emitted when an authentication error occurs */
   AUTH_ERROR = "auth_error",
   /** Emitted when an error occurs */
@@ -101,7 +101,7 @@ export enum RealtimeEvents {
  *     console.log("Partial:", data.transcript);
  * });
  *
- * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
+ * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
  *     console.log("Final:", data.transcript);
  *     connection.close();
  * });
@@ -151,12 +151,12 @@ export class RealtimeConnection {
           case "partial_transcript":
             this.eventEmitter.emit(RealtimeEvents.PARTIAL_TRANSCRIPT, data);
             break;
-          case "final_transcript":
-            this.eventEmitter.emit(RealtimeEvents.FINAL_TRANSCRIPT, data);
+          case "committed_transcript":
+            this.eventEmitter.emit(RealtimeEvents.COMMITTED_TRANSCRIPT, data);
             break;
-          case "final_transcript_with_timestamps":
+          case "committed_transcript_with_timestamps":
             this.eventEmitter.emit(
-              RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS,
+              RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
               data
             );
             break;
@@ -215,7 +215,7 @@ export class RealtimeConnection {
    *     console.log("Partial:", data.transcript);
    * });
    *
-   * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
+   * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
    *     console.log("Final:", data.transcript);
    * });
    * ```
@@ -293,8 +293,8 @@ export class RealtimeConnection {
   }
 
   /**
-   * Commits the transcription, signaling that all audio has been sent.
-   * This finalizes the transcription and triggers a FINAL_TRANSCRIPT event.
+   * Commits the transcription, signaling that a segment of audio has been sent. This clears the buffer and triggers a COMMITTED_TRANSCRIPT event. Context from previous segments is kept.
+   * Committing a segment triggers a COMMITTED_TRANSCRIPT event.
    *
    * @throws {Error} If the WebSocket connection is not open
    *
@@ -338,8 +338,8 @@ export class RealtimeConnection {
    *
    * @example
    * ```typescript
-   * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
-   *     console.log("Final:", data.transcript);
+   * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+   *     console.log("Segment committed:", data.transcript);
    *     connection.close();
    * });
    * ```

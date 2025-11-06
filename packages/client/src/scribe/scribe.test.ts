@@ -7,7 +7,7 @@ const TEST_TOKEN = "sutkn_123";
 const TEST_MODEL_ID = "scribe_realtime_v2";
 const TEST_SESSION_ID = "test-session-id";
 const PARTIAL_TRANSCRIPT_TEXT = "Hello, this is a partial";
-const FINAL_TRANSCRIPT_TEXT = "Hello, this is a final transcript.";
+const COMMITTED_TRANSCRIPT_TEXT = "Hello, this is a committed transcript.";
 
 describe("Scribe", () => {
   describe("WebSocket URI Building", () => {
@@ -304,7 +304,7 @@ describe("Scribe", () => {
       server.close();
     });
 
-    it("handles final_transcript event", async () => {
+    it("handles committed_transcript event", async () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_realtime_v2&token=sutkn_123"
       );
@@ -314,7 +314,7 @@ describe("Scribe", () => {
         setTimeout(() => reject(new Error("timeout")), 5000);
       });
 
-      const onFinalTranscript = vi.fn();
+      const onCommittedTranscript = vi.fn();
 
       const connection = Scribe.connect({
         token: TEST_TOKEN,
@@ -323,24 +323,24 @@ describe("Scribe", () => {
         sampleRate: 16000,
       });
 
-      connection.on(RealtimeEvents.FINAL_TRANSCRIPT, onFinalTranscript);
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, onCommittedTranscript);
 
       const client = await clientPromise;
       await sleep(100);
 
-      // Send final_transcript message
+      // Send committed_transcript message
       client.send(
         JSON.stringify({
-          message_type: "final_transcript",
-          transcript: FINAL_TRANSCRIPT_TEXT,
+          message_type: "committed_transcript",
+          transcript: COMMITTED_TRANSCRIPT_TEXT,
         })
       );
 
       await sleep(100);
-      expect(onFinalTranscript).toHaveBeenCalledTimes(1);
-      expect(onFinalTranscript).toHaveBeenCalledWith({
-        message_type: "final_transcript",
-        transcript: FINAL_TRANSCRIPT_TEXT,
+      expect(onCommittedTranscript).toHaveBeenCalledTimes(1);
+      expect(onCommittedTranscript).toHaveBeenCalledWith({
+        message_type: "committed_transcript",
+        transcript: COMMITTED_TRANSCRIPT_TEXT,
       });
 
       connection.close();
@@ -707,7 +707,7 @@ describe("Scribe", () => {
         onPartialTranscript(data);
         transcripts.push((data as { transcript: string }).transcript);
       });
-      connection.on(RealtimeEvents.FINAL_TRANSCRIPT, data => {
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, data => {
         onFinalTranscript(data);
         transcripts.push((data as { transcript: string }).transcript);
       });
@@ -763,7 +763,7 @@ describe("Scribe", () => {
       // Server sends final transcript
       client.send(
         JSON.stringify({
-          message_type: "final_transcript",
+          message_type: "committed_transcript",
           transcript: "Hello world!",
         })
       );

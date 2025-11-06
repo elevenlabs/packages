@@ -96,7 +96,7 @@ export class ScribeRealtime {
   private static getWebSocketUri(
     baseUri: string = ScribeRealtime.DEFAULT_BASE_URI
   ): string {
-    return `${baseUri}/v1/speech-to-text/realtime`;
+    return `${baseUri}/v1/speech-to-text/realtime-beta`;
   }
 
   private static buildWebSocketUri(

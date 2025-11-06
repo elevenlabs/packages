@@ -14,8 +14,8 @@ export type {
   WebSocketMessage,
   SessionStartedMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
 } from "./connection";

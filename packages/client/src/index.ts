@@ -45,8 +45,8 @@ export type {
   MicrophoneOptions,
   WebSocketMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
 } from "./scribe";

@@ -467,8 +467,8 @@ connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
   console.log("Partial:", data.text);
 });
 
-connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
-  console.log("Final:", data.text);
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+  console.log("Committed:", data.text);
 });
 
 // Close connection when done
@@ -591,18 +591,18 @@ connection.on(RealtimeEvents.SESSION_STARTED, () => {
 // Partial transcripts (interim results)
 connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
   console.log("Partial:", data.text);
-  // { text: string, language_code?: string }
+  // { text: string }
 });
 
-// Final transcripts
-connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
-  console.log("Final:", data.text);
-  // { text: string, language_code?: string }
+// Committed transcripts
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+  console.log("Committed:", data.text);
+  // { text: string }
 });
 
-// Final transcripts with word-level timestamps
-connection.on(RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
-  console.log("Final:", data.text);
+// Committed transcripts with word-level timestamps
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
+  console.log("Committed:", data.text);
   console.log("Timestamps:", data.timestamps);
   // { text: string, timestamps?: { start: number, end: number }[] }
 });
@@ -763,7 +763,7 @@ import {
   type AudioOptions,
   type MicrophoneOptions,
   type PartialTranscriptMessage,
-  type FinalTranscriptMessage,
+  type CommittedTranscriptMessage,
 } from "@elevenlabs/client";
 
 const connection: RealtimeConnection = await scribe.connect({

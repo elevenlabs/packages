@@ -596,13 +596,13 @@ export interface PartialTranscript {
   text: string;
 }
 
-export interface FinalTranscript {
-  message_type: "final_transcript";
+export interface CommittedTranscript {
+  message_type: "committed_transcript";
   text: string;
 }
 
-export interface FinalTranscriptWithTimestamps {
-  message_type: "final_transcript_with_timestamps";
+export interface CommittedTranscriptWithTimestamps {
+  message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
   words?: WordsItem[];
@@ -641,13 +641,13 @@ export interface PartialTranscriptMessage {
   text: string;
 }
 
-export interface FinalTranscriptMessage {
-  message_type: "final_transcript";
+export interface CommittedTranscriptMessage {
+  message_type: "committed_transcript";
   text: string;
 }
 
-export interface FinalTranscriptWithTimestampsMessage {
-  message_type: "final_transcript_with_timestamps";
+export interface CommittedTranscriptWithTimestampsMessage {
+  message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
   words?: WordsItem[];

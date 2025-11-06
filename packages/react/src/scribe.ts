@@ -7,8 +7,8 @@ import type {
   AudioFormat,
   CommitStrategy,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
 } from "@elevenlabs/client";
@@ -240,8 +240,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           onPartialTranscript?.(message);
         });
 
-        connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data: unknown) => {
-          const message = data as FinalTranscriptMessage;
+        connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: unknown) => {
+          const message = data as CommittedTranscriptMessage;
           const segment: TranscriptSegment = {
             id: `${Date.now()}-${Math.random()}`,
             text: message.text,
@@ -254,9 +254,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         });
 
         connection.on(
-          RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS,
+          RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
           (data: unknown) => {
-            const message = data as FinalTranscriptWithTimestampsMessage;
+            const message = data as CommittedTranscriptWithTimestampsMessage;
             const segment: TranscriptSegment = {
               id: `${Date.now()}-${Math.random()}`,
               text: message.text,
