@@ -32,8 +32,8 @@ export interface TranscriptSegment {
 export interface ScribeCallbacks {
   onSessionStarted?: () => void;
   onPartialTranscript?: (data: { text: string }) => void;
-  onFinalTranscript?: (data: { text: string }) => void;
-  onFinalTranscriptWithTimestamps?: (data: {
+  onCommittedTranscript?: (data: { text: string }) => void;
+  onCommittedTranscriptWithTimestamps?: (data: {
     text: string;
     timestamps?: { start: number; end: number }[];
   }) => void;
@@ -80,7 +80,7 @@ export interface UseScribeReturn {
   isConnected: boolean;
   isTranscribing: boolean;
   partialTranscript: string;
-  finalTranscripts: TranscriptSegment[];
+  committedTranscripts: TranscriptSegment[];
   error: string | null;
 
   // Connection methods
@@ -106,8 +106,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     // Callbacks
     onSessionStarted,
     onPartialTranscript,
-    onFinalTranscript,
-    onFinalTranscriptWithTimestamps,
+    onCommittedTranscript,
+    onCommittedTranscriptWithTimestamps,
     onError,
     onAuthError,
     onConnect,
@@ -137,9 +137,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
   const [status, setStatus] = useState<ScribeStatus>("disconnected");
   const [partialTranscript, setPartialTranscript] = useState<string>("");
-  const [finalTranscripts, setFinalTranscripts] = useState<TranscriptSegment[]>(
-    []
-  );
+  const [committedTranscripts, setCommittedTranscripts] = useState<
+    TranscriptSegment[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
 
   // Cleanup on unmount
@@ -248,9 +248,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             timestamp: Date.now(),
             isFinal: true,
           };
-          setFinalTranscripts(prev => [...prev, segment]);
+          setCommittedTranscripts(prev => [...prev, segment]);
           setPartialTranscript("");
-          onFinalTranscript?.(message);
+          onCommittedTranscript?.(message);
         });
 
         connection.on(
@@ -263,9 +263,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               timestamp: Date.now(),
               isFinal: true,
             };
-            setFinalTranscripts(prev => [...prev, segment]);
+            setCommittedTranscripts(prev => [...prev, segment]);
             setPartialTranscript("");
-            onFinalTranscriptWithTimestamps?.(message);
+            onCommittedTranscriptWithTimestamps?.(message);
           }
         );
 
@@ -315,8 +315,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultSampleRate,
       onSessionStarted,
       onPartialTranscript,
-      onFinalTranscript,
-      onFinalTranscriptWithTimestamps,
+      onCommittedTranscript,
+      onCommittedTranscriptWithTimestamps,
       onError,
       onAuthError,
       onConnect,
@@ -351,7 +351,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   }, []);
 
   const clearTranscripts = useCallback(() => {
-    setFinalTranscripts([]);
+    setCommittedTranscripts([]);
     setPartialTranscript("");
   }, []);
 
@@ -372,7 +372,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     isConnected: status === "connected" || status === "transcribing",
     isTranscribing: status === "transcribing",
     partialTranscript,
-    finalTranscripts,
+    committedTranscripts,
     error,
 
     // Methods
