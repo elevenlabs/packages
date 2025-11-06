@@ -96,7 +96,7 @@ export class ScribeRealtime {
   private static getWebSocketUri(
     baseUri: string = ScribeRealtime.DEFAULT_BASE_URI
   ): string {
-    return `${baseUri}/v1/speech-to-text/realtime-beta`;
+    return `${baseUri}/v1/speech-to-text/realtime`;
   }
 
   private static buildWebSocketUri(
@@ -176,7 +176,7 @@ export class ScribeRealtime {
    * // Manual audio streaming
    * const connection = Scribe.connect({
    *     token: "...",
-   *     modelId: "scribe_realtime_v2",
+   *     modelId: "scribe_v2_realtime",
    *     audioFormat: AudioFormat.PCM_16000,
    *     sampleRate: 16000,
    * });
@@ -184,7 +184,7 @@ export class ScribeRealtime {
    * // Automatic microphone streaming
    * const connection = Scribe.connect({
    *     token: "...",
-   *     modelId: "scribe_realtime_v2",
+   *     modelId: "scribe_v2_realtime",
    *     microphone: {
    *         echoCancellation: true,
    *         noiseSuppression: true

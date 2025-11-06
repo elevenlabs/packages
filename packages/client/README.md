@@ -455,7 +455,7 @@ import { Scribe, RealtimeEvents } from "@elevenlabs/client";
 // Connect with microphone streaming
 const connection = Scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     echoCancellation: true,
     noiseSuppression: true,
@@ -516,7 +516,7 @@ import { Scribe, RealtimeEvents } from "@elevenlabs/client";
 
 const connection = Scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     deviceId: "optional-device-id", // Optional: specific microphone
     echoCancellation: true,
@@ -538,7 +538,7 @@ import { Scribe, AudioFormat, RealtimeEvents } from "@elevenlabs/client";
 
 const connection = Scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   audioFormat: AudioFormat.PCM_16000,
   sampleRate: 16000,
 });
@@ -637,7 +637,7 @@ All connection modes support these options:
 ```js
 const connection = await scribe.connect({
   token: "your-token", // Required: Single-use token
-  modelId: "scribe_realtime_v2", // Required: Model ID
+  modelId: "scribe_v2_realtime", // Required: Model ID
   baseUri: "wss://api.elevenlabs.io", // Optional: Custom endpoint
 
   // Voice Activity Detection (VAD) settings
@@ -691,7 +691,7 @@ import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
 
 const connection = Scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   commitStrategy: CommitStrategy.MANUAL,
   audioFormat: AudioFormat.PCM_16000,
   sampleRate: 16000,
@@ -712,7 +712,7 @@ import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
 
 const connection = Scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   commitStrategy: CommitStrategy.VAD,
   audioFormat: AudioFormat.PCM_16000,
   sampleRate: 16000,
@@ -768,7 +768,7 @@ import {
 
 const connection: RealtimeConnection = await scribe.connect({
   token: "your-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     echoCancellation: true,
   },
@@ -785,7 +785,7 @@ import { Scribe, RealtimeEvents } from "@elevenlabs/client";
 try {
   const connection = Scribe.connect({
     token: "your-token",
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     microphone: {},
   });
 

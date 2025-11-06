@@ -538,7 +538,7 @@ import { useScribe } from "@elevenlabs/react";
 
 function MyComponent() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     onPartialTranscript: (data) => {
       console.log("Partial:", data.text);
     },
@@ -620,7 +620,7 @@ Configure the hook with default options and callbacks:
 const scribe = useScribe({
   // Connection options (can be overridden in connect())
   token: "optional-default-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   baseUri: "wss://api.elevenlabs.io",
 
   // VAD options
@@ -665,7 +665,7 @@ Stream audio directly from the user's microphone:
 ```tsx
 function MicrophoneTranscription() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
   });
 
   const startRecording = async () => {
@@ -713,7 +713,7 @@ import { useScribe, AudioFormat } from "@elevenlabs/react";
 function FileTranscription() {
   const [file, setFile] = useState<File | null>(null);
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     audioFormat: AudioFormat.PCM_16000,
     sampleRate: 16000,
   });
@@ -934,7 +934,7 @@ function ScribeDemo() {
   const [mode, setMode] = useState<"microphone" | "file">("microphone");
 
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.AUTOMATIC,
     onSessionStarted: () => console.log("Started"),
     onFinalTranscript: (data) => console.log("Final:", data.text),
@@ -1012,7 +1012,7 @@ import {
 } from "@elevenlabs/react";
 
 const scribe: UseScribeReturn = useScribe({
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     echoCancellation: true,
   },

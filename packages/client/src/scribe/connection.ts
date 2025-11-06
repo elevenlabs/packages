@@ -88,7 +88,7 @@ export enum RealtimeEvents {
  * ```typescript
  * const connection = await Scribe.connect({
  *     token: "...",
- *     modelId: "scribe_realtime_v2",
+ *     modelId: "scribe_v2_realtime",
  *     audioFormat: AudioFormat.PCM_16000,
  *     sampleRate: 16000,
  * });
