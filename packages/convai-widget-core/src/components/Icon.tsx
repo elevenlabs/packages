@@ -190,10 +190,7 @@ function SendIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
       fill="currentColor"
       {...props}
     >
-      <path
-        d="M2.59413 5.1485C2.04 3.39377 3.86657 1.83482 5.51245 2.65776L16.47 8.13653C18.0055 8.90429 18.0055 11.0955 16.47 11.8633L5.51245 17.3421C3.86656 18.165 2.04 16.6061 2.59413 14.8513L3.86297 10.8333H7.50006C7.9603 10.8333 8.33339 10.4602 8.33339 10C8.33339 9.53976 7.9603 9.16667 7.50006 9.16667H3.86302L2.59413 5.1485Z"
-        fill="black"
-      />
+      <path d="M2.59413 5.1485C2.04 3.39377 3.86657 1.83482 5.51245 2.65776L16.47 8.13653C18.0055 8.90429 18.0055 11.0955 16.47 11.8633L5.51245 17.3421C3.86656 18.165 2.04 16.6061 2.59413 14.8513L3.86297 10.8333H7.50006C7.9603 10.8333 8.33339 10.4602 8.33339 10C8.33339 9.53976 7.9603 9.16667 7.50006 9.16667H3.86302L2.59413 5.1485Z" />
     </svg>
   );
 }
@@ -225,7 +222,11 @@ export function FeedbackIcon({
   className?: string;
 }) {
   return (
-    <slot name="icon-feedback" className={clsx("flex", className)} aria-hidden={true}>
+    <slot
+      name="icon-feedback"
+      className={clsx("flex", className)}
+      aria-hidden={true}
+    >
       <svg
         width="100%"
         height="100%"
@@ -300,7 +301,14 @@ export function FeedbackIcon({
             stroke-linejoin="round"
           />
         </g>
-        <ellipse cx="41" cy="85" rx="15" ry="3" fill={orbColor} fill-opacity="0.35" />
+        <ellipse
+          cx="41"
+          cy="85"
+          rx="15"
+          ry="3"
+          fill={orbColor}
+          fill-opacity="0.35"
+        />
         <defs>
           <clipPath id="clip0_7006_42127">
             <rect
