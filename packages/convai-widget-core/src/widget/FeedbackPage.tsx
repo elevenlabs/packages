@@ -40,7 +40,7 @@ export function FeedbackPage() {
           </div>
         </div>
         <TextArea
-          className="w-full min-h-[2lh]"
+          className="w-full min-h-[6lh]"
           placeholder={text.follow_up_feedback_placeholder}
           rows={6}
           value={feedbackText}
