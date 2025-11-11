@@ -45,6 +45,7 @@ export const CustomAttributeList = [
   "expand-text",
   "listening-text",
   "speaking-text",
+  "collect-feedback",
 ] as const;
 
 export type CustomAttributes = {

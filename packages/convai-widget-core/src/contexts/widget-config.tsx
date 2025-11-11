@@ -48,8 +48,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     let conversationSignature: string | undefined;
     if (signedUrl.value) {
       const params = new URL(signedUrl.value).searchParams;
-      currentAgentId = params.get('agent_id') ?? agentId.value;
-      conversationSignature = params.get('conversation_signature') ?? undefined;
+      currentAgentId = params.get("agent_id") ?? agentId.value;
+      conversationSignature = params.get("conversation_signature") ?? undefined;
     }
 
     if (!currentAgentId) {
@@ -58,7 +58,12 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     }
 
     const abort = new AbortController();
-    fetchConfig(currentAgentId, serverUrl.value, abort.signal, conversationSignature)
+    fetchConfig(
+      currentAgentId,
+      serverUrl.value,
+      abort.signal,
+      conversationSignature
+    )
       .then(config => {
         if (!abort.signal.aborted) {
           fetchedConfig.value = config;
@@ -121,9 +126,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       fetchedConfig.value.default_expanded ??
       false;
     const patchedUseRtc =
-      parseBoolAttribute(useRtc.value) ??
-      fetchedConfig.value.use_rtc ??
-      false;
+      parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
 
     return {
       ...fetchedConfig.value,
@@ -189,6 +192,11 @@ export function useWebRTC() {
   return useComputed(() => config.value.use_rtc ?? false);
 }
 
+export function useShouldShowFeedbackAtEnd() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.end_feedback !== undefined);
+}
+
 async function fetchConfig(
   agentId: string,
   serverUrl: string,
@@ -196,7 +204,7 @@ async function fetchConfig(
   conversationSignature?: string
 ): Promise<WidgetConfig> {
   const response = await fetch(
-    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ''}`,
+    `${serverUrl}/v1/convai/agents/${agentId}/widget${conversationSignature ? `?conversation_signature=${encodeURIComponent(conversationSignature)}` : ""}`,
     {
       signal,
     }

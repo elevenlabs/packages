@@ -571,13 +571,11 @@ export interface Config {
   sample_rate?: number;
   audio_format?: ConfigAudioFormat;
   language_code?: string;
-  timestamps_granularity?: string;
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
-  max_tokens_to_recompute?: number;
   model_id?: string;
   disable_logging?: boolean;
 }
@@ -596,8 +594,17 @@ export type ConfigVadCommitStrategy = "manual" | "vad";
 export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
+}
+
+export interface CommittedTranscript {
+  message_type: "committed_transcript";
+  text: string;
+}
+
+export interface CommittedTranscriptWithTimestamps {
+  message_type: "committed_transcript_with_timestamps";
+  text: string;
   language_code?: string;
-  logprob?: number;
   words?: WordsItem[];
 }
 
@@ -612,22 +619,6 @@ export interface WordsItem {
 }
 
 export type WordsItemType = "word" | "spacing";
-
-export interface FinalTranscript {
-  message_type: "final_transcript";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
-
-export interface FinalTranscriptWithTimestamps {
-  message_type: "final_transcript_with_timestamps";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
 
 export interface Error {
   message_type: "error";
@@ -648,24 +639,17 @@ export interface SessionStartedMessage {
 export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
-export interface FinalTranscriptMessage {
-  message_type: "final_transcript";
+export interface CommittedTranscriptMessage {
+  message_type: "committed_transcript";
   text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
-export interface FinalTranscriptWithTimestampsMessage {
-  message_type: "final_transcript_with_timestamps";
+export interface CommittedTranscriptWithTimestampsMessage {
+  message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  logprob?: number;
   words?: WordsItem[];
 }
 

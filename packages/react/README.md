@@ -529,8 +529,6 @@ console.log(canSendFeedback); // boolean
 
 React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe Realtime v2.
 
-**Note:** Scribe Realtime v2 is currently in closed beta. For access please [contact sales](https://elevenlabs.io/contact-sales).
-
 #### Quick Start
 
 ```tsx
@@ -538,12 +536,12 @@ import { useScribe } from "@elevenlabs/react";
 
 function MyComponent() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     onPartialTranscript: (data) => {
       console.log("Partial:", data.text);
     },
-    onFinalTranscript: (data) => {
-      console.log("Final:", data.text);
+    onCommittedTranscript: (data) => {
+      console.log("Committed:", data.text);
     },
   });
 
@@ -570,7 +568,7 @@ function MyComponent() {
       {scribe.partialTranscript && <p>Live: {scribe.partialTranscript}</p>}
 
       <div>
-        {scribe.finalTranscripts.map((t) => (
+        {scribe.committedTranscripts.map((t) => (
           <p key={t.id}>{t.text}</p>
         ))}
       </div>
@@ -620,7 +618,7 @@ Configure the hook with default options and callbacks:
 const scribe = useScribe({
   // Connection options (can be overridden in connect())
   token: "optional-default-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   baseUri: "wss://api.elevenlabs.io",
 
   // VAD options
@@ -649,8 +647,8 @@ const scribe = useScribe({
   // Event callbacks
   onSessionStarted: () => console.log("Session started"),
   onPartialTranscript: (data) => console.log("Partial:", data.text),
-  onFinalTranscript: (data) => console.log("Final:", data.text),
-  onFinalTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
+  onCommittedTranscript: (data) => console.log("Committed:", data.text),
+  onCommittedTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
   onError: (error) => console.error("Error:", error),
   onAuthError: (data) => console.error("Auth error:", data.error),
   onConnect: () => console.log("Connected"),
@@ -665,7 +663,7 @@ Stream audio directly from the user's microphone:
 ```tsx
 function MicrophoneTranscription() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
   });
 
   const startRecording = async () => {
@@ -695,7 +693,7 @@ function MicrophoneTranscription() {
         </div>
       )}
 
-      {scribe.finalTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map((transcript) => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -713,7 +711,7 @@ import { useScribe, AudioFormat } from "@elevenlabs/react";
 function FileTranscription() {
   const [file, setFile] = useState<File | null>(null);
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     audioFormat: AudioFormat.PCM_16000,
     sampleRate: 16000,
   });
@@ -764,7 +762,7 @@ function FileTranscription() {
         Transcribe
       </button>
 
-      {scribe.finalTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map((transcript) => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -780,7 +778,7 @@ function FileTranscription() {
 - **isConnected** - Boolean indicating if connected
 - **isTranscribing** - Boolean indicating if actively transcribing
 - **partialTranscript** - Current partial (interim) transcript
-- **finalTranscripts** - Array of completed transcript segments
+- **committedTranscripts** - Array of completed transcript segments
 - **error** - Current error message, or null
 
 ```tsx
@@ -789,7 +787,7 @@ const scribe = useScribe(/* options */);
 console.log(scribe.status); // "connected"
 console.log(scribe.isConnected); // true
 console.log(scribe.partialTranscript); // "hello world"
-console.log(scribe.finalTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
+console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
 console.log(scribe.error); // null or error string
 ```
 
@@ -855,14 +853,14 @@ const connection = scribe.getConnection();
 
 #### Transcript Segment Type
 
-Each final transcript segment has the following structure:
+Each committed transcript segment has the following structure:
 
 ```typescript
 interface TranscriptSegment {
   id: string; // Unique identifier
   text: string; // Transcript text
   timestamp: number; // Unix timestamp
-  isFinal: boolean; // Always true for final transcripts
+  isFinal: boolean; // Always true for committed transcripts
 }
 ```
 
@@ -878,10 +876,10 @@ const scribe = useScribe({
   onPartialTranscript: (data: { text: string }) => {
     console.log("Partial:", data.text);
   },
-  onFinalTranscript: (data: { text: string }) => {
-    console.log("Final:", data.text);
+  onCommittedTranscript: (data: { text: string }) => {
+    console.log("Committed:", data.text);
   },
-  onFinalTranscriptWithTimestamps: (data: {
+  onCommittedTranscriptWithTimestamps: (data: {
     text: string;
     timestamps?: { start: number; end: number }[];
   }) => {
@@ -905,23 +903,23 @@ const scribe = useScribe({
 
 #### Commit Strategies
 
-Control when transcriptions are finalized:
+Control when transcriptions are committed:
 
 ```tsx
 import { CommitStrategy } from "@elevenlabs/react";
 
-// Automatic (default) - API detects speech end
-const scribe = useScribe({
-  commitStrategy: CommitStrategy.AUTOMATIC,
-});
-
-// Manual - you control when to commit
+// Manual (default) - you control when to commit
 const scribe = useScribe({
   commitStrategy: CommitStrategy.MANUAL,
 });
 
 // Later...
-scribe.commit(); // Finalize transcription
+scribe.commit(); // Commit transcription
+
+// Voice Activity Detection - model detects silences and automatically commits
+const scribe = useScribe({
+  commitStrategy: CommitStrategy.VAD,
+});
 ```
 
 #### Complete Example
@@ -934,10 +932,10 @@ function ScribeDemo() {
   const [mode, setMode] = useState<"microphone" | "file">("microphone");
 
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.AUTOMATIC,
     onSessionStarted: () => console.log("Started"),
-    onFinalTranscript: (data) => console.log("Final:", data.text),
+    onCommittedTranscript: (data) => console.log("Committed:", data.text),
     onError: (error) => console.error("Error:", error),
   });
 
@@ -979,10 +977,10 @@ function ScribeDemo() {
         </div>
       )}
 
-      {/* Final Transcripts */}
+      {/* Committed Transcripts */}
       <div>
-        <h2>Transcripts ({scribe.finalTranscripts.length})</h2>
-        {scribe.finalTranscripts.map((t) => (
+        <h2>Transcripts ({scribe.committedTranscripts.length})</h2>
+        {scribe.committedTranscripts.map((t) => (
           <div key={t.id}>
             <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
             <p>{t.text}</p>
@@ -1012,7 +1010,7 @@ import {
 } from "@elevenlabs/react";
 
 const scribe: UseScribeReturn = useScribe({
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     echoCancellation: true,
   },

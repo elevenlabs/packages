@@ -11,6 +11,8 @@ import { AvatarConfigProvider } from "../contexts/avatar-config";
 import { TermsProvider } from "../contexts/terms";
 import { CustomAttributes } from "../types/attributes";
 import { Wrapper } from "./Wrapper";
+import { SheetContentProvider } from "../contexts/sheet-content";
+import { FeedbackProvider } from "../contexts/feedback";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -24,8 +26,12 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                   <ConversationProvider>
                     <TextContentsProvider>
                       <AvatarConfigProvider>
-                        <Style />
-                        <Wrapper />
+                        <SheetContentProvider>
+                          <FeedbackProvider>
+                            <Style />
+                            <Wrapper />
+                          </FeedbackProvider>
+                        </SheetContentProvider>
                       </AvatarConfigProvider>
                     </TextContentsProvider>
                   </ConversationProvider>

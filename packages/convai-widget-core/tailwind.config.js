@@ -27,6 +27,7 @@ export default {
     boxShadow: {
       md: "0 2px 24px 1px rgba(0, 0, 0, 0.16)",
       lg: "0 2px 40px 1px rgba(0, 0, 0, 0.12)",
+      header: "0 0 1px 0 rgba(0, 0, 0, 0.40), 0 2px 2px 0 rgba(0, 0, 0, 0.04)",
     },
     data: {
       shown: 'shown="true"',

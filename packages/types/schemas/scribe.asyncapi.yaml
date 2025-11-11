@@ -8,7 +8,7 @@ info:
 
     ## Event Flow
     - Audio chunks are sent as input_audio_chunk messages
-    - Transcription results are streamed back in various formats (partial, final, with timestamps)
+    - Transcription results are streamed back in various formats (partial, committed, with timestamps)
     - Supports manual commit or VAD-based automatic commit strategies
   contact:
     name: ElevenLabs API Support
@@ -43,8 +43,8 @@ channels:
           # Server -> Client messages
           - $ref: "#/components/messages/SessionStarted"
           - $ref: "#/components/messages/PartialTranscript"
-          - $ref: "#/components/messages/FinalTranscript"
-          - $ref: "#/components/messages/FinalTranscriptWithTimestamps"
+          - $ref: "#/components/messages/CommittedTranscript"
+          - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
     subscribe:
@@ -84,21 +84,21 @@ components:
       payload:
         $ref: "#/components/schemas/PartialTranscriptPayload"
 
-    FinalTranscript:
-      name: FinalTranscriptMessage
-      title: Final Transcript
-      summary: Final transcription result
+    CommittedTranscript:
+      name: CommittedTranscriptMessage
+      title: Committed Transcript
+      summary: Committed transcription result
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/FinalTranscriptPayload"
+        $ref: "#/components/schemas/CommittedTranscriptPayload"
 
-    FinalTranscriptWithTimestamps:
-      name: FinalTranscriptWithTimestampsMessage
-      title: Final Transcript with Timestamps
-      summary: Final transcription result with word-level timestamps
+    CommittedTranscriptWithTimestamps:
+      name: CommittedTranscriptWithTimestampsMessage
+      title: Committed Transcript with Timestamps
+      summary: Committed transcription result with word-level timestamps
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/FinalTranscriptWithTimestampsPayload"
+        $ref: "#/components/schemas/CommittedTranscriptWithTimestampsPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -122,8 +122,8 @@ components:
       enum:
         - session_started
         - partial_transcript
-        - final_transcript
-        - final_transcript_with_timestamps
+        - committed_transcript
+        - committed_transcript_with_timestamps
         - error
         - auth_error
         - input_audio_chunk
@@ -224,9 +224,6 @@ components:
             language_code:
               type: string
               description: Language code in ISO 639-1 or ISO 639-3 format
-            timestamps_granularity:
-              type: string
-              description: Granularity of timestamps
             vad_commit_strategy:
               type: string
               enum:
@@ -245,9 +242,6 @@ components:
             min_silence_duration_ms:
               type: integer
               description: Minimum silence duration in milliseconds
-            max_tokens_to_recompute:
-              type: integer
-              description: Maximum number of tokens to recompute
             model_id:
               type: string
               description: ID of the model to use for transcription
@@ -265,64 +259,32 @@ components:
         text:
           type: string
           description: Partial transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
 
-    FinalTranscriptPayload:
+    CommittedTranscriptPayload:
       type: object
       required: [message_type, text]
       properties:
         message_type:
           type: string
-          const: final_transcript
+          const: committed_transcript
         text:
           type: string
-          description: Final transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
+          description: Committed transcription text
 
-    FinalTranscriptWithTimestampsPayload:
+    CommittedTranscriptWithTimestampsPayload:
       type: object
       required: [message_type, text]
       properties:
         message_type:
           type: string
-          const: final_transcript_with_timestamps
+          const: committed_transcript_with_timestamps
         text:
           type: string
-          description: Final transcription text
+          description: Committed transcription text
         language_code:
           type: string
           nullable: true
           description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
         words:
           type: array
           nullable: true

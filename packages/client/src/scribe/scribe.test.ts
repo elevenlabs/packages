@@ -4,16 +4,16 @@ import type { Client } from "mock-socket";
 import { Scribe, AudioFormat, CommitStrategy, RealtimeEvents } from "./index";
 
 const TEST_TOKEN = "sutkn_123";
-const TEST_MODEL_ID = "scribe_realtime_v2";
+const TEST_MODEL_ID = "scribe_v2_realtime";
 const TEST_SESSION_ID = "test-session-id";
 const PARTIAL_TRANSCRIPT_TEXT = "Hello, this is a partial";
-const FINAL_TRANSCRIPT_TEXT = "Hello, this is a final transcript.";
+const COMMITTED_TRANSCRIPT_TEXT = "Hello, this is a committed transcript.";
 
 describe("Scribe", () => {
   describe("WebSocket URI Building", () => {
     it("builds URI with required parameters", () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
 
       const connection = Scribe.connect({
@@ -31,7 +31,7 @@ describe("Scribe", () => {
 
     it("builds URI with commit strategy", () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123&commit_strategy=vad"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&commit_strategy=vad"
       );
 
       const connection = Scribe.connect({
@@ -50,7 +50,7 @@ describe("Scribe", () => {
 
     it("builds URI with language code", () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123&language_code=en"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&language_code=en"
       );
 
       const connection = Scribe.connect({
@@ -69,7 +69,7 @@ describe("Scribe", () => {
 
     it("builds URI with custom base URI", () => {
       const server = new Server(
-        "wss://custom.api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://custom.api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
 
       const connection = Scribe.connect({
@@ -191,7 +191,7 @@ describe("Scribe", () => {
 
     it("accepts valid parameter values", () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123&vad_silence_threshold_secs=1.5&vad_threshold=0.5&min_speech_duration_ms=100&min_silence_duration_ms=200"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&vad_silence_threshold_secs=1.5&vad_threshold=0.5&min_speech_duration_ms=100&min_silence_duration_ms=200"
       );
 
       const connection = Scribe.connect({
@@ -215,7 +215,7 @@ describe("Scribe", () => {
   describe("Connection and Events", () => {
     it("handles session_started event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -263,7 +263,7 @@ describe("Scribe", () => {
 
     it("handles partial_transcript event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -304,9 +304,9 @@ describe("Scribe", () => {
       server.close();
     });
 
-    it("handles final_transcript event", async () => {
+    it("handles committed_transcript event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -314,7 +314,7 @@ describe("Scribe", () => {
         setTimeout(() => reject(new Error("timeout")), 5000);
       });
 
-      const onFinalTranscript = vi.fn();
+      const onCommittedTranscript = vi.fn();
 
       const connection = Scribe.connect({
         token: TEST_TOKEN,
@@ -323,24 +323,24 @@ describe("Scribe", () => {
         sampleRate: 16000,
       });
 
-      connection.on(RealtimeEvents.FINAL_TRANSCRIPT, onFinalTranscript);
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, onCommittedTranscript);
 
       const client = await clientPromise;
       await sleep(100);
 
-      // Send final_transcript message
+      // Send committed_transcript message
       client.send(
         JSON.stringify({
-          message_type: "final_transcript",
-          transcript: FINAL_TRANSCRIPT_TEXT,
+          message_type: "committed_transcript",
+          transcript: COMMITTED_TRANSCRIPT_TEXT,
         })
       );
 
       await sleep(100);
-      expect(onFinalTranscript).toHaveBeenCalledTimes(1);
-      expect(onFinalTranscript).toHaveBeenCalledWith({
-        message_type: "final_transcript",
-        transcript: FINAL_TRANSCRIPT_TEXT,
+      expect(onCommittedTranscript).toHaveBeenCalledTimes(1);
+      expect(onCommittedTranscript).toHaveBeenCalledWith({
+        message_type: "committed_transcript",
+        transcript: COMMITTED_TRANSCRIPT_TEXT,
       });
 
       connection.close();
@@ -349,7 +349,7 @@ describe("Scribe", () => {
 
     it("handles error event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -392,7 +392,7 @@ describe("Scribe", () => {
 
     it("handles auth_error event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -435,7 +435,7 @@ describe("Scribe", () => {
 
     it("handles close event", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -470,7 +470,7 @@ describe("Scribe", () => {
   describe("Sending Audio and Commit", () => {
     it("sends audio chunks", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -512,7 +512,7 @@ describe("Scribe", () => {
 
     it("sends commit message", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -585,7 +585,7 @@ describe("Scribe", () => {
 
     it("sends audio with custom sample rate", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -626,7 +626,7 @@ describe("Scribe", () => {
   describe("Event Listener Management", () => {
     it("can add and remove event listeners", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=test-token-123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -681,7 +681,7 @@ describe("Scribe", () => {
   describe("Full Transcription Flow", () => {
     it("handles complete transcription flow with multiple events", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime-beta?model_id=scribe_realtime_v2&token=sutkn_123"
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -707,7 +707,7 @@ describe("Scribe", () => {
         onPartialTranscript(data);
         transcripts.push((data as { transcript: string }).transcript);
       });
-      connection.on(RealtimeEvents.FINAL_TRANSCRIPT, data => {
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, data => {
         onFinalTranscript(data);
         transcripts.push((data as { transcript: string }).transcript);
       });
@@ -763,7 +763,7 @@ describe("Scribe", () => {
       // Server sends final transcript
       client.send(
         JSON.stringify({
-          message_type: "final_transcript",
+          message_type: "committed_transcript",
           transcript: "Hello world!",
         })
       );

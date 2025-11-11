@@ -59,8 +59,8 @@ The types are organized into two main categories:
   - **Scribe API:**
     - `SessionStartedMessage` - Transcription session started
     - `PartialTranscriptMessage` - Interim transcription results
-    - `FinalTranscriptMessage` - Final transcription results
-    - `FinalTranscriptWithTimestampsMessage` - Final results with word timestamps
+    - `CommittedTranscriptMessage` - Committed transcription results
+    - `CommittedTranscriptWithTimestampsMessage` - Committed results with word timestamps
     - `ScribeErrorMessage` - Error events
     - `ScribeAuthErrorMessage` - Authentication errors
 
