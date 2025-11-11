@@ -10,6 +10,8 @@ const VARIANT_CLASSES = {
     "text-accent-primary border border-accent bg-accent hover:border-accent-hover hover:bg-accent-hover active:border-accent-active active:bg-accent-active",
   secondary:
     "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active",
+  ghost:
+    "text-base-primary border border-base bg-base hover:bg-base-hover hover:border-base-hover active:bg-base-active active:border-base-active",
 };
 
 export interface BaseButtonProps

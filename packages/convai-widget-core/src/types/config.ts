@@ -25,12 +25,16 @@ export function parsePlacement(placement: string | undefined): Placement {
 }
 
 export type FeedbackMode = "none" | "during" | "end";
+export type FeedbackType = "rating";
 
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
+  end_feedback?: {
+    type: FeedbackType;
+  };
   language: Language;
   supported_language_overrides?: Language[];
   terms_html?: string;
@@ -104,6 +108,14 @@ export const DefaultTextContents = {
   conversation_id: "ID",
   error_occurred: "An error occurred",
   copy_id: "Copy ID",
+  initiate_feedback: "How was this conversation?",
+  request_follow_up_feedback: "Tell us more",
+  thanks_for_feedback: "Thank you for your feedback!",
+  thanks_for_feedback_details:
+    "Your feedback helps us improve our service and better support you in the future.",
+  follow_up_feedback_placeholder: "Tell us more about your experience...",
+  submit: "Submit",
+  go_back: "Go back",
 };
 
 export const TextKeys = Object.keys(
