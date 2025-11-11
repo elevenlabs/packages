@@ -445,8 +445,6 @@ await conversation.changeOutputDevice({
 
 Scribe is ElevenLabs' real-time speech-to-text API that provides low-latency transcription with support for both streaming microphone input and pre-recorded audio files.
 
-**Note:** Scribe Realtime v2 is currently in closed beta. For access please [contact sales](https://elevenlabs.io/contact-sales).
-
 ### Quick Start
 
 ```js
