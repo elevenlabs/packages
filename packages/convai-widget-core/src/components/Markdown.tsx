@@ -1,3 +1,5 @@
+import { Streamdown } from "../markdown";
+
 export const Markdown = ({ text }: { text: string }) => {
-  return <div>{text}</div>;
+  return <Streamdown>{text}</Streamdown>;
 };

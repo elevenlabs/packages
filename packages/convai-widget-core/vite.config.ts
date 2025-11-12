@@ -23,7 +23,13 @@ export default defineConfig({
         id.startsWith("preact") ||
         id.startsWith("@preact") ||
         id.startsWith("@elevenlabs") ||
-        id === "clsx",
+        id.startsWith("react-markdown") ||
+        id.startsWith("shiki") ||
+        id.startsWith("@shikijs") ||
+        id.startsWith("lucide-react") ||
+        id.startsWith("marked") ||
+        id === "clsx" ||
+        id === "tailwind-merge",
     },
   },
   plugins: [preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],
