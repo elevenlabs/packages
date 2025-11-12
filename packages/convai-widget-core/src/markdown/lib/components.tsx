@@ -85,7 +85,7 @@ const MemoOl = memo<OlProps>(
   ({ children, className, node, ...props }: OlProps) => (
     <ol
       className={cn(
-        "ml-4 list-outside list-decimal whitespace-normal",
+        "ml-4 mb-2 list-outside list-decimal whitespace-normal text-sm",
         className
       )}
       data-streamdown="ordered-list"
@@ -118,7 +118,7 @@ type UlProps = WithNode<JSX.IntrinsicElements["ul"]>;
 const MemoUl = memo<UlProps>(
   ({ children, className, node, ...props }: UlProps) => (
     <ul
-      className={cn("ml-4 list-outside list-disc whitespace-normal", className)}
+      className={cn("ml-4 list-outside list-disc whitespace-normal text-sm", className)}
       data-streamdown="unordered-list"
       {...props}
     >
@@ -190,7 +190,7 @@ type HeadingProps<TTag extends keyof JSX.IntrinsicElements> = WithNode<
 const MemoH1 = memo<HeadingProps<"h1">>(
   ({ children, className, node, ...props }) => (
     <h1
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-2xl", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-semibold text-xl", className)}
       data-streamdown="heading-1"
       {...props}
     >
@@ -204,7 +204,7 @@ MemoH1.displayName = "MarkdownH1";
 const MemoH2 = memo<HeadingProps<"h2">>(
   ({ children, className, node, ...props }) => (
     <h2
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-xl", className)}
+      className={cn("mt-3 mb-2 text-base-primary font-semibold text-lg", className)}
       data-streamdown="heading-2"
       {...props}
     >
@@ -218,7 +218,7 @@ MemoH2.displayName = "MarkdownH2";
 const MemoH3 = memo<HeadingProps<"h3">>(
   ({ children, className, node, ...props }) => (
     <h3
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-lg", className)}
+      className={cn("mt-3 mb-1 text-base-primary font-semibold text-md", className)}
       data-streamdown="heading-3"
       {...props}
     >
@@ -232,7 +232,7 @@ MemoH3.displayName = "MarkdownH3";
 const MemoH4 = memo<HeadingProps<"h4">>(
   ({ children, className, node, ...props }) => (
     <h4
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-md", className)}
+      className={cn("mt-3 mb-1 text-base-primary font-semibold text-sm", className)}
       data-streamdown="heading-4"
       {...props}
     >
@@ -246,7 +246,7 @@ MemoH4.displayName = "MarkdownH4";
 const MemoH5 = memo<HeadingProps<"h5">>(
   ({ children, className, node, ...props }) => (
     <h5
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-sm", className)}
+      className={cn("mt-3 mb-0.5 text-base-primary font-semibold text-sm", className)}
       data-streamdown="heading-5"
       {...props}
     >
@@ -260,7 +260,7 @@ MemoH5.displayName = "MarkdownH5";
 const MemoH6 = memo<HeadingProps<"h6">>(
   ({ children, className, node, ...props }) => (
     <h6
-      className={cn("mt-6 mb-2 text-base-primary font-medium text-xs", className)}
+      className={cn("mt-3 text-base-primary font-semibold text-sm", className)}
       data-streamdown="heading-6"
       {...props}
     >
@@ -609,7 +609,7 @@ const CodeComponent = ({
       data-language={language}
       data-streamdown="code-block"
       language={language}
-      preClassName="overflow-x-auto font-mono text-xs p-4"
+      preClassName="overflow-x-auto font-mono text-[13px] px-4 py-1.5"
     >
       {showCodeControls && <CodeBlockCopyButton />}
     </CodeBlock>
@@ -660,9 +660,9 @@ const MemoParagraph = memo<ParagraphProps>(
     }
 
     return (
-      <p className={className} {...props}>
-        {children}
-      </p>
+      <p className={cn("text-sm", className)} {...props}>
+      {children}
+    </p>
     );
   },
   (p, n) => sameClassAndNode(p, n)

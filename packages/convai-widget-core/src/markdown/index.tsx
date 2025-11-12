@@ -107,7 +107,7 @@ export const WidgetStreamdown = memo(
       <ShikiThemeContext.Provider value={shikiTheme}>
         <ControlsContext.Provider value={controls}>
           <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-            <div className={cn("space-y-4 px-2", className)}>
+            <div className={cn("px-2", className)}>
               {blocks.map((block, index) => (
                 <Block
                   components={{
