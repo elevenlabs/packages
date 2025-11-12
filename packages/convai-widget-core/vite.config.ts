@@ -29,7 +29,8 @@ export default defineConfig({
         id.startsWith("lucide-react") ||
         id.startsWith("marked") ||
         id === "clsx" ||
-        id === "tailwind-merge",
+        id === "tailwind-merge" ||
+        id === "streamdown",
     },
   },
   plugins: [preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],

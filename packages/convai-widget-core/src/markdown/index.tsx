@@ -1,12 +1,18 @@
-import { createContext, memo, useEffect, useId, useMemo } from "preact/compat";
+/**
+ * Heavily stripped down version of Streamdown for use in the widget. 
+ */
+import { createContext, memo, useId, useMemo } from "preact/compat";
 import ReactMarkdown, { type Options } from "react-markdown";
 import type { BundledTheme } from "shiki";
 
+import { harden } from "rehype-harden";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
+import type { Pluggable } from "unified";
 import { components as defaultComponents } from "./lib/components";
 import { parseMarkdownIntoBlocks } from "./lib/parse-blocks";
 import { parseIncompleteMarkdown } from "./lib/parse-incomplete-markdown";
-import { cn } from "./lib/utils";
-
+import { cn } from "../utils/cn";
 export { defaultUrlTransform } from "react-markdown";
 
 export type ControlsConfig =
@@ -14,8 +20,24 @@ export type ControlsConfig =
   | {
       table?: boolean;
       code?: boolean;
-      mermaid?: boolean;
     };
+
+export const defaultRehypePlugins: Record<string, Pluggable> = {
+  harden: [
+    harden,
+    {
+      allowedImagePrefixes: ["*"],
+      allowedLinkPrefixes: ["*"],
+      defaultOrigin: undefined,
+      allowDataImages: true,
+    },
+  ],
+  raw: rehypeRaw,
+} as const;
+
+export const defaultRemarkPlugins: Record<string, Pluggable> = {
+  gfm: [remarkGfm, {}],
+} as const;
 
 export type StreamdownProps = Options & {
   parseIncompleteMarkdown?: boolean;
@@ -61,11 +83,13 @@ const Block = memo(
   (prevProps, nextProps) => prevProps.content === nextProps.content
 );
 
-export const Streamdown = memo(
+export const WidgetStreamdown = memo(
   ({
     children,
     parseIncompleteMarkdown: shouldParseIncompleteMarkdown = true,
     components,
+    rehypePlugins = Object.values(defaultRehypePlugins),
+    remarkPlugins = Object.values(defaultRemarkPlugins),
     className,
     shikiTheme = ["github-light", "github-dark"],
     controls = true,
@@ -73,21 +97,17 @@ export const Streamdown = memo(
     urlTransform = value => value,
     ...props
   }: StreamdownProps) => {
-    // Parse the children to remove incomplete markdown tokens if enabled
     const generatedId = useId();
     const blocks = useMemo(
       () =>
         parseMarkdownIntoBlocks(typeof children === "string" ? children : ""),
       [children]
     );
-
-    console.log("blocks", blocks);
-
     return (
       <ShikiThemeContext.Provider value={shikiTheme}>
         <ControlsContext.Provider value={controls}>
           <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-            <div className={cn("space-y-4", className)}>
+            <div className={cn("space-y-4 px-2", className)}>
               {blocks.map((block, index) => (
                 <Block
                   components={{
@@ -96,6 +116,8 @@ export const Streamdown = memo(
                   }}
                   content={block}
                   key={`${generatedId}-block-${index}`}
+                  rehypePlugins={rehypePlugins}
+                  remarkPlugins={remarkPlugins}
                   shouldParseIncompleteMarkdown={shouldParseIncompleteMarkdown}
                   urlTransform={urlTransform}
                   {...props}

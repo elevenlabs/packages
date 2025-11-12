@@ -6,7 +6,7 @@ import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { useShouldShowFeedbackAtEnd } from "../contexts/widget-config";
-import { Streamdown } from "../markdown";
+import { WidgetStreamdown } from "../markdown";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -45,7 +45,7 @@ function MessageBubble({ entry }: MessageBubbleProps) {
             : "bg-base-active text-base-primary"
         )}
       >
-        <Streamdown>{entry.message}</Streamdown>
+        <WidgetStreamdown>{entry.message}</WidgetStreamdown>
       </div>
     </div>
   );

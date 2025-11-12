@@ -1,7 +1,11 @@
 import { DownloadIcon } from "lucide-react";
 import type { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 import type { ExtraProps } from "react-markdown";
+import { useContext } from "preact/compat";
 import { cn, save } from "./utils";
+import { Button } from "../../components/Button";
+import { StreamdownRuntimeContext } from "../index";
+import { FloatingCard } from "./floating-card";
 
 type ImageComponentProps = DetailedHTMLProps<
   ImgHTMLAttributes<HTMLImageElement>,
@@ -16,6 +20,8 @@ export const ImageComponent = ({
   alt,
   ...props
 }: ImageComponentProps) => {
+  const { isAnimating } = useContext(StreamdownRuntimeContext);
+
   const downloadImage = async () => {
     if (!src) {
       return;
@@ -68,31 +74,28 @@ export const ImageComponent = ({
   }
 
   return (
-    <div
-      className="group relative my-4 inline-block"
+    <FloatingCard
+      containerClassName="inline-block self-auto"
       data-streamdown="image-wrapper"
+      actions={
+        <Button
+          aria-label="Download image"
+          disabled={isAnimating}
+          icon="download"
+          onClick={downloadImage}
+          variant="md-button"
+        >
+          Download
+        </Button>
+      }
     >
-      {/** biome-ignore lint/nursery/useImageSize: "unknown size" */}
-      {/** biome-ignore lint/performance/noImgElement: "streamdown is framework-agnostic" */}
       <img
         alt={alt}
-        className={cn("max-w-full rounded-lg", className)}
+        className={cn("max-w-full rounded-bubble", className)}
         data-streamdown="image"
         src={src}
         {...props}
       />
-      <div className="pointer-events-none absolute inset-0 hidden rounded-lg bg-black/10 group-hover:block" />
-      <button
-        className={cn(
-          "absolute right-2 bottom-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border bg-background/90 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-background",
-          "opacity-0 group-hover:opacity-100"
-        )}
-        onClick={downloadImage}
-        title="Download image"
-        type="button"
-      >
-        <DownloadIcon size={14} />
-      </button>
-    </div>
+    </FloatingCard>
   );
 };

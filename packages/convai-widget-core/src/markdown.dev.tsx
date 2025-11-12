@@ -1,20 +1,11 @@
 import { render } from "preact";
 import { jsx } from "preact/jsx-runtime";
 import { useState, useEffect } from "preact/compat";
-import { Markdown } from "./components/Markdown";
 import { Style } from "./styles/Style";
 import { AttributesProvider } from "./contexts/attributes";
-import { AvatarConfigProvider } from "./contexts/avatar-config";
-import { ConversationProvider } from "./contexts/conversation";
-import { FeedbackProvider } from "./contexts/feedback";
-import { LanguageConfigProvider } from "./contexts/language-config";
-import { MicConfigProvider } from "./contexts/mic-config";
 import { ServerLocationProvider } from "./contexts/server-location";
-import { SessionConfigProvider } from "./contexts/session-config";
-import { SheetContentProvider } from "./contexts/sheet-content";
-import { TermsProvider } from "./contexts/terms";
-import { TextContentsProvider } from "./contexts/text-contents";
 import { WidgetConfigProvider } from "./contexts/widget-config";
+import { WidgetStreamdown } from "./markdown";
 
 const STORAGE_KEY = "markdown-playground-text";
 const DEFAULT_TEXT =
@@ -36,6 +27,7 @@ function MarkdownPlayground() {
   });
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [widgetSize, setWidgetSize] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, text);
@@ -82,7 +74,7 @@ function MarkdownPlayground() {
             <Style />
             <div className="w-screen h-screen flex bg-base-hover text-base-primary">
               <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
-                <h2 className="text-xl font-bold mb-4">Input</h2>
+                <h2 className="text-xl font-medium mb-4">Input</h2>
                 <textarea
                   className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={text}
@@ -92,17 +84,53 @@ function MarkdownPlayground() {
               </div>
               <div className="w-1/2 h-full flex flex-col p-4 overflow-auto">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Preview</h2>
-                  <button
-                    onClick={startStreaming}
-                    disabled={isStreaming}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isStreaming ? "Streaming..." : "Simulate Stream"}
-                  </button>
+                  <h2 className="text-xl font-medium">Preview</h2>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={widgetSize}
+                        onChange={e => setWidgetSize(e.currentTarget.checked)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span>Widget Size (400×550px)</span>
+                    </label>
+                    <button
+                      onClick={startStreaming}
+                      disabled={isStreaming}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isStreaming ? "Streaming..." : "Simulate Stream"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <Markdown text={displayText} />
+                <div className="flex-1 flex items-start justify-center overflow-auto">
+                  <div
+                    className={
+                      widgetSize
+                        ? "w-full max-w-[400px] max-h-[550px] overflow-auto border border-base-border rounded-sheet shadow-lg bg-base"
+                        : "w-full"
+                    }
+                  >
+                    <div className={widgetSize ? "px-4 pb-3" : ""}>
+                      <WidgetStreamdown>{displayText}</WidgetStreamdown>
+                    </div>
+                    {widgetSize && (
+                      <div className="px-4 pt-3 pb-3 flex flex-col gap-3">
+                        <div className="flex gap-2.5 justify-end pl-16 origin-top-right">
+                          <div
+                            dir="auto"
+                            className="px-3 py-2.5 rounded-bubble text-sm min-w-0 [overflow-wrap:break-word] bg-accent text-accent-primary"
+                          >
+                            Hey! Can you help me with something?
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className={widgetSize ? "px-4 pb-3" : ""}>
+                      <WidgetStreamdown>{displayText}</WidgetStreamdown>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

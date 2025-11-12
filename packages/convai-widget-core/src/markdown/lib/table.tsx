@@ -1,7 +1,8 @@
-import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "preact/compat";
 import { StreamdownRuntimeContext } from "../index";
-import { cn, save } from "./utils";
+import { cn } from "../../utils/cn";
+import { save } from "./utils";
+import { Button } from "../../components/Button";
 
 type TableData = {
   headers: string[];
@@ -161,21 +162,17 @@ export const TableCopyButton = ({
     };
   }, []);
 
-  const Icon = isCopied ? CheckIcon : CopyIcon;
-
   return (
-    <button
-      className={cn(
-        "cursor-pointer p-1 text-muted-foreground transition-all hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
+    <Button
+      aria-label={isCopied ? "Copied" : `Copy table as ${format}`}
+      className={cn(className)}
       disabled={isAnimating}
+      icon={isCopied ? "check" : "copy"}
       onClick={copyTableData}
-      title={`Copy table as ${format}`}
-      type="button"
+      variant="md-button"
     >
-      {children ?? <Icon size={14} />}
-    </button>
+      {children ?? (isCopied ? "Copied" : "Copy")}
+    </Button>
   );
 };
 
@@ -251,18 +248,16 @@ export const TableDownloadButton = ({
   };
 
   return (
-    <button
-      className={cn(
-        "cursor-pointer p-1 text-muted-foreground transition-all hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
+    <Button
+      aria-label={`Download table as ${format.toUpperCase()}`}
+      className={cn(className)}
       disabled={isAnimating}
+      icon="download"
       onClick={downloadTableData}
-      title={`Download table as ${format.toUpperCase()}`}
-      type="button"
+      variant="md-button"
     >
-      {children ?? <DownloadIcon size={14} />}
-    </button>
+      {children}
+    </Button>
   );
 };
 
@@ -332,29 +327,27 @@ export const TableDownloadDropdown = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        className={cn(
-          "cursor-pointer p-1 text-muted-foreground transition-all hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
+      <Button
+        aria-label="Download table"
+        className={cn(className)}
         disabled={isAnimating}
+        icon="download"
         onClick={() => setIsOpen(!isOpen)}
-        title="Download table"
-        type="button"
+        variant="md-button"
       >
-        {children ?? <DownloadIcon size={14} />}
-      </button>
+        {children}
+      </Button>
       {isOpen && (
-        <div className="absolute top-full right-0 z-10 mt-1 min-w-[120px] rounded-md border border-border bg-background shadow-lg">
+        <div className="absolute top-full right-0 z-10 mt-1 min-w-30 rounded-dropdown-sheet border border-base-border bg-base shadow-lg">
           <button
-            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40"
+            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-base-active/40"
             onClick={() => downloadTableData("csv")}
             type="button"
           >
             CSV
           </button>
           <button
-            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40"
+            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-base-active/40"
             onClick={() => downloadTableData("markdown")}
             type="button"
           >

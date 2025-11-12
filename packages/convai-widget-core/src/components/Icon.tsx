@@ -12,11 +12,13 @@ const ICON_MAP = {
   "chevron-up": ChevronUpIcon,
   send: SendIcon,
   star: StarIcon,
+  copy: CopyIcon,
+  download: DownloadIcon,
 };
 
 const SIZE_CLASSES = {
   sm: "text-xs",
-  md: "text-lg",
+  md: "text-md",
   lg: "text-xl",
 };
 
@@ -206,6 +208,47 @@ function StarIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
       {...props}
     >
       <path d="M11.8621 0.854898C11.3145 -0.284967 9.68804 -0.284965 9.1404 0.854899L6.77181 5.78487C6.77181 5.78487 6.76902 5.78867 6.7646 5.78925L1.31499 6.50272C0.0591912 6.66713 -0.452868 8.21568 0.474832 9.09033L4.45896 12.8466C4.46075 12.8483 4.46059 12.8502 4.46059 12.8502L3.46003 18.2169C3.22657 19.4691 4.55184 20.4152 5.66108 19.8172L10.4957 17.2111C10.4991 17.2093 10.5035 17.2093 10.5068 17.2111L15.3415 19.8172C16.4507 20.4152 17.776 19.4691 17.5425 18.2169L16.542 12.8502C16.542 12.8502 16.5418 12.8483 16.5436 12.8466L20.5277 9.09033C21.4554 8.21568 20.9434 6.66713 19.6876 6.50272L14.2379 5.78925C14.2335 5.78867 14.2307 5.78487 14.2307 5.78487L11.8621 0.854898Z" />
+    </svg>
+  );
+}
+
+function CopyIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      height="1em"
+      width="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function DownloadIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      height="1em"
+      width="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
     </svg>
   );
 }

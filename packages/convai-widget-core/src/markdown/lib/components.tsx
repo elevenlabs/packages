@@ -11,14 +11,14 @@ import type { VNode, ComponentChild } from "preact";
 import type { ExtraProps, Options } from "react-markdown";
 import { ControlsContext } from "../index";
 import {
-  type BundledLanguage,
+  type SupportedLanguage,
   CodeBlock,
   CodeBlockCopyButton,
-  CodeBlockDownloadButton,
 } from "./code-block";
 import { ImageComponent } from "./image";
 import { TableCopyButton, TableDownloadDropdown } from "./table";
-import { cn } from "./utils";
+import { cn } from "../../utils/cn";
+import { FloatingCard } from "./floating-card";
 
 const LANGUAGE_REGEX = /language-([^\s]+)/;
 
@@ -133,7 +133,7 @@ type HrProps = WithNode<JSX.IntrinsicElements["hr"]>;
 const MemoHr = memo<HrProps>(
   ({ className, node, ...props }: HrProps) => (
     <hr
-      className={cn("my-6 border-border", className)}
+      className={cn("my-6 border-base-border", className)}
       data-streamdown="horizontal-rule"
       {...props}
     />
@@ -146,7 +146,7 @@ type StrongProps = WithNode<JSX.IntrinsicElements["span"]>;
 const MemoStrong = memo<StrongProps>(
   ({ children, className, node, ...props }: StrongProps) => (
     <span
-      className={cn("font-semibold", className)}
+      className={cn("font-medium", className)}
       data-streamdown="strong"
       {...props}
     >
@@ -165,7 +165,7 @@ const MemoA = memo<AProps>(
     return (
       <a
         className={cn(
-          "wrap-anywhere font-medium text-primary underline",
+          "wrap-anywhere font-medium underline",
           className
         )}
         data-incomplete={isIncomplete}
@@ -190,7 +190,7 @@ type HeadingProps<TTag extends keyof JSX.IntrinsicElements> = WithNode<
 const MemoH1 = memo<HeadingProps<"h1">>(
   ({ children, className, node, ...props }) => (
     <h1
-      className={cn("mt-6 mb-2 font-semibold text-3xl", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-2xl", className)}
       data-streamdown="heading-1"
       {...props}
     >
@@ -204,7 +204,7 @@ MemoH1.displayName = "MarkdownH1";
 const MemoH2 = memo<HeadingProps<"h2">>(
   ({ children, className, node, ...props }) => (
     <h2
-      className={cn("mt-6 mb-2 font-semibold text-2xl", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-xl", className)}
       data-streamdown="heading-2"
       {...props}
     >
@@ -218,7 +218,7 @@ MemoH2.displayName = "MarkdownH2";
 const MemoH3 = memo<HeadingProps<"h3">>(
   ({ children, className, node, ...props }) => (
     <h3
-      className={cn("mt-6 mb-2 font-semibold text-xl", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-lg", className)}
       data-streamdown="heading-3"
       {...props}
     >
@@ -232,7 +232,7 @@ MemoH3.displayName = "MarkdownH3";
 const MemoH4 = memo<HeadingProps<"h4">>(
   ({ children, className, node, ...props }) => (
     <h4
-      className={cn("mt-6 mb-2 font-semibold text-lg", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-md", className)}
       data-streamdown="heading-4"
       {...props}
     >
@@ -246,7 +246,7 @@ MemoH4.displayName = "MarkdownH4";
 const MemoH5 = memo<HeadingProps<"h5">>(
   ({ children, className, node, ...props }) => (
     <h5
-      className={cn("mt-6 mb-2 font-semibold text-base", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-sm", className)}
       data-streamdown="heading-5"
       {...props}
     >
@@ -260,7 +260,7 @@ MemoH5.displayName = "MarkdownH5";
 const MemoH6 = memo<HeadingProps<"h6">>(
   ({ children, className, node, ...props }) => (
     <h6
-      className={cn("mt-6 mb-2 font-semibold text-sm", className)}
+      className={cn("mt-6 mb-2 text-base-primary font-medium text-xs", className)}
       data-streamdown="heading-6"
       {...props}
     >
@@ -278,29 +278,22 @@ const MemoTable = memo<TableProps>(
     const showTableControls = shouldShowControls(controlsConfig, "table");
 
     return (
-      <div
-        className="my-4 flex flex-col space-y-2"
+      <FloatingCard
         data-streamdown="table-wrapper"
+        actions={showTableControls ? <TableCopyButton /> : undefined}
+        className="overflow-x-auto"
       >
-        {showTableControls && (
-          <div className="flex items-center justify-end gap-1">
-            <TableCopyButton />
-            <TableDownloadDropdown />
-          </div>
-        )}
-        <div className="overflow-x-auto">
-          <table
-            className={cn(
-              "w-full border-collapse border border-border",
-              className
-            )}
-            data-streamdown="table"
-            {...props}
-          >
-            {children}
-          </table>
-        </div>
-      </div>
+        <table
+          className={cn(
+            "w-full border-collapse border border-base-border",
+            className
+          )}
+          data-streamdown="table"
+          {...props}
+        >
+          {children}
+        </table>
+      </FloatingCard>
     );
   },
   (p, n) => sameClassAndNode(p, n)
@@ -311,7 +304,7 @@ type TheadProps = WithNode<JSX.IntrinsicElements["thead"]>;
 const MemoThead = memo<TheadProps>(
   ({ children, className, node, ...props }: TheadProps) => (
     <thead
-      className={cn("bg-muted/80", className)}
+      className={cn("bg-base-active/80", className)}
       data-streamdown="table-header"
       {...props}
     >
@@ -326,7 +319,7 @@ type TbodyProps = WithNode<JSX.IntrinsicElements["tbody"]>;
 const MemoTbody = memo<TbodyProps>(
   ({ children, className, node, ...props }: TbodyProps) => (
     <tbody
-      className={cn("divide-y divide-border bg-muted/40", className)}
+      className={cn("divide-y divide-base-border bg-base-active/40", className)}
       data-streamdown="table-body"
       {...props}
     >
@@ -341,7 +334,7 @@ type TrProps = WithNode<JSX.IntrinsicElements["tr"]>;
 const MemoTr = memo<TrProps>(
   ({ children, className, node, ...props }: TrProps) => (
     <tr
-      className={cn("border-border border-b", className)}
+      className={cn("border-base-border border-b", className)}
       data-streamdown="table-row"
       {...props}
     >
@@ -357,7 +350,7 @@ const MemoTh = memo<ThProps>(
   ({ children, className, node, ...props }: ThProps) => (
     <th
       className={cn(
-        "whitespace-nowrap px-4 py-2 text-left font-semibold text-sm",
+        "whitespace-nowrap px-4 py-2 text-left font-medium text-sm",
         className
       )}
       data-streamdown="table-header-cell"
@@ -390,7 +383,7 @@ const MemoBlockquote = memo<BlockquoteProps>(
   ({ children, className, node, ...props }: BlockquoteProps) => (
     <blockquote
       className={cn(
-        "my-4 border-muted-foreground/30 border-l-4 pl-4 text-muted-foreground italic",
+        "my-4 border-base-subtle/30 border-l-4 pl-4 text-base-subtle italic",
         className
       )}
       data-streamdown="blockquote"
@@ -576,7 +569,7 @@ const CodeComponent = ({
     return (
       <code
         className={cn(
-          "rounded bg-muted px-1.5 py-0.5 font-mono text-sm",
+          "rounded bg-base-active px-1.5 py-0.5 font-mono text-sm",
           className
         )}
         data-streamdown="inline-code"
@@ -589,7 +582,7 @@ const CodeComponent = ({
 
   const match =
     typeof className === "string" ? className.match(LANGUAGE_REGEX) : null;
-  const language = (match?.at(1) ?? "") as BundledLanguage;
+  const language = (match?.at(1) ?? "") as SupportedLanguage;
 
   // Extract code content from children safely
   let code = "";
@@ -611,19 +604,14 @@ const CodeComponent = ({
 
   return (
     <CodeBlock
-      className={cn("overflow-x-auto border-t", className)}
+      className={cn("overflow-x-auto", className)}
       code={code}
       data-language={language}
       data-streamdown="code-block"
       language={language}
-      preClassName="overflow-x-auto font-mono text-xs p-4 bg-muted/40"
+      preClassName="overflow-x-auto font-mono text-xs p-4"
     >
-      {showCodeControls && (
-        <>
-          <CodeBlockDownloadButton code={code} language={language} />
-          <CodeBlockCopyButton />
-        </>
-      )}
+      {showCodeControls && <CodeBlockCopyButton />}
     </CodeBlock>
   );
 };

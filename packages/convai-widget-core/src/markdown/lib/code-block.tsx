@@ -1,6 +1,3 @@
-"use client";
-
-import { CheckIcon, CopyIcon, DownloadIcon } from "lucide-react";
 import {
   type ComponentProps,
   createContext,
@@ -9,23 +6,31 @@ import {
   useEffect,
   useRef,
   useState,
-} from "react";
-import {
-  type BundledLanguage,
-  type SpecialLanguage,
-} from "shiki";
+} from "preact/compat";
+import { type SpecialLanguage } from "shiki";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { StreamdownRuntimeContext } from "../index";
-import { cn, save } from "./utils";
-
-export { type BundledLanguage } from "shiki";
+import { Button } from "../../components/Button";
+import { cn } from "../../utils/cn";
+import { FloatingCard } from "./floating-card";
 
 const PRE_TAG_REGEX = /<pre(\s|>)/;
 
+const SUPPORTED_LANGUAGES = [
+  "javascript",
+  "typescript",
+  "python",
+  "markdown",
+] as const;
+
+type BundledLanguageSubset = (typeof SUPPORTED_LANGUAGES)[number];
+
+export type SupportedLanguage = BundledLanguageSubset | SpecialLanguage;
+
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
-  language: BundledLanguage;
+  language: SupportedLanguage;
   preClassName?: string;
 };
 
@@ -37,41 +42,32 @@ const CodeBlockContext = createContext<CodeBlockContextType>({
   code: "",
 });
 
-
-
-const SUPPORTED_LANGUAGES = new Set([
-  'javascript',
-  'typescript',
-  'python',
-  'markdown',
-] as const);
-
-const LIGHT_THEME = 'github-light' as const;
-const DARK_THEME = 'github-dark' as const;
+const LIGHT_THEME = "github-light" as const;
 
 const createHighlighter = async () => {
   const highlighter = await createHighlighterCore({
-    themes: [
-      import('@shikijs/themes/github-light'),
-      import('@shikijs/themes/github-dark'),
-    ],
+    themes: [import("@shikijs/themes/github-light")],
     langs: [
-      import('@shikijs/langs/javascript'),
-      import('@shikijs/langs/typescript'),
-      import('@shikijs/langs/python'),
-      import('@shikijs/langs/markdown'),
+      import("@shikijs/langs/javascript"),
+      import("@shikijs/langs/typescript"),
+      import("@shikijs/langs/python"),
+      import("@shikijs/langs/markdown"),
     ],
-    engine: createJavaScriptRegexEngine({ forgiving: true })
+    engine: createJavaScriptRegexEngine({ forgiving: true }),
   });
   return highlighter;
 };
 
 class Highlighter {
-  private highlighter: Awaited<ReturnType<typeof createHighlighterCore>> | null = null;
+  private highlighter: Awaited<
+    ReturnType<typeof createHighlighterCore>
+  > | null = null;
   private initializationPromise: Promise<void> | null = null;
 
-  private isLanguageSupported(language: string): language is BundledLanguage {
-    return SUPPORTED_LANGUAGES.has(language as any);
+  private isLanguageSupported(
+    language: string
+  ): language is BundledLanguageSubset {
+    return SUPPORTED_LANGUAGES.includes(language as BundledLanguageSubset);
   }
 
   private getFallbackLanguage(): SpecialLanguage {
@@ -86,13 +82,13 @@ class Highlighter {
 
   async highlightCode(
     code: string,
-    language: BundledLanguage,
+    language: SupportedLanguage,
     preClassName?: string
-  ): Promise<[string, string]> {
+  ): Promise<string> {
     if (this.initializationPromise) {
       await this.initializationPromise;
     }
-    
+
     this.initializationPromise = this.ensureHighlighterInitialized();
     await this.initializationPromise;
     this.initializationPromise = null;
@@ -101,15 +97,17 @@ class Highlighter {
       ? language
       : this.getFallbackLanguage();
 
-    const light = this.highlighter?.codeToHtml(code, {
-      lang,
-      theme: LIGHT_THEME,
-    });
-
-    const dark = this.highlighter?.codeToHtml(code, {
-      lang,
-      theme: DARK_THEME,
-    });
+      const light = this.highlighter?.codeToHtml(code, {
+        lang,
+        themes: {
+          light: LIGHT_THEME,
+        },
+        colorReplacements: {
+          'github-light': {
+            '#fff': 'var(--el-base-active)'
+          }
+        }
+      });
 
     const addPreClass = (html: string) => {
       if (!preClassName) {
@@ -118,7 +116,7 @@ class Highlighter {
       return html.replace(PRE_TAG_REGEX, `<pre class="${preClassName}"$1`);
     };
 
-    return [addPreClass(light ?? ""), addPreClass(dark ?? "")];
+    return addPreClass(light ?? "");
   }
 }
 
@@ -133,20 +131,16 @@ export const CodeBlock = ({
   ...rest
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("");
-  const [darkHtml, setDarkHtml] = useState<string>("");
   const mounted = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
 
-    highlighter
-      .highlightCode(code, language, preClassName)
-      .then(([light, dark]) => {
-        if (mounted.current) {
-          setHtml(light);
-          setDarkHtml(dark);
-        }
-      });
+    highlighter.highlightCode(code, language, preClassName).then(light => {
+      if (mounted.current) {
+        setHtml(light);
+      }
+    });
 
     return () => {
       mounted.current = false;
@@ -155,40 +149,19 @@ export const CodeBlock = ({
 
   return (
     <CodeBlockContext.Provider value={{ code }}>
-      <div
-        className="my-4 w-full overflow-hidden rounded-xl border"
+      <FloatingCard
+        actions={children}
         data-code-block-container
         data-language={language}
       >
         <div
-          className="flex items-center justify-between bg-muted/80 p-3 text-muted-foreground text-xs"
-          data-code-block-header
+          className={cn("overflow-x-auto pt-1.5 pb-2", className)}
+          dangerouslySetInnerHTML={{ __html: html }}
+          data-code-block
           data-language={language}
-        >
-          <span className="ml-1 font-mono lowercase">{language}</span>
-          <div className="flex items-center gap-2">{children}</div>
-        </div>
-        <div className="w-full">
-          <div className="min-w-full">
-            <div
-              className={cn("overflow-x-auto dark:hidden", className)}
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
-              dangerouslySetInnerHTML={{ __html: html }}
-              data-code-block
-              data-language={language}
-              {...rest}
-            />
-            <div
-              className={cn("hidden overflow-x-auto dark:block", className)}
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: "this is needed."
-              dangerouslySetInnerHTML={{ __html: darkHtml }}
-              data-code-block
-              data-language={language}
-              {...rest}
-            />
-          </div>
-        </div>
-      </div>
+          {...rest}
+        />
+      </FloatingCard>
     </CodeBlockContext.Provider>
   );
 };
@@ -197,66 +170,6 @@ export type CodeBlockCopyButtonProps = ComponentProps<"button"> & {
   onCopy?: () => void;
   onError?: (error: Error) => void;
   timeout?: number;
-};
-
-export type CodeBlockDownloadButtonProps = ComponentProps<"button"> & {
-  onDownload?: () => void;
-  onError?: (error: Error) => void;
-};
-
-const languageExtensionMap: Partial<Record<BundledLanguage, string>> = {
-  javascript: 'js',
-  typescript: 'ts',
-  python: 'py',
-  markdown: 'md',
-};
-
-export const CodeBlockDownloadButton = ({
-  onDownload,
-  onError,
-  language,
-  children,
-  className,
-  code: propCode,
-  ...props
-}: CodeBlockDownloadButtonProps & {
-  code?: string;
-  language?: BundledLanguage;
-}) => {
-  const { code: contextCode } = useContext(CodeBlockContext);
-  const { isAnimating } = useContext(StreamdownRuntimeContext);
-  const code = propCode ?? contextCode;
-  const extension =
-    language && language in languageExtensionMap
-      ? languageExtensionMap[language]
-      : "txt";
-  const filename = `file.${extension}`;
-  const mimeType = "text/plain";
-
-  const downloadCode = () => {
-    try {
-      save(filename, code, mimeType);
-      onDownload?.();
-    } catch (error) {
-      onError?.(error as Error);
-    }
-  };
-
-  return (
-    <button
-      className={cn(
-        "cursor-pointer p-1 text-muted-foreground transition-all hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      disabled={isAnimating}
-      onClick={downloadCode}
-      title="Download file"
-      type="button"
-      {...props}
-    >
-      {children ?? <DownloadIcon size={14} />}
-    </button>
-  );
 };
 
 export const CodeBlockCopyButton = ({
@@ -301,20 +214,17 @@ export const CodeBlockCopyButton = ({
     };
   }, []);
 
-  const Icon = isCopied ? CheckIcon : CopyIcon;
-
   return (
-    <button
-      className={cn(
-        "cursor-pointer p-1 text-muted-foreground transition-all hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
+    <Button
+      aria-label={isCopied ? "Copied" : "Copy code"}
+      className={cn(className)}
       disabled={isAnimating}
+      icon={isCopied ? "check" : "copy"}
       onClick={copyToClipboard}
-      type="button"
+      variant="md-button"
       {...props}
     >
-      {children ?? <Icon size={14} />}
-    </button>
+      {children ?? (isCopied ? "Copied" : "Copy")}
+    </Button>
   );
 };

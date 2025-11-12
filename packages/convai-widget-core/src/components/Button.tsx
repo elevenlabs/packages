@@ -4,6 +4,8 @@ import { Icon, IconName } from "./Icon";
 import { SizeTransition } from "./SizeTransition";
 import { ComponentChildren } from "preact";
 import { Signalish } from "../utils/signalish";
+import { twMerge } from "tailwind-merge";
+import { cn } from "../utils/cn";
 
 const VARIANT_CLASSES = {
   primary:
@@ -12,6 +14,8 @@ const VARIANT_CLASSES = {
     "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active",
   ghost:
     "text-base-primary border border-base bg-base hover:bg-base-hover hover:border-base-hover active:bg-base-active active:border-base-active",
+  "md-button":
+    "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active text-sm h-6 px-1.5 gap-1",
 };
 
 export interface BaseButtonProps
@@ -46,16 +50,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) {
-    const iconOnly = !!icon && !children;
+    const hasIcon = !!icon;
+    const iconOnly = hasIcon && !children;
 
     return (
       <button
         ref={ref}
-        className={clsx(
-          "h-9 flex px-2.5 text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
-          VARIANT_CLASSES[variant],
-          iconOnly && "min-w-9",
-          className
+        className={twMerge(
+          clsx(
+            "h-9 flex text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
+            VARIANT_CLASSES[variant],
+            (hasIcon && !iconOnly) ? "px-2" : "px-1.5",
+            iconOnly && "min-w-9",
+            className
+          )
         )}
         type="button"
         {...props}
@@ -71,7 +79,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           />
         )}
         <SizeTransition visible={!!children} dep={children}>
-          <span className="block whitespace-nowrap max-w-64 truncate px-1.5">
+          <span
+            className={cn(
+              "block whitespace-nowrap max-w-64 truncate",
+              !hasIcon && "px-1.5"
+            )}
+          >
             {children}
           </span>
         </SizeTransition>
