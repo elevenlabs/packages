@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { jsx } from "preact/jsx-runtime";
-import { useState, useEffect } from "preact/compat";
+import { useState, useEffect, useRef } from "preact/compat";
 import { Style } from "./styles/Style";
 import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
@@ -28,16 +28,24 @@ function MarkdownPlayground() {
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [widgetSize, setWidgetSize] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, text);
   }, [text]);
 
+  useEffect(() => {
+    if (isStreaming && previewContainerRef.current) {
+      previewContainerRef.current.scrollTop =
+        previewContainerRef.current.scrollHeight;
+    }
+  }, [streamingText, isStreaming]);
+
   const startStreaming = () => {
     setIsStreaming(true);
     setStreamingText("");
 
-    const maxChunkSize = 100; // Max characters per push
+    const maxChunkSize = 50; // Max characters per push
     let currentPos = 0;
 
     const streamNextChunk = () => {
@@ -104,30 +112,20 @@ function MarkdownPlayground() {
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 flex items-start justify-center overflow-auto">
+                <div
+                  className={`flex-1 flex ${
+                    widgetSize ? "justify-center items-center" : "flex-col"
+                  }`}
+                >
                   <div
+                    ref={previewContainerRef}
                     className={
                       widgetSize
-                        ? "w-full max-w-[400px] max-h-[550px] overflow-auto border border-base-border rounded-sheet shadow-lg bg-base"
-                        : "w-full"
+                        ? "w-[400px] h-[550px] overflow-y-auto border border-base-border rounded-sheet shadow-lg bg-base"
+                        : "flex-1 overflow-y-auto"
                     }
                   >
-                    <div className={widgetSize ? "px-4 pb-3" : ""}>
-                      <WidgetStreamdown>{displayText}</WidgetStreamdown>
-                    </div>
-                    {widgetSize && (
-                      <div className="px-4 pt-3 pb-3 flex flex-col gap-3">
-                        <div className="flex gap-2.5 justify-end pl-16 origin-top-right">
-                          <div
-                            dir="auto"
-                            className="px-3 py-2.5 rounded-bubble text-sm min-w-0 [overflow-wrap:break-word] bg-accent text-accent-primary"
-                          >
-                            Hey! Can you help me with something?
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className={widgetSize ? "px-4 pb-3" : ""}>
+                    <div className={widgetSize ? "px-4 pb-3 pt-3" : ""}>
                       <WidgetStreamdown>{displayText}</WidgetStreamdown>
                     </div>
                   </div>
