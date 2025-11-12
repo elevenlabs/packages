@@ -2,6 +2,7 @@
 
 import preact from "@preact/preset-vite";
 import { defineConfig } from "vitest/config";
+import analyzer from "vite-bundle-analyzer";
 
 export default defineConfig({
   resolve: {
@@ -25,7 +26,7 @@ export default defineConfig({
         id === "clsx",
     },
   },
-  plugins: [preact()],
+  plugins: [preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],
   test: {
     name: "ConvAI Widget Tests",
     browser: {
