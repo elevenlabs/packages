@@ -13,7 +13,7 @@ const VARIANT_CLASSES = {
   ghost:
     "text-base-primary border border-base bg-base hover:bg-base-hover hover:border-base-hover active:bg-base-active active:border-base-active",
   "md-button":
-    "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active text-sm h-6 px-1.5 gap-1",
+    "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active text-sm h-6",
 };
 
 export interface BaseButtonProps
@@ -55,9 +55,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "h-9 flex text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
+          "h-9 flex px-2.5 text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
           VARIANT_CLASSES[variant],
-          hasIcon && !iconOnly ? "px-2" : "px-1.5",
           iconOnly && "min-w-9",
           className
         )}
@@ -78,9 +77,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <span
             className={cn(
               "block whitespace-nowrap max-w-64 truncate",
-              !hasIcon && "px-1.5"
+              variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
-          >
+            >
             {children}
           </span>
         </SizeTransition>

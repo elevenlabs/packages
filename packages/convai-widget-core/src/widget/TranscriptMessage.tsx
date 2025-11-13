@@ -6,7 +6,6 @@ import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { useShouldShowFeedbackAtEnd } from "../contexts/widget-config";
-import { WidgetStreamdown } from "../markdown";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
