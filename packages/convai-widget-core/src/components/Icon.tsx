@@ -18,7 +18,7 @@ const ICON_MAP = {
 
 const SIZE_CLASSES = {
   sm: "text-xs",
-  md: "text-md",
+  md: "text-lg",
   lg: "text-xl",
 };
 

@@ -26,7 +26,6 @@ export default defineConfig({
         id.startsWith("react-markdown") ||
         id.startsWith("shiki") ||
         id.startsWith("@shikijs") ||
-        id.startsWith("lucide-react") ||
         id.startsWith("marked") ||
         id === "clsx" ||
         id === "tailwind-merge" ||
