@@ -140,7 +140,7 @@ export const DefaultStyles = {
   accent_primary: "#ffffff",
   overlay_padding: 32,
   button_radius: 18,
-  input_radius: 10,
+  input_radius: 18,
   bubble_radius: 15,
   sheet_radius: "calc(var(--el-button-radius) + 6px)",
   compact_sheet_radius: "calc(var(--el-button-radius) + 12px)",

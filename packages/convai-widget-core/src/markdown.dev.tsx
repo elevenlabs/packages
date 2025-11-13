@@ -6,6 +6,7 @@ import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
 import { WidgetConfigProvider } from "./contexts/widget-config";
 import { WidgetStreamdown } from "./markdown";
+import "preact/debug" 
 
 const STORAGE_KEY = "markdown-playground-text";
 const DEFAULT_TEXT =

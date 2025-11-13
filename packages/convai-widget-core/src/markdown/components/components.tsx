@@ -5,34 +5,28 @@ import {
   isValidElement,
   type JSX,
   memo,
+  type ReactElement,
+  type ReactNode,
 } from "preact/compat";
-import type { VNode, ComponentChild } from "preact";
 import type { ExtraProps, Options } from "react-markdown";
-import {
-  type SupportedLanguage,
-  CodeBlock,
-  useCopyCode,
-} from "./code-block";
-import { ImageComponent } from "./image";
-import { useCopyTable } from "./table";
 import { cn } from "../../utils/cn";
+import { CodeBlock, type SupportedLanguage, useCopyCode } from "./CodeBlock";
+import { ImageComponent } from "./Image";
 import { InfoCard } from "./InfoCard";
+import { useCopyTable } from "./Table";
 
 const LANGUAGE_REGEX = /language-([^\s]+)/;
 
 type MarkdownPoint = { line?: number; column?: number };
 type MarkdownPosition = { start?: MarkdownPoint; end?: MarkdownPoint };
 type MarkdownNode = {
-  type?: string;
-  tagName?: string;
-  children?: MarkdownNode[];
   position?: MarkdownPosition;
   properties?: { className?: string };
 };
 
 type WithNode<T> = T & {
   node?: MarkdownNode;
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
 };
 
@@ -105,7 +99,10 @@ type UlProps = WithNode<JSX.IntrinsicElements["ul"]>;
 const MemoUl = memo<UlProps>(
   ({ children, className, node, ...props }: UlProps) => (
     <ul
-      className={cn("ml-4 list-outside list-disc whitespace-normal text-sm", className)}
+      className={cn(
+        "ml-4 list-outside list-disc whitespace-normal text-sm",
+        className
+      )}
       data-streamdown="unordered-list"
       {...props}
     >
@@ -151,10 +148,7 @@ const MemoA = memo<AProps>(
 
     return (
       <a
-        className={cn(
-          "wrap-anywhere font-medium underline",
-          className
-        )}
+        className={cn("wrap-anywhere font-medium underline", className)}
         data-incomplete={isIncomplete}
         data-streamdown="link"
         href={href}
@@ -177,7 +171,10 @@ type HeadingProps<TTag extends keyof JSX.IntrinsicElements> = WithNode<
 const MemoH1 = memo<HeadingProps<"h1">>(
   ({ children, className, node, ...props }) => (
     <h1
-      className={cn("mt-6 mb-2 text-base-primary font-semibold text-xl", className)}
+      className={cn(
+        "mt-6 mb-2 text-base-primary font-semibold text-xl",
+        className
+      )}
       data-streamdown="heading-1"
       {...props}
     >
@@ -191,7 +188,10 @@ MemoH1.displayName = "MarkdownH1";
 const MemoH2 = memo<HeadingProps<"h2">>(
   ({ children, className, node, ...props }) => (
     <h2
-      className={cn("mt-3 mb-2 text-base-primary font-semibold text-lg", className)}
+      className={cn(
+        "mt-3 mb-2 text-base-primary font-semibold text-lg",
+        className
+      )}
       data-streamdown="heading-2"
       {...props}
     >
@@ -205,7 +205,10 @@ MemoH2.displayName = "MarkdownH2";
 const MemoH3 = memo<HeadingProps<"h3">>(
   ({ children, className, node, ...props }) => (
     <h3
-      className={cn("mt-3 mb-1 text-base-primary font-semibold text-md", className)}
+      className={cn(
+        "mt-3 mb-1 text-base-primary font-semibold text-md",
+        className
+      )}
       data-streamdown="heading-3"
       {...props}
     >
@@ -219,7 +222,10 @@ MemoH3.displayName = "MarkdownH3";
 const MemoH4 = memo<HeadingProps<"h4">>(
   ({ children, className, node, ...props }) => (
     <h4
-      className={cn("mt-3 mb-1 text-base-primary font-semibold text-sm", className)}
+      className={cn(
+        "mt-3 mb-1 text-base-primary font-semibold text-sm",
+        className
+      )}
       data-streamdown="heading-4"
       {...props}
     >
@@ -233,7 +239,10 @@ MemoH4.displayName = "MarkdownH4";
 const MemoH5 = memo<HeadingProps<"h5">>(
   ({ children, className, node, ...props }) => (
     <h5
-      className={cn("mt-3 mb-0.5 text-base-primary font-semibold text-sm", className)}
+      className={cn(
+        "mt-3 mb-0.5 text-base-primary font-semibold text-sm",
+        className
+      )}
       data-streamdown="heading-5"
       {...props}
     >
@@ -259,9 +268,14 @@ const MemoH6 = memo<HeadingProps<"h6">>(
 MemoH6.displayName = "MarkdownH6";
 
 type TableProps = WithNode<JSX.IntrinsicElements["table"]>;
-const TableComponent = ({ children, className, node, ...props }: TableProps) => {
+const TableComponent = ({
+  children,
+  className,
+  node,
+  ...props
+}: TableProps) => {
   const { isCopied, copyTableData, disabled } = useCopyTable();
-  
+
   return (
     <InfoCard
       data-streamdown="table-wrapper"
@@ -290,9 +304,8 @@ const TableComponent = ({ children, className, node, ...props }: TableProps) => 
   );
 };
 
-const MemoTable = memo<TableProps>(
-  TableComponent,
-  (p, n) => sameClassAndNode(p, n)
+const MemoTable = memo<TableProps>(TableComponent, (p, n) =>
+  sameClassAndNode(p, n)
 );
 MemoTable.displayName = "MarkdownTable";
 
@@ -433,10 +446,10 @@ const MemoSection = memo<SectionProps>(
       // This happens during streaming when footnote definitions haven't fully arrived
 
       // Helper to check if a node is empty (only contains backref)
-      const isEmptyFootnote = (listItem: React.ReactNode): boolean => {
+      const isEmptyFootnote = (listItem: ReactNode): boolean => {
         if (!isValidElement(listItem)) return false;
 
-        const element = listItem as React.ReactElement;
+        const element = listItem as ReactElement;
         const itemChildren = Array.isArray(element.props.children)
           ? element.props.children
           : [element.props.children];
@@ -582,7 +595,7 @@ const CodeComponent = ({
   // Extract code content from children safely
   let code = "";
   if (isValidElement(children)) {
-    const element = children as VNode<any>;
+    const element = children as ReactElement;
     if (
       element.props &&
       typeof element.props === "object" &&
@@ -606,11 +619,11 @@ const CodeComponent = ({
       preClassName="font-mono text-[13px] px-4 py-1.5"
       actions={[
         {
-          icon: isCopied ? "check" : "copy",
-          label: isCopied ? "Copied" : "Copy",
+          icon: isCopied.value ? "check" : "copy",
+          label: isCopied.value ? "Copied" : "Copy",
           onClick: copyToClipboard,
           disabled,
-          "aria-label": isCopied ? "Copied" : "Copy code",
+          "aria-label": isCopied.value ? "Copied" : "Copy code",
         },
       ]}
     />
@@ -643,7 +656,9 @@ const MemoParagraph = memo<ParagraphProps>(
     // (since our ImageComponent returns a <div>, which cannot be nested inside <p>)
 
     // Handle both array and single child cases
-    const childArray = Array.isArray(children) ? children : [children];
+    const childArray: ReactNode[] = Array.isArray(children)
+      ? children
+      : [children];
 
     // Filter out null/undefined/empty values
     const validChildren = childArray.filter(
@@ -654,47 +669,48 @@ const MemoParagraph = memo<ParagraphProps>(
     if (
       validChildren.length === 1 &&
       isValidElement(validChildren[0]) &&
-      (validChildren[0].props as { node?: MarkdownNode }).node?.tagName ===
-        "img"
+      validChildren[0] &&
+      (validChildren[0] as ReactElement).type === "img"
     ) {
       return <>{children}</>;
     }
 
     return (
       <p className={cn("text-sm", className)} {...props}>
-      {children}
-    </p>
+        {children}
+      </p>
     );
   },
   (p, n) => sameClassAndNode(p, n)
 );
 MemoParagraph.displayName = "MarkdownParagraph";
 
-export const components: Options["components"] = {
-  ol: MemoOl as any,
-  li: MemoLi as any,
-  ul: MemoUl as any,
-  hr: MemoHr as any,
-  strong: MemoStrong as any,
-  a: MemoA as any,
-  h1: MemoH1 as any,
-  h2: MemoH2 as any,
-  h3: MemoH3 as any,
-  h4: MemoH4 as any,
-  h5: MemoH5 as any,
-  h6: MemoH6 as any,
-  table: MemoTable as any,
-  thead: MemoThead as any,
-  tbody: MemoTbody as any,
-  tr: MemoTr as any,
-  th: MemoTh as any,
-  td: MemoTd as any,
-  blockquote: MemoBlockquote as any,
-  code: MemoCode as any,
-  img: MemoImg as any,
-  pre: ({ children }) => children,
-  sup: MemoSup as any,
-  sub: MemoSub as any,
-  p: MemoParagraph as any,
-  section: MemoSection as any,
-};
+export const components = {
+  ol: MemoOl,
+  li: MemoLi,
+  ul: MemoUl,
+  hr: MemoHr,
+  strong: MemoStrong,
+  a: MemoA,
+  h1: MemoH1,
+  h2: MemoH2,
+  h3: MemoH3,
+  h4: MemoH4,
+  h5: MemoH5,
+  h6: MemoH6,
+  table: MemoTable,
+  thead: MemoThead,
+  tbody: MemoTbody,
+  tr: MemoTr,
+  th: MemoTh,
+  td: MemoTd,
+  blockquote: MemoBlockquote,
+  code: MemoCode,
+  img: MemoImg,
+  pre: ({ children }: { children: ReactNode }) => children,
+  sup: MemoSup,
+  sub: MemoSub,
+  p: MemoParagraph,
+  section: MemoSection,
+} as Options["components"];
+// type-cast to satisfy react-markdown requirements, preact memo generated a different signature than react

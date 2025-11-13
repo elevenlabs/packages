@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "preact/compat";
+import { useSignal } from "@preact/signals";
 import { type SpecialLanguage } from "shiki";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
@@ -167,20 +168,18 @@ export const CodeBlock = ({
   );
 };
 
-export type UseCopyCodeOptions = {
-  code?: string;
-  onCopy?: () => void;
-  onError?: (error: Error) => void;
-  timeout?: number;
-};
-
-export const useCopyCode = ({
+export function useCopyCode({
   code: propCode,
   onCopy,
   onError,
   timeout = 2000,
-}: UseCopyCodeOptions = {}) => {
-  const [isCopied, setIsCopied] = useState(false);
+}: {
+  code?: string;
+  onCopy?: () => void;
+  onError?: (error: Error) => void;
+  timeout?: number;
+} = {}) {
+  const isCopied = useSignal(false);
   const timeoutRef = useRef(0);
   const { code: contextCode } = useContext(CodeBlockContext);
   const { isAnimating } = useContext(StreamdownRuntimeContext);
@@ -193,12 +192,12 @@ export const useCopyCode = ({
     }
 
     try {
-      if (!isCopied) {
+      if (!isCopied.value) {
         await navigator.clipboard.writeText(code);
-        setIsCopied(true);
+        isCopied.value = true;
         onCopy?.();
         timeoutRef.current = window.setTimeout(
-          () => setIsCopied(false),
+          () => (isCopied.value = false),
           timeout
         );
       }
@@ -218,4 +217,4 @@ export const useCopyCode = ({
     copyToClipboard,
     disabled: isAnimating,
   };
-};
+}

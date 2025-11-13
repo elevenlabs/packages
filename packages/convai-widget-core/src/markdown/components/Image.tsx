@@ -1,26 +1,23 @@
+import { useCallback, useContext } from "preact/compat";
 import type { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 import type { ExtraProps } from "react-markdown";
-import { useContext } from "preact/compat";
-import { cn, save } from "./utils";
+import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
+import { save } from "../utils/utils";
 import { InfoCard } from "./InfoCard";
 
-type ImageComponentProps = DetailedHTMLProps<
-  ImgHTMLAttributes<HTMLImageElement>,
-  HTMLImageElement
-> &
-  ExtraProps;
-
-export const ImageComponent = ({
-  node,
-  className,
+function useDownloadImage({
   src,
   alt,
-  ...props
-}: ImageComponentProps) => {
+  onError,
+}: {
+  src: string;
+  alt?: string;
+  onError?: (error: Error) => void;
+}) {
   const { isAnimating } = useContext(StreamdownRuntimeContext);
 
-  const downloadImage = async () => {
+  const downloadImage = useCallback(async () => {
     if (!src) {
       return;
     }
@@ -64,8 +61,33 @@ export const ImageComponent = ({
       save(filename, blob, blob.type);
     } catch (error) {
       console.error("Failed to download image:", error);
+      onError?.(error as Error);
     }
+  }, [src, alt, onError]);
+
+  return {
+    downloadImage,
+    disabled: isAnimating,
   };
+}
+
+type ImageComponentProps = DetailedHTMLProps<
+  ImgHTMLAttributes<HTMLImageElement>,
+  HTMLImageElement
+> &
+  ExtraProps;
+
+export const ImageComponent = ({
+  node,
+  className,
+  src,
+  alt,
+  ...props
+}: ImageComponentProps) => {
+  const { downloadImage, disabled } = useDownloadImage({
+    src: src?.toString() || "",
+    alt: alt?.toString(),
+  });
 
   if (!src) {
     return null;
@@ -80,14 +102,14 @@ export const ImageComponent = ({
           icon: "download",
           label: "Download",
           onClick: downloadImage,
-          disabled: isAnimating,
+          disabled,
           "aria-label": "Download image",
         },
       ]}
     >
       <img
         alt={alt}
-        className={cn("max-w-full rounded-bubble", className)}
+        className={cn("max-w-full", className)}
         data-streamdown="image"
         src={src}
         {...props}
