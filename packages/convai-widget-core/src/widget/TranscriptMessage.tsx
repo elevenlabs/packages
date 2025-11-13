@@ -61,7 +61,7 @@ function DisconnectionMessage({ entry }: DisconnectionMessageProps) {
 
   return (
     <div className="mt-3 px-8 flex flex-col">
-      {shouldShowFeedbackAtEnd && <Feedback />}
+      {shouldShowFeedbackAtEnd.value && <Feedback />}
       <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
         {entry.role === "user"
           ? text.user_ended_conversation

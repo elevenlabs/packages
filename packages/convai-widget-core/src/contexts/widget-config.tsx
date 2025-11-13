@@ -194,7 +194,7 @@ export function useWebRTC() {
 
 export function useShouldShowFeedbackAtEnd() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback !== undefined);
+  return useComputed(() => !!config.value.end_feedback || config.value.feedback_mode === "end");
 }
 
 async function fetchConfig(
