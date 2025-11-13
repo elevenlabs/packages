@@ -80,7 +80,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     if (isStreaming) {
       const currentLength = lastEntry.message?.length || 0;
 
-      // On first chunk (the start chunk), wait 
+      // On first chunk (the start chunk), wait
       if (lastMessageLength.current === 0 && currentLength > 0) {
         lastMessageLength.current = currentLength;
         userInterrupted.current = false;
@@ -114,7 +114,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   return (
     <div
       ref={scrollContainer}
-      onScroll={e => {
+      onWheel={e => {
         const isAtBottom =
           e.currentTarget.scrollTop >=
           e.currentTarget.scrollHeight -
