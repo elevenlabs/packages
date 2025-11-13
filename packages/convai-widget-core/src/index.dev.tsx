@@ -27,6 +27,8 @@ function Playground() {
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("")
   const [expanded, setExpanded] = useState(false);
+  const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);
+  const [firstMessage, setFirstMessage] = useState("Hi, how can I help you today?")
 
   const dynamicVariables = useMemo(() =>
     dynamicVariablesStr
@@ -113,6 +115,27 @@ function Playground() {
             rows={5}
           />
         </label>
+        <label className="flex flex-row gap-1">
+          <div>
+            <input
+              type="checkbox"
+              checked={overrideFirstMessage}
+              onChange={e => setOverrideFirstMessage(e.currentTarget.checked)}
+            />
+          </div>
+            <div>
+              First message:
+              {overrideFirstMessage && (
+                <input
+                  type="text"
+                  className="p-1 bg-base border border-base-border"
+                  value={firstMessage}
+                  disabled={!overrideFirstMessage}
+                  onChange={e => setFirstMessage(e.currentTarget.value)}
+                />
+              )}
+            </div>
+        </label>
         <label className="flex flex-col">
           Server Location
           <select
@@ -155,6 +178,7 @@ function Playground() {
           always-expanded={JSON.stringify(alwaysExpanded)}
           dynamic-variables={JSON.stringify(dynamicVariables)}
           server-location={location}
+          override-first-message={overrideFirstMessage ? firstMessage : undefined}
         />
       </div>
     </div>

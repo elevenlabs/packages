@@ -241,24 +241,18 @@ function useConversationSetup() {
               if (type === "start") {
                 isReceivingStreamRef.current = true;
                 streamingMessageIndexRef.current = currentTranscript.length;
-                transcript.value = [
-                  ...currentTranscript,
-                  {
+              } else if (type === "delta") {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null && text) {
+                  const updatedTranscript = [...currentTranscript];
+                  const streamingMessage = updatedTranscript[streamingIndex] ??= {
                     type: "message",
                     role: "ai",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
-                  },
-                ];
-              } else if (type === "delta") {
-                const streamingIndex = streamingMessageIndexRef.current;
-                if (
-                  streamingIndex !== null &&
-                  currentTranscript[streamingIndex]
-                ) {
-                  const updatedTranscript = [...currentTranscript];
-                  const streamingMessage = updatedTranscript[streamingIndex];
+                  };
+
                   if (streamingMessage.type === "message") {
                     updatedTranscript[streamingIndex] = {
                       ...streamingMessage,
