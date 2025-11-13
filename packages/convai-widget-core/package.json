@@ -54,7 +54,6 @@
     "preact-custom-element": "^4.3.0",
     "react-markdown": "^10.1.0",
     "shiki": "^3.15.0",
-    "streamdown": "^1.4.0",
     "tailwind-merge": "^3.4.0",
     "rehype-harden": "^1.1.5",
     "rehype-raw": "^7.0.0",
