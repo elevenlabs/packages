@@ -22,6 +22,7 @@ type MarkdownPosition = { start?: MarkdownPoint; end?: MarkdownPoint };
 type MarkdownNode = {
   position?: MarkdownPosition;
   properties?: { className?: string };
+  tagName?: string;
 };
 
 type WithNode<T> = T & {
@@ -665,14 +666,18 @@ const MemoParagraph = memo<ParagraphProps>(
       child => child !== null && child !== undefined && child !== ""
     );
 
-    // Check if there's exactly one child and it's an img element
+    // Check if the paragraph contains only any image elements
+    console.log(validChildren);
     if (
-      validChildren.length === 1 &&
-      isValidElement(validChildren[0]) &&
-      validChildren[0] &&
-      (validChildren[0] as ReactElement).type === "img"
+      validChildren.some(child => isValidElement(child) && (child as ReactElement<WithNode<any>>)?.props?.node?.tagName === "img")
     ) {
-      return <>{children}</>;
+      // If only 1 image, render without wrapping 
+      if (validChildren.length === 1) {
+        console.log("only 1 image", children);
+        return <>{children}</>;
+      }
+      // If multiple images, render a container with the class name and props
+      return <div className={cn("text-sm", className)} {...props}>{children}</div>;
     }
 
     return (

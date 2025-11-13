@@ -55,7 +55,6 @@ function InfoCardActions({
 type InfoCardProps = HTMLAttributes<HTMLDivElement> & {
   children: ComponentChildren;
   actions?: ActionConfig[];
-  className?: string;
   containerClassName?: string;
   actionsClassName?: string;
 };
@@ -87,7 +86,7 @@ export const InfoCard = ({
           className={actionsClassName}
         />
       )}
-      <div className={cn(className)}>{children}</div>
+      {children}
     </div>
   );
 };
