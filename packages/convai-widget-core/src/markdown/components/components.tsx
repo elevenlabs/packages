@@ -667,7 +667,6 @@ const MemoParagraph = memo<ParagraphProps>(
     );
 
     // Check if the paragraph contains only any image elements
-    console.log(validChildren);
     if (
       validChildren.some(child => isValidElement(child) && (child as ReactElement<WithNode<any>>)?.props?.node?.tagName === "img")
     ) {
@@ -676,7 +675,7 @@ const MemoParagraph = memo<ParagraphProps>(
         console.log("only 1 image", children);
         return <>{children}</>;
       }
-      // If multiple images, render a container with the class name and props
+      // If >1 image, render a div for correctness
       return <div className={cn("text-sm", className)} {...props}>{children}</div>;
     }
 
