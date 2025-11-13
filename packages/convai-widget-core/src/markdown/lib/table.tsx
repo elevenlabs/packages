@@ -1,15 +1,8 @@
-import { useContext, useEffect, useRef, useState } from "preact/compat";
+import { useContext, useEffect, useRef } from "preact/compat";
+import { useSignal } from "@preact/signals";
 import { StreamdownRuntimeContext } from "../index";
-import { cn } from "../../utils/cn";
-import { save } from "./utils";
-import { Button } from "../../components/Button";
 
-type TableData = {
-  headers: string[];
-  rows: string[][];
-};
-
-function extractTableDataFromElement(tableElement: HTMLElement): TableData {
+function extractTableDataFromElement(tableElement: HTMLElement) {
   const headers: string[] = [];
   const rows: string[][] = [];
 
@@ -33,33 +26,7 @@ function extractTableDataFromElement(tableElement: HTMLElement): TableData {
   return { headers, rows };
 }
 
-function tableDataToCSV(data: TableData): string {
-  const { headers, rows } = data;
-
-  const escapeCSV = (value: string): string => {
-    // If the value contains comma, quote, or newline, wrap in quotes and escape internal quotes
-    if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-      return `"${value.replace(/"/g, '""')}"`;
-    }
-    return value;
-  };
-
-  const csvRows: string[] = [];
-
-  // Add headers
-  if (headers.length > 0) {
-    csvRows.push(headers.map(escapeCSV).join(","));
-  }
-
-  // Add data rows
-  for (const row of rows) {
-    csvRows.push(row.map(escapeCSV).join(","));
-  }
-
-  return csvRows.join("\n");
-}
-
-function tableDataToMarkdown(data: TableData): string {
+function tableDataToMarkdown(data: { headers: string[]; rows: string[][] }) {
   const { headers, rows } = data;
 
   if (headers.length === 0) {
@@ -69,7 +36,7 @@ function tableDataToMarkdown(data: TableData): string {
   const markdownRows: string[] = [];
 
   // Add headers
-  const escapedHeaders = headers.map((h) => h.replace(/\|/g, "\\|"));
+  const escapedHeaders = headers.map(h => h.replace(/\|/g, "\\|"));
   markdownRows.push(`| ${escapedHeaders.join(" | ")} |`);
 
   // Add separator row
@@ -82,31 +49,23 @@ function tableDataToMarkdown(data: TableData): string {
     while (paddedRow.length < headers.length) {
       paddedRow.push("");
     }
-    const escapedRow = paddedRow.map((cell) => cell.replace(/\|/g, "\\|"));
+    const escapedRow = paddedRow.map(cell => cell.replace(/\|/g, "\\|"));
     markdownRows.push(`| ${escapedRow.join(" | ")} |`);
   }
 
   return markdownRows.join("\n");
 }
 
-export type TableCopyButtonProps = {
-  children?: React.ReactNode;
-  className?: string;
-  onCopy?: () => void;
-  onError?: (error: Error) => void;
-  timeout?: number;
-  format?: "csv" | "markdown" | "text";
-};
-
-export const TableCopyButton = ({
-  children,
-  className,
+export function useCopyTable({
   onCopy,
   onError,
   timeout = 2000,
-  format = "markdown",
-}: TableCopyButtonProps) => {
-  const [isCopied, setIsCopied] = useState(false);
+}: {
+  onCopy?: () => void;
+  onError?: (error: Error) => void;
+  timeout?: number;
+} = {}) {
+  const isCopied = useSignal<boolean>(false);
   const timeoutRef = useRef(0);
   const { isAnimating } = useContext(StreamdownRuntimeContext);
 
@@ -117,7 +76,7 @@ export const TableCopyButton = ({
     }
 
     try {
-      if (!isCopied) {
+      if (!isCopied.value) {
         // Find the closest table element
         const button = event.currentTarget;
         const tableWrapper = button.closest(
@@ -134,20 +93,17 @@ export const TableCopyButton = ({
 
         const tableData = extractTableDataFromElement(tableElement);
         const clipboardItemData = new ClipboardItem({
-          "text/plain":
-            format === "markdown"
-              ? tableDataToMarkdown(tableData)
-              : tableDataToCSV(tableData),
+          "text/plain": tableDataToMarkdown(tableData),
           "text/html": new Blob([tableElement.outerHTML], {
             type: "text/html",
           }),
         });
 
         await navigator.clipboard.write([clipboardItemData]);
-        setIsCopied(true);
+        isCopied.value = true;
         onCopy?.();
         timeoutRef.current = window.setTimeout(
-          () => setIsCopied(false),
+          () => (isCopied.value = false),
           timeout
         );
       }
@@ -162,199 +118,9 @@ export const TableCopyButton = ({
     };
   }, []);
 
-  return (
-    <Button
-      aria-label={isCopied ? "Copied" : `Copy table as ${format}`}
-      className={cn(className)}
-      disabled={isAnimating}
-      icon={isCopied ? "check" : "copy"}
-      onClick={copyTableData}
-      variant="md-button"
-    >
-      {children ?? (isCopied ? "Copied" : "Copy")}
-    </Button>
-  );
-};
-
-export type TableDownloadButtonProps = {
-  children?: React.ReactNode;
-  className?: string;
-  onDownload?: () => void;
-  onError?: (error: Error) => void;
-  format?: "csv" | "markdown";
-  filename?: string;
-};
-
-export const TableDownloadButton = ({
-  children,
-  className,
-  onDownload,
-  onError,
-  format = "csv",
-  filename,
-}: TableDownloadButtonProps) => {
-  const { isAnimating } = useContext(StreamdownRuntimeContext);
-
-  const downloadTableData = (event: React.MouseEvent<HTMLButtonElement>) => {
-    try {
-      // Find the closest table element
-      const button = event.currentTarget;
-      const tableWrapper = button.closest('[data-streamdown="table-wrapper"]');
-      const tableElement = tableWrapper?.querySelector(
-        "table"
-      ) as HTMLTableElement;
-
-      if (!tableElement) {
-        onError?.(new Error("Table not found"));
-        return;
-      }
-
-      const tableData = extractTableDataFromElement(tableElement);
-      let content = "";
-      let mimeType = "";
-      let extension = "";
-
-      switch (format) {
-        case "csv":
-          content = tableDataToCSV(tableData);
-          mimeType = "text/csv";
-          extension = "csv";
-          break;
-        case "markdown":
-          content = tableDataToMarkdown(tableData);
-          mimeType = "text/markdown";
-          extension = "md";
-          break;
-        default:
-          content = tableDataToCSV(tableData);
-          mimeType = "text/csv";
-          extension = "csv";
-      }
-
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${filename || "table"}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      onDownload?.();
-    } catch (error) {
-      onError?.(error as Error);
-    }
+  return {
+    isCopied,
+    copyTableData,
+    disabled: isAnimating,
   };
-
-  return (
-    <Button
-      aria-label={`Download table as ${format.toUpperCase()}`}
-      className={cn(className)}
-      disabled={isAnimating}
-      icon="download"
-      onClick={downloadTableData}
-      variant="md-button"
-    >
-      {children}
-    </Button>
-  );
-};
-
-export type TableDownloadDropdownProps = {
-  children?: React.ReactNode;
-  className?: string;
-  onDownload?: (format: "csv" | "markdown") => void;
-  onError?: (error: Error) => void;
-};
-
-export const TableDownloadDropdown = ({
-  children,
-  className,
-  onDownload,
-  onError,
-}: TableDownloadDropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { isAnimating } = useContext(StreamdownRuntimeContext);
-
-  const downloadTableData = (format: "csv" | "markdown") => {
-    try {
-      const tableWrapper = dropdownRef.current?.closest(
-        '[data-streamdown="table-wrapper"]'
-      );
-      const tableElement = tableWrapper?.querySelector(
-        "table"
-      ) as HTMLTableElement;
-
-      if (!tableElement) {
-        onError?.(new Error("Table not found"));
-        return;
-      }
-
-      const tableData = extractTableDataFromElement(tableElement);
-      const content =
-        format === "csv"
-          ? tableDataToCSV(tableData)
-          : tableDataToMarkdown(tableData);
-      const extension = format === "csv" ? "csv" : "md";
-      const filename = `table.${extension}`;
-      const mimeType = format === "csv" ? "text/csv" : "text/markdown";
-
-      save(filename, content, mimeType);
-      setIsOpen(false);
-      onDownload?.(format);
-    } catch (error) {
-      onError?.(error as Error);
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <Button
-        aria-label="Download table"
-        className={cn(className)}
-        disabled={isAnimating}
-        icon="download"
-        onClick={() => setIsOpen(!isOpen)}
-        variant="md-button"
-      >
-        {children}
-      </Button>
-      {isOpen && (
-        <div className="absolute top-full right-0 z-10 mt-1 min-w-30 rounded-dropdown-sheet border border-base-border bg-base shadow-lg">
-          <button
-            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-base-active/40"
-            onClick={() => downloadTableData("csv")}
-            type="button"
-          >
-            CSV
-          </button>
-          <button
-            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-base-active/40"
-            onClick={() => downloadTableData("markdown")}
-            type="button"
-          >
-            Markdown
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
+}

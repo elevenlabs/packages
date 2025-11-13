@@ -5,20 +5,18 @@ import {
   isValidElement,
   type JSX,
   memo,
-  useContext,
 } from "preact/compat";
 import type { VNode, ComponentChild } from "preact";
 import type { ExtraProps, Options } from "react-markdown";
-import { ControlsContext } from "../index";
 import {
   type SupportedLanguage,
   CodeBlock,
-  CodeBlockCopyButton,
+  useCopyCode,
 } from "./code-block";
 import { ImageComponent } from "./image";
-import { TableCopyButton, TableDownloadDropdown } from "./table";
+import { useCopyTable } from "./table";
 import { cn } from "../../utils/cn";
-import { FloatingCard } from "./floating-card";
+import { InfoCard } from "./InfoCard";
 
 const LANGUAGE_REGEX = /language-([^\s]+)/;
 
@@ -68,17 +66,6 @@ function sameClassAndNode(
     prev.className === next.className && sameNodePosition(prev.node, next.node)
   );
 }
-
-const shouldShowControls = (
-  config: boolean | { table?: boolean; code?: boolean; mermaid?: boolean },
-  type: "table" | "code" | "mermaid"
-) => {
-  if (typeof config === "boolean") {
-    return config;
-  }
-
-  return config[type] !== false;
-};
 
 type OlProps = WithNode<JSX.IntrinsicElements["ol"]>;
 const MemoOl = memo<OlProps>(
@@ -272,30 +259,39 @@ const MemoH6 = memo<HeadingProps<"h6">>(
 MemoH6.displayName = "MarkdownH6";
 
 type TableProps = WithNode<JSX.IntrinsicElements["table"]>;
-const MemoTable = memo<TableProps>(
-  ({ children, className, node, ...props }: TableProps) => {
-    const controlsConfig = useContext(ControlsContext);
-    const showTableControls = shouldShowControls(controlsConfig, "table");
-
-    return (
-      <FloatingCard
-        data-streamdown="table-wrapper"
-        actions={showTableControls ? <TableCopyButton /> : undefined}
-        className="overflow-x-auto"
+const TableComponent = ({ children, className, node, ...props }: TableProps) => {
+  const { isCopied, copyTableData, disabled } = useCopyTable();
+  
+  return (
+    <InfoCard
+      data-streamdown="table-wrapper"
+      actions={[
+        {
+          icon: isCopied.value ? "check" : "copy",
+          label: isCopied.value ? "Copied" : "Copy",
+          onClick: copyTableData,
+          disabled,
+          "aria-label": isCopied.value ? "Copied" : "Copy table as markdown",
+        },
+      ]}
+      className="overflow-x-auto"
+    >
+      <table
+        className={cn(
+          "w-full border-collapse border border-base-border",
+          className
+        )}
+        data-streamdown="table"
+        {...props}
       >
-        <table
-          className={cn(
-            "w-full border-collapse border border-base-border",
-            className
-          )}
-          data-streamdown="table"
-          {...props}
-        >
-          {children}
-        </table>
-      </FloatingCard>
-    );
-  },
+        {children}
+      </table>
+    </InfoCard>
+  );
+};
+
+const MemoTable = memo<TableProps>(
+  TableComponent,
   (p, n) => sameClassAndNode(p, n)
 );
 MemoTable.displayName = "MarkdownTable";
@@ -563,7 +559,6 @@ const CodeComponent = ({
 }: DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> &
   ExtraProps) => {
   const inline = node?.position?.start.line === node?.position?.end.line;
-  const controlsConfig = useContext(ControlsContext);
 
   if (inline) {
     return (
@@ -600,19 +595,25 @@ const CodeComponent = ({
     code = children;
   }
 
-  const showCodeControls = shouldShowControls(controlsConfig, "code");
+  const { isCopied, copyToClipboard, disabled } = useCopyCode({ code });
 
   return (
     <CodeBlock
-      className={cn("overflow-x-auto", className)}
       code={code}
       data-language={language}
       data-streamdown="code-block"
       language={language}
-      preClassName="overflow-x-auto font-mono text-[13px] px-4 py-1.5"
-    >
-      {showCodeControls && <CodeBlockCopyButton />}
-    </CodeBlock>
+      preClassName="font-mono text-[13px] px-4 py-1.5"
+      actions={[
+        {
+          icon: isCopied ? "check" : "copy",
+          label: isCopied ? "Copied" : "Copy",
+          onClick: copyToClipboard,
+          disabled,
+          "aria-label": isCopied ? "Copied" : "Copy code",
+        },
+      ]}
+    />
   );
 };
 

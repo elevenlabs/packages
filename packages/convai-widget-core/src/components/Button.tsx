@@ -1,11 +1,9 @@
-import { clsx } from "clsx";
+import { ComponentChildren } from "preact";
 import { ButtonHTMLAttributes, forwardRef } from "preact/compat";
+import { cn } from "../utils/cn";
+import { Signalish } from "../utils/signalish";
 import { Icon, IconName } from "./Icon";
 import { SizeTransition } from "./SizeTransition";
-import { ComponentChildren } from "preact";
-import { Signalish } from "../utils/signalish";
-import { twMerge } from "tailwind-merge";
-import { cn } from "../utils/cn";
 
 const VARIANT_CLASSES = {
   primary:
@@ -56,21 +54,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={twMerge(
-          clsx(
-            "h-9 flex text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
-            VARIANT_CLASSES[variant],
-            (hasIcon && !iconOnly) ? "px-2" : "px-1.5",
-            iconOnly && "min-w-9",
-            className
-          )
+        className={cn(
+          "h-9 flex text-sm items-center transition-colors justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
+          VARIANT_CLASSES[variant],
+          hasIcon && !iconOnly ? "px-2" : "px-1.5",
+          iconOnly && "min-w-9",
+          className
         )}
         type="button"
         {...props}
       >
         {icon && (
           <Icon
-            className={clsx(
+            className={cn(
               "transition-[margin] duration-200",
               iconOnly && "-mx-0.5",
               iconClassName

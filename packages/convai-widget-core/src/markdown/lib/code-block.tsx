@@ -11,9 +11,8 @@ import { type SpecialLanguage } from "shiki";
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import { StreamdownRuntimeContext } from "../index";
-import { Button } from "../../components/Button";
 import { cn } from "../../utils/cn";
-import { FloatingCard } from "./floating-card";
+import { InfoCard, type ActionConfig } from "./InfoCard";
 
 const PRE_TAG_REGEX = /<pre(\s|>)/;
 
@@ -32,6 +31,7 @@ type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
   language: SupportedLanguage;
   preClassName?: string;
+  actions?: ActionConfig[];
 };
 
 type CodeBlockContextType = {
@@ -126,8 +126,8 @@ export const CodeBlock = ({
   code,
   language,
   className,
-  children,
   preClassName,
+  actions,
   ...rest
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("");
@@ -149,38 +149,37 @@ export const CodeBlock = ({
 
   return (
     <CodeBlockContext.Provider value={{ code }}>
-      <FloatingCard
-        actions={children}
+      <InfoCard
+        actions={actions}
+        className="overflow-x-auto"
         data-code-block-container
         data-language={language}
       >
         <div
-          className={cn("overflow-x-auto pt-1.5 pb-2", className)}
+          className={cn("pt-1.5 pb-2", className)}
           dangerouslySetInnerHTML={{ __html: html }}
           data-code-block
           data-language={language}
           {...rest}
         />
-      </FloatingCard>
+      </InfoCard>
     </CodeBlockContext.Provider>
   );
 };
 
-export type CodeBlockCopyButtonProps = ComponentProps<"button"> & {
+export type UseCopyCodeOptions = {
+  code?: string;
   onCopy?: () => void;
   onError?: (error: Error) => void;
   timeout?: number;
 };
 
-export const CodeBlockCopyButton = ({
+export const useCopyCode = ({
+  code: propCode,
   onCopy,
   onError,
   timeout = 2000,
-  children,
-  className,
-  code: propCode,
-  ...props
-}: CodeBlockCopyButtonProps & { code?: string }) => {
+}: UseCopyCodeOptions = {}) => {
   const [isCopied, setIsCopied] = useState(false);
   const timeoutRef = useRef(0);
   const { code: contextCode } = useContext(CodeBlockContext);
@@ -214,17 +213,9 @@ export const CodeBlockCopyButton = ({
     };
   }, []);
 
-  return (
-    <Button
-      aria-label={isCopied ? "Copied" : "Copy code"}
-      className={cn(className)}
-      disabled={isAnimating}
-      icon={isCopied ? "check" : "copy"}
-      onClick={copyToClipboard}
-      variant="md-button"
-      {...props}
-    >
-      {children ?? (isCopied ? "Copied" : "Copy")}
-    </Button>
-  );
+  return {
+    isCopied,
+    copyToClipboard,
+    disabled: isAnimating,
+  };
 };

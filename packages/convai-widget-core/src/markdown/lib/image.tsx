@@ -1,11 +1,9 @@
-import { DownloadIcon } from "lucide-react";
 import type { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 import type { ExtraProps } from "react-markdown";
 import { useContext } from "preact/compat";
 import { cn, save } from "./utils";
-import { Button } from "../../components/Button";
 import { StreamdownRuntimeContext } from "../index";
-import { FloatingCard } from "./floating-card";
+import { InfoCard } from "./InfoCard";
 
 type ImageComponentProps = DetailedHTMLProps<
   ImgHTMLAttributes<HTMLImageElement>,
@@ -74,20 +72,18 @@ export const ImageComponent = ({
   }
 
   return (
-    <FloatingCard
+    <InfoCard
       containerClassName="inline-block self-auto"
       data-streamdown="image-wrapper"
-      actions={
-        <Button
-          aria-label="Download image"
-          disabled={isAnimating}
-          icon="download"
-          onClick={downloadImage}
-          variant="md-button"
-        >
-          Download
-        </Button>
-      }
+      actions={[
+        {
+          icon: "download",
+          label: "Download",
+          onClick: downloadImage,
+          disabled: isAnimating,
+          "aria-label": "Download image",
+        },
+      ]}
     >
       <img
         alt={alt}
@@ -96,6 +92,6 @@ export const ImageComponent = ({
         src={src}
         {...props}
       />
-    </FloatingCard>
+    </InfoCard>
   );
 };
