@@ -61,6 +61,11 @@ interface BaseOptions {
    * If not provided, the default URI will be used.
    */
   baseUri?: string;
+  /**
+   * Whether to receive a committed_transcript_with_timestamps event which includes word-level timestamps.
+   * @default false
+   */
+  includeTimestamps?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -156,9 +161,11 @@ export class ScribeRealtime {
         options.minSilenceDurationMs.toString()
       );
     }
-
     if (options.languageCode !== undefined) {
       params.append("language_code", options.languageCode);
+    }
+    if (options.includeTimestamps !== undefined) {
+      params.append("include_timestamps", options.includeTimestamps ? "true" : "false");
     }
 
     const queryString = params.toString();

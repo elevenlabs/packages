@@ -18,6 +18,7 @@ export type {
   PingEvent,
   ScribeAuthErrorMessage,
   ScribeErrorMessage,
+  ScribeQuotaExceededErrorMessage,
   SessionStartedMessage,
   TentativeAgentResponseInternalClientEvent,
   TentativeUserTranscriptionClientEvent,

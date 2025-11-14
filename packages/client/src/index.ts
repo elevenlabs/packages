@@ -49,6 +49,7 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
 } from "./scribe";
 
 export class Conversation extends BaseConversation {

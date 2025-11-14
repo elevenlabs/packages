@@ -630,6 +630,11 @@ export interface AuthError {
   error: string;
 }
 
+export interface QuotaExceededError {
+  message_type: "quota_exceeded";
+  error: string;
+}
+
 export interface SessionStartedMessage {
   message_type: "session_started";
   session_id: string;
@@ -660,5 +665,10 @@ export interface ScribeErrorMessage {
 
 export interface ScribeAuthErrorMessage {
   message_type: "auth_error";
+  error: string;
+}
+
+export interface ScribeQuotaExceededErrorMessage {
+  message_type: "quota_exceeded";
   error: string;
 }

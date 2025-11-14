@@ -651,6 +651,7 @@ const scribe = useScribe({
   onCommittedTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
   onError: (error) => console.error("Error:", error),
   onAuthError: (data) => console.error("Auth error:", data.error),
+  onQuotaExceededError: (data) => console.error("Quota exceeded:", data.error),
   onConnect: () => console.log("Connected"),
   onDisconnect: () => console.log("Disconnected"),
 });
@@ -787,7 +788,7 @@ const scribe = useScribe(/* options */);
 console.log(scribe.status); // "connected"
 console.log(scribe.isConnected); // true
 console.log(scribe.partialTranscript); // "hello world"
-console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
+console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", words: ..., isFinal: true }]
 console.log(scribe.error); // null or error string
 ```
 
@@ -881,10 +882,10 @@ const scribe = useScribe({
   },
   onCommittedTranscriptWithTimestamps: (data: {
     text: string;
-    timestamps?: { start: number; end: number }[];
+    words?: { start: number; end: number }[];
   }) => {
     console.log("Text:", data.text);
-    console.log("Word timestamps:", data.timestamps);
+    console.log("Word timestamps:", data.words);
   },
   onError: (error: Error | Event) => {
     console.error("Connection error:", error);

@@ -18,4 +18,5 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
 } from "./connection";

@@ -11,6 +11,7 @@ import type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
 } from "@elevenlabs/client";
 
 // ============= Types =============
@@ -39,6 +40,7 @@ export interface ScribeCallbacks {
   }) => void;
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
+  onQuotaExceededError?: (data: { error: string }) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
 }
@@ -72,6 +74,9 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Auto-connect on mount
   autoConnect?: boolean;
+
+  // Include timestamps
+  includeTimestamps?: boolean;
 }
 
 export interface UseScribeReturn {
@@ -112,6 +117,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onAuthError,
     onConnect,
     onDisconnect,
+    onQuotaExceededError,
 
     // Connection options
     token: defaultToken,
@@ -178,6 +184,11 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         let connection: RealtimeConnection;
 
+        // Determine if timestamps should be included based on whether the callback was provided
+        // We do this instead of providing includeTimestamps as we can assume that if the callback is provided, the user wants timestamps
+        const includeTimestamps =
+          !!(runtimeOptions.onCommittedTranscriptWithTimestamps || onCommittedTranscriptWithTimestamps);
+
         if (microphone) {
           // Microphone mode
           connection = Scribe.connect({
@@ -197,6 +208,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             microphone,
+            includeTimestamps,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -216,6 +228,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               runtimeOptions.minSilenceDurationMs ||
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
+            includeTimestamps,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -283,6 +296,13 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           onAuthError?.(message);
         });
 
+        connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data: unknown) => {
+          const message = data as ScribeQuotaExceededErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onQuotaExceededError?.(message);
+        });
+
         connection.on(RealtimeEvents.OPEN, () => {
           onConnect?.();
         });
@@ -321,6 +341,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       onAuthError,
       onConnect,
       onDisconnect,
+      onQuotaExceededError,
     ]
   );
 

@@ -6,6 +6,7 @@ import type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
 } from "@elevenlabs/types";
 
 // Re-export types for public API
@@ -16,6 +17,7 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
 };
 
 export type WebSocketMessage =
@@ -24,7 +26,8 @@ export type WebSocketMessage =
   | CommittedTranscriptMessage
   | CommittedTranscriptWithTimestampsMessage
   | ScribeErrorMessage
-  | ScribeAuthErrorMessage;
+  | ScribeAuthErrorMessage
+  | ScribeQuotaExceededErrorMessage;
 
 /**
  * Simple EventEmitter implementation for browser compatibility.
@@ -79,6 +82,8 @@ export enum RealtimeEvents {
   OPEN = "open",
   /** Emitted when the WebSocket connection is closed */
   CLOSE = "close",
+  /** Emitted when a quota exceeded error occurs */
+  QUOTA_EXCEEDED = "quota_exceeded",
 }
 
 /**
@@ -162,6 +167,9 @@ export class RealtimeConnection {
             break;
           case "auth_error":
             this.eventEmitter.emit(RealtimeEvents.AUTH_ERROR, data);
+            break;
+          case "quota_exceeded":
+            this.eventEmitter.emit(RealtimeEvents.QUOTA_EXCEEDED, data);
             break;
           case "error":
             this.eventEmitter.emit(RealtimeEvents.ERROR, data);

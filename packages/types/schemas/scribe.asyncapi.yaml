@@ -47,6 +47,7 @@ channels:
           - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
+          - $ref: "#/components/messages/QuotaExceededError"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -115,6 +116,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ScribeAuthErrorPayload"
+
+    QuotaExceededError:
+      name: ScribeQuotaExceededErrorMessage
+      title: Scribe Quota Exceeded Error
+      summary: Quota exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeQuotaExceededErrorPayload"
 
   schemas:
     MessageType:
@@ -314,3 +323,13 @@ components:
           type: string
           description: Authentication error details
 
+    ScribeQuotaExceededErrorPayload:
+      type: object
+      required: [message_type, error]
+      properties:
+        message_type:
+          type: string
+          const: quota_exceeded
+        error:
+          type: string
+          description: Quota exceeded error details

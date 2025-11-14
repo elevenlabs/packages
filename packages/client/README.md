@@ -589,20 +589,18 @@ connection.on(RealtimeEvents.SESSION_STARTED, () => {
 // Partial transcripts (interim results)
 connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
   console.log("Partial:", data.text);
-  // { text: string }
 });
 
 // Committed transcripts
 connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
   console.log("Committed:", data.text);
-  // { text: string }
 });
 
 // Committed transcripts with word-level timestamps
+// Only received when `includeTimestamps = true`
 connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
   console.log("Committed:", data.text);
-  console.log("Timestamps:", data.timestamps);
-  // { text: string, timestamps?: { start: number, end: number }[] }
+  console.log("Timestamps:", data.words);
 });
 
 // Errors
@@ -624,6 +622,11 @@ connection.on(RealtimeEvents.OPEN, () => {
 connection.on(RealtimeEvents.CLOSE, () => {
   console.log("Connection closed");
 });
+
+// Quota exceeded
+connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+  console.log("Quota exceeded:", data.error)
+})
 ```
 
 ### Configuration Options
@@ -646,6 +649,8 @@ const connection = await scribe.connect({
   minSilenceDurationMs: 500, // Minimum silence to detect pause
 
   languageCode: "en", // ISO 639-1 language code
+
+  includeTimestamps: true // Whether to receive the committed_transcript_with_timestamps event after committing
 });
 ```
 
@@ -793,6 +798,10 @@ try {
 
   connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
     console.error("Authentication failed:", data.error);
+  });
+
+  connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+    console.error("Quota exceeded:", data.error);
   });
 } catch (error) {
   console.error("Failed to connect:", error);
