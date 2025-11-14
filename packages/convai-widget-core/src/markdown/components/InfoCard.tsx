@@ -86,7 +86,7 @@ export const InfoCard = ({
           className={actionsClassName}
         />
       )}
-      <div className={cn(className)}>{children}</div>
+      <div className={className}>{children}</div>
     </div>
   );
 };
