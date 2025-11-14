@@ -186,8 +186,10 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         // Determine if timestamps should be included based on whether the callback was provided
         // We do this instead of providing includeTimestamps as we can assume that if the callback is provided, the user wants timestamps
-        const includeTimestamps =
-          !!(runtimeOptions.onCommittedTranscriptWithTimestamps || onCommittedTranscriptWithTimestamps);
+        const includeTimestamps = !!(
+          runtimeOptions.onCommittedTranscriptWithTimestamps ||
+          onCommittedTranscriptWithTimestamps
+        );
 
         if (microphone) {
           // Microphone mode

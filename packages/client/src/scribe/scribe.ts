@@ -165,7 +165,10 @@ export class ScribeRealtime {
       params.append("language_code", options.languageCode);
     }
     if (options.includeTimestamps !== undefined) {
-      params.append("include_timestamps", options.includeTimestamps ? "true" : "false");
+      params.append(
+        "include_timestamps",
+        options.includeTimestamps ? "true" : "false"
+      );
     }
 
     const queryString = params.toString();
