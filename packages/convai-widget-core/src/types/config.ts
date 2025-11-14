@@ -34,7 +34,7 @@ export interface WidgetConfig {
   feedback_mode: FeedbackMode;
   end_feedback?: {
     type: FeedbackType;
-  };
+  } | null;
   language: Language;
   supported_language_overrides?: Language[];
   terms_html?: string;

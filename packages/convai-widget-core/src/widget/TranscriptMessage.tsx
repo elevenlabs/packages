@@ -5,7 +5,7 @@ import { useAvatarConfig } from "../contexts/avatar-config";
 import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
-import { useShouldShowFeedbackAtEnd } from "../contexts/widget-config";
+import { useEndFeedbackType } from "../contexts/widget-config";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -57,11 +57,11 @@ interface DisconnectionMessageProps {
 function DisconnectionMessage({ entry }: DisconnectionMessageProps) {
   const text = useTextContents();
   const { lastId } = useConversation();
-  const shouldShowFeedbackAtEnd = useShouldShowFeedbackAtEnd();
+  const endFeedbackType = useEndFeedbackType();
 
   return (
     <div className="mt-3 px-8 flex flex-col">
-      {shouldShowFeedbackAtEnd && <Feedback />}
+      {endFeedbackType.value === "rating" && <Feedback />}
       <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
         {entry.role === "user"
           ? text.user_ended_conversation
