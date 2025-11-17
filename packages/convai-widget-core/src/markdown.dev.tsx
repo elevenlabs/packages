@@ -6,7 +6,9 @@ import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
 import { WidgetConfigProvider } from "./contexts/widget-config";
 import { WidgetStreamdown } from "./markdown";
-import "preact/debug" 
+import "preact/debug";
+import { TextContentsProvider } from "./contexts/text-contents";
+import { LanguageConfigProvider } from "./contexts/language-config";
 
 const STORAGE_KEY = "markdown-playground-text";
 const DEFAULT_TEXT =
@@ -80,59 +82,63 @@ function MarkdownPlayground() {
       >
         <ServerLocationProvider>
           <WidgetConfigProvider>
-            <Style />
-            <div className="w-screen h-screen flex bg-base-hover text-base-primary">
-              <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
-                <h2 className="text-xl font-medium mb-4">Input</h2>
-                <textarea
-                  className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={text}
-                  onChange={e => setText(e.currentTarget.value)}
-                  placeholder="Enter markdown text here..."
-                />
-              </div>
-              <div className="w-1/2 h-full flex flex-col p-4 overflow-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-medium">Preview</h2>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={widgetSize}
-                        onChange={e => setWidgetSize(e.currentTarget.checked)}
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                      <span>Widget Size (400×550px)</span>
-                    </label>
-                    <button
-                      onClick={startStreaming}
-                      disabled={isStreaming}
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {isStreaming ? "Streaming..." : "Simulate Stream"}
-                    </button>
-                  </div>
+            <LanguageConfigProvider>
+              <TextContentsProvider>
+                <Style />
+                <div className="w-screen h-screen flex bg-base-hover text-base-primary">
+                <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
+                  <h2 className="text-xl font-medium mb-4">Input</h2>
+                  <textarea
+                    className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={text}
+                    onChange={e => setText(e.currentTarget.value)}
+                    placeholder="Enter markdown text here..."
+                  />
                 </div>
-                <div
-                  className={`flex-1 flex ${
-                    widgetSize ? "justify-center items-center" : "flex-col"
-                  }`}
-                >
+                <div className="w-1/2 h-full flex flex-col p-4 overflow-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-medium">Preview</h2>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={widgetSize}
+                          onChange={e => setWidgetSize(e.currentTarget.checked)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span>Widget Size (400×550px)</span>
+                      </label>
+                      <button
+                        onClick={startStreaming}
+                        disabled={isStreaming}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isStreaming ? "Streaming..." : "Simulate Stream"}
+                      </button>
+                    </div>
+                  </div>
                   <div
-                    ref={previewContainerRef}
-                    className={
-                      widgetSize
-                        ? "w-[400px] h-[550px] overflow-y-auto border border-base-border rounded-sheet shadow-lg bg-base"
-                        : "flex-1 overflow-y-auto"
-                    }
+                    className={`flex-1 flex ${
+                      widgetSize ? "justify-center items-center" : "flex-col"
+                    }`}
                   >
-                    <div className={widgetSize ? "px-4 pb-3 pt-3" : ""}>
-                      <WidgetStreamdown>{displayText}</WidgetStreamdown>
+                    <div
+                      ref={previewContainerRef}
+                      className={
+                        widgetSize
+                          ? "w-[400px] h-[550px] overflow-y-auto border border-base-border rounded-sheet shadow-lg bg-base"
+                          : "flex-1 overflow-y-auto"
+                      }
+                    >
+                      <div className={widgetSize ? "px-4 pb-3 pt-3" : ""}>
+                        <WidgetStreamdown>{displayText}</WidgetStreamdown>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+              </TextContentsProvider>
+            </LanguageConfigProvider>
           </WidgetConfigProvider>
         </ServerLocationProvider>
       </AttributesProvider>

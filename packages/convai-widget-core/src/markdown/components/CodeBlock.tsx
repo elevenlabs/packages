@@ -11,6 +11,7 @@ import { StreamdownRuntimeContext } from "../index";
 import { Code, languageParser } from "../utils/highlighter";
 import { ContentBlock } from "./ContentBlock";
 import { Button } from "../../components/Button";
+import { useTextContents } from "../../contexts/text-contents";
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
@@ -29,19 +30,20 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const mappedLanguage = languageParser[language];
   const { isCopied, copyToClipboard, disabled } = useCopyCode({ code });
+  const textContents = useTextContents();
   
   return (
     <CodeBlockContext.Provider value={code}>
       <ContentBlock data-code-block-container data-language={language}>
         <ContentBlock.Actions>
           <Button
-            aria-label={isCopied.value ? "Copied" : "Copy code"}
+            aria-label={isCopied.value ? textContents.copied.value : textContents.copy.value}
             disabled={disabled}
             icon={isCopied.value ? "check" : "copy"}
             onClick={copyToClipboard}
             variant="md-button"
           >
-            {isCopied.value ? "Copied" : "Copy"}
+            {isCopied.value ? textContents.copied.value : textContents.copy.value}
           </Button>
         </ContentBlock.Actions>
         <ContentBlock.Content className="overflow-x-auto">

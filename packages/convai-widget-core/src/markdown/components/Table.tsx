@@ -4,6 +4,7 @@ import { StreamdownRuntimeContext } from "../index";
 import { Button } from "../../components/Button";
 import { ContentBlock } from "./ContentBlock";
 import { cn } from "../../utils/cn";
+import { useTextContents } from "../../contexts/text-contents";
 
 function extractTableDataFromElement(tableElement: HTMLElement) {
   const headers: string[] = [];
@@ -134,18 +135,19 @@ export const TableComponent = ({
   ...props
 }: HTMLAttributes<HTMLTableElement>) => {
   const { isCopied, copyTableData, disabled } = useCopyTable();
+  const textContents = useTextContents();
 
   return (
     <ContentBlock data-streamdown="table-wrapper">
       <ContentBlock.Actions>
         <Button
-          aria-label={isCopied.value ? "Copied" : "Copy table as markdown"}
+          aria-label={isCopied.value ? textContents.copied.value : textContents.copy.value}
           disabled={disabled}
           icon={isCopied.value ? "check" : "copy"}
           onClick={copyTableData}
           variant="md-button"
         >
-          {isCopied.value ? "Copied" : "Copy"}
+          {isCopied.value ? textContents.copied.value : textContents.copy.value}
         </Button>
       </ContentBlock.Actions>
       <ContentBlock.Content className="overflow-x-auto">

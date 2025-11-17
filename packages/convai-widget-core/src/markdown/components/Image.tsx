@@ -6,6 +6,7 @@ import { StreamdownRuntimeContext } from "../index";
 import { save } from "../utils/utils";
 import { ContentBlock } from "./ContentBlock";
 import { Button } from "../../components/Button";
+import { useTextContents } from "../../contexts/text-contents";
 
 function useDownloadImage({
   src,
@@ -89,6 +90,7 @@ export const ImageComponent = ({
     src: src?.toString() || "",
     alt: alt?.toString(),
   });
+  const textContents = useTextContents();
 
   if (!src) {
     return null;
@@ -98,13 +100,13 @@ export const ImageComponent = ({
     <ContentBlock className="inline-block self-auto" data-streamdown="image-wrapper">
       <ContentBlock.Actions>
         <Button
-          aria-label="Download image"
+          aria-label={textContents.download.value}
           disabled={disabled}
           icon="download"
           onClick={downloadImage}
           variant="md-button"
         >
-          Download
+          {textContents.download.value}
         </Button>
       </ContentBlock.Actions>
       <ContentBlock.Content>

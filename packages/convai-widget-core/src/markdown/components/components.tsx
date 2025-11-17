@@ -629,7 +629,6 @@ const MemoParagraph = memo<ParagraphProps>(
     ) {
       // If only 1 image, render without wrapping 
       if (validChildren.length === 1) {
-        console.log("only 1 image", children);
         return <>{children}</>;
       }
       // If >1 image, render a div for correctness
