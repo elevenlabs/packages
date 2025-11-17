@@ -16,7 +16,6 @@ import { useTextContents } from "../../contexts/text-contents";
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
   language: string;
-  preClassName?: string;
 };
 
 const CodeBlockContext = createContext<string>("");
@@ -25,17 +24,26 @@ export const CodeBlock = ({
   code,
   language,
   className,
-  preClassName,
   ...rest
 }: CodeBlockProps) => {
   const mappedLanguage = languageParser[language];
   const { isCopied, copyToClipboard, disabled } = useCopyCode({ code });
   const textContents = useTextContents();
+  const isWrapped = useSignal(false);
   
   return (
     <CodeBlockContext.Provider value={code}>
       <ContentBlock data-code-block-container data-language={language}>
         <ContentBlock.Actions>
+          <Button
+            aria-label={textContents.wrap.value}
+            disabled={disabled}
+            icon="wrap"
+            onClick={() => isWrapped.value = !isWrapped.value}
+            variant="md-button"
+          >
+            {textContents.wrap.value}
+          </Button>
           <Button
             aria-label={isCopied.value ? textContents.copied.value : textContents.copy.value}
             disabled={disabled}
@@ -46,14 +54,24 @@ export const CodeBlock = ({
             {isCopied.value ? textContents.copied.value : textContents.copy.value}
           </Button>
         </ContentBlock.Actions>
-        <ContentBlock.Content className="overflow-x-auto">
+        <ContentBlock.Content className={cn(isWrapped.value ? "overflow-x-hidden" : "overflow-x-auto")}>
           <div
             className={cn("pt-1.5 pb-2", className)}
             data-code-block
             data-language={language}
             {...rest}
           >
-            <Code code={code} language={mappedLanguage} className={preClassName} />
+            <pre className={cn(
+              "m-0 font-mono text-[13px] px-4 py-1.5",
+              isWrapped.value ? "whitespace-pre-wrap overflow-x-hidden" : "whitespace-pre overflow-x-auto"
+            )}>
+              <code className={cn(
+                "block",
+                isWrapped.value ? "whitespace-pre-wrap break-all" : "whitespace-pre"
+              )}>
+                <Code code={code} language={mappedLanguage} />
+              </code>
+            </pre>
           </div>
         </ContentBlock.Content>
       </ContentBlock>

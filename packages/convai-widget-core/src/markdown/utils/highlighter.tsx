@@ -57,33 +57,19 @@ export const languageParser: Record<string, string> = {
 export interface CodeProps {
   code: string;
   language?: string;
-  className?: string | ((language?: string) => string);
 }
 
 export const Code = (props: CodeProps) => {
   const parsers = useContext(ParsersContext);
 
-  const className =
-    typeof props.className === "string"
-      ? props.className
-      : props.className?.(props.language);
-
   if (props.language === undefined || parsers[props.language] === undefined) {
-    return (
-      <pre className={cn("m-0 whitespace-pre overflow-x-auto", className)}>
-        <code className="block whitespace-pre">{props.code}</code>
-      </pre>
-    );
+    return <>{props.code}</>;
   }
 
   const parser = parsers[props.language];
   const tree = parser.parse(props.code);
   const root = fromLezer(props.code, tree);
   const content = toJsxRuntime(root, { Fragment, jsx, jsxs });
-  return (
-    <pre className={cn("m-0 whitespace-pre overflow-x-auto", className)}>
-      <code className="block whitespace-pre">{content}</code>
-    </pre>
-  );
+  return <>{content}</>;
 };
 

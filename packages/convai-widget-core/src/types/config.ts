@@ -118,6 +118,7 @@ export const DefaultTextContents = {
   go_back: "Go back",
   copy: "Copy",
   download: "Download",
+  wrap: "Wrap",
 };
 
 export const TextKeys = Object.keys(

@@ -583,7 +583,6 @@ const CodeComponent = ({
       data-language={language}
       data-streamdown="code-block"
       language={language}
-      preClassName="font-mono text-[13px] px-4 py-1.5"
     />
   );
 };
