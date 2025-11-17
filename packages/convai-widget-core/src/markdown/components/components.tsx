@@ -10,6 +10,7 @@ import {
 } from "preact/compat";
 import type { ExtraProps, Options } from "react-markdown";
 import { cn } from "../../utils/cn";
+import type { Signalish } from "../../utils/signalish";
 import { CodeBlock } from "./CodeBlock";
 import { ImageComponent } from "./Image";
 import { InfoCard } from "./InfoCard";
@@ -54,8 +55,8 @@ function sameNodePosition(prev?: MarkdownNode, next?: MarkdownNode): boolean {
 
 // Shared comparators
 function sameClassAndNode(
-  prev: { className?: string; node?: MarkdownNode },
-  next: { className?: string; node?: MarkdownNode }
+  prev: { className?: Signalish<string | undefined>; node?: MarkdownNode },
+  next: { className?: Signalish<string | undefined>; node?: MarkdownNode }
 ) {
   return (
     prev.className === next.className && sameNodePosition(prev.node, next.node)
@@ -92,7 +93,7 @@ const MemoLi = memo<LiProps>(
       {children}
     </li>
   ),
-  (p, n) => p.className === n.className && sameNodePosition(p.node, n.node)
+  (p, n) => sameClassAndNode(p, n)
 );
 MemoLi.displayName = "MarkdownLi";
 
@@ -624,7 +625,7 @@ const MemoCode = memo<
   DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> & ExtraProps
 >(
   CodeComponent,
-  (p, n) => p.className === n.className && sameNodePosition(p.node, n.node)
+  (p, n) => sameClassAndNode(p, n)
 );
 MemoCode.displayName = "MarkdownCode";
 
@@ -633,7 +634,7 @@ const MemoImg = memo<
     ExtraProps
 >(
   ImageComponent,
-  (p, n) => p.className === n.className && sameNodePosition(p.node, n.node)
+  (p, n) => sameClassAndNode(p, n)
 );
 
 MemoImg.displayName = "MarkdownImg";
