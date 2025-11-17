@@ -4,7 +4,8 @@ import type { ExtraProps } from "react-markdown";
 import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
 import { save } from "../utils/utils";
-import { InfoCard } from "./InfoCard";
+import { ContentBlock } from "./ContentBlock";
+import { Button } from "../../components/Button";
 
 function useDownloadImage({
   src,
@@ -94,26 +95,27 @@ export const ImageComponent = ({
   }
 
   return (
-    <InfoCard
-      containerClassName="inline-block self-auto"
-      data-streamdown="image-wrapper"
-      actions={[
-        {
-          icon: "download",
-          label: "Download",
-          onClick: downloadImage,
-          disabled,
-          "aria-label": "Download image",
-        },
-      ]}
-    >
-      <img
-        alt={alt}
-        className={cn("max-w-full", className)}
-        data-streamdown="image"
-        src={src}
-        {...props}
-      />
-    </InfoCard>
+    <ContentBlock className="inline-block self-auto" data-streamdown="image-wrapper">
+      <ContentBlock.Actions>
+        <Button
+          aria-label="Download image"
+          disabled={disabled}
+          icon="download"
+          onClick={downloadImage}
+          variant="md-button"
+        >
+          Download
+        </Button>
+      </ContentBlock.Actions>
+      <ContentBlock.Content>
+        <img
+          alt={alt}
+          className={cn("max-w-full", className)}
+          data-streamdown="image"
+          src={src}
+          {...props}
+        />
+      </ContentBlock.Content>
+    </ContentBlock>
   );
 };

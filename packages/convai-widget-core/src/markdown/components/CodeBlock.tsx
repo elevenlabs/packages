@@ -9,7 +9,8 @@ import {
 import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
 import { Code, languageParser } from "../utils/highlighter";
-import { InfoCard } from "./InfoCard";
+import { ContentBlock } from "./ContentBlock";
+import { Button } from "../../components/Button";
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
@@ -31,29 +32,29 @@ export const CodeBlock = ({
   
   return (
     <CodeBlockContext.Provider value={code}>
-      <InfoCard
-        actions={[
-          {
-            icon: isCopied.value ? "check" : "copy",
-            label: isCopied.value ? "Copied" : "Copy",
-            onClick: copyToClipboard,
-            disabled,
-            "aria-label": isCopied.value ? "Copied" : "Copy code",
-          },
-        ]}
-        className="overflow-x-auto"
-        data-code-block-container
-        data-language={language}
-      >
-        <div
-          className={cn("pt-1.5 pb-2", className)}
-          data-code-block
-          data-language={language}
-          {...rest}
-        >
-          <Code code={code} language={mappedLanguage} className={preClassName} />
-        </div>
-      </InfoCard>
+      <ContentBlock data-code-block-container data-language={language}>
+        <ContentBlock.Actions>
+          <Button
+            aria-label={isCopied.value ? "Copied" : "Copy code"}
+            disabled={disabled}
+            icon={isCopied.value ? "check" : "copy"}
+            onClick={copyToClipboard}
+            variant="md-button"
+          >
+            {isCopied.value ? "Copied" : "Copy"}
+          </Button>
+        </ContentBlock.Actions>
+        <ContentBlock.Content className="overflow-x-auto">
+          <div
+            className={cn("pt-1.5 pb-2", className)}
+            data-code-block
+            data-language={language}
+            {...rest}
+          >
+            <Code code={code} language={mappedLanguage} className={preClassName} />
+          </div>
+        </ContentBlock.Content>
+      </ContentBlock>
     </CodeBlockContext.Provider>
   );
 };

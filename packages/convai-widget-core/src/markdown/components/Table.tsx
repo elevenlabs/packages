@@ -1,6 +1,9 @@
-import { useContext, useEffect, useRef } from "preact/compat";
+import { HTMLAttributes, useContext, useEffect, useRef } from "preact/compat";
 import { useSignal } from "@preact/signals";
 import { StreamdownRuntimeContext } from "../index";
+import { Button } from "../../components/Button";
+import { ContentBlock } from "./ContentBlock";
+import { cn } from "../../utils/cn";
 
 function extractTableDataFromElement(tableElement: HTMLElement) {
   const headers: string[] = [];
@@ -124,3 +127,39 @@ export function useCopyTable({
     disabled: isAnimating,
   };
 }
+
+export const TableComponent = ({
+  children,
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableElement>) => {
+  const { isCopied, copyTableData, disabled } = useCopyTable();
+
+  return (
+    <ContentBlock data-streamdown="table-wrapper">
+      <ContentBlock.Actions>
+        <Button
+          aria-label={isCopied.value ? "Copied" : "Copy table as markdown"}
+          disabled={disabled}
+          icon={isCopied.value ? "check" : "copy"}
+          onClick={copyTableData}
+          variant="md-button"
+        >
+          {isCopied.value ? "Copied" : "Copy"}
+        </Button>
+      </ContentBlock.Actions>
+      <ContentBlock.Content className="overflow-x-auto">
+        <table
+          className={cn(
+            "w-full border-collapse border border-base-border",
+            className
+          )}
+          data-streamdown="table"
+          {...props}
+        >
+          {children}
+        </table>
+      </ContentBlock.Content>
+    </ContentBlock>
+  );
+};

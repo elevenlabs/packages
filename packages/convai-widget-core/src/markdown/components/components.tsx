@@ -13,8 +13,7 @@ import { cn } from "../../utils/cn";
 import type { Signalish } from "../../utils/signalish";
 import { CodeBlock } from "./CodeBlock";
 import { ImageComponent } from "./Image";
-import { InfoCard } from "./InfoCard";
-import { useCopyTable } from "./Table";
+import { TableComponent } from "./Table";
 
 const LANGUAGE_REGEX = /language-([^\s]+)/;
 
@@ -270,43 +269,11 @@ const MemoH6 = memo<HeadingProps<"h6">>(
 MemoH6.displayName = "MarkdownH6";
 
 type TableProps = WithNode<JSX.IntrinsicElements["table"]>;
-const TableComponent = ({
-  children,
-  className,
-  node,
-  ...props
-}: TableProps) => {
-  const { isCopied, copyTableData, disabled } = useCopyTable();
+const TableNode = ({ node, ...props }: TableProps) => (
+  <TableComponent {...props} />
+);
 
-  return (
-    <InfoCard
-      data-streamdown="table-wrapper"
-      actions={[
-        {
-          icon: isCopied.value ? "check" : "copy",
-          label: isCopied.value ? "Copied" : "Copy",
-          onClick: copyTableData,
-          disabled,
-          "aria-label": isCopied.value ? "Copied" : "Copy table as markdown",
-        },
-      ]}
-      className="overflow-x-auto"
-    >
-      <table
-        className={cn(
-          "w-full border-collapse border border-base-border",
-          className
-        )}
-        data-streamdown="table"
-        {...props}
-      >
-        {children}
-      </table>
-    </InfoCard>
-  );
-};
-
-const MemoTable = memo<TableProps>(TableComponent, (p, n) =>
+const MemoTable = memo<TableProps>(TableNode, (p, n) =>
   sameClassAndNode(p, n)
 );
 MemoTable.displayName = "MarkdownTable";
