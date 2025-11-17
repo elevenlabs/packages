@@ -12,8 +12,6 @@ import { components as defaultComponents } from "./components/components";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { cn } from "../utils/cn";
-import { Signalish } from "../utils/signalish";
-import { signal } from "@preact/signals";
 import { ParsersContext, parserConfig } from "./utils/highlighter";
 export { defaultUrlTransform } from "react-markdown";
 
@@ -37,16 +35,16 @@ const defaultRemarkPlugins: Record<string, Pluggable> = {
 export type StreamdownProps = Options & {
   parseIncompleteMarkdown?: boolean;
   className?: string;
-  isAnimating?: Signalish<boolean>;
+  isAnimating?: boolean;
 };
 
 export type StreamdownRuntimeContextType = {
-  isAnimating: Signalish<boolean>;
+  isAnimating: boolean;
 };
 
 export const StreamdownRuntimeContext =
   createContext<StreamdownRuntimeContextType>({
-    isAnimating: signal(false),
+    isAnimating: false,
   });
 
 type BlockProps = Options & {
@@ -75,7 +73,7 @@ export const WidgetStreamdown = memo(
     parseIncompleteMarkdown: shouldParseIncompleteMarkdown = true,
     components,
     className,
-    isAnimating = signal(false),
+    isAnimating = false,
     urlTransform = value => value,
     ...props
   }: StreamdownProps) => {

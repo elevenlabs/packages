@@ -68,6 +68,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             className={cn(
               "transition-[margin] duration-200",
               iconOnly && "-mx-0.5",
+              variant === "md-button" && "text-sm",
               iconClassName
             )}
             name={icon}
