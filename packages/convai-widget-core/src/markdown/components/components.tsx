@@ -10,7 +10,7 @@ import {
 } from "preact/compat";
 import type { ExtraProps, Options } from "react-markdown";
 import { cn } from "../../utils/cn";
-import { CodeBlock, type SupportedLanguage, useCopyCode } from "./CodeBlock";
+import { CodeBlock } from "./CodeBlock";
 import { ImageComponent } from "./Image";
 import { InfoCard } from "./InfoCard";
 import { useCopyTable } from "./Table";
@@ -591,7 +591,7 @@ const CodeComponent = ({
 
   const match =
     typeof className === "string" ? className.match(LANGUAGE_REGEX) : null;
-  const language = (match?.at(1) ?? "") as SupportedLanguage;
+  const language = (match?.at(1) ?? "");
 
   // Extract code content from children safely
   let code = "";
@@ -609,8 +609,6 @@ const CodeComponent = ({
     code = children;
   }
 
-  const { isCopied, copyToClipboard, disabled } = useCopyCode({ code });
-
   return (
     <CodeBlock
       code={code}
@@ -618,15 +616,6 @@ const CodeComponent = ({
       data-streamdown="code-block"
       language={language}
       preClassName="font-mono text-[13px] px-4 py-1.5"
-      actions={[
-        {
-          icon: isCopied.value ? "check" : "copy",
-          label: isCopied.value ? "Copied" : "Copy",
-          onClick: copyToClipboard,
-          disabled,
-          "aria-label": isCopied.value ? "Copied" : "Copy code",
-        },
-      ]}
     />
   );
 };

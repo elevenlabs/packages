@@ -14,6 +14,7 @@ import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { cn } from "../utils/cn";
 import { Signalish } from "../utils/signalish";
 import { signal } from "@preact/signals";
+import { ParsersContext, parserConfig } from "./utils/highlighter";
 export { defaultUrlTransform } from "react-markdown";
 
 const defaultRehypePlugins: Record<string, Pluggable> = {
@@ -85,25 +86,27 @@ export const WidgetStreamdown = memo(
       [children]
     );
     return (
-      <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-        <div className={cn("px-2", className)}>
-          {blocks.map((block, index) => (
-            <Block
-              components={{
-                ...defaultComponents,
-                ...components,
-              }}
-              content={block}
-              key={`${generatedId}-block-${index}`}
-              rehypePlugins={Object.values(defaultRehypePlugins)}
-              remarkPlugins={Object.values(defaultRemarkPlugins)}
-              shouldParseIncompleteMarkdown={shouldParseIncompleteMarkdown}
-              urlTransform={urlTransform}
-              {...props}
-            />
-          ))}
-        </div>
-      </StreamdownRuntimeContext.Provider>
+      <ParsersContext.Provider value={parserConfig}>
+        <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
+          <div className={cn("px-2", className)}>
+            {blocks.map((block, index) => (
+              <Block
+                components={{
+                  ...defaultComponents,
+                  ...components,
+                }}
+                content={block}
+                key={`${generatedId}-block-${index}`}
+                rehypePlugins={Object.values(defaultRehypePlugins)}
+                remarkPlugins={Object.values(defaultRemarkPlugins)}
+                shouldParseIncompleteMarkdown={shouldParseIncompleteMarkdown}
+                urlTransform={urlTransform}
+                {...props}
+              />
+            ))}
+          </div>
+        </StreamdownRuntimeContext.Provider>
+      </ParsersContext.Provider>
     );
   },
   (prevProps, nextProps) =>

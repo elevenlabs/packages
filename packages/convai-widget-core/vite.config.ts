@@ -24,12 +24,8 @@ export default defineConfig({
         id.startsWith("@preact") ||
         id.startsWith("@elevenlabs") ||
         id.startsWith("react-markdown") ||
-        id.startsWith("shiki") ||
-        id.startsWith("@shikijs") ||
-        id.startsWith("marked") ||
-        id === "clsx" ||
-        id === "tailwind-merge" ||
-        id === "streamdown",
+        id.startsWith("@lezer") ||
+        id.startsWith("marked")
     },
   },
   plugins: [preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],
