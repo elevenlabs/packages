@@ -15,6 +15,9 @@ const ICON_MAP = {
   copy: CopyIcon,
   download: DownloadIcon,
   wrap: WrapTextIcon,
+  paperclip: PaperclipIcon,
+  maximize: MaximizeIcon,
+  minimize: MinimizeIcon,
 };
 
 const SIZE_CLASSES = {
@@ -276,6 +279,25 @@ function WrapTextIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
+function PaperclipIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      height="1em"
+      width="1em"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      {...props}
+    >
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M9.16667 4.58268C9.16667 2.97185 10.4725 1.66602 12.0833 1.66602C13.6942 1.66602 15 2.97185 15 4.58268V13.3327C15 16.0941 12.7614 18.3327 10 18.3327C7.23858 18.3327 5 16.0941 5 13.3327V7.49935C5 7.03911 5.3731 6.66601 5.83333 6.66601C6.29357 6.66601 6.66667 7.03911 6.66667 7.49935V13.3327C6.66667 15.1736 8.15905 16.666 10 16.666C11.8409 16.666 13.3333 15.1736 13.3333 13.3327V4.58268C13.3333 3.89233 12.7737 3.33268 12.0833 3.33268C11.393 3.33268 10.8333 3.89233 10.8333 4.58268V12.4993C10.8333 12.9596 10.4602 13.3327 10 13.3327C9.53976 13.3327 9.16667 12.9596 9.16667 12.4993V4.58268Z"
+      />
+    </svg>
+  );
+}
+
 export function FeedbackIcon({
   orbColor,
   circleBackgroundColor,
@@ -387,5 +409,49 @@ export function FeedbackIcon({
         </defs>
       </svg>
     </slot>
+  );
+}
+
+function MaximizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M15 3h6v6" />
+      <path d="m21 3-7 7" />
+      <path d="m3 21 7-7" />
+      <path d="M9 21H3v-6" />
+    </svg>
+  );
+}
+
+function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="m14 10 7-7" />
+      <path d="M20 10h-6V4" />
+      <path d="m3 21 7-7" />
+      <path d="M4 14h6v6" />
+    </svg>
   );
 }

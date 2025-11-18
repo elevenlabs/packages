@@ -44,7 +44,7 @@ function MessageBubble({ entry }: MessageBubbleProps) {
             : "bg-base-active text-base-primary"
         )}
       >
-        {entry.message}
+        <WidgetStreamdown>{entry.message}</WidgetStreamdown>
       </div>
     </div>
   );
