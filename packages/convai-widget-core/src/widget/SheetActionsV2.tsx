@@ -48,8 +48,8 @@ export function SheetActionsV2({
   return (
     <div className="bg-base flex flex-col px-2 pt-1 pb-2 w-full shrink-0 relative z-20">
       <div
-        className={`bg-base flex flex-col gap-2 items-center justify-end p-3 rounded-sheet shadow-header w-full transition-shadow ${
-          isFocused.value ? "ring-2 ring-accent ring-offset-2" : ""
+        className={`bg-base flex flex-col gap-2 items-center justify-end p-3 rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow ${
+          isFocused.value ? "ring-2 ring-accent" : ""
         }`}
       >
         <div className="relative w-full max-h-[68px] overflow-y-auto">
@@ -71,7 +71,7 @@ export function SheetActionsV2({
                 icon="paperclip"
                 onClick={onAttachmentClick}
                 variant="secondary"
-                className="!rounded-full shadow-header !w-10 !h-10 !min-w-10 !px-0"
+                className="!rounded-full shadow-natural-sm !w-10 !h-10 !min-w-10 !px-0 border-0"
                 aria-label="Attach file"
               />
             )}
@@ -81,15 +81,15 @@ export function SheetActionsV2({
               icon="phone"
               onClick={onPhoneClick}
               variant="secondary"
-              className="!rounded-full shadow-header !w-10 !h-10 !min-w-10 !px-0"
+              className="!rounded-full shadow-natural-sm !w-10 !h-10 !min-w-10 !px-0 border-0"
               aria-label={text.start_call.value}
             />
           )}
           <Button
             icon="send"
             onClick={handleSendMessage}
-            variant="secondary"
-            className="!rounded-full shadow-header !w-10 !h-10 !min-w-10 !px-0 !bg-base-primary !border-base-primary opacity-50 hover:opacity-60 active:opacity-70 !transition-opacity"
+            variant="primary"
+            className="!rounded-full shadow-natural-sm !w-10 !h-10 !min-w-10 !px-0 !bg-base-primary !border-base-primary opacity-50 hover:opacity-60 active:opacity-70 !transition-opacity"
             iconClassName="-rotate-90 !text-base"
             aria-label={text.send_message.value}
           />

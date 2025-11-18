@@ -64,6 +64,7 @@ export function SheetHeader({
             <Icon
               name={variant.value === "compact" ? "maximize" : "minimize"}
               size="sm"
+              className="!text-[14px]"
             />
           </Button>
         )}

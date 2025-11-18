@@ -99,8 +99,8 @@ export const DefaultTextContents = {
   chatting_status: "Chatting with AI Agent",
 
   input_label: "Text message input",
-  input_placeholder: "Send a message",
-  input_placeholder_text_only: "Send a message",
+  input_placeholder: "Send a message...",
+  input_placeholder_text_only: "Send a message...",
   input_placeholder_new_conversation: "Start a new conversation",
 
   user_ended_conversation: "You ended the conversation",
