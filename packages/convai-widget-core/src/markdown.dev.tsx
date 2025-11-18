@@ -14,6 +14,12 @@ import { TranscriptScrollArea } from "./components/TranscriptScrollArea";
 import { SheetHeader } from "./widget/SheetHeader";
 import { clsx } from "clsx";
 import { WidgetSizeProvider, useWidgetSize } from "./contexts/widget-size";
+import { Avatar } from "./components/Avatar";
+import { MicConfigProvider } from "./contexts/mic-config";
+import { SessionConfigProvider } from "./contexts/session-config";
+import { ConversationProvider } from "./contexts/conversation";
+import { AvatarConfigProvider } from "./contexts/avatar-config";
+import { TermsProvider } from "./contexts/terms";
 
 const STORAGE_KEY = "markdown-playground-text";
 const DEFAULT_TEXT =
@@ -65,10 +71,13 @@ function WidgetPreview({
     >
       <div
         className={clsx(
-          "flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out",
+          "flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative",
           variants.content
         )}
       >
+        <div className="absolute top-4 left-4 scale-[0.1667] origin-top-left z-10">
+          <Avatar size="lg" />
+        </div>
         <SheetHeader
           showBackButton={false}
           showStatusLabel={false}
@@ -153,11 +162,16 @@ function MarkdownPlayground() {
       >
         <ServerLocationProvider>
           <WidgetConfigProvider>
-            <LanguageConfigProvider>
-              <TextContentsProvider>
-                <WidgetSizeProvider>
-                  <Style />
-                  <div className="w-screen h-screen flex bg-base-hover text-base-primary">
+            <TermsProvider>
+              <LanguageConfigProvider>
+                <MicConfigProvider>
+                  <SessionConfigProvider>
+                    <ConversationProvider>
+                    <TextContentsProvider>
+                      <AvatarConfigProvider>
+                        <WidgetSizeProvider>
+                          <Style />
+                          <div className="w-screen h-screen flex bg-base-hover text-base-primary">
                     <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
                       <h2 className="text-xl font-medium mb-4">Input</h2>
                       <textarea
@@ -186,9 +200,14 @@ function MarkdownPlayground() {
                     isStreaming={isStreaming}
                     scrollAreaRef={scrollAreaRef}
                   />
-                </WidgetSizeProvider>
-              </TextContentsProvider>
+                        </WidgetSizeProvider>
+                      </AvatarConfigProvider>
+                    </TextContentsProvider>
+                  </ConversationProvider>
+                </SessionConfigProvider>
+              </MicConfigProvider>
             </LanguageConfigProvider>
+          </TermsProvider>
           </WidgetConfigProvider>
         </ServerLocationProvider>
       </AttributesProvider>
