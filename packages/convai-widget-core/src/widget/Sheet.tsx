@@ -1,4 +1,4 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -80,10 +80,10 @@ export function Sheet({ open }: SheetProps) {
   const showTranscript =
     filteredTranscript.value.length > 0 ||
     (!isDisconnected.value && config.value.transcript_enabled);
+  
   const scrollPinned = useSignal(true);
   const showAvatar = currentContent.value !== "feedback";
 
-  
   return (
     <InOutTransition initial={false} active={open}>
       <div
@@ -119,9 +119,9 @@ export function Sheet({ open }: SheetProps) {
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
             />
-            <SheetActions
-              scrollPinned={scrollPinned}
+            <SheetActionsV2
               showTranscript={showTranscript}
+              scrollPinned={scrollPinned}
             />
           </div>
         </InOutTransition>
@@ -133,7 +133,7 @@ export function Sheet({ open }: SheetProps) {
         </InOutTransition>
         <InOutTransition active={showAvatar}>
           <div
-            className={clsx(
+            className={cn(
               "absolute origin-top-left transition-[transform,left,top,opacity,scale] duration-200 z-1",
               "data-hidden:opacity-0",
               showTranscript
