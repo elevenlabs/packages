@@ -1,6 +1,7 @@
 import { render } from "preact";
 import { jsx } from "preact/jsx-runtime";
 import { useState, useEffect, useRef } from "preact/compat";
+import { useSignal } from "@preact/signals";
 import { Style } from "./styles/Style";
 import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
@@ -60,6 +61,7 @@ function WidgetPreview({
   scrollAreaRef: React.RefObject<HTMLDivElement>;
 }) {
   const { variant } = useWidgetSize();
+  const scrollPinned = useSignal(true);
 
   return (
     <div
@@ -90,7 +92,7 @@ function WidgetPreview({
             </WidgetStreamdown>
           </TranscriptScrollArea>
         </div>
-        <SheetActionsV2 />
+        <SheetActionsV2 showTranscript={true} scrollPinned={scrollPinned} />
       </div>
     </div>
   );
