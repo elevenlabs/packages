@@ -2,6 +2,7 @@ import { ReadonlySignal, Signal, useSignalEffect } from "@preact/signals";
 import { TranscriptEntry } from "../contexts/conversation";
 import { useEffect, useRef } from "preact/compat";
 import { TranscriptMessage } from "./TranscriptMessage";
+import { ScrollArea } from "../components/TranscriptScrollArea";
 
 const SCROLL_PIN_PADDING = 16;
 
@@ -35,7 +36,8 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     // If we're very close, snap to bottom andkeep the animation running during streaming to handle new content
     if (Math.abs(distance) < 1) {
       container.scrollTop = maxScroll;
-      scrollAnimationFrame.current = requestAnimationFrame(smoothScrollToTarget);
+      scrollAnimationFrame.current =
+        requestAnimationFrame(smoothScrollToTarget);
       return;
     }
 
@@ -52,7 +54,8 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
 
     if (!isScrolling.current) {
       isScrolling.current = true;
-      scrollAnimationFrame.current = requestAnimationFrame(smoothScrollToTarget);
+      scrollAnimationFrame.current =
+        requestAnimationFrame(smoothScrollToTarget);
     }
   };
 
@@ -73,14 +76,15 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     if (!scrollPinned.peek()) return;
 
     const lastEntry = currentTranscript[currentTranscript.length - 1];
-    const isStreaming = lastEntry?.type === "message" &&
-                        lastEntry?.role === "ai" &&
-                        lastEntry?.isText === true;
+    const isStreaming =
+      lastEntry?.type === "message" &&
+      lastEntry?.role === "ai" &&
+      lastEntry?.isText === true;
 
     if (isStreaming) {
       const currentLength = lastEntry.message?.length || 0;
 
-      // On first chunk (the start chunk), wait 
+      // On first chunk (the start chunk), wait
       if (lastMessageLength.current === 0 && currentLength > 0) {
         lastMessageLength.current = currentLength;
         userInterrupted.current = false;
@@ -94,8 +98,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
             }
           });
         });
-      }
-      else if (currentLength > lastMessageLength.current) {
+      } else if (currentLength > lastMessageLength.current) {
         lastMessageLength.current = currentLength;
         startSmoothScroll();
       }
@@ -112,36 +115,19 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   });
 
   return (
-    <div
-      ref={scrollContainer}
-      onScroll={e => {
-        const isAtBottom =
-          e.currentTarget.scrollTop >=
-          e.currentTarget.scrollHeight -
-            e.currentTarget.clientHeight -
-            SCROLL_PIN_PADDING;
-
-        scrollPinned.value = isAtBottom;
-
-        // If user scrolls away from bottom while streaming, stop the animation
-        if (!isAtBottom && isScrolling.current) {
-          userInterrupted.current = true;
-          isScrolling.current = false;
-          if (scrollAnimationFrame.current) {
-            cancelAnimationFrame(scrollAnimationFrame.current);
-            scrollAnimationFrame.current = null;
-          }
-        }
-      }}
-      className="px-4 py-4 grow flex flex-col gap-6 overflow-x-hidden overflow-y-auto"
+    <ScrollArea
+      orientation="vertical"
+      className="px-4 pb-4 pt-4 grow"
     >
-      {transcript.value.map((entry, index) => (
-        <TranscriptMessage
-          key={`${index}-${entry.conversationIndex}`}
-          entry={entry}
-          animateIn={!firstRender.current}
-        />
-      ))}
-    </div>
+      <div ref={scrollContainer} className="flex flex-col gap-6">
+        {transcript.value.map((entry, index) => (
+          <TranscriptMessage
+            key={`${index}-${entry.conversationIndex}`}
+            entry={entry}
+            animateIn={!firstRender.current}
+          />
+        ))}
+      </div>
+    </ScrollArea>
   );
 }

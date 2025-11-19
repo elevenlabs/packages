@@ -26,7 +26,8 @@
     "Helvetica Neue",
     sans-serif;
 
-  scrollbar-color: #e5e7eb transparent;
+  --scrollbar-color: #e5e7eb;
+  scrollbar-color: var(--scrollbar-color) transparent;
 }
 
 @layer utilities {
