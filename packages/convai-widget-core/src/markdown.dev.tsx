@@ -59,21 +59,15 @@ function WidgetPreview({
   isStreaming: boolean;
   scrollAreaRef: React.RefObject<HTMLDivElement>;
 }) {
-  const { variants } = useWidgetSize();
+  const { variant } = useWidgetSize();
 
   return (
     <div
-      className={clsx(
-        "fixed bottom-8 right-8 transition-all duration-300 ease-out",
-        variants.origin,
-        variants.container
-      )}
+      data-variant={variant.value}
+      className="sheet fixed bottom-8 right-8 transition-all duration-300 ease-out"
     >
       <div
-        className={clsx(
-          "flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative",
-          variants.content
-        )}
+        className="flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative"
       >
         <div className="absolute top-4 left-4 scale-[0.1667] origin-top-left z-10">
           <Avatar size="lg" />

@@ -66,7 +66,14 @@ export default {
     },
     zIndex: {
       1: "1",
+      2: "2",
       10: "10",
+    },
+    maxWidth: {
+      dvw: "100dvw",
+    },
+    maxHeight: {
+      dvh: "100dvh",
     },
   },
   plugins: [],
