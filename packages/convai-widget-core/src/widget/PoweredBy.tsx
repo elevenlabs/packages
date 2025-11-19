@@ -11,7 +11,7 @@ export function PoweredBy() {
   return (
     <p
       className={clsx(
-        "whitespace-nowrap [line-height:var(--el-overlay-padding)] text-[10px] px-3",
+        "whitespace-nowrap [line-height:var(--el-overlay-padding)] text-[10px] px-3 z-10",
         config.value.placement.startsWith("top")
           ? "-translate-y-[calc(var(--el-overlay-padding))]"
           : "translate-y-[calc(var(--el-overlay-padding))]"

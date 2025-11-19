@@ -43,6 +43,28 @@
     @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
   }
 
+  [data-variant="compact"] {
+    &.sheet {
+      @apply rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px];
+    }
+  }
+
+  [data-variant="expanded"] {
+    &.sheet {
+      @apply rounded-sheet w-full max-w-[600px] h-full max-h-[calc(100%-80px)];
+    }
+  }
+
+  [data-variant="fullscreen"] {
+    &.sheet {
+      @apply rounded-none w-full max-w-dvw h-full max-h-dvh bottom-0 pb-6;
+      /* Bleed to fill the entire viewport */
+      margin: calc(-1 * var(--el-overlay-padding));
+      width: calc(100% + 2 * var(--el-overlay-padding));
+      height: calc(100% + 2 * var(--el-overlay-padding));
+    }
+  }
+
   .animate-text {
     background-image: linear-gradient(
       75deg,
@@ -96,11 +118,15 @@
   /* for better non-latin text rendering https://developer.chrome.com/blog/css-i18n-features */
   text-autospace: normal;
   text-spacing-trim: trim-start;
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     word-break: auto-phrase;
   }
 }
-
 
 /* Syntax highlighting token styles - GitHub Light theme */
 .tok-comment {

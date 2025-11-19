@@ -7,7 +7,7 @@ import {
 } from "../contexts/widget-config";
 import { TranscriptEntry, useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
-import { clsx } from "clsx";
+import { cn } from "../utils/cn";
 import { Avatar } from "../components/Avatar";
 import { Button } from "../components/Button";
 import { StatusLabel } from "./StatusLabel";
@@ -20,6 +20,8 @@ import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
+import { useWidgetSize } from "../contexts/widget-size";
+import { SheetActionsV2 } from "./SheetActionsV2";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -44,6 +46,7 @@ export function Sheet({ open }: SheetProps) {
     useConversation();
   const firstMessage = useFirstMessage();
   const { currentContent, currentConfig } = useSheetContent();
+  const { variant } = useWidgetSize();
 
   const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
     if (textOnly.value || isConversationTextOnly.value) {
@@ -80,12 +83,16 @@ export function Sheet({ open }: SheetProps) {
   const scrollPinned = useSignal(true);
   const showAvatar = currentContent.value !== "feedback";
 
+  
   return (
     <InOutTransition initial={false} active={open}>
       <div
-        className={clsx(
-          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
-          "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
+        data-variant={variant.value}
+        className={cn(
+          "sheet",
+          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto z-2",
+          "transition-[width,height,max-width,max-height,transform,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
+          "data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top")
             ? config.value.always_expanded
