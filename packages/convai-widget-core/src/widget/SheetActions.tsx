@@ -106,7 +106,12 @@ export function SheetActions({
         </div>
       )}
       <div className="flex h-11 items-center">
-        <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
+        <SizeTransition
+          visible={!textOnly.value && !isDisconnected.value}
+          className="p-1"
+        >
+          <TriggerMuteButton />
+        </SizeTransition>
         <SizeTransition
           visible={!isDisconnected.value || showTranscript}
           className="p-1"
