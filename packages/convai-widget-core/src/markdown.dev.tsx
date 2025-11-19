@@ -83,12 +83,12 @@ function WidgetPreview({
         <div className="grow flex flex-col min-h-0 overflow-hidden">
           <ScrollArea
             orientation="vertical"
-            className="flex-1"
+            className="flex-1 px-4 pt-4 pb-4"
           >
-            <div ref={scrollAreaRef} className="px-4 py-4">
-            <WidgetStreamdown isAnimating={isStreaming}>
-              {displayText}
-            </WidgetStreamdown>
+            <div ref={scrollAreaRef}>
+              <WidgetStreamdown isAnimating={isStreaming}>
+                {displayText}
+              </WidgetStreamdown>
             </div>
           </ScrollArea>
         </div>

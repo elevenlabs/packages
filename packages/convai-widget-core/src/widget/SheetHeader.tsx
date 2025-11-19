@@ -26,7 +26,7 @@ export function SheetHeader({
 
   return (
     <div
-      className="bg-base shrink-0 relative"
+      className="bg-base shrink-0 relative z-20"
     >
       <div className="flex gap-2 p-4 items-start justify-between">
         <div className="flex gap-2 items-start">
