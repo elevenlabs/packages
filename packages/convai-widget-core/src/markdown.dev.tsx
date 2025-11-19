@@ -77,7 +77,6 @@ function WidgetPreview({
         <SheetHeader
           showBackButton={false}
           showStatusLabel={false}
-          showShadow={true}
           showLanguageSelector={true}
           showExpandButton={true}
         />
@@ -87,9 +86,9 @@ function WidgetPreview({
             className="flex-1"
           >
             <div ref={scrollAreaRef} className="px-4 py-4">
-              <WidgetStreamdown isAnimating={isStreaming}>
-                {displayText}
-              </WidgetStreamdown>
+            <WidgetStreamdown isAnimating={isStreaming}>
+              {displayText}
+            </WidgetStreamdown>
             </div>
           </ScrollArea>
         </div>

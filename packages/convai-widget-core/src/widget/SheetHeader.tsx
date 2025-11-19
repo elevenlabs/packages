@@ -1,4 +1,3 @@
-import { clsx } from "clsx";
 import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
@@ -11,7 +10,6 @@ interface SheetHeaderProps {
   showBackButton: boolean;
   onBackClick?: () => void;
   showStatusLabel: boolean;
-  showShadow: boolean;
   showLanguageSelector: boolean;
   showExpandButton?: boolean;
 }
@@ -20,7 +18,6 @@ export function SheetHeader({
   showBackButton,
   onBackClick,
   showStatusLabel,
-  showShadow,
   showLanguageSelector,
   showExpandButton = true,
 }: SheetHeaderProps) {
@@ -29,10 +26,7 @@ export function SheetHeader({
 
   return (
     <div
-      className={clsx(
-        "bg-base shrink-0 relative",
-        showShadow && "shadow-header"
-      )}
+      className="bg-base shrink-0 relative"
     >
       <div className="flex gap-2 p-4 items-start justify-between">
         <div className="flex gap-2 items-start">

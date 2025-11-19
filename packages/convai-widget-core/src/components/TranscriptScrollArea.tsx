@@ -10,10 +10,24 @@ function ScrollArea({
   orientation?: "horizontal" | "vertical" | "both";
 }) {
   return (
-    <ScrollAreaPrimitive.Root className="min-h-0" {...props}>
+    <ScrollAreaPrimitive.Root className="grow min-h-0" {...props}>
       <ScrollAreaPrimitive.Viewport
         className={cn(
           "size-full overscroll-contain rounded-[inherit] outline-none transition-[box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "before:[--scroll-area-overflow-y-start:inherit]",
+          "before:content-['']",
+          "before:block",
+          "before:absolute",
+          "before:left-0",
+          "before:w-full",
+          "before:pointer-events-none",
+          "before:transition-[height]",
+          "before:duration-100",
+          "before:ease-out",
+          "before:top-0",
+          "before:bg-[linear-gradient(to_bottom,var(--el-base),transparent)]",
+          "before:[height:min(40px,var(--scroll-area-overflow-y-start))]",
+          "before:z-10",
           className,
         )}
         data-slot="scroll-area-viewport"
