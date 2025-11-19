@@ -107,7 +107,6 @@ export function Sheet({ open }: SheetProps) {
           showBackButton={currentConfig.showHeaderBack}
           onBackClick={currentConfig.onHeaderBack}
           showStatusLabel={showTranscript && !isDisconnected.value}
-          showShadow={showTranscript}
           showLanguageSelector={
             currentContent.value !== "feedback" &&
             (!showTranscript || isDisconnected.value)

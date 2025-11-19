@@ -57,7 +57,7 @@ export function SheetActionsV2({
   );
 
   return (
-    <div className="bg-base flex flex-col gap-2 p-3 w-full shrink-0 relative z-20">
+    <div className="bg-[transparent] flex flex-col gap-2 px-3 pb-3 w-full shrink-0 relative z-20">
       {text_input_enabled && (
         <div
           className={cn(

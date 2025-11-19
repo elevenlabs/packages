@@ -117,9 +117,9 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   return (
     <ScrollArea
       orientation="vertical"
-      className="px-4 pb-4 pt-4 grow"
+      className="px-4 pb-4 grow"
     >
-      <div ref={scrollContainer} className="flex flex-col gap-6">
+      <div ref={scrollContainer} className="flex flex-col gap-6 pt-4">
         {transcript.value.map((entry, index) => (
           <TranscriptMessage
             key={`${index}-${entry.conversationIndex}`}
