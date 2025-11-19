@@ -28,7 +28,7 @@ function ContentBlockActions({ children, className, ...props }: ContentBlockActi
   return (
     <div
       className={cn(
-        "absolute top-1 right-1 z-10 flex items-center gap-1 transition-opacity duration-200 ease-out opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
+        "absolute top-1 right-1 z-10 flex items-center gap-1 transition-opacity duration-200 ease-out opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto",
         className
       )}
       {...props}
