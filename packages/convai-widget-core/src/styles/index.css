@@ -92,6 +92,16 @@
   }
 }
 
+.markdown {
+  /* for better non-latin text rendering https://developer.chrome.com/blog/css-i18n-features */
+  text-autospace: normal;
+  text-spacing-trim: trim-start;
+  h1, h2, h3, h4, h5, h6 {
+    word-break: auto-phrase;
+  }
+}
+
+
 /* Syntax highlighting token styles - GitHub Light theme */
 .tok-comment {
   color: #6a737d;
