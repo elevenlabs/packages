@@ -1,17 +1,15 @@
 import { useSignal } from "@preact/signals";
 import {
   createContext,
-  useContext,
-  useEffect,
-  useRef,
   type HTMLAttributes,
 } from "preact/compat";
+import { useCallback, useContext, useEffect, useRef } from "preact/hooks";
+import { Button } from "../../components/Button";
+import { useTextContents } from "../../contexts/text-contents";
 import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
 import { Code, languageParser } from "../utils/highlighter";
 import { ContentBlock } from "./ContentBlock";
-import { Button } from "../../components/Button";
-import { useTextContents } from "../../contexts/text-contents";
 
 type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string;
@@ -96,7 +94,7 @@ function useCopyCode({
   const { isAnimating } = useContext(StreamdownRuntimeContext);
   const code = propCode ?? contextCode;
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
       onError?.(new Error("Clipboard API not available"));
       return;
@@ -114,7 +112,7 @@ function useCopyCode({
     } catch (error) {
       onError?.(error as Error);
     }
-  };
+  }, [code, isCopied, onCopy, onError, timeout]);
 
   useEffect(() => {
     return () => {

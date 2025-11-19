@@ -1,10 +1,10 @@
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
+import { memo } from "preact/compat";
 import { Fragment, jsx, jsxs } from "preact/jsx-runtime";
 
 import { fromLezer } from "hast-util-from-lezer";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import { cn } from "../../utils/cn";
 
 import { parser as htmlParser } from "@lezer/html";
 import { parser as javascriptParser } from "@lezer/javascript";
@@ -59,7 +59,7 @@ export interface CodeProps {
   language?: string;
 }
 
-export const Code = (props: CodeProps) => {
+export const Code = memo((props: CodeProps) => {
   const parsers = useContext(ParsersContext);
 
   if (props.language === undefined || parsers[props.language] === undefined) {
@@ -71,5 +71,5 @@ export const Code = (props: CodeProps) => {
   const root = fromLezer(props.code, tree);
   const content = toJsxRuntime(root, { Fragment, jsx, jsxs });
   return <>{content}</>;
-};
+});
 
