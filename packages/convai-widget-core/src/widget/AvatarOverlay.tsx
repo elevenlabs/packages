@@ -5,7 +5,7 @@ import { Button } from "../components/Button";
 import { InOutTransition } from "../components/InOutTransition";
 import { StatusLabel } from "./StatusLabel";
 import { useTextContents } from "../contexts/text-contents";
-import { useWidgetConfig, useTextOnly } from "../contexts/widget-config";
+import { useTextOnly, useTextInputEnabled } from "../contexts/widget-config";
 
 export function AvatarOverlay({
   showAvatar,
@@ -19,7 +19,7 @@ export function AvatarOverlay({
   onStartSession: (element: HTMLElement) => void;
 }) {
   const text = useTextContents();
-  const { text_input_enabled } = useWidgetConfig().value;
+  const textInputEnabled = useTextInputEnabled();
   const textOnly = useTextOnly();
 
   const containerClassName = useComputed(() =>
@@ -28,7 +28,7 @@ export function AvatarOverlay({
       "data-hidden:opacity-0",
       showTranscript.value
         ? "top-4 left-4 scale-[0.1667]"
-        : text_input_enabled
+        : textInputEnabled.value
           ? "top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
           : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
     )

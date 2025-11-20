@@ -1,43 +1,32 @@
+import { Signal, useComputed, useSignal } from "@preact/signals";
 import {
   KeyboardEventHandler,
   TargetedEvent,
   useCallback,
 } from "preact/compat";
-import { Signal, useComputed, useSignal } from "@preact/signals";
-import { useTextContents } from "../contexts/text-contents";
 import { Button } from "../components/Button";
+import { SizeTransition } from "../components/SizeTransition";
 import { useConversation } from "../contexts/conversation";
+import { useTextContents } from "../contexts/text-contents";
 import {
   useIsConversationTextOnly,
-  useWidgetConfig,
+  useTextInputEnabled,
 } from "../contexts/widget-config";
-import { TriggerMuteButton } from "./TriggerMuteButton";
-import { CallButton } from "./CallButton";
-import { SizeTransition } from "../components/SizeTransition";
 import { cn } from "../utils/cn";
-import { useSheetContent } from "../contexts/sheet-content";
-
-interface SheetActionsV2Props {
-  showTranscript: boolean;
-  scrollPinned: Signal<boolean>;
-}
+import { CallButton } from "./CallButton";
+import { TriggerMuteButton } from "./TriggerMuteButton";
 
 export function SheetActionsV2({
   showTranscript,
   scrollPinned,
-}: SheetActionsV2Props) {
-  const { text_input_enabled } = useWidgetConfig().value;
+}: {
+  showTranscript: boolean;
+  scrollPinned: Signal<boolean>;
+}) {
+  const textInputEnabled = useTextInputEnabled();
   const userMessage = useSignal("");
   const isFocused = useSignal(false);
-  const textOnly = useIsConversationTextOnly();
-  const { isDisconnected, status, startSession, sendUserMessage } =
-    useConversation();
-
-  // Determine button visibility based on conversation state
-  const showMuteButton = useComputed(() => {
-    // Only show mute button when connected and not text-only
-    return !textOnly.value && !isDisconnected.value;
-  });
+  const { isDisconnected, startSession, sendUserMessage } = useConversation();
 
   const handleSendMessage = useCallback(
     async (e: TargetedEvent<HTMLElement>) => {
@@ -58,9 +47,9 @@ export function SheetActionsV2({
 
   return (
     <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10">
-      <div className="absolute bottom-0 left-4 right-4 h-14 bg-base" />
+      <div className="absolute bottom-0 left-0 right-4 h-14 bg-base" />
       <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto">
-        {text_input_enabled && (
+        {textInputEnabled.value && (
           <div
             className={cn(
               "bg-base flex flex-col rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
@@ -81,7 +70,7 @@ export function SheetActionsV2({
             </div>
           </div>
         )}
-        {!text_input_enabled && (
+        {!textInputEnabled.value && (
           <div className="w-full flex gap-1.5 items-center justify-end">
             <SheetButtons
               userMessage={userMessage}
@@ -165,31 +154,33 @@ function SheetButtons({
 }) {
   const text = useTextContents();
   const textOnly = useIsConversationTextOnly();
-  const { text_input_enabled } = useWidgetConfig().value;
+  const textInputEnabled = useTextInputEnabled();
   const { isDisconnected, status } = useConversation();
 
   const showSendButton = useComputed(() => !!userMessage.value.trim());
-
   const showSendButtonControl = useComputed(() => {
-    return text_input_enabled;
+    return textInputEnabled.value;
+  });
+  const showCallButton = useComputed(() => {
+    return !isDisconnected.value || showTranscript;
+  });
+  const showMuteButton = useComputed(() => {
+    return !textOnly.value && !isDisconnected.value;
   });
 
   return (
     <>
-      <SizeTransition
-        visible={!textOnly.value && !isDisconnected.value}
-        className="p-1"
-      >
-        <TriggerMuteButton className="shadow-natural-sm !border-0 !bg-base !text-base-primary hover:!bg-base-hover active:!bg-base-active" />
+      <SizeTransition visible={showMuteButton.value} className="p-1">
+        <TriggerMuteButton className="shadow-natural-sm border-0 bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>
-      <SizeTransition visible={!isDisconnected.value || showTranscript}>
+      <SizeTransition visible={showCallButton.value}>
         <CallButton
           iconOnly
           isDisconnected={isDisconnected.value}
           disabled={
             status.value === "disconnecting" || status.value === "connecting"
           }
-          className="shadow-natural-sm !border-0 !bg-base !text-base-primary hover:!bg-base-hover active:!bg-base-active"
+          className="shadow-natural-sm border-0 bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />
       </SizeTransition>
       {showSendButtonControl.value && (
