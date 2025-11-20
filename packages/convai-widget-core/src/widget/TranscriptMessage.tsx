@@ -15,14 +15,10 @@ interface TranscriptMessageProps {
 
 function AgentMessageBubble({
   entry,
-  animateIn,
 }: {
   entry: Extract<TranscriptEntry, { type: "message" }>;
-  animateIn: boolean;
 }) {
-  return (
-    <WidgetStreamdown isAnimating={animateIn}>{entry.message}</WidgetStreamdown>
-  );
+  return <WidgetStreamdown>{entry.message}</WidgetStreamdown>;
 }
 
 function UserMessageBubble({
@@ -115,7 +111,7 @@ function ErrorMessage({
   );
 }
 
-function getMessageComponent(entry: TranscriptEntry, animateIn: boolean) {
+function getMessageComponent(entry: TranscriptEntry, isStreaming?: boolean) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
   }
@@ -123,7 +119,7 @@ function getMessageComponent(entry: TranscriptEntry, animateIn: boolean) {
     return <ErrorMessage entry={entry} />;
   }
   if (entry.role === "ai") {
-    return <AgentMessageBubble entry={entry} animateIn={animateIn} />;
+    return <AgentMessageBubble entry={entry} />;
   }
   return <UserMessageBubble entry={entry} />;
 }
@@ -134,7 +130,7 @@ export function TranscriptMessage({
 }: TranscriptMessageProps) {
   return (
     <InOutTransition initial={!animateIn} active={true}>
-      {getMessageComponent(entry, animateIn)}
+      {getMessageComponent(entry)}
     </InOutTransition>
   );
 }

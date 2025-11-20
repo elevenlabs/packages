@@ -20,28 +20,28 @@ export function ConvAIWidget(attributes: CustomAttributes) {
     <AttributesProvider value={attributes}>
       <ServerLocationProvider>
         <WidgetConfigProvider>
-          <TermsProvider>
-            <LanguageConfigProvider>
-              <MicConfigProvider>
-                <SessionConfigProvider>
-                  <ConversationProvider>
-                    <TextContentsProvider>
-                      <AvatarConfigProvider>
-                        <SheetContentProvider>
-                          <FeedbackProvider>
-                            <WidgetSizeProvider>
-                            <Style />
-                            <Wrapper />
-                            </WidgetSizeProvider>
-                          </FeedbackProvider>
-                        </SheetContentProvider>
-                      </AvatarConfigProvider>
-                    </TextContentsProvider>
-                  </ConversationProvider>
-                </SessionConfigProvider>
-              </MicConfigProvider>
-            </LanguageConfigProvider>
-          </TermsProvider>
+          <WidgetSizeProvider>
+            <TermsProvider>
+              <LanguageConfigProvider>
+                <MicConfigProvider>
+                  <SessionConfigProvider>
+                    <ConversationProvider>
+                      <TextContentsProvider>
+                        <AvatarConfigProvider>
+                          <SheetContentProvider>
+                            <FeedbackProvider>
+                              <Style />
+                              <Wrapper />
+                            </FeedbackProvider>
+                          </SheetContentProvider>
+                        </AvatarConfigProvider>
+                      </TextContentsProvider>
+                    </ConversationProvider>
+                  </SessionConfigProvider>
+                </MicConfigProvider>
+              </LanguageConfigProvider>
+            </TermsProvider>
+          </WidgetSizeProvider>
         </WidgetConfigProvider>
       </ServerLocationProvider>
     </AttributesProvider>
