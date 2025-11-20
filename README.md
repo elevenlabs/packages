@@ -107,6 +107,30 @@ The ElevenLabs Agents Widgets provide an easy way to embed AI agents into any we
 
 Learn how to embed the widget into your website [here](https://elevenlabs.io/docs/agents-platform/customization/widget).
 
+#### Dynamic Variables in Widgets
+
+You can pass dynamic variables to your agent through HTML attributes:
+
+```html
+<elevenlabs-convai-widget
+  agent-id="your-agent-id"
+  dynamic-variables='{"user_name":"John Doe","account_type":"premium"}'
+></elevenlabs-convai-widget>
+```
+
+To handle missing required variables, use the `expected-dynamic-variables` and `missing-dynamic-variable-default` attributes:
+
+```html
+<elevenlabs-convai-widget
+  agent-id="your-agent-id"
+  dynamic-variables='{"user_name":"John Doe","current_plan":"premium"}'
+  expected-dynamic-variables='["user_name","current_plan","previous_orders","support_history"]'
+  missing-dynamic-variable-default="null"
+></elevenlabs-convai-widget>
+```
+
+This automatically fills missing variables (like `previous_orders` and `support_history`) with `null`, preventing conversation failures when your agent's tools require variables you don't have.
+
 ### Agents CLI
 
 The ElevenLabs Agents CLI allows you to manage your agents as code, with features like version control, templates, and multi-environment deployments.
