@@ -68,23 +68,18 @@ function WidgetPreview({
       data-variant={variant.value}
       className="sheet fixed bottom-8 right-8 transition-all duration-300 ease-out"
     >
-      <div
-        className="flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative"
-      >
+      <div className="flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative">
         <div className="absolute top-4 left-4 scale-[0.1667] origin-top-left z-10">
           <Avatar size="lg" />
         </div>
         <SheetHeader
           showBackButton={false}
-          showStatusLabel={false}
-          showLanguageSelector={true}
-          showExpandButton={true}
+          showStatusLabel={useSignal(false)}
+          showLanguageSelector={useSignal(true)}
+          showExpandButton={useSignal(true)}
         />
         <div className="grow flex flex-col min-h-0 overflow-hidden">
-          <ScrollArea
-            orientation="vertical"
-            className="flex-1 px-4 pt-4 pb-4"
-          >
+          <ScrollArea orientation="vertical" className="flex-1 px-4 pt-4 pb-4">
             <div ref={scrollAreaRef}>
               <WidgetStreamdown isAnimating={isStreaming}>
                 {displayText}
@@ -163,47 +158,53 @@ function MarkdownPlayground() {
                 <MicConfigProvider>
                   <SessionConfigProvider>
                     <ConversationProvider>
-                    <TextContentsProvider>
-                      <AvatarConfigProvider>
-                        <WidgetSizeProvider>
-                          <Style />
-                          <div className="w-screen h-screen flex bg-base-hover text-base-primary">
-                    <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
-                      <h2 className="text-xl font-medium mb-4">Input</h2>
-                      <textarea
-                        className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={text}
-                        onChange={e => setText(e.currentTarget.value)}
-                        placeholder="Enter markdown text here..."
-                      />
-                    </div>
+                      <TextContentsProvider>
+                        <AvatarConfigProvider>
+                          <WidgetSizeProvider>
+                            <Style />
+                            <div className="w-screen h-screen flex bg-base-hover text-base-primary">
+                              <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
+                                <h2 className="text-xl font-medium mb-4">
+                                  Input
+                                </h2>
+                                <textarea
+                                  className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  value={text}
+                                  onChange={e => setText(e.currentTarget.value)}
+                                  placeholder="Enter markdown text here..."
+                                />
+                              </div>
 
-                    <div className="w-1/2 h-full flex flex-col p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-medium">Widget Preview</h2>
-                        <button
-                          onClick={startStreaming}
-                          disabled={isStreaming}
-                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {isStreaming ? "Streaming..." : "Simulate Stream"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <WidgetPreview
-                    displayText={displayText}
-                    isStreaming={isStreaming}
-                    scrollAreaRef={scrollAreaRef}
-                  />
-                        </WidgetSizeProvider>
-                      </AvatarConfigProvider>
-                    </TextContentsProvider>
-                  </ConversationProvider>
-                </SessionConfigProvider>
-              </MicConfigProvider>
-            </LanguageConfigProvider>
-          </TermsProvider>
+                              <div className="w-1/2 h-full flex flex-col p-4">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h2 className="text-xl font-medium">
+                                    Widget Preview
+                                  </h2>
+                                  <button
+                                    onClick={startStreaming}
+                                    disabled={isStreaming}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {isStreaming
+                                      ? "Streaming..."
+                                      : "Simulate Stream"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            <WidgetPreview
+                              displayText={displayText}
+                              isStreaming={isStreaming}
+                              scrollAreaRef={scrollAreaRef}
+                            />
+                          </WidgetSizeProvider>
+                        </AvatarConfigProvider>
+                      </TextContentsProvider>
+                    </ConversationProvider>
+                  </SessionConfigProvider>
+                </MicConfigProvider>
+              </LanguageConfigProvider>
+            </TermsProvider>
           </WidgetConfigProvider>
         </ServerLocationProvider>
       </AttributesProvider>
