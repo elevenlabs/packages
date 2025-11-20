@@ -72,7 +72,7 @@ export function SheetActionsV2({
               isFocused={isFocused}
               onSendMessage={handleSendMessage}
             />
-            <div className="flex gap-1.5 items-center w-full px-3 pb-3 pt-2">
+            <div className="w-full flex gap-1.5 items-center justify-end px-3 pb-3 pt-2">
               <SheetButtons
                 userMessage={userMessage}
                 onSendMessage={handleSendMessage}
@@ -81,7 +81,7 @@ export function SheetActionsV2({
           </div>
         )}
         {!text_input_enabled && (
-          <div className="flex gap-1.5 items-center">
+          <div className="w-full flex gap-1.5 items-center justify-end">
             <SheetButtons
               userMessage={userMessage}
               onSendMessage={handleSendMessage}
@@ -185,14 +185,12 @@ function SheetButtons({
 
   return (
     <>
-      <div className="flex gap-1.5 items-center grow min-w-0">
-        <SizeTransition
-          visible={!textOnly.value && !isDisconnected.value}
-          className="p-1"
-        >
-          <TriggerMuteButton className="shadow-natural-sm" />
-        </SizeTransition>
-      </div>
+      <SizeTransition
+        visible={!textOnly.value && !isDisconnected.value}
+        className="p-1"
+      >
+        <TriggerMuteButton className="shadow-natural-sm" />
+      </SizeTransition>
       <SizeTransition visible={showCallButton.value}>
         <CallButton
           iconOnly
