@@ -76,6 +76,7 @@ export function SheetActionsV2({
               <SheetButtons
                 userMessage={userMessage}
                 onSendMessage={handleSendMessage}
+                showTranscript={showTranscript}
               />
             </div>
           </div>
@@ -169,16 +170,6 @@ function SheetButtons({
 
   const showSendButton = useComputed(() => !!userMessage.value.trim());
 
-  const showCallButton = useComputed(() => {
-    if (!isDisconnected.value) {
-      return true;
-    }
-    if (!showTranscript && isDisconnected.value && !textOnly.value) {
-      return false;
-    }
-    return !textOnly.value;
-  });
-
   const showSendButtonControl = useComputed(() => {
     return text_input_enabled;
   });
@@ -191,7 +182,7 @@ function SheetButtons({
       >
         <TriggerMuteButton className="shadow-natural-sm" />
       </SizeTransition>
-      <SizeTransition visible={showCallButton.value}>
+      <SizeTransition visible={!isDisconnected.value || showTranscript}>
         <CallButton
           iconOnly
           isDisconnected={isDisconnected.value}
