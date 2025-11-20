@@ -18,7 +18,11 @@ function AgentMessageBubble({
 }: {
   entry: Extract<TranscriptEntry, { type: "message" }>;
 }) {
-  return <WidgetStreamdown>{entry.message}</WidgetStreamdown>;
+  return (
+    <div className="pr-8">
+      <WidgetStreamdown>{entry.message}</WidgetStreamdown>
+    </div>
+  );
 }
 
 function UserMessageBubble({
