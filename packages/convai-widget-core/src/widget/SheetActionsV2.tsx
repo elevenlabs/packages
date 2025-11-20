@@ -180,7 +180,7 @@ function SheetButtons({
         visible={!textOnly.value && !isDisconnected.value}
         className="p-1"
       >
-        <TriggerMuteButton className="shadow-natural-sm" />
+        <TriggerMuteButton className="shadow-natural-sm !border-0 !bg-base !text-base-primary hover:!bg-base-hover active:!bg-base-active" />
       </SizeTransition>
       <SizeTransition visible={!isDisconnected.value || showTranscript}>
         <CallButton
@@ -189,7 +189,7 @@ function SheetButtons({
           disabled={
             status.value === "disconnecting" || status.value === "connecting"
           }
-          className="shadow-natural-sm"
+          className="shadow-natural-sm !border-0 !bg-base !text-base-primary hover:!bg-base-hover active:!bg-base-active"
         />
       </SizeTransition>
       {showSendButtonControl.value && (
