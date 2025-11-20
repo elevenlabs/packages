@@ -11,9 +11,7 @@ import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
 import { SheetActionsV2 } from "./widget/SheetActionsV2";
-import { ScrollArea } from "./components/TranscriptScrollArea";
 import { SheetHeader } from "./widget/SheetHeader";
-import { clsx } from "clsx";
 import { WidgetSizeProvider, useWidgetSize } from "./contexts/widget-size";
 import { Avatar } from "./components/Avatar";
 import { MicConfigProvider } from "./contexts/mic-config";
@@ -79,13 +77,13 @@ function WidgetPreview({
           showExpandButton={useSignal(true)}
         />
         <div className="grow flex flex-col min-h-0 overflow-hidden">
-          <ScrollArea orientation="vertical" className="flex-1 px-4 pt-4 pb-4">
+          <div className="flex-1 px-4 pt-4 pb-4">
             <div ref={scrollAreaRef}>
               <WidgetStreamdown isAnimating={isStreaming}>
                 {displayText}
               </WidgetStreamdown>
             </div>
-          </ScrollArea>
+          </div>
         </div>
         <SheetActionsV2 showTranscript={true} scrollPinned={scrollPinned} />
       </div>
