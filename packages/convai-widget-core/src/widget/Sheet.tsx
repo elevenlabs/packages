@@ -137,7 +137,6 @@ export function Sheet({ open }: SheetProps) {
           showAvatar={showAvatar}
           showTranscript={showTranscript}
           isDisconnected={isDisconnected}
-          textOnly={textOnly}
           onStartSession={startSession}
         />
       </div>
