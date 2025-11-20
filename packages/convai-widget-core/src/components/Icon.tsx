@@ -20,7 +20,8 @@ const ICON_MAP = {
 };
 
 const SIZE_CLASSES = {
-  sm: "text-xs",
+  xs: "text-xs",
+  sm: "text-sm",
   md: "text-lg",
   lg: "text-xl",
 };
