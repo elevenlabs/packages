@@ -1,3 +1,4 @@
+import { ReadonlySignal, useComputed } from "@preact/signals";
 import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
@@ -9,9 +10,9 @@ import { useWidgetSize } from "../contexts/widget-size";
 interface SheetHeaderProps {
   showBackButton: boolean;
   onBackClick?: () => void;
-  showStatusLabel: boolean;
-  showLanguageSelector: boolean;
-  showExpandButton?: boolean;
+  showStatusLabel: ReadonlySignal<boolean>;
+  showLanguageSelector: ReadonlySignal<boolean>;
+  showExpandButton: ReadonlySignal<boolean>;
 }
 
 export function SheetHeader({
@@ -19,10 +20,14 @@ export function SheetHeader({
   onBackClick,
   showStatusLabel,
   showLanguageSelector,
-  showExpandButton = true,
+  showExpandButton,
 }: SheetHeaderProps) {
   const text = useTextContents();
   const { toggleSize, variant } = useWidgetSize();
+
+  const expandButtonLabel = useComputed(() =>
+    variant.value === "compact" ? "Expand widget" : "Collapse widget"
+  );
 
   return (
     <div className="w-full relative shrink-0 z-10">
@@ -51,14 +56,12 @@ export function SheetHeader({
               <SheetLanguageSelect />
             </div>
           </InOutTransition>
-          {showExpandButton && (
+          <InOutTransition active={showExpandButton}>
             <Button
               variant="ghost"
               onClick={toggleSize}
-              aria-label={
-                variant.value === "compact" ? "Expand widget" : "Collapse widget"
-              }
-              className="!h-8 !w-8"
+              aria-label={expandButtonLabel}
+              className="!h-8 !w-8 transition-opacity data-hidden:opacity-0"
             >
               <Icon
                 name={variant.value === "compact" ? "maximize" : "minimize"}
@@ -66,7 +69,7 @@ export function SheetHeader({
                 className="!text-[14px]"
               />
             </Button>
-          )}
+          </InOutTransition>
         </div>
       </div>
     </div>
