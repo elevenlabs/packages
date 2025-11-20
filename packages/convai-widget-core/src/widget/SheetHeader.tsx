@@ -39,9 +39,9 @@ export function SheetHeader({
               variant="ghost"
               onClick={onBackClick}
               aria-label={text.go_back}
-              className="!h-8 !w-8"
+              className="h-8 w-8"
             >
-              <Icon name="chevron-up" className="-rotate-90" size="sm" />
+              <Icon name="chevron-up" className="-rotate-90" size="xs" />
             </Button>
           ) : (
             <div className="relative w-8 h-8" />
@@ -61,12 +61,11 @@ export function SheetHeader({
               variant="ghost"
               onClick={toggleSize}
               aria-label={expandButtonLabel}
-              className="!h-8 !w-8 transition-opacity data-hidden:opacity-0"
+              className="h-8 w-8 transition-opacity data-hidden:opacity-0"
             >
               <Icon
                 name={variant.value === "compact" ? "maximize" : "minimize"}
-                size="sm"
-                className="!text-[14px]"
+                size="xs"
               />
             </Button>
           </InOutTransition>
