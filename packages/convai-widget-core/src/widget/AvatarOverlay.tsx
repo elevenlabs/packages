@@ -27,7 +27,9 @@ export function AvatarOverlay({
       "data-hidden:opacity-0",
       showTranscript.value
         ? "top-4 left-4 scale-[0.1667]"
-        : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
+        : textOnly.value
+          ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
+          : "top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
     )
   );
 
