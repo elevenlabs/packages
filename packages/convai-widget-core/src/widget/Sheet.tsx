@@ -113,7 +113,7 @@ export function Sheet({ open }: SheetProps) {
           }
         />
         <InOutTransition active={currentContent.value === "transcript"}>
-          <div className="grow flex flex-col min-h-0 transition-opacity duration-300 ease-out data-hidden:opacity-0">
+          <div className="grow flex flex-col min-h-0 relative transition-opacity duration-300 ease-out data-hidden:opacity-0">
             <Transcript
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
@@ -133,7 +133,7 @@ export function Sheet({ open }: SheetProps) {
         <InOutTransition active={showAvatar}>
           <div
             className={cn(
-              "absolute origin-top-left transition-[transform,left,top,opacity,scale] duration-200 z-1",
+              "absolute origin-top-left transition-[transform,left,top,opacity,scale] duration-200 z-10",
               "data-hidden:opacity-0",
               showTranscript
                 ? "top-4 left-4 scale-[0.1667]" // ~32px size

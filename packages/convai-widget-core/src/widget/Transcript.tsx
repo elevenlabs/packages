@@ -2,7 +2,6 @@ import { ReadonlySignal, Signal, useSignalEffect } from "@preact/signals";
 import { TranscriptEntry } from "../contexts/conversation";
 import { useEffect, useRef } from "preact/compat";
 import { TranscriptMessage } from "./TranscriptMessage";
-import { ScrollArea } from "../components/TranscriptScrollArea";
 
 const SCROLL_PIN_PADDING = 16;
 
@@ -115,11 +114,8 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   });
 
   return (
-    <ScrollArea
-      orientation="vertical"
-      className="px-4 pt-4 pb-4 grow"
-    >
-      <div ref={scrollContainer} className="flex flex-col gap-6">
+    <div className="px-4 pt-20 pb-32 grow overflow-y-auto z-2">
+      <div className="flex flex-col gap-6">
         {transcript.value.map((entry, index) => (
           <TranscriptMessage
             key={`${index}-${entry.conversationIndex}`}
@@ -128,6 +124,6 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
           />
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

@@ -57,36 +57,39 @@ export function SheetActionsV2({
   );
 
   return (
-    <div className="bg-base flex flex-col gap-2 px-3 pb-3 w-full shrink-0">
-      {text_input_enabled && (
-        <div
-          className={cn(
-            "bg-base flex flex-col rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
-            isFocused.value && "ring-2 ring-accent"
-          )}
-        >
-          <SheetTextarea
-            userMessage={userMessage}
-            isFocused={isFocused}
-            onSendMessage={handleSendMessage}
-          />
-          <div className="flex gap-1.5 items-center w-full px-3 pb-3 pt-2">
+    <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10">
+      <div className="absolute bottom-0 left-4 right-4 h-14 bg-base" />
+      <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto">
+        {text_input_enabled && (
+          <div
+            className={cn(
+              "bg-base flex flex-col rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
+              isFocused.value && "ring-2 ring-accent"
+            )}
+          >
+            <SheetTextarea
+              userMessage={userMessage}
+              isFocused={isFocused}
+              onSendMessage={handleSendMessage}
+            />
+            <div className="flex gap-1.5 items-center w-full px-3 pb-3 pt-2">
+              <SheetButtons
+                userMessage={userMessage}
+                onSendMessage={handleSendMessage}
+              />
+            </div>
+          </div>
+        )}
+        {!text_input_enabled && (
+          <div className="flex gap-1.5 items-center">
             <SheetButtons
               userMessage={userMessage}
               onSendMessage={handleSendMessage}
+              showTranscript={showTranscript}
             />
           </div>
-        </div>
-      )}
-      {!text_input_enabled && (
-        <div className="flex gap-1.5 items-center">
-          <SheetButtons
-            userMessage={userMessage}
-            onSendMessage={handleSendMessage}
-            showTranscript={showTranscript}
-          />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -145,7 +148,7 @@ function SheetTextarea({
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
       }
-      className="w-full resize-none bg-transparent leading-5 border-none outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 min-h-[1lh] max-h-[6lh] [field-sizing:content]"
+      className="w-full resize-none bg-base leading-5 border-none outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 min-h-[1lh] max-h-[6lh] [field-sizing:content]"
     />
   );
 }

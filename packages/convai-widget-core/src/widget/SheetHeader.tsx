@@ -25,11 +25,10 @@ export function SheetHeader({
   const { toggleSize, variant } = useWidgetSize();
 
   return (
-    <div
-      className="bg-base shrink-0 relative z-20"
-    >
-      <div className="flex gap-2 p-4 items-start justify-between">
-        <div className="flex gap-2 items-start">
+    <div className="w-full relative shrink-0 z-10">
+      <div className="h-20 top-0 absolute w-full bg-gradient-to-b from-base via-base via-80% to-transparent" />
+      <div className="h-16 top-0 absolute flex flex-row items-center justify-center w-full">
+        <div className="absolute start-3 flex gap-2 items-center">
           {showBackButton ? (
             <Button
               variant="ghost"
@@ -46,28 +45,30 @@ export function SheetHeader({
             <StatusLabel className="transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
         </div>
-        {showExpandButton && (
-          <Button
-            variant="ghost"
-            onClick={toggleSize}
-            aria-label={
-              variant.value === "compact" ? "Expand widget" : "Collapse widget"
-            }
-            className="!h-8 !w-8"
-          >
-            <Icon
-              name={variant.value === "compact" ? "maximize" : "minimize"}
-              size="sm"
-              className="!text-[14px]"
-            />
-          </Button>
-        )}
-      </div>
-      <InOutTransition active={showLanguageSelector}>
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-center transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
-          <SheetLanguageSelect />
+        <div className="absolute flex flex-row items-center gap-2 ms-auto end-3">
+          <InOutTransition active={showLanguageSelector}>
+            <div className="transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
+              <SheetLanguageSelect />
+            </div>
+          </InOutTransition>
+          {showExpandButton && (
+            <Button
+              variant="ghost"
+              onClick={toggleSize}
+              aria-label={
+                variant.value === "compact" ? "Expand widget" : "Collapse widget"
+              }
+              className="!h-8 !w-8"
+            >
+              <Icon
+                name={variant.value === "compact" ? "maximize" : "minimize"}
+                size="sm"
+                className="!text-[14px]"
+              />
+            </Button>
+          )}
         </div>
-      </InOutTransition>
+      </div>
     </div>
   );
 }
