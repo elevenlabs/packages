@@ -128,4 +128,7 @@ jobs:
           echo "Publish tag is $PUBLISH_TAG"
 
       - name: Publish package
-        run: pnpm --filter $PACKAGE_NAME publish --access=public --no-git-checks --tag $PUBLISH_TAG
+        run: |
+          PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
+          cd $PACKAGE_PATH
+          npx -y npm@latest publish --access public --tag $PUBLISH_TAG
