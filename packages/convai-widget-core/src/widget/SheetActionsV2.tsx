@@ -173,7 +173,7 @@ function SheetButtons({
 
   return (
     <>
-      <SizeTransition visible={showMuteButton.value} className="p-1">
+      <SizeTransition visible={showMuteButton.value}>
         <TriggerMuteButton className="shadow-natural-sm border-0 bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>
       <SizeTransition visible={showCallButton.value}>
