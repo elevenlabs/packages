@@ -32,7 +32,7 @@ export function TriggerLanguageSelect({ visible, className, ...rest }: Props) {
         >
           <Flag flagCode={language.value.flagCode} />
           <Select.Icon className="px-1 text-base-subtle" asChild>
-            <Icon size="sm" name="chevron-down" />
+            <Icon size="xs" name="chevron-down" />
           </Select.Icon>
         </Select.Trigger>
       </LanguageSelect>

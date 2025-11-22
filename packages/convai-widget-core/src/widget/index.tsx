@@ -14,6 +14,7 @@ import { Wrapper } from "./Wrapper";
 import { SheetContentProvider } from "../contexts/sheet-content";
 import { FeedbackProvider } from "../contexts/feedback";
 import { ShadowHostProvider } from "../contexts/shadow-host";
+import { WidgetSizeProvider } from "../contexts/widget-size";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -21,26 +22,28 @@ export function ConvAIWidget(attributes: CustomAttributes) {
       <AttributesProvider value={attributes}>
         <ServerLocationProvider>
           <WidgetConfigProvider>
-            <LanguageConfigProvider>
-              <TermsProvider>
-                <MicConfigProvider>
-                  <SessionConfigProvider>
-                    <ConversationProvider>
-                      <TextContentsProvider>
-                        <AvatarConfigProvider>
-                          <SheetContentProvider>
-                            <FeedbackProvider>
-                              <Style />
-                              <Wrapper />
-                            </FeedbackProvider>
-                          </SheetContentProvider>
-                        </AvatarConfigProvider>
-                      </TextContentsProvider>
-                    </ConversationProvider>
-                  </SessionConfigProvider>
-                </MicConfigProvider>
-              </TermsProvider>
-            </LanguageConfigProvider>
+            <WidgetSizeProvider>
+              <LanguageConfigProvider>
+                <TermsProvider>
+                  <MicConfigProvider>
+                    <SessionConfigProvider>
+                      <ConversationProvider>
+                        <TextContentsProvider>
+                          <AvatarConfigProvider>
+                            <SheetContentProvider>
+                              <FeedbackProvider>
+                                <Style />
+                                <Wrapper />
+                              </FeedbackProvider>
+                            </SheetContentProvider>
+                          </AvatarConfigProvider>
+                        </TextContentsProvider>
+                      </ConversationProvider>
+                    </SessionConfigProvider>
+                  </MicConfigProvider>
+                </TermsProvider>
+              </LanguageConfigProvider>
+            </WidgetSizeProvider>
           </WidgetConfigProvider>
         </ServerLocationProvider>
       </AttributesProvider>

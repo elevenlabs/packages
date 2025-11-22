@@ -20,7 +20,7 @@ import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
-const ConversationContext = createContext<ConversationSetup | null>(null);
+export const ConversationContext = createContext<ConversationSetup | null>(null);
 
 interface ConversationProviderProps {
   children: ComponentChildren;

@@ -7,19 +7,17 @@ import {
 } from "../contexts/widget-config";
 import { TranscriptEntry, useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
-import { clsx } from "clsx";
-import { Avatar } from "../components/Avatar";
-import { Button } from "../components/Button";
-import { StatusLabel } from "./StatusLabel";
+import { cn } from "../utils/cn";
 import { Placement } from "../types/config";
 import { Transcript } from "./Transcript";
-import { SheetActions } from "./SheetActions";
 import { FeedbackPage } from "./FeedbackPage";
 import { FeedbackActions } from "./FeedbackActions";
-import { useTextContents } from "../contexts/text-contents";
 import { Signalish } from "../utils/signalish";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
+import { useWidgetSize } from "../contexts/widget-size";
+import { SheetActions } from "./SheetActions";
+import { AvatarOverlay } from "./AvatarOverlay";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -35,7 +33,6 @@ const ORIGIN_CLASSES: Record<Placement, string> = {
 };
 
 export function Sheet({ open }: SheetProps) {
-  const text = useTextContents();
   const textOnly = useTextOnly();
   const isConversationTextOnly = useIsConversationTextOnly();
   const config = useWidgetConfig();
@@ -44,13 +41,13 @@ export function Sheet({ open }: SheetProps) {
     useConversation();
   const firstMessage = useFirstMessage();
   const { currentContent, currentConfig } = useSheetContent();
+  const { variant } = useWidgetSize();
 
   const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
     if (textOnly.value || isConversationTextOnly.value) {
       if (!firstMessage.value || !textOnly.value) {
         return transcript.value;
       }
-
       // We only show the first message if the widget does not support voice
       // altogether. If the widget supports voice but switched to text-only
       // mode due to user input, we don't show the first message again.
@@ -73,19 +70,34 @@ export function Sheet({ open }: SheetProps) {
           entry => entry.type !== "message" || entry.isText
         );
   });
-
-  const showTranscript =
-    filteredTranscript.value.length > 0 ||
-    (!isDisconnected.value && config.value.transcript_enabled);
+  const showTranscript = useComputed(
+    () =>
+      filteredTranscript.value.length > 0 ||
+      (!isDisconnected.value && config.value.transcript_enabled)
+  );
   const scrollPinned = useSignal(true);
-  const showAvatar = currentContent.value !== "feedback";
+  const showAvatar = useComputed(() => currentContent.value !== "feedback");
+  const showStatusLabel = useComputed(
+    () => showTranscript.value && !isDisconnected.value
+  );
+
+  const showLanguageSelector = useComputed(
+    () =>
+      currentContent.value !== "feedback" &&
+      (!showTranscript.value || isDisconnected.value)
+  );
+
+  const showExpandButton = useComputed(() => showTranscript.value);
 
   return (
     <InOutTransition initial={false} active={open}>
       <div
-        className={clsx(
-          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto rounded-sheet w-full max-w-[400px] h-[calc(100%-80px)] max-h-[550px]",
-          "transition-[transform,opacity] duration-200 data-hidden:scale-90 data-hidden:opacity-0",
+        data-variant={variant.value}
+        className={cn(
+          "sheet",
+          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto z-2",
+          "transition-[width,height,max-width,max-height,transform,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
+          "data-hidden:scale-90 data-hidden:opacity-0",
           ORIGIN_CLASSES[placement],
           placement.startsWith("top")
             ? config.value.always_expanded
@@ -99,22 +111,19 @@ export function Sheet({ open }: SheetProps) {
         <SheetHeader
           showBackButton={currentConfig.showHeaderBack}
           onBackClick={currentConfig.onHeaderBack}
-          showStatusLabel={showTranscript && !isDisconnected.value}
-          showShadow={showTranscript}
-          showLanguageSelector={
-            currentContent.value !== "feedback" &&
-            (!showTranscript || isDisconnected.value)
-          }
+          showStatusLabel={showStatusLabel}
+          showLanguageSelector={showLanguageSelector}
+          showExpandButton={showExpandButton}
         />
         <InOutTransition active={currentContent.value === "transcript"}>
-          <div className="grow flex flex-col min-h-0 transition-opacity duration-300 ease-out data-hidden:opacity-0">
+          <div className="grow flex flex-col min-h-0 relative transition-opacity duration-300 ease-out data-hidden:opacity-0">
             <Transcript
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
             />
             <SheetActions
+              showTranscript={showTranscript.value}
               scrollPinned={scrollPinned}
-              showTranscript={showTranscript}
             />
           </div>
         </InOutTransition>
@@ -124,38 +133,12 @@ export function Sheet({ open }: SheetProps) {
             <FeedbackActions />
           </div>
         </InOutTransition>
-        <InOutTransition active={showAvatar}>
-          <div
-            className={clsx(
-              "absolute origin-top-left transition-[transform,left,top,opacity,scale] duration-200 z-1",
-              "data-hidden:opacity-0",
-              showTranscript
-                ? "top-4 left-4 scale-[0.1667]" // ~32px size
-                : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
-            )}
-          >
-            <Avatar size="lg" />
-            <InOutTransition
-              active={
-                !showTranscript && isDisconnected.value && !textOnly.value
-              }
-            >
-              <div className="absolute bottom-0 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base left-1/2 -translate-x-1/2 translate-y-1/2 transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-100 scale-150">
-                <Button
-                  aria-label={text.start_call}
-                  variant="primary"
-                  icon="phone"
-                  onClick={e => startSession(e.currentTarget)}
-                />
-              </div>
-            </InOutTransition>
-            <InOutTransition active={!showTranscript && !isDisconnected.value}>
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
-                <StatusLabel />
-              </div>
-            </InOutTransition>
-          </div>
-        </InOutTransition>
+        <AvatarOverlay
+          showAvatar={showAvatar}
+          showTranscript={showTranscript}
+          isDisconnected={isDisconnected}
+          onStartSession={startSession}
+        />
       </div>
     </InOutTransition>
   );

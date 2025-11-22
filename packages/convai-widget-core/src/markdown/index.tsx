@@ -86,7 +86,7 @@ export const WidgetStreamdown = memo(
     return (
       <ParsersContext.Provider value={parserConfig}>
         <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-          <div className={cn("px-2 markdown", className)}>
+          <div className={cn("markdown", className)}>
             {blocks.map((block, index) => (
               <Block
                 components={{

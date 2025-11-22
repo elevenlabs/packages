@@ -12,6 +12,8 @@ import { useTerms } from "../contexts/terms";
 import { TermsModal } from "./TermsModal";
 import { ErrorModal } from "./ErrorModal";
 import { PoweredBy } from "./PoweredBy";
+import { useWidgetSize } from "../contexts/widget-size";
+import { cn } from "../utils/cn";
 import { useShadowHost } from "../contexts/shadow-host";
 
 const HORIZONTAL = {
@@ -46,16 +48,21 @@ export const Wrapper = memo(function Wrapper() {
   const sawError = useSignal(false);
   const { error } = useConversation();
   const terms = useTerms();
+  const { variant } = useWidgetSize();
   const expandable = useComputed(
     () => config.value.transcript_enabled || config.value.text_input_enabled
   );
   const shadowHost = useShadowHost();
   const className = useComputed(() =>
-    clsx(
-      "overlay !flex transition-opacity duration-200 data-hidden:opacity-0",
+    cn(
+      "overlay !flex transition-[opacity] duration-200 data-hidden:opacity-0",
       PLACEMENT_CLASSES[config.value.placement]
     )
   );
+  // Powered by should always at bottom of the viewport in fullscreen mode
+  const poweredByClassName = useComputed(() => (
+    variant.value === "fullscreen" ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
+  ));
 
   useSignalEffect(() => {
     if (error.value) {
@@ -91,10 +98,7 @@ export const Wrapper = memo(function Wrapper() {
     host?.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
 
     return () => {
-      document.removeEventListener(
-        "elevenlabs-agent:expand",
-        handleExpandEvent
-      );
+      document.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
       host?.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
     };
   });
@@ -137,7 +141,7 @@ export const Wrapper = memo(function Wrapper() {
           <ErrorModal sawError={sawError} />
         </Root>
       </InOutTransition>
-      <Root className={className} style={HIDDEN_STYLE}>
+      <Root className={poweredByClassName} style={HIDDEN_STYLE}>
         <PoweredBy />
       </Root>
     </>

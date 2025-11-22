@@ -187,13 +187,18 @@ export function useFirstMessage() {
   );
 }
 
+export function useTextInputEnabled() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.text_input_enabled ?? false);
+}
+
 export function useLocalizedTerms() {
   const config = useWidgetConfig();
   const { language } = useLanguageConfig();
-  
+
   return useComputed(() => {
     const languagePreset = config.value.language_presets?.[language.value.languageCode];
-    
+
     return {
       terms_html: languagePreset?.terms_html ?? config.value.terms_html,
       terms_text: languagePreset?.terms_text ?? config.value.terms_text,
