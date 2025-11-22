@@ -66,10 +66,14 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
     }
   }, [context, tokenFetchUrl]);
 
-  if (clientTools) {
-    context.setClientTools(clientTools);
-  }
+  React.useEffect(() => {
+    if (clientTools) {
+      context.setClientTools(clientTools);
+    }
+  }, [context, clientTools]);
 
+  // Update callbacks - since this only updates a ref, it's safe to call on every render
+  // and doesn't cause re-renders of the provider or its consumers
   context.setCallbacks(callbacks);
 
   return context.conversation;
@@ -188,7 +192,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     console.warn('setVolume is not yet implemented in React Native SDK');
   }, []);
 
-  const getId = () => conversationId;
+  const getId = React.useCallback(() => conversationId, [conversationId]);
 
   const setMicMuted = React.useCallback((muted: boolean) => {
     if (localParticipant) {
@@ -225,41 +229,61 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     }
   }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
 
-  const conversation: Conversation = {
-    startSession,
-    endSession,
-    status,
-    isSpeaking,
-    // setVolume,
-    canSendFeedback,
-    getId,
-    setMicMuted,
-    sendFeedback,
-    sendContextualUpdate: (text: string) => {
-      sendMessage({
-        type: "contextual_update",
-        text,
-      });
-    },
-    sendUserMessage: (text: string) => {
-      sendMessage({
-        type: "user_message",
-        text,
-      });
-    },
-    sendUserActivity: () => {
-      sendMessage({
-        type: "user_activity",
-      });
-    },
-  };
-
   // Create setClientTools function that only updates ref
   const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {
     clientToolsRef.current = tools;
   }, []);
 
-  const contextValue: ElevenLabsContextType = {
+  // Memoize inline callback functions
+  const sendContextualUpdate = React.useCallback((text: string) => {
+    sendMessage({
+      type: "contextual_update",
+      text,
+    });
+  }, [sendMessage]);
+
+  const sendUserMessage = React.useCallback((text: string) => {
+    sendMessage({
+      type: "user_message",
+      text,
+    });
+  }, [sendMessage]);
+
+  const sendUserActivity = React.useCallback(() => {
+    sendMessage({
+      type: "user_activity",
+    });
+  }, [sendMessage]);
+
+  // Memoize the conversation object to prevent unnecessary re-renders
+  const conversation = React.useMemo<Conversation>(() => ({
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  }), [
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  ]);
+
+  // Memoize the context value to prevent unnecessary re-renders of consumers
+  const contextValue = React.useMemo<ElevenLabsContextType>(() => ({
     conversation,
     callbacksRef,
     serverUrl,
@@ -267,9 +291,16 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     clientTools: clientToolsRef.current,
     setCallbacks,
     setServerUrl,
-    setTokenFetchUrl: setTokenFetchUrl,
+    setTokenFetchUrl,
     setClientTools,
-  };
+  }), [
+    conversation,
+    callbacksRef,
+    serverUrl,
+    tokenFetchUrl,
+    setCallbacks,
+    setClientTools,
+  ]);
 
   return (
     <ElevenLabsContext.Provider value={contextValue}>
