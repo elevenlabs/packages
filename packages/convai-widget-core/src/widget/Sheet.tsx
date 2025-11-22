@@ -16,7 +16,7 @@ import { Signalish } from "../utils/signalish";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
-import { SheetActionsV2 } from "./SheetActionsV2";
+import { SheetActions } from "./SheetActions";
 import { AvatarOverlay } from "./AvatarOverlay";
 
 interface SheetProps {
@@ -121,7 +121,7 @@ export function Sheet({ open }: SheetProps) {
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
             />
-            <SheetActionsV2
+            <SheetActions
               showTranscript={showTranscript.value}
               scrollPinned={scrollPinned}
             />

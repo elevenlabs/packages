@@ -16,7 +16,7 @@ import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
 import { TriggerMuteButton } from "./TriggerMuteButton";
 
-export function SheetActionsV2({
+export function SheetActions({
   showTranscript,
   scrollPinned,
 }: {

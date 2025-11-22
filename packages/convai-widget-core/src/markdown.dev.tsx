@@ -10,7 +10,7 @@ import { WidgetStreamdown } from "./markdown";
 import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
-import { SheetActionsV2 } from "./widget/SheetActionsV2";
+import { SheetActions } from "./widget/SheetActions";
 import { SheetHeader } from "./widget/SheetHeader";
 import { WidgetSizeProvider, useWidgetSize } from "./contexts/widget-size";
 import { Avatar } from "./components/Avatar";
@@ -85,7 +85,7 @@ function WidgetPreview({
             </div>
           </div>
         </div>
-        <SheetActionsV2 showTranscript={true} scrollPinned={scrollPinned} />
+        <SheetActions showTranscript={true} scrollPinned={scrollPinned} />
       </div>
     </div>
   );
