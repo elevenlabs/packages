@@ -31,7 +31,8 @@ export function SheetHeader({
 
   return (
     <div className="w-full relative shrink-0 z-10">
-      <div className="h-20 top-0 absolute w-full bg-gradient-to-b from-base via-base via-80% to-transparent" />
+      <div className="h-16 absolute top-0 w-full bg-base" />
+      <div className="h-4 absolute top-16 w-full bg-gradient-to-b from-base to-transparent backdrop-blur-[1px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
       <div className="h-16 top-0 absolute flex flex-row items-center justify-center w-full">
         <div className="absolute start-3 flex gap-2 items-center">
           {showBackButton ? (

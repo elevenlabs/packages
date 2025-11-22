@@ -47,6 +47,7 @@ export function SheetActions({
 
   return (
     <div className="sticky bottom-0 pointer-events-none z-10 max-h-[50%] flex flex-col">
+      <div className="absolute top-0 left-0 right-0 h-4 -translate-y-full bg-gradient-to-t from-base to-transparent pointer-events-none backdrop-blur-[1px] [mask-image:linear-gradient(to_top,black,transparent)] shadow-upper-blur" />
       <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto min-h-0">
         {textInputEnabled.value && (
           <div

@@ -15,7 +15,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   return (
     <div
       ref={scrollContainer}
-      className="px-4 pt-20 pb-32 grow overflow-y-auto z-2"
+      className="px-4 pt-20 pb-4 grow overflow-y-auto z-2"
       onScroll={handleScroll}
       onWheel={handleUserInteraction}
       onTouchMove={handleUserInteraction}
