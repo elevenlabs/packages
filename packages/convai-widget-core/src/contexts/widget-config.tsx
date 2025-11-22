@@ -187,6 +187,11 @@ export function useFirstMessage() {
   );
 }
 
+export function useTextInputEnabled() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.text_input_enabled ?? false);
+}
+
 export function useWebRTC() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.use_rtc ?? false);

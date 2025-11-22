@@ -13,32 +13,35 @@ import { CustomAttributes } from "../types/attributes";
 import { Wrapper } from "./Wrapper";
 import { SheetContentProvider } from "../contexts/sheet-content";
 import { FeedbackProvider } from "../contexts/feedback";
+import { WidgetSizeProvider } from "../contexts/widget-size";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
     <AttributesProvider value={attributes}>
       <ServerLocationProvider>
         <WidgetConfigProvider>
-          <TermsProvider>
-            <LanguageConfigProvider>
-              <MicConfigProvider>
-                <SessionConfigProvider>
-                  <ConversationProvider>
-                    <TextContentsProvider>
-                      <AvatarConfigProvider>
-                        <SheetContentProvider>
-                          <FeedbackProvider>
-                            <Style />
-                            <Wrapper />
-                          </FeedbackProvider>
-                        </SheetContentProvider>
-                      </AvatarConfigProvider>
-                    </TextContentsProvider>
-                  </ConversationProvider>
-                </SessionConfigProvider>
-              </MicConfigProvider>
-            </LanguageConfigProvider>
-          </TermsProvider>
+          <WidgetSizeProvider>
+            <TermsProvider>
+              <LanguageConfigProvider>
+                <MicConfigProvider>
+                  <SessionConfigProvider>
+                    <ConversationProvider>
+                      <TextContentsProvider>
+                        <AvatarConfigProvider>
+                          <SheetContentProvider>
+                            <FeedbackProvider>
+                              <Style />
+                              <Wrapper />
+                            </FeedbackProvider>
+                          </SheetContentProvider>
+                        </AvatarConfigProvider>
+                      </TextContentsProvider>
+                    </ConversationProvider>
+                  </SessionConfigProvider>
+                </MicConfigProvider>
+              </LanguageConfigProvider>
+            </TermsProvider>
+          </WidgetSizeProvider>
         </WidgetConfigProvider>
       </ServerLocationProvider>
     </AttributesProvider>
