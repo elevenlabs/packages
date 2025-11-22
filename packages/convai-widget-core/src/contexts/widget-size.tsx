@@ -1,6 +1,6 @@
 import { createContext } from "preact";
 import { useCallback, useContext, useEffect, useMemo } from "preact/hooks";
-import { Signal, useSignal } from "@preact/signals";
+import { Signal, useSignal, useComputed } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 
 export type SizeVariant = "compact" | "expanded" | "fullscreen";
@@ -25,7 +25,7 @@ export function WidgetSizeProvider({
   children,
   initialVariant = "compact",
 }: WidgetSizeProviderProps) {
-  const variant = useSignal<SizeVariant>(initialVariant);
+  const expanded = useSignal(initialVariant !== "compact");
   const isMobile = useSignal<boolean>(
     typeof window !== "undefined"
       ? window.innerWidth < MOBILE_BREAKPOINT
@@ -34,16 +34,7 @@ export function WidgetSizeProvider({
 
   useEffect(() => {
     const handleResize = () => {
-      const wasMobile = isMobile.value;
       isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
-      // desktop -> mobile fullscreen
-      if (!wasMobile && isMobile.value && variant.value === "expanded") {
-        variant.value = "fullscreen";
-      }
-      // mobile fullscreen -> desktop expanded
-      else if (wasMobile && !isMobile.value && variant.value === "fullscreen") {
-        variant.value = "expanded";
-      }
     };
 
     window.addEventListener("resize", handleResize);
@@ -51,12 +42,12 @@ export function WidgetSizeProvider({
   }, []);
 
   const toggleSize = useCallback(() => {
-    if (variant.value === "compact") {
-      variant.value = isMobile.value ? "fullscreen" : "expanded";
-    } else {
-      variant.value = "compact";
-    }
-  }, [variant, isMobile]);
+    expanded.value = !expanded.value;
+  }, [expanded]);
+
+  const variant = useComputed(() =>
+    expanded.value ? (isMobile.value ? "fullscreen" : "expanded") : "compact"
+  );
 
   const value = useMemo(
     () => ({
