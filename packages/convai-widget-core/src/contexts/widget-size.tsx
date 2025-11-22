@@ -1,7 +1,8 @@
-import { createContext } from "preact";
-import { useCallback, useContext, useEffect, useMemo } from "preact/hooks";
-import { Signal, useSignal, useComputed } from "@preact/signals";
+import { Signal, useComputed, useSignal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
+import { createContext } from "preact";
+import { useCallback, useEffect, useMemo } from "preact/hooks";
+import { useContextSafely } from "../utils/useContextSafely";
 
 export type SizeVariant = "compact" | "expanded" | "fullscreen";
 
@@ -65,9 +66,5 @@ export function WidgetSizeProvider({
 }
 
 export function useWidgetSize() {
-  const context = useContext(WidgetSizeContext);
-  if (!context) {
-    throw new Error("useWidgetSize must be used within WidgetSizeProvider");
-  }
-  return context;
+  return useContextSafely(WidgetSizeContext);
 }
