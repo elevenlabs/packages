@@ -1,24 +1,26 @@
 import { render } from "preact";
 import { jsx } from "preact/jsx-runtime";
-import { useState, useEffect, useRef } from "preact/compat";
-import { useSignal } from "@preact/signals";
+import { useState, useEffect, useMemo } from "preact/compat";
+import { useSignal, useComputed, signal, type Signal } from "@preact/signals";
 import { Style } from "./styles/Style";
 import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
 import { WidgetConfigProvider } from "./contexts/widget-config";
-import { WidgetStreamdown } from "./markdown";
 import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
-import { SheetActions } from "./widget/SheetActions";
-import { SheetHeader } from "./widget/SheetHeader";
-import { WidgetSizeProvider, useWidgetSize } from "./contexts/widget-size";
-import { Avatar } from "./components/Avatar";
+import { WidgetSizeProvider } from "./contexts/widget-size";
 import { MicConfigProvider } from "./contexts/mic-config";
 import { SessionConfigProvider } from "./contexts/session-config";
-import { ConversationProvider } from "./contexts/conversation";
 import { AvatarConfigProvider } from "./contexts/avatar-config";
 import { TermsProvider } from "./contexts/terms";
+import { SheetContentProvider } from "./contexts/sheet-content";
+import { Sheet } from "./widget/Sheet";
+import {
+  ConversationContext,
+  type TranscriptEntry,
+} from "./contexts/conversation";
+import { Status, Mode } from "@elevenlabs/client";
 
 const STORAGE_KEY = "markdown-playground-text";
 const DEFAULT_TEXT =
@@ -49,45 +51,51 @@ const DEFAULT_TEXT =
   "```\n\n" +
   "Try editing the text on the left to see live updates!";
 
-function WidgetPreview({
-  displayText,
-  isStreaming,
-  scrollAreaRef,
+// Mock conversation provider for the markdown playground
+function MockConversationProvider({
+  displayTextSignal,
+  children,
 }: {
-  displayText: string;
-  isStreaming: boolean;
-  scrollAreaRef: React.RefObject<HTMLDivElement>;
+  displayTextSignal: Signal<string>;
+  children: any;
 }) {
-  const { variant } = useWidgetSize();
-  const scrollPinned = useSignal(true);
+  const mockTranscript = useComputed<TranscriptEntry[]>(() => [
+    {
+      type: "message",
+      role: "ai",
+      message: displayTextSignal.value,
+      isText: true,
+      conversationIndex: 0,
+    },
+  ]);
+
+  const mockValue = useMemo(
+    () => ({
+      status: signal<Status>("connected"),
+      isSpeaking: signal(false),
+      mode: signal<Mode>("listening"),
+      isDisconnected: signal(false),
+      lastId: signal<string | null>(null),
+      error: signal<string | null>(null),
+      canSendFeedback: signal(false),
+      conversationIndex: signal(0),
+      conversationTextOnly: signal<boolean | null>(null),
+      transcript: mockTranscript,
+      startSession: async () => "",
+      endSession: async () => {},
+      getInputVolume: () => 0,
+      getOutputVolume: () => 0,
+      sendFeedback: () => {},
+      sendUserMessage: () => {},
+      sendUserActivity: () => {},
+    }),
+    [mockTranscript]
+  );
 
   return (
-    <div
-      data-variant={variant.value}
-      className="sheet fixed bottom-8 right-8 transition-all duration-300 ease-out"
-    >
-      <div className="flex flex-col overflow-hidden bg-base shadow-lg h-full transition-[border-radius] duration-300 ease-out relative">
-        <div className="absolute top-4 left-4 scale-[0.1667] origin-top-left z-10">
-          <Avatar size="lg" />
-        </div>
-        <SheetHeader
-          showBackButton={false}
-          showStatusLabel={useSignal(false)}
-          showLanguageSelector={useSignal(true)}
-          showExpandButton={useSignal(true)}
-        />
-        <div className="grow flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 px-4 pt-4 pb-4">
-            <div ref={scrollAreaRef}>
-              <WidgetStreamdown isAnimating={isStreaming}>
-                {displayText}
-              </WidgetStreamdown>
-            </div>
-          </div>
-        </div>
-        <SheetActions showTranscript={true} scrollPinned={scrollPinned} />
-      </div>
-    </div>
+    <ConversationContext.Provider value={mockValue}>
+      {children}
+    </ConversationContext.Provider>
   );
 }
 
@@ -96,28 +104,20 @@ function MarkdownPlayground() {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ?? DEFAULT_TEXT;
   });
-  const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const sheetOpen = useSignal(true);
+  const displayTextSignal = useSignal(text);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, text);
-  }, [text]);
-
-  useEffect(() => {
-    if (isStreaming && scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector(
-        "[data-scroll-viewport]"
-      ) as HTMLDivElement;
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+    if (!isStreaming) {
+      displayTextSignal.value = text;
     }
-  }, [streamingText, isStreaming]);
+  }, [text, isStreaming]);
 
   const startStreaming = () => {
     setIsStreaming(true);
-    setStreamingText("");
+    displayTextSignal.value = "";
 
     const maxChunkSize = 50;
     let currentPos = 0;
@@ -127,26 +127,47 @@ function MarkdownPlayground() {
         const chunkSize = Math.floor(Math.random() * maxChunkSize) + 1;
         const nextPos = Math.min(currentPos + chunkSize, text.length);
 
-        setStreamingText(text.slice(0, nextPos));
+        displayTextSignal.value = text.slice(0, nextPos);
         currentPos = nextPos;
 
         const jitter = Math.random() * 60 + 20;
         setTimeout(streamNextChunk, jitter);
       } else {
         setIsStreaming(false);
+        displayTextSignal.value = text;
       }
     };
 
     streamNextChunk();
   };
 
-  const displayText = isStreaming ? streamingText : text;
-
   return (
     <>
       <AttributesProvider
         value={{
           "agent-id": import.meta.env.VITE_AGENT_ID,
+          "override-config": JSON.stringify({
+            variant: "compact",
+            placement: "bottom-right",
+            avatar: {
+              type: "orb",
+              color_1: "#3b82f6",
+              color_2: "#8b5cf6",
+            },
+            feedback_mode: "none",
+            language: "en",
+            supported_language_overrides: ["en"],
+            mic_muting_enabled: false,
+            transcript_enabled: true,
+            text_input_enabled: true,
+            default_expanded: true,
+            always_expanded: true,
+            text_contents: {},
+            language_presets: {},
+            disable_banner: true,
+            text_only: true,
+            supports_text_only: true,
+          }),
         }}
       >
         <ServerLocationProvider>
@@ -155,50 +176,50 @@ function MarkdownPlayground() {
               <LanguageConfigProvider>
                 <MicConfigProvider>
                   <SessionConfigProvider>
-                    <ConversationProvider>
+                    <MockConversationProvider displayTextSignal={displayTextSignal}>
                       <TextContentsProvider>
                         <AvatarConfigProvider>
                           <WidgetSizeProvider>
-                            <Style />
-                            <div className="w-screen h-screen flex bg-base-hover text-base-primary">
-                              <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
-                                <h2 className="text-xl font-medium mb-4">
-                                  Input
-                                </h2>
-                                <textarea
-                                  className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  value={text}
-                                  onChange={e => setText(e.currentTarget.value)}
-                                  placeholder="Enter markdown text here..."
-                                />
-                              </div>
-
-                              <div className="w-1/2 h-full flex flex-col p-4">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h2 className="text-xl font-medium">
-                                    Widget Preview
+                            <SheetContentProvider>
+                              <Style />
+                              <div className="w-screen h-screen flex bg-base-hover text-base-primary">
+                                <div className="w-1/2 h-full flex flex-col p-4 border-r border-base-border">
+                                  <h2 className="text-xl font-medium mb-4">
+                                    Input
                                   </h2>
-                                  <button
-                                    onClick={startStreaming}
-                                    disabled={isStreaming}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    {isStreaming
-                                      ? "Streaming..."
-                                      : "Simulate Stream"}
-                                  </button>
+                                  <textarea
+                                    className="flex-1 p-4 bg-base border border-base-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={text}
+                                    onChange={e =>
+                                      setText(e.currentTarget.value)
+                                    }
+                                    placeholder="Enter markdown text here..."
+                                  />
+                                </div>
+
+                                <div className="w-1/2 h-full flex flex-col p-4">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-medium">
+                                      Widget Preview
+                                    </h2>
+                                    <button
+                                      onClick={startStreaming}
+                                      disabled={isStreaming}
+                                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      {isStreaming
+                                        ? "Streaming..."
+                                        : "Simulate Stream"}
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <WidgetPreview
-                              displayText={displayText}
-                              isStreaming={isStreaming}
-                              scrollAreaRef={scrollAreaRef}
-                            />
+                              <Sheet open={sheetOpen} />
+                            </SheetContentProvider>
                           </WidgetSizeProvider>
                         </AvatarConfigProvider>
                       </TextContentsProvider>
-                    </ConversationProvider>
+                    </MockConversationProvider>
                   </SessionConfigProvider>
                 </MicConfigProvider>
               </LanguageConfigProvider>
