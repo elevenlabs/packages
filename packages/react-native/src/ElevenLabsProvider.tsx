@@ -121,6 +121,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    expectedDynamicVariables,
+    missingDynamicVariableDefault,
     userId,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
 
@@ -210,6 +212,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
       overrides,
       customLlmExtraBody,
       dynamicVariables,
+      expectedDynamicVariables,
+      missingDynamicVariableDefault,
       userId,
     });
 
@@ -223,7 +227,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         callbacksRef.current.onError?.(error as string);
       }
     }
-  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
+  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, expectedDynamicVariables, missingDynamicVariableDefault, userId, callbacksRef]);
 
   const conversation: Conversation = {
     startSession,

@@ -128,6 +128,60 @@ const conversation = useConversation({
 });
 ```
 
+#### Dynamic Variables
+
+Dynamic variables allow you to pass runtime data to your agent's tools. If your agent has tools configured with dynamic variable references, you can provide these variables during conversation initiation.
+
+**Basic usage:**
+
+```ts
+const conversationId = await conversation.startSession({
+  agentId: "<your-agent-id>",
+  dynamicVariables: {
+    user_name: "John Doe",
+    account_type: "premium",
+    session_id: "abc123",
+  },
+});
+```
+
+**Handling missing required variables:**
+
+If your agent's tools require dynamic variables that you don't always have values for, you can use `expectedDynamicVariables` and `missingDynamicVariableDefault` to automatically fill missing variables with default values:
+
+```ts
+const conversationId = await conversation.startSession({
+  agentId: "<your-agent-id>",
+
+  // Variables you have available
+  dynamicVariables: {
+    user_name: "John Doe",
+    current_plan: "premium",
+  },
+
+  // All variables your agent's tools expect
+  expectedDynamicVariables: [
+    "user_name",
+    "current_plan",
+    "previous_orders",    // Will be auto-filled
+    "support_history",    // Will be auto-filled
+    "preferences",        // Will be auto-filled
+  ],
+
+  // Default value for missing variables (defaults to null)
+  missingDynamicVariableDefault: null,
+});
+```
+
+This prevents conversation failures when tools require variables you don't have. Missing variables will be automatically filled with the specified default value.
+
+**Supported default values:**
+- `null` (default)
+- Empty string: `""`
+- Custom string: `"N/A"`
+- Number: `0`
+- Boolean: `false`
+
 #### User identification
 
 You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server:

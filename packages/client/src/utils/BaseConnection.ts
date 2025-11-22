@@ -48,6 +48,43 @@ export type BaseSessionConfig = {
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
+  /**
+   * List of dynamic variable names that your agent's tools expect.
+   * Any variables in this list that aren't provided in dynamicVariables will be
+   * automatically filled with the value specified in missingDynamicVariableDefault.
+   *
+   * This is useful when your agent has tools that require dynamic variables,
+   * but you don't always have values for all of them.
+   *
+   * @example
+   * {
+   *   expectedDynamicVariables: ['clients', 'matters', 'conversation_history'],
+   *   missingDynamicVariableDefault: null,
+   *   dynamicVariables: { clients: 'client data' }
+   *   // Will automatically add: matters: null, conversation_history: null
+   * }
+   */
+  expectedDynamicVariables?: string[];
+  /**
+   * Default value to use for missing dynamic variables when tools require them.
+   * This helps avoid errors when tools expect dynamic variables that aren't provided.
+   * Only used when expectedDynamicVariables is specified.
+   *
+   * @default null
+   *
+   * @example
+   * // Fill missing dynamic variables with null
+   * { missingDynamicVariableDefault: null }
+   *
+   * @example
+   * // Fill missing dynamic variables with empty string
+   * { missingDynamicVariableDefault: "" }
+   *
+   * @example
+   * // Fill missing dynamic variables with a custom value
+   * { missingDynamicVariableDefault: "N/A" }
+   */
+  missingDynamicVariableDefault?: string | number | boolean | null;
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;

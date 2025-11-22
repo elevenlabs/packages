@@ -31,8 +31,33 @@ export function constructOverrides(
     overridesEvent.custom_llm_extra_body = config.customLlmExtraBody;
   }
 
-  if (config.dynamicVariables) {
-    overridesEvent.dynamic_variables = config.dynamicVariables;
+  // Handle dynamic variables with auto-filling of missing required variables
+  if (config.dynamicVariables || config.expectedDynamicVariables) {
+    const providedVariables = config.dynamicVariables || {};
+
+    // If expectedDynamicVariables is specified, fill in missing ones with default value
+    if (
+      config.expectedDynamicVariables &&
+      config.expectedDynamicVariables.length > 0
+    ) {
+      const defaultValue = config.missingDynamicVariableDefault ?? null;
+      const filledVariables: Record<string, string | number | boolean | null> =
+        { ...providedVariables };
+
+      // Add missing variables with default value
+      for (const varName of config.expectedDynamicVariables) {
+        if (!(varName in filledVariables)) {
+          filledVariables[varName] = defaultValue;
+        }
+      }
+
+      overridesEvent.dynamic_variables = filledVariables as Record<
+        string,
+        string | number | boolean
+      >;
+    } else {
+      overridesEvent.dynamic_variables = providedVariables;
+    }
   }
 
   if (config.userId) {

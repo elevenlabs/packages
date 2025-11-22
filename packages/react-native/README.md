@@ -102,10 +102,54 @@ Starts a new conversation session.
 - `config.agentId`: ElevenLabs agent ID, not needed if you provide a conversationToken.
 - `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your ElevenLabs API key.
 - `config.userId`: You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server.
+- `config.dynamicVariables`: Optional key-value pairs to pass runtime data to your agent's tools.
+- `config.expectedDynamicVariables`: Optional array of variable names your agent expects. Any missing variables will be auto-filled.
+- `config.missingDynamicVariableDefault`: Default value for missing variables (defaults to `null`). Can be `null`, string, number, or boolean.
+
+**Basic example:**
 
 ```typescript
 await conversation.startSession({
   agentId: "your-agent-id",
+});
+```
+
+**With dynamic variables:**
+
+```typescript
+await conversation.startSession({
+  agentId: "your-agent-id",
+  dynamicVariables: {
+    user_name: "John Doe",
+    account_type: "premium",
+  },
+});
+```
+
+**Auto-filling missing required variables:**
+
+If your agent's tools require dynamic variables you don't always have, use `expectedDynamicVariables` to prevent errors:
+
+```typescript
+await conversation.startSession({
+  agentId: "your-agent-id",
+
+  // Variables you have
+  dynamicVariables: {
+    user_name: "John Doe",
+    current_plan: "premium",
+  },
+
+  // All variables your agent expects
+  expectedDynamicVariables: [
+    "user_name",
+    "current_plan",
+    "previous_orders",    // Will be auto-filled with null
+    "support_history",    // Will be auto-filled with null
+  ],
+
+  // Optional: customize the default value
+  missingDynamicVariableDefault: null, // Can also be "", "N/A", 0, false, etc.
 });
 ```
 

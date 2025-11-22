@@ -59,6 +59,36 @@ export function SessionConfigProvider({
     return undefined;
   });
 
+  const expectedDynamicVariablesJSON = useAttribute("expected-dynamic-variables");
+  const expectedDynamicVariables = useComputed(() => {
+    if (expectedDynamicVariablesJSON.value) {
+      try {
+        return JSON.parse(expectedDynamicVariablesJSON.value) as string[];
+      } catch (e: any) {
+        console.error(
+          `[ConversationalAI] Cannot parse expected-dynamic-variables: ${e?.message}`
+        );
+      }
+    }
+
+    return undefined;
+  });
+
+  const missingDynamicVariableDefaultAttr = useAttribute("missing-dynamic-variable-default");
+  const missingDynamicVariableDefault = useComputed(() => {
+    if (missingDynamicVariableDefaultAttr.value) {
+      try {
+        // Try to parse as JSON first (for null, numbers, booleans)
+        return JSON.parse(missingDynamicVariableDefaultAttr.value);
+      } catch {
+        // If JSON parse fails, treat as string
+        return missingDynamicVariableDefaultAttr.value;
+      }
+    }
+
+    return null;
+  });
+
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
@@ -68,6 +98,8 @@ export function SessionConfigProvider({
     const isWebRTC = useWebRTCEnabled.value;
     const baseConfig = {
       dynamicVariables: dynamicVariables.value,
+      expectedDynamicVariables: expectedDynamicVariables.value,
+      missingDynamicVariableDefault: missingDynamicVariableDefault.value,
       overrides: overrides.value,
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,

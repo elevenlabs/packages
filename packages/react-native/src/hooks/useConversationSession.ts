@@ -25,6 +25,10 @@ export const useConversationSession = (
   const [dynamicVariables, setDynamicVariables] = useState<
     ConversationConfig["dynamicVariables"]
   >({});
+  const [expectedDynamicVariables, setExpectedDynamicVariables] =
+    useState<ConversationConfig["expectedDynamicVariables"]>(undefined);
+  const [missingDynamicVariableDefault, setMissingDynamicVariableDefault] =
+    useState<ConversationConfig["missingDynamicVariableDefault"]>(null);
   const [userId, setUserId] = useState<ConversationConfig["userId"]>(undefined);
 
   const startSession = useCallback(
@@ -36,6 +40,10 @@ export const useConversationSession = (
         setOverrides(config.overrides || {});
         setCustomLlmExtraBody(config.customLlmExtraBody || null);
         setDynamicVariables(config.dynamicVariables || {});
+        setExpectedDynamicVariables(config.expectedDynamicVariables);
+        setMissingDynamicVariableDefault(
+          config.missingDynamicVariableDefault ?? null
+        );
         setUserId(config.userId);
 
         let conversationToken: string;
@@ -91,6 +99,8 @@ export const useConversationSession = (
         setOverrides({});
         setCustomLlmExtraBody(null);
         setDynamicVariables({});
+        setExpectedDynamicVariables(undefined);
+        setMissingDynamicVariableDefault(null);
         setUserId(undefined);
         setConversationId("");
 
@@ -110,6 +120,8 @@ export const useConversationSession = (
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    expectedDynamicVariables,
+    missingDynamicVariableDefault,
     userId,
   };
 };

@@ -25,6 +25,8 @@ export const CustomAttributeList = [
   "server-location",
   "language",
   "dynamic-variables",
+  "expected-dynamic-variables",
+  "missing-dynamic-variable-default",
   "show-avatar-when-collapsed",
   "override-prompt",
   "override-first-message",
