@@ -46,13 +46,12 @@ export function SheetActionsV2({
   );
 
   return (
-    <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10">
-      <div className="absolute bottom-0 left-0 right-4 h-14 bg-base" />
-      <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto">
+    <div className="sticky bottom-0 pointer-events-none z-10 max-h-[50%] flex flex-col">
+      <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto min-h-0">
         {textInputEnabled.value && (
           <div
             className={cn(
-              "bg-base flex flex-col rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
+              "bg-base relative flex flex-col min-h-0 rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
               isFocused.value && "ring-2 ring-accent"
             )}
           >
@@ -61,12 +60,14 @@ export function SheetActionsV2({
               isFocused={isFocused}
               onSendMessage={handleSendMessage}
             />
-            <div className="w-full flex gap-1.5 items-center justify-end px-3 pb-3 pt-2">
-              <SheetButtons
-                userMessage={userMessage}
-                onSendMessage={handleSendMessage}
-                showTranscript={showTranscript}
-              />
+            <div className="absolute bottom-0 left-0 right-0 flex gap-1.5 items-center justify-end px-3 pb-3 pt-2 pointer-events-none">
+              <div className="pointer-events-auto flex gap-1.5 items-center">
+                <SheetButtons
+                  userMessage={userMessage}
+                  onSendMessage={handleSendMessage}
+                  showTranscript={showTranscript}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -138,7 +139,7 @@ function SheetTextarea({
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
       }
-      className="w-full resize-none bg-base leading-5 border-none outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 min-h-[1lh] max-h-[6lh] [field-sizing:content]"
+      className="w-full h-full resize-none bg-base leading-5 border-none outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-[4.5rem] max-h-full [field-sizing:content]"
     />
   );
 }
