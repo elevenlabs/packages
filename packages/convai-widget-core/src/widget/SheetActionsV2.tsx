@@ -163,7 +163,9 @@ function SheetButtons({
     return textInputEnabled.value;
   });
   const showCallButton = useComputed(() => {
-    return !textOnly.value && (!isDisconnected.value || showTranscript);
+    // 1. Do not show the call button if text only -> user use text input to initiate
+    // 2. Always show the call button for users ends the conversation
+    return !isDisconnected.value || (!textOnly.value && showTranscript);
   });
   const showMuteButton = useComputed(() => {
     return !textOnly.value && !isDisconnected.value;
