@@ -163,7 +163,7 @@ function SheetButtons({
     return textInputEnabled.value;
   });
   const showCallButton = useComputed(() => {
-    return !isDisconnected.value || showTranscript;
+    return !textOnly.value && (!isDisconnected.value || showTranscript);
   });
   const showMuteButton = useComputed(() => {
     return !textOnly.value && !isDisconnected.value;
@@ -191,7 +191,6 @@ function SheetButtons({
           variant="primary"
           disabled={!showSendButton.value}
           className="shadow-natural-sm"
-          iconClassName="-rotate-90 text-base"
           aria-label={text.send_message.value}
         />
       )}
