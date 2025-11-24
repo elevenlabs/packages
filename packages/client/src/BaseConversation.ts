@@ -21,6 +21,7 @@ import type {
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
+  AgentToolRequestEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -271,6 +272,12 @@ export class BaseConversation {
     }
   }
 
+  protected handleAgentToolRequest(event: AgentToolRequestEvent) {
+    if (this.options.onAgentToolRequest) {
+      this.options.onAgentToolRequest(event.agent_tool_request);
+    }
+  }
+
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
     if (event.agent_tool_response.tool_name === "end_call") {
       this.endSessionWithDetails({
@@ -385,6 +392,11 @@ export class BaseConversation {
 
       case "mcp_connection_status": {
         this.handleMCPConnectionStatus(parsedEvent);
+        return;
+      }
+
+      case "agent_tool_request": {
+        this.handleAgentToolRequest(parsedEvent);
         return;
       }
 

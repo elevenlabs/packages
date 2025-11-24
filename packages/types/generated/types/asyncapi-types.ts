@@ -130,6 +130,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "tentative_user_transcript"
   | "conversation_initiation_metadata"
   | "client_tool_call"
+  | "agent_tool_request"
   | "agent_tool_response"
   | "mcp_tool_call"
   | "mcp_connection_status"
@@ -257,6 +258,18 @@ export interface ClientToolCall {
   event_id: number;
 }
 
+export interface AgentToolRequestMessage {
+  type: "agent_tool_request";
+  agent_tool_request: AgentToolRequest;
+}
+
+export interface AgentToolRequest {
+  tool_name: string;
+  tool_call_id: string;
+  tool_type: string;
+  event_id: number;
+}
+
 export interface AgentToolResponseMessage {
   type: "agent_tool_response";
   agent_tool_response: AgentToolResponse;
@@ -267,6 +280,7 @@ export interface AgentToolResponse {
   tool_call_id: string;
   tool_type: string;
   is_error: boolean;
+  is_called: boolean;
   event_id: number;
 }
 
@@ -461,6 +475,11 @@ export interface AgentChatResponsePartClientEvent {
 export interface ClientToolCallClientEvent {
   type: "client_tool_call";
   client_tool_call: ClientToolCall;
+}
+
+export interface AgentToolRequestClientEvent {
+  type: "agent_tool_request";
+  agent_tool_request: AgentToolRequest;
 }
 
 export interface AgentToolResponseClientEvent {

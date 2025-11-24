@@ -3,6 +3,7 @@ export type {
   AgentChatResponsePartClientEvent,
   AgentResponseClientEvent,
   AgentResponseCorrectionClientEvent,
+  AgentToolRequestClientEvent,
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent,
   AudioClientEvent,

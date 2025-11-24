@@ -128,6 +128,7 @@ export type HookCallbacks = Pick<
   | "onVadScore"
   | "onInterruption"
   | "onAgentToolResponse"
+  | "onAgentToolRequest"
   | "onConversationMetadata"
   | "onMCPToolCall"
   | "onMCPConnectionStatus"
@@ -227,6 +228,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
           onInterruption:
             options?.onInterruption || defaultOptions?.onInterruption,
+          onAgentToolRequest:
+            options?.onAgentToolRequest || defaultOptions?.onAgentToolRequest,
           onAgentToolResponse:
             options?.onAgentToolResponse || defaultOptions?.onAgentToolResponse,
           onConversationMetadata:

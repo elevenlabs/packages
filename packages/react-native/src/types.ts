@@ -99,6 +99,7 @@ export type ClientToolCallEvent = Incoming.ClientToolCallClientEvent;
 export type VadScoreEvent = Incoming.VadScoreClientEvent;
 export type MCPToolCallClientEvent = Incoming.McpToolCallClientEvent;
 export type MCPConnectionStatusEvent = Incoming.McpConnectionStatusClientEvent;
+export type AgentToolRequestEvent = Incoming.AgentToolRequestClientEvent;
 export type AgentToolResponseEvent = Incoming.AgentToolResponseClientEvent;
 export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
@@ -133,6 +134,7 @@ export type ConversationEvent =
   | VadScoreEvent
   | MCPToolCallClientEvent
   | MCPConnectionStatusEvent
+  | AgentToolRequestEvent
   | AgentToolResponseEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent

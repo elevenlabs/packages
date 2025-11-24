@@ -169,6 +169,9 @@ export const MessageHandler = ({
       case "mcp_connection_status":
         callbacks.onMCPConnectionStatus?.(message.mcp_connection_status);
         break;
+      case "agent_tool_request":
+        callbacks.onAgentToolRequest?.(message.agent_tool_request);
+        break;
       case "agent_tool_response":
         callbacks.onAgentToolResponse?.(message.agent_tool_response);
 

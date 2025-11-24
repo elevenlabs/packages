@@ -58,6 +58,9 @@ export type Callbacks = {
   onMCPConnectionStatus?: (
     props: Generated.McpConnectionStatusClientEvent["mcp_connection_status"]
   ) => void;
+  onAgentToolRequest?: (
+    props: Generated.AgentToolRequestClientEvent["agent_tool_request"]
+  ) => void;
   onAgentToolResponse?: (
     props: Generated.AgentToolResponseClientEvent["agent_tool_response"]
   ) => void;
