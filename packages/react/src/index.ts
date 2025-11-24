@@ -185,13 +185,19 @@ export function useConversation<T extends HookOptions & ControlledState>(
           options?.serverLocation || serverLocation
         );
         const origin = getOriginForLocation(resolvedServerLocation);
-        const livekitUrl = getLivekitUrlForLocation(resolvedServerLocation);
+        const calculatedLivekitUrl = getLivekitUrlForLocation(
+          resolvedServerLocation
+        );
 
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
           origin,
-          livekitUrl,
+
+          livekitUrl:
+            options?.livekitUrl ||
+            defaultOptions?.livekitUrl ||
+            calculatedLivekitUrl,
           overrides: {
             ...(defaultOptions?.overrides ?? {}),
             ...(options?.overrides ?? {}),
