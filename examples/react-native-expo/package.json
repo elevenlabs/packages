@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --tunnel",
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && npm start",
     "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && npm start",
-    "build:android": "expo build:android",
-    "build:ios": "expo build:ios",
+    "build:android": "eas build -p android",
+    "build:ios": "eas build -p ios",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
