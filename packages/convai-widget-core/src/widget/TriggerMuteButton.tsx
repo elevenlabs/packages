@@ -3,6 +3,7 @@ import { useMicConfig } from "../contexts/mic-config";
 import { Button, ButtonProps } from "../components/Button";
 import { SizeTransition } from "../components/SizeTransition";
 import { useTextContents } from "../contexts/text-contents";
+import { useConversation } from "../contexts/conversation";
 
 interface TriggerMuteButtonProps extends Omit<ButtonProps, "icon"> {
   visible: boolean;
@@ -14,10 +15,14 @@ export function TriggerMuteButton({
 }: TriggerMuteButtonProps) {
   const text = useTextContents();
   const { isMuted, isMutingEnabled, setIsMuted } = useMicConfig();
+  const conversation = useConversation();
 
   const onClick = useCallback(() => {
-    setIsMuted(!isMuted.peek());
-  }, [setIsMuted]);
+    const newMutedState = !isMuted.peek();
+    setIsMuted(newMutedState);
+    // Also control the actual audio stream
+    conversation.setMicMuted?.(newMutedState);
+  }, [setIsMuted, conversation]);
 
   if (!isMutingEnabled.value) {
     return null;
