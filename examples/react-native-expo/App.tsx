@@ -66,6 +66,9 @@ const ConversationScreen = () => {
     onMCPConnectionStatus: (event) => {
       console.log("🔌 MCP Connection Status:", event);
     },
+    onAgentToolRequest: (event) => {
+      console.log("🛠️ Agent Tool Request:", event);
+    },
     onAgentToolResponse: (event) => {
       console.log("🛠️ Agent Tool Response:", event);
     },

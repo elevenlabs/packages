@@ -169,6 +169,7 @@ The options passed to `startSession` can also be used to register optional callb
 - **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
 - **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
 - **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolRequest** - handler called when the agent begins tool execution.
 - **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
 - **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
 - **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.

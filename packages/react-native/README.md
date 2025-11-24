@@ -284,6 +284,7 @@ Pass to `useConversation` hook to handle various conversation events:
 - `onUnhandledClientToolCall?: (props: ClientToolCall) => void` - Called when a client tool is invoked but not defined
 - `onMCPToolCall?: (props: McpToolCall) => void` - Called when an MCP (Model Context Protocol) tool is invoked
 - `onMCPConnectionStatus?: (props: McpConnectionStatus) => void` - Called when MCP connection status changes
+- `onAgentToolRequest?: (props: AgentToolRequest) => void` - Called when the agent begins executing a tool
 - `onAgentToolResponse?: (props: AgentToolResponse) => void` - Called when the agent receives a tool execution response
 
 #### Debug
