@@ -92,6 +92,8 @@ export const DefaultTextContents = {
   copied: "Copied!",
   accept_terms: "Accept",
   dismiss_terms: "Cancel",
+  switch_to_voice: "Switch to voice mode",
+  switch_to_chat: "Switch to chat mode",
 
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",

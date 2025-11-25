@@ -86,7 +86,7 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
+  const { isMuted, setIsMuted } = useMicConfig();
 
   useSignalEffect(() => {
     const muted = isMuted.value;
@@ -126,6 +126,22 @@ function useConversationSetup() {
       conversationIndex,
       conversationTextOnly,
       transcript,
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
+      toggleMode: () => {
+        if (!conversationRef.current?.isOpen()) {
+          return;
+        }
+        const newTextMode = !conversationTextOnly.peek();
+        conversationTextOnly.value = newTextMode;
+        
+        // Actually mute the microphone stream at the conversation level
+        conversationRef.current.setMicMuted(newTextMode);
+        
+        // Also update the widget's mic config state
+        setIsMuted(newTextMode);
+      },
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
 
@@ -140,15 +156,9 @@ function useConversationSetup() {
 
         let processedConfig = structuredClone(config.peek());
         // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode.
-        if (initialMessage && widgetConfig.value.supports_text_only) {
-          processedConfig.textOnly = true;
-          if (!widgetConfig.value.text_only) {
-            processedConfig.overrides ??= {};
-            processedConfig.overrides.conversation ??= {};
-            processedConfig.overrides.conversation.textOnly = true;
-          }
-        }
+        // agent supports it, track that they're in text mode but don't
+        // force textOnly on the conversation (so they can switch to voice later).
+        const startedWithText = !!initialMessage && widgetConfig.value.supports_text_only && !widgetConfig.value.text_only;
 
         try {
           processedConfig = triggerCallEvent(element, processedConfig);
@@ -159,7 +169,13 @@ function useConversationSetup() {
           );
         }
 
-        conversationTextOnly.value = processedConfig.textOnly ?? false;
+        conversationTextOnly.value = startedWithText || (processedConfig.textOnly ?? false);
+        
+        // If starting in text mode, mute the microphone
+        if (conversationTextOnly.value) {
+          setIsMuted(true);
+        }
+        
         transcript.value = initialMessage
           ? [
               {
@@ -296,7 +312,11 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          conversationRef.current.setMicMuted(isMuted.peek());
+          
+          // Set initial mic mute state
+          const shouldMuteMic = isMuted.peek() || (conversationTextOnly.peek() ?? false);
+          conversationRef.current.setMicMuted(shouldMuteMic);
+          
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
