@@ -190,6 +190,7 @@ describe("Conversation", () => {
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "user",
+        role: "user",
         message: USER_TRANSCRIPT,
       });
 
