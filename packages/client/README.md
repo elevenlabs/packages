@@ -742,8 +742,11 @@ connection.send({
   audioBase64: base64AudioData,
   commit: false, // Optional: commit immediately
   sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
 });
 ```
+
+**Warning:** The `previousText`field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 #### commit()
 
@@ -793,6 +796,7 @@ try {
     microphone: {},
   });
 
+  // Generic event that fires on all errors, including auth and quota exceeded
   connection.on(RealtimeEvents.ERROR, (error) => {
     console.error("Connection error:", error);
   });

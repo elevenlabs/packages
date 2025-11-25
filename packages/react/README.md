@@ -825,8 +825,11 @@ Send audio data (manual mode only):
 scribe.sendAudio(base64AudioChunk, {
   commit: false, // Optional: commit immediately
   sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
 });
 ```
+
+**Warning:** The `previousText`field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 ###### commit()
 
@@ -888,9 +891,11 @@ const scribe = useScribe({
     console.log("Text:", data.text);
     console.log("Word timestamps:", data.words);
   },
+  // Generic error handler for all errors
   onError: (error: Error | Event) => {
-    console.error("Connection error:", error);
+    console.error("Scribe error:", error);
   },
+  // Specific errors can also be tracked
   onAuthError: (data: { error: string }) => {
     console.error("Auth error:", data.error);
   },
