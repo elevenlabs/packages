@@ -56,9 +56,11 @@ export class Input {
       }
 
       if (inputDeviceId) {
-        options.deviceId = isIosDevice()
-          ? { ideal: inputDeviceId }
-          : { exact: inputDeviceId };
+        const supportsDeviceId =
+          !!navigator.mediaDevices.getSupportedConstraints().deviceId;
+        options.deviceId = supportsDeviceId
+          ? { exact: inputDeviceId }
+          : { ideal: inputDeviceId };
       }
 
       const supportsSampleRateConstraint =
@@ -129,10 +131,12 @@ export class Input {
         ...defaultConstraints,
       };
 
-      if (inputDeviceId) {
-        options.deviceId = isIosDevice() 
-          ? { ideal: inputDeviceId } 
-          : { exact: inputDeviceId };
+     if (inputDeviceId) {
+        const supportsDeviceId =
+          !!navigator.mediaDevices.getSupportedConstraints().deviceId;
+        options.deviceId = supportsDeviceId
+          ? { exact: inputDeviceId }
+          : { ideal: inputDeviceId };
       }
       // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
