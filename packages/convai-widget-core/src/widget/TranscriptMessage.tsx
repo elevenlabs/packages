@@ -28,7 +28,7 @@ function MessageBubble({ entry }: MessageBubbleProps) {
           : "pr-16 origin-top-left"
       )}
     >
-      {entry.role === "ai" && (
+      {entry.role === "agent" && (
         <img
           src={previewUrl}
           alt="AI agent avatar"

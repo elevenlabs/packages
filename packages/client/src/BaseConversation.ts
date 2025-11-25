@@ -164,6 +164,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "ai",
+        role: "agent",
         message: event.agent_response_event.agent_response,
       });
     }
@@ -173,6 +174,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "user",
+        role: "user",
         message: event.user_transcription_event.user_transcript,
       });
     }

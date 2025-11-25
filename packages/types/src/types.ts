@@ -3,7 +3,7 @@ import type * as Generated from "../generated/types/asyncapi-types";
 /**
  * Role in the conversation
  */
-export type Role = "user" | "ai";
+export type Role = "user" | "agent";
 
 /**
  * Current mode of the conversation
@@ -36,6 +36,15 @@ export type DisconnectionDetails =
       reason: "user";
     };
 
+export interface MessagePayload {
+  message: string;
+  /**
+   * @deprecated use {@link role} instead.
+   */
+  source: "user" | "ai";
+  role: Role;
+}
+
 /**
  * Shared Callbacks, ensures all callbacks are implemented across all SDKs
  */
@@ -43,7 +52,7 @@ export type Callbacks = {
   onConnect?: (props: { conversationId: string }) => void;
   onDisconnect?: (details: DisconnectionDetails) => void;
   onError?: (message: string, context?: any) => void;
-  onMessage?: (props: { message: string; source: Role }) => void;
+  onMessage?: (props: MessagePayload) => void;
   onAudio?: (base64Audio: string) => void;
   onModeChange?: (prop: { mode: Mode }) => void;
   onStatusChange?: (prop: { status: Status }) => void;
