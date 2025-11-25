@@ -56,7 +56,7 @@ export class Input {
       }
 
       if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+        options.deviceId = isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
       }
 
       const supportsSampleRateConstraint =
@@ -128,7 +128,7 @@ export class Input {
       };
 
       if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+        options.deviceId = isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
       }
       // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
