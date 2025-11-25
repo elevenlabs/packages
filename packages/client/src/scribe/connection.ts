@@ -7,6 +7,7 @@ import type {
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
 } from "@elevenlabs/types";
 
 // Re-export types for public API
@@ -18,6 +19,7 @@ export type {
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
 };
 
 export type WebSocketMessage =
@@ -27,7 +29,8 @@ export type WebSocketMessage =
   | CommittedTranscriptWithTimestampsMessage
   | ScribeErrorMessage
   | ScribeAuthErrorMessage
-  | ScribeQuotaExceededErrorMessage;
+  | ScribeQuotaExceededErrorMessage
+  | ScribeCommitThrottledErrorMessage;
 
 /**
  * Simple EventEmitter implementation for browser compatibility.
@@ -84,6 +87,8 @@ export enum RealtimeEvents {
   CLOSE = "close",
   /** Emitted when a quota exceeded error occurs */
   QUOTA_EXCEEDED = "quota_exceeded",
+  /** Emitted when a commit request is throttled */
+  COMMIT_THROTTLED = "commit_throttled",
 }
 
 /**
@@ -170,6 +175,9 @@ export class RealtimeConnection {
             break;
           case "quota_exceeded":
             this.eventEmitter.emit(RealtimeEvents.QUOTA_EXCEEDED, data);
+            break;
+          case "commit_throttled":
+            this.eventEmitter.emit(RealtimeEvents.COMMIT_THROTTLED, data);
             break;
           case "error":
             this.eventEmitter.emit(RealtimeEvents.ERROR, data);

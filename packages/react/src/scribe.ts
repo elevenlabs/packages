@@ -12,6 +12,7 @@ import type {
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
 } from "@elevenlabs/client";
 
 // ============= Types =============
@@ -41,6 +42,7 @@ export interface ScribeCallbacks {
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
   onQuotaExceededError?: (data: { error: string }) => void;
+  onCommitThrottledError?: (data: { error: string }) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
 }
@@ -118,6 +120,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onConnect,
     onDisconnect,
     onQuotaExceededError,
+    onCommitThrottledError,
 
     // Connection options
     token: defaultToken,
@@ -303,6 +306,13 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           setError(message.error);
           setStatus("error");
           onQuotaExceededError?.(message);
+        });
+
+        connection.on(RealtimeEvents.COMMIT_THROTTLED, (data: unknown) => {
+          const message = data as ScribeCommitThrottledErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onCommitThrottledError?.(message);
         });
 
         connection.on(RealtimeEvents.OPEN, () => {

@@ -691,3 +691,8 @@ export interface ScribeQuotaExceededErrorMessage {
   message_type: "quota_exceeded";
   error: string;
 }
+
+export interface ScribeCommitThrottledErrorMessage {
+  message_type: "commit_throttled";
+  error: string;
+}
