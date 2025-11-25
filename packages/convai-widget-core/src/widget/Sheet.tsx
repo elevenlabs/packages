@@ -57,7 +57,7 @@ export function Sheet({ open }: SheetProps) {
       return [
         {
           type: "message",
-          role: "ai",
+          role: "agent",
           message: firstMessage.value,
           isText: true,
           conversationIndex:

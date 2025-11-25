@@ -209,11 +209,11 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ source, message }) => {
+            onMessage: ({ role, message }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
-                source === "ai" &&
+                role === "agent" &&
                 !receivedFirstMessageRef.current
               ) {
                 receivedFirstMessageRef.current = true;
@@ -221,11 +221,11 @@ function useConversationSetup() {
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
                 return;
-              } else if (source === "ai") {
+              } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
               }
 
-              if (source === "ai" && isReceivingStreamRef.current) {
+              if (role === "agent" && isReceivingStreamRef.current) {
                 isReceivingStreamRef.current = false;
                 return;
               }
@@ -234,7 +234,7 @@ function useConversationSetup() {
                 ...transcript.value,
                 {
                   type: "message",
-                  role: source,
+                  role,
                   message,
                   isText: false,
                   conversationIndex: conversationIndex.peek(),
@@ -263,7 +263,7 @@ function useConversationSetup() {
                   const updatedTranscript = [...currentTranscript];
                   const streamingMessage = updatedTranscript[streamingIndex] ??= {
                     type: "message",
-                    role: "ai",
+                    role: "agent",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
@@ -296,7 +296,7 @@ function useConversationSetup() {
                     }
                   : {
                       type: "disconnection",
-                      role: details.reason === "user" ? "user" : "ai",
+                      role: details.reason === "user" ? "user" : "agent",
                       conversationIndex: conversationIndex.peek(),
                     },
               ];

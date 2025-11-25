@@ -127,6 +127,7 @@ export const MessageHandler = ({
       callbacks.onMessage?.({
         message: messageText,
         source: message.type === "user_transcript" ? "user" : "ai",
+        role: message.type === "user_transcript" ? "user" : "agent",
       });
     }
 
