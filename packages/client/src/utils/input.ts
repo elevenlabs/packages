@@ -131,7 +131,7 @@ export class Input {
         ...defaultConstraints,
       };
 
-     if (inputDeviceId) {
+      if (inputDeviceId) {
         const supportsDeviceId =
           !!navigator.mediaDevices.getSupportedConstraints().deviceId;
         options.deviceId = supportsDeviceId
