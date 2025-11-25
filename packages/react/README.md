@@ -829,7 +829,7 @@ scribe.sendAudio(base64AudioChunk, {
 });
 ```
 
-**Warning:** The `previousText`field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
+**Warning:** The `previousText` field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 ###### commit()
 
