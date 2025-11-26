@@ -134,6 +134,6 @@ jobs:
           PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
           cd $PACKAGE_PATH
           # Update npm to latest for OIDC support (requires npm v11.5.1+)
-          npm install -g npm@latest
+          alias npm='pnpm exec npm'
           # Use pnpm publish (not npm) to handle workspace:* protocol conversion
           pnpm publish --access public --no-git-checks --tag $PUBLISH_TAG
