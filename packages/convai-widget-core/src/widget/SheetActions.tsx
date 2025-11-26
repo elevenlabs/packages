@@ -52,7 +52,7 @@ export function SheetActions({
         {textInputEnabled.value && (
           <div
             className={cn(
-              "bg-base relative flex flex-col min-h-0 rounded-[calc(var(--el-sheet-radius)-8px)] border border-base-border shadow-natural-xs w-full transition-shadow overflow-hidden",
+              "bg-base relative flex flex-col min-h-0 rounded-[calc(var(--el-sheet-radius)-8px)] border border-base-border w-full transition-shadow overflow-hidden",
               isFocused.value && "ring-2 ring-accent"
             )}
           >
