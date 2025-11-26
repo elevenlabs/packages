@@ -11,21 +11,21 @@ jobs:
       id-token: write
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Install PNPM
-        run: npm i pnpm -g
-
       - name: Install dependencies
-        run: pnpm i
+        run: pnpm install --frozen-lockfile
 
       - name: Build packages
         run: pnpm run build
@@ -132,6 +132,6 @@ jobs:
           PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
           cd $PACKAGE_PATH
           # Update npm to latest for OIDC support (requires npm v11.5.1+)
-          npm install -g npm@latest
+          alias npm='pnpm exec npm'
           # Use pnpm publish (not npm) to handle workspace:* protocol conversion
           pnpm publish --access public --no-git-checks --tag $PUBLISH_TAG
