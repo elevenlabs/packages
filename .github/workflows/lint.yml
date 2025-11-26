@@ -18,16 +18,18 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
       - name: Set up node
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      - name: Install PNPM
-        run: npm i pnpm -g
-
       - name: Install dependencies
-        run: pnpm i
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm run build
