@@ -45,14 +45,15 @@ const ConversationScreen = () => {
     }) => {
       console.log(`🔊 Can send feedback: ${canSendFeedback}`);
     },
-    // onVadScore: ({ vadScore }: { vadScore: number }) => {
-    //   console.log(`🎙️ VAD Score: ${vadScore}`);
-    // },
+    onVadScore: ({ vadScore }: { vadScore: number }) => {
+      // commented out as it's quite noisy
+      // console.log(`🎙️ VAD Score: ${vadScore}`);
+    },
     onInterruption: (event) => {
       console.log("⚡ Interruption detected:", event);
     },
     onAudio: (base64Audio: string) => {
-      console.log(`🔊 Audio chunk received: ${base64Audio} bytes`);
+      console.log(`🔊 Audio chunk received: ${base64Audio.length} bytes`);
     },
     onMCPToolCall: (event) => {
       console.log("🔧 MCP Tool Call:", event);
