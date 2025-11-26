@@ -10,33 +10,33 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v6
+
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: 8
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Build
         run: pnpm --filter @elevenlabs/agents-cli build
-      
+
       - name: Run E2E tests
         run: pnpm --filter @elevenlabs/agents-cli test:e2e
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY }}
           ELEVENLABS_TEST_API_KEY: ${{ secrets.ELEVENLABS_TEST_API_KEY_SECONDARY }}
-          
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
