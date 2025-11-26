@@ -6,7 +6,12 @@ import {
 } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
-import { parsePlacement, parseVariant, WidgetConfig } from "../types/config";
+import {
+  parsePlacement,
+  parseVariant,
+  type SyntaxHighlightTheme,
+  type WidgetConfig,
+} from "../types/config";
 import { useAttribute } from "./attributes";
 import { useServerLocation } from "./server-location";
 
@@ -200,6 +205,17 @@ export function useWebRTC() {
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.end_feedback?.type ?? null);
+}
+
+export function useSyntaxTheme() {
+  const override = useAttribute("syntax-highlight-theme");
+  const config = useWidgetConfig();
+
+  return useComputed<SyntaxHighlightTheme>(() => {
+    const value = override.value ?? config.value.syntax_highlight_theme;
+    if (value === "light" || value === "dark") return value;
+    return "light";
+  });
 }
 
 async function fetchConfig(
