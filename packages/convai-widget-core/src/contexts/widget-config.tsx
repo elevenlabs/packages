@@ -4,9 +4,11 @@ import {
   useSignal,
   useSignalEffect,
 } from "@preact/signals";
+import { TinyColor } from "@ctrl/tinycolor";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import {
+  DefaultStyles,
   parsePlacement,
   parseVariant,
   type SyntaxHighlightTheme,
@@ -212,9 +214,20 @@ export function useSyntaxTheme() {
   const config = useWidgetConfig();
 
   return useComputed<SyntaxHighlightTheme>(() => {
-    const value = override.value ?? config.value.syntax_highlight_theme;
-    if (value === "light" || value === "dark") return value;
-    return "light";
+    // Explicit override takes priority
+    const explicitValue = override.value ?? config.value.syntax_highlight_theme;
+    if (explicitValue === "light" || explicitValue === "dark") {
+      return explicitValue;
+    }
+    // Auto-detect based on base_active background color
+    const baseActive =
+      config.value.styles?.base_active ?? DefaultStyles.base_active;
+    const color = new TinyColor(baseActive);
+
+    if (!color.isValid) {
+      return "light";
+    }
+    return color.isDark() ? "dark" : "light";
   });
 }
 
