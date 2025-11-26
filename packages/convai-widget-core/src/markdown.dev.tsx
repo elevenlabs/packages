@@ -21,15 +21,15 @@ const LIGHT_THEME_STYLES = {
 };
 
 const DARK_THEME_STYLES = {
-  base: "rgba(8, 9, 10, 1)",
-  base_hover: "oklch(29.8% 0 none)",
-  base_active: "oklch(32.5% 0 none)",
-  base_border: "oklch(35.3% 0 none)",
-  base_subtle: "#ffffffaf",
-  base_primary: "#FFFFFF",
-  accent: "#E0E0E0",
-  accent_hover: "#F0F0F0",
-  accent_active: "#F0F0F0",
+  base: "#08090a",
+  base_hover: "#2d2d2d",
+  base_active: "#343434",
+  base_border: "#3b3b3b",
+  base_primary: "#ffffff",
+  base_subtle: "#ffffff",
+  accent: "#e0e0e0",
+  accent_hover: "#d6d6d6",
+  accent_active: "#d6d6d6",
   accent_primary: "#311921",
   button_radius: 8,
   input_radius: 8,
@@ -101,9 +101,23 @@ function MockConversationProvider({
     {
       type: "message",
       role: "ai" as Role,
-      message: displayTextSignal.value,
+      message: "Hello, how can I help you?",
       isText: true,
       conversationIndex: 0,
+    },
+    {
+      type: "message",
+      role: "user" as Role,
+      message: "hi",
+      isText: true,
+      conversationIndex: 1,
+    },
+    {
+      type: "message",
+      role: "ai" as Role,
+      message: displayTextSignal.value,
+      isText: true,
+      conversationIndex: 2,
     },
   ]);
 
