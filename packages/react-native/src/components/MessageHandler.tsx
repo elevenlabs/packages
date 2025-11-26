@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useLocalParticipant, useDataChannel } from "@livekit/react-native";
-import type { LocalParticipant } from "livekit-client";
+import { useLocalParticipant, useDataChannel, useRoomContext } from "@livekit/react-native";
+import { RoomEvent } from "livekit-client";
+import type { LocalParticipant, RemoteParticipant } from "livekit-client";
 import type {
   Callbacks,
   ClientToolsConfig,
@@ -44,9 +45,25 @@ export const MessageHandler = ({
   onEndSession,
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
 
   // Track agent response count for synthetic event IDs (WebRTC mode)
   const agentResponseCountRef = React.useRef(1);
+
+  // Detect agent disconnection
+  useEffect(() => {
+    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      if (participant.identity?.startsWith("agent")) {
+        onEndSession("agent");
+      }
+    };
+
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+
+    return () => {
+      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+    };
+  }, [room, onEndSession]);
 
   // Reset agent response count when connection status changes
   useEffect(() => {
