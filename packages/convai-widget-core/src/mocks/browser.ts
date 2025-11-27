@@ -74,6 +74,40 @@ export const AGENTS = {
       },
     },
   },
+  markdown: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: `# Heading 1
+
+This is **bold** and *italic* text.
+
+- List item 1
+- List item 2
+
+1. Ordered item 1
+2. Ordered item 2
+
+\`inline code\`
+
+\`\`\`javascript
+const codeBlock = true;
+\`\`\`
+
+[Link text](https://example.com)
+
+![Alt text](data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs=)
+
+> Blockquote text
+
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+
+---
+`,
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {

@@ -1,5 +1,6 @@
 import {
   type DetailedHTMLProps,
+  Fragment,
   type HTMLAttributes,
   type ImgHTMLAttributes,
   isValidElement,
@@ -8,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "preact/compat";
-import type { ExtraProps, Options } from "react-markdown";
+import type { Components, ExtraProps } from "../utils/markdown";
 import { cn } from "../../utils/cn";
 import type { Signalish } from "../../utils/signalish";
 import { CodeBlock } from "./CodeBlock";
@@ -666,10 +667,9 @@ export const components = {
   blockquote: MemoBlockquote,
   code: MemoCode,
   img: MemoImg,
-  pre: ({ children }: { children: ReactNode }) => children,
+  pre: Fragment,
   sup: MemoSup,
   sub: MemoSub,
   p: MemoParagraph,
   section: MemoSection,
-} as Options["components"];
-// type-cast to satisfy react-markdown requirements, preact memo generated a different signature than react
+} as Components;

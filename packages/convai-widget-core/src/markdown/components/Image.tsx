@@ -1,6 +1,6 @@
 import { useCallback, useContext } from "preact/compat";
 import type { DetailedHTMLProps, ImgHTMLAttributes } from "react";
-import type { ExtraProps } from "react-markdown";
+import type { ExtraProps } from "../utils/markdown";
 import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
 import { save } from "../utils/utils";

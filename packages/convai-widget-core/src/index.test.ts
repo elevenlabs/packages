@@ -1,5 +1,5 @@
 import { page, userEvent } from "@vitest/browser/context";
-import { describe, it, beforeAll, expect, afterAll } from "vitest";
+import { describe, it, beforeAll, beforeEach, expect, afterAll } from "vitest";
 import { Worker } from "./mocks/browser";
 import { setupWebComponent } from "./mocks/web-component";
 import { Variants } from "./types/config";
@@ -339,5 +339,80 @@ describe("elevenlabs-convai", () => {
           .not.toBeInTheDocument();
       }
     );
+  });
+
+  describe("markdown rendering", () => {
+    beforeEach(() => {
+      setupWebComponent({
+        "agent-id": "markdown",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+    });
+
+    it("should render headings", async () => {
+      const heading = page.getByRole("heading", { name: "Heading 1" });
+      await expect.element(heading).toBeInTheDocument();
+    });
+
+    it("should render text formatting (bold, italic)", async () => {
+      const boldText = page.getByText("bold");
+      await expect.element(boldText).toBeInTheDocument();
+      await expect.element(boldText).toHaveClass("font-medium");
+
+      const italicText = page.getByText("italic");
+      await expect.element(italicText).toBeInTheDocument();
+    });
+
+    it("should render lists", async () => {
+      // Verify unordered list items
+      await expect.element(page.getByText("List item 1")).toBeInTheDocument();
+      await expect.element(page.getByText("List item 2")).toBeInTheDocument();
+
+      // Verify ordered list items
+      await expect
+        .element(page.getByText("Ordered item 1"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Ordered item 2"))
+        .toBeInTheDocument();
+    });
+
+    it("should render code blocks and inline code", async () => {
+      const inlineCode = page.getByText("inline code");
+      await expect.element(inlineCode).toBeInTheDocument();
+
+      const codeBlock = page.getByText("const codeBlock = true;");
+      await expect.element(codeBlock).toBeInTheDocument();
+    });
+
+    it("should render links", async () => {
+      const link = page.getByRole("link", { name: "Link text" });
+      await expect.element(link).toBeInTheDocument();
+      await expect
+        .element(link)
+        .toHaveAttribute("href", "https://example.com/");
+    });
+
+    it("should render images", async () => {
+      const image = page.getByRole("img", { name: "Alt text" });
+      await expect.element(image).toBeInTheDocument();
+    });
+
+    it("should render blockquotes", async () => {
+      await expect
+        .element(page.getByText("Blockquote text"))
+        .toBeInTheDocument();
+    });
+
+    it("should render tables", async () => {
+      // Verify table headers
+      await expect.element(page.getByText("Header 1")).toBeInTheDocument();
+      await expect.element(page.getByText("Header 2")).toBeInTheDocument();
+
+      // Verify table cells
+      await expect.element(page.getByText("Cell 1")).toBeInTheDocument();
+      await expect.element(page.getByText("Cell 2")).toBeInTheDocument();
+    });
   });
 });
