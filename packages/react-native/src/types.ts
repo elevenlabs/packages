@@ -70,6 +70,7 @@ export type ConversationConfig = {
     };
     tts?: {
       voiceId?: string;
+      speed?: number;
     };
     conversation?: {
       textOnly?: boolean;
