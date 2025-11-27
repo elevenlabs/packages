@@ -130,8 +130,10 @@ jobs:
       - name: Publish package
         run: |
           PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
+          # Instruct pnpm to use the local npm installation instead of the global one
+          # This is necessary for OIDC support (requires npm v11.5.1+)
+          export PATH="$PWD/node_modules/.bin:$PATH"
           cd $PACKAGE_PATH
-          # Update npm to latest for OIDC support (requires npm v11.5.1+)
           alias npm='pnpm exec npm'
           # Use pnpm publish (not npm) to handle workspace:* protocol conversion
           pnpm publish --access public --no-git-checks --tag $PUBLISH_TAG
