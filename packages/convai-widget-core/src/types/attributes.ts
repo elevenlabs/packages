@@ -40,6 +40,7 @@ export const CustomAttributeList = [
   "user-id",
   "use-rtc",
   "collect-feedback",
+  "syntax-highlight-theme",
 ] as const;
 
 export type CustomAttributes = {

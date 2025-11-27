@@ -47,12 +47,12 @@ export function SheetActions({
 
   return (
     <div className="sticky bottom-0 pointer-events-none z-10 max-h-[50%] flex flex-col">
-      <div className="absolute top-0 left-0 right-0 h-4 -translate-y-full bg-gradient-to-t from-base to-transparent pointer-events-none backdrop-blur-[1px] [mask-image:linear-gradient(to_top,black,transparent)] shadow-upper-blur" />
+      <div className="absolute top-0 left-0 right-0 h-4 -translate-y-full bg-gradient-to-t from-base to-transparent pointer-events-none backdrop-blur-[1px] [mask-image:linear-gradient(to_top,black,transparent)] shadow-scroll-fade-top" />
       <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto min-h-0">
         {textInputEnabled.value && (
           <div
             className={cn(
-              "bg-base relative flex flex-col min-h-0 rounded-[calc(var(--el-sheet-radius)-8px)] shadow-natural-xs w-full transition-shadow overflow-hidden",
+              "bg-base relative flex flex-col min-h-0 rounded-[calc(var(--el-sheet-radius)-8px)] border border-base-border w-full transition-shadow overflow-hidden",
               isFocused.value && "ring-2 ring-accent"
             )}
           >
@@ -140,7 +140,7 @@ function SheetTextarea({
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
       }
-      className="w-full h-full resize-none bg-base leading-5 border-none outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-[4.5rem] max-h-full [field-sizing:content]"
+      className="w-full h-full resize-none bg-base leading-5 outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-[4.5rem] max-h-full [field-sizing:content]"
     />
   );
 }
@@ -175,7 +175,7 @@ function SheetButtons({
   return (
     <>
       <SizeTransition visible={showMuteButton.value}>
-        <TriggerMuteButton className="shadow-natural-sm border-0 bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
+        <TriggerMuteButton className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>
       <SizeTransition visible={showCallButton.value}>
         <CallButton
@@ -184,7 +184,7 @@ function SheetButtons({
           disabled={
             status.value === "disconnecting" || status.value === "connecting"
           }
-          className="shadow-natural-sm border-0 bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+          className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />
       </SizeTransition>
       {showSendButtonControl.value && (
@@ -193,7 +193,6 @@ function SheetButtons({
           onClick={onSendMessage}
           variant="primary"
           disabled={!showSendButton.value}
-          className="shadow-natural-sm"
           aria-label={text.send_message.value}
         />
       )}

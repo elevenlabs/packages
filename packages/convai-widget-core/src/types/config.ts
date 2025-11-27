@@ -26,6 +26,7 @@ export function parsePlacement(placement: string | undefined): Placement {
 
 export type FeedbackMode = "none" | "during" | "end";
 export type FeedbackType = "rating";
+export type SyntaxHighlightTheme = "light" | "dark";
 
 export interface WidgetConfig {
   variant: Variant;
@@ -61,6 +62,7 @@ export interface WidgetConfig {
   supports_text_only: boolean;
   first_message?: string;
   use_rtc?: boolean;
+  syntax_highlight_theme?: SyntaxHighlightTheme;
 }
 
 export type AvatarConfig =
