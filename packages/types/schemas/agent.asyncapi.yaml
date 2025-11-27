@@ -74,6 +74,7 @@ channels:
           - $ref: "#/components/messages/Pong"
           - $ref: "#/components/messages/UserMessage"
           - $ref: "#/components/messages/UserActivity"
+          - $ref: "#/components/messages/ConversationModeChange"
           - $ref: "#/components/messages/UserFeedback"
           - $ref: "#/components/messages/ClientToolResult"
           - $ref: "#/components/messages/MCPToolApprovalResult"
@@ -114,6 +115,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/UserActivityPayload"
+
+    ConversationModeChange:
+      name: ConversationModeChangeClientToOrchestratorEvent
+      title: Conversation Mode Change
+      summary: Dynamic mode switch between text-only and voice
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConversationModeChangePayload"
 
     UserFeedback:
       name: UserFeedbackClientToOrchestratorEvent
@@ -539,6 +548,17 @@ components:
         type:
           type: string
           const: user_activity
+
+    ConversationModeChangePayload:
+      type: object
+      required: [type, text_only]
+      properties:
+        type:
+          type: string
+          const: conversation_mode_change
+        text_only:
+          type: boolean
+          description: true for text-only mode, false for voice mode
 
     UserFeedbackPayload:
       type: object

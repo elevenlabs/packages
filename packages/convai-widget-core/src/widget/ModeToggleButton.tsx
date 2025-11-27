@@ -34,9 +34,8 @@ export function ModeToggleButton({ visible }: ModeToggleButtonProps) {
     : text.switch_to_chat.value;
   const icon = isCurrentlyTextMode ? "phone" : "chat";
 
-  const handleToggle = () => {
-    // Toggle mode - this handles both UI and audio muting
-    toggleMode();
+  const handleToggle = async () => {
+    await toggleMode();
   };
 
   return (

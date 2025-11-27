@@ -21,6 +21,11 @@ export interface UserActivity {
   type: "user_activity";
 }
 
+export interface ConversationModeChange {
+  type: "conversation_mode_change";
+  text_only: boolean;
+}
+
 export interface UserFeedback {
   type: "feedback";
   event_id: number;
@@ -538,6 +543,11 @@ export interface UserMessageClientToOrchestratorEvent {
 
 export interface UserActivityClientToOrchestratorEvent {
   type: "user_activity";
+}
+
+export interface ConversationModeChangeClientToOrchestratorEvent {
+  type: "conversation_mode_change";
+  text_only: boolean;
 }
 
 export interface UserFeedbackClientToOrchestratorEvent {

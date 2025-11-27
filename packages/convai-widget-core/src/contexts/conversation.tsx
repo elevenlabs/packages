@@ -1,5 +1,6 @@
 import {
   Conversation,
+  VoiceConversation,
   Mode,
   Role,
   SessionConfig,
@@ -129,18 +130,29 @@ function useConversationSetup() {
       setMicMuted: (muted: boolean) => {
         conversationRef.current?.setMicMuted(muted);
       },
-      toggleMode: () => {
+      toggleMode: async () => {
         if (!conversationRef.current?.isOpen()) {
           return;
         }
         const newTextMode = !conversationTextOnly.peek();
+        
+        console.log(`[Widget] Toggling mode to ${newTextMode ? 'TEXT' : 'VOICE'}`);
+        
+        // CRITICAL ORDER:
+        // 1. First mute/unmute the microphone to stop/start audio flow
+        await conversationRef.current.setMicMuted(newTextMode);
+        console.log(`[Widget] Microphone ${newTextMode ? 'muted' : 'unmuted'}`);
+        
+        // 2. Wait a bit to ensure worklet receives the mute message
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 3. Update UI state
         conversationTextOnly.value = newTextMode;
-        
-        // Actually mute the microphone stream at the conversation level
-        conversationRef.current.setMicMuted(newTextMode);
-        
-        // Also update the widget's mic config state
         setIsMuted(newTextMode);
+        
+        // 4. Then notify backend about mode change (after audio is stopped)
+        conversationRef.current.setTextOnlyMode(newTextMode);
+        console.log(`[Widget] Backend notified of mode change`);
       },
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
@@ -155,10 +167,13 @@ function useConversationSetup() {
         }
 
         let processedConfig = structuredClone(config.peek());
-        // If the user started the conversation with a text message, and the
-        // agent supports it, track that they're in text mode but don't
-        // force textOnly on the conversation (so they can switch to voice later).
+        // Track if user started with text message (for UI state)
         const startedWithText = !!initialMessage && widgetConfig.value.supports_text_only && !widgetConfig.value.text_only;
+        
+        // IMPORTANT: Don't set processedConfig.textOnly = true here!
+        // We want to start a VoiceConversation (which has mic) even if starting in text mode,
+        // so we can later toggle to voice mode. Instead, we'll send conversation_mode_change
+        // event right after initialization.
 
         try {
           processedConfig = triggerCallEvent(element, processedConfig);
@@ -189,8 +204,11 @@ function useConversationSetup() {
           : [];
 
         try {
-          lockRef.current = Conversation.startSession({
+          // Always use VoiceConversation (never TextConversation)
+          // This ensures we always have microphone hardware available for toggling
+          lockRef.current = VoiceConversation.startSession({
             ...processedConfig,
+            textOnly: false, // Force VoiceConversation
             overrides: {
               ...processedConfig.overrides,
               client: {
@@ -200,16 +218,16 @@ function useConversationSetup() {
                   processedConfig.overrides?.client?.version || PACKAGE_VERSION,
               },
             },
-            onModeChange: props => {
+            onModeChange: (props: { mode: Mode }) => {
               mode.value = props.mode;
             },
-            onStatusChange: props => {
+            onStatusChange: (props: { status: Status }) => {
               status.value = props.status;
             },
-            onCanSendFeedbackChange: props => {
+            onCanSendFeedbackChange: (props: { canSendFeedback: boolean }) => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ role, message }) => {
+            onMessage: ({ role, message }: { role: Role; message: string }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -310,12 +328,23 @@ function useConversationSetup() {
               }
             },
           });
-
+            
           conversationRef.current = await lockRef.current;
           
-          // Set initial mic mute state
-          const shouldMuteMic = isMuted.peek() || (conversationTextOnly.peek() ?? false);
-          conversationRef.current.setMicMuted(shouldMuteMic);
+          // Set initial mic mute state and mode
+          const isTextMode = conversationTextOnly.peek() ?? false;
+          
+          if (isTextMode) {
+            // Starting in text mode: mute mic and notify backend
+            console.log('[Widget] Starting in text mode, muting mic and notifying backend');
+            await conversationRef.current.setMicMuted(true);
+            setIsMuted(true);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            conversationRef.current.setTextOnlyMode(true);
+          } else if (isMuted.peek()) {
+            // User manually muted
+            await conversationRef.current.setMicMuted(true);
+          }
           
           if (initialMessage) {
             const instance = conversationRef.current;
