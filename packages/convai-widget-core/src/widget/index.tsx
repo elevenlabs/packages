@@ -13,6 +13,7 @@ import { CustomAttributes } from "../types/attributes";
 import { Wrapper } from "./Wrapper";
 import { SheetContentProvider } from "../contexts/sheet-content";
 import { FeedbackProvider } from "../contexts/feedback";
+import { TextModeProvider } from "../contexts/text-mode";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -22,20 +23,22 @@ export function ConvAIWidget(attributes: CustomAttributes) {
           <TermsProvider>
             <LanguageConfigProvider>
               <MicConfigProvider>
-                <SessionConfigProvider>
-                  <ConversationProvider>
-                    <TextContentsProvider>
-                      <AvatarConfigProvider>
-                        <SheetContentProvider>
-                          <FeedbackProvider>
-                            <Style />
-                            <Wrapper />
-                          </FeedbackProvider>
-                        </SheetContentProvider>
-                      </AvatarConfigProvider>
-                    </TextContentsProvider>
-                  </ConversationProvider>
-                </SessionConfigProvider>
+                <TextModeProvider>
+                  <SessionConfigProvider>
+                    <ConversationProvider>
+                      <TextContentsProvider>
+                        <AvatarConfigProvider>
+                          <SheetContentProvider>
+                            <FeedbackProvider>
+                              <Style />
+                              <Wrapper />
+                            </FeedbackProvider>
+                          </SheetContentProvider>
+                        </AvatarConfigProvider>
+                      </TextContentsProvider>
+                    </ConversationProvider>
+                  </SessionConfigProvider>
+                </TextModeProvider>
               </MicConfigProvider>
             </LanguageConfigProvider>
           </TermsProvider>
