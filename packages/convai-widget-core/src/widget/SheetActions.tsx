@@ -15,6 +15,9 @@ import {
 import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { TextModeToggleButton } from "./TextModeToggleButton";
+import { useTextMode } from "../contexts/text-mode";
+import { useWidgetConfig } from "../contexts/widget-config";
 
 export function SheetActions({
   showTranscript,
@@ -158,6 +161,8 @@ function SheetButtons({
   const textOnly = useIsConversationTextOnly();
   const textInputEnabled = useTextInputEnabled();
   const { isDisconnected, status } = useConversation();
+  const { text_voice_toggle_enabled } = useWidgetConfig().value;
+  const { isTextMode } = useTextMode();
 
   const showSendButton = useComputed(() => !!userMessage.value.trim());
   const showSendButtonControl = useComputed(() => {
@@ -168,12 +173,18 @@ function SheetButtons({
     // 2. Always show the call button for users ends the conversation
     return !isDisconnected.value || (!textOnly.value && showTranscript);
   });
+  const showTextModeToggleButton = useComputed(() => {
+    return !!text_voice_toggle_enabled && !textOnly.value && !isDisconnected.value;
+  });
   const showMuteButton = useComputed(() => {
-    return !textOnly.value && !isDisconnected.value;
+    return !textOnly.value && !isDisconnected.value && !isTextMode.value;
   });
 
   return (
     <>
+      <SizeTransition visible={showTextModeToggleButton.value}>
+        <TextModeToggleButton className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
+      </SizeTransition>
       <SizeTransition visible={showMuteButton.value}>
         <TriggerMuteButton className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>

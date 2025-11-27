@@ -16,6 +16,7 @@ import { useSessionConfig } from "./session-config";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import { useTextMode } from "./text-mode";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -86,7 +87,20 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
+  const { isMuted, setIsMuted } = useMicConfig();
+  const { isTextMode } = useTextMode();
+
+  // When text mode is enabled, mute the mic and disable audio output
+  useSignalEffect(() => {
+    const textMode = isTextMode.value;
+    if (textMode) {
+      setIsMuted(true);
+      conversationRef?.current?.setVolume({ volume: 0 });
+    } else {
+      setIsMuted(false);
+      conversationRef?.current?.setVolume({ volume: 1 });
+    }
+  });
 
   useSignalEffect(() => {
     const muted = isMuted.value;
@@ -245,13 +259,15 @@ function useConversationSetup() {
                 const streamingIndex = streamingMessageIndexRef.current;
                 if (streamingIndex !== null && text) {
                   const updatedTranscript = [...currentTranscript];
-                  const streamingMessage = updatedTranscript[streamingIndex] ??= {
+                  const streamingMessage = (updatedTranscript[
+                    streamingIndex
+                  ] ??= {
                     type: "message",
                     role: "ai",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
-                  };
+                  });
 
                   if (streamingMessage.type === "message") {
                     updatedTranscript[streamingIndex] = {
