@@ -188,7 +188,6 @@ const handleIncompleteLinksAndImages = (text: string): string => {
 };
 
 // Completes incomplete bold formatting (**)
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex markdown parsing logic with multiple edge cases"
 const handleIncompleteBold = (text: string): string => {
   // Don't process if inside a complete code block
   if (hasCompleteCodeBlock(text)) {
@@ -239,7 +238,6 @@ const handleIncompleteBold = (text: string): string => {
 };
 
 // Completes incomplete italic formatting with double underscores (__)
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex markdown parsing logic with multiple edge cases"
 const handleIncompleteDoubleUnderscoreItalic = (text: string): string => {
   const italicMatch = text.match(italicPattern);
 
@@ -286,7 +284,6 @@ const handleIncompleteDoubleUnderscoreItalic = (text: string): string => {
 
 // OPTIMIZATION: Counts single asterisks without split("").reduce()
 // Counts single asterisks that are not part of double asterisks, not escaped, not list markers, and not word-internal
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex character counting logic with multiple edge cases"
 const countSingleAsterisks = (text: string): number => {
   let count = 0;
   const len = text.length;
@@ -344,7 +341,6 @@ const countSingleAsterisks = (text: string): number => {
 };
 
 // Completes incomplete italic formatting with single asterisks (*)
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex italic handling logic with multiple edge cases for markdown parsing"
 const handleIncompleteSingleAsteriskItalic = (text: string): string => {
   // Don't process if inside a complete code block
   if (hasCompleteCodeBlock(text)) {
@@ -438,7 +434,6 @@ const isWithinMathBlock = (text: string, position: number): boolean => {
 
 // OPTIMIZATION: Counts single underscores without split("").reduce()
 // Counts single underscores that are not part of double underscores, not escaped, and not in math blocks
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex character counting logic with multiple edge cases"
 const countSingleUnderscores = (text: string): number => {
   // OPTIMIZATION: For large texts, if there are no dollar signs, skip math block checking entirely
   const hasMathBlocks = text.includes("$");
@@ -481,7 +476,6 @@ const countSingleUnderscores = (text: string): number => {
 };
 
 // Completes incomplete italic formatting with single underscores (_)
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex italic handling logic with multiple edge cases for markdown parsing"
 const handleIncompleteSingleUnderscoreItalic = (text: string): string => {
   // Don't process if inside a complete code block
   if (hasCompleteCodeBlock(text)) {
@@ -578,7 +572,6 @@ const countSingleBackticks = (text: string): number => {
 
 // Completes incomplete inline code formatting (`)
 // Avoids completing if inside an incomplete code block
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex inline code handling logic with multiple edge cases for markdown parsing"
 const handleIncompleteInlineCode = (text: string): string => {
   // Check if we have inline triple backticks (starts with ``` and should end with ```)
   // This pattern should ONLY match truly inline code (no newlines)
@@ -641,7 +634,6 @@ const handleIncompleteInlineCode = (text: string): string => {
 };
 
 // Completes incomplete strikethrough formatting (~~)
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex markdown parsing logic with multiple edge cases"
 const handleIncompleteStrikethrough = (text: string): string => {
   const strikethroughMatch = text.match(strikethroughPattern);
 
@@ -672,7 +664,6 @@ const countTripleAsterisks = (text: string): number => {
   let count = 0;
   let consecutiveAsterisks = 0;
 
-  // biome-ignore lint/style/useForOf: "Need index access to check character codes for performance"
   for (let i = 0; i < text.length; i += 1) {
     if (text[i] === "*") {
       consecutiveAsterisks += 1;

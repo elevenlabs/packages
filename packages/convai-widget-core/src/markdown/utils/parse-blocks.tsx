@@ -44,7 +44,6 @@ const countDoubleDollars = (str: string): number => {
   return count;
 };
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Complex parsing logic that handles multiple markdown edge cases"
 export const parseMarkdownIntoBlocks = (markdown: string): string[] => {
   // Check if the markdown contains footnotes (references or definitions)
   // Footnote references: [^1], [^label], etc.

@@ -31,12 +31,10 @@ const EMPTY_PLUGINS: PluggableList = [];
 const DEFAULT_REMARK_REHYPE_OPTIONS = { allowDangerousHtml: true };
 
 // Plugin name cache for faster serialization
-// biome-ignore lint/complexity/noBannedTypes: "Need Function type for plugin caching"
 const pluginNameCache = new WeakMap<Function, string>();
 
 // LRU Cache for unified processors
 class ProcessorCache {
-  // biome-ignore lint/suspicious/noExplicitAny: Processor type is complex and varies with plugins
   private readonly cache = new Map<string, any>();
   private readonly keyCache = new WeakMap<Readonly<Options>, string>();
   private readonly maxSize = 100;
@@ -60,7 +58,6 @@ class ProcessorCache {
     }
 
     // Optimize serialization for plugins
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: "Plugin serialization requires checking multiple plugin formats"
     const serializePlugins = (plugins: PluggableList | undefined): string => {
       if (!plugins || plugins.length === 0) {
         return "";
@@ -130,7 +127,6 @@ class ProcessorCache {
     return processor;
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Processor type is complex and varies with plugins
   set(options: Readonly<Options>, processor: any): void {
     const key = this.generateCacheKey(options);
 
@@ -158,7 +154,6 @@ export const Markdown = (options: Readonly<Options>) => {
   const processor = getCachedProcessor(options);
   const content = options.children || "";
   return post(
-    // biome-ignore lint/suspicious/noExplicitAny: runSync return type varies with processor configuration
     processor.runSync(processor.parse(content), content) as any,
     options
   );
