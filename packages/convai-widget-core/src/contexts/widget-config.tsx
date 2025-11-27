@@ -4,9 +4,16 @@ import {
   useSignal,
   useSignalEffect,
 } from "@preact/signals";
+import { TinyColor } from "@ctrl/tinycolor";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
-import { parsePlacement, parseVariant, WidgetConfig } from "../types/config";
+import {
+  DefaultStyles,
+  parsePlacement,
+  parseVariant,
+  type SyntaxHighlightTheme,
+  type WidgetConfig,
+} from "../types/config";
 import { useAttribute } from "./attributes";
 import { useServerLocation } from "./server-location";
 
@@ -215,6 +222,28 @@ export function useWebRTC() {
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.end_feedback?.type ?? null);
+}
+
+export function useSyntaxTheme() {
+  const override = useAttribute("syntax-highlight-theme");
+  const config = useWidgetConfig();
+
+  return useComputed<SyntaxHighlightTheme>(() => {
+    // Explicit override takes priority
+    const explicitValue = override.value ?? config.value.syntax_highlight_theme;
+    if (explicitValue === "light" || explicitValue === "dark") {
+      return explicitValue;
+    }
+    // Auto-detect based on base_active background color
+    const baseActive =
+      config.value.styles?.base_active ?? DefaultStyles.base_active;
+    const color = new TinyColor(baseActive);
+
+    if (!color.isValid) {
+      return "light";
+    }
+    return color.isDark() ? "dark" : "light";
+  });
 }
 
 async function fetchConfig(

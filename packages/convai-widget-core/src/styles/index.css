@@ -129,7 +129,8 @@
 }
 
 /* Syntax highlighting token styles - GitHub Light theme */
-.tok-comment {
+.tok-comment,
+.tok-meta {
   color: #6a737d;
 }
 
@@ -139,7 +140,8 @@
 
 .tok-atom,
 .tok-bool,
-.tok-literal {
+.tok-literal,
+.tok-number {
   color: #005cc5;
 }
 
@@ -195,8 +197,12 @@
   color: #032f62;
 }
 
-.tok-meta {
-  color: #6a737d;
+.tok-operator {
+  color: #d73a49;
+}
+
+.tok-punctuation {
+  color: #24292e;
 }
 
 .tok-invalid {
@@ -231,4 +237,100 @@
 
 .tok-strikethrough {
   text-decoration: line-through;
+}
+
+.tok-monospace {
+  color: #005cc5;
+}
+
+.tok-processingInstruction {
+  color: #6a737d;
+}
+
+/* GitHub Dark theme for syntax highlighting styles */
+[data-syntax-theme="dark"] {
+  .tok-comment,
+  .tok-meta {
+    color: #6a737d;
+  }
+
+  .tok-keyword {
+    color: #f97583;
+  }
+
+  .tok-atom,
+  .tok-bool,
+  .tok-literal,
+  .tok-number,
+  .tok-propertyName.tok-definition {
+    color: #79b8ff;
+  }
+
+  .tok-string,
+  .tok-string2 {
+    color: #9ecbff;
+  }
+
+  .tok-url,
+  .tok-link {
+    color: #dbedff;
+  }
+
+  .tok-variableName,
+  .tok-variableName.tok-local,
+  .tok-propertyName {
+    color: #e1e4e8;
+  }
+
+  .tok-emphasis,
+  .tok-strong {
+    color: #e1e4e8;
+  }
+
+  .tok-variableName.tok-definition,
+  .tok-variableName2,
+  .tok-macroName,
+  .tok-typeName,
+  .tok-namespace,
+  .tok-className {
+    color: #b392f0;
+  }
+
+  .tok-labelName {
+    color: #85e89d;
+  }
+
+  .tok-invalid {
+    color: #fdaeb7;
+  }
+
+  .tok-deleted {
+    color: #fdaeb7;
+    background-color: #86181d;
+  }
+
+  .tok-inserted {
+    color: #85e89d;
+    background-color: #144620;
+  }
+
+  .tok-heading {
+    color: #79b8ff;
+  }
+
+  .tok-operator {
+    color: #f97583;
+  }
+
+  .tok-punctuation {
+    color: #e1e4e8;
+  }
+
+  .tok-monospace {
+    color: #79b8ff;
+  }
+
+  .tok-processingInstruction {
+    color: #6a737d;
+  }
 }

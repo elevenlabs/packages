@@ -47,6 +47,7 @@ export const CustomAttributeList = [
   "worklet-path-raw-audio-processor",
   "worklet-path-audio-concat-processor",
   "worklet-path-libsamplerate",
+  "syntax-highlight-theme",
 ] as const;
 
 export type CustomAttributes = {
