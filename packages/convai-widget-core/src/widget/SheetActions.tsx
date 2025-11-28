@@ -6,6 +6,7 @@ import {
 import { useConversation } from "../contexts/conversation";
 import { TextArea } from "../components/TextArea";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { TextModeToggleButton } from "./TextModeToggleButton";
 import { SizeTransition } from "../components/SizeTransition";
 import { CallButton } from "./CallButton";
 import { Signal, useComputed, useSignal } from "@preact/signals";
@@ -16,6 +17,7 @@ import {
 import { useTextContents } from "../contexts/text-contents";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
+import { useTextMode } from "../contexts/text-mode";
 
 interface SheetActionsProps {
   showTranscript: boolean;
@@ -30,6 +32,7 @@ export function SheetActions({
   const textOnly = useIsConversationTextOnly();
   const { text_input_enabled } = useWidgetConfig().value;
   const text = useTextContents();
+  const { isTextMode } = useTextMode();
   const {
     isDisconnected,
     status,
@@ -106,7 +109,14 @@ export function SheetActions({
         </div>
       )}
       <div className="flex h-11 items-center">
-        <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
+        <TextModeToggleButton
+          visible={!textOnly.value && !isDisconnected.value}
+        />
+        <TriggerMuteButton
+          visible={
+            !textOnly.value && !isDisconnected.value && !isTextMode.value
+          }
+        />
         <SizeTransition
           visible={!isDisconnected.value || showTranscript}
           className="p-1"
