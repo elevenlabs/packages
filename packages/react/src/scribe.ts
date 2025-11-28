@@ -11,6 +11,17 @@ import type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
+  ScribeTranscriberErrorMessage,
+  ScribeUnacceptedTermsErrorMessage,
+  ScribeRateLimitedErrorMessage,
+  ScribeInputErrorMessage,
+  ScribeQueueOverflowErrorMessage,
+  ScribeResourceExhaustedErrorMessage,
+  ScribeSessionTimeLimitExceededErrorMessage,
+  ScribeChunkSizeExceededErrorMessage,
+  ScribeInsufficientAudioActivityErrorMessage,
 } from "@elevenlabs/client";
 
 // ============= Types =============
@@ -37,8 +48,21 @@ export interface ScribeCallbacks {
     text: string;
     timestamps?: { start: number; end: number }[];
   }) => void;
+  /** Called for any error (also called when specific error callbacks fire) */
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
+  onQuotaExceededError?: (data: { error: string }) => void;
+  onCommitThrottledError?: (data: { error: string }) => void;
+  onTranscriberError?: (data: { error: string }) => void;
+  onUnacceptedTermsError?: (data: { error: string }) => void;
+  onRateLimitedError?: (data: { error: string }) => void;
+  onInputError?: (data: { error: string }) => void;
+  onQueueOverflowError?: (data: { error: string }) => void;
+  onResourceExhaustedError?: (data: { error: string }) => void;
+  onSessionTimeLimitExceededError?: (data: { error: string }) => void;
+  onChunkSizeExceededError?: (data: { error: string }) => void;
+  onInsufficientAudioActivityError?: (data: { error: string }) => void;
+
   onConnect?: () => void;
   onDisconnect?: () => void;
 }
@@ -72,6 +96,9 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Auto-connect on mount
   autoConnect?: boolean;
+
+  // Include timestamps
+  includeTimestamps?: boolean;
 }
 
 export interface UseScribeReturn {
@@ -90,7 +117,7 @@ export interface UseScribeReturn {
   // Audio methods (for manual mode)
   sendAudio: (
     audioBase64: string,
-    options?: { commit?: boolean; sampleRate?: number }
+    options?: { commit?: boolean; sampleRate?: number; previousText?: string }
   ) => void;
   commit: () => void;
 
@@ -110,6 +137,17 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onCommittedTranscriptWithTimestamps,
     onError,
     onAuthError,
+    onQuotaExceededError,
+    onCommitThrottledError,
+    onTranscriberError,
+    onUnacceptedTermsError,
+    onRateLimitedError,
+    onInputError,
+    onQueueOverflowError,
+    onResourceExhaustedError,
+    onSessionTimeLimitExceededError,
+    onChunkSizeExceededError,
+    onInsufficientAudioActivityError,
     onConnect,
     onDisconnect,
 
@@ -178,6 +216,13 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         let connection: RealtimeConnection;
 
+        // Determine if timestamps should be included based on whether the callback was provided
+        // We do this instead of providing includeTimestamps as we can assume that if the callback is provided, the user wants timestamps
+        const includeTimestamps = !!(
+          runtimeOptions.onCommittedTranscriptWithTimestamps ||
+          onCommittedTranscriptWithTimestamps
+        );
+
         if (microphone) {
           // Microphone mode
           connection = Scribe.connect({
@@ -197,6 +242,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             microphone,
+            includeTimestamps,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -216,6 +262,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               runtimeOptions.minSilenceDurationMs ||
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
+            includeTimestamps,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -283,6 +330,89 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           onAuthError?.(message);
         });
 
+        connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data: unknown) => {
+          const message = data as ScribeQuotaExceededErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onQuotaExceededError?.(message);
+        });
+
+        connection.on(RealtimeEvents.COMMIT_THROTTLED, (data: unknown) => {
+          const message = data as ScribeCommitThrottledErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onCommitThrottledError?.(message);
+        });
+
+        connection.on(RealtimeEvents.TRANSCRIBER_ERROR, (data: unknown) => {
+          const message = data as ScribeTranscriberErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onTranscriberError?.(message);
+        });
+
+        connection.on(RealtimeEvents.UNACCEPTED_TERMS, (data: unknown) => {
+          const message = data as ScribeUnacceptedTermsErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onUnacceptedTermsError?.(message);
+        });
+
+        connection.on(RealtimeEvents.RATE_LIMITED, (data: unknown) => {
+          const message = data as ScribeRateLimitedErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onRateLimitedError?.(message);
+        });
+
+        connection.on(RealtimeEvents.INPUT_ERROR, (data: unknown) => {
+          const message = data as ScribeInputErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onInputError?.(message);
+        });
+
+        connection.on(RealtimeEvents.QUEUE_OVERFLOW, (data: unknown) => {
+          const message = data as ScribeQueueOverflowErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onQueueOverflowError?.(message);
+        });
+
+        connection.on(RealtimeEvents.RESOURCE_EXHAUSTED, (data: unknown) => {
+          const message = data as ScribeResourceExhaustedErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onResourceExhaustedError?.(message);
+        });
+
+        connection.on(
+          RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED,
+          (data: unknown) => {
+            const message = data as ScribeSessionTimeLimitExceededErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onSessionTimeLimitExceededError?.(message);
+          }
+        );
+
+        connection.on(RealtimeEvents.CHUNK_SIZE_EXCEEDED, (data: unknown) => {
+          const message = data as ScribeChunkSizeExceededErrorMessage;
+          setError(message.error);
+          setStatus("error");
+          onChunkSizeExceededError?.(message);
+        });
+
+        connection.on(
+          RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY,
+          (data: unknown) => {
+            const message = data as ScribeInsufficientAudioActivityErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onInsufficientAudioActivityError?.(message);
+          }
+        );
+
         connection.on(RealtimeEvents.OPEN, () => {
           onConnect?.();
         });
@@ -319,6 +449,17 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       onCommittedTranscriptWithTimestamps,
       onError,
       onAuthError,
+      onQuotaExceededError,
+      onCommitThrottledError,
+      onTranscriberError,
+      onUnacceptedTermsError,
+      onRateLimitedError,
+      onInputError,
+      onQueueOverflowError,
+      onResourceExhaustedError,
+      onSessionTimeLimitExceededError,
+      onChunkSizeExceededError,
+      onInsufficientAudioActivityError,
       onConnect,
       onDisconnect,
     ]
@@ -333,7 +474,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   const sendAudio = useCallback(
     (
       audioBase64: string,
-      options?: { commit?: boolean; sampleRate?: number }
+      options?: { commit?: boolean; sampleRate?: number; previousText?: string }
     ) => {
       if (!connectionRef.current) {
         throw new Error("Not connected to Scribe");

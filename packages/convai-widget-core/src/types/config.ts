@@ -34,7 +34,7 @@ export interface WidgetConfig {
   feedback_mode: FeedbackMode;
   end_feedback?: {
     type: FeedbackType;
-  };
+  } | null;
   language: Language;
   supported_language_overrides?: Language[];
   terms_html?: string;
@@ -116,6 +116,9 @@ export const DefaultTextContents = {
   follow_up_feedback_placeholder: "Tell us more about your experience...",
   submit: "Submit",
   go_back: "Go back",
+  copy: "Copy",
+  download: "Download",
+  wrap: "Wrap",
 };
 
 export const TextKeys = Object.keys(

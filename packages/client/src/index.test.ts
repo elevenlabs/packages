@@ -177,6 +177,7 @@ describe("Conversation", () => {
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "ai",
+        role: "agent",
         message: AGENT_RESPONSE,
       });
 
@@ -189,6 +190,7 @@ describe("Conversation", () => {
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "user",
+        role: "user",
         message: USER_TRANSCRIPT,
       });
 

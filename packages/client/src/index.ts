@@ -49,6 +49,17 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
+  ScribeTranscriberErrorMessage,
+  ScribeUnacceptedTermsErrorMessage,
+  ScribeRateLimitedErrorMessage,
+  ScribeInputErrorMessage,
+  ScribeQueueOverflowErrorMessage,
+  ScribeResourceExhaustedErrorMessage,
+  ScribeSessionTimeLimitExceededErrorMessage,
+  ScribeChunkSizeExceededErrorMessage,
+  ScribeInsufficientAudioActivityErrorMessage,
 } from "./scribe";
 
 export class Conversation extends BaseConversation {

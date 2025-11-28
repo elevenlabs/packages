@@ -91,3 +91,118 @@
     @apply text-base-primary font-medium text-2xl;
   }
 }
+
+.markdown {
+  /* for better non-latin text rendering https://developer.chrome.com/blog/css-i18n-features */
+  text-autospace: normal;
+  text-spacing-trim: trim-start;
+  h1, h2, h3, h4, h5, h6 {
+    word-break: auto-phrase;
+  }
+}
+
+
+/* Syntax highlighting token styles - GitHub Light theme */
+.tok-comment {
+  color: #6a737d;
+}
+
+.tok-keyword {
+  color: #d73a49;
+}
+
+.tok-atom,
+.tok-bool,
+.tok-literal {
+  color: #005cc5;
+}
+
+.tok-string {
+  color: #032f62;
+}
+
+.tok-string2 {
+  color: #032f62;
+}
+
+.tok-variableName {
+  color: #24292e;
+}
+
+.tok-variableName.tok-definition {
+  color: #6f42c1;
+}
+
+.tok-variableName.tok-local {
+  color: #24292e;
+}
+
+.tok-variableName2,
+.tok-macroName {
+  color: #6f42c1;
+}
+
+.tok-typeName,
+.tok-namespace {
+  color: #6f42c1;
+}
+
+.tok-className {
+  color: #6f42c1;
+}
+
+.tok-propertyName {
+  color: #24292e;
+}
+
+.tok-propertyName.tok-definition {
+  color: #005cc5;
+}
+
+.tok-labelName {
+  color: #22863a;
+}
+
+.tok-url,
+.tok-link {
+  text-decoration: underline;
+  color: #032f62;
+}
+
+.tok-meta {
+  color: #6a737d;
+}
+
+.tok-invalid {
+  color: #b31d28;
+}
+
+.tok-deleted {
+  color: #b31d28;
+  background-color: #ffeef0;
+}
+
+.tok-inserted {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+
+/* Markdown-specific tokens */
+.tok-heading {
+  font-weight: bold;
+  color: #005cc5;
+}
+
+.tok-emphasis {
+  font-style: italic;
+  color: #24292e;
+}
+
+.tok-strong {
+  font-weight: bold;
+  color: #24292e;
+}
+
+.tok-strikethrough {
+  text-decoration: line-through;
+}

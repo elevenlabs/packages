@@ -192,9 +192,9 @@ export function useWebRTC() {
   return useComputed(() => config.value.use_rtc ?? false);
 }
 
-export function useShouldShowFeedbackAtEnd() {
+export function useEndFeedbackType() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback !== undefined);
+  return useComputed(() => config.value.end_feedback?.type ?? null);
 }
 
 async function fetchConfig(

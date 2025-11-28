@@ -76,6 +76,7 @@ const conversation = useConversation({
 - **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
 - **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
 - **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolRequest** - handler called when the agent begins tool execution.
 - **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
 - **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
 - **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
@@ -651,6 +652,7 @@ const scribe = useScribe({
   onCommittedTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
   onError: (error) => console.error("Error:", error),
   onAuthError: (data) => console.error("Auth error:", data.error),
+  onQuotaExceededError: (data) => console.error("Quota exceeded:", data.error),
   onConnect: () => console.log("Connected"),
   onDisconnect: () => console.log("Disconnected"),
 });
@@ -787,7 +789,7 @@ const scribe = useScribe(/* options */);
 console.log(scribe.status); // "connected"
 console.log(scribe.isConnected); // true
 console.log(scribe.partialTranscript); // "hello world"
-console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
+console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", words: ..., isFinal: true }]
 console.log(scribe.error); // null or error string
 ```
 
@@ -823,8 +825,11 @@ Send audio data (manual mode only):
 scribe.sendAudio(base64AudioChunk, {
   commit: false, // Optional: commit immediately
   sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
 });
 ```
+
+**Warning:** The `previousText` field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 ###### commit()
 
@@ -881,14 +886,16 @@ const scribe = useScribe({
   },
   onCommittedTranscriptWithTimestamps: (data: {
     text: string;
-    timestamps?: { start: number; end: number }[];
+    words?: { start: number; end: number }[];
   }) => {
     console.log("Text:", data.text);
-    console.log("Word timestamps:", data.timestamps);
+    console.log("Word timestamps:", data.words);
   },
+  // Generic error handler for all errors
   onError: (error: Error | Event) => {
-    console.error("Connection error:", error);
+    console.error("Scribe error:", error);
   },
+  // Specific errors can also be tracked
   onAuthError: (data: { error: string }) => {
     console.error("Auth error:", data.error);
   },

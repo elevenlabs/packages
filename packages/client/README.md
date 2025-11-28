@@ -169,6 +169,7 @@ The options passed to `startSession` can also be used to register optional callb
 - **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
 - **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
 - **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolRequest** - handler called when the agent begins tool execution.
 - **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
 - **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
 - **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
@@ -589,20 +590,18 @@ connection.on(RealtimeEvents.SESSION_STARTED, () => {
 // Partial transcripts (interim results)
 connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
   console.log("Partial:", data.text);
-  // { text: string }
 });
 
 // Committed transcripts
 connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
   console.log("Committed:", data.text);
-  // { text: string }
 });
 
 // Committed transcripts with word-level timestamps
+// Only received when `includeTimestamps = true`
 connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
   console.log("Committed:", data.text);
-  console.log("Timestamps:", data.timestamps);
-  // { text: string, timestamps?: { start: number, end: number }[] }
+  console.log("Timestamps:", data.words);
 });
 
 // Errors
@@ -624,6 +623,11 @@ connection.on(RealtimeEvents.OPEN, () => {
 connection.on(RealtimeEvents.CLOSE, () => {
   console.log("Connection closed");
 });
+
+// Quota exceeded
+connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+  console.log("Quota exceeded:", data.error)
+})
 ```
 
 ### Configuration Options
@@ -646,6 +650,8 @@ const connection = await scribe.connect({
   minSilenceDurationMs: 500, // Minimum silence to detect pause
 
   languageCode: "en", // ISO 639-1 language code
+
+  includeTimestamps: true // Whether to receive the committed_transcript_with_timestamps event after committing
 });
 ```
 
@@ -736,8 +742,11 @@ connection.send({
   audioBase64: base64AudioData,
   commit: false, // Optional: commit immediately
   sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
 });
 ```
+
+**Warning:** The `previousText`field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 #### commit()
 
@@ -787,12 +796,17 @@ try {
     microphone: {},
   });
 
+  // Generic event that fires on all errors, including auth and quota exceeded
   connection.on(RealtimeEvents.ERROR, (error) => {
     console.error("Connection error:", error);
   });
 
   connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
     console.error("Authentication failed:", data.error);
+  });
+
+  connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+    console.error("Quota exceeded:", data.error);
   });
 } catch (error) {
   console.error("Failed to connect:", error);

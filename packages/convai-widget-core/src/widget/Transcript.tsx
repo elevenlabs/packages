@@ -35,7 +35,8 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     // If we're very close, snap to bottom andkeep the animation running during streaming to handle new content
     if (Math.abs(distance) < 1) {
       container.scrollTop = maxScroll;
-      scrollAnimationFrame.current = requestAnimationFrame(smoothScrollToTarget);
+      scrollAnimationFrame.current =
+        requestAnimationFrame(smoothScrollToTarget);
       return;
     }
 
@@ -52,7 +53,8 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
 
     if (!isScrolling.current) {
       isScrolling.current = true;
-      scrollAnimationFrame.current = requestAnimationFrame(smoothScrollToTarget);
+      scrollAnimationFrame.current =
+        requestAnimationFrame(smoothScrollToTarget);
     }
   };
 
@@ -73,9 +75,10 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     if (!scrollPinned.peek()) return;
 
     const lastEntry = currentTranscript[currentTranscript.length - 1];
-    const isStreaming = lastEntry?.type === "message" &&
-                        lastEntry?.role === "ai" &&
-                        lastEntry?.isText === true;
+    const isStreaming =
+      lastEntry?.type === "message" &&
+      lastEntry?.role === "agent" &&
+      lastEntry?.isText === true;
 
     if (isStreaming) {
       const currentLength = lastEntry.message?.length || 0;
@@ -94,8 +97,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
             }
           });
         });
-      }
-      else if (currentLength > lastMessageLength.current) {
+      } else if (currentLength > lastMessageLength.current) {
         lastMessageLength.current = currentLength;
         startSmoothScroll();
       }

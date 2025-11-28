@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import analyzer from "vite-bundle-analyzer";
 
 export default defineConfig({
   build: {
@@ -10,4 +11,5 @@ export default defineConfig({
     },
     outDir: "dist",
   },
+  plugins: [...(process.env.ANALYZE ? [analyzer()] : [])],
 });

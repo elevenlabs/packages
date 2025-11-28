@@ -17,6 +17,7 @@ import type {
   RemoteAudioTrack,
   Participant,
   TrackPublication,
+  RemoteParticipant,
 } from "livekit-client";
 import {
   constructOverrides,
@@ -280,6 +281,18 @@ export class WebRTCConnection extends BaseConnection {
           );
         } else {
           this.updateMode("listening");
+        }
+      }
+    );
+
+    this.room.on(
+      RoomEvent.ParticipantDisconnected,
+      (participant: RemoteParticipant) => {
+        if (participant.identity?.startsWith("agent")) {
+          this.disconnect({
+            reason: "agent",
+            context: new CloseEvent("close", { reason: "agent disconnected" }),
+          });
         }
       }
     );

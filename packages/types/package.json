@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/types",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -33,5 +33,13 @@
       "import": "./dist/src/index.js",
       "types": "./dist/src/index.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elevenlabs/packages.git",
+    "directory": "packages/types"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

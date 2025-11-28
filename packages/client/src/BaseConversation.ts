@@ -21,6 +21,7 @@ import type {
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
+  AgentToolRequestEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -163,6 +164,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "ai",
+        role: "agent",
         message: event.agent_response_event.agent_response,
       });
     }
@@ -172,6 +174,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "user",
+        role: "user",
         message: event.user_transcription_event.user_transcript,
       });
     }
@@ -268,6 +271,12 @@ export class BaseConversation {
   protected handleMCPConnectionStatus(event: MCPConnectionStatusEvent) {
     if (this.options.onMCPConnectionStatus) {
       this.options.onMCPConnectionStatus(event.mcp_connection_status);
+    }
+  }
+
+  protected handleAgentToolRequest(event: AgentToolRequestEvent) {
+    if (this.options.onAgentToolRequest) {
+      this.options.onAgentToolRequest(event.agent_tool_request);
     }
   }
 
@@ -385,6 +394,11 @@ export class BaseConversation {
 
       case "mcp_connection_status": {
         this.handleMCPConnectionStatus(parsedEvent);
+        return;
+      }
+
+      case "agent_tool_request": {
+        this.handleAgentToolRequest(parsedEvent);
         return;
       }
 
