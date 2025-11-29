@@ -20,6 +20,7 @@ interface LiveKitRoomWrapperProps {
   clientTools: ClientToolsConfig['clientTools'];
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
+  textOnly?: boolean;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -37,13 +38,14 @@ export const LiveKitRoomWrapper = ({
   clientTools,
   updateCurrentEventId,
   onEndSession,
+  textOnly = false,
 }: LiveKitRoomWrapperProps) => {
   return (
     <LiveKitRoom
       serverUrl={serverUrl}
       token={token}
       connect={connect}
-      audio={true}
+      audio={!textOnly}
       video={false}
       options={{
         adaptiveStream: { pixelDensity: 'screen' },
