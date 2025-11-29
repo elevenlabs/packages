@@ -74,7 +74,7 @@ channels:
           - $ref: "#/components/messages/Pong"
           - $ref: "#/components/messages/UserMessage"
           - $ref: "#/components/messages/UserActivity"
-          - $ref: "#/components/messages/ConversationModeChange"
+          - $ref: "#/components/messages/ConversationConfigUpdate"
           - $ref: "#/components/messages/UserFeedback"
           - $ref: "#/components/messages/ClientToolResult"
           - $ref: "#/components/messages/MCPToolApprovalResult"
@@ -116,13 +116,13 @@ components:
       payload:
         $ref: "#/components/schemas/UserActivityPayload"
 
-    ConversationModeChange:
-      name: ConversationModeChangeClientToOrchestratorEvent
-      title: Conversation Mode Change
-      summary: Dynamic mode switch between text-only and voice
+    ConversationConfigUpdate:
+      name: ConversationConfigUpdateClientToOrchestratorEvent
+      title: Conversation Config Update
+      summary: Dynamically update conversation configuration (text_only, TTS, ASR, etc.)
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/ConversationModeChangePayload"
+        $ref: "#/components/schemas/ConversationConfigUpdatePayload"
 
     UserFeedback:
       name: UserFeedbackClientToOrchestratorEvent
@@ -549,16 +549,25 @@ components:
           type: string
           const: user_activity
 
-    ConversationModeChangePayload:
+    ConversationConfigUpdatePayload:
       type: object
-      required: [type, text_only]
+      required: [type, conversation_config_override]
       properties:
         type:
           type: string
-          const: conversation_mode_change
-        text_only:
-          type: boolean
-          description: true for text-only mode, false for voice mode
+          const: conversation_config_update
+        conversation_config_override:
+          type: object
+          description: Partial conversation configuration to update dynamically
+          properties:
+            agent:
+              $ref: "#/components/schemas/AgentConfigOverride"
+            conversation:
+              $ref: "#/components/schemas/ConversationConfigOverride"
+            tts:
+              $ref: "#/components/schemas/TTSConversationalConfigOverride"
+            asr:
+              type: object
 
     UserFeedbackPayload:
       type: object

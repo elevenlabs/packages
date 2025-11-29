@@ -466,8 +466,12 @@ export class BaseConversation {
     }
 
     this.connection.sendMessage({
-      type: "conversation_mode_change",
-      text_only: textOnly,
+      type: "conversation_config_update",
+      conversation_config_override: {
+        conversation: {
+          text_only: textOnly,
+        },
+      },
     });
   }
 

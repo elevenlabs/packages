@@ -1,6 +1,7 @@
 import {
   Conversation,
   VoiceConversation,
+  BaseConversation,
   Mode,
   Role,
   SessionConfig,
@@ -134,25 +135,52 @@ function useConversationSetup() {
         if (!conversationRef.current?.isOpen()) {
           return;
         }
-        const newTextMode = !conversationTextOnly.peek();
-        
+        const currentTextMode = conversationTextOnly.peek();
+        const newTextMode = !currentTextMode;
         console.log(`[Widget] Toggling mode to ${newTextMode ? 'TEXT' : 'VOICE'}`);
         
-        // CRITICAL ORDER:
-        // 1. First mute/unmute the microphone to stop/start audio flow
-        await conversationRef.current.setMicMuted(newTextMode);
-        console.log(`[Widget] Microphone ${newTextMode ? 'muted' : 'unmuted'}`);
-        
-        // 2. Wait a bit to ensure worklet receives the mute message
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // 3. Update UI state
-        conversationTextOnly.value = newTextMode;
-        setIsMuted(newTextMode);
-        
-        // 4. Then notify backend about mode change (after audio is stopped)
-        conversationRef.current.setTextOnlyMode(newTextMode);
-        console.log(`[Widget] Backend notified of mode change`);
+        // Switching from TEXT to VOICE - need to upgrade to VoiceConversation
+        if (currentTextMode && !newTextMode) {
+          try {
+            console.log('[Widget] Upgrading from TextConversation to VoiceConversation...');
+            const upgradedConversation = await VoiceConversation.upgradeFromTextConversation(
+              conversationRef.current as BaseConversation,
+              {}
+            );
+            
+            // Replace the conversation reference
+            conversationRef.current = upgradedConversation;
+            
+            // Update state
+            conversationTextOnly.value = false;
+            setIsMuted(false);
+            
+            // Notify backend
+            conversationRef.current.setTextOnlyMode(false);
+            console.log('[Widget] Successfully upgraded to voice mode');
+          } catch (error) {
+            console.error('[Widget] Failed to upgrade to voice mode:', error);
+            // Revert UI state on error
+            return;
+          }
+        }
+        // Switching from VOICE to TEXT
+        else if (!currentTextMode && newTextMode) {
+          // Mute microphone
+          await conversationRef.current.setMicMuted(true);
+          console.log(`[Widget] Microphone muted`);
+          
+          // Wait for worklet to process the mute
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Update UI state
+          conversationTextOnly.value = true;
+          setIsMuted(true);
+          
+          // Notify backend
+          conversationRef.current.setTextOnlyMode(true);
+          console.log(`[Widget] Switched to text mode`);
+        }
       },
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
@@ -204,11 +232,9 @@ function useConversationSetup() {
           : [];
 
         try {
-          // Always use VoiceConversation (never TextConversation)
-          // This ensures we always have microphone hardware available for toggling
-          lockRef.current = VoiceConversation.startSession({
+          // Common config for both text and voice
+          const commonConfig = {
             ...processedConfig,
-            textOnly: false, // Force VoiceConversation
             overrides: {
               ...processedConfig.overrides,
               client: {
@@ -259,7 +285,7 @@ function useConversationSetup() {
                 },
               ];
             },
-            onAgentChatResponsePart: ({ text, type }) => {
+            onAgentChatResponsePart: ({ text, type }: { text: string; type: string }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -299,7 +325,7 @@ function useConversationSetup() {
                 streamingMessageIndexRef.current = null;
               }
             },
-            onDisconnect: details => {
+            onDisconnect: (details: any) => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               streamingMessageIndexRef.current = null;
@@ -327,21 +353,26 @@ function useConversationSetup() {
                 );
               }
             },
-          });
-            
+          };
+
+          // If starting with text, use TextConversation (no mic permissions)
+          // If starting with voice, use VoiceConversation (requests mic permissions)
+          if (startedWithText) {
+            lockRef.current = Conversation.startSession({
+              ...commonConfig,
+              textOnly: true,
+            });
+          } else {
+            lockRef.current = VoiceConversation.startSession({
+              ...commonConfig,
+              textOnly: false,
+            });
+          }
+
           conversationRef.current = await lockRef.current;
           
-          // Set initial mic mute state and mode
-          const isTextMode = conversationTextOnly.peek() ?? false;
-          
-          if (isTextMode) {
-            // Starting in text mode: mute mic and notify backend
-            console.log('[Widget] Starting in text mode, muting mic and notifying backend');
-            await conversationRef.current.setMicMuted(true);
-            setIsMuted(true);
-            await new Promise(resolve => setTimeout(resolve, 50));
-            conversationRef.current.setTextOnlyMode(true);
-          } else if (isMuted.peek()) {
+          // Set initial mic state for voice conversations
+          if (!startedWithText && isMuted.peek()) {
             // User manually muted
             await conversationRef.current.setMicMuted(true);
           }

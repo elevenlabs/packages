@@ -21,50 +21,16 @@ export interface UserActivity {
   type: "user_activity";
 }
 
-export interface ConversationModeChange {
-  type: "conversation_mode_change";
-  text_only: boolean;
-}
-
-export interface UserFeedback {
-  type: "feedback";
-  event_id: number;
-  score: Score;
-}
-
-export type Score = "like" | "dislike";
-
-export interface ClientToolResult {
-  type: "client_tool_result";
-  tool_call_id: string;
-  result: string;
-  is_error: boolean;
-}
-
-export interface McpToolApprovalResult {
-  type: "mcp_tool_approval_result";
-  tool_call_id: string;
-  is_approved: boolean;
-}
-
-export interface ContextualUpdate {
-  type: "contextual_update";
-  text: string;
-}
-
-export interface ConversationInitiation {
-  type: "conversation_initiation_client_data";
-  conversation_config_override?: ConversationConfigOverride;
-  custom_llm_extra_body?: Record<string, any>;
-  dynamic_variables?: Record<string, any>;
-  user_id?: string;
-  source_info?: SourceInfo;
+export interface ConversationConfigUpdate {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
 }
 
 export interface ConversationConfigOverride {
   agent?: ConversationConfigOverrideAgent;
-  tts?: ConversationConfigOverrideTts;
   conversation?: ConversationConfigOverrideConversation;
+  tts?: ConversationConfigOverrideTts;
+  asr?: Record<string, any>;
 }
 
 export interface ConversationConfigOverrideAgent {
@@ -113,13 +79,6 @@ export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
 }
 
-export interface ConversationConfigOverrideTts {
-  voice_id?: string;
-  stability?: number;
-  speed?: number;
-  similarity_boost?: number;
-}
-
 export interface ConversationConfigOverrideConversation {
   text_only?: boolean;
   client_events?: ConversationConfigOverrideConversationClientEventsItem[];
@@ -144,6 +103,48 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "asr_initiation_metadata"
   | "internal_turn_probability"
   | "internal_tentative_agent_response";
+
+export interface ConversationConfigOverrideTts {
+  voice_id?: string;
+  stability?: number;
+  speed?: number;
+  similarity_boost?: number;
+}
+
+export interface UserFeedback {
+  type: "feedback";
+  event_id: number;
+  score: Score;
+}
+
+export type Score = "like" | "dislike";
+
+export interface ClientToolResult {
+  type: "client_tool_result";
+  tool_call_id: string;
+  result: string;
+  is_error: boolean;
+}
+
+export interface McpToolApprovalResult {
+  type: "mcp_tool_approval_result";
+  tool_call_id: string;
+  is_approved: boolean;
+}
+
+export interface ContextualUpdate {
+  type: "contextual_update";
+  text: string;
+}
+
+export interface ConversationInitiation {
+  type: "conversation_initiation_client_data";
+  conversation_config_override?: ConversationConfigOverride;
+  custom_llm_extra_body?: Record<string, any>;
+  dynamic_variables?: Record<string, any>;
+  user_id?: string;
+  source_info?: SourceInfo;
+}
 
 export interface SourceInfo {
   source?: string;
@@ -545,9 +546,9 @@ export interface UserActivityClientToOrchestratorEvent {
   type: "user_activity";
 }
 
-export interface ConversationModeChangeClientToOrchestratorEvent {
-  type: "conversation_mode_change";
-  text_only: boolean;
+export interface ConversationConfigUpdateClientToOrchestratorEvent {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
 }
 
 export interface UserFeedbackClientToOrchestratorEvent {

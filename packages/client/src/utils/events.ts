@@ -74,8 +74,8 @@ export type UserMessageEvent = Outgoing.UserMessageClientToOrchestratorEvent;
 export type UserActivityEvent = Outgoing.UserActivityClientToOrchestratorEvent;
 export type MCPToolApprovalResultEvent =
   Outgoing.McpToolApprovalResultClientToOrchestratorEvent;
-export type ConversationModeChangeEvent =
-  Outgoing.ConversationModeChangeClientToOrchestratorEvent;
+export type ConversationConfigUpdateEvent =
+  Outgoing.ConversationConfigUpdateClientToOrchestratorEvent;
 
 export type OutgoingSocketEvent =
   | PongEvent
@@ -87,7 +87,7 @@ export type OutgoingSocketEvent =
   | UserMessageEvent
   | UserActivityEvent
   | MCPToolApprovalResultEvent
-  | ConversationModeChangeEvent;
+  | ConversationConfigUpdateEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
   return !!event.type;
