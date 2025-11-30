@@ -51,6 +51,27 @@ function App() {
     </ElevenLabsProvider>
   );
 }
+```
+
+### Audio Session Configuration
+
+By default, ElevenLabs uses an exclusive audio session for optimal voice quality. To allow concurrent audio playback (e.g., sound effects, notifications, background music):
+
+```typescript
+import React from 'react';
+import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
+
+function App() {
+  return (
+    <ElevenLabsProvider
+      audioSessionConfiguration={{
+        allowMixingWithOthers: true,
+      }}
+    >
+      <ConversationComponent />
+    </ElevenLabsProvider>
+  );
+}
 
 function ConversationComponent() {
   const conversation = useConversation({
@@ -207,7 +228,39 @@ console.log(conversation.isSpeaking);
 console.log(conversation.canSendFeedback);
 ```
 
-### Configuration Options
+### ElevenLabsProvider Configuration
+
+Configure the provider with optional settings:
+
+#### Audio Session Configuration
+
+Control how the SDK manages audio sessions with other audio sources:
+
+```typescript
+<ElevenLabsProvider
+  audioSessionConfiguration={{
+    allowMixingWithOthers: true, // Default: false
+  }}
+>
+  {/* Your app */}
+</ElevenLabsProvider>
+```
+
+**When to use `allowMixingWithOthers: true`:**
+- Playing connection/disconnection sound effects during conversations
+- Background music in your app
+- Notification sounds while agent is speaking
+- Multiple concurrent audio sources
+
+**Default behavior (`false`):**
+- Exclusive audio session for best voice quality
+- Other audio sources will be paused during conversations
+
+**Platform Notes:**
+- **iOS**: Adds `AVAudioSessionCategoryOptionMixWithOthers` to the audio session
+- **Android**: Uses `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` for audio focus
+
+### Conversation Hook Options
 
 Pass to `useConversation` hook to customize SDK behavior:
 
