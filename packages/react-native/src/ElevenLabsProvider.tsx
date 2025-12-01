@@ -129,6 +129,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     userId,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
 
+  const textOnly = overrides?.conversation?.textOnly ?? false;
+
   const {
     roomConnected,
     localParticipant,
@@ -136,7 +138,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleConnected,
     handleDisconnected,
     handleError,
-  } = useLiveKitRoom(callbacksRef, setStatus, conversationId, status);
+  } = useLiveKitRoom(callbacksRef, setStatus, conversationId, status, textOnly);
 
   // Enhanced connection handler to initialize feedback state
   const handleConnectedWithFeedback = React.useCallback(() => {
@@ -321,6 +323,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         updateCurrentEventId={updateCurrentEventId}
         onEndSession={endSession}
         audioSessionConfiguration={audioSessionConfiguration}
+        textOnly={textOnly}
       >
         {children}
       </LiveKitRoomWrapper>
