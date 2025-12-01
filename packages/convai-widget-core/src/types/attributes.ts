@@ -40,6 +40,9 @@ export const CustomAttributeList = [
   "user-id",
   "use-rtc",
   "collect-feedback",
+  "worklet-path-raw-audio-processor",
+  "worklet-path-audio-concat-processor",
+  "worklet-path-libsamplerate",
 ] as const;
 
 export type CustomAttributes = {
