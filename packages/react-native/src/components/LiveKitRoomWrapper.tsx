@@ -2,7 +2,7 @@
 import React from 'react';
 import { LiveKitRoom } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig, AudioSessionConfiguration } from '../types';
+import type { Callbacks, ClientToolsConfig, AudioSessionConfig } from '../types';
 import { MessageHandler } from './MessageHandler';
 
 interface LiveKitRoomWrapperProps {
@@ -20,7 +20,7 @@ interface LiveKitRoomWrapperProps {
   clientTools: ClientToolsConfig['clientTools'];
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
-  audioSessionConfiguration?: AudioSessionConfiguration;
+  audioSessionConfig?: AudioSessionConfig;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -38,11 +38,11 @@ export const LiveKitRoomWrapper = ({
   clientTools,
   updateCurrentEventId,
   onEndSession,
-  audioSessionConfiguration,
+  audioSessionConfig,
 }: LiveKitRoomWrapperProps) => {
-  // Configure audio options based on audioSessionConfiguration
+  // Configure audio options based on audioSessionConfig
   const audioOptions = React.useMemo(() => {
-    if (!audioSessionConfiguration?.allowMixingWithOthers) {
+    if (!audioSessionConfig?.allowMixingWithOthers) {
       return true;
     }
 
@@ -56,7 +56,7 @@ export const LiveKitRoomWrapper = ({
         allowMixingWithOthers: true,
       },
     };
-  }, [audioSessionConfiguration]);
+  }, [audioSessionConfig]);
 
   return (
     <LiveKitRoom
