@@ -21,6 +21,7 @@ interface LiveKitRoomWrapperProps {
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
   audioSessionConfig?: AudioSessionConfig;
+  textOnly?: boolean;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -39,9 +40,14 @@ export const LiveKitRoomWrapper = ({
   updateCurrentEventId,
   onEndSession,
   audioSessionConfig,
+  textOnly = false,
 }: LiveKitRoomWrapperProps) => {
   // Configure audio options based on audioSessionConfig
   const audioOptions = React.useMemo(() => {
+    if (textOnly) {
+      return false;
+    }
+
     if (!audioSessionConfig?.allowMixingWithOthers) {
       return true;
     }
@@ -56,7 +62,7 @@ export const LiveKitRoomWrapper = ({
         allowMixingWithOthers: true,
       },
     };
-  }, [audioSessionConfig]);
+  }, [audioSessionConfig, textOnly]);
 
   return (
     <LiveKitRoom
