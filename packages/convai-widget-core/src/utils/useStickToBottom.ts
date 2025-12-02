@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef } from "preact/compat";
 
 const SCROLL_PIN_PADDING = 16;
 
-interface UseStickToBottomOptions {
+export function useStickToBottom({
+  scrollPinned,
+}: {
   scrollPinned: Signal<boolean>;
-}
-
-export function useStickToBottom({ scrollPinned }: UseStickToBottomOptions) {
+}) {
   const scrollContainer = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const firstRender = useRef(true);
