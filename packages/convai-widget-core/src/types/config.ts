@@ -63,6 +63,7 @@ export interface WidgetConfig {
   first_message?: string;
   use_rtc?: boolean;
   syntax_highlight_theme?: SyntaxHighlightTheme;
+  text_voice_toggle_enabled?: boolean;
 }
 
 export type AvatarConfig =
