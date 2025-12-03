@@ -41,7 +41,6 @@ export const CustomAttributeList = [
   "use-rtc",
   "collect-feedback",
   "syntax-highlight-theme",
-  "text-voice-toggle",
 ] as const;
 
 export type CustomAttributes = {

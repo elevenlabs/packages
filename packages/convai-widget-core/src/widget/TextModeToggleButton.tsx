@@ -3,7 +3,9 @@ import { useTextMode } from "../contexts/text-mode";
 import { Button, ButtonProps } from "../components/Button";
 import { useTextContents } from "../contexts/text-contents";
 
-export function TextModeToggleButton(props: Omit<ButtonProps, "icon" | "onClick" | "aria-label" | "aria-pressed">) {
+export function TextModeToggleButton(
+  props: Omit<ButtonProps, "icon" | "onClick" | "aria-label" | "aria-pressed">
+) {
   const text = useTextContents();
   const { isTextMode, setIsTextMode } = useTextMode();
 

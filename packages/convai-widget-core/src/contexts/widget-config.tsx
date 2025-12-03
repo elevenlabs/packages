@@ -100,7 +100,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const alwaysExpanded = useAttribute("always-expanded");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
-  const textVoiceToggle = useAttribute("text-voice-toggle");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -135,8 +134,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       false;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
-    const patchedTextVoiceToggle =
-      parseBoolAttribute(textVoiceToggle.value) ?? false;
 
     return {
       ...fetchedConfig.value,
@@ -149,7 +146,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
       use_rtc: patchedUseRtc,
-      text_voice_toggle_enabled: patchedTextVoiceToggle,
     };
   });
 
