@@ -44,10 +44,34 @@ export type TranscriptEntry =
       type: "error";
       message: string;
       conversationIndex: number;
+    }
+  | {
+      type: "mode_toggle";
+      mode: "text" | "voice";
+      conversationIndex: number;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
+  const { isTextMode } = useTextMode();
+  const prevTextModeRef = useRef<boolean | null>(null);
+
+  // Track mode changes and add transcript entries
+  useSignalEffect(() => {
+    const textMode = isTextMode.value;
+    const prevMode = prevTextModeRef.current;
+
+    // Only add entry if this is a change (not initial render) and conversation is active
+    if (
+      prevMode !== null &&
+      prevMode !== textMode &&
+      !value.isDisconnected.value
+    ) {
+      value.addModeToggleEntry(textMode ? "text" : "voice");
+    }
+
+    prevTextModeRef.current = textMode;
+  });
 
   // Automatically disconnect the conversation after 10 minutes of no messages
   useSignalEffect(() => {
@@ -372,6 +396,18 @@ function useConversationSetup() {
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
+      },
+      addModeToggleEntry: (mode: "text" | "voice") => {
+        // Only add entry if conversation is active
+        if (!conversationRef.current?.isOpen()) return;
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "mode_toggle",
+            mode,
+            conversationIndex: conversationIndex.peek(),
+          },
+        ];
       },
     };
   }, [config, isMuted]);
