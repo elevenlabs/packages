@@ -1,4 +1,4 @@
-import { SessionConfig } from "@elevenlabs/client";
+import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
 import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
@@ -59,6 +59,12 @@ export function SessionConfigProvider({
     return undefined;
   });
 
+  const rawAudioProcessor = useAttribute("worklet-path-raw-audio-processor");
+  const audioConcatProcessor = useAttribute(
+    "worklet-path-audio-concat-processor"
+  );
+  const libsamplerate = useAttribute("worklet-path-libsamplerate");
+
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
@@ -72,7 +78,12 @@ export function SessionConfigProvider({
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
       userId: userId.value || undefined,
-    };
+      libsampleratePath: libsamplerate.value,
+      workletPaths: {
+        rawAudioProcessor: rawAudioProcessor.value,
+        audioConcatProcessor: audioConcatProcessor.value,
+      },
+    } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
     if (agentId.value) {
       if (isWebRTC) {

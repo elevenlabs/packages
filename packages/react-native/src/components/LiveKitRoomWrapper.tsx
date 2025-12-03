@@ -2,7 +2,7 @@
 import React from 'react';
 import { LiveKitRoom } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig } from '../types';
+import type { Callbacks, ClientToolsConfig, AudioSessionConfig } from '../types';
 import { MessageHandler } from './MessageHandler';
 
 interface LiveKitRoomWrapperProps {
@@ -20,6 +20,7 @@ interface LiveKitRoomWrapperProps {
   clientTools: ClientToolsConfig['clientTools'];
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
+  audioSessionConfig?: AudioSessionConfig;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -37,13 +38,32 @@ export const LiveKitRoomWrapper = ({
   clientTools,
   updateCurrentEventId,
   onEndSession,
+  audioSessionConfig,
 }: LiveKitRoomWrapperProps) => {
+  // Configure audio options based on audioSessionConfig
+  const audioOptions = React.useMemo(() => {
+    if (!audioSessionConfig?.allowMixingWithOthers) {
+      return true;
+    }
+
+    // When mixing is enabled, configure audio to allow concurrent playback
+    return {
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+      },
+      audioSessionConfiguration: {
+        allowMixingWithOthers: true,
+      },
+    };
+  }, [audioSessionConfig]);
+
   return (
     <LiveKitRoom
       serverUrl={serverUrl}
       token={token}
       connect={connect}
-      audio={true}
+      audio={audioOptions}
       video={false}
       options={{
         adaptiveStream: { pixelDensity: 'screen' },

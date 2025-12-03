@@ -116,7 +116,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   return (
     <div
       ref={scrollContainer}
-      onScroll={e => {
+      onWheel={e => {
         const isAtBottom =
           e.currentTarget.scrollTop >=
           e.currentTarget.scrollHeight -
