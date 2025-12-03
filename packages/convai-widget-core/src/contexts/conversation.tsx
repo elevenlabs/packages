@@ -113,15 +113,22 @@ function useConversationSetup() {
   const config = useSessionConfig();
   const { isMuted, setIsMuted } = useMicConfig();
   const { isTextMode } = useTextMode();
+  const prevMuteStateRef = useRef<boolean | null>(null);
 
   // When text mode is enabled, mute the mic and disable audio output
   useSignalEffect(() => {
     const textMode = isTextMode.value;
     if (textMode) {
+      prevMuteStateRef.current = isMuted.peek();
       setIsMuted(true);
       conversationRef?.current?.setVolume({ volume: 0 });
     } else {
-      setIsMuted(false);
+      // Restore the previous mute state when exiting text mode
+      const prevMuteState = prevMuteStateRef.current;
+      if (prevMuteState !== null) {
+        setIsMuted(prevMuteState);
+        prevMuteStateRef.current = null;
+      }
       conversationRef?.current?.setVolume({ volume: 1 });
     }
   });
