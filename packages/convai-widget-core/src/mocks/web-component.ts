@@ -17,6 +17,7 @@ export function setupWebComponent(
   });
   MOUNTED_COMPONENTS.add(element);
   document.body.appendChild(element);
+  return element;
 }
 
 beforeAll(() => {

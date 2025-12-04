@@ -16,6 +16,7 @@ import { useSessionConfig } from "./session-config";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -81,6 +82,7 @@ function useConversationSetup() {
   const receivedFirstMessageRef = useRef(false);
   const streamingMessageIndexRef = useRef<number | null>(null);
   const isReceivingStreamRef = useRef(false);
+  const shadowHost = useShadowHost();
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
@@ -151,7 +153,10 @@ function useConversationSetup() {
         }
 
         try {
-          processedConfig = triggerCallEvent(element, processedConfig);
+          processedConfig = triggerCallEvent(
+            shadowHost.value ?? element,
+            processedConfig
+          );
         } catch (error) {
           console.error(
             "[ConversationalAI] Error triggering call event:",
@@ -245,13 +250,15 @@ function useConversationSetup() {
                 const streamingIndex = streamingMessageIndexRef.current;
                 if (streamingIndex !== null && text) {
                   const updatedTranscript = [...currentTranscript];
-                  const streamingMessage = updatedTranscript[streamingIndex] ??= {
+                  const streamingMessage = (updatedTranscript[
+                    streamingIndex
+                  ] ??= {
                     type: "message",
                     role: "agent",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
-                  };
+                  });
 
                   if (streamingMessage.type === "message") {
                     updatedTranscript[streamingIndex] = {
