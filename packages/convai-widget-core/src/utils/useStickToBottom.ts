@@ -1,73 +1,59 @@
-import {
-  ReadonlySignal,
-  Signal,
-  useSignal,
-  useSignalEffect,
-} from "@preact/signals";
+import { Signal } from "@preact/signals";
 import { useCallback, useEffect, useRef } from "preact/compat";
-import { TranscriptEntry } from "../contexts/conversation";
 
 const SCROLL_PIN_PADDING = 16;
 
-interface UseStickToBottomOptions {
-  scrollPinned: Signal<boolean>;
-  transcript: ReadonlySignal<TranscriptEntry[]>;
-}
-
 export function useStickToBottom({
   scrollPinned,
-  transcript,
-}: UseStickToBottomOptions) {
+}: {
+  scrollPinned: Signal<boolean>;
+}) {
   const scrollContainer = useRef<HTMLDivElement>(null);
-  const lastMessageLength = useRef<number>(0);
-  const scrollAnimationFrame = useRef<number | null>(null);
-  const isScrolling = useRef(false);
-  const userInterrupted = useRef(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   const firstRender = useRef(true);
 
-  const scrollToBottom = useCallback((smooth: boolean) => {
-    scrollContainer.current?.scrollTo({
-      top: scrollContainer.current.scrollHeight,
-      behavior: smooth ? "smooth" : "instant",
+  const scrollToBottom = useCallback(() => {
+    const container = scrollContainer.current;
+    if (!container) return;
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
     });
   }, []);
 
-  const smoothScrollToTarget = useCallback(() => {
-    const container = scrollContainer.current;
-    if (!container || !isScrolling.current || userInterrupted.current) return;
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      // Only unpin when scrolling up (away from bottom)
+      if (e.deltaY < 0) {
+        scrollPinned.value = false;
+      }
+    },
+    [scrollPinned]
+  );
 
-    const currentScroll = container.scrollTop;
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    const distance = maxScroll - currentScroll;
+  const lastTouchY = useRef<number | null>(null);
 
-    if (Math.abs(distance) < 1) {
-      container.scrollTop = maxScroll;
-      scrollAnimationFrame.current =
-        requestAnimationFrame(smoothScrollToTarget);
-      return;
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0];
+    if (touch) {
+      lastTouchY.current = touch.clientY;
     }
-
-    const smoothStep = distance * 0.2;
-    const minStep = 2;
-    container.scrollTop = currentScroll + Math.max(smoothStep, minStep);
-    scrollAnimationFrame.current = requestAnimationFrame(smoothScrollToTarget);
   }, []);
 
-  const startSmoothScroll = useCallback(() => {
-    const container = scrollContainer.current;
-    if (!container || userInterrupted.current) return;
-
-    if (!isScrolling.current) {
-      isScrolling.current = true;
-      scrollAnimationFrame.current =
-        requestAnimationFrame(smoothScrollToTarget);
-    }
-  }, [smoothScrollToTarget]);
-
-  const handleUserInteraction = useCallback(() => {
-    scrollPinned.value = false;
-    userInterrupted.current = true;
-  }, [scrollPinned]);
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch && lastTouchY.current !== null) {
+        // If moving finger down, user is scrolling up (away from bottom)
+        if (touch.clientY > lastTouchY.current) {
+          scrollPinned.value = false;
+        }
+        lastTouchY.current = touch.clientY;
+      }
+    },
+    [scrollPinned]
+  );
 
   const handleScroll = useCallback(() => {
     const container = scrollContainer.current;
@@ -84,60 +70,36 @@ export function useStickToBottom({
 
   useEffect(() => {
     firstRender.current = false;
-    scrollToBottom(false);
 
-    return () => {
-      if (scrollAnimationFrame.current) {
-        cancelAnimationFrame(scrollAnimationFrame.current);
+    const content = contentRef.current;
+    const container = scrollContainer.current;
+    if (!content || !container) return;
+
+    // Track initial height to detect first message vs initial render
+    let lastHeight = content.getBoundingClientRect().height;
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const newHeight = entry.contentRect.height;
+      const heightGrew = newHeight > lastHeight;
+      lastHeight = newHeight;
+
+      // Only scroll if content actually grew and we're pinned
+      if (heightGrew && scrollPinned.peek()) {
+        scrollToBottom();
       }
-    };
-  }, [scrollToBottom]);
+    });
 
-  useSignalEffect(() => {
-    const currentTranscript = transcript.value;
-    if (!scrollPinned.peek()) return;
-
-    const lastEntry = currentTranscript[currentTranscript.length - 1];
-    const isStreamingEntry =
-      lastEntry?.type === "message" &&
-      lastEntry?.role === "ai" &&
-      lastEntry?.isText === true;
-
-    if (isStreamingEntry) {
-      const currentLength = lastEntry.message?.length || 0;
-
-      if (lastMessageLength.current === 0 && currentLength > 0) {
-        lastMessageLength.current = currentLength;
-        userInterrupted.current = false;
-
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (!userInterrupted.current && scrollPinned.peek()) {
-              scrollToBottom(false);
-              startSmoothScroll();
-            }
-          });
-        });
-      } else if (currentLength > lastMessageLength.current) {
-        lastMessageLength.current = currentLength;
-        startSmoothScroll();
-      }
-    } else {
-      lastMessageLength.current = 0;
-      isScrolling.current = false;
-      userInterrupted.current = false;
-      if (scrollAnimationFrame.current) {
-        cancelAnimationFrame(scrollAnimationFrame.current);
-        scrollAnimationFrame.current = null;
-      }
-      scrollToBottom(true);
-    }
-  });
+    resizeObserver.observe(content);
+    return () => resizeObserver.disconnect();
+  }, [scrollPinned, scrollToBottom]);
 
   return {
     scrollContainer,
+    contentRef,
     handleScroll,
-    handleUserInteraction,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
     firstRender,
   };
 }
