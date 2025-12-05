@@ -15,6 +15,7 @@ import {
 import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { useTextMode } from "../contexts/text-mode";
 
 export function SheetActions({
   showTranscript,
@@ -158,6 +159,7 @@ function SheetButtons({
   const textOnly = useIsConversationTextOnly();
   const textInputEnabled = useTextInputEnabled();
   const { isDisconnected, status } = useConversation();
+  const { isTextMode } = useTextMode();
 
   const showSendButton = useComputed(() => !!userMessage.value.trim());
   const showSendButtonControl = useComputed(() => {
@@ -169,7 +171,7 @@ function SheetButtons({
     return !isDisconnected.value || (!textOnly.value && showTranscript);
   });
   const showMuteButton = useComputed(() => {
-    return !textOnly.value && !isDisconnected.value;
+    return !textOnly.value && !isDisconnected.value && !isTextMode.value;
   });
 
   return (

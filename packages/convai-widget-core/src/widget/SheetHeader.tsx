@@ -6,12 +6,14 @@ import { useTextContents } from "../contexts/text-contents";
 import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { StatusLabel } from "./StatusLabel";
 import { useWidgetSize } from "../contexts/widget-size";
+import { TextModeToggleButton } from "./TextModeToggleButton";
 
 interface SheetHeaderProps {
   showBackButton: boolean;
   onBackClick?: () => void;
   showStatusLabel: ReadonlySignal<boolean>;
   showLanguageSelector: ReadonlySignal<boolean>;
+  showTextModeToggle: ReadonlySignal<boolean>;
   showExpandButton: ReadonlySignal<boolean>;
 }
 
@@ -20,6 +22,7 @@ export function SheetHeader({
   onBackClick,
   showStatusLabel,
   showLanguageSelector,
+  showTextModeToggle,
   showExpandButton,
 }: SheetHeaderProps) {
   const text = useTextContents();
@@ -56,6 +59,12 @@ export function SheetHeader({
             <div className="transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
               <SheetLanguageSelect />
             </div>
+          </InOutTransition>
+          <InOutTransition active={showTextModeToggle}>
+            <TextModeToggleButton
+              variant="ghost"
+              className="h-8 w-8 transition-opacity data-hidden:opacity-0"
+            />
           </InOutTransition>
           <InOutTransition active={showExpandButton}>
             <Button

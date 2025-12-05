@@ -16,6 +16,7 @@ import { useSessionConfig } from "./session-config";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import { useTextMode } from "./text-mode";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -43,10 +44,34 @@ export type TranscriptEntry =
       type: "error";
       message: string;
       conversationIndex: number;
+    }
+  | {
+      type: "mode_toggle";
+      mode: "text" | "voice";
+      conversationIndex: number;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
+  const { isTextMode } = useTextMode();
+  const prevTextModeRef = useRef<boolean | null>(null);
+
+  // Track mode changes and add transcript entries
+  useSignalEffect(() => {
+    const textMode = isTextMode.value;
+    const prevMode = prevTextModeRef.current;
+
+    // Only add entry if this is a change (not initial render) and conversation is active
+    if (
+      prevMode !== null &&
+      prevMode !== textMode &&
+      !value.isDisconnected.value
+    ) {
+      value.addModeToggleEntry(textMode ? "text" : "voice");
+    }
+
+    prevTextModeRef.current = textMode;
+  });
 
   // Automatically disconnect the conversation after 10 minutes of no messages
   useSignalEffect(() => {
@@ -86,7 +111,27 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
+  const { isMuted, setIsMuted } = useMicConfig();
+  const { isTextMode } = useTextMode();
+  const prevMuteStateRef = useRef<boolean | null>(null);
+
+  // When text mode is enabled, mute the mic and disable audio output
+  useSignalEffect(() => {
+    const textMode = isTextMode.value;
+    if (textMode) {
+      prevMuteStateRef.current = isMuted.peek();
+      setIsMuted(true);
+      conversationRef?.current?.setVolume({ volume: 0 });
+    } else {
+      // Restore the previous mute state when exiting text mode
+      const prevMuteState = prevMuteStateRef.current;
+      if (prevMuteState !== null) {
+        setIsMuted(prevMuteState);
+        prevMuteStateRef.current = null;
+      }
+      conversationRef?.current?.setVolume({ volume: 1 });
+    }
+  });
 
   useSignalEffect(() => {
     const muted = isMuted.value;
@@ -245,13 +290,15 @@ function useConversationSetup() {
                 const streamingIndex = streamingMessageIndexRef.current;
                 if (streamingIndex !== null && text) {
                   const updatedTranscript = [...currentTranscript];
-                  const streamingMessage = updatedTranscript[streamingIndex] ??= {
+                  const streamingMessage = (updatedTranscript[
+                    streamingIndex
+                  ] ??= {
                     type: "message",
                     role: "ai",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
-                  };
+                  });
 
                   if (streamingMessage.type === "message") {
                     updatedTranscript[streamingIndex] = {
@@ -356,6 +403,18 @@ function useConversationSetup() {
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
+      },
+      addModeToggleEntry: (mode: "text" | "voice") => {
+        // Only add entry if conversation is active
+        if (!conversationRef.current?.isOpen()) return;
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "mode_toggle",
+            mode,
+            conversationIndex: conversationIndex.peek(),
+          },
+        ];
       },
     };
   }, [config, isMuted]);

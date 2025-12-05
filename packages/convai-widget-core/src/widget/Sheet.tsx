@@ -87,6 +87,13 @@ export function Sheet({ open }: SheetProps) {
       (!showTranscript.value || isDisconnected.value)
   );
 
+  const showTextModeToggle = useComputed(
+    () =>
+      !!config.value.text_voice_toggle_enabled &&
+      !isConversationTextOnly.value &&
+      !isDisconnected.value
+  );
+
   const showExpandButton = useComputed(() => showTranscript.value);
 
   return (
@@ -113,6 +120,7 @@ export function Sheet({ open }: SheetProps) {
           onBackClick={currentConfig.onHeaderBack}
           showStatusLabel={showStatusLabel}
           showLanguageSelector={showLanguageSelector}
+          showTextModeToggle={showTextModeToggle}
           showExpandButton={showExpandButton}
         />
         <InOutTransition active={currentContent.value === "transcript"}>
