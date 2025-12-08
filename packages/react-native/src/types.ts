@@ -143,7 +143,7 @@ export type ConversationEvent =
 /**
  * Audio session configuration for controlling how the SDK handles audio
  */
-export interface AudioSessionConfiguration {
+export interface AudioSessionConfig {
   /**
    * Whether audio should mix with other audio sources.
    * When true, the SDK will configure the audio session to allow

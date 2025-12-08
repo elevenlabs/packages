@@ -64,7 +64,7 @@ import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
 function App() {
   return (
     <ElevenLabsProvider
-      audioSessionConfiguration={{
+      audioSessionConfig={{
         allowMixingWithOthers: true,
       }}
     >
@@ -238,7 +238,7 @@ Control how the SDK manages audio sessions with other audio sources:
 
 ```typescript
 <ElevenLabsProvider
-  audioSessionConfiguration={{
+  audioSessionConfig={{
     allowMixingWithOthers: true, // Default: false
   }}
 >

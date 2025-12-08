@@ -2,7 +2,7 @@ import React from 'react';
 import { createContext, useContext, useState } from 'react';
 import { registerGlobals } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig, AudioSessionConfiguration } from './types';
+import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig, AudioSessionConfig } from './types';
 import { constructOverrides } from './utils/overrides';
 import { DEFAULT_SERVER_URL } from './utils/constants';
 import { useConversationCallbacks } from './hooks/useConversationCallbacks';
@@ -81,10 +81,10 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
 
 interface ElevenLabsProviderProps {
   children: React.ReactNode;
-  audioSessionConfiguration?: AudioSessionConfiguration;
+  audioSessionConfig?: AudioSessionConfig;
 }
 
-export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, audioSessionConfiguration }) => {
+export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, audioSessionConfig }) => {
   // Initialize globals on mount
   registerGlobals();
 
@@ -320,7 +320,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         clientTools={clientToolsRef.current}
         updateCurrentEventId={updateCurrentEventId}
         onEndSession={endSession}
-        audioSessionConfiguration={audioSessionConfiguration}
+        audioSessionConfig={audioSessionConfig}
       >
         {children}
       </LiveKitRoomWrapper>

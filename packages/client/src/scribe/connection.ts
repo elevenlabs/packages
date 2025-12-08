@@ -492,7 +492,7 @@ export class RealtimeConnection {
 
     // Close WebSocket connection
     if (this.websocket) {
-      this.websocket.close();
+      this.websocket.close(1000, "User ended session");
     }
   }
 }

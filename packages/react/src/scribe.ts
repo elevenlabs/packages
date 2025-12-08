@@ -33,11 +33,25 @@ export type ScribeStatus =
   | "transcribing"
   | "error";
 
+export interface WordTimestamp {
+  text?: string;
+  /** Start time in seconds */
+  start?: number;
+  /** End time in seconds */
+  end?: number;
+  type?: "word" | "spacing";
+  speaker_id?: string;
+  logprob?: number;
+  characters?: string[];
+}
+
 export interface TranscriptSegment {
   id: string;
   text: string;
   timestamp: number;
   isFinal: boolean;
+  /** Word-level timestamps (only present when includeTimestamps is enabled) */
+  words?: WordTimestamp[];
 }
 
 export interface ScribeCallbacks {
@@ -46,7 +60,7 @@ export interface ScribeCallbacks {
   onCommittedTranscript?: (data: { text: string }) => void;
   onCommittedTranscriptWithTimestamps?: (data: {
     text: string;
-    timestamps?: { start: number; end: number }[];
+    words?: WordTimestamp[];
   }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
   onError?: (error: Error | Event) => void;
@@ -169,6 +183,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
     // Auto-connect
     autoConnect = false,
+
+    // Timestamps
+    includeTimestamps: defaultIncludeTimestamps,
   } = options;
 
   const connectionRef = useRef<RealtimeConnection | null>(null);
@@ -216,12 +233,14 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         let connection: RealtimeConnection;
 
-        // Determine if timestamps should be included based on whether the callback was provided
-        // We do this instead of providing includeTimestamps as we can assume that if the callback is provided, the user wants timestamps
-        const includeTimestamps = !!(
-          runtimeOptions.onCommittedTranscriptWithTimestamps ||
-          onCommittedTranscriptWithTimestamps
-        );
+        // Include timestamps if explicitly requested OR if the callback is provided
+        const includeTimestamps =
+          runtimeOptions.includeTimestamps ??
+          defaultIncludeTimestamps ??
+          !!(
+            runtimeOptions.onCommittedTranscriptWithTimestamps ||
+            onCommittedTranscriptWithTimestamps
+          );
 
         if (microphone) {
           // Microphone mode
@@ -309,6 +328,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               text: message.text,
               timestamp: Date.now(),
               isFinal: true,
+              words: message.words,
             };
             setCommittedTranscripts(prev => [...prev, segment]);
             setPartialTranscript("");
@@ -443,6 +463,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultMicrophone,
       defaultAudioFormat,
       defaultSampleRate,
+      defaultIncludeTimestamps,
       onSessionStarted,
       onPartialTranscript,
       onCommittedTranscript,
