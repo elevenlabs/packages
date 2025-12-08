@@ -280,7 +280,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
         if (shouldEndRef.current) {
           await conversationRef.current.endSession();
           conversationRef.current = null;
-          return "";
+          lockRef.current = null;
+          throw new Error("Session cancelled during connection");
         }
 
         // Persist controlled state between sessions using refs to get current values
