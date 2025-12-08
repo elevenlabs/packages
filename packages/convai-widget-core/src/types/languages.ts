@@ -43,7 +43,7 @@ export const Languages = {
   hu: { name: "Magyar", flagCode: "hu", languageCode: "hu" },
   no: { name: "Norsk", flagCode: "no", languageCode: "no" },
   vi: { name: "Tiếng Việt", flagCode: "vn", languageCode: "vi" },
-  tl: { name: "Pilipino", flagCode: "ph", languageCode: "tl" },
+  tl: { name: "Filipino", flagCode: "ph", languageCode: "tl" },
   af: { name: "Afrikaans", flagCode: "za", languageCode: "af" },
   hy: { name: "Հայերեն", flagCode: "am", languageCode: "hy" },
   as: { name: "অসমীয়া", flagCode: "in", languageCode: "as" },
