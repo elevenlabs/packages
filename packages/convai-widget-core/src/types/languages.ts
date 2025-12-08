@@ -81,7 +81,7 @@ export const Languages = {
   sw: { name: "Kiswahili", flagCode: "ke", languageCode: "sw" },
   te: { name: "తెలుగు", flagCode: "in", languageCode: "te" },
   th: { name: "ไทย", flagCode: "th", languageCode: "th" },
-  ur: { name: "اردو", flagCode: "in", languageCode: "ur" },
+  ur: { name: "اردو", flagCode: "pk", languageCode: "ur" },
   cy: { name: "Cymraeg", flagCode: "gb-wls", languageCode: "cy" },
 } as const satisfies {
   [K in Language]: {
