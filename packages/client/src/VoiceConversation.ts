@@ -89,7 +89,7 @@ export class VoiceConversation extends BaseConversation {
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch (_e) {}
+      } catch (_e) { }
       throw error;
     }
   }
@@ -114,7 +114,7 @@ export class VoiceConversation extends BaseConversation {
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch (_e) {}
+    } catch (_e) { }
 
     await this.input.close();
     await this.output.close();
@@ -125,13 +125,16 @@ export class VoiceConversation extends BaseConversation {
     this.fadeOutAudio();
   }
 
-  protected override handleAudio(event: AgentAudioEvent) {
+  protected override async handleAudio(event: AgentAudioEvent) {
     if (this.lastInterruptTimestamp <= event.audio_event.event_id) {
       this.options.onAudio?.(event.audio_event.audio_base_64);
 
       // Only play audio through the output worklet for WebSocket connections
       // WebRTC connections handle audio playback directly through LiveKit tracks
       if (!(this.connection instanceof WebRTCConnection)) {
+        if (this.output.context.state === 'suspended') {
+          await this.output.context.resume();
+        }
         this.addAudioBase64Chunk(event.audio_event.audio_base_64);
       }
 
