@@ -371,6 +371,45 @@ components:
         - no
         - vi
         - tl
+        - af
+        - hy
+        - as
+        - az
+        - be
+        - bn
+        - bs
+        - ca
+        - et
+        - gl
+        - ka
+        - gu
+        - ha
+        - he
+        - is
+        - ga
+        - jv
+        - kn
+        - kk
+        - ky
+        - lv
+        - lt
+        - lb
+        - mk
+        - ml
+        - mr
+        - ne
+        - ps
+        - fa
+        - pa
+        - sr
+        - sd
+        - sl
+        - so
+        - sw
+        - te
+        - th
+        - ur
+        - cy
       description: Language code for ASR and TTS
 
     AudioFormat:
