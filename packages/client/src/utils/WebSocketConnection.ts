@@ -176,7 +176,7 @@ export class WebSocketConnection extends BaseConnection {
   }
 
   public close() {
-    this.socket.close();
+    this.socket.close(1000, "User ended conversation");
   }
 
   public sendMessage(message: OutgoingSocketEvent) {
