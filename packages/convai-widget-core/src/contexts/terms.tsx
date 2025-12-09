@@ -1,9 +1,9 @@
-import { computed, ReadonlySignal, signal } from "@preact/signals";
+import { computed, ReadonlySignal, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
 import { useContextSafely } from "../utils/useContextSafely";
-import { useWidgetConfig } from "./widget-config";
+import { useLocalizedTerms } from "./widget-config";
 
 const TermsContext = createContext<{
   termsAccepted: ReadonlySignal<boolean>;
@@ -23,15 +23,14 @@ interface StoredPromise {
 }
 
 export function TermsProvider({ children }: TermsProviderProps) {
-  const config = useWidgetConfig();
+  const localizedTerms = useLocalizedTerms();
 
+  const termsShown = useMemo(() => signal(false), []);
+  const termsAcceptedState = useMemo(() => signal(false), []);
+  
   const value = useMemo(() => {
-    const key = config.peek().terms_key;
-    const termsAlreadyAccepted = key ? !!localStorage.getItem(key) : false;
-    const termsShown = signal(false);
-    const termsAcceptedState = signal(termsAlreadyAccepted);
     const termsAccepted = computed(
-      () => !config.value.terms_html || termsAcceptedState.value
+      () => !localizedTerms.value.terms_html || termsAcceptedState.value
     );
     let termsPromises: StoredPromise[] = [];
 
@@ -46,7 +45,7 @@ export function TermsProvider({ children }: TermsProviderProps) {
       acceptTerms: () => {
         termsAcceptedState.value = true;
         termsShown.value = false;
-        const key = config.peek().terms_key;
+        const key = localizedTerms.peek().terms_key;
         if (key) {
           localStorage.setItem(key, "true");
         }
@@ -63,7 +62,13 @@ export function TermsProvider({ children }: TermsProviderProps) {
         }
       },
     };
-  }, []);
+  }, [termsShown, termsAcceptedState, localizedTerms]);
+
+  useSignalEffect(() => {
+    const key = localizedTerms.value.terms_key;
+    const termsAlreadyAccepted = key ? !!localStorage.getItem(key) : false;
+    termsAcceptedState.value = termsAlreadyAccepted;
+  });
 
   return (
     <TermsContext.Provider value={value}>{children}</TermsContext.Provider>

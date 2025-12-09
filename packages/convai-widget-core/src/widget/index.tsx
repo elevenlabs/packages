@@ -21,8 +21,8 @@ export function ConvAIWidget(attributes: CustomAttributes) {
       <AttributesProvider value={attributes}>
         <ServerLocationProvider>
           <WidgetConfigProvider>
-            <TermsProvider>
-              <LanguageConfigProvider>
+            <LanguageConfigProvider>
+              <TermsProvider>
                 <MicConfigProvider>
                   <SessionConfigProvider>
                     <ConversationProvider>
@@ -39,8 +39,8 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                     </ConversationProvider>
                   </SessionConfigProvider>
                 </MicConfigProvider>
-              </LanguageConfigProvider>
-            </TermsProvider>
+              </TermsProvider>
+            </LanguageConfigProvider>
           </WidgetConfigProvider>
         </ServerLocationProvider>
       </AttributesProvider>
