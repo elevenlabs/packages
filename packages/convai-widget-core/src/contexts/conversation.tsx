@@ -16,11 +16,13 @@ import { useSessionConfig } from "./session-config";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
-import { useTextMode } from "./text-mode";
+import { ConversationMode, useConversationMode } from "./conversation-mode";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
-export const ConversationContext = createContext<ConversationSetup | null>(null);
+export const ConversationContext = createContext<ConversationSetup | null>(
+  null
+);
 
 interface ConversationProviderProps {
   children: ComponentChildren;
@@ -53,24 +55,26 @@ export type TranscriptEntry =
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
-  const { isTextMode } = useTextMode();
-  const prevTextModeRef = useRef<boolean | null>(null);
+  const { mode } = useConversationMode();
+  const prevModeRef = useRef<ConversationMode | null>(null);
 
   // Track mode changes and add transcript entries
   useSignalEffect(() => {
-    const textMode = isTextMode.value;
-    const prevMode = prevTextModeRef.current;
+    const currentMode = mode.value;
+    const prevMode = prevModeRef.current;
 
     // Only add entry if this is a change (not initial render) and conversation is active
     if (
       prevMode !== null &&
-      prevMode !== textMode &&
+      prevMode !== currentMode &&
       !value.isDisconnected.value
     ) {
-      value.addModeToggleEntry(textMode ? "text" : "voice");
+      value.addModeToggleEntry(
+        currentMode === ConversationMode.Text ? "text" : "voice"
+      );
     }
 
-    prevTextModeRef.current = textMode;
+    prevModeRef.current = currentMode;
   });
 
   // Automatically disconnect the conversation after 10 minutes of no messages
@@ -112,13 +116,13 @@ function useConversationSetup() {
   const terms = useTerms();
   const config = useSessionConfig();
   const { isMuted, setIsMuted } = useMicConfig();
-  const { isTextMode } = useTextMode();
+  const { mode } = useConversationMode();
   const prevMuteStateRef = useRef<boolean | null>(null);
 
   // When text mode is enabled, mute the mic and disable audio output
   useSignalEffect(() => {
-    const textMode = isTextMode.value;
-    if (textMode) {
+    const isTextMode = mode.value === ConversationMode.Text;
+    if (isTextMode) {
       prevMuteStateRef.current = isMuted.peek();
       setIsMuted(true);
       conversationRef?.current?.setVolume({ volume: 0 });

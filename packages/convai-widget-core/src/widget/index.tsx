@@ -14,7 +14,7 @@ import { Wrapper } from "./Wrapper";
 import { SheetContentProvider } from "../contexts/sheet-content";
 import { FeedbackProvider } from "../contexts/feedback";
 import { WidgetSizeProvider } from "../contexts/widget-size";
-import { TextModeProvider } from "../contexts/text-mode";
+import { ConversationModeProvider } from "../contexts/conversation-mode";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -25,7 +25,7 @@ export function ConvAIWidget(attributes: CustomAttributes) {
             <TermsProvider>
               <LanguageConfigProvider>
                 <MicConfigProvider>
-                  <TextModeProvider>
+                  <ConversationModeProvider>
                     <SessionConfigProvider>
                       <ConversationProvider>
                         <TextContentsProvider>
@@ -40,7 +40,7 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                         </TextContentsProvider>
                       </ConversationProvider>
                     </SessionConfigProvider>
-                  </TextModeProvider>
+                  </ConversationModeProvider>
                 </MicConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
