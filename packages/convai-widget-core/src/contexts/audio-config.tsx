@@ -9,24 +9,29 @@ import { createContext, useMemo } from "preact/compat";
 import { useWidgetConfig } from "./widget-config";
 import { useContextSafely } from "../utils/useContextSafely";
 
-interface MicConfig {
+interface AudioConfig {
+  // Microphone input control
   isMutingEnabled: ReadonlySignal<boolean>;
   isMuted: ReadonlySignal<boolean>;
   setIsMuted: (value: boolean) => void;
+  // Agent audio output control
+  isAgentAudioEnabled: ReadonlySignal<boolean>;
+  setIsAgentAudioEnabled: (value: boolean) => void;
 }
 
-const MicConfigContext = createContext<MicConfig | null>(null);
+const AudioConfigContext = createContext<AudioConfig | null>(null);
 
-interface MicConfigProviderProps {
+interface AudioConfigProviderProps {
   children: ComponentChildren;
 }
 
-export function MicConfigProvider({ children }: MicConfigProviderProps) {
+export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
   const widgetConfig = useWidgetConfig();
   const isMutingEnabled = useComputed(
     () => widgetConfig.value.mic_muting_enabled ?? false
   );
   const isMuted = useSignal(false);
+  const isAgentAudioEnabled = useSignal(true);
 
   const value = useMemo(
     () => ({
@@ -41,17 +46,21 @@ export function MicConfigProvider({ children }: MicConfigProviderProps) {
         isMuted.value = value;
       },
       isMutingEnabled,
+      isAgentAudioEnabled: computed(() => isAgentAudioEnabled.value),
+      setIsAgentAudioEnabled: (value: boolean) => {
+        isAgentAudioEnabled.value = value;
+      },
     }),
     []
   );
 
   return (
-    <MicConfigContext.Provider value={value}>
+    <AudioConfigContext.Provider value={value}>
       {children}
-    </MicConfigContext.Provider>
+    </AudioConfigContext.Provider>
   );
 }
 
-export function useMicConfig() {
-  return useContextSafely(MicConfigContext);
+export function useAudioConfig() {
+  return useContextSafely(AudioConfigContext);
 }

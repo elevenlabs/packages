@@ -2,7 +2,7 @@ import { Style } from "../styles/Style";
 import { AttributesProvider } from "../contexts/attributes";
 import { LanguageConfigProvider } from "../contexts/language-config";
 import { WidgetConfigProvider } from "../contexts/widget-config";
-import { MicConfigProvider } from "../contexts/mic-config";
+import { AudioConfigProvider } from "../contexts/audio-config";
 import { ServerLocationProvider } from "../contexts/server-location";
 import { SessionConfigProvider } from "../contexts/session-config";
 import { ConversationProvider } from "../contexts/conversation";
@@ -24,7 +24,7 @@ export function ConvAIWidget(attributes: CustomAttributes) {
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <MicConfigProvider>
+                <AudioConfigProvider>
                   <ConversationModeProvider>
                     <SessionConfigProvider>
                       <ConversationProvider>
@@ -41,7 +41,7 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                       </ConversationProvider>
                     </SessionConfigProvider>
                   </ConversationModeProvider>
-                </MicConfigProvider>
+                </AudioConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>

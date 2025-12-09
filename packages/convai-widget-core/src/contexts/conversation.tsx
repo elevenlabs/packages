@@ -10,7 +10,7 @@ import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
-import { useMicConfig } from "./mic-config";
+import { useAudioConfig } from "./audio-config";
 import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
@@ -115,31 +115,18 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted, setIsMuted } = useMicConfig();
-  const { mode } = useConversationMode();
-  const prevMuteStateRef = useRef<boolean | null>(null);
+  const { isMuted, isAgentAudioEnabled } = useAudioConfig();
 
-  // When text mode is enabled, mute the mic and disable audio output
-  useSignalEffect(() => {
-    const isTextMode = mode.value === ConversationMode.Text;
-    if (isTextMode) {
-      prevMuteStateRef.current = isMuted.peek();
-      setIsMuted(true);
-      conversationRef?.current?.setVolume({ volume: 0 });
-    } else {
-      // Restore the previous mute state when exiting text mode
-      const prevMuteState = prevMuteStateRef.current;
-      if (prevMuteState !== null) {
-        setIsMuted(prevMuteState);
-        prevMuteStateRef.current = null;
-      }
-      conversationRef?.current?.setVolume({ volume: 1 });
-    }
-  });
-
+  // Apply mic mute state to conversation
   useSignalEffect(() => {
     const muted = isMuted.value;
     conversationRef?.current?.setMicMuted(muted);
+  });
+
+  // Apply agent audio state to conversation
+  useSignalEffect(() => {
+    const enabled = isAgentAudioEnabled.value;
+    conversationRef?.current?.setVolume({ volume: enabled ? 1 : 0 });
   });
 
   // Stop the conversation when the component unmounts.

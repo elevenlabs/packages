@@ -44,7 +44,7 @@ import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
 import { WidgetSizeProvider } from "./contexts/widget-size";
-import { MicConfigProvider } from "./contexts/mic-config";
+import { AudioConfigProvider } from "./contexts/audio-config";
 import { SessionConfigProvider } from "./contexts/session-config";
 import { AvatarConfigProvider } from "./contexts/avatar-config";
 import { TermsProvider } from "./contexts/terms";
@@ -194,7 +194,7 @@ function WidgetSandbox({
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <MicConfigProvider>
+                <AudioConfigProvider>
                   <SessionConfigProvider>
                     <MockConversationProvider
                       displayTextSignal={displayTextSignal}
@@ -220,7 +220,7 @@ function WidgetSandbox({
                       </TextContentsProvider>
                     </MockConversationProvider>
                   </SessionConfigProvider>
-                </MicConfigProvider>
+                </AudioConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>
