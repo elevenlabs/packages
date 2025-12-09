@@ -21,45 +21,48 @@ export interface UserActivity {
   type: "user_activity";
 }
 
-export interface UserFeedback {
-  type: "feedback";
-  event_id: number;
-  score: Score;
-}
-
-export type Score = "like" | "dislike";
-
-export interface ClientToolResult {
-  type: "client_tool_result";
-  tool_call_id: string;
-  result: string;
-  is_error: boolean;
-}
-
-export interface McpToolApprovalResult {
-  type: "mcp_tool_approval_result";
-  tool_call_id: string;
-  is_approved: boolean;
-}
-
-export interface ContextualUpdate {
-  type: "contextual_update";
-  text: string;
-}
-
-export interface ConversationInitiation {
-  type: "conversation_initiation_client_data";
-  conversation_config_override?: ConversationConfigOverride;
-  custom_llm_extra_body?: Record<string, any>;
-  dynamic_variables?: Record<string, any>;
-  user_id?: string;
-  source_info?: SourceInfo;
+export interface ConversationConfigUpdate {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
 }
 
 export interface ConversationConfigOverride {
-  agent?: ConversationConfigOverrideAgent;
-  tts?: ConversationConfigOverrideTts;
   conversation?: ConversationConfigOverrideConversation;
+  tts?: ConversationConfigOverrideTts;
+  agent?: ConversationConfigOverrideAgent;
+  asr?: Record<string, any>;
+}
+
+export interface ConversationConfigOverrideConversation {
+  text_only?: boolean;
+  client_events?: ConversationConfigOverrideConversationClientEventsItem[];
+}
+
+export type ConversationConfigOverrideConversationClientEventsItem =
+  | "audio"
+  | "agent_response"
+  | "agent_response_correction"
+  | "agent_chat_response_part"
+  | "interruption"
+  | "user_transcript"
+  | "tentative_user_transcript"
+  | "conversation_initiation_metadata"
+  | "client_tool_call"
+  | "agent_tool_request"
+  | "agent_tool_response"
+  | "mcp_tool_call"
+  | "mcp_connection_status"
+  | "vad_score"
+  | "ping"
+  | "asr_initiation_metadata"
+  | "internal_turn_probability"
+  | "internal_tentative_agent_response";
+
+export interface ConversationConfigOverrideTts {
+  voice_id?: string;
+  stability?: number;
+  speed?: number;
+  similarity_boost?: number;
 }
 
 export interface ConversationConfigOverrideAgent {
@@ -108,37 +111,40 @@ export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
 }
 
-export interface ConversationConfigOverrideTts {
-  voice_id?: string;
-  stability?: number;
-  speed?: number;
-  similarity_boost?: number;
+export interface UserFeedback {
+  type: "feedback";
+  event_id: number;
+  score: Score;
 }
 
-export interface ConversationConfigOverrideConversation {
-  text_only?: boolean;
-  client_events?: ConversationConfigOverrideConversationClientEventsItem[];
+export type Score = "like" | "dislike";
+
+export interface ClientToolResult {
+  type: "client_tool_result";
+  tool_call_id: string;
+  result: string;
+  is_error: boolean;
 }
 
-export type ConversationConfigOverrideConversationClientEventsItem =
-  | "audio"
-  | "agent_response"
-  | "agent_response_correction"
-  | "agent_chat_response_part"
-  | "interruption"
-  | "user_transcript"
-  | "tentative_user_transcript"
-  | "conversation_initiation_metadata"
-  | "client_tool_call"
-  | "agent_tool_request"
-  | "agent_tool_response"
-  | "mcp_tool_call"
-  | "mcp_connection_status"
-  | "vad_score"
-  | "ping"
-  | "asr_initiation_metadata"
-  | "internal_turn_probability"
-  | "internal_tentative_agent_response";
+export interface McpToolApprovalResult {
+  type: "mcp_tool_approval_result";
+  tool_call_id: string;
+  is_approved: boolean;
+}
+
+export interface ContextualUpdate {
+  type: "contextual_update";
+  text: string;
+}
+
+export interface ConversationInitiation {
+  type: "conversation_initiation_client_data";
+  conversation_config_override?: ConversationConfigOverride;
+  custom_llm_extra_body?: Record<string, any>;
+  dynamic_variables?: Record<string, any>;
+  user_id?: string;
+  source_info?: SourceInfo;
+}
 
 export interface SourceInfo {
   source?: string;
@@ -538,6 +544,11 @@ export interface UserMessageClientToOrchestratorEvent {
 
 export interface UserActivityClientToOrchestratorEvent {
   type: "user_activity";
+}
+
+export interface ConversationConfigUpdateClientToOrchestratorEvent {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
 }
 
 export interface UserFeedbackClientToOrchestratorEvent {

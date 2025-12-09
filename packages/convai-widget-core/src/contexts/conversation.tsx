@@ -1,5 +1,7 @@
 import {
   Conversation,
+  VoiceConversation,
+  BaseConversation,
   Mode,
   Role,
   SessionConfig,
@@ -86,7 +88,7 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
+  const { isMuted, setIsMuted } = useMicConfig();
 
   useSignalEffect(() => {
     const muted = isMuted.value;
@@ -126,6 +128,60 @@ function useConversationSetup() {
       conversationIndex,
       conversationTextOnly,
       transcript,
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
+      toggleMode: async () => {
+        if (!conversationRef.current?.isOpen()) {
+          return;
+        }
+        const currentTextMode = conversationTextOnly.peek();
+        const newTextMode = !currentTextMode;
+        console.log(`[Widget] Toggling mode to ${newTextMode ? 'TEXT' : 'VOICE'}`);
+        
+        // Switching from TEXT to VOICE - need to upgrade to VoiceConversation
+        if (currentTextMode && !newTextMode) {
+          try {
+            console.log('[Widget] Upgrading from TextConversation to VoiceConversation...');
+            const upgradedConversation = await VoiceConversation.upgradeFromTextConversation(
+              conversationRef.current as BaseConversation,
+              {}
+            );
+            
+            // Replace the conversation reference
+            conversationRef.current = upgradedConversation;
+            
+            // Update state
+            conversationTextOnly.value = false;
+            setIsMuted(false);
+            
+            // Notify backend
+            conversationRef.current.setTextOnlyMode(false);
+            console.log('[Widget] Successfully upgraded to voice mode');
+          } catch (error) {
+            console.error('[Widget] Failed to upgrade to voice mode:', error);
+            // Revert UI state on error
+            return;
+          }
+        }
+        // Switching from VOICE to TEXT
+        else if (!currentTextMode && newTextMode) {
+          // Mute microphone
+          await conversationRef.current.setMicMuted(true);
+          console.log(`[Widget] Microphone muted`);
+          
+          // Wait for worklet to process the mute
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Update UI state
+          conversationTextOnly.value = true;
+          setIsMuted(true);
+          
+          // Notify backend
+          conversationRef.current.setTextOnlyMode(true);
+          console.log(`[Widget] Switched to text mode`);
+        }
+      },
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
 
@@ -139,16 +195,8 @@ function useConversationSetup() {
         }
 
         let processedConfig = structuredClone(config.peek());
-        // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode.
-        if (initialMessage && widgetConfig.value.supports_text_only) {
-          processedConfig.textOnly = true;
-          if (!widgetConfig.value.text_only) {
-            processedConfig.overrides ??= {};
-            processedConfig.overrides.conversation ??= {};
-            processedConfig.overrides.conversation.textOnly = true;
-          }
-        }
+        // Track if user started with text message (for UI state)
+        const startedWithText = !!initialMessage && widgetConfig.value.supports_text_only && !widgetConfig.value.text_only;
 
         try {
           processedConfig = triggerCallEvent(element, processedConfig);
@@ -159,7 +207,13 @@ function useConversationSetup() {
           );
         }
 
-        conversationTextOnly.value = processedConfig.textOnly ?? false;
+        conversationTextOnly.value = startedWithText || (processedConfig.textOnly ?? false);
+        
+        // If starting in text mode, mute the microphone
+        if (conversationTextOnly.value) {
+          setIsMuted(true);
+        }
+        
         transcript.value = initialMessage
           ? [
               {
@@ -173,7 +227,8 @@ function useConversationSetup() {
           : [];
 
         try {
-          lockRef.current = Conversation.startSession({
+          // Common config for both text and voice
+          const commonConfig = {
             ...processedConfig,
             overrides: {
               ...processedConfig.overrides,
@@ -184,16 +239,16 @@ function useConversationSetup() {
                   processedConfig.overrides?.client?.version || PACKAGE_VERSION,
               },
             },
-            onModeChange: props => {
+            onModeChange: (props: { mode: Mode }) => {
               mode.value = props.mode;
             },
-            onStatusChange: props => {
+            onStatusChange: (props: { status: Status }) => {
               status.value = props.status;
             },
-            onCanSendFeedbackChange: props => {
+            onCanSendFeedbackChange: (props: { canSendFeedback: boolean }) => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ role, message }) => {
+            onMessage: ({ role, message }: { role: Role; message: string }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -225,7 +280,7 @@ function useConversationSetup() {
                 },
               ];
             },
-            onAgentChatResponsePart: ({ text, type }) => {
+            onAgentChatResponsePart: ({ text, type }: { text: string; type: string }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -265,7 +320,7 @@ function useConversationSetup() {
                 streamingMessageIndexRef.current = null;
               }
             },
-            onDisconnect: details => {
+            onDisconnect: (details: any) => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               streamingMessageIndexRef.current = null;
@@ -293,10 +348,29 @@ function useConversationSetup() {
                 );
               }
             },
-          });
+          };
+
+          // If starting with text, use TextConversation (no mic permissions)
+          // If starting with voice, use VoiceConversation (requests mic permissions)
+          if (startedWithText) {
+            lockRef.current = Conversation.startSession({
+              ...commonConfig,
+              textOnly: true,
+            });
+          } else {
+            lockRef.current = VoiceConversation.startSession({
+              ...commonConfig,
+              textOnly: false,
+            });
+          }
 
           conversationRef.current = await lockRef.current;
-          conversationRef.current.setMicMuted(isMuted.peek());
+          
+          // Set initial mic state for voice conversations
+          if (!startedWithText && isMuted.peek()) {
+            // User manually muted
+            await conversationRef.current.setMicMuted(true);
+          }
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it

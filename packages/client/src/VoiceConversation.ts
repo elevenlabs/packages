@@ -1,6 +1,6 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input, type InputConfig } from "./utils/input";
-import { Output } from "./utils/output";
+import { Output, type OutputConfig } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
 import { WebRTCConnection } from "./utils/WebRTCConnection";
@@ -14,6 +14,88 @@ import {
 import { WebSocketConnection } from "./utils/WebSocketConnection";
 
 export class VoiceConversation extends BaseConversation {
+  /**
+   * Upgrade an existing TextConversation to VoiceConversation by adding audio capabilities
+   * This preserves the existing connection and conversation state
+   */
+  public static async upgradeFromTextConversation(
+    textConversation: BaseConversation,
+    options: Partial<
+      InputConfig &
+        OutputConfig & {
+          workletPaths?: {
+            rawAudioProcessor?: string;
+            audioConcatProcessor?: string;
+          };
+          libsampleratePath?: string;
+        }
+    >
+  ): Promise<VoiceConversation> {
+    // Cast to access protected connection property
+    const connection = (textConversation as any).connection as BaseConnection;
+    const fullOptions = (textConversation as any).options as Options;
+
+    let input: Input | null = null;
+    let output: Output | null = null;
+    let preliminaryInputStream: MediaStream | null = null;
+    let wakeLock: WakeLockSentinel | null = null;
+
+    try {
+      // Request wake lock
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+      } catch (_e) {
+        // Wake Lock is not required
+      }
+
+      // Request microphone permissions
+      preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      // Create input and output
+      [input, output] = await Promise.all([
+        Input.create({
+          ...connection.inputFormat,
+          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+          inputDeviceId: options.inputDeviceId,
+          workletPaths: options.workletPaths,
+          libsampleratePath: options.libsampleratePath,
+        }),
+        Output.create({
+          ...connection.outputFormat,
+          outputDeviceId: options.outputDeviceId,
+          workletPaths: options.workletPaths,
+        }),
+      ]);
+
+      preliminaryInputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
+      preliminaryInputStream = null;
+
+      // Create new VoiceConversation with the existing connection
+      // The fullOptions already contain all the callbacks
+      return new VoiceConversation(
+        fullOptions,
+        connection,
+        input,
+        output,
+        wakeLock
+      );
+    } catch (error) {
+      preliminaryInputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
+      await input?.close();
+      await output?.close();
+      try {
+        await wakeLock?.release();
+      } catch (_e) {}
+      throw error;
+    }
+  }
+
   public static async startSession(
     options: PartialOptions
   ): Promise<VoiceConversation> {

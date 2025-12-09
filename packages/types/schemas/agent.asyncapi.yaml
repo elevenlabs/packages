@@ -74,6 +74,7 @@ channels:
           - $ref: "#/components/messages/Pong"
           - $ref: "#/components/messages/UserMessage"
           - $ref: "#/components/messages/UserActivity"
+          - $ref: "#/components/messages/ConversationConfigUpdate"
           - $ref: "#/components/messages/UserFeedback"
           - $ref: "#/components/messages/ClientToolResult"
           - $ref: "#/components/messages/MCPToolApprovalResult"
@@ -114,6 +115,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/UserActivityPayload"
+
+    ConversationConfigUpdate:
+      name: ConversationConfigUpdateClientToOrchestratorEvent
+      title: Conversation Configuration Update
+      summary: Dynamically update conversation configuration during an active session
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConversationConfigUpdatePayload"
 
     UserFeedback:
       name: UserFeedbackClientToOrchestratorEvent
@@ -539,6 +548,26 @@ components:
         type:
           type: string
           const: user_activity
+
+    ConversationConfigUpdatePayload:
+      type: object
+      required: [type, conversation_config_override]
+      properties:
+        type:
+          type: string
+          const: conversation_config_update
+        conversation_config_override:
+          type: object
+          description: Partial conversation configuration to update dynamically
+          properties:
+            conversation:
+              $ref: "#/components/schemas/ConversationConfigOverride"
+            tts:
+              $ref: "#/components/schemas/TTSConversationalConfigOverride"
+            agent:
+              $ref: "#/components/schemas/AgentConfigOverride"
+            asr:
+              type: object
 
     UserFeedbackPayload:
       type: object

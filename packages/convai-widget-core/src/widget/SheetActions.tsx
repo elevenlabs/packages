@@ -16,6 +16,7 @@ import {
 import { useTextContents } from "../contexts/text-contents";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
+import { ModeToggleButton } from "./ModeToggleButton";
 
 interface SheetActionsProps {
   showTranscript: boolean;
@@ -105,8 +106,9 @@ export function SheetActions({
           </InOutTransition>
         </div>
       )}
-      <div className="flex h-11 items-center">
+      <div className="flex h-11 items-center gap-1">
         <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
+        <ModeToggleButton visible={!isDisconnected.value} />
         <SizeTransition
           visible={!isDisconnected.value || showTranscript}
           className="p-1"

@@ -459,6 +459,22 @@ export class BaseConversation {
     this.connection.setMicMuted(isMuted);
   }
 
+  public setTextOnlyMode(textOnly: boolean): void {
+    if (!this.isOpen()) {
+      console.warn("Cannot change mode: conversation is not active");
+      return;
+    }
+
+    this.connection.sendMessage({
+      type: "conversation_config_update",
+      conversation_config_override: {
+        conversation: {
+          text_only: textOnly,
+        },
+      },
+    });
+  }
+
   public getInputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
   }

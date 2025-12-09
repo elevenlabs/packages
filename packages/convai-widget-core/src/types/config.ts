@@ -86,6 +86,8 @@ export const DefaultTextContents = {
   new_call: "New call",
   end_call: "End",
   mute_microphone: "Mute microphone",
+  switch_to_voice: "Switch to voice mode",
+  switch_to_chat: "Switch to chat mode",
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
