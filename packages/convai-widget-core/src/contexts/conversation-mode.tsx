@@ -9,10 +9,7 @@ import { createContext, useMemo, useRef } from "preact/compat";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useAudioConfig } from "./audio-config";
 
-export enum ConversationMode {
-  Voice = "voice",
-  Text = "text",
-}
+export type ConversationMode = "text" | "voice";
 
 interface ConversationModeConfig {
   mode: ReadonlySignal<ConversationMode>;
@@ -32,13 +29,13 @@ interface ConversationModeProviderProps {
 export function ConversationModeProvider({
   children,
 }: ConversationModeProviderProps) {
-  const mode = useSignal<ConversationMode>(ConversationMode.Voice);
+  const mode = useSignal<ConversationMode>("voice");
   const { isMuted, setIsMuted, setIsAgentAudioEnabled } = useAudioConfig();
   const prevMuteStateRef = useRef<boolean | null>(null);
 
   // Sync audio configuration with conversation mode
   useSignalEffect(() => {
-    const isTextMode = mode.value === ConversationMode.Text;
+    const isTextMode = mode.value === "text";
     if (isTextMode) {
       // Entering text mode: mute mic and disable agent audio
       prevMuteStateRef.current = isMuted.peek();
@@ -61,8 +58,8 @@ export function ConversationModeProvider({
       setMode: (value: ConversationMode) => {
         mode.value = value;
       },
-      isTextMode: computed(() => mode.value === ConversationMode.Text),
-      isVoiceMode: computed(() => mode.value === ConversationMode.Voice),
+      isTextMode: computed(() => mode.value === "text"),
+      isVoiceMode: computed(() => mode.value === "voice"),
     }),
     []
   );

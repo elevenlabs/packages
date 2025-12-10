@@ -49,7 +49,7 @@ export type TranscriptEntry =
     }
   | {
       type: "mode_toggle";
-      mode: "text" | "voice";
+      mode: ConversationMode;
       conversationIndex: number;
     };
 
@@ -69,9 +69,7 @@ export function ConversationProvider({ children }: ConversationProviderProps) {
       prevMode !== currentMode &&
       !value.isDisconnected.value
     ) {
-      value.addModeToggleEntry(
-        currentMode === ConversationMode.Text ? "text" : "voice"
-      );
+      value.addModeToggleEntry(currentMode);
     }
 
     prevModeRef.current = currentMode;
@@ -395,7 +393,7 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
-      addModeToggleEntry: (mode: "text" | "voice") => {
+      addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active
         if (!conversationRef.current?.isOpen()) return;
         transcript.value = [

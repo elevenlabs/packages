@@ -10,17 +10,12 @@ export function ConversationModeToggleButton(
   props: Omit<ButtonProps, "icon" | "onClick" | "aria-label" | "aria-pressed">
 ) {
   const text = useTextContents();
-  const { mode, setMode } = useConversationMode();
+  const { mode, setMode, isTextMode } = useConversationMode();
 
   const onClick = useCallback(() => {
-    const newMode =
-      mode.peek() === ConversationMode.Text
-        ? ConversationMode.Voice
-        : ConversationMode.Text;
+    const newMode = mode.peek() === "text" ? "voice" : "text";
     setMode(newMode);
   }, [setMode, mode]);
-
-  const isTextMode = mode.value === ConversationMode.Text;
 
   return (
     <Button
