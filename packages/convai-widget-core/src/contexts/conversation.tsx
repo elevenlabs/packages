@@ -10,17 +10,19 @@ import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
-import { useMicConfig } from "./mic-config";
 import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
-export const ConversationContext = createContext<ConversationSetup | null>(null);
+export const ConversationContext = createContext<ConversationSetup | null>(
+  null
+);
 
 interface ConversationProviderProps {
   children: ComponentChildren;
@@ -43,6 +45,11 @@ export type TranscriptEntry =
   | {
       type: "error";
       message: string;
+      conversationIndex: number;
+    }
+  | {
+      type: "mode_toggle";
+      mode: ConversationMode;
       conversationIndex: number;
     };
 
@@ -88,12 +95,6 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
-
-  useSignalEffect(() => {
-    const muted = isMuted.value;
-    conversationRef?.current?.setMicMuted(muted);
-  });
 
   // Stop the conversation when the component unmounts.
   // This can happen when the widget is used inside another framework.
@@ -316,7 +317,6 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          conversationRef.current.setMicMuted(isMuted.peek());
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
@@ -358,6 +358,12 @@ function useConversationSetup() {
       getOutputVolume: () => {
         return conversationRef.current?.getOutputVolume() ?? 0;
       },
+      setVolume: (volume: number) => {
+        conversationRef.current?.setVolume({ volume });
+      },
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
       sendFeedback: (like: boolean) => {
         conversationRef.current?.sendFeedback(like);
       },
@@ -377,8 +383,20 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
+      addModeToggleEntry: (mode: ConversationMode) => {
+        // Only add entry if conversation is active
+        if (!conversationRef.current?.isOpen()) return;
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "mode_toggle",
+            mode,
+            conversationIndex: conversationIndex.peek(),
+          },
+        ];
+      },
     };
-  }, [config, isMuted]);
+  }, [config]);
 }
 
 function triggerCallEvent(

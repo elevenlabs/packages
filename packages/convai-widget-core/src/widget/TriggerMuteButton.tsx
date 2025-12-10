@@ -1,11 +1,11 @@
 import { useCallback } from "preact/compat";
-import { useMicConfig } from "../contexts/mic-config";
+import { useAudioConfig } from "../contexts/audio-config";
 import { Button, ButtonProps } from "../components/Button";
 import { useTextContents } from "../contexts/text-contents";
 
 export function TriggerMuteButton(props: Omit<ButtonProps, "icon">) {
   const text = useTextContents();
-  const { isMuted, isMutingEnabled, setIsMuted } = useMicConfig();
+  const { isMuted, isMutingEnabled, setIsMuted } = useAudioConfig();
 
   const onClick = useCallback(() => {
     setIsMuted(!isMuted.peek());
@@ -18,7 +18,7 @@ export function TriggerMuteButton(props: Omit<ButtonProps, "icon">) {
   return (
     <Button
       aria-label={text.mute_microphone}
-      aria-pressed={isMuted}
+      aria-pressed={isMuted.value}
       icon={isMuted.value ? "mic-off" : "mic"}
       onClick={onClick}
       {...props}

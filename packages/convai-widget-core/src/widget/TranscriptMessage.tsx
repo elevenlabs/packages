@@ -115,14 +115,33 @@ function ErrorMessage({
   );
 }
 
+interface ModeToggleMessageProps {
+  entry: Extract<TranscriptEntry, { type: "mode_toggle" }>;
+}
+
+function ModeToggleMessage({ entry }: ModeToggleMessageProps) {
+  const text = useTextContents();
+
+  return (
+    <div className="mt-2 px-8 text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
+      {entry.mode === "text"
+        ? text.switched_to_text_mode
+        : text.switched_to_voice_mode}
+    </div>
+  );
+}
+
 function getMessageComponent(entry: TranscriptEntry, isStreaming?: boolean) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
   }
+  if (entry.type === "mode_toggle") {
+    return <ModeToggleMessage entry={entry} />;
+  }
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
   }
-  if (entry.role === "ai") {
+  if (entry.role === "agent") {
     return <AgentMessageBubble entry={entry} />;
   }
   return <UserMessageBubble entry={entry} />;
