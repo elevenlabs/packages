@@ -30,7 +30,7 @@ export function ConversationModeProvider({
   children,
 }: ConversationModeProviderProps) {
   const mode = useSignal<ConversationMode>("voice");
-  const { isMuted, setIsMuted, setIsAgentAudioEnabled } = useAudioConfig();
+  const { isMuted, setIsMuted, isAgentAudioEnabled } = useAudioConfig();
   const prevMuteStateRef = useRef<boolean | null>(null);
 
   // Sync audio configuration with conversation mode
@@ -40,7 +40,7 @@ export function ConversationModeProvider({
       // Entering text mode: mute mic and disable agent audio
       prevMuteStateRef.current = isMuted.peek();
       setIsMuted(true);
-      setIsAgentAudioEnabled(false);
+      isAgentAudioEnabled.value = false;
     } else {
       // Exiting text mode: restore previous mic state and enable agent audio
       const prevMuteState = prevMuteStateRef.current;
@@ -48,7 +48,7 @@ export function ConversationModeProvider({
         setIsMuted(prevMuteState);
         prevMuteStateRef.current = null;
       }
-      setIsAgentAudioEnabled(true);
+      isAgentAudioEnabled.value = true;
     }
   });
 
