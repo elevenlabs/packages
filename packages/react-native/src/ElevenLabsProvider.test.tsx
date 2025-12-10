@@ -78,7 +78,11 @@ jest.mock('./components/MessageHandler', () => ({
 }));
 
 jest.mock('./components/LiveKitRoomWrapper', () => ({
-  LiveKitRoomWrapper: ({ children }: { children: ReactNode }) => <>{children}</>,
+  LiveKitRoomWrapper: ({ children, roomKey }: { children: ReactNode; roomKey?: string }) => (
+    // Pass roomKey as key to an internal div to simulate the behavior
+    // This allows us to test if children remount when roomKey changes
+    <div key={roomKey}>{children}</div>
+  ),
 }));
 
 describe('ElevenLabsProvider', () => {
@@ -189,6 +193,55 @@ describe('ElevenLabsProvider', () => {
           </ElevenLabsProvider>
         );
       }).not.toThrow();
+    });
+
+    it('should not remount children when startSession is called in useEffect', () => {
+      const mountSpy = jest.fn();
+      const unmountSpy = jest.fn();
+      const startSessionSpy = jest.fn();
+
+      const ChildComponent = () => {
+        React.useEffect(() => {
+          mountSpy();
+          return () => {
+            unmountSpy();
+          };
+        }, []);
+
+        return <TestText>Child component</TestText>;
+      };
+
+      const TestComponent = () => {
+        const conversation = useConversation();
+
+        // This is the problematic pattern from the issue - calling startSession in useEffect
+        React.useEffect(() => {
+          startSessionSpy();
+          conversation.startSession({ agentId: 'test' });
+        }, [conversation]);
+
+        return <ChildComponent />;
+      };
+
+      render(
+        <ElevenLabsProvider>
+          <TestComponent />
+        </ElevenLabsProvider>
+      );
+
+      // Without the fix, this would cause an infinite loop:
+      // 1. Component mounts
+      // 2. useEffect calls startSession
+      // 3. conversationId changes, causing key change on LiveKitRoomWrapper
+      // 4. Children unmount and remount
+      // 5. useEffect runs again → infinite loop
+
+      // With the fix, child should mount only once
+      expect(mountSpy).toHaveBeenCalledTimes(1);
+      expect(unmountSpy).not.toHaveBeenCalled();
+
+      // startSession should be called only once, not infinitely
+      expect(startSessionSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

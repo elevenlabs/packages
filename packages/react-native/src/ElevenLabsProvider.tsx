@@ -306,7 +306,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   return (
     <ElevenLabsContext.Provider value={contextValue}>
       <LiveKitRoomWrapper
-        key={conversationId || 'disconnected'}
+        roomKey={conversationId || 'disconnected'}
         serverUrl={serverUrl}
         token={token}
         connect={connect}
