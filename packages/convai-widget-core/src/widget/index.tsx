@@ -24,10 +24,10 @@ export function ConvAIWidget(attributes: CustomAttributes) {
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <ConversationModeProvider>
-                  <AudioConfigProvider>
-                    <SessionConfigProvider>
-                      <ConversationProvider>
+                <SessionConfigProvider>
+                  <ConversationProvider>
+                    <ConversationModeProvider>
+                      <AudioConfigProvider>
                         <TextContentsProvider>
                           <AvatarConfigProvider>
                             <SheetContentProvider>
@@ -38,10 +38,10 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                             </SheetContentProvider>
                           </AvatarConfigProvider>
                         </TextContentsProvider>
-                      </ConversationProvider>
-                    </SessionConfigProvider>
-                  </AudioConfigProvider>
-                </ConversationModeProvider>
+                      </AudioConfigProvider>
+                    </ConversationModeProvider>
+                  </ConversationProvider>
+                </SessionConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>

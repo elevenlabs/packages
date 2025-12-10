@@ -3,12 +3,14 @@ import {
   ReadonlySignal,
   useComputed,
   useSignal,
+  useSignalEffect,
 } from "@preact/signals";
 import { ComponentChildren } from "preact";
-import { createContext, useMemo } from "preact/compat";
+import { createContext, useMemo, useRef } from "preact/compat";
 import { useWidgetConfig } from "./widget-config";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useConversationMode } from "./conversation-mode";
+import { useConversation } from "./conversation";
 
 interface AudioConfig {
   // Microphone input control
@@ -26,10 +28,31 @@ interface AudioConfigProviderProps {
 export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
   const widgetConfig = useWidgetConfig();
   const { isTextMode } = useConversationMode();
+  const { setMicMuted } = useConversation();
   const isMutingEnabled = useComputed(
     () => widgetConfig.value.mic_muting_enabled ?? false
   );
   const isMuted = useSignal(false);
+  const prevMuteStateRef = useRef<boolean | null>(null);
+
+  // Handle mute state based on conversation mode and user preference
+  useSignalEffect(() => {
+    if (isTextMode.value) {
+      // Text mode: save current state and always mute
+      if (prevMuteStateRef.current === null) {
+        prevMuteStateRef.current = isMuted.peek();
+      }
+      setMicMuted(true);
+    } else {
+      // Voice mode: restore saved state if returning from text mode
+      if (prevMuteStateRef.current !== null) {
+        isMuted.value = prevMuteStateRef.current;
+        prevMuteStateRef.current = null;
+      }
+
+      setMicMuted(isMutingEnabled.value ? isMuted.value : false);
+    }
+  });
 
   const value = useMemo(
     () => ({

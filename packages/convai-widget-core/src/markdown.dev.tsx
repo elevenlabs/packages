@@ -138,6 +138,8 @@ function MockConversationProvider({
       endSession: async () => {},
       getInputVolume: () => 0,
       getOutputVolume: () => 0,
+      setVolume: () => {},
+      setMicMuted: () => {},
       sendFeedback: () => {},
       sendUserMessage: () => {},
       sendUserActivity: () => {},
@@ -195,12 +197,12 @@ function WidgetSandbox({
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <ConversationModeProvider>
-                  <AudioConfigProvider>
-                    <SessionConfigProvider>
-                      <MockConversationProvider
-                        displayTextSignal={displayTextSignal}
-                      >
+                <SessionConfigProvider>
+                  <MockConversationProvider
+                    displayTextSignal={displayTextSignal}
+                  >
+                    <ConversationModeProvider>
+                      <AudioConfigProvider>
                         <TextContentsProvider>
                           <AvatarConfigProvider>
                             <SheetContentProvider>
@@ -220,10 +222,10 @@ function WidgetSandbox({
                             </SheetContentProvider>
                           </AvatarConfigProvider>
                         </TextContentsProvider>
-                      </MockConversationProvider>
-                    </SessionConfigProvider>
-                  </AudioConfigProvider>
-                </ConversationModeProvider>
+                      </AudioConfigProvider>
+                    </ConversationModeProvider>
+                  </MockConversationProvider>
+                </SessionConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>

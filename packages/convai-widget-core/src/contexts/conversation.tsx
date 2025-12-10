@@ -10,13 +10,12 @@ import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
-import { useAudioConfig } from "./audio-config";
 import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
-import { ConversationMode, useConversationMode } from "./conversation-mode";
+import { ConversationMode } from "./conversation-mode";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -55,25 +54,6 @@ export type TranscriptEntry =
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
-  const { mode } = useConversationMode();
-  const prevModeRef = useRef<ConversationMode | null>(null);
-
-  // Track mode changes and add transcript entries
-  useSignalEffect(() => {
-    const currentMode = mode.value;
-    const prevMode = prevModeRef.current;
-
-    // Only add entry if this is a change (not initial render) and conversation is active
-    if (
-      prevMode !== null &&
-      prevMode !== currentMode &&
-      !value.isDisconnected.value
-    ) {
-      value.addModeToggleEntry(currentMode);
-    }
-
-    prevModeRef.current = currentMode;
-  });
 
   // Automatically disconnect the conversation after 10 minutes of no messages
   useSignalEffect(() => {
@@ -113,20 +93,6 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useAudioConfig();
-  const { isVoiceMode } = useConversationMode();
-
-  // Apply mic mute state to conversation
-  useSignalEffect(() => {
-    const muted = isMuted.value;
-    conversationRef?.current?.setMicMuted(muted);
-  });
-
-  // Apply agent audio state to conversation
-  useSignalEffect(() => {
-    const enabled = isVoiceMode.value;
-    conversationRef?.current?.setVolume({ volume: enabled ? 1 : 0 });
-  });
 
   // Stop the conversation when the component unmounts.
   // This can happen when the widget is used inside another framework.
@@ -333,7 +299,6 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          conversationRef.current.setMicMuted(isMuted.peek());
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
@@ -375,6 +340,12 @@ function useConversationSetup() {
       getOutputVolume: () => {
         return conversationRef.current?.getOutputVolume() ?? 0;
       },
+      setVolume: (volume: number) => {
+        conversationRef.current?.setVolume({ volume });
+      },
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
       sendFeedback: (like: boolean) => {
         conversationRef.current?.sendFeedback(like);
       },
@@ -407,7 +378,7 @@ function useConversationSetup() {
         ];
       },
     };
-  }, [config, isMuted]);
+  }, [config]);
 }
 
 function triggerCallEvent(
