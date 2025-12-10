@@ -113,7 +113,8 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted, isAgentAudioEnabled } = useAudioConfig();
+  const { isMuted } = useAudioConfig();
+  const { isVoiceMode } = useConversationMode();
 
   // Apply mic mute state to conversation
   useSignalEffect(() => {
@@ -123,7 +124,7 @@ function useConversationSetup() {
 
   // Apply agent audio state to conversation
   useSignalEffect(() => {
-    const enabled = isAgentAudioEnabled.value;
+    const enabled = isVoiceMode.value;
     conversationRef?.current?.setVolume({ volume: enabled ? 1 : 0 });
   });
 

@@ -1,7 +1,6 @@
 import {
   computed,
   ReadonlySignal,
-  Signal,
   useComputed,
   useSignal,
 } from "@preact/signals";
@@ -15,8 +14,6 @@ interface AudioConfig {
   isMutingEnabled: ReadonlySignal<boolean>;
   isMuted: ReadonlySignal<boolean>;
   setIsMuted: (value: boolean) => void;
-  // Agent audio output control
-  isAgentAudioEnabled: Signal<boolean>;
 }
 
 const AudioConfigContext = createContext<AudioConfig | null>(null);
@@ -31,7 +28,6 @@ export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
     () => widgetConfig.value.mic_muting_enabled ?? false
   );
   const isMuted = useSignal(false);
-  const isAgentAudioEnabled = useSignal(true);
 
   const value = useMemo(
     () => ({
@@ -46,7 +42,6 @@ export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
         isMuted.value = value;
       },
       isMutingEnabled,
-      isAgentAudioEnabled,
     }),
     []
   );
