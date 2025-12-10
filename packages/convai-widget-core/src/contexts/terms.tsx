@@ -1,4 +1,4 @@
-import { computed, ReadonlySignal, signal, useSignalEffect } from "@preact/signals";
+import { computed, ReadonlySignal, useSignal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
@@ -25,8 +25,8 @@ interface StoredPromise {
 export function TermsProvider({ children }: TermsProviderProps) {
   const localizedTerms = useLocalizedTerms();
 
-  const termsShown = useMemo(() => signal(false), []);
-  const termsAcceptedState = useMemo(() => signal(false), []);
+  const termsShown = useSignal(false);
+  const termsAcceptedState = useSignal(false);
   
   const value = useMemo(() => {
     const termsAccepted = computed(
