@@ -26,7 +26,11 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "msw"
-    ]
+    ],
+    "overrides": {
+      "react": "19.0.1",
+      "react-dom": "19.0.1"
+    }
   },
   "packageManager": "pnpm@10.13.1"
 }
