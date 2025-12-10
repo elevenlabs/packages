@@ -12,7 +12,8 @@ vi.mock("livekit-client", () => {
         setMicrophoneEnabled: [],
       };
       (
-        (globalThis as Record<string, unknown>).__mockCalls__ as typeof mockCalls
+        (globalThis as Record<string, unknown>)
+          .__mockCalls__ as typeof mockCalls
       ).setMicrophoneEnabled.push(enabled);
       return Promise.resolve();
     }),
@@ -89,7 +90,8 @@ describe("WebRTCConnection", () => {
       }
 
       const calls = (
-        (globalThis as Record<string, unknown>).__mockCalls__ as typeof mockCalls
+        (globalThis as Record<string, unknown>)
+          .__mockCalls__ as typeof mockCalls
       ).setMicrophoneEnabled;
 
       if (shouldEnableMic) {
