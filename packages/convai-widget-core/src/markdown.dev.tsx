@@ -44,7 +44,8 @@ import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
 import { WidgetSizeProvider } from "./contexts/widget-size";
-import { MicConfigProvider } from "./contexts/mic-config";
+import { AudioConfigProvider } from "./contexts/audio-config";
+import { ConversationModeProvider } from "./contexts/conversation-mode";
 import { SessionConfigProvider } from "./contexts/session-config";
 import { AvatarConfigProvider } from "./contexts/avatar-config";
 import { TermsProvider } from "./contexts/terms";
@@ -137,9 +138,12 @@ function MockConversationProvider({
       endSession: async () => {},
       getInputVolume: () => 0,
       getOutputVolume: () => 0,
+      setVolume: () => {},
+      setMicMuted: () => {},
       sendFeedback: () => {},
       sendUserMessage: () => {},
       sendUserActivity: () => {},
+      addModeToggleEntry: () => {},
     }),
     [mockTranscript]
   );
@@ -193,33 +197,35 @@ function WidgetSandbox({
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <MicConfigProvider>
-                  <SessionConfigProvider>
-                    <MockConversationProvider
-                      displayTextSignal={displayTextSignal}
-                    >
-                      <TextContentsProvider>
-                        <AvatarConfigProvider>
-                          <SheetContentProvider>
-                            <FeedbackProvider>
-                              <div className="dev-host">
-                                <Style />
-                                <Wrapper />
-                                {theme === "dark" && (
-                                  <style>{`
+                <SessionConfigProvider>
+                  <MockConversationProvider
+                    displayTextSignal={displayTextSignal}
+                  >
+                    <ConversationModeProvider>
+                      <AudioConfigProvider>
+                        <TextContentsProvider>
+                          <AvatarConfigProvider>
+                            <SheetContentProvider>
+                              <FeedbackProvider>
+                                <div className="dev-host">
+                                  <Style />
+                                  <Wrapper />
+                                  {theme === "dark" && (
+                                    <style>{`
                                 .dev-host {
                                   scrollbar-color: #4b5563 transparent !important;
                                 }
                               `}</style>
-                                )}
-                              </div>
-                            </FeedbackProvider>
-                          </SheetContentProvider>
-                        </AvatarConfigProvider>
-                      </TextContentsProvider>
-                    </MockConversationProvider>
-                  </SessionConfigProvider>
-                </MicConfigProvider>
+                                  )}
+                                </div>
+                              </FeedbackProvider>
+                            </SheetContentProvider>
+                          </AvatarConfigProvider>
+                        </TextContentsProvider>
+                      </AudioConfigProvider>
+                    </ConversationModeProvider>
+                  </MockConversationProvider>
+                </SessionConfigProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>

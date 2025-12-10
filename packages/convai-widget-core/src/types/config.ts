@@ -63,6 +63,7 @@ export interface WidgetConfig {
   first_message?: string;
   use_rtc?: boolean;
   syntax_highlight_theme?: SyntaxHighlightTheme;
+  conversation_mode_toggle_enabled?: boolean;
 }
 
 export type AvatarConfig =
@@ -88,6 +89,10 @@ export const DefaultTextContents = {
   new_call: "New call",
   end_call: "End",
   mute_microphone: "Mute microphone",
+  text_mode: "Switch to text mode",
+  voice_mode: "Switch to voice mode",
+  switched_to_text_mode: "Switched to text mode",
+  switched_to_voice_mode: "Switched to voice mode",
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
