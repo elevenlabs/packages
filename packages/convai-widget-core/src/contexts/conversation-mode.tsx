@@ -1,13 +1,7 @@
-import {
-  computed,
-  ReadonlySignal,
-  useSignal,
-  useSignalEffect,
-} from "@preact/signals";
+import { computed, ReadonlySignal, useSignal } from "@preact/signals";
 import { ComponentChildren } from "preact";
-import { createContext, useMemo, useRef } from "preact/compat";
+import { createContext, useMemo } from "preact/compat";
 import { useContextSafely } from "../utils/useContextSafely";
-import { useAudioConfig } from "./audio-config";
 
 export type ConversationMode = "text" | "voice";
 
@@ -30,25 +24,6 @@ export function ConversationModeProvider({
   children,
 }: ConversationModeProviderProps) {
   const mode = useSignal<ConversationMode>("voice");
-  const { isMuted, setIsMuted } = useAudioConfig();
-  const prevMuteStateRef = useRef<boolean | null>(null);
-
-  // Sync audio configuration with conversation mode
-  useSignalEffect(() => {
-    const isTextMode = mode.value === "text";
-    if (isTextMode) {
-      // Entering text mode: mute mic
-      prevMuteStateRef.current = isMuted.peek();
-      setIsMuted(true);
-    } else {
-      // Exiting text mode: restore previous mic state
-      const prevMuteState = prevMuteStateRef.current;
-      if (prevMuteState !== null) {
-        setIsMuted(prevMuteState);
-        prevMuteStateRef.current = null;
-      }
-    }
-  });
 
   const value = useMemo(
     () => ({

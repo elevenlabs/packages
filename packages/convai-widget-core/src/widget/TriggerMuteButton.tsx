@@ -18,7 +18,7 @@ export function TriggerMuteButton(props: Omit<ButtonProps, "icon">) {
   return (
     <Button
       aria-label={text.mute_microphone}
-      aria-pressed={isMuted}
+      aria-pressed={isMuted.value}
       icon={isMuted.value ? "mic-off" : "mic"}
       onClick={onClick}
       {...props}

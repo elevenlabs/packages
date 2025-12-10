@@ -8,6 +8,7 @@ import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useWidgetConfig } from "./widget-config";
 import { useContextSafely } from "../utils/useContextSafely";
+import { useConversationMode } from "./conversation-mode";
 
 interface AudioConfig {
   // Microphone input control
@@ -24,6 +25,7 @@ interface AudioConfigProviderProps {
 
 export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
   const widgetConfig = useWidgetConfig();
+  const { isTextMode } = useConversationMode();
   const isMutingEnabled = useComputed(
     () => widgetConfig.value.mic_muting_enabled ?? false
   );
@@ -32,11 +34,12 @@ export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
   const value = useMemo(
     () => ({
       isMuted: computed(() =>
-        isMutingEnabled.value
-          ? isMuted.value
-          : // The user will not be able to unmute themselves if the muting
-            // button is hidden so we always return false
-            false
+        isTextMode.value
+          ? true // Always mute in text mode
+          : isMutingEnabled.value
+            ? isMuted.value
+            : // The user is not able to unmute themselves if the muting button is hidden
+              false
       ),
       setIsMuted: (value: boolean) => {
         isMuted.value = value;

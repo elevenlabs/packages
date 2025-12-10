@@ -45,6 +45,7 @@ import { TextContentsProvider } from "./contexts/text-contents";
 import { LanguageConfigProvider } from "./contexts/language-config";
 import { WidgetSizeProvider } from "./contexts/widget-size";
 import { AudioConfigProvider } from "./contexts/audio-config";
+import { ConversationModeProvider } from "./contexts/conversation-mode";
 import { SessionConfigProvider } from "./contexts/session-config";
 import { AvatarConfigProvider } from "./contexts/avatar-config";
 import { TermsProvider } from "./contexts/terms";
@@ -194,33 +195,35 @@ function WidgetSandbox({
           <WidgetSizeProvider>
             <TermsProvider>
               <LanguageConfigProvider>
-                <AudioConfigProvider>
-                  <SessionConfigProvider>
-                    <MockConversationProvider
-                      displayTextSignal={displayTextSignal}
-                    >
-                      <TextContentsProvider>
-                        <AvatarConfigProvider>
-                          <SheetContentProvider>
-                            <FeedbackProvider>
-                              <div className="dev-host">
-                                <Style />
-                                <Wrapper />
-                                {theme === "dark" && (
-                                  <style>{`
+                <ConversationModeProvider>
+                  <AudioConfigProvider>
+                    <SessionConfigProvider>
+                      <MockConversationProvider
+                        displayTextSignal={displayTextSignal}
+                      >
+                        <TextContentsProvider>
+                          <AvatarConfigProvider>
+                            <SheetContentProvider>
+                              <FeedbackProvider>
+                                <div className="dev-host">
+                                  <Style />
+                                  <Wrapper />
+                                  {theme === "dark" && (
+                                    <style>{`
                                 .dev-host {
                                   scrollbar-color: #4b5563 transparent !important;
                                 }
                               `}</style>
-                                )}
-                              </div>
-                            </FeedbackProvider>
-                          </SheetContentProvider>
-                        </AvatarConfigProvider>
-                      </TextContentsProvider>
-                    </MockConversationProvider>
-                  </SessionConfigProvider>
-                </AudioConfigProvider>
+                                  )}
+                                </div>
+                              </FeedbackProvider>
+                            </SheetContentProvider>
+                          </AvatarConfigProvider>
+                        </TextContentsProvider>
+                      </MockConversationProvider>
+                    </SessionConfigProvider>
+                  </AudioConfigProvider>
+                </ConversationModeProvider>
               </LanguageConfigProvider>
             </TermsProvider>
           </WidgetSizeProvider>
