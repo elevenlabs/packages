@@ -17,7 +17,6 @@ export function ConversationModeToggleButton(
   return (
     <Button
       aria-label={isTextMode.value ? text.voice_mode : text.text_mode}
-      aria-pressed={isTextMode.value}
       icon={isTextMode.value ? "soundwave" : "chat"}
       onClick={onClick}
       {...props}
