@@ -256,32 +256,51 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     });
   }, [sendMessage]);
 
-  // Memoize the conversation object to prevent unnecessary re-renders
+  // Store all conversation values/functions in refs for stable access
+  const conversationValuesRef = React.useRef({
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  });
+
+  // Update ref on every render
+  conversationValuesRef.current = {
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  };
+
+  // Create a stable conversation object that never changes reference
+  // This prevents infinite loops when conversation is used in useEffect dependencies
   const conversation = React.useMemo<Conversation>(() => ({
-    startSession,
-    endSession,
-    status,
-    isSpeaking,
-    canSendFeedback,
-    getId,
-    setMicMuted,
-    sendFeedback,
-    sendContextualUpdate,
-    sendUserMessage,
-    sendUserActivity,
-  }), [
-    startSession,
-    endSession,
-    status,
-    isSpeaking,
-    canSendFeedback,
-    getId,
-    setMicMuted,
-    sendFeedback,
-    sendContextualUpdate,
-    sendUserMessage,
-    sendUserActivity,
-  ]);
+    get startSession() { return conversationValuesRef.current.startSession; },
+    get endSession() { return conversationValuesRef.current.endSession; },
+    get status() { return conversationValuesRef.current.status; },
+    get isSpeaking() { return conversationValuesRef.current.isSpeaking; },
+    get canSendFeedback() { return conversationValuesRef.current.canSendFeedback; },
+    get getId() { return conversationValuesRef.current.getId; },
+    get setMicMuted() { return conversationValuesRef.current.setMicMuted; },
+    get sendFeedback() { return conversationValuesRef.current.sendFeedback; },
+    get sendContextualUpdate() { return conversationValuesRef.current.sendContextualUpdate; },
+    get sendUserMessage() { return conversationValuesRef.current.sendUserMessage; },
+    get sendUserActivity() { return conversationValuesRef.current.sendUserActivity; },
+  }), []); // Empty deps - object is created once and never recreated
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
   const contextValue = React.useMemo<ElevenLabsContextType>(() => ({
@@ -306,7 +325,6 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   return (
     <ElevenLabsContext.Provider value={contextValue}>
       <LiveKitRoomWrapper
-        roomKey={conversationId || 'disconnected'}
         serverUrl={serverUrl}
         token={token}
         connect={connect}

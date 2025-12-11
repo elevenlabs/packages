@@ -21,7 +21,6 @@ interface LiveKitRoomWrapperProps {
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
   audioSessionConfig?: AudioSessionConfig;
-  roomKey?: string;
 }
 
 export const LiveKitRoomWrapper = ({
@@ -40,7 +39,6 @@ export const LiveKitRoomWrapper = ({
   updateCurrentEventId,
   onEndSession,
   audioSessionConfig,
-  roomKey,
 }: LiveKitRoomWrapperProps) => {
   // Configure audio options based on audioSessionConfig
   const audioOptions = React.useMemo(() => {
@@ -62,7 +60,6 @@ export const LiveKitRoomWrapper = ({
 
   return (
     <LiveKitRoom
-      key={roomKey}
       serverUrl={serverUrl}
       token={token}
       connect={connect}

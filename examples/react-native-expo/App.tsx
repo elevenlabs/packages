@@ -53,7 +53,7 @@ const ConversationScreen = () => {
       console.log("⚡ Interruption detected:", event);
     },
     onAudio: (base64Audio: string) => {
-      console.log(`🔊 Audio chunk received: ${base64Audio.length} bytes`);
+      console.log(`🔊 Audio chunk received: ${base64Audio} bytes`);
     },
     onMCPToolCall: (event) => {
       console.log("🔧 MCP Tool Call:", event);
