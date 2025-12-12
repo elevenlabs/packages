@@ -220,7 +220,10 @@ export function useAllowedLinkDomains() {
         .map(d => d.trim())
         .filter(Boolean);
     }
-    return config.value.allowed_link_domains;
+    const domains = config.value.allowed_link_domains;
+    if (!domains) return undefined;
+
+    return domains.map(d => (typeof d === "string" ? d : d.hostname));
   });
 }
 
