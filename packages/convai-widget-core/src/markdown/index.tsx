@@ -3,31 +3,67 @@
  */
 import { createContext, memo, useId, useMemo } from "preact/compat";
 
-import { harden } from "rehype-harden";
+import rehypeSanitize from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
+import { harden as rehypeHarden } from "rehype-harden";
 import remarkCjkFriendly from "remark-cjk-friendly";
 import remarkCjkFriendlyGfmStrikethrough from "remark-cjk-friendly-gfm-strikethrough";
 import remarkGfm from "remark-gfm";
 import type { PluggableList } from "unified";
 import { components as defaultComponents } from "./components/components";
 import { Markdown, type Options } from "./utils/markdown";
+import { allowedDomainsToLinkPrefixes } from "./utils/allowedDomainsToLinkPrefixes";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { cn } from "../utils/cn";
 import { ParsersContext, parserConfig } from "./utils/highlighter";
 
-const defaultRehypePlugins: PluggableList = [
-  [
-    harden,
-    {
-      allowedImagePrefixes: ["*"],
-      allowedLinkPrefixes: ["*"],
-      defaultOrigin: undefined,
-      allowDataImages: true,
-    },
-  ],
-  rehypeRaw,
-];
+function getDefaultOrigin(): string {
+  const isInIframe = window.location !== window.parent.location;
+
+  if (isInIframe) {
+    // Prefer ancestorOrigins (more reliable), fall back to referrer
+    // Firefox do not support https://caniuse.com/#search=ancestorOrigins
+    const { ancestorOrigins } = document.location;
+    if (ancestorOrigins && ancestorOrigins.length) {
+      return ancestorOrigins[0];
+    }
+    if (document.referrer) {
+      try {
+        return new URL(document.referrer).origin;
+      } catch {
+        // Fall through to current origin
+      }
+    }
+  }
+
+  return document.location.origin;
+}
+
+function createRehypePlugins(
+  allowedLinkDomains?: string[] | null
+): PluggableList {
+  const defaultOrigin = getDefaultOrigin();
+  const allowedLinkPrefixes = [
+    defaultOrigin,
+    ...allowedDomainsToLinkPrefixes(allowedLinkDomains),
+  ];
+
+  return [
+    rehypeRaw,
+    [rehypeSanitize, {}],
+    [
+      rehypeHarden,
+      {
+        allowedImagePrefixes: ["*"],
+        allowedLinkPrefixes,
+        allowedProtocols: ["*"],
+        defaultOrigin,
+        allowDataImages: true,
+      },
+    ]
+  ];
+}
 
 const defaultRemarkPlugins: PluggableList = [
   [remarkGfm, {}],
@@ -35,18 +71,12 @@ const defaultRemarkPlugins: PluggableList = [
   [remarkCjkFriendlyGfmStrikethrough, {}],
 ];
 
-
-const markdownOptions: Readonly<Options> = {
-  components: defaultComponents,
-  rehypePlugins: defaultRehypePlugins,
-  remarkPlugins: defaultRemarkPlugins,
-};
-
 export type StreamdownProps = {
   children?: string;
   parseIncompleteMarkdown?: boolean;
   className?: string;
   isAnimating?: boolean;
+  allowedLinkDomains?: string[] | null;
 };
 
 export type StreamdownRuntimeContextType = {
@@ -61,10 +91,11 @@ export const StreamdownRuntimeContext =
 type BlockProps = {
   content: string;
   shouldParseIncompleteMarkdown: boolean;
+  markdownOptions: Readonly<Options>;
 };
 
 const Block = memo(
-  ({ content, shouldParseIncompleteMarkdown }: BlockProps) => {
+  ({ content, shouldParseIncompleteMarkdown, markdownOptions }: BlockProps) => {
     const parsedContent = useMemo(
       () =>
         typeof content === "string" && shouldParseIncompleteMarkdown
@@ -77,7 +108,11 @@ const Block = memo(
       <Markdown {...markdownOptions}>{parsedContent}</Markdown>
     );
   },
-  (prevProps, nextProps) => prevProps.content === nextProps.content
+  (prevProps, nextProps) =>
+    prevProps.content === nextProps.content &&
+    prevProps.shouldParseIncompleteMarkdown ===
+    nextProps.shouldParseIncompleteMarkdown &&
+    prevProps.markdownOptions === nextProps.markdownOptions
 );
 
 export const WidgetStreamdown = memo(
@@ -86,12 +121,21 @@ export const WidgetStreamdown = memo(
     parseIncompleteMarkdown: shouldParseIncompleteMarkdown = true,
     className,
     isAnimating = false,
+    allowedLinkDomains,
   }: StreamdownProps) => {
     const generatedId = useId();
     const blocks = useMemo(
       () =>
         parseMarkdownIntoBlocks(typeof children === "string" ? children : ""),
       [children]
+    );
+    const markdownOptions = useMemo<Readonly<Options>>(
+      () => ({
+        components: defaultComponents,
+        rehypePlugins: createRehypePlugins(allowedLinkDomains),
+        remarkPlugins: defaultRemarkPlugins,
+      }),
+      [allowedLinkDomains]
     );
 
     return (
@@ -103,6 +147,7 @@ export const WidgetStreamdown = memo(
                 content={block}
                 key={`${generatedId}-block-${index}`}
                 shouldParseIncompleteMarkdown={shouldParseIncompleteMarkdown}
+                markdownOptions={markdownOptions}
               />
             ))}
           </div>
@@ -112,5 +157,8 @@ export const WidgetStreamdown = memo(
   },
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children &&
-    prevProps.isAnimating === nextProps.isAnimating
+    prevProps.isAnimating === nextProps.isAnimating &&
+    prevProps.className === nextProps.className &&
+    prevProps.parseIncompleteMarkdown === nextProps.parseIncompleteMarkdown &&
+    prevProps.allowedLinkDomains === nextProps.allowedLinkDomains
 );

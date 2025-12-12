@@ -31,6 +31,7 @@ export type SyntaxHighlightTheme = "light" | "dark";
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
+  allowed_link_domains?: string[];
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
   end_feedback?: {

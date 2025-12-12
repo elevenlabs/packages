@@ -6,6 +6,7 @@ import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { useEndFeedbackType } from "../contexts/widget-config";
+import { useWidgetConfig } from "../contexts/widget-config";
 import { WidgetStreamdown } from "../markdown";
 
 interface TranscriptMessageProps {
@@ -18,9 +19,12 @@ function AgentMessageBubble({
 }: {
   entry: Extract<TranscriptEntry, { type: "message" }>;
 }) {
+  const config = useWidgetConfig();
   return (
     <div className="pr-8">
-      <WidgetStreamdown>{entry.message}</WidgetStreamdown>
+      <WidgetStreamdown allowedLinkDomains={config.value.allowed_link_domains}>
+        {entry.message}
+      </WidgetStreamdown>
     </div>
   );
 }
