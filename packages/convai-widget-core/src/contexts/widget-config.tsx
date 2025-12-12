@@ -209,6 +209,24 @@ export function useEndFeedbackType() {
   return useComputed(() => config.value.end_feedback?.type ?? null);
 }
 
+export function useAllowedLinkDomains() {
+  const override = useAttribute("allowed-link-domains");
+  const config = useWidgetConfig();
+
+  return useComputed(() => {
+    if (override.value) {
+      return override.value
+        .split(",")
+        .map(d => d.trim())
+        .filter(Boolean);
+    }
+    const domains = config.value.allowed_link_domains;
+    if (!domains) return undefined;
+
+    return domains.map(d => (typeof d === "string" ? d : d.hostname));
+  });
+}
+
 export function useSyntaxTheme() {
   const override = useAttribute("syntax-highlight-theme");
   const config = useWidgetConfig();

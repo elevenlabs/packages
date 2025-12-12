@@ -369,4 +369,61 @@ describe("elevenlabs-convai", () => {
       await expect.element(page.getByText("Cell 2")).toBeInTheDocument();
     });
   });
+
+  describe("markdown link allowlist", () => {
+    it("should allow widget domain by default when config omits allowlist", async () => {
+      setupWebComponent({
+        "agent-id": "markdown_default_domain",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+
+      await expect
+        .element(page.getByRole("link", { name: "Relative link" }))
+        .toBeInTheDocument();
+    });
+
+    it("should deny links when allowed_link_domains is empty", async () => {
+      setupWebComponent({
+        "agent-id": "markdown_no_links",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+
+      await expect
+        .element(page.getByText("No links should be clickable:"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText("Link text")).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("link", { name: "Link text" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("should allow only whitelisted domains", async () => {
+      setupWebComponent({
+        "agent-id": "markdown_domain_allowlist",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+
+      const allowedHttps = page.getByRole("link", {
+        name: "Allowed https link",
+      });
+      await expect.element(allowedHttps).toBeInTheDocument();
+      await expect
+        .element(allowedHttps)
+        .toHaveAttribute("href", "https://example.com/allowed");
+
+      const allowedHttp = page.getByRole("link", { name: "Allowed http link" });
+      await expect.element(allowedHttp).toBeInTheDocument();
+      await expect
+        .element(allowedHttp)
+        .toHaveAttribute("href", "http://example.com/http-allowed");
+
+      await expect.element(page.getByText("Blocked link")).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("link", { name: "Blocked link" }))
+        .not.toBeInTheDocument();
+    });
+  });
 });
