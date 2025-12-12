@@ -156,8 +156,10 @@ export class WebRTCConnection extends BaseConnection {
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
-      // Enable microphone and send overrides
-      await room.localParticipant.setMicrophoneEnabled(true);
+      // Enable microphone only if not text-only mode
+      if (!config.textOnly) {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      }
 
       const overridesEvent = constructOverrides(config);
 
