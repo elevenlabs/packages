@@ -3,7 +3,7 @@
  */
 import { createContext, memo, useId, useMemo } from "preact/compat";
 
-import rehypeSanitize from "rehype-sanitize";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
 import { harden as rehypeHarden } from "rehype-harden";
 import remarkCjkFriendly from "remark-cjk-friendly";
@@ -51,7 +51,16 @@ function createRehypePlugins(
 
   return [
     rehypeRaw,
-    [rehypeSanitize, {}],
+    [
+      rehypeSanitize,
+      {
+        ...defaultSchema,
+        protocols: {
+          ...defaultSchema.protocols,
+          src: [...(defaultSchema.protocols?.src || []), "data"],
+        },
+      },
+    ],
     [
       rehypeHarden,
       {
