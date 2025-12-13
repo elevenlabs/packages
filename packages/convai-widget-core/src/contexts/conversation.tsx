@@ -206,15 +206,25 @@ function useConversationSetup() {
                 !receivedFirstMessageRef.current
               ) {
                 receivedFirstMessageRef.current = true;
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
               }
 
               if (role === "agent" && isReceivingStreamRef.current) {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null) {
+                  const currentTranscript = transcript.peek();
+                  const updatedTranscript = [...currentTranscript];
+                  updatedTranscript[streamingIndex] = {
+                    type: "message",
+                    role: "agent",
+                    message,
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  };
+                  transcript.value = updatedTranscript;
+                }
                 isReceivingStreamRef.current = false;
                 return;
               }
@@ -236,9 +246,6 @@ function useConversationSetup() {
                 conversationTextOnly.peek() === true &&
                 !receivedFirstMessageRef.current
               ) {
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
                 return;
               }
 
@@ -273,32 +280,34 @@ function useConversationSetup() {
               }
             },
             onDisconnect: details => {
-              receivedFirstMessageRef.current = false;
-              conversationTextOnly.value = null;
-              streamingMessageIndexRef.current = null;
-              isReceivingStreamRef.current = false;
-              transcript.value = [
-                ...transcript.value,
-                details.reason === "error"
-                  ? {
-                      type: "error",
-                      message: details.message,
-                      conversationIndex: conversationIndex.peek(),
-                    }
-                  : {
-                      type: "disconnection",
-                      role: details.reason === "user" ? "user" : "agent",
-                      conversationIndex: conversationIndex.peek(),
-                    },
-              ];
-              conversationIndex.value++;
-              if (details.reason === "error") {
-                error.value = details.message;
-                console.error(
-                  "[ConversationalAI] Disconnected due to an error:",
-                  details.message
-                );
-              }
+              queueMicrotask(() => {
+                receivedFirstMessageRef.current = false;
+                conversationTextOnly.value = null;
+                streamingMessageIndexRef.current = null;
+                isReceivingStreamRef.current = false;
+                transcript.value = [
+                  ...transcript.peek(),
+                  details.reason === "error"
+                    ? {
+                        type: "error",
+                        message: details.message,
+                        conversationIndex: conversationIndex.peek(),
+                      }
+                    : {
+                        type: "disconnection",
+                        role: details.reason === "user" ? "user" : "agent",
+                        conversationIndex: conversationIndex.peek(),
+                      },
+                ];
+                conversationIndex.value++;
+                if (details.reason === "error") {
+                  error.value = details.message;
+                  console.error(
+                    "[ConversationalAI] Disconnected due to an error:",
+                    details.message
+                  );
+                }
+              });
             },
           });
 
