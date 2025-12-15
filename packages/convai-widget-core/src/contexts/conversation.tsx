@@ -206,6 +206,9 @@ function useConversationSetup() {
                 !receivedFirstMessageRef.current
               ) {
                 receivedFirstMessageRef.current = true;
+                // Text mode is always started by the user sending a text message.
+                // We need to ignore the first agent message as it is immediately
+                // interrupted by the user input.
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
@@ -246,6 +249,9 @@ function useConversationSetup() {
                 conversationTextOnly.peek() === true &&
                 !receivedFirstMessageRef.current
               ) {
+                // Text mode is always started by the user sending a text message.
+                // We need to ignore the first agent message as it is immediately
+                // interrupted by the user input.
                 return;
               }
 
