@@ -118,7 +118,7 @@ export class ScribeRealtime {
     if (options.commitStrategy !== undefined) {
       params.append("commit_strategy", options.commitStrategy);
     }
-    if ("audioFormat" in options && options.audioFormat !== undefined) {
+    if (options.audioFormat !== undefined) {
       params.append("audio_format", options.audioFormat);
     }
     if (options.vadSilenceThresholdSecs !== undefined) {
