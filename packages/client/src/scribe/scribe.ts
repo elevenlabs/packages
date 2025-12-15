@@ -115,6 +115,11 @@ export class ScribeRealtime {
 
     params.append("token", options.token);
 
+    // Add audio format if provided (AudioOptions mode)
+    if ("audioFormat" in options && options.audioFormat !== undefined) {
+      params.append("audio_format", options.audioFormat);
+    }
+
     // Add optional parameters if provided, with validation
     if (options.commitStrategy !== undefined) {
       params.append("commit_strategy", options.commitStrategy);
