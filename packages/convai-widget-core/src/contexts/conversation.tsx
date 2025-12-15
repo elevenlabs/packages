@@ -280,34 +280,32 @@ function useConversationSetup() {
               }
             },
             onDisconnect: details => {
-              queueMicrotask(() => {
-                receivedFirstMessageRef.current = false;
-                conversationTextOnly.value = null;
-                streamingMessageIndexRef.current = null;
-                isReceivingStreamRef.current = false;
-                transcript.value = [
-                  ...transcript.peek(),
-                  details.reason === "error"
-                    ? {
-                        type: "error",
-                        message: details.message,
-                        conversationIndex: conversationIndex.peek(),
-                      }
-                    : {
-                        type: "disconnection",
-                        role: details.reason === "user" ? "user" : "agent",
-                        conversationIndex: conversationIndex.peek(),
-                      },
-                ];
-                conversationIndex.value++;
-                if (details.reason === "error") {
-                  error.value = details.message;
-                  console.error(
-                    "[ConversationalAI] Disconnected due to an error:",
-                    details.message
-                  );
-                }
-              });
+              receivedFirstMessageRef.current = false;
+              conversationTextOnly.value = null;
+              streamingMessageIndexRef.current = null;
+              isReceivingStreamRef.current = false;
+              transcript.value = [
+                ...transcript.peek(),
+                details.reason === "error"
+                  ? {
+                      type: "error",
+                      message: details.message,
+                      conversationIndex: conversationIndex.peek(),
+                    }
+                  : {
+                      type: "disconnection",
+                      role: details.reason === "user" ? "user" : "agent",
+                      conversationIndex: conversationIndex.peek(),
+                    },
+              ];
+              conversationIndex.value++;
+              if (details.reason === "error") {
+                error.value = details.message;
+                console.error(
+                  "[ConversationalAI] Disconnected due to an error:",
+                  details.message
+                );
+              }
             },
           });
 
