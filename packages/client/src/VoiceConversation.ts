@@ -14,6 +14,17 @@ import {
 import { WebSocketConnection } from "./utils/WebSocketConnection";
 
 export class VoiceConversation extends BaseConversation {
+  private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
+    if ("wakeLock" in navigator) { // unavailable without HTTPS, including localhost in dev
+      try {
+        return await navigator.wakeLock.request("screen");
+      } catch (_e) {
+        // Wake Lock is not required for the conversation to work
+      }
+    }
+    return null;
+  }
+
   public static async startSession(
     options: PartialOptions
   ): Promise<VoiceConversation> {
@@ -31,13 +42,10 @@ export class VoiceConversation extends BaseConversation {
     let output: Output | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
+    const useWakeLock = options.useWakeLock ?? true;
     let wakeLock: WakeLockSentinel | null = null;
-    if (options.useWakeLock ?? true) {
-      try {
-        wakeLock = await navigator.wakeLock.request("screen");
-      } catch (_e) {
-        // Wake Lock is not required for the conversation to work
-      }
+    if (useWakeLock) {
+      wakeLock = await VoiceConversation.requestWakeLock();
     }
 
     try {
@@ -89,13 +97,14 @@ export class VoiceConversation extends BaseConversation {
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch (_e) {}
+      } catch (_e) { }
       throw error;
     }
   }
 
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
+  private visibilityChangeHandler: (() => void) | null = null;
 
   protected constructor(
     options: Options,
@@ -107,14 +116,32 @@ export class VoiceConversation extends BaseConversation {
     super(options, connection);
     this.input.worklet.port.onmessage = this.onInputWorkletMessage;
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
+
+    if (wakeLock) {
+      // Wake locks are automatically released when a page is hidden like when switching tabs
+      // so attempt to re-acquire lock when page becomes visible again
+      this.visibilityChangeHandler = () => {
+        if (document.visibilityState === "visible" && this.wakeLock?.released) {
+          VoiceConversation.requestWakeLock().then(lock => {
+            this.wakeLock = lock;
+          });
+        }
+      };
+      document.addEventListener("visibilitychange", this.visibilityChangeHandler);
+    }
   }
 
   protected override async handleEndSession() {
     await super.handleEndSession();
+
+    if (this.visibilityChangeHandler) {
+      document.removeEventListener("visibilitychange", this.visibilityChangeHandler);
+    }
+
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch (_e) {}
+    } catch (_e) { }
 
     await this.input.close();
     await this.output.close();
