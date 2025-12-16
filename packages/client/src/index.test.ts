@@ -1264,7 +1264,7 @@ describe("Wake Lock", () => {
     return mockWakeLock;
   };
 
-  it.only("acquires wake lock by default when starting session", async () => {
+  it("acquires wake lock by default when starting session", async () => {
     const mockSentinel = mockWakeLockSentinel();
     const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
 
