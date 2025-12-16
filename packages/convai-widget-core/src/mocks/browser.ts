@@ -43,6 +43,13 @@ export const AGENTS = {
     use_rtc: true,
   },
   fail: BASIC_CONFIG,
+  end_call_test: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -110,6 +117,40 @@ export const Worker = setupWorker(
       if (agentId === "fail") {
         client.addEventListener("message", () => {
           client.close(3000, "Test reason");
+        });
+      }
+      if (agentId === "end_call_test") {
+        client.addEventListener("message", async () => {
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "start",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Goodbye! Have a great day!",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "stop",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.close(1000);
         });
       }
     })

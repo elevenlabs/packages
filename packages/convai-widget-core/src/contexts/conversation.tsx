@@ -233,7 +233,7 @@ function useConversationSetup() {
               }
 
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 {
                   type: "message",
                   role,
