@@ -106,6 +106,7 @@ export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type AgentChatResponsePartEvent =
   Incoming.AgentChatResponsePartClientEvent;
+export type AudioAlignmentEvent = Incoming.AudioAlignmentClientEvent;
 
 // Outgoing event types
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
@@ -139,7 +140,8 @@ export type ConversationEvent =
   | AgentToolResponseEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent
-  | AgentChatResponsePartEvent;
+  | AgentChatResponsePartEvent
+  | AudioAlignmentEvent;
 
 /**
  * Audio session configuration for controlling how the SDK handles audio

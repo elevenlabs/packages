@@ -12,5 +12,6 @@ export type {
   ConversationOptions,
   ConversationConfig,
   ConversationEvent,
+  AudioAlignmentEvent,
   AudioSessionConfig,
 } from "./types";

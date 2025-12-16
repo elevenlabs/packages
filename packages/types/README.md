@@ -53,6 +53,7 @@ The types are organized into two main categories:
 - **`Incoming`** - Messages received from the ElevenLabs server
   - **Agent API:**
     - `AudioClientEvent` - Audio data from the agent
+    - `AudioAlignmentClientEvent` - Character-level timing data for text-to-speech synchronization
     - `AgentResponseClientEvent` - Text responses from the agent
     - `UserTranscriptionClientEvent` - Transcriptions of user speech
     - `InterruptionEvent` - Interruption notifications

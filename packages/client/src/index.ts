@@ -16,7 +16,11 @@ export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
 export { Input } from "./utils/input";
 export { Output } from "./utils/output";
-export type { IncomingSocketEvent, VadScoreEvent } from "./utils/events";
+export type {
+  IncomingSocketEvent,
+  VadScoreEvent,
+  AudioAlignmentEvent,
+} from "./utils/events";
 export type {
   SessionConfig,
   BaseSessionConfig,

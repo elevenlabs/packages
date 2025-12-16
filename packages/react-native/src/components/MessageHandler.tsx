@@ -219,6 +219,9 @@ export const MessageHandler = ({
       case "agent_chat_response_part":
         callbacksRef.current.onAgentChatResponsePart?.(message.text_response_part);
         break;
+      case "audio_alignment":
+        callbacksRef.current.onAudioAlignment?.(message.audio_alignment_event);
+        break;
       default:
         callbacksRef.current.onDebug?.(message);
         break;

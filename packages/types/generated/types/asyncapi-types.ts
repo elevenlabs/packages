@@ -161,6 +161,7 @@ export interface ConversationConfigOverrideConversation {
 
 export type ConversationConfigOverrideConversationClientEventsItem =
   | "audio"
+  | "audio_alignment"
   | "agent_response"
   | "agent_response_correction"
   | "agent_chat_response_part"
@@ -419,6 +420,17 @@ export interface AsrInitiationMetadata {
   asr_initiation_metadata_event: Record<string, any>;
 }
 
+export interface AudioAlignment {
+  type: "audio_alignment";
+  audio_alignment_event: AudioAlignmentEvent;
+}
+
+export interface AudioAlignmentEvent {
+  chars: string[];
+  char_start_times_ms: number[];
+  char_durations_ms: number[];
+}
+
 export interface InternalTurnProbability {
   type: "internal_turn_probability";
   turn_probability_internal_event: TurnProbabilityInternalEvent;
@@ -548,6 +560,11 @@ export interface VadScoreClientEvent {
 export interface AsrInitiationMetadataEvent {
   type: "asr_initiation_metadata";
   asr_initiation_metadata_event: Record<string, any>;
+}
+
+export interface AudioAlignmentClientEvent {
+  type: "audio_alignment";
+  audio_alignment_event: AudioAlignmentEvent;
 }
 
 export interface TurnProbabilityInternalClientEvent {

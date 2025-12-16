@@ -85,6 +85,9 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
+  onAudioAlignment?: (
+    props: Generated.AudioAlignmentClientEvent["audio_alignment_event"]
+  ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };

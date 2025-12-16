@@ -62,6 +62,7 @@ channels:
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
           - $ref: "#/components/messages/ASRInitiationMetadata"
+          - $ref: "#/components/messages/AudioAlignment"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
           - $ref: "#/components/messages/ErrorMessage"
@@ -285,6 +286,14 @@ components:
       payload:
         $ref: "#/components/schemas/ASRInitiationMetadataPayload"
 
+    AudioAlignment:
+      name: AudioAlignmentClientEvent
+      title: Audio Alignment
+      summary: Character-level timing alignment for synthesized audio
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AudioAlignmentPayload"
+
     InternalTurnProbability:
       name: TurnProbabilityInternalClientEvent
       title: Internal Turn Probability
@@ -316,6 +325,7 @@ components:
       type: string
       enum:
         - audio
+        - audio_alignment
         - agent_response
         - agent_response_correction
         - agent_chat_response_part
@@ -1003,6 +1013,36 @@ components:
         asr_initiation_metadata_event:
           type: object
           description: ASR initialization metadata
+
+    AudioAlignmentPayload:
+      type: object
+      required: [audio_alignment_event, type]
+      properties:
+        type:
+          type: string
+          const: audio_alignment
+        audio_alignment_event:
+          $ref: "#/components/schemas/AudioAlignmentData"
+
+    AudioAlignmentData:
+      type: object
+      required: [chars, char_start_times_ms, char_durations_ms]
+      properties:
+        chars:
+          type: array
+          items:
+            type: string
+          description: Array of individual characters in the synthesized text
+        char_start_times_ms:
+          type: array
+          items:
+            type: integer
+          description: Start time in milliseconds for each character
+        char_durations_ms:
+          type: array
+          items:
+            type: integer
+          description: Duration in milliseconds for each character
 
     InternalTurnProbabilityPayload:
       type: object

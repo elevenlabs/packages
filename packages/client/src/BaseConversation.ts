@@ -9,6 +9,7 @@ import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
   AgentResponseEvent,
+  AudioAlignmentEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
@@ -313,6 +314,12 @@ export class BaseConversation {
     }
   }
 
+  protected handleAudioAlignment(event: AudioAlignmentEvent) {
+    if (this.options.onAudioAlignment) {
+      this.options.onAudioAlignment(event.audio_alignment_event);
+    }
+  }
+
   protected handleErrorEvent(event: ErrorMessageEvent) {
     const errorType = event.error_event.error_type;
     const message =
@@ -419,6 +426,11 @@ export class BaseConversation {
 
       case "agent_chat_response_part": {
         this.handleAgentChatResponsePart(parsedEvent);
+        return;
+      }
+
+      case "audio_alignment": {
+        this.handleAudioAlignment(parsedEvent);
         return;
       }
 
