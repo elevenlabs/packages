@@ -119,7 +119,7 @@ export const Worker = setupWorker(
           agent_response_event: { agent_response: config.first_message },
         })
       );
-      if (config.text_only) {
+      if (config.text_only && agentId !== "end_call_test") {
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -130,7 +130,7 @@ export const Worker = setupWorker(
         );
         await new Promise(resolve => setTimeout(resolve, 1000));
         client.close();
-      } else {
+      } else if (!config.text_only) {
         client.send(
           JSON.stringify({
             type: "user_transcript",
