@@ -49,6 +49,7 @@ export const AGENTS = {
     transcript_enabled: true,
     text_input_enabled: true,
     first_message: "",
+  },
   localized: {
     ...BASIC_CONFIG,
     terms_html: "<p>Default Terms in English</p>",
