@@ -15,7 +15,8 @@ import { WebSocketConnection } from "./utils/WebSocketConnection";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
-    if ("wakeLock" in navigator) { // unavailable without HTTPS, including localhost in dev
+    if ("wakeLock" in navigator) {
+      // unavailable without HTTPS, including localhost in dev
       try {
         return await navigator.wakeLock.request("screen");
       } catch (_e) {
@@ -97,7 +98,7 @@ export class VoiceConversation extends BaseConversation {
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch (_e) { }
+      } catch (_e) {}
       throw error;
     }
   }
@@ -127,7 +128,10 @@ export class VoiceConversation extends BaseConversation {
           });
         }
       };
-      document.addEventListener("visibilitychange", this.visibilityChangeHandler);
+      document.addEventListener(
+        "visibilitychange",
+        this.visibilityChangeHandler
+      );
     }
   }
 
@@ -135,13 +139,16 @@ export class VoiceConversation extends BaseConversation {
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
-      document.removeEventListener("visibilitychange", this.visibilityChangeHandler);
+      document.removeEventListener(
+        "visibilitychange",
+        this.visibilityChangeHandler
+      );
     }
 
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch (_e) { }
+    } catch (_e) {}
 
     await this.input.close();
     await this.output.close();

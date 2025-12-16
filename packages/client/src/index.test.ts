@@ -1,4 +1,12 @@
-import { it, expect, describe, vi, beforeAll } from "vitest";
+import {
+  it,
+  expect,
+  describe,
+  vi,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from "vitest";
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk";
 import { Mode, Status, Conversation } from "./index";
@@ -1186,6 +1194,282 @@ describe("Device Change Default Device", () => {
     expect(outputResult.audioElement).toBeDefined();
 
     await conversation.endSession();
+    server.close();
+  });
+});
+
+describe("Wake Lock", () => {
+  let originalWakeLock: WakeLock | undefined;
+  let visibilityChangeListeners: (() => void)[] = [];
+
+  beforeAll(() => {
+    originalWakeLock = navigator.wakeLock;
+
+    vi.spyOn(document, "addEventListener").mockImplementation(
+      (type: string, listener: any) => {
+        if (type === "visibilitychange") {
+          visibilityChangeListeners.push(listener);
+        }
+      }
+    );
+
+    vi.spyOn(document, "removeEventListener").mockImplementation(
+      (type: string, listener: any) => {
+        if (type === "visibilitychange") {
+          visibilityChangeListeners = visibilityChangeListeners.filter(
+            l => l !== listener
+          );
+        }
+      }
+    );
+  });
+
+  afterEach(() => {
+    visibilityChangeListeners = [];
+  });
+
+  afterAll(() => {
+    // Restore original wakeLock
+    if (originalWakeLock) {
+      Object.defineProperty(navigator, "wakeLock", {
+        value: originalWakeLock,
+        writable: true,
+        configurable: true,
+      });
+    }
+    vi.restoreAllMocks();
+  });
+
+  const mockWakeLockSentinel = (released = false) => ({
+    released,
+    release: vi.fn(() => Promise.resolve()),
+    onrelease: null,
+    type: "screen" as WakeLockType,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  });
+
+  const setupMockWakeLock = (
+    requestFn: () => Promise<WakeLockSentinel>
+  ): WakeLock => {
+    const mockWakeLock = {
+      request: vi.fn(requestFn),
+    };
+    Object.defineProperty(navigator, "wakeLock", {
+      value: mockWakeLock,
+      writable: true,
+      configurable: true,
+    });
+    return mockWakeLock;
+  };
+
+  it.only("acquires wake lock by default when starting session", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-default");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-default",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect(mockWakeLock.request).toHaveBeenCalledWith("screen");
+
+    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("does not acquire wake lock when useWakeLock is false", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-disabled"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-disabled",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+      useWakeLock: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    // Verify wake lock was NOT requested
+    expect(mockWakeLock.request).not.toHaveBeenCalled();
+
+    // Verify the conversation does not have a wake lock
+    expect((conversation as VoiceConversation).wakeLock).toBeNull();
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("releases wake lock when session ends", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-release");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-release",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
+
+    await conversation.endSession();
+
+    expect(mockSentinel.release).toHaveBeenCalled();
+    expect((conversation as VoiceConversation).wakeLock).toBeNull();
+
+    server.close();
+  });
+
+  it("re-acquires wake lock when page becomes visible and lock was released", async () => {
+    let requestCallCount = 0;
+    const firstSentinel = mockWakeLockSentinel(true); // Already released
+    const secondSentinel = mockWakeLockSentinel(false);
+
+    setupMockWakeLock(() => {
+      requestCallCount++;
+      if (requestCallCount === 1) {
+        return Promise.resolve(firstSentinel);
+      }
+      return Promise.resolve(secondSentinel);
+    });
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-reacquire"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-reacquire",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect(requestCallCount).toBe(1);
+
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+
+    visibilityChangeListeners.forEach(listener => listener());
+
+    await sleep(100);
+
+    expect(requestCallCount).toBe(2);
+    expect((conversation as VoiceConversation).wakeLock).toBe(secondSentinel);
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("releases wake lock on connection error during session setup", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-setup-error"
+    );
+
+    server.on("connection", socket => {
+      socket.close({
+        code: 3000,
+        reason: "Test setup error",
+        wasClean: true,
+      });
+    });
+
+    await expect(
+      Conversation.startSession({
+        signedUrl: "wss://api.elevenlabs.io/voice/wakelock-setup-error",
+        connectionDelay: { default: 0 },
+        textOnly: false,
+      })
+    ).rejects.toThrow();
+
+    expect(mockSentinel.release).toHaveBeenCalled();
+
     server.close();
   });
 });
