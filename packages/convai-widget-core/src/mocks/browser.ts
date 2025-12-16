@@ -49,6 +49,29 @@ export const AGENTS = {
     transcript_enabled: true,
     text_input_enabled: true,
     first_message: "",
+  localized: {
+    ...BASIC_CONFIG,
+    terms_html: "<p>Default Terms in English</p>",
+    terms_key: "terms_default",
+    supported_language_overrides: ["es", "fr"],
+    language_presets: {
+      es: {
+        text_contents: {
+          start_chat: "Iniciar una llamada",
+        },
+        first_message: "¡Hola! ¿Cómo puedo ayudarte?",
+        terms_html: "<p>Términos en Español</p>",
+        terms_key: "terms_es",
+      },
+      fr: {
+        text_contents: {
+          start_chat: "Commencer un appel",
+        },
+        first_message: "Bonjour! Comment puis-je vous aider?",
+        terms_html: "<p>Termes en Français</p>",
+        terms_key: "terms_fr",
+      },
+    },
   },
 } as const satisfies Record<string, WidgetConfig>;
 
