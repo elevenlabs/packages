@@ -191,7 +191,7 @@ function WidgetSandbox({
           supports_text_only: true,
           styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
           syntax_highlight_theme: theme === "light" ? "light" : "dark",
-          allowed_link_domains: allowedDomains,
+          markdown_link_allowed_hosts: allowedDomains.map(d => ({ hostname: d })),
         }),
       }}
     >

@@ -1,101 +1,228 @@
 import { describe, expect, it } from "vitest";
 import { allowedDomainsToLinkPrefixes } from "./allowedDomainsToLinkPrefixes";
+import type { MarkdownLinkConfig } from "../../contexts/widget-config";
+
+/** Helper to create a config with just allowedHosts (uses defaults for other options) */
+function config(
+  allowedHosts: string[],
+  overrides?: Partial<MarkdownLinkConfig>
+): MarkdownLinkConfig {
+  return {
+    allowedHosts,
+    includeWww: true,
+    allowHttp: true,
+    ...overrides,
+  };
+}
 
 describe("allowedDomainsToLinkPrefixes", () => {
-  it("should default deny when missing", () => {
-    expect(allowedDomainsToLinkPrefixes(undefined)).toEqual([]);
+  describe("edge cases", () => {
+    it.each([
+      { input: [], expected: [], description: "empty array" },
+      { input: ["*"], expected: ["*"], description: 'wildcard "*"' },
+      {
+        input: ["*", "example.com"],
+        expected: ["*"],
+        description: 'wildcard with other domains (prefers "*")',
+      },
+      {
+        input: ["", "  ", "valid.com"],
+        expected: [
+          "https://valid.com",
+          "http://valid.com",
+          "https://www.valid.com",
+          "http://www.valid.com",
+        ],
+        description: "empty/whitespace inputs are skipped",
+      },
+    ])("$description", ({ input, expected }) => {
+      expect(allowedDomainsToLinkPrefixes(config(input))).toEqual(expected);
+    });
   });
 
-  it("should default deny when empty", () => {
-    expect(allowedDomainsToLinkPrefixes([])).toEqual([]);
+  describe("domain to URL expansion", () => {
+    it.each([
+      {
+        input: ["example.com"],
+        expected: [
+          "https://example.com",
+          "http://example.com",
+          "https://www.example.com",
+          "http://www.example.com",
+        ],
+        description: "root domain",
+      },
+      {
+        input: ["www.example.com"],
+        expected: ["https://www.example.com", "http://www.example.com"],
+        description: "www domain (no www.www duplication)",
+      },
+      {
+        input: ["example.com."],
+        expected: [
+          "https://example.com",
+          "http://example.com",
+          "https://www.example.com",
+          "http://www.example.com",
+        ],
+        description: "FQDN with trailing dot",
+      },
+      {
+        input: ["docs.elevenlabs.io"],
+        expected: [
+          "https://docs.elevenlabs.io",
+          "http://docs.elevenlabs.io",
+          "https://www.docs.elevenlabs.io",
+          "http://www.docs.elevenlabs.io",
+        ],
+        description: "subdomain",
+      },
+      {
+        input: ["example.co.uk"],
+        expected: [
+          "https://example.co.uk",
+          "http://example.co.uk",
+          "https://www.example.co.uk",
+          "http://www.example.co.uk",
+        ],
+        description: "multi-part TLD (.co.uk)",
+      },
+      {
+        input: ["localhost"],
+        expected: [
+          "https://localhost",
+          "http://localhost",
+          "https://www.localhost",
+          "http://www.localhost",
+        ],
+        description: "localhost without port",
+      },
+      {
+        input: ["localhost:3000"],
+        expected: [
+          "https://localhost:3000",
+          "http://localhost:3000",
+          "https://www.localhost:3000",
+          "http://www.localhost:3000",
+        ],
+        description: "localhost with port",
+      },
+      {
+        input: ["example.com/"],
+        expected: [
+          "https://example.com/",
+          "http://example.com/",
+          "https://www.example.com/",
+          "http://www.example.com/",
+        ],
+        description: "domain with trailing slash",
+      },
+    ])("$description", ({ input, expected }) => {
+      expect(allowedDomainsToLinkPrefixes(config(input))).toEqual(expected);
+    });
   });
 
-  it('should allow all when includes "*"', () => {
-    expect(allowedDomainsToLinkPrefixes(["*"])).toEqual(["*"]);
+  describe("full URLs (passed through as-is)", () => {
+    it.each([
+      {
+        input: ["https://example.com/specific/path"],
+        expected: ["https://example.com/specific/path"],
+        description: "https URL with path",
+      },
+      {
+        input: ["http://localhost:3000"],
+        expected: ["http://localhost:3000"],
+        description: "http localhost with port",
+      },
+      {
+        input: ["https://example.com/"],
+        expected: ["https://example.com/"],
+        description: "https URL with trailing slash",
+      },
+    ])("$description", ({ input, expected }) => {
+      expect(allowedDomainsToLinkPrefixes(config(input))).toEqual(expected);
+    });
   });
 
-  it('should prefer allow-all when includes "*" and domains', () => {
-    expect(allowedDomainsToLinkPrefixes(["*", "example.com"])).toEqual(["*"]);
+  describe("mixed inputs", () => {
+    it.each([
+      {
+        input: ["example.com", "www.example.com"],
+        expected: [
+          "https://example.com",
+          "http://example.com",
+          "https://www.example.com",
+          "http://www.example.com",
+        ],
+        description: "domain and www variant (deduped)",
+      },
+      {
+        input: ["https://trusted.com/api", "example.com"],
+        expected: [
+          "https://trusted.com/api",
+          "https://example.com",
+          "http://example.com",
+          "https://www.example.com",
+          "http://www.example.com",
+        ],
+        description: "full URL and domain",
+      },
+    ])("$description", ({ input, expected }) => {
+      expect(allowedDomainsToLinkPrefixes(config(input))).toEqual(expected);
+    });
   });
 
-  it("should map root domains to https/http with www variants", () => {
-    expect(allowedDomainsToLinkPrefixes(["example.com"])).toEqual([
-      "https://example.com",
-      "http://example.com",
-      "https://www.example.com",
-      "http://www.example.com",
-    ]);
-  });
+  describe("with options", () => {
+    it.each<{
+      input: string[];
+      overrides: Partial<MarkdownLinkConfig>;
+      expected: string[];
+      description: string;
+    }>([
+      {
+        input: ["example.com"],
+        overrides: { allowHttp: false },
+        expected: ["https://example.com", "https://www.example.com"],
+        description: "allowHttp: false - https only",
+      },
+      {
+        input: ["example.com"],
+        overrides: { includeWww: false },
+        expected: ["https://example.com", "http://example.com"],
+        description: "includeWww: false - no www variants",
+      },
+      {
+        input: ["example.com"],
+        overrides: { includeWww: false, allowHttp: false },
+        expected: ["https://example.com"],
+        description: "both false - https only, no www",
+      },
+      {
+        input: ["www.example.com"],
+        overrides: { allowHttp: false },
+        expected: ["https://www.example.com"],
+        description: "www domain with allowHttp: false",
+      },
+      {
+        input: ["http://example.com/path"],
+        overrides: { allowHttp: false, includeWww: false },
+        expected: ["http://example.com/path"],
+        description: "full URL preserved regardless of options",
+      },
+    ])("$description", ({ input, overrides, expected }) => {
+      expect(allowedDomainsToLinkPrefixes(config(input, overrides))).toEqual(
+        expected
+      );
+    });
 
-  it("should not add www.www for www domains", () => {
-    expect(allowedDomainsToLinkPrefixes(["www.example.com"])).toEqual([
-      "https://www.example.com",
-      "http://www.example.com",
-    ]);
-  });
-
-  it("should strip trailing dot from FQDN and add www", () => {
-    expect(allowedDomainsToLinkPrefixes(["example.com."])).toEqual([
-      "https://example.com",
-      "http://example.com",
-      "https://www.example.com",
-      "http://www.example.com",
-    ]);
-  });
-
-  it("should dedupe when domain and www variant provided", () => {
-    expect(
-      allowedDomainsToLinkPrefixes(["example.com", "www.example.com"])
-    ).toEqual([
-      "https://example.com",
-      "http://example.com",
-      "https://www.example.com",
-      "http://www.example.com",
-    ]);
-  });
-
-  it("should use URL as-is when already a full URL", () => {
-    expect(
-      allowedDomainsToLinkPrefixes(["https://example.com/specific/path"])
-    ).toEqual(["https://example.com/specific/path"]);
-  });
-
-  it("should handle mix of URLs and domains", () => {
-    expect(
-      allowedDomainsToLinkPrefixes(["https://trusted.com/api", "example.com"])
-    ).toEqual([
-      "https://trusted.com/api",
-      "https://example.com",
-      "http://example.com",
-      "https://www.example.com",
-      "http://www.example.com",
-    ]);
-  });
-
-  it("should always add www for subdomains too", () => {
-    expect(allowedDomainsToLinkPrefixes(["docs.elevenlabs.io"])).toEqual([
-      "https://docs.elevenlabs.io",
-      "http://docs.elevenlabs.io",
-      "https://www.docs.elevenlabs.io",
-      "http://www.docs.elevenlabs.io",
-    ]);
-  });
-
-  it("should add www for .co.uk domains", () => {
-    expect(allowedDomainsToLinkPrefixes(["example.co.uk"])).toEqual([
-      "https://example.co.uk",
-      "http://example.co.uk",
-      "https://www.example.co.uk",
-      "http://www.example.co.uk",
-    ]);
-  });
-
-  it("should skip invalid/empty inputs", () => {
-    expect(allowedDomainsToLinkPrefixes(["", "  ", "valid.com"])).toEqual([
-      "https://valid.com",
-      "http://valid.com",
-      "https://www.valid.com",
-      "http://www.valid.com",
-    ]);
+    it("should handle mixed domains with options", () => {
+      const result = allowedDomainsToLinkPrefixes(
+        config(["example.com", "https://trusted.com/api"], { allowHttp: false })
+      );
+      expect(result).toHaveLength(3);
+      expect(result).toContain("https://trusted.com/api");
+      expect(result).toContain("https://example.com");
+      expect(result).toContain("https://www.example.com");
+    });
   });
 });

@@ -383,7 +383,7 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
     });
 
-    it("should deny links when allowed_link_domains is empty", async () => {
+    it("should deny links when markdown_link_allowed_hosts is empty", async () => {
       setupWebComponent({
         "agent-id": "markdown_no_links",
         variant: "compact",

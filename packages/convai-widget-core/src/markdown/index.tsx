@@ -13,6 +13,7 @@ import type { PluggableList } from "unified";
 import { components as defaultComponents } from "./components/components";
 import { Markdown, type Options } from "./utils/markdown";
 import { allowedDomainsToLinkPrefixes } from "./utils/allowedDomainsToLinkPrefixes";
+import type { MarkdownLinkConfig } from "../contexts/widget-config";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { cn } from "../utils/cn";
@@ -40,13 +41,11 @@ function getDefaultOrigin(): string {
   return document.location.origin;
 }
 
-function createRehypePlugins(
-  allowedLinkDomains?: string[] | null
-): PluggableList {
+function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
   const defaultOrigin = getDefaultOrigin();
   const allowedLinkPrefixes = [
     defaultOrigin,
-    ...allowedDomainsToLinkPrefixes(allowedLinkDomains),
+    ...allowedDomainsToLinkPrefixes(linkConfig),
   ];
 
   return [
@@ -85,7 +84,7 @@ export type StreamdownProps = {
   parseIncompleteMarkdown?: boolean;
   className?: string;
   isAnimating?: boolean;
-  allowedLinkDomains?: string[] | null;
+  linkConfig: MarkdownLinkConfig;
 };
 
 export type StreamdownRuntimeContextType = {
@@ -130,7 +129,7 @@ export const WidgetStreamdown = memo(
     parseIncompleteMarkdown: shouldParseIncompleteMarkdown = true,
     className,
     isAnimating = false,
-    allowedLinkDomains,
+    linkConfig,
   }: StreamdownProps) => {
     const generatedId = useId();
     const blocks = useMemo(
@@ -141,10 +140,10 @@ export const WidgetStreamdown = memo(
     const markdownOptions = useMemo<Readonly<Options>>(
       () => ({
         components: defaultComponents,
-        rehypePlugins: createRehypePlugins(allowedLinkDomains),
+        rehypePlugins: createRehypePlugins(linkConfig),
         remarkPlugins: defaultRemarkPlugins,
       }),
-      [allowedLinkDomains]
+      [linkConfig]
     );
 
     return (
@@ -169,5 +168,5 @@ export const WidgetStreamdown = memo(
     prevProps.isAnimating === nextProps.isAnimating &&
     prevProps.className === nextProps.className &&
     prevProps.parseIncompleteMarkdown === nextProps.parseIncompleteMarkdown &&
-    prevProps.allowedLinkDomains === nextProps.allowedLinkDomains
+    prevProps.linkConfig === nextProps.linkConfig
 );

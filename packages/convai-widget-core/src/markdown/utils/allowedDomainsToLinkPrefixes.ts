@@ -1,29 +1,29 @@
-function maybeParseUrl(value: string): URL | null {
-  try {
-    return new URL(value);
-  } catch {
-    return null;
-  }
+import type { MarkdownLinkConfig } from "../../contexts/widget-config";
+
+function isFullUrl(value: string): boolean {
+  return value.startsWith("https://") || value.startsWith("http://");
 }
 
 export function allowedDomainsToLinkPrefixes(
-  domains?: string[] | null
+  config: MarkdownLinkConfig
 ): string[] {
-  if (!domains || domains.length === 0) {
+  const { allowedHosts, includeWww, allowHttp } = config;
+
+  if (allowedHosts.length === 0) {
     return [];
   }
 
-  if (domains.includes("*")) {
+  if (allowedHosts.includes("*")) {
     return ["*"];
   }
 
   const candidates = new Set<string>();
 
-  for (const raw of domains) {
+  for (const raw of allowedHosts) {
     const trimmed = raw.trim();
     if (!trimmed) continue;
 
-    if (maybeParseUrl(trimmed)) {
+    if (isFullUrl(trimmed)) {
       candidates.add(trimmed);
       continue;
     }
@@ -31,12 +31,16 @@ export function allowedDomainsToLinkPrefixes(
     const domain = trimmed.replace(/\.$/, "");
 
     candidates.add(`https://${domain}`);
-    candidates.add(`http://${domain}`);
-    if (!domain.startsWith("www.")) {
+    if (allowHttp) {
+      candidates.add(`http://${domain}`);
+    }
+    if (includeWww && !domain.startsWith("www.")) {
       candidates.add(`https://www.${domain}`);
-      candidates.add(`http://www.${domain}`);
+      if (allowHttp) {
+        candidates.add(`http://www.${domain}`);
+      }
     }
   }
 
-  return [...candidates].filter(url => maybeParseUrl(url));
+  return [...candidates];
 }

@@ -41,7 +41,9 @@ export const CustomAttributeList = [
   "use-rtc",
   "collect-feedback",
   "syntax-highlight-theme",
-  "allowed-link-domains",
+  "markdown-link-allowed-hosts",
+  "markdown-link-include-www",
+  "markdown-link-allow-http",
 ] as const;
 
 export type CustomAttributes = {

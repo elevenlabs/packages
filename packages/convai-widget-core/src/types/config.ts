@@ -35,7 +35,9 @@ export interface AllowlistItem {
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
-  allowed_link_domains?: AllowlistItem[] | string[];
+  markdown_link_allowed_hosts?: AllowlistItem[];
+  markdown_link_include_www?: boolean;
+  markdown_link_allow_http?: boolean;
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
   end_feedback?: {

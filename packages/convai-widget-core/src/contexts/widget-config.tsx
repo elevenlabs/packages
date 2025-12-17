@@ -209,21 +209,49 @@ export function useEndFeedbackType() {
   return useComputed(() => config.value.end_feedback?.type ?? null);
 }
 
-export function useAllowedLinkDomains() {
-  const override = useAttribute("allowed-link-domains");
+export interface MarkdownLinkConfig {
+  allowedHosts: string[];
+  includeWww: boolean;
+  allowHttp: boolean;
+}
+
+export function useMarkdownLinkConfig() {
+  const overrideHosts = useAttribute("markdown-link-allowed-hosts");
+  const overrideIncludeWww = useAttribute("markdown-link-include-www");
+  const overrideAllowHttp = useAttribute("markdown-link-allow-http");
   const config = useWidgetConfig();
 
-  return useComputed(() => {
-    if (override.value) {
-      return override.value
+  return useComputed<MarkdownLinkConfig>(() => {
+    let allowedHosts: string[] = [];
+
+    if (overrideHosts.value) {
+      allowedHosts = overrideHosts.value
         .split(",")
         .map(d => d.trim())
         .filter(Boolean);
+    } else {
+      const hosts = config.value.markdown_link_allowed_hosts;
+      if (hosts && hosts.length > 0) {
+        const hasWildcard = hosts.some(h => h.hostname === "*");
+        if (hasWildcard) {
+          allowedHosts = ["*"];
+        } else {
+          allowedHosts = hosts.map(h => h.hostname);
+        }
+      }
     }
-    const domains = config.value.allowed_link_domains;
-    if (!domains) return undefined;
 
-    return domains.map(d => (typeof d === "string" ? d : d.hostname));
+    const includeWww =
+      parseBoolAttribute(overrideIncludeWww.value) ??
+      config.value.markdown_link_include_www ??
+      true;
+
+    const allowHttp =
+      parseBoolAttribute(overrideAllowHttp.value) ??
+      config.value.markdown_link_allow_http ??
+      true;
+
+    return { allowedHosts, includeWww, allowHttp };
   });
 }
 
