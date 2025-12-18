@@ -30,7 +30,7 @@ export const useLiveKitRoom = (
 
     if (shouldHaveAudio && !audioSessionActiveRef.current) {
       audioSessionActiveRef.current = true;
-      AudioSession.startAudioSession();
+      await AudioSession.startAudioSession();
     } else if (!shouldHaveAudio && audioSessionActiveRef.current) {
       audioSessionActiveRef.current = false;
       AudioSession.stopAudioSession();
