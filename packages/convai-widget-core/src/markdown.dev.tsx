@@ -101,7 +101,7 @@ function MockConversationProvider({
   const mockTranscript = useComputed<TranscriptEntry[]>(() => [
     {
       type: "message",
-      role: "ai" as Role,
+      role: "agent" as Role,
       message: "Hello, how can I help you?",
       isText: true,
       conversationIndex: 0,
@@ -115,7 +115,7 @@ function MockConversationProvider({
     },
     {
       type: "message",
-      role: "ai" as Role,
+      role: "agent" as Role,
       message: displayTextSignal.value,
       isText: true,
       conversationIndex: 2,

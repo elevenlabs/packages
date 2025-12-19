@@ -6,6 +6,7 @@ import {
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
+  AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
   ErrorMessage,
@@ -31,6 +32,7 @@ export type ClientToolCallEvent = ClientToolCallMessage;
 export type VadScoreEvent = VadScore;
 export type MCPToolCallClientEvent = McpToolCall;
 export type AgentResponseCorrectionEvent = AgentResponseCorrection;
+export type AgentToolRequestEvent = AgentToolRequestClientEvent;
 export type AgentToolResponseEvent = AgentToolResponseClientEvent;
 export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
@@ -50,6 +52,7 @@ export type IncomingSocketEvent =
   | ClientToolCallEvent
   | VadScoreEvent
   | MCPToolCallClientEvent
+  | AgentToolRequestEvent
   | AgentToolResponseEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent

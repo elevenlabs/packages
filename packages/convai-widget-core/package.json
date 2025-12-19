@@ -39,7 +39,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.5.4",
     "unified": "^11.0.5",
-    "vite": "^6.3.2",
+    "vite": "^6.4.1",
     "vite-bundle-analyzer": "^1.2.3",
     "vitest": "^3.1.2"
   },

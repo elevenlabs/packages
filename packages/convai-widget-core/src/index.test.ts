@@ -140,6 +140,40 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  it.each(Variants)(
+    "$0 variant should show last message when agent calls end_call",
+    async variant => {
+      setupWebComponent({
+        "agent-id": "end_call_test",
+        transcript: "true",
+        "text-input": "true",
+        variant,
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Bye");
+      await userEvent.keyboard("{Enter}");
+
+      await expect.element(page.getByText("Bye")).toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("Goodbye! Have a great day!"))
+        .toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("The agent ended the conversation"))
+        .toBeInTheDocument();
+    }
+  );
+
   it.each(Variants)("$0 variant should handle errors", async variant => {
     setupWebComponent({ "agent-id": "basic", variant });
 
@@ -192,107 +226,119 @@ describe("elevenlabs-convai", () => {
   );
 
   describe("expansion events", () => {
-    it("should expand and collapse widget when elevenlabs-agent:expand event is dispatched", async () => {
-      setupWebComponent({
-        "agent-id": "basic",
-        "text-input": "true",
-        variant: "compact",
-      });
+    it.each(["document", "widget"])(
+      "should expand and collapse widget when elevenlabs-agent:expand event is dispatched (%s)",
+      async source => {
+        const widget = setupWebComponent({
+          "agent-id": "basic",
+          "text-input": "true",
+          variant: "compact",
+        });
+        const sourceElement = source === "document" ? document : widget;
 
-      // Initially, the widget should not be expanded
-      await expect
-        .element(page.getByRole("button", { name: "Start a call" }))
-        .toBeInTheDocument();
+        // Initially, the widget should not be expanded
+        await expect
+          .element(page.getByRole("button", { name: "Start a call" }))
+          .toBeInTheDocument();
 
-      // Dispatch expand event
-      const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
-        detail: { action: "expand" },
-        bubbles: true,
-        composed: true,
-      });
-      document.dispatchEvent(expandEvent);
+        // Dispatch expand event
+        const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "expand" },
+          bubbles: true,
+          composed: true,
+        });
+        sourceElement.dispatchEvent(expandEvent);
 
-      // The widget should now be expanded (Sheet should be visible)
-      // We can check for the presence of the text input which is only visible when expanded
-      await expect
-        .element(page.getByRole("textbox", { name: "Text message input" }))
-        .toBeInTheDocument();
+        // The widget should now be expanded (Sheet should be visible)
+        // We can check for the presence of the text input which is only visible when expanded
+        await expect
+          .element(page.getByRole("textbox", { name: "Text message input" }))
+          .toBeInTheDocument();
 
-      // Now collapse it
-      const collapseEvent = new CustomEvent("elevenlabs-agent:expand", {
-        detail: { action: "collapse" },
-        bubbles: true,
-        composed: true,
-      });
-      document.dispatchEvent(collapseEvent);
+        // Now collapse it
+        const collapseEvent = new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "collapse" },
+          bubbles: true,
+          composed: true,
+        });
+        sourceElement.dispatchEvent(collapseEvent);
 
-      // The text input should no longer be visible
-      await expect
-        .element(page.getByRole("textbox", { name: "Text message input" }))
-        .not.toBeInTheDocument();
-    });
+        // The text input should no longer be visible
+        await expect
+          .element(page.getByRole("textbox", { name: "Text message input" }))
+          .not.toBeInTheDocument();
+      }
+    );
 
-    it("should toggle widget when elevenlabs-agent:expand event is dispatched with toggle action", async () => {
-      setupWebComponent({
-        "agent-id": "basic",
-        transcript: "true",
-        "text-input": "true",
-        variant: "compact",
-      });
+    it.each(["document", "widget"])(
+      "should toggle widget when elevenlabs-agent:expand event is dispatched with toggle action (%s)",
+      async source => {
+        const widget = setupWebComponent({
+          "agent-id": "basic",
+          transcript: "true",
+          "text-input": "true",
+          variant: "compact",
+        });
+        const sourceElement = source === "document" ? document : widget;
 
-      // Initially collapsed
-      await expect
-        .element(page.getByRole("button", { name: "Start a call" }))
-        .toBeInTheDocument();
+        // Initially collapsed
+        await expect
+          .element(page.getByRole("button", { name: "Start a call" }))
+          .toBeInTheDocument();
 
-      // First toggle - should expand
-      const toggleEvent1 = new CustomEvent("elevenlabs-agent:expand", {
-        detail: { action: "toggle" },
-        bubbles: true,
-        composed: true,
-      });
-      document.dispatchEvent(toggleEvent1);
+        // First toggle - should expand
+        const toggleEvent1 = new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "toggle" },
+          bubbles: true,
+          composed: true,
+        });
+        sourceElement.dispatchEvent(toggleEvent1);
 
-      // Should be expanded now
-      await expect
-        .element(page.getByRole("textbox", { name: "Text message input" }))
-        .toBeInTheDocument();
+        // Should be expanded now
+        await expect
+          .element(page.getByRole("textbox", { name: "Text message input" }))
+          .toBeInTheDocument();
 
-      // Second toggle - should collapse
-      const toggleEvent2 = new CustomEvent("elevenlabs-agent:expand", {
-        detail: { action: "toggle" },
-        bubbles: true,
-        composed: true,
-      });
-      document.dispatchEvent(toggleEvent2);
+        // Second toggle - should collapse
+        const toggleEvent2 = new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "toggle" },
+          bubbles: true,
+          composed: true,
+        });
+        sourceElement.dispatchEvent(toggleEvent2);
 
-      // Should be collapsed now
-      await expect
-        .element(page.getByRole("textbox", { name: "Text message input" }))
-        .not.toBeInTheDocument();
-    });
+        // Should be collapsed now
+        await expect
+          .element(page.getByRole("textbox", { name: "Text message input" }))
+          .not.toBeInTheDocument();
+      }
+    );
 
-    it("should not expand widget when it's not expandable (no transcript or text input)", async () => {
-      setupWebComponent({
-        "agent-id": "basic",
-        variant: "compact",
-        // No transcript or text-input enabled
-      });
+    it.each(["document", "widget"])(
+      "should not expand widget when it's not expandable (no transcript or text input) (%s)",
+      async source => {
+        const widget = setupWebComponent({
+          "agent-id": "basic",
+          variant: "compact",
+          // No transcript or text-input enabled
+        });
+        const sourceElement = source === "document" ? document : widget;
 
-      // Dispatch expand event
-      const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
-        detail: { action: "expand" },
-        bubbles: true,
-        composed: true,
-      });
-      document.dispatchEvent(expandEvent);
+        // Dispatch expand event
+        const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "expand" },
+          bubbles: true,
+          composed: true,
+        });
+        sourceElement.dispatchEvent(expandEvent);
 
-      // Widget should remain in its original state (not expanded)
-      // The text input should not be present since the widget is not expandable
-      await expect
-        .element(page.getByRole("textbox", { name: "Text message input" }))
-        .not.toBeInTheDocument();
-    });
+        // Widget should remain in its original state (not expanded)
+        // The text input should not be present since the widget is not expandable
+        await expect
+          .element(page.getByRole("textbox", { name: "Text message input" }))
+          .not.toBeInTheDocument();
+      }
+    );
   });
 
   describe("markdown rendering", () => {

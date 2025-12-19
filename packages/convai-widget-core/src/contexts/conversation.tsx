@@ -16,6 +16,7 @@ import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
 import { ConversationMode } from "./conversation-mode";
+import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -88,6 +89,7 @@ function useConversationSetup() {
   const receivedFirstMessageRef = useRef(false);
   const streamingMessageIndexRef = useRef<number | null>(null);
   const isReceivingStreamRef = useRef(false);
+  const shadowHost = useShadowHost();
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
@@ -152,7 +154,10 @@ function useConversationSetup() {
         }
 
         try {
-          processedConfig = triggerCallEvent(element, processedConfig);
+          processedConfig = triggerCallEvent(
+            shadowHost.value ?? element,
+            processedConfig
+          );
         } catch (error) {
           console.error(
             "[ConversationalAI] Error triggering call event:",
@@ -194,11 +199,11 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ source, message }) => {
+            onMessage: ({ role, message }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
-                source === "ai" &&
+                role === "agent" &&
                 !receivedFirstMessageRef.current
               ) {
                 receivedFirstMessageRef.current = true;
@@ -206,20 +211,33 @@ function useConversationSetup() {
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
                 return;
-              } else if (source === "ai") {
+              } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
               }
 
-              if (source === "ai" && isReceivingStreamRef.current) {
+              if (role === "agent" && isReceivingStreamRef.current) {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null) {
+                  const currentTranscript = transcript.peek();
+                  const updatedTranscript = [...currentTranscript];
+                  updatedTranscript[streamingIndex] = {
+                    type: "message",
+                    role: "agent",
+                    message,
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  };
+                  transcript.value = updatedTranscript;
+                }
                 isReceivingStreamRef.current = false;
                 return;
               }
 
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 {
                   type: "message",
-                  role: source,
+                  role,
                   message,
                   isText: false,
                   conversationIndex: conversationIndex.peek(),
@@ -250,7 +268,7 @@ function useConversationSetup() {
                     streamingIndex
                   ] ??= {
                     type: "message",
-                    role: "ai",
+                    role: "agent",
                     message: "",
                     isText: true,
                     conversationIndex: conversationIndex.peek(),
@@ -274,7 +292,7 @@ function useConversationSetup() {
               streamingMessageIndexRef.current = null;
               isReceivingStreamRef.current = false;
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 details.reason === "error"
                   ? {
                       type: "error",
@@ -283,7 +301,7 @@ function useConversationSetup() {
                     }
                   : {
                       type: "disconnection",
-                      role: details.reason === "user" ? "user" : "ai",
+                      role: details.reason === "user" ? "user" : "agent",
                       conversationIndex: conversationIndex.peek(),
                     },
               ];

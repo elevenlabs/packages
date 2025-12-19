@@ -44,6 +44,9 @@ export const CustomAttributeList = [
   "markdown-link-allowed-hosts",
   "markdown-link-include-www",
   "markdown-link-allow-http",
+  "worklet-path-raw-audio-processor",
+  "worklet-path-audio-concat-processor",
+  "worklet-path-libsamplerate",
 ] as const;
 
 export type CustomAttributes = {

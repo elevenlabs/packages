@@ -652,7 +652,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "partial_transcript",
-          transcript: "First transcript",
+          text: "First transcript",
         })
       );
 
@@ -666,7 +666,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "partial_transcript",
-          transcript: "Second transcript",
+          text: "Second transcript",
         })
       );
 
@@ -705,11 +705,11 @@ describe("Scribe", () => {
       connection.on(RealtimeEvents.SESSION_STARTED, onSessionStarted);
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, data => {
         onPartialTranscript(data);
-        transcripts.push((data as { transcript: string }).transcript);
+        transcripts.push(data.text);
       });
       connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, data => {
         onFinalTranscript(data);
-        transcripts.push((data as { transcript: string }).transcript);
+        transcripts.push(data.text);
       });
 
       const client = await clientPromise;
@@ -736,7 +736,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "partial_transcript",
-          transcript: "Hello",
+          text: "Hello",
         })
       );
 
@@ -750,7 +750,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "partial_transcript",
-          transcript: "Hello world",
+          text: "Hello world",
         })
       );
 
@@ -764,7 +764,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "committed_transcript",
-          transcript: "Hello world!",
+          text: "Hello world!",
         })
       );
 

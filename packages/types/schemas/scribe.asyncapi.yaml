@@ -48,6 +48,16 @@ channels:
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
           - $ref: "#/components/messages/QuotaExceededError"
+          - $ref: "#/components/messages/CommitThrottledError"
+          - $ref: "#/components/messages/TranscriberError"
+          - $ref: "#/components/messages/UnacceptedTermsError"
+          - $ref: "#/components/messages/RateLimitedError"
+          - $ref: "#/components/messages/InputError"
+          - $ref: "#/components/messages/QueueOverflowError"
+          - $ref: "#/components/messages/ResourceExhaustedError"
+          - $ref: "#/components/messages/SessionTimeLimitExceededError"
+          - $ref: "#/components/messages/ChunkSizeExceededError"
+          - $ref: "#/components/messages/InsufficientAudioActivityError"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -124,6 +134,86 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ScribeQuotaExceededErrorPayload"
+
+    CommitThrottledError:
+      name: ScribeCommitThrottledErrorMessage
+      title: Scribe Commit Throttled Error
+      summary: Commit throttled
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeCommitThrottledErrorPayload"
+
+    TranscriberError:
+      name: ScribeTranscriberErrorMessage
+      title: Scribe Transcriber Error
+      summary: Transcriber error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeTranscriberErrorPayload"
+
+    UnacceptedTermsError:
+      name: ScribeUnacceptedTermsErrorMessage
+      title: Scribe Unaccepted Terms Error
+      summary: Unaccepted terms
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeUnacceptedTermsErrorPayload"
+
+    RateLimitedError:
+      name: ScribeRateLimitedErrorMessage
+      title: Scribe Rate Limited Error
+      summary: Rate limited
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeRateLimitedErrorPayload"
+
+    InputError:
+      name: ScribeInputErrorMessage
+      title: Scribe Input Error
+      summary: Input error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeInputErrorPayload"
+
+    QueueOverflowError:
+      name: ScribeQueueOverflowErrorMessage
+      title: Scribe Queue Overflow Error
+      summary: Queue overflow
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeQueueOverflowErrorPayload"
+
+    ResourceExhaustedError:
+      name: ScribeResourceExhaustedErrorMessage
+      title: Scribe Resource Exhausted Error
+      summary: Resource exhausted
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeResourceExhaustedErrorPayload"
+
+    SessionTimeLimitExceededError:
+      name: ScribeSessionTimeLimitExceededErrorMessage
+      title: Scribe Session Time Limit Exceeded Error
+      summary: Session time limit exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeSessionTimeLimitExceededErrorPayload"
+
+    ChunkSizeExceededError:
+      name: ScribeChunkSizeExceededErrorMessage
+      title: Scribe Chunk Size Exceeded Error
+      summary: Chunk size exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeChunkSizeExceededErrorPayload"
+
+    InsufficientAudioActivityError:
+      name: ScribeInsufficientAudioActivityErrorMessage
+      title: Scribe Insufficient Audio Activity Error
+      summary: Insufficient audio activity
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeInsufficientAudioActivityErrorPayload"
 
   schemas:
     MessageType:
@@ -208,6 +298,9 @@ components:
         sample_rate:
           type: integer
           description: Sample rate of the audio in Hz
+        previous_text:
+          type: string
+          description: Send context to the model via base64 encoded audio or text from a previous transcription. Can only be sent alongside the first audio chunk. If sent in a subsequent chunk, an error will be returned.
 
     # ===== SERVER MESSAGE PAYLOADS =====
 
@@ -301,35 +394,145 @@ components:
           items:
             $ref: "#/components/schemas/Word"
 
+    # Base error structure - used as anchor for all error payloads
+    ScribeErrorBase: &ScribeErrorBase
+      type: object
+      required: [message_type, error]
+      properties:
+        error:
+          type: string
+          description: Error message with details
+
+    # Generic error that can represent any error type
     ScribeErrorPayload:
       type: object
       required: [message_type, error]
       properties:
         message_type:
           type: string
-          const: error
+          enum:
+            - error
+            - auth_error
+            - quota_exceeded
+            - commit_throttled
+            - transcriber_error
+            - unaccepted_terms
+            - rate_limited
+            - input_error
+            - queue_overflow
+            - resource_exhausted
+            - session_time_limit_exceeded
+            - chunk_size_exceeded
+            - insufficient_audio_activity
+          description: Type of error that occurred
         error:
           type: string
-          description: Error message describing what went wrong
+          description: Error message with details
 
     ScribeAuthErrorPayload:
-      type: object
-      required: [message_type, error]
+      <<: *ScribeErrorBase
       properties:
         message_type:
           type: string
           const: auth_error
         error:
           type: string
-          description: Authentication error details
 
     ScribeQuotaExceededErrorPayload:
-      type: object
-      required: [message_type, error]
+      <<: *ScribeErrorBase
       properties:
         message_type:
           type: string
           const: quota_exceeded
         error:
           type: string
-          description: Quota exceeded error details
+
+    ScribeCommitThrottledErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: commit_throttled
+        error:
+          type: string
+
+    ScribeTranscriberErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: transcriber_error
+        error:
+          type: string
+
+    ScribeUnacceptedTermsErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: unaccepted_terms
+        error:
+          type: string
+
+    ScribeRateLimitedErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: rate_limited
+        error:
+          type: string
+
+    ScribeInputErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: input_error
+        error:
+          type: string
+
+    ScribeQueueOverflowErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: queue_overflow
+        error:
+          type: string
+
+    ScribeResourceExhaustedErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: resource_exhausted
+        error:
+          type: string
+
+    ScribeSessionTimeLimitExceededErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: session_time_limit_exceeded
+        error:
+          type: string
+
+    ScribeChunkSizeExceededErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: chunk_size_exceeded
+        error:
+          type: string
+
+    ScribeInsufficientAudioActivityErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: insufficient_audio_activity
+        error:
+          type: string
