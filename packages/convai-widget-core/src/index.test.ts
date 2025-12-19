@@ -452,6 +452,10 @@ describe("elevenlabs-convai", () => {
         "default-expanded": "true",
       });
 
+      await expect
+        .element(page.getByText("Allowed https link"))
+        .toBeInTheDocument();
+
       const allowedHttps = page.getByRole("link", {
         name: "Allowed https link",
       });
