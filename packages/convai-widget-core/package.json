@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-widget-core",
-  "version": "0.6.0-beta.7",
+  "version": "0.6.0-beta.8",
   "description": "The common library for the Conversational AI Widget.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +39,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.5.4",
     "unified": "^11.0.5",
-    "vite": "^6.3.2",
+    "vite": "^6.4.1",
     "vite-bundle-analyzer": "^1.2.3",
     "vitest": "^3.1.2"
   },

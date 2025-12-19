@@ -44,7 +44,7 @@ function UserMessageBubble({
           : "pr-16 origin-top-left"
       )}
     >
-      {entry.role === "ai" && (
+      {entry.role === "agent" && (
         <img
           src={previewUrl}
           alt="AI agent avatar"
@@ -144,7 +144,7 @@ function getMessageComponent(entry: TranscriptEntry, isStreaming?: boolean) {
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
   }
-  if (entry.role === "ai") {
+  if (entry.role === "agent") {
     return <AgentMessageBubble entry={entry} />;
   }
   return <UserMessageBubble entry={entry} />;

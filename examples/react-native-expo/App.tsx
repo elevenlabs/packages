@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type { ConversationStatus, Role } from "@elevenlabs/react-native";
+import type { ConversationStatus } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
@@ -29,14 +29,8 @@ const ConversationScreen = () => {
     onError: (message: string, context?: Record<string, unknown>) => {
       console.error("❌ Conversation error:", message, context);
     },
-    onMessage: ({
-      message,
-      source,
-    }: {
-      message: string;
-      source: Role;
-    }) => {
-      console.log(`💬 Message from ${source}:`, message);
+    onMessage: ({ message, role }) => {
+      console.log(`💬 Message from ${role}:`, message);
     },
     onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
       console.log(`🔊 Mode: ${mode}`);
@@ -52,19 +46,23 @@ const ConversationScreen = () => {
       console.log(`🔊 Can send feedback: ${canSendFeedback}`);
     },
     onVadScore: ({ vadScore }: { vadScore: number }) => {
-      console.log(`🎙️ VAD Score: ${vadScore}`);
+      // commented out as it's quite noisy
+      // console.log(`🎙️ VAD Score: ${vadScore}`);
     },
     onInterruption: (event) => {
       console.log("⚡ Interruption detected:", event);
     },
     onAudio: (base64Audio: string) => {
-      console.log(`🔊 Audio chunk received: ${base64Audio.length} bytes`);
+      console.log(`🔊 Audio chunk received: ${base64Audio} bytes`);
     },
     onMCPToolCall: (event) => {
       console.log("🔧 MCP Tool Call:", event);
     },
     onMCPConnectionStatus: (event) => {
       console.log("🔌 MCP Connection Status:", event);
+    },
+    onAgentToolRequest: (event) => {
+      console.log("🛠️ Agent Tool Request:", event);
     },
     onAgentToolResponse: (event) => {
       console.log("🛠️ Agent Tool Response:", event);

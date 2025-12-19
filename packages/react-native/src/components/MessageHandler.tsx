@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useLocalParticipant, useDataChannel } from "@livekit/react-native";
-import type { LocalParticipant } from "livekit-client";
+import { useLocalParticipant, useDataChannel, useRoomContext } from "@livekit/react-native";
+import { RoomEvent } from "livekit-client";
+import type { LocalParticipant, RemoteParticipant } from "livekit-client";
 import type {
   Callbacks,
   ClientToolsConfig,
@@ -44,9 +45,33 @@ export const MessageHandler = ({
   onEndSession,
 }: MessageHandlerProps) => {
   const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
 
   // Track agent response count for synthetic event IDs (WebRTC mode)
   const agentResponseCountRef = React.useRef(1);
+
+  // Refs for callbacks to avoid unnecessary effect re-runs
+  const onEndSessionRef = React.useRef(onEndSession);
+  onEndSessionRef.current = onEndSession;
+  const onReadyRef = React.useRef(onReady);
+  onReadyRef.current = onReady;
+  const callbacksRef = React.useRef(callbacks);
+  callbacksRef.current = callbacks;
+
+  // Detect agent disconnection
+  useEffect(() => {
+    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      if (participant.identity?.startsWith("agent")) {
+        onEndSessionRef.current("agent");
+      }
+    };
+
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+
+    return () => {
+      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+    };
+  }, [room]);
 
   // Reset agent response count when connection status changes
   useEffect(() => {
@@ -57,9 +82,9 @@ export const MessageHandler = ({
 
   useEffect(() => {
     if (isConnected && localParticipant) {
-      onReady(localParticipant);
+      onReadyRef.current(localParticipant);
     }
-  }, [isConnected, localParticipant, onReady]);
+  }, [isConnected, localParticipant]);
 
   const handleClientToolCall = async (clientToolCall: ClientToolCallEvent) => {
     if (clientToolCall.client_tool_call.tool_name in clientTools) {
@@ -81,7 +106,7 @@ export const MessageHandler = ({
         });
       } catch (e) {
         const errorMessage = `Client tool execution failed with following error: ${(e as Error)?.message}`;
-        callbacks.onError?.(errorMessage, {
+        callbacksRef.current.onError?.(errorMessage, {
           clientToolName: clientToolCall.client_tool_call.tool_name,
         });
         sendMessage({
@@ -92,13 +117,13 @@ export const MessageHandler = ({
         });
       }
     } else {
-      if (callbacks.onUnhandledClientToolCall) {
-        callbacks.onUnhandledClientToolCall(clientToolCall.client_tool_call);
+      if (callbacksRef.current.onUnhandledClientToolCall) {
+        callbacksRef.current.onUnhandledClientToolCall(clientToolCall.client_tool_call);
         return;
       }
 
       const errorMessage = `Client tool with name ${clientToolCall.client_tool_call.tool_name} is not defined on client`;
-      callbacks.onError?.(errorMessage, {
+      callbacksRef.current.onError?.(errorMessage, {
         clientToolName: clientToolCall.client_tool_call.tool_name,
       });
       sendMessage({
@@ -115,7 +140,7 @@ export const MessageHandler = ({
     const message = JSON.parse(decoder.decode(msg.payload));
 
     if (!isValidEvent(message)) {
-      callbacks.onDebug?.({
+      callbacksRef.current.onDebug?.({
         type: "invalid_event",
         message,
       });
@@ -124,14 +149,15 @@ export const MessageHandler = ({
 
     const messageText = extractMessageText(message);
     if (messageText !== null) {
-      callbacks.onMessage?.({
+      callbacksRef.current.onMessage?.({
         message: messageText,
         source: message.type === "user_transcript" ? "user" : "ai",
+        role: message.type === "user_transcript" ? "user" : "agent",
       });
     }
 
     if (msg.from?.isAgent) {
-      callbacks.onModeChange?.({
+      callbacksRef.current.onModeChange?.({
         mode: msg.from?.isSpeaking ? "speaking" : "listening",
       });
 
@@ -153,45 +179,48 @@ export const MessageHandler = ({
         handleClientToolCall(message);
         break;
       case "audio":
-        callbacks.onAudio?.(message.audio_event.audio_base_64);
+        callbacksRef.current.onAudio?.(message.audio_event.audio_base_64);
         break;
       case "vad_score":
-        callbacks.onVadScore?.({
+        callbacksRef.current.onVadScore?.({
           vadScore: message.vad_score_event.vad_score,
         });
         break;
       case "interruption":
-        callbacks.onInterruption?.(message.interruption_event);
+        callbacksRef.current.onInterruption?.(message.interruption_event);
         break;
       case "mcp_tool_call":
-        callbacks.onMCPToolCall?.(message.mcp_tool_call);
+        callbacksRef.current.onMCPToolCall?.(message.mcp_tool_call);
         break;
       case "mcp_connection_status":
-        callbacks.onMCPConnectionStatus?.(message.mcp_connection_status);
+        callbacksRef.current.onMCPConnectionStatus?.(message.mcp_connection_status);
+        break;
+      case "agent_tool_request":
+        callbacksRef.current.onAgentToolRequest?.(message.agent_tool_request);
         break;
       case "agent_tool_response":
-        callbacks.onAgentToolResponse?.(message.agent_tool_response);
+        callbacksRef.current.onAgentToolResponse?.(message.agent_tool_response);
 
         if (message.agent_tool_response.tool_name === "end_call") {
           // End the call
-          onEndSession("agent");
+          onEndSessionRef.current("agent");
         }
         break;
       case "conversation_initiation_metadata":
-        callbacks.onConversationMetadata?.(
+        callbacksRef.current.onConversationMetadata?.(
           message.conversation_initiation_metadata_event
         );
         break;
       case "asr_initiation_metadata":
-        callbacks.onAsrInitiationMetadata?.(
+        callbacksRef.current.onAsrInitiationMetadata?.(
           message.asr_initiation_metadata_event
         );
         break;
       case "agent_chat_response_part":
-        callbacks.onAgentChatResponsePart?.(message.text_response_part);
+        callbacksRef.current.onAgentChatResponsePart?.(message.text_response_part);
         break;
       default:
-        callbacks.onDebug?.(message);
+        callbacksRef.current.onDebug?.(message);
         break;
     }
   });

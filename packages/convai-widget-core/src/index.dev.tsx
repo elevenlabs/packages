@@ -11,12 +11,13 @@ import {
   Location,
   parseLocation,
 } from "./types/config";
-import { useMemo, useState } from "preact/compat";
+import { useMemo, useRef, useState } from "preact/compat";
 
 /**
  * A dev-only playground for testing the ConvAIWidget component.
  */
 function Playground() {
+  const ref = useRef<HTMLDivElement>(null);
   const [variant, setVariant] = useState<Variant>("compact");
   const [placement, setPlacement] = useState<Placement>("bottom-right");
   const [location, setLocation] = useState<Location>("us");
@@ -25,19 +26,23 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
-  const [dynamicVariablesStr, setDynamicVariablesStr] = useState("")
+  const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);
-  const [firstMessage, setFirstMessage] = useState("Hi, how can I help you today?")
+  const [firstMessage, setFirstMessage] = useState(
+    "Hi, how can I help you today?"
+  );
 
-  const dynamicVariables = useMemo(() =>
-    dynamicVariablesStr
-      .split('\n')
-      .reduce<Record<string, string>>((acc, expr) => {
-        const [name, value] = expr.split('=')
-        return { ...acc, [name]: value };
-      }, {})
-  , [dynamicVariablesStr])
+  const dynamicVariables = useMemo(
+    () =>
+      dynamicVariablesStr
+        .split("\n")
+        .reduce<Record<string, string>>((acc, expr) => {
+          const [name, value] = expr.split("=");
+          return { ...acc, [name]: value };
+        }, {}),
+    [dynamicVariablesStr]
+  );
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -123,18 +128,18 @@ function Playground() {
               onChange={e => setOverrideFirstMessage(e.currentTarget.checked)}
             />
           </div>
-            <div>
-              First message:
-              {overrideFirstMessage && (
-                <input
-                  type="text"
-                  className="p-1 bg-base border border-base-border"
-                  value={firstMessage}
-                  disabled={!overrideFirstMessage}
-                  onChange={e => setFirstMessage(e.currentTarget.value)}
-                />
-              )}
-            </div>
+          <div>
+            First message:
+            {overrideFirstMessage && (
+              <input
+                type="text"
+                className="p-1 bg-base border border-base-border"
+                value={firstMessage}
+                disabled={!overrideFirstMessage}
+                onChange={e => setFirstMessage(e.currentTarget.value)}
+              />
+            )}
+          </div>
         </label>
         <label className="flex flex-col">
           Server Location
@@ -152,12 +157,12 @@ function Playground() {
           <button
             type="button"
             onClick={() => {
-              const event = new CustomEvent('elevenlabs-agent:expand', {
-                detail: { action: expanded ? 'collapse' : 'expand' },
+              const event = new CustomEvent("elevenlabs-agent:expand", {
+                detail: { action: expanded ? "collapse" : "expand" },
                 bubbles: true,
-                composed: true
+                composed: true,
               });
-              document.dispatchEvent(event);
+              ref.current?.dispatchEvent(event);
               setExpanded(!expanded);
             }}
             className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -166,7 +171,7 @@ function Playground() {
           </button>
         )}
       </div>
-      <div className="dev-host">
+      <div ref={ref} className="dev-host">
         <ConvAIWidget
           agent-id={import.meta.env.VITE_AGENT_ID}
           variant={variant}
@@ -178,7 +183,9 @@ function Playground() {
           always-expanded={JSON.stringify(alwaysExpanded)}
           dynamic-variables={JSON.stringify(dynamicVariables)}
           server-location={location}
-          override-first-message={overrideFirstMessage ? firstMessage : undefined}
+          override-first-message={
+            overrideFirstMessage ? firstMessage : undefined
+          }
         />
       </div>
     </div>

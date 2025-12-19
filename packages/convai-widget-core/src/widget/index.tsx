@@ -15,38 +15,41 @@ import { SheetContentProvider } from "../contexts/sheet-content";
 import { FeedbackProvider } from "../contexts/feedback";
 import { WidgetSizeProvider } from "../contexts/widget-size";
 import { ConversationModeProvider } from "../contexts/conversation-mode";
+import { ShadowHostProvider } from "../contexts/shadow-host";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
-    <AttributesProvider value={attributes}>
-      <ServerLocationProvider>
-        <WidgetConfigProvider>
-          <WidgetSizeProvider>
-            <TermsProvider>
+    <ShadowHostProvider>
+      <AttributesProvider value={attributes}>
+        <ServerLocationProvider>
+          <WidgetConfigProvider>
+            <WidgetSizeProvider>
               <LanguageConfigProvider>
-                <SessionConfigProvider>
-                  <ConversationProvider>
-                    <ConversationModeProvider>
-                      <AudioConfigProvider>
-                        <TextContentsProvider>
-                          <AvatarConfigProvider>
-                            <SheetContentProvider>
-                              <FeedbackProvider>
-                                <Style />
-                                <Wrapper />
-                              </FeedbackProvider>
-                            </SheetContentProvider>
-                          </AvatarConfigProvider>
-                        </TextContentsProvider>
-                      </AudioConfigProvider>
-                    </ConversationModeProvider>
-                  </ConversationProvider>
-                </SessionConfigProvider>
+                <TermsProvider>
+                  <SessionConfigProvider>
+                    <ConversationProvider>
+                      <ConversationModeProvider>
+                        <AudioConfigProvider>
+                          <TextContentsProvider>
+                            <AvatarConfigProvider>
+                              <SheetContentProvider>
+                                <FeedbackProvider>
+                                  <Style />
+                                  <Wrapper />
+                                </FeedbackProvider>
+                              </SheetContentProvider>
+                            </AvatarConfigProvider>
+                          </TextContentsProvider>
+                        </AudioConfigProvider>
+                      </ConversationModeProvider>
+                    </ConversationProvider>
+                  </SessionConfigProvider>
+                </TermsProvider>
               </LanguageConfigProvider>
-            </TermsProvider>
-          </WidgetSizeProvider>
-        </WidgetConfigProvider>
-      </ServerLocationProvider>
-    </AttributesProvider>
+            </WidgetSizeProvider>
+          </WidgetConfigProvider>
+        </ServerLocationProvider>
+      </AttributesProvider>
+    </ShadowHostProvider>
   );
 }
