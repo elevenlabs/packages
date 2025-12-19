@@ -46,6 +46,14 @@ export class Output {
 
       await context.resume();
 
+      // Browser may suspend the context in certain situations e.g. switching tabs, sleep, timeout
+      // This listener will resume the context when it is suspended
+      context.addEventListener('statechange', async () => {
+        if (context && context.state === 'suspended') {
+          await context.resume();
+        }
+      });
+
       // Set initial output device if provided
       if (outputDeviceId && audioElement.setSinkId) {
         await audioElement.setSinkId(outputDeviceId);
@@ -80,7 +88,7 @@ export class Output {
     public readonly gain: GainNode,
     public readonly worklet: AudioWorkletNode,
     public readonly audioElement: HTMLAudioElement
-  ) {}
+  ) { }
 
   public async setOutputDevice(deviceId?: string): Promise<void> {
     if (!("setSinkId" in HTMLAudioElement.prototype)) {
