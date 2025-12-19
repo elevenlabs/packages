@@ -110,14 +110,16 @@ export class ScribeRealtime {
     const baseUri = ScribeRealtime.getWebSocketUri(options.baseUri);
     const params = new URLSearchParams();
 
-    // Model ID is required, so no check required
+    // Model ID and token are required, so no check required
     params.append("model_id", options.modelId);
-
     params.append("token", options.token);
 
     // Add optional parameters if provided, with validation
     if (options.commitStrategy !== undefined) {
       params.append("commit_strategy", options.commitStrategy);
+    }
+    if (options.audioFormat !== undefined) {
+      params.append("audio_format", options.audioFormat);
     }
     if (options.vadSilenceThresholdSecs !== undefined) {
       if (

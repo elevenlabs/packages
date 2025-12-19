@@ -7,12 +7,14 @@ export const useLiveKitRoom = (
   callbacksRef: { current: Callbacks },
   setStatus: (status: ConversationStatus) => void,
   conversationId: string,
-  status: ConversationStatus
+  status: ConversationStatus,
+  textOnly: boolean = false
 ) => {
   const [roomConnected, setRoomConnected] = useState(false);
   const [localParticipant, setLocalParticipant] =
     useState<LocalParticipant | null>(null);
   const hasCalledOnConnectRef = useRef(false);
+  const audioSessionActiveRef = useRef(false);
 
   // Reset room state when conversationId changes (new session starting)
   useEffect(() => {
@@ -24,15 +26,23 @@ export const useLiveKitRoom = (
   }, [conversationId]);
 
   useEffect(() => {
-    const start = async () => {
-      await AudioSession.startAudioSession();
-    };
+    const shouldHaveAudio = !textOnly && !!conversationId;
 
-    start();
-    return () => {
+    if (shouldHaveAudio && !audioSessionActiveRef.current) {
+      audioSessionActiveRef.current = true;
+      AudioSession.startAudioSession();
+    } else if (!shouldHaveAudio && audioSessionActiveRef.current) {
+      audioSessionActiveRef.current = false;
       AudioSession.stopAudioSession();
+    }
+
+    return () => {
+      if (audioSessionActiveRef.current) {
+        audioSessionActiveRef.current = false;
+        AudioSession.stopAudioSession();
+      }
     };
-  }, []);
+  }, [textOnly, conversationId]);
 
   // Fire onConnect when both participant and room are fully ready
   useEffect(() => {

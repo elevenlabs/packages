@@ -78,7 +78,11 @@ jest.mock('./components/MessageHandler', () => ({
 }));
 
 jest.mock('./components/LiveKitRoomWrapper', () => ({
-  LiveKitRoomWrapper: ({ children }: { children: ReactNode }) => <>{children}</>,
+  LiveKitRoomWrapper: ({ children }: { children: ReactNode }) => (
+    // The actual LiveKitRoomWrapper receives key prop from parent (ElevenLabsProvider)
+    // Children are passed through and should not remount when key changes
+    <div>{children}</div>
+  ),
 }));
 
 describe('ElevenLabsProvider', () => {
@@ -189,6 +193,65 @@ describe('ElevenLabsProvider', () => {
           </ElevenLabsProvider>
         );
       }).not.toThrow();
+    });
+
+    it('should maintain stable conversation object reference to prevent infinite loops', () => {
+      const useEffectCallCount = jest.fn();
+      const conversationRefs: any[] = [];
+      let capturedConversation: any = null;
+
+      const TestComponent = () => {
+        const conversation = useConversation();
+
+        // Capture conversation for external testing
+        capturedConversation = conversation;
+
+        // Track the conversation object reference on each render
+        conversationRefs.push(conversation);
+
+        // Using conversation in useEffect deps should not cause an infinite loop
+        React.useEffect(() => {
+          useEffectCallCount();
+          // Simulate calling startSession which triggers state changes
+          // In real usage, this would call conversation.startSession(...)
+        }, [conversation]);
+
+        return <TestText>Test component</TestText>;
+      };
+
+      const { rerender } = render(
+        <ElevenLabsProvider>
+          <TestComponent />
+        </ElevenLabsProvider>
+      );
+
+      // Initial render - effect should run once
+      expect(useEffectCallCount).toHaveBeenCalledTimes(1);
+      const firstConversationRef = conversationRefs[0];
+
+      // Verify the conversation object has all required properties
+      expect(firstConversationRef).toHaveProperty('startSession');
+      expect(firstConversationRef).toHaveProperty('endSession');
+      expect(firstConversationRef).toHaveProperty('status');
+      expect(firstConversationRef).toHaveProperty('isSpeaking');
+
+      // Force a re-render by calling rerender
+      rerender(
+        <ElevenLabsProvider>
+          <TestComponent />
+        </ElevenLabsProvider>
+      );
+
+      // After re-render, verify conversation reference is still the same
+      expect(conversationRefs[conversationRefs.length - 1]).toBe(firstConversationRef);
+
+      // Effect should NOT run again because conversation reference is stable
+      expect(useEffectCallCount).toHaveBeenCalledTimes(1);
+
+      // Verify ALL conversation references collected are the same object
+      conversationRefs.forEach((ref, index) => {
+        expect(ref).toBe(firstConversationRef);
+      });
     });
   });
 });

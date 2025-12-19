@@ -1,15 +1,15 @@
 import type * as Types from "@elevenlabs/types";
 import type {
-  Incoming,
-  Outgoing,
-  Interruption,
-  ConversationMetadata,
-  Ping,
-  Role as MessageRole,
-  Mode as ConversationMode,
-  Status,
-  Callbacks,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
+  Callbacks,
+  ConversationMetadata,
+  Mode as ConversationMode,
+  Incoming,
+  Interruption,
+  Role as MessageRole,
+  Outgoing,
+  Ping,
+  Status,
 } from "@elevenlabs/types";
 export type { Callbacks } from "@elevenlabs/types";
 
@@ -70,6 +70,7 @@ export type ConversationConfig = {
     };
     tts?: {
       voiceId?: string;
+      speed?: number;
     };
     conversation?: {
       textOnly?: boolean;
@@ -99,6 +100,7 @@ export type ClientToolCallEvent = Incoming.ClientToolCallClientEvent;
 export type VadScoreEvent = Incoming.VadScoreClientEvent;
 export type MCPToolCallClientEvent = Incoming.McpToolCallClientEvent;
 export type MCPConnectionStatusEvent = Incoming.McpConnectionStatusClientEvent;
+export type AgentToolRequestEvent = Incoming.AgentToolRequestClientEvent;
 export type AgentToolResponseEvent = Incoming.AgentToolResponseClientEvent;
 export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
@@ -133,7 +135,25 @@ export type ConversationEvent =
   | VadScoreEvent
   | MCPToolCallClientEvent
   | MCPConnectionStatusEvent
+  | AgentToolRequestEvent
   | AgentToolResponseEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent
   | AgentChatResponsePartEvent;
+
+/**
+ * Audio session configuration for controlling how the SDK handles audio
+ */
+export interface AudioSessionConfig {
+  /**
+   * Whether audio should mix with other audio sources.
+   * When true, the SDK will configure the audio session to allow
+   * concurrent audio playback with other audio sources.
+   *
+   * iOS: Adds AVAudioSessionCategoryOptionMixWithOthers
+   * Android: Uses AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+   *
+   * @default false (exclusive audio session)
+   */
+  allowMixingWithOthers?: boolean;
+}
