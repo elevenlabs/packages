@@ -79,6 +79,7 @@ export const AGENTS = {
     text_only: true,
     terms_html: undefined,
     default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
     first_message: `# Heading 1
 
 This is **bold** and *italic* text.
@@ -107,6 +108,34 @@ const codeBlock = true;
 
 ---
 `,
+  },
+  markdown_no_links: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [],
+    first_message: `No links should be clickable: [Link text](https://example.com/allowed)`,
+  },
+  markdown_domain_allowlist: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "example.com" }],
+    first_message: `[Allowed https link](https://example.com/allowed)
+
+[Allowed http link](http://example.com/http-allowed)
+
+[Blocked link](https://evil.com/blocked)
+`,
+  },
+  markdown_default_domain: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: `[Relative link](/relative)`,
   },
 } as const satisfies Record<string, WidgetConfig>;
 

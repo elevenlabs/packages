@@ -28,9 +28,16 @@ export type FeedbackMode = "none" | "during" | "end";
 export type FeedbackType = "rating";
 export type SyntaxHighlightTheme = "light" | "dark";
 
+export interface AllowlistItem {
+  hostname: string;
+}
+
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
+  markdown_link_allowed_hosts?: AllowlistItem[];
+  markdown_link_include_www?: boolean;
+  markdown_link_allow_http?: boolean;
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
   end_feedback?: {
