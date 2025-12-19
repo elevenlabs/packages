@@ -158,9 +158,11 @@ function MockConversationProvider({
 function WidgetSandbox({
   theme,
   displayTextSignal,
+  allowedDomains,
 }: {
   theme: "light" | "dark";
   displayTextSignal: Signal<string>;
+  allowedDomains: string[];
 }) {
   return (
     <AttributesProvider
@@ -189,6 +191,7 @@ function WidgetSandbox({
           supports_text_only: true,
           styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
           syntax_highlight_theme: theme === "light" ? "light" : "dark",
+          markdown_link_allowed_hosts: allowedDomains.map(d => ({ hostname: d })),
         }),
       }}
     >
@@ -235,14 +238,26 @@ function WidgetSandbox({
   );
 }
 
+const ALLOWED_DOMAINS_STORAGE_KEY = "markdown-playground-allowed-domains";
+
 function MarkdownPlayground() {
   const [text, setText] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ?? DEFAULT_TEXT;
   });
+  const [allowedDomainsInput, setAllowedDomainsInput] = useState(() => {
+    const stored = localStorage.getItem(ALLOWED_DOMAINS_STORAGE_KEY);
+    return stored ?? "*";
+  });
   const [isStreaming, setIsStreaming] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const displayTextSignal = useSignal(text);
+
+  const allowedDomains = useMemo(() => {
+    const trimmed = allowedDomainsInput.trim();
+    if (!trimmed) return [];
+    return trimmed.split(",").map(d => d.trim()).filter(Boolean);
+  }, [allowedDomainsInput]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, text);
@@ -250,6 +265,10 @@ function MarkdownPlayground() {
       displayTextSignal.value = text;
     }
   }, [text, isStreaming]);
+
+  useEffect(() => {
+    localStorage.setItem(ALLOWED_DOMAINS_STORAGE_KEY, allowedDomainsInput);
+  }, [allowedDomainsInput]);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === "light" ? "dark" : "light"));
@@ -299,6 +318,18 @@ function MarkdownPlayground() {
             onChange={e => setText(e.currentTarget.value)}
             placeholder="Enter markdown text here..."
           />
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-1">
+              Allowed Link Domains (comma-separated, * for all)
+            </label>
+            <input
+              type="text"
+              className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputBgClass} ${borderClass}`}
+              value={allowedDomainsInput}
+              onChange={e => setAllowedDomainsInput(e.currentTarget.value)}
+              placeholder="e.g. elevenlabs.io, example.com or * for all"
+            />
+          </div>
         </div>
 
         <div className="w-1/2 h-full flex flex-col p-4">
@@ -323,7 +354,7 @@ function MarkdownPlayground() {
           </div>
         </div>
       </div>
-      <WidgetSandbox theme={theme} displayTextSignal={displayTextSignal} />
+      <WidgetSandbox theme={theme} displayTextSignal={displayTextSignal} allowedDomains={allowedDomains} />
     </>
   );
 }

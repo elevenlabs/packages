@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-widget-core",
-  "version": "0.6.0-beta.6",
+  "version": "0.6.0-beta.7",
   "description": "The common library for the Conversational AI Widget.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -63,8 +63,9 @@
     "marked": "^17.0.0",
     "preact": "^10.26.5",
     "preact-custom-element": "^4.3.0",
-    "rehype-harden": "^1.1.5",
+    "rehype-harden": "^1.1.7",
     "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
     "remark-cjk-friendly": "^1.2.3",
     "remark-cjk-friendly-gfm-strikethrough": "^1.2.3",
     "remark-gfm": "^4.0.1",
