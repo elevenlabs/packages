@@ -222,12 +222,16 @@ const conversation = await Conversation.startSession({
     agent: {
       prompt: {
         prompt: "My custom prompt",
+        llm: "gemini-2.5-flash",
       },
       firstMessage: "My custom first message",
       language: "en",
     },
     tts: {
       voiceId: "custom voice id",
+      speed: 1.0,
+      stability: 0.5,
+      similarityBoost: 0.8,
     },
     conversation: {
       textOnly: true,

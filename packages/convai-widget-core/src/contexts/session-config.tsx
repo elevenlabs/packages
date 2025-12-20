@@ -24,6 +24,10 @@ export function SessionConfigProvider({
 }: SessionConfigProviderProps) {
   const { language } = useLanguageConfig();
   const overridePrompt = useAttribute("override-prompt");
+  const overrideLLM = useAttribute("override-llm");
+  const overrideSpeed = useAttribute("override-speed");
+  const overrideStability = useAttribute("override-stability");
+  const overrideSimilarityBoost = useAttribute("override-similarity-boost");
   const overrideFirstMessage = useAttribute("override-first-message");
   const overrideVoiceId = useAttribute("override-voice-id");
   const overrideTextOnly = useAttribute("override-text-only");
@@ -32,12 +36,16 @@ export function SessionConfigProvider({
     agent: {
       prompt: {
         prompt: overridePrompt.value,
+        llm: overrideLLM.value,
       },
       firstMessage: overrideFirstMessage.value,
       language: language.value.languageCode,
     },
     tts: {
       voiceId: overrideVoiceId.value,
+      speed: overrideSpeed.value,
+      stability: overrideStability.value,
+      similarityBoost: overrideSimilarityBoost.value,
     },
     conversation: {
       textOnly: parseBoolAttribute(overrideTextOnly.value) ?? undefined,
