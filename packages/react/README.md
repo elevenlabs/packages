@@ -533,6 +533,7 @@ React hook for managing real-time speech-to-text transcription with ElevenLabs S
 #### Quick Start
 
 ```tsx
+import { useEffect } from "react";
 import { useScribe } from "@elevenlabs/react";
 
 function MyComponent() {
@@ -546,23 +547,42 @@ function MyComponent() {
     },
   });
 
+  // Start recording
   const handleStart = async () => {
-    const token = await fetchTokenFromServer();
-    await scribe.connect({
-      token,
-      microphone: {
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
+    try {
+      const token = await fetchTokenFromServer();
+      await scribe.connect({
+        token,
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+    }
   };
+
+  // Stop recording
+  const handleDisconnect = () => {
+    scribe.disconnect();
+  };
+
+  // Disconnect on unmount
+  useEffect(() => {
+    return () => {
+      if (scribe.isConnected) {
+        scribe.disconnect();
+      }
+    };
+  }, [scribe]);
 
   return (
     <div>
       <button onClick={handleStart} disabled={scribe.isConnected}>
         Start Recording
       </button>
-      <button onClick={scribe.disconnect} disabled={!scribe.isConnected}>
+      <button onClick={handleDisconnect} disabled={!scribe.isConnected}>
         Stop
       </button>
 
