@@ -958,11 +958,13 @@ const scribe = useScribe({
 #### Complete Example
 
 ```tsx
-import { useScribe, AudioFormat, CommitStrategy } from "@elevenlabs/react";
-import { useState } from "react";
+import { useScribe, CommitStrategy } from "@elevenlabs/react";
+import { useState, useEffect } from "react";
+
+type Mode = "microphone" | "file"
 
 function ScribeDemo() {
-  const [mode, setMode] = useState<"microphone" | "file">("microphone");
+  const [mode, setMode] = useState<Mode>("microphone");
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
@@ -983,6 +985,16 @@ function ScribeDemo() {
     });
   };
 
+  const handleDisconnect = () => scribe.disconnect();
+  
+  const handleClearTranscripts = () => scribe.clearTranscripts();
+
+  useEffect(() => {
+    return () => {
+      handleDisconnect();
+    };
+  }, []);
+
   return (
     <div>
       <h1>Scribe Demo</h1>
@@ -998,9 +1010,9 @@ function ScribeDemo() {
         {!scribe.isConnected ? (
           <button onClick={startMicrophone}>Start Recording</button>
         ) : (
-          <button onClick={scribe.disconnect}>Stop</button>
+          <button onClick={handleDisconnect}>Stop</button>
         )}
-        <button onClick={scribe.clearTranscripts}>Clear</button>
+        <button onClick={handleClearTranscripts}>Clear</button>
       </div>
 
       {/* Live Transcript */}
