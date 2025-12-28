@@ -43,6 +43,13 @@ export const AGENTS = {
     use_rtc: true,
   },
   fail: BASIC_CONFIG,
+  end_call_test: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    first_message: "",
+  },
   localized: {
     ...BASIC_CONFIG,
     terms_html: "<p>Default Terms in English</p>",
@@ -112,7 +119,7 @@ export const Worker = setupWorker(
           agent_response_event: { agent_response: config.first_message },
         })
       );
-      if (config.text_only) {
+      if (config.text_only && agentId !== "end_call_test") {
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -123,7 +130,7 @@ export const Worker = setupWorker(
         );
         await new Promise(resolve => setTimeout(resolve, 1000));
         client.close();
-      } else {
+      } else if (!config.text_only) {
         client.send(
           JSON.stringify({
             type: "user_transcript",
@@ -134,6 +141,40 @@ export const Worker = setupWorker(
       if (agentId === "fail") {
         client.addEventListener("message", () => {
           client.close(3000, "Test reason");
+        });
+      }
+      if (agentId === "end_call_test") {
+        client.addEventListener("message", async () => {
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "start",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Goodbye! Have a great day!",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "stop",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.close(1000);
         });
       }
     })

@@ -59,29 +59,31 @@ const conversation = useConversation({
 });
 ```
 
-- **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
-- **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
-- **textOnly** - whether the conversation should run in text-only mode. [See below](#text-only) for details.
-- **onConnect** - handler called when the conversation connection is established.
-- **onDisconnect** - handler called when the conversation connection has ended.
-- **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
-- **onError** - handler called when a error is encountered.
-- **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
-- **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
-- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
-- **onUnhandledClientToolCall** - handler called when a client tool is invoked but no corresponding client tool was defined.
-- **onDebug** - handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.
-- **onAudio** - handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.
-- **onInterruption** - handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.
-- **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
-- **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
-- **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
-- **onAgentToolRequest** - handler called when the agent begins tool execution.
-- **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
-- **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
-- **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
-- **onAgentChatResponsePart** - handler called with streaming text chunks during text-only conversations. Provides start, delta, and stop events for real-time text streaming.
-- **onAudioAlignment** - handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization.
+| Property | Description |
+|----------|-------------|
+| **clientTools** | Object definition for client tools that can be invoked by the agent. [See below](#client-tools) for details. |
+| **overrides** | Object definition for conversation settings overrides. [See below](#conversation-overrides) for details. |
+| **textOnly** | Whether the conversation should run in text-only mode. [See below](#text-only) for details. |
+| **onConnect** | Handler called when the conversation connection is established. |
+| **onDisconnect** | Handler called when the conversation connection has ended. |
+| **onMessage** | Handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug messages when a debug option is enabled. |
+| **onError** | Handler called when an error is encountered. |
+| **onStatusChange** | Handler called whenever connection status changes. Can be `connected`, `connecting`, or `disconnected` (initial). |
+| **onModeChange** | Handler called when a status changes, e.g., agent switches from `speaking` to `listening`, or vice versa. |
+| **onCanSendFeedbackChange** | Handler called when sending feedback becomes available or unavailable. |
+| **onUnhandledClientToolCall** | Handler called when a client tool is invoked but no corresponding client tool was defined. |
+| **onDebug** | Handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting. |
+| **onAudio** | Handler called when audio data is received from the agent. Provides access to raw audio events for custom processing. |
+| **onInterruption** | Handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking. |
+| **onVadScore** | Handler called with voice activity detection scores, indicating the likelihood of speech in the audio input. |
+| **onMCPToolCall** | Handler called when an MCP (Model Context Protocol) tool is invoked by the agent. |
+| **onMCPConnectionStatus** | Handler called when the MCP connection status changes, useful for monitoring MCP server connectivity. |
+| **onAgentToolRequest** | Handler called when the agent begins tool execution. |
+| **onAgentToolResponse** | Handler called when the agent receives a response from a tool execution. |
+| **onConversationMetadata** | Handler called with conversation initiation metadata, providing information about the conversation setup. |
+| **onAsrInitiationMetadata** | Handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition. |
+| **onAudioAlignment** | Handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization. |
+
 
 ##### Client Tools
 
@@ -117,12 +119,16 @@ const conversation = useConversation({
     agent: {
       prompt: {
         prompt: "My custom prompt",
+        llm: "gemini-2.5-flash",
       },
       firstMessage: "My custom first message",
       language: "en",
     },
     tts: {
       voiceId: "custom voice id",
+      speed: 1.0,
+      stability: 0.5,
+      similarityBoost: 0.8,
     },
     conversation: {
       textOnly: true,
@@ -535,6 +541,7 @@ React hook for managing real-time speech-to-text transcription with ElevenLabs S
 #### Quick Start
 
 ```tsx
+import { useEffect } from "react";
 import { useScribe } from "@elevenlabs/react";
 
 function MyComponent() {
@@ -548,23 +555,42 @@ function MyComponent() {
     },
   });
 
+  // Start recording
   const handleStart = async () => {
-    const token = await fetchTokenFromServer();
-    await scribe.connect({
-      token,
-      microphone: {
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
+    try {
+      const token = await fetchTokenFromServer();
+      await scribe.connect({
+        token,
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+    }
   };
+
+  // Stop recording
+  const handleDisconnect = () => {
+    scribe.disconnect();
+  };
+
+  // Disconnect on unmount
+  useEffect(() => {
+    return () => {
+      if (scribe.isConnected) {
+        scribe.disconnect();
+      }
+    };
+  }, [scribe]);
 
   return (
     <div>
       <button onClick={handleStart} disabled={scribe.isConnected}>
         Start Recording
       </button>
-      <button onClick={scribe.disconnect} disabled={!scribe.isConnected}>
+      <button onClick={handleDisconnect} disabled={!scribe.isConnected}>
         Stop
       </button>
 

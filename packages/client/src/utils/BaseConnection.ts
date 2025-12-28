@@ -38,6 +38,8 @@ export type BaseSessionConfig = {
     tts?: {
       voiceId?: string;
       speed?: number;
+      stability?: number;
+      similarityBoost?: number;
     };
     conversation?: {
       textOnly?: boolean;

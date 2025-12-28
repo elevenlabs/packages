@@ -215,12 +215,25 @@ function useConversationSetup() {
               }
 
               if (role === "agent" && isReceivingStreamRef.current) {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null) {
+                  const currentTranscript = transcript.peek();
+                  const updatedTranscript = [...currentTranscript];
+                  updatedTranscript[streamingIndex] = {
+                    type: "message",
+                    role: "agent",
+                    message,
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  };
+                  transcript.value = updatedTranscript;
+                }
                 isReceivingStreamRef.current = false;
                 return;
               }
 
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 {
                   type: "message",
                   role,
@@ -278,7 +291,7 @@ function useConversationSetup() {
               streamingMessageIndexRef.current = null;
               isReceivingStreamRef.current = false;
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 details.reason === "error"
                   ? {
                       type: "error",

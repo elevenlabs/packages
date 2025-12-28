@@ -140,6 +140,40 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  it.each(Variants)(
+    "$0 variant should show last message when agent calls end_call",
+    async variant => {
+      setupWebComponent({
+        "agent-id": "end_call_test",
+        transcript: "true",
+        "text-input": "true",
+        variant,
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Bye");
+      await userEvent.keyboard("{Enter}");
+
+      await expect.element(page.getByText("Bye")).toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("Goodbye! Have a great day!"))
+        .toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("The agent ended the conversation"))
+        .toBeInTheDocument();
+    }
+  );
+
   it.each(Variants)("$0 variant should handle errors", async variant => {
     setupWebComponent({ "agent-id": "basic", variant });
 
