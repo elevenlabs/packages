@@ -190,7 +190,7 @@ export interface Audio {
 }
 
 export interface AudioEvent {
-  audio_base_64?: string;
+  audio_base_64: string;
   event_id: number;
   alignment?: AudioEventAlignment;
 }

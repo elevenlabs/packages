@@ -810,17 +810,16 @@ components:
 
     AudioEventData:
       type: object
-      required: [event_id]
+      required: [audio_base_64, event_id]
       properties:
         audio_base_64:
           type: string
           format: base64
-          description: Base64 encoded audio (may be omitted in alignment-only messages)
         event_id:
           type: integer
         alignment:
           $ref: "#/components/schemas/AudioAlignmentData"
-          description: Optional character-level timing data for text-to-speech synchronization
+         
 
     UserTranscriptionData:
       type: object
