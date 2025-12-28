@@ -12,7 +12,6 @@ export type {
   ConversationOptions,
   ConversationConfig,
   ConversationEvent,
-  AudioAlignmentEvent,
   AudioAlignmentData,
   AudioEventWithAlignment,
   AudioSessionConfig,

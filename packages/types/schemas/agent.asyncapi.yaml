@@ -62,7 +62,6 @@ channels:
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
           - $ref: "#/components/messages/ASRInitiationMetadata"
-          - $ref: "#/components/messages/AudioAlignment"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
           - $ref: "#/components/messages/ErrorMessage"
@@ -286,14 +285,6 @@ components:
       payload:
         $ref: "#/components/schemas/ASRInitiationMetadataPayload"
 
-    AudioAlignment:
-      name: AudioAlignmentClientEvent
-      title: Audio Alignment
-      summary: Character-level timing alignment for synthesized audio
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/AudioAlignmentPayload"
-
     InternalTurnProbability:
       name: TurnProbabilityInternalClientEvent
       title: Internal Turn Probability
@@ -325,7 +316,6 @@ components:
       type: string
       enum:
         - audio
-        - audio_alignment
         - agent_response
         - agent_response_correction
         - agent_chat_response_part
@@ -820,13 +810,17 @@ components:
 
     AudioEventData:
       type: object
-      required: [audio_base_64, event_id]
+      required: [event_id]
       properties:
         audio_base_64:
           type: string
           format: base64
+          description: Base64 encoded audio (may be omitted in alignment-only messages)
         event_id:
           type: integer
+        alignment:
+          $ref: "#/components/schemas/AudioAlignmentData"
+          description: Optional character-level timing data for text-to-speech synchronization
 
     UserTranscriptionData:
       type: object
@@ -1013,16 +1007,6 @@ components:
         asr_initiation_metadata_event:
           type: object
           description: ASR initialization metadata
-
-    AudioAlignmentPayload:
-      type: object
-      required: [audio_alignment_event, type]
-      properties:
-        type:
-          type: string
-          const: audio_alignment
-        audio_alignment_event:
-          $ref: "#/components/schemas/AudioAlignmentData"
 
     AudioAlignmentData:
       type: object

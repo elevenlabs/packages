@@ -6,7 +6,7 @@ import {
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
-  AudioAlignment,
+  AudioEventAlignment,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
@@ -40,7 +40,7 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
-export type AudioAlignmentEvent = AudioAlignment;
+export type AudioAlignmentEvent = AudioEventAlignment;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
@@ -60,8 +60,7 @@ export type IncomingSocketEvent =
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
-  | ErrorMessageEvent
-  | AudioAlignmentEvent;
+  | ErrorMessageEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;

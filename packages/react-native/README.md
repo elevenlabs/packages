@@ -329,7 +329,7 @@ Pass to `useConversation` hook to handle various conversation events:
 - `onAgentChatResponsePart?: (props: AgentChatResponsePart) => void` - Called for streaming agent response parts
 - `onConversationMetadata?: (props: ConversationMetadata) => void` - Called with conversation initiation metadata
 - `onAsrInitiationMetadata?: (props: AsrInitiationMetadata) => void` - Called with ASR (speech recognition) initialization metadata
-- `onAudioAlignment?: (props: AudioAlignmentEvent) => void` - Called with character-level timing data for text-to-speech synchronization
+- `onAudioAlignment?: (props: AudioAlignmentData) => void` - Called with character-level timing data for text-to-speech synchronization
 
 #### Feedback
 - `onCanSendFeedbackChange?: (props: { canSendFeedback: boolean }) => void` - Called when feedback availability changes

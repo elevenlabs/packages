@@ -261,7 +261,11 @@ export class BaseConversation {
     }
   }
 
-  protected handleAudio(event: AgentAudioEvent) {}
+  protected handleAudio(event: AgentAudioEvent) {
+    if (event.audio_event.alignment && this.options.onAudioAlignment) {
+      this.options.onAudioAlignment(event.audio_event.alignment);
+    }
+  }
 
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {
@@ -314,9 +318,9 @@ export class BaseConversation {
     }
   }
 
-  protected handleAudioAlignment(event: AudioAlignmentEvent) {
+  protected handleAudioAlignment(alignment: AudioAlignmentEvent) {
     if (this.options.onAudioAlignment) {
-      this.options.onAudioAlignment(event.audio_alignment_event);
+      this.options.onAudioAlignment(alignment);
     }
   }
 
@@ -426,11 +430,6 @@ export class BaseConversation {
 
       case "agent_chat_response_part": {
         this.handleAgentChatResponsePart(parsedEvent);
-        return;
-      }
-
-      case "audio_alignment": {
-        this.handleAudioAlignment(parsedEvent);
         return;
       }
 

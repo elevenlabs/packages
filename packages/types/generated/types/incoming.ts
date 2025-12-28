@@ -6,7 +6,6 @@ export type {
   AgentToolRequestClientEvent,
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent,
-  AudioAlignmentClientEvent,
   AudioClientEvent,
   ClientToolCallClientEvent,
   CommittedTranscriptMessage,

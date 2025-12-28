@@ -160,13 +160,16 @@ export class VoiceConversation extends BaseConversation {
   }
 
   protected override handleAudio(event: AgentAudioEvent) {
+    super.handleAudio(event);
     if (this.lastInterruptTimestamp <= event.audio_event.event_id) {
-      this.options.onAudio?.(event.audio_event.audio_base_64);
+      if (event.audio_event.audio_base_64) {
+        this.options.onAudio?.(event.audio_event.audio_base_64);
 
-      // Only play audio through the output worklet for WebSocket connections
-      // WebRTC connections handle audio playback directly through LiveKit tracks
-      if (!(this.connection instanceof WebRTCConnection)) {
-        this.addAudioBase64Chunk(event.audio_event.audio_base_64);
+        // Only play audio through the output worklet for WebSocket connections
+        // WebRTC connections handle audio playback directly through LiveKit tracks
+        if (!(this.connection instanceof WebRTCConnection)) {
+          this.addAudioBase64Chunk(event.audio_event.audio_base_64);
+        }
       }
 
       this.currentEventId = event.audio_event.event_id;
