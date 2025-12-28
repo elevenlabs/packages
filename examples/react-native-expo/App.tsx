@@ -76,6 +76,13 @@ const ConversationScreen = () => {
     onAgentChatResponsePart: (part) => {
       console.log("📝 Agent Response Part:", part);
     },
+    onAudioAlignment: (alignment) => {
+      console.log("🎯 Audio Alignment:", {
+        chars: alignment.chars.join(""),
+        charCount: alignment.chars.length,
+        totalDuration: alignment.char_durations_ms.reduce((a, b) => a + b, 0),
+      });
+    },
     onUnhandledClientToolCall: (toolCall) => {
       console.warn("⚠️ Unhandled Client Tool Call:", toolCall);
     },

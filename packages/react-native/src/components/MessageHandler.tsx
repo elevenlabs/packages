@@ -7,6 +7,7 @@ import type {
   ClientToolsConfig,
   ClientToolCallEvent,
   ConversationEvent,
+  AudioEventWithAlignment,
 } from "../types";
 import React from "react";
 
@@ -178,9 +179,21 @@ export const MessageHandler = ({
       case "client_tool_call":
         handleClientToolCall(message);
         break;
-      case "audio":
-        callbacksRef.current.onAudio?.(message.audio_event.audio_base_64);
+      case "audio": {
+        const audioEvent = message.audio_event as AudioEventWithAlignment;
+        console.log("[MessageHandler] Audio event received:", {
+          hasAudioBase64: !!audioEvent.audio_base_64,
+          hasAlignment: !!audioEvent.alignment,
+          audioEventKeys: Object.keys(audioEvent),
+        });
+        if (audioEvent.audio_base_64) {
+          callbacksRef.current.onAudio?.(audioEvent.audio_base_64);
+        }
+        if (audioEvent.alignment) {
+          callbacksRef.current.onAudioAlignment?.(audioEvent.alignment);
+        }
         break;
+      }
       case "vad_score":
         callbacksRef.current.onVadScore?.({
           vadScore: message.vad_score_event.vad_score,
@@ -218,9 +231,6 @@ export const MessageHandler = ({
         break;
       case "agent_chat_response_part":
         callbacksRef.current.onAgentChatResponsePart?.(message.text_response_part);
-        break;
-      case "audio_alignment":
-        callbacksRef.current.onAudioAlignment?.(message.audio_alignment_event);
         break;
       default:
         callbacksRef.current.onDebug?.(message);

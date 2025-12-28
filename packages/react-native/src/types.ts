@@ -107,6 +107,12 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type AgentChatResponsePartEvent =
   Incoming.AgentChatResponsePartClientEvent;
 export type AudioAlignmentEvent = Incoming.AudioAlignmentClientEvent;
+export type AudioAlignmentData = Types.AudioAlignmentEvent;
+export type AudioEventWithAlignment = {
+  audio_base_64?: string;
+  event_id: number;
+  alignment?: AudioAlignmentData;
+};
 
 // Outgoing event types
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
