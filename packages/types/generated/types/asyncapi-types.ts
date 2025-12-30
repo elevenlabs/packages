@@ -192,6 +192,13 @@ export interface Audio {
 export interface AudioEvent {
   audio_base_64: string;
   event_id: number;
+  alignment?: AudioEventAlignment;
+}
+
+export interface AudioEventAlignment {
+  chars: string[];
+  char_start_times_ms: number[];
+  char_durations_ms: number[];
 }
 
 export interface UserTranscript {

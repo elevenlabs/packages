@@ -82,6 +82,8 @@ const conversation = useConversation({
 | **onAgentToolResponse** | Handler called when the agent receives a response from a tool execution. |
 | **onConversationMetadata** | Handler called with conversation initiation metadata, providing information about the conversation setup. |
 | **onAsrInitiationMetadata** | Handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition. |
+| **onAudioAlignment** | Handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization. |
+
 
 ##### Client Tools
 

@@ -173,6 +173,8 @@ The options passed to `startSession` can also be used to register optional callb
 - **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
 - **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
 - **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
+- **onAgentChatResponsePart** - handler called with streaming text chunks during text-only conversations. Provides start, delta, and stop events for real-time text streaming.
+- **onAudioAlignment** - handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization.
 
 #### Setting input/output devices
 

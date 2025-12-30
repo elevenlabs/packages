@@ -9,6 +9,7 @@ import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
   AgentResponseEvent,
+  AudioAlignmentEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
@@ -260,7 +261,11 @@ export class BaseConversation {
     }
   }
 
-  protected handleAudio(event: AgentAudioEvent) {}
+  protected handleAudio(event: AgentAudioEvent) {
+    if (event.audio_event.alignment && this.options.onAudioAlignment) {
+      this.options.onAudioAlignment(event.audio_event.alignment);
+    }
+  }
 
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {
@@ -310,6 +315,12 @@ export class BaseConversation {
   protected handleAgentChatResponsePart(event: AgentChatResponsePartEvent) {
     if (this.options.onAgentChatResponsePart) {
       this.options.onAgentChatResponsePart(event.text_response_part);
+    }
+  }
+
+  protected handleAudioAlignment(alignment: AudioAlignmentEvent) {
+    if (this.options.onAudioAlignment) {
+      this.options.onAudioAlignment(alignment);
     }
   }
 

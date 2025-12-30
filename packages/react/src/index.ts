@@ -74,6 +74,7 @@ export type {
   DisconnectionDetails,
   Language,
   VadScoreEvent,
+  AudioAlignmentEvent,
   InputConfig,
   FormatConfig,
   VoiceConversation,
@@ -135,6 +136,7 @@ export type HookCallbacks = Pick<
   | "onMCPConnectionStatus"
   | "onAsrInitiationMetadata"
   | "onAgentChatResponsePart"
+  | "onAudioAlignment"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -255,6 +257,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onAgentChatResponsePart:
             options?.onAgentChatResponsePart ||
             defaultOptions?.onAgentChatResponsePart,
+          onAudioAlignment:
+            options?.onAudioAlignment || defaultOptions?.onAudioAlignment,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });

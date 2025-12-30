@@ -817,6 +817,9 @@ components:
           format: base64
         event_id:
           type: integer
+        alignment:
+          $ref: "#/components/schemas/AudioAlignmentData"
+         
 
     UserTranscriptionData:
       type: object
@@ -1003,6 +1006,26 @@ components:
         asr_initiation_metadata_event:
           type: object
           description: ASR initialization metadata
+
+    AudioAlignmentData:
+      type: object
+      required: [chars, char_start_times_ms, char_durations_ms]
+      properties:
+        chars:
+          type: array
+          items:
+            type: string
+          description: Array of individual characters in the synthesized text
+        char_start_times_ms:
+          type: array
+          items:
+            type: integer
+          description: Start time in milliseconds for each character
+        char_durations_ms:
+          type: array
+          items:
+            type: integer
+          description: Duration in milliseconds for each character
 
     InternalTurnProbabilityPayload:
       type: object

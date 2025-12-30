@@ -6,6 +6,7 @@ import {
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
+  AudioEventAlignment,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
@@ -39,6 +40,7 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
+export type AudioAlignmentEvent = AudioEventAlignment;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
