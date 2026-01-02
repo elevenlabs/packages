@@ -273,8 +273,9 @@ describe("Conversation", () => {
         await clientPromise;
       }).rejects.toThrowError(
         expect.objectContaining({
-          code: 3000,
-          reason: "Test cancellation reason",
+          name: "SessionConnectionError",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
         })
       );
     }
@@ -324,6 +325,8 @@ describe("Conversation", () => {
         expect.objectContaining({
           reason: "error",
           message: "Test cancellation reason",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
         })
       );
     }
