@@ -11,6 +11,7 @@ import {
   type OutgoingSocketEvent,
 } from "./events";
 import { constructOverrides } from "./overrides";
+import { SessionConnectionError } from "./errors";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
@@ -53,12 +54,16 @@ export class WebSocketConnection extends BaseConnection {
           ? {
               reason: "agent",
               context: event,
+              closeCode: event.code,
+              closeReason: event.reason || undefined,
             }
           : {
               reason: "error",
               message:
                 event.reason || "The connection was closed by the server.",
               context: event,
+              closeCode: event.code,
+              closeReason: event.reason || undefined,
             }
       );
     });
@@ -128,10 +133,30 @@ export class WebSocketConnection extends BaseConnection {
           // In case the error event is followed by a close event, we want the
           // latter to be the one that rejects the promise as it contains more
           // useful information.
-          setTimeout(() => reject(event), 0);
+          setTimeout(
+            () =>
+              reject(
+                new SessionConnectionError(
+                  "The connection was closed due to a socket error."
+                )
+              ),
+            0
+          );
         });
 
-        socket!.addEventListener("close", reject);
+        socket!.addEventListener("close", (event: CloseEvent) => {
+          const message =
+            event.reason ||
+            (event.code === 1000
+              ? "Connection closed normally before session could be established."
+              : "Connection closed unexpectedly before session could be established.");
+          reject(
+            new SessionConnectionError(message, {
+              closeCode: event.code,
+              closeReason: event.reason || undefined,
+            })
+          );
+        });
 
         socket!.addEventListener(
           "message",

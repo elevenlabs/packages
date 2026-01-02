@@ -29,6 +29,7 @@ export { createConnection } from "./utils/ConnectionFactory";
 export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
+export { SessionConnectionError } from "./utils/errors";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
 
