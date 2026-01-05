@@ -2,6 +2,7 @@
 export type {
   ClientToolResultClientToOrchestratorEvent,
   ContextualUpdateClientToOrchestratorEvent,
+  ConversationConfigUpdateClientToOrchestratorEvent,
   ConversationInitiationClientToOrchestratorEvent,
   InputAudioChunk,
   McpToolApprovalResultClientToOrchestratorEvent,
