@@ -1,4 +1,4 @@
-import { Outgoing } from "@elevenlabs/types";
+import { Outgoing, AudioAlignmentEvent } from "@elevenlabs/types";
 import {
   AgentChatResponsePartClientEvent,
   AgentResponse,
@@ -6,7 +6,6 @@ import {
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
-  AudioEventAlignment,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
@@ -40,7 +39,7 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
-export type AudioAlignmentEvent = AudioEventAlignment;
+export { AudioAlignmentEvent };
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
