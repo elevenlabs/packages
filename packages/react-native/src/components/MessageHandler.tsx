@@ -181,11 +181,6 @@ export const MessageHandler = ({
         break;
       case "audio": {
         const audioEvent = message.audio_event as AudioEventWithAlignment;
-        console.log("[MessageHandler] Audio event received:", {
-          hasAudioBase64: !!audioEvent.audio_base_64,
-          hasAlignment: !!audioEvent.alignment,
-          audioEventKeys: Object.keys(audioEvent),
-        });
         if (audioEvent.audio_base_64) {
           callbacksRef.current.onAudio?.(audioEvent.audio_base_64);
         }

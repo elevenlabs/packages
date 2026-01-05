@@ -161,6 +161,11 @@ export class VoiceConversation extends BaseConversation {
 
   protected override handleAudio(event: AgentAudioEvent) {
     super.handleAudio(event);
+
+    if (event.audio_event.alignment && this.options.onAudioAlignment) {
+      this.options.onAudioAlignment(event.audio_event.alignment);
+    }
+
     if (this.lastInterruptTimestamp <= event.audio_event.event_id) {
       if (event.audio_event.audio_base_64) {
         this.options.onAudio?.(event.audio_event.audio_base_64);

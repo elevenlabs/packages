@@ -12,7 +12,7 @@ export type {
   ConversationOptions,
   ConversationConfig,
   ConversationEvent,
-  AudioAlignmentData,
+  AudioAlignmentEvent,
   AudioEventWithAlignment,
   AudioSessionConfig,
 } from "./types";

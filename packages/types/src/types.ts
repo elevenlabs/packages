@@ -5,6 +5,8 @@ import type * as Generated from "../generated/types/asyncapi-types";
  */
 export type Role = "user" | "agent";
 
+export type AudioAlignmentEvent = Generated.AudioEventAlignment;
+
 /**
  * Current mode of the conversation
  */
