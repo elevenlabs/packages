@@ -107,6 +107,7 @@ export const DefaultTextContents = {
   voice_mode: "Switch to voice mode",
   switched_to_text_mode: "Switched to text mode",
   switched_to_voice_mode: "Switched to voice mode",
+  switch_to_voice: "Enable voice mode",
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
