@@ -6,6 +6,7 @@ import {
 import { useConversation } from "../contexts/conversation";
 import { TextArea } from "../components/TextArea";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { ModeToggleButton } from "./ModeToggleButton";
 import { SizeTransition } from "../components/SizeTransition";
 import { CallButton } from "./CallButton";
 import { Signal, useComputed, useSignal } from "@preact/signals";
@@ -28,7 +29,8 @@ export function SheetActions({
 }: SheetActionsProps) {
   const userMessage = useSignal("");
   const textOnly = useIsConversationTextOnly();
-  const { text_input_enabled } = useWidgetConfig().value;
+  const widgetConfig = useWidgetConfig();
+  const { text_input_enabled } = widgetConfig.value;
   const text = useTextContents();
   const {
     isDisconnected,
@@ -105,8 +107,9 @@ export function SheetActions({
           </InOutTransition>
         </div>
       )}
-      <div className="flex h-11 items-center">
+      <div className="flex h-11 items-center gap-1">
         <TriggerMuteButton visible={!textOnly.value && !isDisconnected.value} />
+        <ModeToggleButton visible={!isDisconnected.value && widgetConfig.value.supports_text_only} />
         <SizeTransition
           visible={!isDisconnected.value || showTranscript}
           className="p-1"

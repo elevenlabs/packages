@@ -90,6 +90,7 @@ export const DefaultTextContents = {
   new_call: "New call",
   end_call: "End",
   mute_microphone: "Mute microphone",
+  switch_to_voice: "Enable voice mode",
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",

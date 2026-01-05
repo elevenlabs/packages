@@ -4,6 +4,7 @@ import {
   Role,
   SessionConfig,
   Status,
+  VoiceConversation,
 } from "@elevenlabs/client";
 import { PACKAGE_VERSION } from "../version";
 import { computed, signal, useSignalEffect } from "@preact/signals";
@@ -88,7 +89,7 @@ function useConversationSetup() {
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
+  const { isMuted, setIsMuted } = useMicConfig();
 
   useSignalEffect(() => {
     const muted = isMuted.value;
@@ -116,6 +117,8 @@ function useConversationSetup() {
     const transcript = signal<TranscriptEntry[]>([]);
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
+    const voiceEnabled = signal<boolean>(false); 
+    const enablingVoice = signal<boolean>(false); 
 
     return {
       status,
@@ -127,6 +130,8 @@ function useConversationSetup() {
       canSendFeedback,
       conversationIndex,
       conversationTextOnly,
+      voiceEnabled,
+      enablingVoice,
       transcript,
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
@@ -288,6 +293,8 @@ function useConversationSetup() {
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
+              voiceEnabled.value = false; 
+              enablingVoice.value = false; 
               streamingMessageIndexRef.current = null;
               isReceivingStreamRef.current = false;
               transcript.value = [
@@ -311,6 +318,21 @@ function useConversationSetup() {
                   "[ConversationalAI] Disconnected due to an error:",
                   details.message
                 );
+              }
+            },
+            onConversationModeChange: ({ mode: newMode }: { mode: string }) => {
+              console.log(`[Widget] Backend confirmed mode change: ${newMode}`);
+              enablingVoice.value = false; 
+              
+              if (newMode === "voice") {
+                voiceEnabled.value = true;
+                conversationTextOnly.value = false;
+                console.log('[Widget] Voice mode confirmed and enabled');
+              } else if (newMode === "text") {
+                // Backend reverted to text mode due to some error, so show the button again
+                voiceEnabled.value = false;
+                conversationTextOnly.value = true;
+                console.log('[Widget] Reverted to text mode, button will reappear');
               }
             },
           });
@@ -377,8 +399,44 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
+      enableVoiceMode: async () => {
+        const conversation = conversationRef.current;
+        if (!conversation?.isOpen()) {
+          return;
+        }
+        
+        const currentTextMode = conversationTextOnly.peek();
+        if (!currentTextMode || voiceEnabled.peek() || enablingVoice.peek()) {
+          return;
+        }
+        
+        try {
+          enablingVoice.value = true; // Set loading state
+          console.log('[Widget] Enabling voice mode - upgrading from TextConversation to VoiceConversation...');
+          
+          const upgradedConversation = await (VoiceConversation as any).upgradeFromTextConversation(
+            conversation as any,
+            {}
+          );
+          
+          conversationRef.current = upgradedConversation;
+          
+          conversationTextOnly.value = false;
+          setIsMuted(false);
+          
+          (conversationRef.current as any).setTextOnlyMode(false);
+          console.log('[Widget] Voice mode upgrade sent, waiting for backend confirmation...');          
+        } catch (error) {
+          console.error('[Widget] Failed to enable voice mode:', error);
+          enablingVoice.value = false;
+          throw error;
+        }
+      },
     };
-  }, [config, isMuted]);
+  }, [config, isMuted, setIsMuted]);
 }
 
 function triggerCallEvent(

@@ -39,6 +39,8 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
+export type ConversationModeChangeEvent =
+  import("@elevenlabs/types/generated/types/asyncapi-types").ConversationModeChangeClientEvent;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
@@ -58,7 +60,8 @@ export type IncomingSocketEvent =
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
-  | ErrorMessageEvent;
+  | ErrorMessageEvent
+  | ConversationModeChangeEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
@@ -74,6 +77,8 @@ export type UserMessageEvent = Outgoing.UserMessageClientToOrchestratorEvent;
 export type UserActivityEvent = Outgoing.UserActivityClientToOrchestratorEvent;
 export type MCPToolApprovalResultEvent =
   Outgoing.McpToolApprovalResultClientToOrchestratorEvent;
+export type ConversationConfigUpdateEvent =
+  Outgoing.ConversationConfigUpdateClientToOrchestratorEvent;
 
 export type OutgoingSocketEvent =
   | PongEvent
@@ -84,7 +89,8 @@ export type OutgoingSocketEvent =
   | ContextualUpdateEvent
   | UserMessageEvent
   | UserActivityEvent
-  | MCPToolApprovalResultEvent;
+  | MCPToolApprovalResultEvent
+  | ConversationConfigUpdateEvent;
 
 export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
   return !!event.type;

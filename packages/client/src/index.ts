@@ -31,6 +31,7 @@ export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
+export { BaseConversation } from "./BaseConversation";
 
 // Scribe exports
 export {

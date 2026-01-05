@@ -1,6 +1,6 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
 import { Input, type InputConfig } from "./utils/input";
-import { Output } from "./utils/output";
+import { Output, type OutputConfig } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
 import { WebRTCConnection } from "./utils/WebRTCConnection";
@@ -24,6 +24,75 @@ export class VoiceConversation extends BaseConversation {
       }
     }
     return null;
+  }
+
+  public static async upgradeFromTextConversation(
+    textConversation: BaseConversation,
+    options: Partial<
+      InputConfig &
+        OutputConfig & {
+          workletPaths?: {
+            rawAudioProcessor?: string;
+            audioConcatProcessor?: string;
+          };
+          libsampleratePath?: string;
+          useWakeLock?: boolean;
+        }
+    >
+  ): Promise<VoiceConversation> {
+    const connection = (textConversation as any).connection as BaseConnection;
+    const fullOptions = (textConversation as any).options as Options;
+
+    let input: Input | null = null;
+    let output: Output | null = null;
+    let preliminaryInputStream: MediaStream | null = null;
+
+    const useWakeLock = options.useWakeLock ?? true;
+    let wakeLock: WakeLockSentinel | null = null;
+    if (useWakeLock) {
+      wakeLock = await VoiceConversation.requestWakeLock();
+    }
+
+    try {
+      preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      [input, output] = await Promise.all([
+        Input.create({
+          ...connection.inputFormat,
+          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+          inputDeviceId: options.inputDeviceId,
+          workletPaths: options.workletPaths,
+          libsampleratePath: options.libsampleratePath,
+        }),
+        Output.create({
+          ...connection.outputFormat,
+          outputDeviceId: options.outputDeviceId,
+          workletPaths: options.workletPaths,
+        }),
+      ]);
+
+      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      preliminaryInputStream = null;
+
+      // Create VoiceConversation with existing connection
+      return new VoiceConversation(
+        fullOptions,
+        connection,
+        input,
+        output,
+        wakeLock
+      );
+    } catch (error) {
+      preliminaryInputStream?.getTracks().forEach(track => track.stop());
+      await input?.close();
+      await output?.close();
+      try {
+        await wakeLock?.release();
+      } catch (_e) {}
+      throw error;
+    }
   }
 
   public static async startSession(

@@ -184,6 +184,11 @@ export interface SourceInfo {
   version?: string;
 }
 
+export interface ConversationConfigUpdate {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
+}
+
 export interface Audio {
   type: "audio";
   audio_event: AudioEvent;
@@ -481,6 +486,17 @@ export type ErrorEventErrorType =
   | "redis_timeout_error"
   | "unknown_websocket_crash";
 
+export interface ConversationModeChange {
+  type: "conversation_mode_change";
+  conversation_mode_change_event: ConversationModeChangeEvent;
+}
+
+export interface ConversationModeChangeEvent {
+  mode: ConversationModeChangeEventMode;
+}
+
+export type ConversationModeChangeEventMode = "text" | "voice";
+
 export interface AudioClientEvent {
   type: "audio";
   audio_event: AudioEvent;
@@ -565,6 +581,11 @@ export interface ErrorClientEvent {
   error_event: ErrorEvent;
 }
 
+export interface ConversationModeChangeClientEvent {
+  type: "conversation_mode_change";
+  conversation_mode_change_event: ConversationModeChangeEvent;
+}
+
 export interface PongClientToOrchestratorEvent {
   type: "pong";
   event_id: number;
@@ -610,6 +631,11 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   dynamic_variables?: Record<string, any>;
   user_id?: string;
   source_info?: SourceInfo;
+}
+
+export interface ConversationConfigUpdateClientToOrchestratorEvent {
+  type: "conversation_config_update";
+  conversation_config_override: ConversationConfigOverride;
 }
 
 export interface InputAudioChunk {

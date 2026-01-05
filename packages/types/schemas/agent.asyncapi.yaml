@@ -65,6 +65,7 @@ channels:
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
           - $ref: "#/components/messages/ErrorMessage"
+          - $ref: "#/components/messages/ConversationModeChange"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -79,6 +80,7 @@ channels:
           - $ref: "#/components/messages/MCPToolApprovalResult"
           - $ref: "#/components/messages/ContextualUpdate"
           - $ref: "#/components/messages/ConversationInitiation"
+          - $ref: "#/components/messages/ConversationConfigUpdate"
 components:
   messages:
     # ===== CLIENT → SERVER MESSAGES =====
@@ -154,6 +156,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ConversationInitiationPayload"
+
+    ConversationConfigUpdate:
+      name: ConversationConfigUpdateClientToOrchestratorEvent
+      title: Conversation Config Update
+      summary: Update conversation configuration mid-conversation
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConversationConfigUpdatePayload"
 
     # ===== SERVER → CLIENT MESSAGES =====
 
@@ -310,6 +320,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ErrorPayload"
+
+    ConversationModeChange:
+      name: ConversationModeChangeClientEvent
+      title: Conversation Mode Change
+      summary: Notification of conversation mode change (text/voice)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConversationModeChangePayload"
 
   schemas:
     ClientEvent:
@@ -649,6 +667,16 @@ components:
           description: Unique identifier for the user
         source_info:
           $ref: "#/components/schemas/SourceInfo"
+
+    ConversationConfigUpdatePayload:
+      type: object
+      required: [type, conversation_config_override]
+      properties:
+        type:
+          type: string
+          const: conversation_config_update
+        conversation_config_override:
+          $ref: "#/components/schemas/ConversationConfigClientOverride"
 
     # ===== SERVER MESSAGE PAYLOADS =====
 
@@ -1153,6 +1181,22 @@ components:
           const: error
         error_event:
           $ref: "#/components/schemas/ErrorData"
+
+    ConversationModeChangePayload:
+      type: object
+      required: [type, conversation_mode_change_event]
+      properties:
+        type:
+          type: string
+          const: conversation_mode_change
+        conversation_mode_change_event:
+          type: object
+          required: [mode]
+          properties:
+            mode:
+              type: string
+              enum: [text, voice]
+              description: The current conversation mode
 
     ErrorData:
       type: object

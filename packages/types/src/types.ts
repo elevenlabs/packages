@@ -85,6 +85,9 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
+  onConversationModeChange?: (
+    props: Generated.ConversationModeChangeClientEvent["conversation_mode_change_event"]
+  ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
