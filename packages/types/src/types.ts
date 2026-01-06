@@ -29,10 +29,14 @@ export type DisconnectionDetails =
       reason: "error";
       message: string;
       context: Event;
+      closeCode?: number;
+      closeReason?: string;
     }
   | {
       reason: "agent";
       context?: CloseEvent;
+      closeCode?: number;
+      closeReason?: string;
     }
   | {
       reason: "user";
