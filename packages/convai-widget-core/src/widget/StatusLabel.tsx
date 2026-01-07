@@ -5,6 +5,7 @@ import { useComputed, useSignalEffect } from "@preact/signals";
 import { InOutTransition } from "../components/InOutTransition";
 import { useTextContents } from "../contexts/text-contents";
 import { useIsConversationTextOnly } from "../contexts/widget-config";
+import { useConversationMode } from "../contexts/conversation-mode";
 
 export function StatusLabel({
   className,
@@ -12,11 +13,12 @@ export function StatusLabel({
 }: HTMLAttributes<HTMLDivElement>) {
   const { status, isSpeaking } = useConversation();
   const textOnly = useIsConversationTextOnly();
+  const { isTextMode } = useConversationMode();
   const text = useTextContents();
   const currentLabel = useComputed(() =>
     status.value !== "connected"
       ? text.connecting_status.value
-      : textOnly.value
+      : textOnly.value || isTextMode.value
         ? text.chatting_status.value
         : isSpeaking.value
           ? text.speaking_status.value

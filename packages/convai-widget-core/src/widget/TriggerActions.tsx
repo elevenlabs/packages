@@ -3,6 +3,7 @@ import { useConversation } from "../contexts/conversation";
 import { CallButton } from "./CallButton";
 import { TriggerLanguageSelect } from "./TriggerLanguageSelect";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { SizeTransition } from "../components/SizeTransition";
 
 export function TriggerActions() {
   const variant = useWidgetConfig().value.variant;
@@ -19,7 +20,9 @@ export function TriggerActions() {
         }
       />
       <TriggerLanguageSelect visible={isDisconnected.value} />
-      <TriggerMuteButton visible={!isDisconnected.value} />
+      <SizeTransition visible={!isDisconnected.value} className="p-1">
+        <TriggerMuteButton />
+      </SizeTransition>
     </>
   );
 }

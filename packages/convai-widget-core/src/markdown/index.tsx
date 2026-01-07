@@ -1,41 +1,90 @@
 /**
- * Heavily stripped down version of Streamdown for use in the widget. 
+ * Heavily stripped down version of Streamdown for use in the widget.
  */
 import { createContext, memo, useId, useMemo } from "preact/compat";
-import ReactMarkdown, { type Options } from "react-markdown";
 
-import { harden } from "rehype-harden";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeRaw from "rehype-raw";
+import { harden as rehypeHarden } from "rehype-harden";
+import remarkCjkFriendly from "remark-cjk-friendly";
+import remarkCjkFriendlyGfmStrikethrough from "remark-cjk-friendly-gfm-strikethrough";
 import remarkGfm from "remark-gfm";
-import type { Pluggable } from "unified";
+import type { PluggableList } from "unified";
 import { components as defaultComponents } from "./components/components";
+import { Markdown, type Options } from "./utils/markdown";
+import { allowedDomainsToLinkPrefixes } from "./utils/allowedDomainsToLinkPrefixes";
+import type { MarkdownLinkConfig } from "../contexts/widget-config";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { cn } from "../utils/cn";
 import { ParsersContext, parserConfig } from "./utils/highlighter";
-export { defaultUrlTransform } from "react-markdown";
 
-const defaultRehypePlugins: Record<string, Pluggable> = {
-  harden: [
-    harden,
-    {
-      allowedImagePrefixes: ["*"],
-      allowedLinkPrefixes: ["*"],
-      defaultOrigin: undefined,
-      allowDataImages: true,
-    },
-  ],
-  raw: rehypeRaw,
-} as const;
+function getDefaultOrigin(): string {
+  const isInIframe = window.location !== window.parent.location;
 
-const defaultRemarkPlugins: Record<string, Pluggable> = {
-  gfm: [remarkGfm, {}],
-} as const;
+  if (isInIframe) {
+    // Prefer ancestorOrigins (more reliable), fall back to referrer
+    // Firefox do not support https://caniuse.com/#search=ancestorOrigins
+    const { ancestorOrigins } = document.location;
+    if (ancestorOrigins && ancestorOrigins.length) {
+      return ancestorOrigins[0];
+    }
+    if (document.referrer) {
+      try {
+        return new URL(document.referrer).origin;
+      } catch {
+        // Fall through to current origin
+      }
+    }
+  }
 
-export type StreamdownProps = Options & {
+  return document.location.origin;
+}
+
+function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
+  const defaultOrigin = getDefaultOrigin();
+  const allowedLinkPrefixes = [
+    defaultOrigin,
+    ...allowedDomainsToLinkPrefixes(linkConfig),
+  ];
+
+  return [
+    rehypeRaw,
+    [
+      rehypeSanitize,
+      {
+        ...defaultSchema,
+        protocols: {
+          ...defaultSchema.protocols,
+          src: [...(defaultSchema.protocols?.src || []), "data"],
+        },
+      },
+    ],
+    [
+      rehypeHarden,
+      {
+        allowedImagePrefixes: ["*"],
+        allowedLinkPrefixes,
+        allowedProtocols: ["*"],
+        defaultOrigin,
+        allowDataImages: true,
+      },
+    ]
+  ];
+}
+
+const defaultRemarkPlugins: PluggableList = [
+  [remarkGfm, {}],
+  [remarkCjkFriendly, {}],
+  [remarkCjkFriendlyGfmStrikethrough, {}],
+];
+
+export type StreamdownProps = {
+  children?: string;
   parseIncompleteMarkdown?: boolean;
   className?: string;
   isAnimating?: boolean;
+  linkConfig: MarkdownLinkConfig;
 };
 
 export type StreamdownRuntimeContextType = {
@@ -47,13 +96,14 @@ export const StreamdownRuntimeContext =
     isAnimating: false,
   });
 
-type BlockProps = Options & {
+type BlockProps = {
   content: string;
   shouldParseIncompleteMarkdown: boolean;
+  markdownOptions: Readonly<Options>;
 };
 
 const Block = memo(
-  ({ content, shouldParseIncompleteMarkdown, ...props }: BlockProps) => {
+  ({ content, shouldParseIncompleteMarkdown, markdownOptions }: BlockProps) => {
     const parsedContent = useMemo(
       () =>
         typeof content === "string" && shouldParseIncompleteMarkdown
@@ -62,20 +112,24 @@ const Block = memo(
       [content, shouldParseIncompleteMarkdown]
     );
 
-    return <ReactMarkdown {...props}>{parsedContent}</ReactMarkdown>;
+    return (
+      <Markdown {...markdownOptions}>{parsedContent}</Markdown>
+    );
   },
-  (prevProps, nextProps) => prevProps.content === nextProps.content
+  (prevProps, nextProps) =>
+    prevProps.content === nextProps.content &&
+    prevProps.shouldParseIncompleteMarkdown ===
+    nextProps.shouldParseIncompleteMarkdown &&
+    prevProps.markdownOptions === nextProps.markdownOptions
 );
 
 export const WidgetStreamdown = memo(
   ({
     children,
     parseIncompleteMarkdown: shouldParseIncompleteMarkdown = true,
-    components,
     className,
     isAnimating = false,
-    urlTransform = value => value,
-    ...props
+    linkConfig,
   }: StreamdownProps) => {
     const generatedId = useId();
     const blocks = useMemo(
@@ -83,23 +137,25 @@ export const WidgetStreamdown = memo(
         parseMarkdownIntoBlocks(typeof children === "string" ? children : ""),
       [children]
     );
+    const markdownOptions = useMemo<Readonly<Options>>(
+      () => ({
+        components: defaultComponents,
+        rehypePlugins: createRehypePlugins(linkConfig),
+        remarkPlugins: defaultRemarkPlugins,
+      }),
+      [linkConfig]
+    );
+
     return (
       <ParsersContext.Provider value={parserConfig}>
         <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-          <div className={cn("px-2 markdown", className)}>
+          <div className={cn("markdown", className)}>
             {blocks.map((block, index) => (
               <Block
-                components={{
-                  ...defaultComponents,
-                  ...components,
-                }}
                 content={block}
                 key={`${generatedId}-block-${index}`}
-                rehypePlugins={Object.values(defaultRehypePlugins)}
-                remarkPlugins={Object.values(defaultRemarkPlugins)}
                 shouldParseIncompleteMarkdown={shouldParseIncompleteMarkdown}
-                urlTransform={urlTransform}
-                {...props}
+                markdownOptions={markdownOptions}
               />
             ))}
           </div>
@@ -109,5 +165,8 @@ export const WidgetStreamdown = memo(
   },
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children &&
-    prevProps.isAnimating === nextProps.isAnimating
+    prevProps.isAnimating === nextProps.isAnimating &&
+    prevProps.className === nextProps.className &&
+    prevProps.parseIncompleteMarkdown === nextProps.parseIncompleteMarkdown &&
+    prevProps.linkConfig === nextProps.linkConfig
 );

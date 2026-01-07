@@ -7,6 +7,7 @@ const ICON_MAP = {
   chat: ChatIcon,
   mic: MicIcon,
   "mic-off": MicOffIcon,
+  soundwave: SoundwaveIcon,
   check: CheckIcon,
   "chevron-down": ChevronDownIcon,
   "chevron-up": ChevronUpIcon,
@@ -15,10 +16,13 @@ const ICON_MAP = {
   copy: CopyIcon,
   download: DownloadIcon,
   wrap: WrapTextIcon,
+  maximize: MaximizeIcon,
+  minimize: MinimizeIcon,
 };
 
 const SIZE_CLASSES = {
-  sm: "text-xs",
+  xs: "text-xs",
+  sm: "text-sm",
   md: "text-lg",
   lg: "text-xl",
 };
@@ -126,6 +130,25 @@ function MicOffIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
+function SoundwaveIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      height="1em"
+      width="1em"
+      viewBox="0 0 18 18"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <rect x="1.5" y="6.75" width="2" height="4.5" rx="1" />
+      <rect x="5" y="4.5" width="2" height="9" rx="1" />
+      <rect x="8.5" y="2.25" width="2" height="13.5" rx="1" />
+      <rect x="12" y="4.5" width="2" height="9" rx="1" />
+      <rect x="15.5" y="6.75" width="2" height="4.5" rx="1" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   return (
     <svg
@@ -193,7 +216,7 @@ function SendIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
       fill="currentColor"
       {...props}
     >
-      <path d="M2.59413 5.1485C2.04 3.39377 3.86657 1.83482 5.51245 2.65776L16.47 8.13653C18.0055 8.90429 18.0055 11.0955 16.47 11.8633L5.51245 17.3421C3.86656 18.165 2.04 16.6061 2.59413 14.8513L3.86297 10.8333H7.50006C7.9603 10.8333 8.33339 10.4602 8.33339 10C8.33339 9.53976 7.9603 9.16667 7.50006 9.16667H3.86302L2.59413 5.1485Z" />
+      <path d="M4.64337 17.6645C3.243 18.1313 1.97185 16.6817 2.6176 15.3543L8.50148 3.25965C9.10962 2.00957 10.8908 2.00958 11.4989 3.25965L17.3828 15.3543C18.0286 16.6817 16.7574 18.1313 15.357 17.6645L10.8334 16.1567L10.8334 12.5005C10.8334 12.0403 10.4603 11.6672 10 11.6672C9.5398 11.6672 9.16671 12.0403 9.16671 12.5005L9.16671 16.1568L4.64337 17.6645Z" />
     </svg>
   );
 }
@@ -387,5 +410,49 @@ export function FeedbackIcon({
         </defs>
       </svg>
     </slot>
+  );
+}
+
+function MaximizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M15 3h6v6" />
+      <path d="m21 3-7 7" />
+      <path d="m3 21 7-7" />
+      <path d="M9 21H3v-6" />
+    </svg>
+  );
+}
+
+function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="m14 10 7-7" />
+      <path d="M20 10h-6V4" />
+      <path d="m3 21 7-7" />
+      <path d="M4 14h6v6" />
+    </svg>
   );
 }

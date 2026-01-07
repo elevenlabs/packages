@@ -30,7 +30,7 @@ export function SheetLanguageSelect({
         <Flag size="sm" flagCode={language.value.flagCode} />
         {language.value.name}
         <Select.Icon className="text-base-subtle" asChild>
-          <Icon size="sm" name="chevron-down" />
+          <Icon size="xs" name="chevron-down" />
         </Select.Icon>
       </Select.Trigger>
     </LanguageSelect>

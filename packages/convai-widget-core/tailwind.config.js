@@ -28,6 +28,8 @@ export default {
       md: "0 2px 24px 1px rgba(0, 0, 0, 0.16)",
       lg: "0 2px 40px 1px rgba(0, 0, 0, 0.12)",
       header: "0 0 1px 0 rgba(0, 0, 0, 0.40), 0 2px 2px 0 rgba(0, 0, 0, 0.04)",
+      "scroll-fade-top": "0 -8px 16px -4px rgba(0, 0, 0, 0.1)",
+      "scroll-fade-bottom": "0 8px 16px -4px rgba(0, 0, 0, 0.1)",
     },
     data: {
       shown: 'shown="true"',
@@ -62,7 +64,14 @@ export default {
     },
     zIndex: {
       1: "1",
+      2: "2",
       10: "10",
+    },
+    maxWidth: {
+      dvw: "100dvw",
+    },
+    maxHeight: {
+      dvh: "100dvh",
     },
   },
   plugins: [],

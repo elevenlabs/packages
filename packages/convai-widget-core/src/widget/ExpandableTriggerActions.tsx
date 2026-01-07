@@ -39,9 +39,12 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
       >
         <CallButton iconOnly isDisconnected={false} />
       </SizeTransition>
-      <TriggerMuteButton
+      <SizeTransition
         visible={!textOnly.value && !expanded.value && !isDisconnected.value}
-      />
+        className="p-1"
+      >
+        <TriggerMuteButton />
+      </SizeTransition>
       <SizeTransition grow={isDisconnected.value} visible className="p-1">
         <Button
           className="w-full"

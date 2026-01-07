@@ -6,6 +6,7 @@ import {
 import { useCallback, useContext, useEffect, useRef } from "preact/hooks";
 import { Button } from "../../components/Button";
 import { useTextContents } from "../../contexts/text-contents";
+import { useSyntaxTheme } from "../../contexts/widget-config";
 import { cn } from "../../utils/cn";
 import { StreamdownRuntimeContext } from "../index";
 import { Code, languageParser } from "../utils/highlighter";
@@ -28,7 +29,8 @@ export const CodeBlock = ({
   const { isCopied, copyToClipboard, disabled } = useCopyCode({ code });
   const textContents = useTextContents();
   const isWrapped = useSignal(false);
-  
+  const syntaxTheme = useSyntaxTheme();
+
   return (
     <CodeBlockContext.Provider value={code}>
       <ContentBlock data-code-block-container data-language={language}>
@@ -57,6 +59,7 @@ export const CodeBlock = ({
             className={cn("pt-1.5 pb-2", className)}
             data-code-block
             data-language={language}
+            data-syntax-theme={syntaxTheme.value}
             {...rest}
           >
             <pre className={cn(

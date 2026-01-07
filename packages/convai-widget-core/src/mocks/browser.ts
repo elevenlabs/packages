@@ -74,6 +74,69 @@ export const AGENTS = {
       },
     },
   },
+  markdown: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
+    first_message: `# Heading 1
+
+This is **bold** and *italic* text.
+
+- List item 1
+- List item 2
+
+1. Ordered item 1
+2. Ordered item 2
+
+\`inline code\`
+
+\`\`\`javascript
+const codeBlock = true;
+\`\`\`
+
+[Link text](https://example.com)
+
+![Alt text](data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs=)
+
+> Blockquote text
+
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+
+---
+`,
+  },
+  markdown_no_links: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [],
+    first_message: `No links should be clickable: [Link text](https://example.com/allowed)`,
+  },
+  markdown_domain_allowlist: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "example.com" }],
+    first_message: `[Allowed https link](https://example.com/allowed)
+
+[Allowed http link](http://example.com/http-allowed)
+
+[Blocked link](https://evil.com/blocked)
+`,
+  },
+  markdown_default_domain: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: `[Relative link](/relative)`,
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {

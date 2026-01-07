@@ -26,10 +26,18 @@ export function parsePlacement(placement: string | undefined): Placement {
 
 export type FeedbackMode = "none" | "during" | "end";
 export type FeedbackType = "rating";
+export type SyntaxHighlightTheme = "light" | "dark";
+
+export interface AllowlistItem {
+  hostname: string;
+}
 
 export interface WidgetConfig {
   variant: Variant;
   placement: Placement;
+  markdown_link_allowed_hosts?: AllowlistItem[];
+  markdown_link_include_www?: boolean;
+  markdown_link_allow_http?: boolean;
   avatar: AvatarConfig;
   feedback_mode: FeedbackMode;
   end_feedback?: {
@@ -65,6 +73,8 @@ export interface WidgetConfig {
   supports_text_only: boolean;
   first_message?: string;
   use_rtc?: boolean;
+  syntax_highlight_theme?: SyntaxHighlightTheme;
+  conversation_mode_toggle_enabled?: boolean;
 }
 
 export type AvatarConfig =
@@ -90,6 +100,10 @@ export const DefaultTextContents = {
   new_call: "New call",
   end_call: "End",
   mute_microphone: "Mute microphone",
+  text_mode: "Switch to text mode",
+  voice_mode: "Switch to voice mode",
+  switched_to_text_mode: "Switched to text mode",
+  switched_to_voice_mode: "Switched to voice mode",
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
@@ -103,8 +117,8 @@ export const DefaultTextContents = {
   chatting_status: "Chatting with AI Agent",
 
   input_label: "Text message input",
-  input_placeholder: "Send a message",
-  input_placeholder_text_only: "Send a message",
+  input_placeholder: "Send a message...",
+  input_placeholder_text_only: "Send a message...",
   input_placeholder_new_conversation: "Start a new conversation",
 
   user_ended_conversation: "You ended the conversation",
