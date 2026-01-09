@@ -242,7 +242,13 @@ export class ScribeRealtime {
     options: MicrophoneOptions,
     connection: RealtimeConnection
   ): Promise<void> {
+    const TARGET_SAMPLE_RATE = 16000;
+
     try {
+      // Check if the browser supports sample rate constraints
+      const supportsSampleRateConstraint =
+        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -251,25 +257,40 @@ export class ScribeRealtime {
           noiseSuppression: options.microphone?.noiseSuppression ?? true,
           autoGainControl: options.microphone?.autoGainControl ?? true,
           channelCount: options.microphone?.channelCount ?? 1,
-          sampleRate: { ideal: 16000 },
+          ...(supportsSampleRateConstraint
+            ? { sampleRate: { ideal: TARGET_SAMPLE_RATE } }
+            : {}),
         },
       });
 
-      // Create audio context at 16kHz (Scribe's default)
-      const audioContext = new AudioContext({ sampleRate: 16000 });
+      // Create audio context - use fixed sample rate only if browser supports it
+      // Firefox requires the AudioContext to match the microphone's native sample rate
+      const audioContext = new AudioContext(
+        supportsSampleRateConstraint ? { sampleRate: TARGET_SAMPLE_RATE } : {}
+      );
 
       // Load scribe worklet
       await loadScribeAudioProcessor(audioContext.audioWorklet);
 
       // Set up audio pipeline
       const source = audioContext.createMediaStreamSource(stream);
-      const workletNode = new AudioWorkletNode(
+      const scribeNode = new AudioWorkletNode(
         audioContext,
         "scribeAudioProcessor"
       );
 
+      // Configure the worklet with sample rate info for resampling
+      // (only needed when AudioContext sample rate differs from target)
+      if (audioContext.sampleRate !== TARGET_SAMPLE_RATE) {
+        scribeNode.port.postMessage({
+          type: "configure",
+          inputSampleRate: audioContext.sampleRate,
+          outputSampleRate: TARGET_SAMPLE_RATE,
+        });
+      }
+
       // Handle audio data from worklet
-      workletNode.port.onmessage = event => {
+      scribeNode.port.onmessage = event => {
         const { audioData } = event.data;
         // Convert ArrayBuffer to base64
         const bytes = new Uint8Array(audioData);
@@ -283,7 +304,7 @@ export class ScribeRealtime {
       };
 
       // Connect audio pipeline
-      source.connect(workletNode);
+      source.connect(scribeNode);
 
       // Resume audio context if needed
       if (audioContext.state === "suspended") {
@@ -296,7 +317,7 @@ export class ScribeRealtime {
           track.stop();
         });
         source.disconnect();
-        workletNode.disconnect();
+        scribeNode.disconnect();
         audioContext.close();
       };
     } catch (error) {

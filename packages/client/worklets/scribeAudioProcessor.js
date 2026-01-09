@@ -1,5 +1,7 @@
 /*
  * Scribe Audio Processor for converting microphone audio to PCM16 format
+ * Supports resampling for browsers like Firefox that don't support
+ * AudioContext sample rate constraints.
  * USED BY @elevenlabs/client
  */
 
@@ -8,15 +10,67 @@ class ScribeAudioProcessor extends AudioWorkletProcessor {
     super();
     this.buffer = [];
     this.bufferSize = 4096; // Buffer size for optimal chunk transmission
+
+    // Resampling state
+    this.inputSampleRate = null;
+    this.outputSampleRate = null;
+    this.resampleRatio = 1;
+    this.lastSample = 0;
+    this.resampleAccumulator = 0;
+
+    this.port.onmessage = ({ data }) => {
+      if (data.type === "configure") {
+        this.inputSampleRate = data.inputSampleRate;
+        this.outputSampleRate = data.outputSampleRate;
+        if (this.inputSampleRate && this.outputSampleRate) {
+          this.resampleRatio = this.inputSampleRate / this.outputSampleRate;
+        }
+      }
+    };
+  }
+
+  // Linear interpolation resampling
+  resample(inputData) {
+    if (this.resampleRatio === 1 || !this.inputSampleRate) {
+      return inputData;
+    }
+
+    const outputSamples = [];
+
+    for (let i = 0; i < inputData.length; i++) {
+      const currentSample = inputData[i];
+
+      // Generate output samples using linear interpolation
+      while (this.resampleAccumulator < 1) {
+        const interpolated =
+          this.lastSample +
+          (currentSample - this.lastSample) * this.resampleAccumulator;
+        outputSamples.push(interpolated);
+        this.resampleAccumulator += this.resampleRatio;
+      }
+
+      this.resampleAccumulator -= 1;
+      this.lastSample = currentSample;
+    }
+
+    return new Float32Array(outputSamples);
   }
 
   process(inputs) {
     const input = inputs[0];
     if (input.length > 0) {
-      const channelData = input[0]; // Get first channel (mono)
+      let channelData = input[0]; // Get first channel (mono)
+
+      // Resample if needed (for Firefox and other browsers that don't
+      // support AudioContext sample rate constraints)
+      if (this.resampleRatio !== 1) {
+        channelData = this.resample(channelData);
+      }
 
       // Add incoming audio to buffer
-      this.buffer.push(...channelData);
+      for (let i = 0; i < channelData.length; i++) {
+        this.buffer.push(channelData[i]);
+      }
 
       // When buffer reaches threshold, convert and send
       if (this.buffer.length >= this.bufferSize) {
