@@ -13,9 +13,9 @@
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@elevenlabs/react-native": "workspace:*",
-    "@livekit/react-native": "^2.7.6",
+    "@livekit/react-native": "^2.9.6",
     "@livekit/react-native-expo-plugin": "^1.0.1",
-    "@livekit/react-native-webrtc": "125.0.11",
+    "@livekit/react-native-webrtc": "^137.0.2",
     "expo": "~54.0.31",
     "expo-dev-client": "~6.0.20",
     "react": "19.1.0",

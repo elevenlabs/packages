@@ -319,9 +319,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - livekit-react-native-webrtc (125.0.11):
+  - livekit-react-native-webrtc (137.0.2):
     - React-Core
-    - WebRTC-SDK (= 125.6422.07)
+    - WebRTC-SDK (= 137.7151.04)
   - LiveKitExpoPlugin (1.0.1):
     - ExpoModulesCore
     - livekit-react-native
@@ -2571,7 +2571,7 @@ PODS:
     - React-utils (= 0.81.5)
     - SocketRocket
   - SocketRocket (0.7.1)
-  - WebRTC-SDK (125.6422.07)
+  - WebRTC-SDK (137.7151.04)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2596,9 +2596,9 @@ DEPENDENCIES:
   - "fmt (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/fmt.podspec`)"
   - "glog (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/glog.podspec`)"
   - "hermes-engine (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)"
-  - "livekit-react-native (from `../../../node_modules/.pnpm/@livekit+react-native@2.9.6_@livekit+react-native-webrtc@125.0.11_react-native@0.81.5_@_a966aec70a11bd1377a4a2b262dd4bd2/node_modules/@livekit/react-native`)"
-  - "livekit-react-native-webrtc (from `../../../node_modules/.pnpm/@livekit+react-native-webrtc@125.0.11_react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/@livekit/react-native-webrtc`)"
-  - "LiveKitExpoPlugin (from `../../../node_modules/.pnpm/@livekit+react-native-expo-plugin@1.0.1_@livekit+react-native@2.9.6_@livekit+react-nati_9bee1e02dd5e3e719d906db3f50c2827/node_modules/@livekit/react-native-expo-plugin/ios`)"
+  - "livekit-react-native (from `../../../node_modules/.pnpm/@livekit+react-native@2.9.6_@livekit+react-native-webrtc@137.0.2_react-native@0.81.5_@b_af537e42866274d3e16dc992a5bc3085/node_modules/@livekit/react-native`)"
+  - "livekit-react-native-webrtc (from `../../../node_modules/.pnpm/@livekit+react-native-webrtc@137.0.2_react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/@livekit/react-native-webrtc`)"
+  - "LiveKitExpoPlugin (from `../../../node_modules/.pnpm/@livekit+react-native-expo-plugin@1.0.1_@livekit+react-native@2.9.6_@livekit+react-nati_43979112cb1500f962a694aaf01e2354/node_modules/@livekit/react-native-expo-plugin/ios`)"
   - "RCT-Folly (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)"
   - "RCTDeprecation (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)"
   - "RCTRequired (from `../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/Libraries/Required`)"
@@ -2716,11 +2716,11 @@ EXTERNAL SOURCES:
     :podspec: "../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2025-07-07-RNv0.81.0-e0fc67142ec0763c6b6153ca2bf96df815539782
   livekit-react-native:
-    :path: "../../../node_modules/.pnpm/@livekit+react-native@2.9.6_@livekit+react-native-webrtc@125.0.11_react-native@0.81.5_@_a966aec70a11bd1377a4a2b262dd4bd2/node_modules/@livekit/react-native"
+    :path: "../../../node_modules/.pnpm/@livekit+react-native@2.9.6_@livekit+react-native-webrtc@137.0.2_react-native@0.81.5_@b_af537e42866274d3e16dc992a5bc3085/node_modules/@livekit/react-native"
   livekit-react-native-webrtc:
-    :path: "../../../node_modules/.pnpm/@livekit+react-native-webrtc@125.0.11_react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/@livekit/react-native-webrtc"
+    :path: "../../../node_modules/.pnpm/@livekit+react-native-webrtc@137.0.2_react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/@livekit/react-native-webrtc"
   LiveKitExpoPlugin:
-    :path: "../../../node_modules/.pnpm/@livekit+react-native-expo-plugin@1.0.1_@livekit+react-native@2.9.6_@livekit+react-nati_9bee1e02dd5e3e719d906db3f50c2827/node_modules/@livekit/react-native-expo-plugin/ios"
+    :path: "../../../node_modules/.pnpm/@livekit+react-native-expo-plugin@1.0.1_@livekit+react-native@2.9.6_@livekit+react-nati_43979112cb1500f962a694aaf01e2354/node_modules/@livekit/react-native-expo-plugin/ios"
   RCT-Folly:
     :podspec: "../../../node_modules/.pnpm/react-native@0.81.5_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -2873,7 +2873,7 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
   livekit-react-native: 7098d44b34b78ede49582a9ef5731c665faf43c7
-  livekit-react-native-webrtc: 4dd93b14cdd2ffcc9eaae07eaeff7f95a643db45
+  livekit-react-native-webrtc: c03e72c608fbb8284a99e095dd7835a85bdb0279
   LiveKitExpoPlugin: 8e0f4bdffa921c27c13e1504ea0e668b6f859278
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: 5eb1d2eeff5fb91151e8a8eef45b6c7658b6c897
@@ -2939,7 +2939,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 90f18a6f672aa65eb3216a7d8339c0a9a7b9fc4d
   ReactCommon: 5f0e5c09a64a2717215dd84380e1a747810406f2
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  WebRTC-SDK: dff00a3892bc570b6014e046297782084071657e
+  WebRTC-SDK: 40d4f5ba05cadff14e4db5614aec402a633f007e
   Yoga: 728df40394d49f3f471688747cf558158b3a3bd1
 
 PODFILE CHECKSUM: 8b86b6f5f52778358c8688d52aca31ef1e76af8d
