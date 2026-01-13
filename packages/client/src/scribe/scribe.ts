@@ -247,7 +247,7 @@ export class ScribeRealtime {
     try {
       // Check if the browser supports sample rate constraints
       const supportsSampleRateConstraint =
-        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+        typeof navigator.mediaDevices.getSupportedConstraints().sampleRate === "number";
 
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
