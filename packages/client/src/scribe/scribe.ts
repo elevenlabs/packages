@@ -245,10 +245,6 @@ export class ScribeRealtime {
     const TARGET_SAMPLE_RATE = 16000;
 
     try {
-      // Check if the browser supports sample rate constraints
-      const supportsSampleRateConstraint =
-        typeof navigator.mediaDevices.getSupportedConstraints().sampleRate === "number";
-
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -257,16 +253,18 @@ export class ScribeRealtime {
           noiseSuppression: options.microphone?.noiseSuppression ?? true,
           autoGainControl: options.microphone?.autoGainControl ?? true,
           channelCount: options.microphone?.channelCount ?? 1,
-          ...(supportsSampleRateConstraint
-            ? { sampleRate: { ideal: TARGET_SAMPLE_RATE } }
-            : {}),
+          sampleRate: { ideal: TARGET_SAMPLE_RATE },
         },
       });
 
-      // Create audio context - use fixed sample rate only if browser supports it
+      // Get the actual sample rate from the stream - the ideal may not have been honored
+      const trackSettings = stream.getAudioTracks()[0]?.getSettings();
+      const streamSampleRate = trackSettings?.sampleRate;
+
+      // Create audio context matching the stream's sample rate to avoid Firefox errors
       // Firefox requires the AudioContext to match the microphone's native sample rate
       const audioContext = new AudioContext(
-        supportsSampleRateConstraint ? { sampleRate: TARGET_SAMPLE_RATE } : {}
+        streamSampleRate ? { sampleRate: streamSampleRate } : {}
       );
 
       // Load scribe worklet
