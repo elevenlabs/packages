@@ -96,9 +96,14 @@ const ConversationScreen = () => {
     if (isStarting) return;
 
     setIsStarting(true);
+
     try {
+      const { EXPO_PUBLIC_AGENT_ID: agentId } = process.env;
+      if (!agentId) {
+        throw new Error("Expected EXPO_PUBLIC_AGENT_ID environment variable");
+      }
       await conversation.startSession({
-        agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+        agentId,
         userId: "demo-user",
       });
     } catch (error) {
