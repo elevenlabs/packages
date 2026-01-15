@@ -26,7 +26,7 @@ pnpm install @elevenlabs/react
 
 ### useConversation
 
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Conversational AI.
+React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Agent Platform.
 
 #### Initialize conversation
 
@@ -36,7 +36,7 @@ First, initialize the Conversation instance.
 const conversation = useConversation();
 ```
 
-Note that Conversational AI requires microphone access.
+Note that Agent Platform requires microphone access.
 Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
@@ -224,7 +224,7 @@ The SDK automatically routes both WebSocket and WebRTC connections to the approp
 
 ##### startConversation
 
-`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
+`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
 
 Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) and is always necessary.
 
