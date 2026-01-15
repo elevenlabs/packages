@@ -40,7 +40,7 @@ servers:
 
 channels:
   AgentMessages:
-    description: Main WebSocket channel for conversational AI
+    description: Main WebSocket channel for agents
     publish:
       summary: Messages sent from server to client
       message:

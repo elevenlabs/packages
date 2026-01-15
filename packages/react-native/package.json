@@ -1,7 +1,7 @@
 {
   "name": "@elevenlabs/react-native",
   "version": "0.5.7",
-  "description": "ElevenLabs React Native SDK for Conversational AI",
+  "description": "ElevenLabs React Native SDK for the Agent Platform",
   "main": "./dist/lib.js",
   "module": "./dist/lib.module.js",
   "source": "src/index.ts",
