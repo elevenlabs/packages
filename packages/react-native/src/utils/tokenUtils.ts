@@ -38,7 +38,7 @@ export const getConversationToken = async (
     return data.token;
   } catch (error) {
     throw new Error(
-      `Failed to get conversaion token: ${error instanceof Error ? error.message : "No message"}`
+      `Failed to get conversation token: ${error instanceof Error ? error.message : "No message"}`
     );
   }
 };
