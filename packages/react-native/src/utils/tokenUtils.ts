@@ -26,9 +26,14 @@ export const getConversationToken = async (
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to get conversation token: ${data.detail.message}`
-      );
+      if (
+        typeof data.detail === "object" &&
+        data.detail !== null &&
+        typeof data.detail.message === "string"
+      ) {
+        throw new Error(data.detail.message);
+      }
+      throw new Error("Missing error details or message");
     }
 
     if (!data.token) {
