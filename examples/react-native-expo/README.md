@@ -25,7 +25,7 @@ This example uses a public agent ID for demonstration purposes. In a production 
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Development Build
