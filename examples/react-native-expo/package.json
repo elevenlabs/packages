@@ -2,6 +2,7 @@
   "name": "elevenlabs-react-native-example",
   "version": "1.0.0",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "start": "expo start --tunnel",
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && npm start",
