@@ -198,6 +198,10 @@ pnpm run dev
 pnpm run create --name=my-new-package
 ```
 
+### Releasing
+
+Merge the latest ["Version Packages" PR](https://github.com/elevenlabs/packages/pulls?q=is%3Apr+%22Version+Packages%22+author%3Aapp%2Fgithub-actions+is%3Aopen).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
