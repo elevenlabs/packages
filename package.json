@@ -15,6 +15,7 @@
     "clean": "turbo clean"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "args": "^5.0.3",
     "fs-extra": "^11.2.0",
     "husky": "^9.1.3",
