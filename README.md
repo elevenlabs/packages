@@ -190,6 +190,9 @@ pnpm run test
 
 # Start development mode
 pnpm run dev
+
+# If the change needs a note in the changelog / release nodes, create a changeset
+pnpm run changeset
 ```
 
 ### Creating a New Package

@@ -13,6 +13,7 @@
     "prepare": "husky install",
     "dev": "turbo dev",
     "clean": "turbo clean",
+    "changeset": "changeset",
     "publish": "turbo build lint test && changeset version && changeset publish"
   },
   "devDependencies": {
