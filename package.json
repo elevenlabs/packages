@@ -12,7 +12,8 @@
     "generate:types": "turbo run generate --filter=@elevenlabs/types",
     "prepare": "husky install",
     "dev": "turbo dev",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "publish": "turbo build lint test && changeset version && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
