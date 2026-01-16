@@ -26,7 +26,7 @@ pnpm install @elevenlabs/react
 
 ### useConversation
 
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Agent Platform.
+React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Agents Platform.
 
 #### Initialize conversation
 
@@ -36,7 +36,7 @@ First, initialize the Conversation instance.
 const conversation = useConversation();
 ```
 
-Note that Agent Platform requires microphone access.
+Note that Agents Platform requires microphone access.
 Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
