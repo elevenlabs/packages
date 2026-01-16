@@ -17,6 +17,9 @@ export function constructOverrides(
       },
       tts: {
         voice_id: config.overrides.tts?.voiceId,
+        speed: config.overrides.tts?.speed,
+        stability: config.overrides.tts?.stability,
+        similarity_boost: config.overrides.tts?.similarityBoost,
       },
       conversation: {
         text_only: config.overrides.conversation?.textOnly,

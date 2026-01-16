@@ -14,7 +14,7 @@ A minimal React Native Expo app demonstrating the ElevenLabs React Native SDK fo
 cp .env.example .env
 ```
 
-Follow the ElevenLabs Conversational AI [quickstart guide](https://elevenlabs.io/docs/conversational-ai/quickstart) to create an agent and set your agent ID in the `.env` file.
+Follow the ElevenLabs Agents Platform [quickstart guide](https://elevenlabs.io/docs/agents-platform/quickstart) to create an agent and set your agent ID in the `.env` file.
 
 ### Security consideration
 
@@ -25,7 +25,7 @@ This example uses a public agent ID for demonstration purposes. In a production 
 Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Development Build

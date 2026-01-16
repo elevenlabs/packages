@@ -61,6 +61,11 @@ interface BaseOptions {
    * If not provided, the default URI will be used.
    */
   baseUri?: string;
+  /**
+   * Whether to receive a committed_transcript_with_timestamps event which includes word-level timestamps.
+   * @default false
+   */
+  includeTimestamps?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -74,7 +79,7 @@ export interface AudioOptions extends BaseOptions {
  */
 export interface MicrophoneOptions extends BaseOptions {
   microphone?: {
-    deviceId?: string;
+    deviceId?: ConstrainDOMString;
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;
@@ -96,7 +101,7 @@ export class ScribeRealtime {
   private static getWebSocketUri(
     baseUri: string = ScribeRealtime.DEFAULT_BASE_URI
   ): string {
-    return `${baseUri}/v1/speech-to-text/realtime-beta`;
+    return `${baseUri}/v1/speech-to-text/realtime`;
   }
 
   private static buildWebSocketUri(
@@ -105,14 +110,16 @@ export class ScribeRealtime {
     const baseUri = ScribeRealtime.getWebSocketUri(options.baseUri);
     const params = new URLSearchParams();
 
-    // Model ID is required, so no check required
+    // Model ID and token are required, so no check required
     params.append("model_id", options.modelId);
-
     params.append("token", options.token);
 
     // Add optional parameters if provided, with validation
     if (options.commitStrategy !== undefined) {
       params.append("commit_strategy", options.commitStrategy);
+    }
+    if (options.audioFormat !== undefined) {
+      params.append("audio_format", options.audioFormat);
     }
     if (options.vadSilenceThresholdSecs !== undefined) {
       if (
@@ -156,9 +163,14 @@ export class ScribeRealtime {
         options.minSilenceDurationMs.toString()
       );
     }
-
     if (options.languageCode !== undefined) {
       params.append("language_code", options.languageCode);
+    }
+    if (options.includeTimestamps !== undefined) {
+      params.append(
+        "include_timestamps",
+        options.includeTimestamps ? "true" : "false"
+      );
     }
 
     const queryString = params.toString();
@@ -176,7 +188,7 @@ export class ScribeRealtime {
    * // Manual audio streaming
    * const connection = Scribe.connect({
    *     token: "...",
-   *     modelId: "scribe_realtime_v2",
+   *     modelId: "scribe_v2_realtime",
    *     audioFormat: AudioFormat.PCM_16000,
    *     sampleRate: 16000,
    * });
@@ -184,7 +196,7 @@ export class ScribeRealtime {
    * // Automatic microphone streaming
    * const connection = Scribe.connect({
    *     token: "...",
-   *     modelId: "scribe_realtime_v2",
+   *     modelId: "scribe_v2_realtime",
    *     microphone: {
    *         echoCancellation: true,
    *         noiseSuppression: true
@@ -230,6 +242,8 @@ export class ScribeRealtime {
     options: MicrophoneOptions,
     connection: RealtimeConnection
   ): Promise<void> {
+    const TARGET_SAMPLE_RATE = 16000;
+
     try {
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -239,25 +253,42 @@ export class ScribeRealtime {
           noiseSuppression: options.microphone?.noiseSuppression ?? true,
           autoGainControl: options.microphone?.autoGainControl ?? true,
           channelCount: options.microphone?.channelCount ?? 1,
-          sampleRate: { ideal: 16000 },
+          sampleRate: { ideal: TARGET_SAMPLE_RATE },
         },
       });
 
-      // Create audio context at 16kHz (Scribe's default)
-      const audioContext = new AudioContext({ sampleRate: 16000 });
+      // Get the actual sample rate from the stream - the ideal may not have been honored
+      const trackSettings = stream.getAudioTracks()[0]?.getSettings();
+      const streamSampleRate = trackSettings?.sampleRate;
+
+      // Create audio context matching the stream's sample rate to avoid Firefox errors
+      // Firefox requires the AudioContext to match the microphone's native sample rate
+      const audioContext = new AudioContext(
+        streamSampleRate ? { sampleRate: streamSampleRate } : {}
+      );
 
       // Load scribe worklet
       await loadScribeAudioProcessor(audioContext.audioWorklet);
 
       // Set up audio pipeline
       const source = audioContext.createMediaStreamSource(stream);
-      const workletNode = new AudioWorkletNode(
+      const scribeNode = new AudioWorkletNode(
         audioContext,
         "scribeAudioProcessor"
       );
 
+      // Configure the worklet with sample rate info for resampling
+      // (only needed when AudioContext sample rate differs from target)
+      if (audioContext.sampleRate !== TARGET_SAMPLE_RATE) {
+        scribeNode.port.postMessage({
+          type: "configure",
+          inputSampleRate: audioContext.sampleRate,
+          outputSampleRate: TARGET_SAMPLE_RATE,
+        });
+      }
+
       // Handle audio data from worklet
-      workletNode.port.onmessage = event => {
+      scribeNode.port.onmessage = event => {
         const { audioData } = event.data;
         // Convert ArrayBuffer to base64
         const bytes = new Uint8Array(audioData);
@@ -271,7 +302,7 @@ export class ScribeRealtime {
       };
 
       // Connect audio pipeline
-      source.connect(workletNode);
+      source.connect(scribeNode);
 
       // Resume audio context if needed
       if (audioContext.state === "suspended") {
@@ -284,7 +315,7 @@ export class ScribeRealtime {
           track.stop();
         });
         source.disconnect();
-        workletNode.disconnect();
+        scribeNode.disconnect();
         audioContext.close();
       };
     } catch (error) {

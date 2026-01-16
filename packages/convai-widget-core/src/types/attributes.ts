@@ -27,6 +27,10 @@ export const CustomAttributeList = [
   "dynamic-variables",
   "show-avatar-when-collapsed",
   "override-prompt",
+  "override-llm",
+  "override-speed",
+  "override-stability",
+  "override-similarity-boost",
   "override-first-message",
   "override-language",
   "override-voice-id",
@@ -40,6 +44,13 @@ export const CustomAttributeList = [
   "user-id",
   "use-rtc",
   "collect-feedback",
+  "worklet-path-raw-audio-processor",
+  "worklet-path-audio-concat-processor",
+  "worklet-path-libsamplerate",
+  "syntax-highlight-theme",
+  "markdown-link-allowed-hosts",
+  "markdown-link-include-www",
+  "markdown-link-allow-http",
 ] as const;
 
 export type CustomAttributes = {

@@ -102,7 +102,46 @@ export type ConversationConfigOverrideAgentLanguage =
   | "sk"
   | "no"
   | "vi"
-  | "tl";
+  | "tl"
+  | "af"
+  | "hy"
+  | "as"
+  | "az"
+  | "be"
+  | "bn"
+  | "bs"
+  | "ca"
+  | "et"
+  | "gl"
+  | "ka"
+  | "gu"
+  | "ha"
+  | "he"
+  | "is"
+  | "ga"
+  | "jv"
+  | "kn"
+  | "kk"
+  | "ky"
+  | "lv"
+  | "lt"
+  | "lb"
+  | "mk"
+  | "ml"
+  | "mr"
+  | "ne"
+  | "ps"
+  | "fa"
+  | "pa"
+  | "sr"
+  | "sd"
+  | "sl"
+  | "so"
+  | "sw"
+  | "te"
+  | "th"
+  | "ur"
+  | "cy";
 
 export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
@@ -130,6 +169,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "tentative_user_transcript"
   | "conversation_initiation_metadata"
   | "client_tool_call"
+  | "agent_tool_request"
   | "agent_tool_response"
   | "mcp_tool_call"
   | "mcp_connection_status"
@@ -152,6 +192,13 @@ export interface Audio {
 export interface AudioEvent {
   audio_base_64: string;
   event_id: number;
+  alignment?: AudioEventAlignment;
+}
+
+export interface AudioEventAlignment {
+  chars: string[];
+  char_start_times_ms: number[];
+  char_durations_ms: number[];
 }
 
 export interface UserTranscript {
@@ -257,6 +304,18 @@ export interface ClientToolCall {
   event_id: number;
 }
 
+export interface AgentToolRequestMessage {
+  type: "agent_tool_request";
+  agent_tool_request: AgentToolRequest;
+}
+
+export interface AgentToolRequest {
+  tool_name: string;
+  tool_call_id: string;
+  tool_type: string;
+  event_id: number;
+}
+
 export interface AgentToolResponseMessage {
   type: "agent_tool_response";
   agent_tool_response: AgentToolResponse;
@@ -267,6 +326,7 @@ export interface AgentToolResponse {
   tool_call_id: string;
   tool_type: string;
   is_error: boolean;
+  is_called: boolean;
   event_id: number;
 }
 
@@ -463,6 +523,11 @@ export interface ClientToolCallClientEvent {
   client_tool_call: ClientToolCall;
 }
 
+export interface AgentToolRequestClientEvent {
+  type: "agent_tool_request";
+  agent_tool_request: AgentToolRequest;
+}
+
 export interface AgentToolResponseClientEvent {
   type: "agent_tool_response";
   agent_tool_response: AgentToolResponse;
@@ -559,6 +624,7 @@ export interface InputAudioChunk {
   audio_base_64: string;
   commit: boolean;
   sample_rate: number;
+  previous_text?: string;
 }
 
 export interface SessionStarted {
@@ -571,13 +637,11 @@ export interface Config {
   sample_rate?: number;
   audio_format?: ConfigAudioFormat;
   language_code?: string;
-  timestamps_granularity?: string;
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
-  max_tokens_to_recompute?: number;
   model_id?: string;
   disable_logging?: boolean;
 }
@@ -596,8 +660,17 @@ export type ConfigVadCommitStrategy = "manual" | "vad";
 export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
+}
+
+export interface CommittedTranscript {
+  message_type: "committed_transcript";
+  text: string;
+}
+
+export interface CommittedTranscriptWithTimestamps {
+  message_type: "committed_transcript_with_timestamps";
+  text: string;
   language_code?: string;
-  logprob?: number;
   words?: WordsItem[];
 }
 
@@ -613,29 +686,83 @@ export interface WordsItem {
 
 export type WordsItemType = "word" | "spacing";
 
-export interface FinalTranscript {
-  message_type: "final_transcript";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
-
-export interface FinalTranscriptWithTimestamps {
-  message_type: "final_transcript_with_timestamps";
-  text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
-}
-
 export interface Error {
-  message_type: "error";
+  message_type: MessageType;
   error: string;
 }
 
+export type MessageType =
+  | "error"
+  | "auth_error"
+  | "quota_exceeded"
+  | "commit_throttled"
+  | "transcriber_error"
+  | "unaccepted_terms"
+  | "rate_limited"
+  | "input_error"
+  | "queue_overflow"
+  | "resource_exhausted"
+  | "session_time_limit_exceeded"
+  | "chunk_size_exceeded"
+  | "insufficient_audio_activity";
+
 export interface AuthError {
   message_type: "auth_error";
+  error: string;
+}
+
+export interface QuotaExceededError {
+  message_type: "quota_exceeded";
+  error: string;
+}
+
+export interface CommitThrottledError {
+  message_type: "commit_throttled";
+  error: string;
+}
+
+export interface TranscriberError {
+  message_type: "transcriber_error";
+  error: string;
+}
+
+export interface UnacceptedTermsError {
+  message_type: "unaccepted_terms";
+  error: string;
+}
+
+export interface RateLimitedError {
+  message_type: "rate_limited";
+  error: string;
+}
+
+export interface InputError {
+  message_type: "input_error";
+  error: string;
+}
+
+export interface QueueOverflowError {
+  message_type: "queue_overflow";
+  error: string;
+}
+
+export interface ResourceExhaustedError {
+  message_type: "resource_exhausted";
+  error: string;
+}
+
+export interface SessionTimeLimitExceededError {
+  message_type: "session_time_limit_exceeded";
+  error: string;
+}
+
+export interface ChunkSizeExceededError {
+  message_type: "chunk_size_exceeded";
+  error: string;
+}
+
+export interface InsufficientAudioActivityError {
+  message_type: "insufficient_audio_activity";
   error: string;
 }
 
@@ -648,33 +775,81 @@ export interface SessionStartedMessage {
 export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
-export interface FinalTranscriptMessage {
-  message_type: "final_transcript";
+export interface CommittedTranscriptMessage {
+  message_type: "committed_transcript";
   text: string;
-  language_code?: string;
-  logprob?: number;
-  words?: WordsItem[];
 }
 
-export interface FinalTranscriptWithTimestampsMessage {
-  message_type: "final_transcript_with_timestamps";
+export interface CommittedTranscriptWithTimestampsMessage {
+  message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  logprob?: number;
   words?: WordsItem[];
 }
 
 export interface ScribeErrorMessage {
-  message_type: "error";
+  message_type: MessageType;
   error: string;
 }
 
 export interface ScribeAuthErrorMessage {
   message_type: "auth_error";
+  error: string;
+}
+
+export interface ScribeQuotaExceededErrorMessage {
+  message_type: "quota_exceeded";
+  error: string;
+}
+
+export interface ScribeCommitThrottledErrorMessage {
+  message_type: "commit_throttled";
+  error: string;
+}
+
+export interface ScribeTranscriberErrorMessage {
+  message_type: "transcriber_error";
+  error: string;
+}
+
+export interface ScribeUnacceptedTermsErrorMessage {
+  message_type: "unaccepted_terms";
+  error: string;
+}
+
+export interface ScribeRateLimitedErrorMessage {
+  message_type: "rate_limited";
+  error: string;
+}
+
+export interface ScribeInputErrorMessage {
+  message_type: "input_error";
+  error: string;
+}
+
+export interface ScribeQueueOverflowErrorMessage {
+  message_type: "queue_overflow";
+  error: string;
+}
+
+export interface ScribeResourceExhaustedErrorMessage {
+  message_type: "resource_exhausted";
+  error: string;
+}
+
+export interface ScribeSessionTimeLimitExceededErrorMessage {
+  message_type: "session_time_limit_exceeded";
+  error: string;
+}
+
+export interface ScribeChunkSizeExceededErrorMessage {
+  message_type: "chunk_size_exceeded";
+  error: string;
+}
+
+export interface ScribeInsufficientAudioActivityErrorMessage {
+  message_type: "insufficient_audio_activity";
   error: string;
 }

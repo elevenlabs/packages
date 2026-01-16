@@ -40,7 +40,7 @@ servers:
 
 channels:
   AgentMessages:
-    description: Main WebSocket channel for conversational AI
+    description: Main WebSocket channel for agents
     publish:
       summary: Messages sent from server to client
       message:
@@ -55,6 +55,7 @@ channels:
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
           - $ref: "#/components/messages/ClientToolCallMessage"
+          - $ref: "#/components/messages/AgentToolRequestMessage"
           - $ref: "#/components/messages/AgentToolResponseMessage"
           - $ref: "#/components/messages/MCPToolCall"
           - $ref: "#/components/messages/MCPConnectionStatusMessage"
@@ -228,6 +229,14 @@ components:
       payload:
         $ref: "#/components/schemas/ClientToolCallPayload"
 
+    AgentToolRequestMessage:
+      name: AgentToolRequestClientEvent
+      title: Agent Tool Request
+      summary: Event emitted when a tool request is received
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentToolRequestPayload"
+
     AgentToolResponseMessage:
       name: AgentToolResponseClientEvent
       title: Agent Tool Response
@@ -315,6 +324,7 @@ components:
         - tentative_user_transcript
         - conversation_initiation_metadata
         - client_tool_call
+        - agent_tool_request
         - agent_tool_response
         - mcp_tool_call
         - mcp_connection_status
@@ -361,6 +371,45 @@ components:
         - no
         - vi
         - tl
+        - af
+        - hy
+        - as
+        - az
+        - be
+        - bn
+        - bs
+        - ca
+        - et
+        - gl
+        - ka
+        - gu
+        - ha
+        - he
+        - is
+        - ga
+        - jv
+        - kn
+        - kk
+        - ky
+        - lv
+        - lt
+        - lb
+        - mk
+        - ml
+        - mr
+        - ne
+        - ps
+        - fa
+        - pa
+        - sr
+        - sd
+        - sl
+        - so
+        - sw
+        - te
+        - th
+        - ur
+        - cy
       description: Language code for ASR and TTS
 
     AudioFormat:
@@ -692,7 +741,15 @@ components:
           const: client_tool_call
         client_tool_call:
           $ref: "#/components/schemas/ClientToolCallData"
-
+    AgentToolRequestPayload:
+      type: object
+      required: [agent_tool_request, type]
+      properties:
+        type:
+          type: string
+          const: agent_tool_request
+        agent_tool_request:
+          $ref: "#/components/schemas/AgentToolRequestData"
     AgentToolResponsePayload:
       type: object
       required: [agent_tool_response, type]
@@ -760,6 +817,9 @@ components:
           format: base64
         event_id:
           type: integer
+        alignment:
+          $ref: "#/components/schemas/AudioAlignmentData"
+         
 
     UserTranscriptionData:
       type: object
@@ -849,9 +909,27 @@ components:
         event_id:
           type: integer
 
+    AgentToolRequestData:
+      type: object
+      required: [tool_name, tool_call_id, tool_type, event_id]
+      properties:
+        tool_name:
+          type: string
+          description: Name of the tool being requested
+        tool_call_id:
+          type: string
+          description: Unique identifier for the tool call
+        tool_type:
+          type: string
+          description: Type of tool (client, webhook, or mcp)
+        event_id:
+          type: integer
+          description: Event ID when the tool was requested
+
     AgentToolResponseData:
       type: object
-      required: [tool_name, tool_call_id, tool_type, is_error, event_id]
+      required:
+        [tool_name, tool_call_id, tool_type, is_error, is_called, event_id]
       properties:
         tool_name:
           type: string
@@ -865,6 +943,9 @@ components:
         is_error:
           type: boolean
           description: Whether the tool execution resulted in an error
+        is_called:
+          type: boolean
+          description: Whether the tool has been called and execution started
         event_id:
           type: integer
 
@@ -925,6 +1006,26 @@ components:
         asr_initiation_metadata_event:
           type: object
           description: ASR initialization metadata
+
+    AudioAlignmentData:
+      type: object
+      required: [chars, char_start_times_ms, char_durations_ms]
+      properties:
+        chars:
+          type: array
+          items:
+            type: string
+          description: Array of individual characters in the synthesized text
+        char_start_times_ms:
+          type: array
+          items:
+            type: integer
+          description: Start time in milliseconds for each character
+        char_durations_ms:
+          type: array
+          items:
+            type: integer
+          description: Duration in milliseconds for each character
 
     InternalTurnProbabilityPayload:
       type: object

@@ -5,18 +5,34 @@ import { useAvatarConfig } from "../contexts/avatar-config";
 import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
-import { useShouldShowFeedbackAtEnd } from "../contexts/widget-config";
+import { useMarkdownLinkConfig, useEndFeedbackType } from "../contexts/widget-config";
+import { WidgetStreamdown } from "../markdown";
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
   animateIn: boolean;
 }
 
-interface MessageBubbleProps {
+function AgentMessageBubble({
+  entry,
+}: {
   entry: Extract<TranscriptEntry, { type: "message" }>;
+}) {
+  const linkConfig = useMarkdownLinkConfig();
+  return (
+    <div className="pr-8">
+      <WidgetStreamdown linkConfig={linkConfig.value}>
+        {entry.message}
+      </WidgetStreamdown>
+    </div>
+  );
 }
 
-function MessageBubble({ entry }: MessageBubbleProps) {
+function UserMessageBubble({
+  entry,
+}: {
+  entry: Extract<TranscriptEntry, { type: "message" }>;
+}) {
   const { previewUrl } = useAvatarConfig();
 
   return (
@@ -28,7 +44,7 @@ function MessageBubble({ entry }: MessageBubbleProps) {
           : "pr-16 origin-top-left"
       )}
     >
-      {entry.role === "ai" && (
+      {entry.role === "agent" && (
         <img
           src={previewUrl}
           alt="AI agent avatar"
@@ -50,18 +66,18 @@ function MessageBubble({ entry }: MessageBubbleProps) {
   );
 }
 
-interface DisconnectionMessageProps {
+function DisconnectionMessage({
+  entry,
+}: {
   entry: Extract<TranscriptEntry, { type: "disconnection" }>;
-}
-
-function DisconnectionMessage({ entry }: DisconnectionMessageProps) {
+}) {
   const text = useTextContents();
   const { lastId } = useConversation();
-  const shouldShowFeedbackAtEnd = useShouldShowFeedbackAtEnd();
+  const endFeedbackType = useEndFeedbackType();
 
   return (
     <div className="mt-3 px-8 flex flex-col">
-      {shouldShowFeedbackAtEnd && <Feedback />}
+      {endFeedbackType.value === "rating" && <Feedback />}
       <div className="text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
         {entry.role === "user"
           ? text.user_ended_conversation
@@ -77,11 +93,11 @@ function DisconnectionMessage({ entry }: DisconnectionMessageProps) {
   );
 }
 
-interface ErrorMessageProps {
+function ErrorMessage({
+  entry,
+}: {
   entry: Extract<TranscriptEntry, { type: "error" }>;
-}
-
-function ErrorMessage({ entry }: ErrorMessageProps) {
+}) {
   const text = useTextContents();
   const { lastId } = useConversation();
 
@@ -102,19 +118,45 @@ function ErrorMessage({ entry }: ErrorMessageProps) {
   );
 }
 
+interface ModeToggleMessageProps {
+  entry: Extract<TranscriptEntry, { type: "mode_toggle" }>;
+}
+
+function ModeToggleMessage({ entry }: ModeToggleMessageProps) {
+  const text = useTextContents();
+
+  return (
+    <div className="mt-2 px-8 text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
+      {entry.mode === "text"
+        ? text.switched_to_text_mode
+        : text.switched_to_voice_mode}
+    </div>
+  );
+}
+
+function getMessageComponent(entry: TranscriptEntry, isStreaming?: boolean) {
+  if (entry.type === "disconnection") {
+    return <DisconnectionMessage entry={entry} />;
+  }
+  if (entry.type === "mode_toggle") {
+    return <ModeToggleMessage entry={entry} />;
+  }
+  if (entry.type === "error") {
+    return <ErrorMessage entry={entry} />;
+  }
+  if (entry.role === "agent") {
+    return <AgentMessageBubble entry={entry} />;
+  }
+  return <UserMessageBubble entry={entry} />;
+}
+
 export function TranscriptMessage({
   entry,
   animateIn,
 }: TranscriptMessageProps) {
   return (
     <InOutTransition initial={!animateIn} active={true}>
-      {entry.type === "message" ? (
-        <MessageBubble entry={entry} />
-      ) : entry.type === "disconnection" ? (
-        <DisconnectionMessage entry={entry} />
-      ) : (
-        <ErrorMessage entry={entry} />
-      )}
+      {getMessageComponent(entry)}
     </InOutTransition>
   );
 }

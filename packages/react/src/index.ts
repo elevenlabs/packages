@@ -74,6 +74,7 @@ export type {
   DisconnectionDetails,
   Language,
   VadScoreEvent,
+  AudioAlignmentEvent,
   InputConfig,
   FormatConfig,
   VoiceConversation,
@@ -92,6 +93,7 @@ export {
 export type {
   ScribeStatus,
   TranscriptSegment,
+  WordTimestamp,
   ScribeCallbacks,
   ScribeHookOptions,
   UseScribeReturn,
@@ -128,11 +130,13 @@ export type HookCallbacks = Pick<
   | "onVadScore"
   | "onInterruption"
   | "onAgentToolResponse"
+  | "onAgentToolRequest"
   | "onConversationMetadata"
   | "onMCPToolCall"
   | "onMCPConnectionStatus"
   | "onAsrInitiationMetadata"
   | "onAgentChatResponsePart"
+  | "onAudioAlignment"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -141,6 +145,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
   const { micMuted, volume, serverLocation, ...defaultOptions } = props;
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  const shouldEndRef = useRef(false);
   const [status, setStatus] = useState<Status>("disconnected");
   const [canSendFeedback, setCanSendFeedback] = useState(false);
   const [mode, setMode] = useState<Mode>("listening");
@@ -165,7 +170,12 @@ export function useConversation<T extends HookOptions & ControlledState>(
 
   useEffect(() => {
     return () => {
-      conversationRef.current?.endSession();
+      shouldEndRef.current = true;
+      if (lockRef.current) {
+        lockRef.current.then(conv => conv.endSession());
+      } else {
+        conversationRef.current?.endSession();
+      }
     };
   }, []);
 
@@ -180,18 +190,26 @@ export function useConversation<T extends HookOptions & ControlledState>(
         return conversation.getId();
       }
 
+      shouldEndRef.current = false;
+
       try {
         const resolvedServerLocation = parseLocation(
           options?.serverLocation || serverLocation
         );
         const origin = getOriginForLocation(resolvedServerLocation);
-        const livekitUrl = getLivekitUrlForLocation(resolvedServerLocation);
+        const calculatedLivekitUrl = getLivekitUrlForLocation(
+          resolvedServerLocation
+        );
 
         lockRef.current = Conversation.startSession({
           ...(defaultOptions ?? {}),
           ...(options ?? {}),
           origin,
-          livekitUrl,
+
+          livekitUrl:
+            options?.livekitUrl ||
+            defaultOptions?.livekitUrl ||
+            calculatedLivekitUrl,
           overrides: {
             ...(defaultOptions?.overrides ?? {}),
             ...(options?.overrides ?? {}),
@@ -221,6 +239,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onVadScore: options?.onVadScore || defaultOptions?.onVadScore,
           onInterruption:
             options?.onInterruption || defaultOptions?.onInterruption,
+          onAgentToolRequest:
+            options?.onAgentToolRequest || defaultOptions?.onAgentToolRequest,
           onAgentToolResponse:
             options?.onAgentToolResponse || defaultOptions?.onAgentToolResponse,
           onConversationMetadata:
@@ -237,6 +257,8 @@ export function useConversation<T extends HookOptions & ControlledState>(
           onAgentChatResponsePart:
             options?.onAgentChatResponsePart ||
             defaultOptions?.onAgentChatResponsePart,
+          onAudioAlignment:
+            options?.onAudioAlignment || defaultOptions?.onAudioAlignment,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });
@@ -257,6 +279,15 @@ export function useConversation<T extends HookOptions & ControlledState>(
         } as Options);
 
         conversationRef.current = await lockRef.current;
+
+        // Check if session was cancelled while connecting
+        if (shouldEndRef.current) {
+          await conversationRef.current.endSession();
+          conversationRef.current = null;
+          lockRef.current = null;
+          throw new Error("Session cancelled during connection");
+        }
+
         // Persist controlled state between sessions using refs to get current values
         if (micMutedRef.current !== undefined) {
           conversationRef.current.setMicMuted(micMutedRef.current);
@@ -273,9 +304,17 @@ export function useConversation<T extends HookOptions & ControlledState>(
       ? (options?: HookOptions) => Promise<string>
       : (options: SessionConfig & HookOptions) => Promise<string>,
     endSession: async () => {
+      shouldEndRef.current = true;
+      const pendingConnection = lockRef.current;
       const conversation = conversationRef.current;
       conversationRef.current = null;
-      await conversation?.endSession();
+
+      if (pendingConnection) {
+        const conv = await pendingConnection;
+        await conv.endSession();
+      } else {
+        await conversation?.endSession();
+      }
     },
     setVolume: ({ volume }: { volume: number }) => {
       conversationRef.current?.setVolume({ volume });

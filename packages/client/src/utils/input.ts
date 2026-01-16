@@ -56,7 +56,7 @@ export class Input {
       }
 
       if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -100,6 +100,16 @@ export class Input {
     }
   }
 
+  // Use { ideal } on iOS as a defensive measure - some iOS versions may not support { exact } for deviceId constraints
+  private static getDeviceIdConstraint(
+    inputDeviceId?: string
+  ): MediaTrackConstraints["deviceId"] {
+    if (!inputDeviceId) {
+      return undefined;
+    }
+    return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
+  }
+
   private constructor(
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
@@ -128,7 +138,7 @@ export class Input {
       };
 
       if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
       }
       // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 

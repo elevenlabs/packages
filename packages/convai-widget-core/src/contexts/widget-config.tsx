@@ -4,9 +4,16 @@ import {
   useSignal,
   useSignalEffect,
 } from "@preact/signals";
+import { TinyColor } from "@ctrl/tinycolor";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
-import { parsePlacement, parseVariant, WidgetConfig } from "../types/config";
+import {
+  DefaultStyles,
+  parsePlacement,
+  parseVariant,
+  type SyntaxHighlightTheme,
+  type WidgetConfig,
+} from "../types/config";
 import { useAttribute } from "./attributes";
 import { useServerLocation } from "./server-location";
 
@@ -187,14 +194,102 @@ export function useFirstMessage() {
   );
 }
 
+export function useTextInputEnabled() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.text_input_enabled ?? false);
+}
+
+export function useLocalizedTerms() {
+  const config = useWidgetConfig();
+  const { language } = useLanguageConfig();
+
+  return useComputed(() => {
+    const languagePreset = config.value.language_presets?.[language.value.languageCode];
+
+    return {
+      terms_html: languagePreset?.terms_html ?? config.value.terms_html,
+      terms_text: languagePreset?.terms_text ?? config.value.terms_text,
+      terms_key: languagePreset?.terms_key ?? config.value.terms_key,
+    };
+  });
+}
+
 export function useWebRTC() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.use_rtc ?? false);
 }
 
-export function useShouldShowFeedbackAtEnd() {
+export function useEndFeedbackType() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback !== undefined);
+  return useComputed(() => config.value.end_feedback?.type ?? null);
+}
+
+export interface MarkdownLinkConfig {
+  allowedHosts: string[];
+  includeWww: boolean;
+  allowHttp: boolean;
+}
+
+export function useMarkdownLinkConfig() {
+  const overrideHosts = useAttribute("markdown-link-allowed-hosts");
+  const overrideIncludeWww = useAttribute("markdown-link-include-www");
+  const overrideAllowHttp = useAttribute("markdown-link-allow-http");
+  const config = useWidgetConfig();
+
+  return useComputed<MarkdownLinkConfig>(() => {
+    let allowedHosts: string[] = [];
+
+    if (overrideHosts.value) {
+      allowedHosts = overrideHosts.value
+        .split(",")
+        .map(d => d.trim())
+        .filter(Boolean);
+    } else {
+      const hosts = config.value.markdown_link_allowed_hosts;
+      if (hosts && hosts.length > 0) {
+        const hasWildcard = hosts.some(h => h.hostname === "*");
+        if (hasWildcard) {
+          allowedHosts = ["*"];
+        } else {
+          allowedHosts = hosts.map(h => h.hostname);
+        }
+      }
+    }
+
+    const includeWww =
+      parseBoolAttribute(overrideIncludeWww.value) ??
+      config.value.markdown_link_include_www ??
+      true;
+
+    const allowHttp =
+      parseBoolAttribute(overrideAllowHttp.value) ??
+      config.value.markdown_link_allow_http ??
+      true;
+
+    return { allowedHosts, includeWww, allowHttp };
+  });
+}
+
+export function useSyntaxTheme() {
+  const override = useAttribute("syntax-highlight-theme");
+  const config = useWidgetConfig();
+
+  return useComputed<SyntaxHighlightTheme>(() => {
+    // Explicit override takes priority
+    const explicitValue = override.value ?? config.value.syntax_highlight_theme;
+    if (explicitValue === "light" || explicitValue === "dark") {
+      return explicitValue;
+    }
+    // Auto-detect based on base_active background color
+    const baseActive =
+      config.value.styles?.base_active ?? DefaultStyles.base_active;
+    const color = new TinyColor(baseActive);
+
+    if (!color.isValid) {
+      return "light";
+    }
+    return color.isDark() ? "dark" : "light";
+  });
 }
 
 async function fetchConfig(

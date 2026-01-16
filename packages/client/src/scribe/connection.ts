@@ -2,29 +2,62 @@ import type {
   InputAudioChunk,
   SessionStartedMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
+  ScribeTranscriberErrorMessage,
+  ScribeUnacceptedTermsErrorMessage,
+  ScribeRateLimitedErrorMessage,
+  ScribeInputErrorMessage,
+  ScribeQueueOverflowErrorMessage,
+  ScribeResourceExhaustedErrorMessage,
+  ScribeSessionTimeLimitExceededErrorMessage,
+  ScribeChunkSizeExceededErrorMessage,
+  ScribeInsufficientAudioActivityErrorMessage,
 } from "@elevenlabs/types";
 
 // Re-export types for public API
 export type {
   SessionStartedMessage,
   PartialTranscriptMessage,
-  FinalTranscriptMessage,
-  FinalTranscriptWithTimestampsMessage,
+  CommittedTranscriptMessage,
+  CommittedTranscriptWithTimestampsMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
+  ScribeQuotaExceededErrorMessage,
+  ScribeCommitThrottledErrorMessage,
+  ScribeTranscriberErrorMessage,
+  ScribeUnacceptedTermsErrorMessage,
+  ScribeRateLimitedErrorMessage,
+  ScribeInputErrorMessage,
+  ScribeQueueOverflowErrorMessage,
+  ScribeResourceExhaustedErrorMessage,
+  ScribeSessionTimeLimitExceededErrorMessage,
+  ScribeChunkSizeExceededErrorMessage,
+  ScribeInsufficientAudioActivityErrorMessage,
 };
 
 export type WebSocketMessage =
   | SessionStartedMessage
   | PartialTranscriptMessage
-  | FinalTranscriptMessage
-  | FinalTranscriptWithTimestampsMessage
+  | CommittedTranscriptMessage
+  | CommittedTranscriptWithTimestampsMessage
   | ScribeErrorMessage
-  | ScribeAuthErrorMessage;
+  | ScribeAuthErrorMessage
+  | ScribeQuotaExceededErrorMessage
+  | ScribeCommitThrottledErrorMessage
+  | ScribeTranscriberErrorMessage
+  | ScribeUnacceptedTermsErrorMessage
+  | ScribeRateLimitedErrorMessage
+  | ScribeInputErrorMessage
+  | ScribeQueueOverflowErrorMessage
+  | ScribeResourceExhaustedErrorMessage
+  | ScribeSessionTimeLimitExceededErrorMessage
+  | ScribeChunkSizeExceededErrorMessage
+  | ScribeInsufficientAudioActivityErrorMessage;
 
 /**
  * Simple EventEmitter implementation for browser compatibility.
@@ -68,17 +101,64 @@ export enum RealtimeEvents {
   /** Emitted when a partial (interim) transcript is available */
   PARTIAL_TRANSCRIPT = "partial_transcript",
   /** Emitted when a final transcript is available */
-  FINAL_TRANSCRIPT = "final_transcript",
+  COMMITTED_TRANSCRIPT = "committed_transcript",
   /** Emitted when a final transcript with timestamps is available */
-  FINAL_TRANSCRIPT_WITH_TIMESTAMPS = "final_transcript_with_timestamps",
+  COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS = "committed_transcript_with_timestamps",
   /** Emitted when an authentication error occurs */
   AUTH_ERROR = "auth_error",
-  /** Emitted when an error occurs */
+  /** Emitted when an error occurs (also emitted for all specific error types) */
   ERROR = "error",
   /** Emitted when the WebSocket connection is opened */
   OPEN = "open",
   /** Emitted when the WebSocket connection is closed */
   CLOSE = "close",
+  /** Emitted when a quota exceeded error occurs */
+  QUOTA_EXCEEDED = "quota_exceeded",
+  /** Emitted when commit is throttled */
+  COMMIT_THROTTLED = "commit_throttled",
+  /** Emitted when a transcriber error occurs */
+  TRANSCRIBER_ERROR = "transcriber_error",
+  /** Emitted when terms have not been accepted */
+  UNACCEPTED_TERMS = "unaccepted_terms",
+  /** Emitted when rate limited */
+  RATE_LIMITED = "rate_limited",
+  /** Emitted when there's an input error */
+  INPUT_ERROR = "input_error",
+  /** Emitted when the queue overflows */
+  QUEUE_OVERFLOW = "queue_overflow",
+  /** Emitted when resources are exhausted */
+  RESOURCE_EXHAUSTED = "resource_exhausted",
+  /** Emitted when session time limit is exceeded */
+  SESSION_TIME_LIMIT_EXCEEDED = "session_time_limit_exceeded",
+  /** Emitted when chunk size is exceeded */
+  CHUNK_SIZE_EXCEEDED = "chunk_size_exceeded",
+  /** Emitted when there's insufficient audio activity */
+  INSUFFICIENT_AUDIO_ACTIVITY = "insufficient_audio_activity",
+}
+
+/**
+ * Map of event types to their payload types.
+ */
+export interface RealtimeEventMap {
+  [RealtimeEvents.SESSION_STARTED]: SessionStartedMessage;
+  [RealtimeEvents.PARTIAL_TRANSCRIPT]: PartialTranscriptMessage;
+  [RealtimeEvents.COMMITTED_TRANSCRIPT]: CommittedTranscriptMessage;
+  [RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS]: CommittedTranscriptWithTimestampsMessage;
+  [RealtimeEvents.ERROR]: ScribeErrorMessage;
+  [RealtimeEvents.AUTH_ERROR]: ScribeAuthErrorMessage;
+  [RealtimeEvents.QUOTA_EXCEEDED]: ScribeQuotaExceededErrorMessage;
+  [RealtimeEvents.COMMIT_THROTTLED]: ScribeCommitThrottledErrorMessage;
+  [RealtimeEvents.TRANSCRIBER_ERROR]: ScribeTranscriberErrorMessage;
+  [RealtimeEvents.UNACCEPTED_TERMS]: ScribeUnacceptedTermsErrorMessage;
+  [RealtimeEvents.RATE_LIMITED]: ScribeRateLimitedErrorMessage;
+  [RealtimeEvents.INPUT_ERROR]: ScribeInputErrorMessage;
+  [RealtimeEvents.QUEUE_OVERFLOW]: ScribeQueueOverflowErrorMessage;
+  [RealtimeEvents.RESOURCE_EXHAUSTED]: ScribeResourceExhaustedErrorMessage;
+  [RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED]: ScribeSessionTimeLimitExceededErrorMessage;
+  [RealtimeEvents.CHUNK_SIZE_EXCEEDED]: ScribeChunkSizeExceededErrorMessage;
+  [RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY]: ScribeInsufficientAudioActivityErrorMessage;
+  [RealtimeEvents.OPEN]: undefined;
+  [RealtimeEvents.CLOSE]: CloseEvent;
 }
 
 /**
@@ -88,7 +168,7 @@ export enum RealtimeEvents {
  * ```typescript
  * const connection = await Scribe.connect({
  *     token: "...",
- *     modelId: "scribe_realtime_v2",
+ *     modelId: "scribe_v2_realtime",
  *     audioFormat: AudioFormat.PCM_16000,
  *     sampleRate: 16000,
  * });
@@ -101,7 +181,7 @@ export enum RealtimeEvents {
  *     console.log("Partial:", data.transcript);
  * });
  *
- * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
+ * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
  *     console.log("Final:", data.transcript);
  *     connection.close();
  * });
@@ -151,17 +231,69 @@ export class RealtimeConnection {
           case "partial_transcript":
             this.eventEmitter.emit(RealtimeEvents.PARTIAL_TRANSCRIPT, data);
             break;
-          case "final_transcript":
-            this.eventEmitter.emit(RealtimeEvents.FINAL_TRANSCRIPT, data);
+          case "committed_transcript":
+            this.eventEmitter.emit(RealtimeEvents.COMMITTED_TRANSCRIPT, data);
             break;
-          case "final_transcript_with_timestamps":
+          case "committed_transcript_with_timestamps":
             this.eventEmitter.emit(
-              RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS,
+              RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
               data
             );
             break;
+          // Error cases - emit both specific event and generic ERROR
           case "auth_error":
             this.eventEmitter.emit(RealtimeEvents.AUTH_ERROR, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "quota_exceeded":
+            this.eventEmitter.emit(RealtimeEvents.QUOTA_EXCEEDED, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "commit_throttled":
+            this.eventEmitter.emit(RealtimeEvents.COMMIT_THROTTLED, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "transcriber_error":
+            this.eventEmitter.emit(RealtimeEvents.TRANSCRIBER_ERROR, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "unaccepted_terms":
+            this.eventEmitter.emit(RealtimeEvents.UNACCEPTED_TERMS, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "rate_limited":
+            this.eventEmitter.emit(RealtimeEvents.RATE_LIMITED, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "input_error":
+            this.eventEmitter.emit(RealtimeEvents.INPUT_ERROR, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "queue_overflow":
+            this.eventEmitter.emit(RealtimeEvents.QUEUE_OVERFLOW, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "resource_exhausted":
+            this.eventEmitter.emit(RealtimeEvents.RESOURCE_EXHAUSTED, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "session_time_limit_exceeded":
+            this.eventEmitter.emit(
+              RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED,
+              data
+            );
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "chunk_size_exceeded":
+            this.eventEmitter.emit(RealtimeEvents.CHUNK_SIZE_EXCEEDED, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "insufficient_audio_activity":
+            this.eventEmitter.emit(
+              RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY,
+              data
+            );
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
             break;
           case "error":
             this.eventEmitter.emit(RealtimeEvents.ERROR, data);
@@ -208,23 +340,25 @@ export class RealtimeConnection {
    * @example
    * ```typescript
    * connection.on(RealtimeEvents.SESSION_STARTED, (data) => {
-   *     console.log("Session started", data);
+   *     console.log("Session started", data.session_id);
    * });
    *
    * connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
-   *     console.log("Partial:", data.transcript);
+   *     console.log("Partial:", data.text);
    * });
    *
-   * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
-   *     console.log("Final:", data.transcript);
+   * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+   *     console.log("Final:", data.text);
    * });
    * ```
    */
-  public on(
-    event: RealtimeEvents,
-    listener: (...args: unknown[]) => void
+  public on<E extends RealtimeEvents>(
+    event: E,
+    listener: RealtimeEventMap[E] extends undefined
+      ? () => void
+      : (data: RealtimeEventMap[E]) => void
   ): void {
-    this.eventEmitter.on(event, listener);
+    this.eventEmitter.on(event, listener as (...args: unknown[]) => void);
   }
 
   /**
@@ -235,18 +369,20 @@ export class RealtimeConnection {
    *
    * @example
    * ```typescript
-   * const handler = (data) => console.log(data);
+   * const handler = (data: PartialTranscriptMessage) => console.log(data.text);
    * connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, handler);
    *
    * // Later, remove the listener
    * connection.off(RealtimeEvents.PARTIAL_TRANSCRIPT, handler);
    * ```
    */
-  public off(
-    event: RealtimeEvents,
-    listener: (...args: unknown[]) => void
+  public off<E extends RealtimeEvents>(
+    event: E,
+    listener: RealtimeEventMap[E] extends undefined
+      ? () => void
+      : (data: RealtimeEventMap[E]) => void
   ): void {
-    this.eventEmitter.off(event, listener);
+    this.eventEmitter.off(event, listener as (...args: unknown[]) => void);
   }
 
   /**
@@ -256,6 +392,7 @@ export class RealtimeConnection {
    * @param data.audioBase64 - Base64-encoded audio data
    * @param data.commit - Whether to commit the transcription after this chunk. You likely want to use connection.commit() instead (default: false)
    * @param data.sampleRate - Sample rate of the audio (default: configured sample rate)
+   * @param data.previousText - Send context to the model via base64 encoded audio or text from a previous transcription. Can only be sent alongside the first audio chunk. If sent in a subsequent chunk, an error will be returned.
    *
    * @throws {Error} If the WebSocket connection is not open
    *
@@ -266,10 +403,11 @@ export class RealtimeConnection {
    *     audioBase64: base64EncodedAudio,
    * });
    *
-   * // Send audio chunk with custom sample rate
+   * // Send audio chunk with custom sample rate and previous text
    * connection.send({
    *     audioBase64: base64EncodedAudio,
    *     sampleRate: 16000,
+   *     previousText: "Previous transcription text",
    * });
    * ```
    */
@@ -277,6 +415,7 @@ export class RealtimeConnection {
     audioBase64: string;
     commit?: boolean;
     sampleRate?: number;
+    previousText?: string;
   }): void {
     if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
       throw new Error("WebSocket is not connected");
@@ -287,14 +426,15 @@ export class RealtimeConnection {
       audio_base_64: data.audioBase64,
       commit: data.commit ?? false,
       sample_rate: data.sampleRate ?? this.currentSampleRate,
+      previous_text: data.previousText,
     };
 
     this.websocket.send(JSON.stringify(message));
   }
 
   /**
-   * Commits the transcription, signaling that all audio has been sent.
-   * This finalizes the transcription and triggers a FINAL_TRANSCRIPT event.
+   * Commits the transcription, signaling that a segment of audio has been sent. This clears the buffer and triggers a COMMITTED_TRANSCRIPT event. Context from previous segments is kept.
+   * Committing a segment triggers a COMMITTED_TRANSCRIPT event.
    *
    * @throws {Error} If the WebSocket connection is not open
    *
@@ -338,8 +478,8 @@ export class RealtimeConnection {
    *
    * @example
    * ```typescript
-   * connection.on(RealtimeEvents.FINAL_TRANSCRIPT, (data) => {
-   *     console.log("Final:", data.transcript);
+   * connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+   *     console.log("Segment committed:", data.transcript);
    *     connection.close();
    * });
    * ```
@@ -352,7 +492,7 @@ export class RealtimeConnection {
 
     // Close WebSocket connection
     if (this.websocket) {
-      this.websocket.close();
+      this.websocket.close(1000, "User ended session");
     }
   }
 }

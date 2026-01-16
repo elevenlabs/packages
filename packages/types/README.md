@@ -53,14 +53,15 @@ The types are organized into two main categories:
 - **`Incoming`** - Messages received from the ElevenLabs server
   - **Agent API:**
     - `AudioClientEvent` - Audio data from the agent
+    - `AudioAlignmentEvent` - Character-level timing data embedded in audio events for text-to-speech synchronization
     - `AgentResponseClientEvent` - Text responses from the agent
     - `UserTranscriptionClientEvent` - Transcriptions of user speech
     - `InterruptionEvent` - Interruption notifications
   - **Scribe API:**
     - `SessionStartedMessage` - Transcription session started
     - `PartialTranscriptMessage` - Interim transcription results
-    - `FinalTranscriptMessage` - Final transcription results
-    - `FinalTranscriptWithTimestampsMessage` - Final results with word timestamps
+    - `CommittedTranscriptMessage` - Committed transcription results
+    - `CommittedTranscriptWithTimestampsMessage` - Committed results with word timestamps
     - `ScribeErrorMessage` - Error events
     - `ScribeAuthErrorMessage` - Authentication errors
 

@@ -26,7 +26,7 @@ pnpm install @elevenlabs/react
 
 ### useConversation
 
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Conversational AI.
+React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Agents Platform.
 
 #### Initialize conversation
 
@@ -36,7 +36,7 @@ First, initialize the Conversation instance.
 const conversation = useConversation();
 ```
 
-Note that Conversational AI requires microphone access.
+Note that Agents Platform requires microphone access.
 Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
@@ -59,26 +59,31 @@ const conversation = useConversation({
 });
 ```
 
-- **clientTools** - object definition for client tools that can be invoked by agent. [See below](#client-tools) for details.
-- **overrides** - object definition conversations settings overrides. [See below](#conversation-overrides) for details.
-- **textOnly** - whether the conversation should run in text-only mode. [See below](#text-only) for details.
-- **onConnect** - handler called when the conversation connection is established.
-- **onDisconnect** - handler called when the conversation connection has ended.
-- **onMessage** - handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug message when a debug option is enabled.
-- **onError** - handler called when a error is encountered.
-- **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
-- **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
-- **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
-- **onUnhandledClientToolCall** - handler called when a client tool is invoked but no corresponding client tool was defined.
-- **onDebug** - handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.
-- **onAudio** - handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.
-- **onInterruption** - handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.
-- **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
-- **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
-- **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
-- **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
-- **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
-- **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
+| Property | Description |
+|----------|-------------|
+| **clientTools** | Object definition for client tools that can be invoked by the agent. [See below](#client-tools) for details. |
+| **overrides** | Object definition for conversation settings overrides. [See below](#conversation-overrides) for details. |
+| **textOnly** | Whether the conversation should run in text-only mode. [See below](#text-only) for details. |
+| **onConnect** | Handler called when the conversation connection is established. |
+| **onDisconnect** | Handler called when the conversation connection has ended. |
+| **onMessage** | Handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug messages when a debug option is enabled. |
+| **onError** | Handler called when an error is encountered. |
+| **onStatusChange** | Handler called whenever connection status changes. Can be `connected`, `connecting`, or `disconnected` (initial). |
+| **onModeChange** | Handler called when a status changes, e.g., agent switches from `speaking` to `listening`, or vice versa. |
+| **onCanSendFeedbackChange** | Handler called when sending feedback becomes available or unavailable. |
+| **onUnhandledClientToolCall** | Handler called when a client tool is invoked but no corresponding client tool was defined. |
+| **onDebug** | Handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting. |
+| **onAudio** | Handler called when audio data is received from the agent. Provides access to raw audio events for custom processing. |
+| **onInterruption** | Handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking. |
+| **onVadScore** | Handler called with voice activity detection scores, indicating the likelihood of speech in the audio input. |
+| **onMCPToolCall** | Handler called when an MCP (Model Context Protocol) tool is invoked by the agent. |
+| **onMCPConnectionStatus** | Handler called when the MCP connection status changes, useful for monitoring MCP server connectivity. |
+| **onAgentToolRequest** | Handler called when the agent begins tool execution. |
+| **onAgentToolResponse** | Handler called when the agent receives a response from a tool execution. |
+| **onConversationMetadata** | Handler called with conversation initiation metadata, providing information about the conversation setup. |
+| **onAsrInitiationMetadata** | Handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition. |
+| **onAudioAlignment** | Handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization. |
+
 
 ##### Client Tools
 
@@ -114,12 +119,16 @@ const conversation = useConversation({
     agent: {
       prompt: {
         prompt: "My custom prompt",
+        llm: "gemini-2.5-flash",
       },
       firstMessage: "My custom first message",
       language: "en",
     },
     tts: {
       voiceId: "custom voice id",
+      speed: 1.0,
+      stability: 0.5,
+      similarityBoost: 0.8,
     },
     conversation: {
       textOnly: true,
@@ -215,7 +224,7 @@ The SDK automatically routes both WebSocket and WebRTC connections to the approp
 
 ##### startConversation
 
-`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
+`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
 
 Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) and is always necessary.
 
@@ -529,48 +538,66 @@ console.log(canSendFeedback); // boolean
 
 React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe Realtime v2.
 
-**Note:** Scribe Realtime v2 is currently in closed beta. For access please [contact sales](https://elevenlabs.io/contact-sales).
-
 #### Quick Start
 
 ```tsx
+import { useEffect } from "react";
 import { useScribe } from "@elevenlabs/react";
 
 function MyComponent() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     onPartialTranscript: (data) => {
       console.log("Partial:", data.text);
     },
-    onFinalTranscript: (data) => {
-      console.log("Final:", data.text);
+    onCommittedTranscript: (data) => {
+      console.log("Committed:", data.text);
     },
   });
 
+  // Start recording
   const handleStart = async () => {
-    const token = await fetchTokenFromServer();
-    await scribe.connect({
-      token,
-      microphone: {
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
+    try {
+      const token = await fetchTokenFromServer();
+      await scribe.connect({
+        token,
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+    }
   };
+
+  // Stop recording
+  const handleDisconnect = () => {
+    scribe.disconnect();
+  };
+
+  // Disconnect on unmount
+  useEffect(() => {
+    return () => {
+      if (scribe.isConnected) {
+        scribe.disconnect();
+      }
+    };
+  }, [scribe]);
 
   return (
     <div>
       <button onClick={handleStart} disabled={scribe.isConnected}>
         Start Recording
       </button>
-      <button onClick={scribe.disconnect} disabled={!scribe.isConnected}>
+      <button onClick={handleDisconnect} disabled={!scribe.isConnected}>
         Stop
       </button>
 
       {scribe.partialTranscript && <p>Live: {scribe.partialTranscript}</p>}
 
       <div>
-        {scribe.finalTranscripts.map((t) => (
+        {scribe.committedTranscripts.map((t) => (
           <p key={t.id}>{t.text}</p>
         ))}
       </div>
@@ -620,7 +647,7 @@ Configure the hook with default options and callbacks:
 const scribe = useScribe({
   // Connection options (can be overridden in connect())
   token: "optional-default-token",
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   baseUri: "wss://api.elevenlabs.io",
 
   // VAD options
@@ -649,10 +676,11 @@ const scribe = useScribe({
   // Event callbacks
   onSessionStarted: () => console.log("Session started"),
   onPartialTranscript: (data) => console.log("Partial:", data.text),
-  onFinalTranscript: (data) => console.log("Final:", data.text),
-  onFinalTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
+  onCommittedTranscript: (data) => console.log("Committed:", data.text),
+  onCommittedTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
   onError: (error) => console.error("Error:", error),
   onAuthError: (data) => console.error("Auth error:", data.error),
+  onQuotaExceededError: (data) => console.error("Quota exceeded:", data.error),
   onConnect: () => console.log("Connected"),
   onDisconnect: () => console.log("Disconnected"),
 });
@@ -665,7 +693,7 @@ Stream audio directly from the user's microphone:
 ```tsx
 function MicrophoneTranscription() {
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
   });
 
   const startRecording = async () => {
@@ -695,7 +723,7 @@ function MicrophoneTranscription() {
         </div>
       )}
 
-      {scribe.finalTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map((transcript) => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -713,7 +741,7 @@ import { useScribe, AudioFormat } from "@elevenlabs/react";
 function FileTranscription() {
   const [file, setFile] = useState<File | null>(null);
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     audioFormat: AudioFormat.PCM_16000,
     sampleRate: 16000,
   });
@@ -764,7 +792,7 @@ function FileTranscription() {
         Transcribe
       </button>
 
-      {scribe.finalTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map((transcript) => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -780,7 +808,7 @@ function FileTranscription() {
 - **isConnected** - Boolean indicating if connected
 - **isTranscribing** - Boolean indicating if actively transcribing
 - **partialTranscript** - Current partial (interim) transcript
-- **finalTranscripts** - Array of completed transcript segments
+- **committedTranscripts** - Array of completed transcript segments
 - **error** - Current error message, or null
 
 ```tsx
@@ -789,7 +817,7 @@ const scribe = useScribe(/* options */);
 console.log(scribe.status); // "connected"
 console.log(scribe.isConnected); // true
 console.log(scribe.partialTranscript); // "hello world"
-console.log(scribe.finalTranscripts); // [{ id: "...", text: "...", timestamp: ..., isFinal: true }]
+console.log(scribe.committedTranscripts); // [{ id: "...", text: "...", words: ..., isFinal: true }]
 console.log(scribe.error); // null or error string
 ```
 
@@ -825,8 +853,11 @@ Send audio data (manual mode only):
 scribe.sendAudio(base64AudioChunk, {
   commit: false, // Optional: commit immediately
   sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
 });
 ```
+
+**Warning:** The `previousText` field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
 
 ###### commit()
 
@@ -855,14 +886,14 @@ const connection = scribe.getConnection();
 
 #### Transcript Segment Type
 
-Each final transcript segment has the following structure:
+Each committed transcript segment has the following structure:
 
 ```typescript
 interface TranscriptSegment {
   id: string; // Unique identifier
   text: string; // Transcript text
   timestamp: number; // Unix timestamp
-  isFinal: boolean; // Always true for final transcripts
+  isFinal: boolean; // Always true for committed transcripts
 }
 ```
 
@@ -878,19 +909,21 @@ const scribe = useScribe({
   onPartialTranscript: (data: { text: string }) => {
     console.log("Partial:", data.text);
   },
-  onFinalTranscript: (data: { text: string }) => {
-    console.log("Final:", data.text);
+  onCommittedTranscript: (data: { text: string }) => {
+    console.log("Committed:", data.text);
   },
-  onFinalTranscriptWithTimestamps: (data: {
+  onCommittedTranscriptWithTimestamps: (data: {
     text: string;
-    timestamps?: { start: number; end: number }[];
+    words?: { start: number; end: number }[];
   }) => {
     console.log("Text:", data.text);
-    console.log("Word timestamps:", data.timestamps);
+    console.log("Word timestamps:", data.words);
   },
+  // Generic error handler for all errors
   onError: (error: Error | Event) => {
-    console.error("Connection error:", error);
+    console.error("Scribe error:", error);
   },
+  // Specific errors can also be tracked
   onAuthError: (data: { error: string }) => {
     console.error("Auth error:", data.error);
   },
@@ -905,39 +938,41 @@ const scribe = useScribe({
 
 #### Commit Strategies
 
-Control when transcriptions are finalized:
+Control when transcriptions are committed:
 
 ```tsx
 import { CommitStrategy } from "@elevenlabs/react";
 
-// Automatic (default) - API detects speech end
-const scribe = useScribe({
-  commitStrategy: CommitStrategy.AUTOMATIC,
-});
-
-// Manual - you control when to commit
+// Manual (default) - you control when to commit
 const scribe = useScribe({
   commitStrategy: CommitStrategy.MANUAL,
 });
 
 // Later...
-scribe.commit(); // Finalize transcription
+scribe.commit(); // Commit transcription
+
+// Voice Activity Detection - model detects silences and automatically commits
+const scribe = useScribe({
+  commitStrategy: CommitStrategy.VAD,
+});
 ```
 
 #### Complete Example
 
 ```tsx
-import { useScribe, AudioFormat, CommitStrategy } from "@elevenlabs/react";
-import { useState } from "react";
+import { useScribe, CommitStrategy } from "@elevenlabs/react";
+import { useState, useEffect } from "react";
+
+type Mode = "microphone" | "file"
 
 function ScribeDemo() {
-  const [mode, setMode] = useState<"microphone" | "file">("microphone");
+  const [mode, setMode] = useState<Mode>("microphone");
 
   const scribe = useScribe({
-    modelId: "scribe_realtime_v2",
+    modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.AUTOMATIC,
     onSessionStarted: () => console.log("Started"),
-    onFinalTranscript: (data) => console.log("Final:", data.text),
+    onCommittedTranscript: (data) => console.log("Committed:", data.text),
     onError: (error) => console.error("Error:", error),
   });
 
@@ -951,6 +986,16 @@ function ScribeDemo() {
       },
     });
   };
+
+  const handleDisconnect = () => scribe.disconnect();
+  
+  const handleClearTranscripts = () => scribe.clearTranscripts();
+
+  useEffect(() => {
+    return () => {
+      handleDisconnect();
+    };
+  }, []);
 
   return (
     <div>
@@ -967,9 +1012,9 @@ function ScribeDemo() {
         {!scribe.isConnected ? (
           <button onClick={startMicrophone}>Start Recording</button>
         ) : (
-          <button onClick={scribe.disconnect}>Stop</button>
+          <button onClick={handleDisconnect}>Stop</button>
         )}
-        <button onClick={scribe.clearTranscripts}>Clear</button>
+        <button onClick={handleClearTranscripts}>Clear</button>
       </div>
 
       {/* Live Transcript */}
@@ -979,10 +1024,10 @@ function ScribeDemo() {
         </div>
       )}
 
-      {/* Final Transcripts */}
+      {/* Committed Transcripts */}
       <div>
-        <h2>Transcripts ({scribe.finalTranscripts.length})</h2>
-        {scribe.finalTranscripts.map((t) => (
+        <h2>Transcripts ({scribe.committedTranscripts.length})</h2>
+        {scribe.committedTranscripts.map((t) => (
           <div key={t.id}>
             <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
             <p>{t.text}</p>
@@ -1012,7 +1057,7 @@ import {
 } from "@elevenlabs/react";
 
 const scribe: UseScribeReturn = useScribe({
-  modelId: "scribe_realtime_v2",
+  modelId: "scribe_v2_realtime",
   microphone: {
     echoCancellation: true,
   },

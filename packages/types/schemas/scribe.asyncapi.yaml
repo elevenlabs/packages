@@ -8,7 +8,7 @@ info:
 
     ## Event Flow
     - Audio chunks are sent as input_audio_chunk messages
-    - Transcription results are streamed back in various formats (partial, final, with timestamps)
+    - Transcription results are streamed back in various formats (partial, committed, with timestamps)
     - Supports manual commit or VAD-based automatic commit strategies
   contact:
     name: ElevenLabs API Support
@@ -43,10 +43,21 @@ channels:
           # Server -> Client messages
           - $ref: "#/components/messages/SessionStarted"
           - $ref: "#/components/messages/PartialTranscript"
-          - $ref: "#/components/messages/FinalTranscript"
-          - $ref: "#/components/messages/FinalTranscriptWithTimestamps"
+          - $ref: "#/components/messages/CommittedTranscript"
+          - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
+          - $ref: "#/components/messages/QuotaExceededError"
+          - $ref: "#/components/messages/CommitThrottledError"
+          - $ref: "#/components/messages/TranscriberError"
+          - $ref: "#/components/messages/UnacceptedTermsError"
+          - $ref: "#/components/messages/RateLimitedError"
+          - $ref: "#/components/messages/InputError"
+          - $ref: "#/components/messages/QueueOverflowError"
+          - $ref: "#/components/messages/ResourceExhaustedError"
+          - $ref: "#/components/messages/SessionTimeLimitExceededError"
+          - $ref: "#/components/messages/ChunkSizeExceededError"
+          - $ref: "#/components/messages/InsufficientAudioActivityError"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -84,21 +95,21 @@ components:
       payload:
         $ref: "#/components/schemas/PartialTranscriptPayload"
 
-    FinalTranscript:
-      name: FinalTranscriptMessage
-      title: Final Transcript
-      summary: Final transcription result
+    CommittedTranscript:
+      name: CommittedTranscriptMessage
+      title: Committed Transcript
+      summary: Committed transcription result
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/FinalTranscriptPayload"
+        $ref: "#/components/schemas/CommittedTranscriptPayload"
 
-    FinalTranscriptWithTimestamps:
-      name: FinalTranscriptWithTimestampsMessage
-      title: Final Transcript with Timestamps
-      summary: Final transcription result with word-level timestamps
+    CommittedTranscriptWithTimestamps:
+      name: CommittedTranscriptWithTimestampsMessage
+      title: Committed Transcript with Timestamps
+      summary: Committed transcription result with word-level timestamps
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/FinalTranscriptWithTimestampsPayload"
+        $ref: "#/components/schemas/CommittedTranscriptWithTimestampsPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -116,14 +127,102 @@ components:
       payload:
         $ref: "#/components/schemas/ScribeAuthErrorPayload"
 
+    QuotaExceededError:
+      name: ScribeQuotaExceededErrorMessage
+      title: Scribe Quota Exceeded Error
+      summary: Quota exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeQuotaExceededErrorPayload"
+
+    CommitThrottledError:
+      name: ScribeCommitThrottledErrorMessage
+      title: Scribe Commit Throttled Error
+      summary: Commit throttled
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeCommitThrottledErrorPayload"
+
+    TranscriberError:
+      name: ScribeTranscriberErrorMessage
+      title: Scribe Transcriber Error
+      summary: Transcriber error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeTranscriberErrorPayload"
+
+    UnacceptedTermsError:
+      name: ScribeUnacceptedTermsErrorMessage
+      title: Scribe Unaccepted Terms Error
+      summary: Unaccepted terms
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeUnacceptedTermsErrorPayload"
+
+    RateLimitedError:
+      name: ScribeRateLimitedErrorMessage
+      title: Scribe Rate Limited Error
+      summary: Rate limited
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeRateLimitedErrorPayload"
+
+    InputError:
+      name: ScribeInputErrorMessage
+      title: Scribe Input Error
+      summary: Input error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeInputErrorPayload"
+
+    QueueOverflowError:
+      name: ScribeQueueOverflowErrorMessage
+      title: Scribe Queue Overflow Error
+      summary: Queue overflow
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeQueueOverflowErrorPayload"
+
+    ResourceExhaustedError:
+      name: ScribeResourceExhaustedErrorMessage
+      title: Scribe Resource Exhausted Error
+      summary: Resource exhausted
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeResourceExhaustedErrorPayload"
+
+    SessionTimeLimitExceededError:
+      name: ScribeSessionTimeLimitExceededErrorMessage
+      title: Scribe Session Time Limit Exceeded Error
+      summary: Session time limit exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeSessionTimeLimitExceededErrorPayload"
+
+    ChunkSizeExceededError:
+      name: ScribeChunkSizeExceededErrorMessage
+      title: Scribe Chunk Size Exceeded Error
+      summary: Chunk size exceeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeChunkSizeExceededErrorPayload"
+
+    InsufficientAudioActivityError:
+      name: ScribeInsufficientAudioActivityErrorMessage
+      title: Scribe Insufficient Audio Activity Error
+      summary: Insufficient audio activity
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeInsufficientAudioActivityErrorPayload"
+
   schemas:
     MessageType:
       type: string
       enum:
         - session_started
         - partial_transcript
-        - final_transcript
-        - final_transcript_with_timestamps
+        - committed_transcript
+        - committed_transcript_with_timestamps
         - error
         - auth_error
         - input_audio_chunk
@@ -199,6 +298,9 @@ components:
         sample_rate:
           type: integer
           description: Sample rate of the audio in Hz
+        previous_text:
+          type: string
+          description: Send context to the model via base64 encoded audio or text from a previous transcription. Can only be sent alongside the first audio chunk. If sent in a subsequent chunk, an error will be returned.
 
     # ===== SERVER MESSAGE PAYLOADS =====
 
@@ -224,9 +326,6 @@ components:
             language_code:
               type: string
               description: Language code in ISO 639-1 or ISO 639-3 format
-            timestamps_granularity:
-              type: string
-              description: Granularity of timestamps
             vad_commit_strategy:
               type: string
               enum:
@@ -245,9 +344,6 @@ components:
             min_silence_duration_ms:
               type: integer
               description: Minimum silence duration in milliseconds
-            max_tokens_to_recompute:
-              type: integer
-              description: Maximum number of tokens to recompute
             model_id:
               type: string
               description: ID of the model to use for transcription
@@ -265,64 +361,32 @@ components:
         text:
           type: string
           description: Partial transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
 
-    FinalTranscriptPayload:
+    CommittedTranscriptPayload:
       type: object
       required: [message_type, text]
       properties:
         message_type:
           type: string
-          const: final_transcript
+          const: committed_transcript
         text:
           type: string
-          description: Final transcription text
-        language_code:
-          type: string
-          nullable: true
-          description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
-        words:
-          type: array
-          nullable: true
-          description: Word-level information (if available)
-          items:
-            $ref: "#/components/schemas/Word"
+          description: Committed transcription text
 
-    FinalTranscriptWithTimestampsPayload:
+    CommittedTranscriptWithTimestampsPayload:
       type: object
       required: [message_type, text]
       properties:
         message_type:
           type: string
-          const: final_transcript_with_timestamps
+          const: committed_transcript_with_timestamps
         text:
           type: string
-          description: Final transcription text
+          description: Committed transcription text
         language_code:
           type: string
           nullable: true
           description: Detected or specified language code
-        logprob:
-          type: number
-          nullable: true
-          description: Log probability score for the transcription
         words:
           type: array
           nullable: true
@@ -330,25 +394,145 @@ components:
           items:
             $ref: "#/components/schemas/Word"
 
+    # Base error structure - used as anchor for all error payloads
+    ScribeErrorBase: &ScribeErrorBase
+      type: object
+      required: [message_type, error]
+      properties:
+        error:
+          type: string
+          description: Error message with details
+
+    # Generic error that can represent any error type
     ScribeErrorPayload:
       type: object
       required: [message_type, error]
       properties:
         message_type:
           type: string
-          const: error
+          enum:
+            - error
+            - auth_error
+            - quota_exceeded
+            - commit_throttled
+            - transcriber_error
+            - unaccepted_terms
+            - rate_limited
+            - input_error
+            - queue_overflow
+            - resource_exhausted
+            - session_time_limit_exceeded
+            - chunk_size_exceeded
+            - insufficient_audio_activity
+          description: Type of error that occurred
         error:
           type: string
-          description: Error message describing what went wrong
+          description: Error message with details
 
     ScribeAuthErrorPayload:
-      type: object
-      required: [message_type, error]
+      <<: *ScribeErrorBase
       properties:
         message_type:
           type: string
           const: auth_error
         error:
           type: string
-          description: Authentication error details
 
+    ScribeQuotaExceededErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: quota_exceeded
+        error:
+          type: string
+
+    ScribeCommitThrottledErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: commit_throttled
+        error:
+          type: string
+
+    ScribeTranscriberErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: transcriber_error
+        error:
+          type: string
+
+    ScribeUnacceptedTermsErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: unaccepted_terms
+        error:
+          type: string
+
+    ScribeRateLimitedErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: rate_limited
+        error:
+          type: string
+
+    ScribeInputErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: input_error
+        error:
+          type: string
+
+    ScribeQueueOverflowErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: queue_overflow
+        error:
+          type: string
+
+    ScribeResourceExhaustedErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: resource_exhausted
+        error:
+          type: string
+
+    ScribeSessionTimeLimitExceededErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: session_time_limit_exceeded
+        error:
+          type: string
+
+    ScribeChunkSizeExceededErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: chunk_size_exceeded
+        error:
+          type: string
+
+    ScribeInsufficientAudioActivityErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: insufficient_audio_activity
+        error:
+          type: string
