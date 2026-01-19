@@ -54,7 +54,7 @@ function UserMessageBubble({
       <div
         dir="auto"
         className={clsx(
-          "px-3 py-2.5 rounded-bubble text-sm min-w-0 [overflow-wrap:break-word]",
+          "px-3 py-2.5 rounded-bubble text-sm min-w-0 [overflow-wrap:break-word] whitespace-pre-wrap",
           entry.role === "user"
             ? "bg-accent text-accent-primary"
             : "bg-base-active text-base-primary"
