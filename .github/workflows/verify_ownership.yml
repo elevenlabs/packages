@@ -1,0 +1,258 @@
+name: Verify Ownership Compliance
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  verify-ownership:
+    name: ✅ Ownership Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load Ownership Configuration
+        id: ownership
+        run: |
+          if [ ! -f ".github/OWNERSHIP_VERIFICATION.json" ]; then
+            echo "ERROR: Ownership verification file missing"
+            exit 1
+          fi
+          
+          # Parse ownership file
+          PROJECT_NAME=$(jq -r '.project' .github/OWNERSHIP_VERIFICATION.json)
+          OWNER_COUNT=$(jq -r '.owners | length' .github/OWNERSHIP_VERIFICATION.json)
+          
+          echo "project=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "owner_count=$OWNER_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "✓ Loaded ownership config: $PROJECT_NAME with $OWNER_COUNT owners"
+
+      - name: Verify Required Files Exist
+        run: |
+          echo "Checking required ownership files..."
+          
+          REQUIRED_FILES=(
+            "LICENSE"
+            "OWNERSHIP_AGREEMENT.md"
+            ".github/OWNERSHIP_VERIFICATION.json"
+          )
+          
+          ALL_EXIST=true
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ $file exists"
+            else
+              echo "✗ $file is missing"
+              ALL_EXIST=false
+            fi
+          done
+          
+          if [ "$ALL_EXIST" = false ]; then
+            echo "ERROR: Required ownership files missing"
+            exit 1
+          fi
+
+      - name: Verify License File Content
+        run: |
+          echo "Verifying license file..."
+          
+          # Check for required license terms
+          REQUIRED_TERMS=(
+            "Rylee Tikel Greene"
+            "Joseph Michael Lung"
+            "ElevenLabs"
+            "2026"
+          )
+          
+          for term in "${REQUIRED_TERMS[@]}"; do
+            if grep -q "$term" LICENSE; then
+              echo "✓ License contains: $term"
+            else
+              echo "✗ License missing: $term"
+              exit 1
+            fi
+          done
+
+      - name: Verify Package.json Ownership
+        run: |
+          echo "Verifying package.json ownership fields..."
+          
+          if [ ! -f "package.json" ]; then
+            echo "ERROR: package.json missing"
+            exit 1
+          fi
+          
+          # Check for ownership declaration
+          if jq -e '.ownership' package.json > /dev/null; then
+            echo "✓ package.json contains ownership section"
+          else
+            echo "ERROR: package.json missing ownership section"
+            exit 1
+          fi
+          
+          # Verify owners are listed
+          if jq -e '.ownership.owners | index("Rylee Tikel Greene")' package.json > /dev/null; then
+            echo "✓ Rylee Tikel Greene listed as owner"
+          else
+            echo "ERROR: Rylee Tikel Greene not listed in package.json"
+            exit 1
+          fi
+          
+          if jq -e '.ownership.owners | index("Joseph Michael Lung")' package.json > /dev/null; then
+            echo "✓ Joseph Michael Lung listed as owner"
+          else
+            echo "ERROR: Joseph Michael Lung not listed in package.json"
+            exit 1
+          fi
+
+      - name: Verify GitHub Actor Permissions
+        env:
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "Verifying GitHub actor permissions..."
+          echo "Current actor: $ACTOR"
+          
+          # Load authorized owners from config
+          OWNERS=$(jq -r '.owners[].github' .github/OWNERSHIP_VERIFICATION.json)
+          echo "Authorized owners: $OWNERS"
+          
+          # Check if actor is an owner
+          if echo "$OWNERS" | grep -q "$ACTOR"; then
+            echo "✓ Actor $ACTOR is an authorized owner"
+          else
+            echo "⚠️ Actor $ACTOR is not an owner"
+            echo "This is allowed for CI runs but restricted for releases"
+          fi
+
+      - name: Generate Ownership Report
+        if: always()
+        run: |
+          echo "## Ownership Verification Report" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ElevenLabs.io" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Verified:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ LICENSE" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ OWNERSHIP_AGREEMENT.md" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ .github/OWNERSHIP_VERIFICATION.json" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ package.json" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Owners:" >> $GITHUB_STEP_SUMMARY
+          echo "- Rylee Tikel Greene (@ryleetikelgreene)" >> $GITHUB_STEP_SUMMARY
+          echo "- Joseph Michael Lung (@josephlung)" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All ownership checks passed successfully**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  integration-test:
+    name: 🧪 Ownership Integration Tests
+    runs-on: ubuntu-latest
+    needs: verify-ownership
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Ownership Validation Tests
+        run: |
+          # Create a test script for ownership validation
+          cat > test-ownership.js << 'EOF'
+          const fs = require('fs');
+          const ownership = JSON.parse(fs.readFileSync('.github/OWNERSHIP_VERIFICATION.json', 'utf8'));
+          
+          console.log('Running ownership validation tests...');
+          
+          // Test 1: Verify required fields
+          const requiredFields = ['project', 'owners', 'license', 'effectiveDate'];
+          requiredFields.forEach(field => {
+            if (!ownership[field]) {
+              throw new Error(`Missing required field: ${field}`);
+            }
+          });
+          console.log('✓ All required fields present');
+          
+          // Test 2: Verify owner count
+          if (ownership.owners.length !== 2) {
+            throw new Error(`Expected 2 owners, found ${ownership.owners.length}`);
+          }
+          console.log('✓ Correct number of owners');
+          
+          // Test 3: Verify owner names
+          const ownerNames = ownership.owners.map(o => o.name);
+          if (!ownerNames.includes('Rylee Tikel Greene') || !ownerNames.includes('Joseph Michael Lung')) {
+            throw new Error('Missing required owner names');
+          }
+          console.log('✓ Correct owner names');
+          
+          // Test 4: Verify license type
+          if (ownership.license.type !== 'Custom-CC-BY-4.0-With-Retained-Rights') {
+            throw new Error('Incorrect license type');
+          }
+          console.log('✓ Correct license type');
+          
+          console.log('✅ All ownership tests passed!');
+          EOF
+          
+          node test-ownership.js
+
+      - name: Test Workflow Permissions
+        run: |
+          echo "Testing workflow permissions..."
+          
+          # Check if workflow can access necessary files
+          TEST_FILES=(
+            ".github/workflows/verify-ownership.yml"
+            ".github/CODEOWNERS"
+            ".github/SECURITY.md"
+          )
+          
+          for file in "${TEST_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Can access: $file"
+            else
+              echo "✗ Cannot access: $file"
+              exit 1
+            fi
+          done
+
+  success-notification:
+    name: 📢 Ownership Verification Complete
+    runs-on: ubuntu-latest
+    needs: [verify-ownership, integration-test]
+    if: always()
+    steps:
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "🎉 All ownership verification checks passed!"
+          echo "Project ownership is properly configured."
+          echo ""
+          echo "Owners:"
+          echo "  - Rylee Tikel Greene"
+          echo "  - Joseph Michael Lung"
+          echo ""
+          echo "License: Custom-CC-BY-4.0-With-Retained-Rights"
+          echo "Effective: 2026-01-19"
+          echo "Jurisdiction: International"
+          
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Ownership verification failed!"
+          echo "Please check the ownership configuration."
+          echo ""
+          echo "Required files:"
+          echo "  - LICENSE"
+          echo "  - OWNERSHIP_AGREEMENT.md"
+          echo "  - .github/OWNERSHIP_VERIFICATION.json"
+          echo "  - package.json (with ownership section)"
+          exit 1
