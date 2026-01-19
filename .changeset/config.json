@@ -1,11 +1,51 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
-  "changelog": "@changesets/cli/changelog",
-  "commit": false,
-  "fixed": [],
-  "linked": [],
-  "access": "public",
-  "baseBranch": "main",
-  "updateInternalDependencies": "patch",
-  "ignore": []
+  "project": {
+    "name": "ElevenLabs.io",
+    "version": "1.0.0",
+    "description": "An extraordinary project by Rylee Tikel Greene and Joseph Michael Lung",
+    "license": "Custom-CC-BY-4.0-With-Retained-Rights"
+  },
+  "ownership": {
+    "owners": [
+      {
+        "name": "Rylee Tikel Greene",
+        "role": "Founding Owner",
+        "since": "2026-01-19"
+      },
+      {
+        "name": "Joseph Michael Lung",
+        "role": "Founding Owner",
+        "since": "2026-01-19"
+      }
+    ],
+    "effectiveDate": "2026-01-19",
+    "jurisdiction": "International",
+    "agreementFile": "OWNERSHIP_AGREEMENT.md"
+  },
+  "licensing": {
+    "type": "Custom Public License",
+    "basedOn": "Creative Commons Attribution 4.0 International",
+    "keyProvisions": [
+      "Attribution required to named owners",
+      "Share and adapt permitted",
+      "Owners retain all financial rights from derivatives",
+      "Exclusive control maintained by owners"
+    ],
+    "licenseFile": "LICENSE",
+    "notice": "© 2026 Rylee Tikel Greene & Joseph Michael Lung. All rights reserved."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ElevenLabs.io",
+    "private": true
+  },
+  "access": {
+    "controlledBy": ["Rylee Tikel Greene", "Joseph Michael Lung"],
+    "delegation": "Direct owner authorization only",
+    "revocable": true
+  },
+  "build": {
+    "entry": "src/index.js",
+    "output": "dist"
+  }
 }
