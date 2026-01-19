@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [],
+  "privatePackages": {
+    "version": true,
+    "tag": true
+  },
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true,
+    "updateInternalDependents": "always"
+  },
+  "owners": [
+    {
+      "name": "Rylee Tikel Greene",
+      "email": "rylee@elevenlabs.io",
+      "required": true
+    },
+    {
+      "name": "Joseph Michael Lung",
+      "email": "joseph@elevenlabs.io",
+      "required": true
+    }
+  ]
+}
