@@ -1,0 +1,48 @@
+name: Update Ownership Checksum
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'  # Monthly
+
+# Only owners can run this workflow
+permissions:
+  contents: write
+
+jobs:
+  update-checksum:
+    name: Update Ownership Checksum
+    runs-on: ubuntu-latest
+    if: github.actor == 'ryleetikelgreene' || github.actor == 'josephlung'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Calculate New Checksum
+        id: checksum
+        run: |
+          # Calculate SHA256 of ownership verification file
+          CHECKSUM=$(sha256sum .github/OWNERSHIP_VERIFICATION.json | awk '{print $1}')
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "New checksum: $CHECKSUM"
+
+      - name: Update Verification File
+        run: |
+          # Update checksum in the verification file
+          jq --arg checksum "${{ steps.checksum.outputs.checksum }}" \
+             --arg date "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+             '.verification.checksum = $checksum | .verification.lastVerified = $date' \
+             .github/OWNERSHIP_VERIFICATION.json > tmp.json
+          
+          mv tmp.json .github/OWNERSHIP_VERIFICATION.json
+          
+          echo "Updated checksum and verification date"
+
+      - name: Commit and Push Changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .github/OWNERSHIP_VERIFICATION.json
+          git commit -m "chore: update ownership verification checksum"
+          git push
