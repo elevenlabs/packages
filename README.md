@@ -190,6 +190,9 @@ pnpm run test
 
 # Start development mode
 pnpm run dev
+
+# If the change needs a note in the changelog / release nodes, create a changeset
+pnpm run changeset
 ```
 
 ### Creating a New Package
@@ -197,6 +200,10 @@ pnpm run dev
 ```bash
 pnpm run create --name=my-new-package
 ```
+
+### Releasing
+
+Merge the latest ["Version Packages" PR](https://github.com/elevenlabs/packages/pulls?q=is%3Apr+%22Version+Packages%22+author%3Aapp%2Fgithub-actions+is%3Aopen).
 
 ## License
 
