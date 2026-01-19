@@ -203,7 +203,11 @@ pnpm run create --name=my-new-package
 
 ### Releasing
 
-Merge the latest ["Version Packages" PR](https://github.com/elevenlabs/packages/pulls?q=is%3Apr+%22Version+Packages%22+author%3Aapp%2Fgithub-actions+is%3Aopen).
+We're using [Changesets](https://github.com/changesets/changesets) to coordinate changelog entries and release notes.
+
+Merge the latest ["Version Packages" PR](https://github.com/elevenlabs/packages/pulls?q=is%3Apr+%22Version+Packages%22+author%3Aapp%2Fgithub-actions+is%3Aopen) opened by [the Changesets action](https://github.com/changesets/action).
+
+See the [Changesets documentation](https://github.com/changesets/changesets/blob/main/docs/common-questions.md) for answers to common questions.
 
 ## License
 
