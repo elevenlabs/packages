@@ -636,7 +636,7 @@ const MemoParagraph = memo<ParagraphProps>(
     }
 
     return (
-      <p className={cn("text-sm", className)} {...props}>
+      <p className={cn("text-sm mb-3", className)} {...props}>
         {children}
       </p>
     );
