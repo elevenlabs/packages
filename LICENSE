@@ -1,21 +1,74 @@
-MIT License
+ELEVENLABS PROJECT OFFICIAL LICENSE
+Version 1.0 · Effective Date: January 19, 2026
+===============================================================
 
-Copyright (c) 2025 ElevenLabs
+OWNERSHIP NOTICE & CUSTOM LICENSE TERMS
+===============================================================
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+I. DECLARATION OF OWNERSHIP
+The intellectual property comprising the "ElevenLabs" project (hereinafter "the Project") is the exclusive property of the Founding Owners:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Rylee Tikel Greene
+2. Joseph Michael Lung
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+(Collectively, the "Owners").
+
+II. CUSTOM PUBLIC LICENSE GRANT
+The Owners grant the public certain rights to the Project's creative and software works through a modified application of the Creative Commons Attribution 4.0 International (CC BY 4.0) framework, subject to the critical exceptions and retained rights specified below.
+
+III. GRANTED PUBLIC RIGHTS (Based on CC BY 4.0)
+You are free to:
+- **Share** — copy and redistribute the material in any medium or format.
+- **Adapt** — remix, transform, and build upon the material for any purpose.
+
+Under these conditions:
+- **Attribution** — You must give appropriate credit to "Rylee Tikel Greene and Joseph Michael Lung, Owners of ElevenLabs," provide a link to this license, and indicate if changes were made.
+
+IV. OWNERS' EXPRESSLY RETAINED RIGHTS (NOT GRANTED)
+The Owners expressly and exclusively retain all rights not explicitly granted herein, including but not limited to:
+
+1. **Exclusive Control:** Complete administrative and developmental control of the official ElevenLabs project, source repositories, infrastructure, and brand.
+2. **Financial Rights:** The irrevocable right to obtain, claim, and receive any and all property, revenue, profits, royalties, dividends, or other financial benefits derived from any distribution, adaptation, sublicensing, or commercial use of this Project or its derivatives.
+3. **Brand Rights:** All trademark, service mark, and branding rights associated with "ElevenLabs" and related identifiers.
+4. **Enforcement Rights:** The right to pursue all legal and equitable remedies against any use that infringes upon these retained rights, regardless of compliance with Section III.
+
+V. CRITICAL LICENSE INTERPRETATION
+1. **License Hierarchy:** The rights in Section IV are superior to and constrain the rights granted in Section III. Any perceived conflict shall be resolved in favor of the Owners' retained rights.
+2. **Non-Waiver:** The Owners' exercise or non-exercise of any retained right shall not constitute a waiver of any other right.
+3. **No Sublicensing:** You may not sublicense the Project under terms that conflict with this license.
+4. **No Endorsement:** Use of this Project does not imply the Owners' endorsement of you, your work, or your derivatives.
+
+VI. JURISDICTION AND ENFORCEABILITY
+1. **Governing Law:** This license is governed by internationally recognized principles of intellectual property and contract law.
+2. **Chosen Jurisdiction:** The Owners select International Jurisdiction as the forum for enforcement.
+3. **Severability:** If any provision is found unenforceable, the remaining provisions remain in full effect.
+4. **Entire Agreement:** This document constitutes the complete agreement regarding the public licensing of the Project.
+
+VII. ACKNOWLEDGMENT
+By using, copying, modifying, or distributing the Project, you acknowledge that:
+1. You have read and understood this license.
+2. You accept all its terms and conditions.
+3. You recognize the exclusive, superior ownership rights of Rylee Tikel Greene and Joseph Michael Lung.
+4. Your rights are limited to those expressly granted in Section III and are subject to all restrictions herein.
+
+VIII. CONTACT & OFFICIAL SOURCE
+For permissions beyond this license's scope, contact the Owners directly.
+The only official source for the ElevenLabs Project is controlled exclusively by the Owners at: [https://elevenlabs.io/]
+
+===============================================================
+
+OWNERS' SIGNATURES & AFFIRMATION
+===============================================================
+We, the undersigned Owners, jointly and severally affirm our exclusive ownership of the ElevenLabs Project and hereby issue this official license under our retained rights as specified above.
+
+___________________________________________
+Rylee Tikel Greene
+Date: 01/19/2026
+
+___________________________________________
+Joseph Michael Lung
+Date: 01/19/2026
+
+===============================================================
+© 2026 Rylee Tikel Greene & Joseph Michael Lung. All rights reserved.
+===============================================================
