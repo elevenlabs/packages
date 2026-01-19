@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "ownership:migrate": "node scripts/ownership-migration-bot.js",
+    "ownership:fix": "node scripts/fix-failed-runs.js",
+    "ownership:update-all": "node scripts/update-all-releases.js",
+    "bot:run": "node scripts/ownership-migration-bot.js --auto"
+  }
+}
