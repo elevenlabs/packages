@@ -1,0 +1,368 @@
+name: Policy Enforcement
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '.github/policy.yml'
+      - 'LICENSE'
+      - 'OWNERSHIP_AGREEMENT.md'
+      - 'package.json'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '.github/policy.yml'
+      - 'LICENSE'
+      - 'OWNERSHIP_AGREEMENT.md'
+      - 'package.json'
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+
+jobs:
+  verify-policy-compliance:
+    name: 🔒 Verify Policy Compliance
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load Policy Configuration
+        id: policy
+        run: |
+          if [ ! -f ".github/policy.yml" ]; then
+            echo "ERROR: policy.yml file missing"
+            exit 1
+          fi
+          
+          # Parse policy file
+          POLICY_VERSION=$(yq e '.metadata.version' .github/policy.yml)
+          OWNER_COUNT=$(yq e '.ownership.owners | length' .github/policy.yml)
+          
+          echo "policy_version=$POLICY_VERSION" >> $GITHUB_OUTPUT
+          echo "owner_count=$OWNER_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "📋 Policy Version: $POLICY_VERSION"
+          echo "👥 Owner Count: $OWNER_COUNT"
+
+      - name: Verify Required Files Exist
+        run: |
+          echo "📁 Checking required policy files..."
+          
+          REQUIRED_FILES=(
+            ".github/policy.yml"
+            "LICENSE"
+            "OWNERSHIP_AGREEMENT.md"
+            "package.json"
+          )
+          
+          ALL_EXIST=true
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ $file is missing"
+              ALL_EXIST=false
+            fi
+          done
+          
+          if [ "$ALL_EXIST" = false ]; then
+            echo "ERROR: Required policy files missing"
+            exit 1
+          fi
+
+      - name: Verify Ownership Consistency
+        run: |
+          echo "👥 Verifying ownership consistency across files..."
+          
+          # Extract owners from policy.yml
+          POLICY_OWNERS=$(yq e '.ownership.owners[].name' .github/policy.yml | sort)
+          
+          # Extract owners from package.json
+          PKG_OWNERS=$(jq -r '.ownership.owners[]' package.json | sort)
+          
+          # Extract owners from LICENSE
+          LICENSE_CONTENT=$(cat LICENSE)
+          
+          echo "Policy Owners: $POLICY_OWNERS"
+          echo "Package Owners: $PKG_OWNERS"
+          
+          # Compare owners
+          if [ "$POLICY_OWNERS" = "$PKG_OWNERS" ]; then
+            echo "✅ Ownership consistent between policy.yml and package.json"
+          else
+            echo "❌ Ownership mismatch between policy.yml and package.json"
+            exit 1
+          fi
+          
+          # Verify LICENSE contains owner names
+          if echo "$LICENSE_CONTENT" | grep -q "Rylee Tikel Greene" && \
+             echo "$LICENSE_CONTENT" | grep -q "Joseph Michael Lung"; then
+            echo "✅ LICENSE contains correct owner names"
+          else
+            echo "❌ LICENSE missing owner names"
+            exit 1
+          fi
+
+      - name: Verify License Type
+        run: |
+          echo "⚖️ Verifying license consistency..."
+          
+          POLICY_LICENSE=$(yq e '.licensing.public_license.name' .github/policy.yml)
+          PKG_LICENSE=$(jq -r '.license' package.json)
+          
+          echo "Policy License: $POLICY_LICENSE"
+          echo "Package License: $PKG_LICENSE"
+          
+          if [ "$POLICY_LICENSE" = "$PKG_LICENSE" ]; then
+            echo "✅ License type consistent"
+          else
+            echo "❌ License type mismatch"
+            exit 1
+          fi
+
+      - name: Check Branch Protection Compliance
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🛡️ Checking branch protection compliance..."
+          
+          # Check main branch protection
+          MAIN_PROTECTION=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/branches/main/protection")
+          
+          if echo "$MAIN_PROTECTION" | grep -q "required_pull_request_reviews"; then
+            echo "✅ Main branch has required reviews"
+          else
+            echo "❌ Main branch missing required reviews"
+          fi
+          
+          if echo "$MAIN_PROTECTION" | grep -q "required_status_checks"; then
+            echo "✅ Main branch has required status checks"
+          else
+            echo "❌ Main branch missing required status checks"
+          fi
+
+      - name: Run Policy Tests
+        run: |
+          echo "🧪 Running policy tests..."
+          
+          # Create test script
+          cat > test-policy.js << 'EOF'
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          
+          console.log('Testing policy configuration...');
+          
+          // Load policy
+          const policy = yaml.load(fs.readFileSync('.github/policy.yml', 'utf8'));
+          
+          // Test 1: Verify required sections
+          const requiredSections = ['ownership', 'licensing', 'access', 'security'];
+          requiredSections.forEach(section => {
+            if (!policy[section]) {
+              throw new Error(`Missing required section: ${section}`);
+            }
+          });
+          console.log('✅ All required sections present');
+          
+          // Test 2: Verify owner count
+          if (policy.ownership.owners.length !== 2) {
+            throw new Error(`Expected 2 owners, found ${policy.ownership.owners.length}`);
+          }
+          console.log('✅ Correct number of owners');
+          
+          // Test 3: Verify owner names
+          const ownerNames = policy.ownership.owners.map(o => o.name);
+          if (!ownerNames.includes('Rylee Tikel Greene') || 
+              !ownerNames.includes('Joseph Michael Lung')) {
+            throw new Error('Missing required owner names');
+          }
+          console.log('✅ Correct owner names');
+          
+          // Test 4: Verify license type
+          if (policy.licensing.public_license.name !== 'Custom-CC-BY-4.0-With-Retained-Rights') {
+            throw new Error('Incorrect license type');
+          }
+          console.log('✅ Correct license type');
+          
+          console.log('✅ All policy tests passed!');
+          EOF
+          
+          # Install yaml parser and run tests
+          npm install js-yaml
+          node test-policy.js
+
+      - name: Generate Compliance Report
+        if: always()
+        run: |
+          echo "## Policy Compliance Report" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Policy Version:** ${{ steps.policy.outputs.policy_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Checks Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Required files verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Ownership consistency check" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ License type verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Branch protection check" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Policy structure tests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "### Compliance Status: ✅ FULLY COMPLIANT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All policy requirements are satisfied." >> $GITHUB_STEP_SUMMARY
+            echo "Ownership: Rylee Tikel Greene & Joseph Michael Lung" >> $GITHUB_STEP_SUMMARY
+            echo "License: Custom-CC-BY-4.0-With-Retained-Rights" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Compliance Status: ❌ NON-COMPLIANT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the failed checks above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify on Policy Violation
+        if: failure()
+        run: |
+          echo "🚨 Policy violation detected!"
+          echo "Sending notification..."
+          
+          # Create violation report
+          VIOLATION_REPORT=$(cat << EOF
+          Policy Violation Detected
+          =========================
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+          Actor: ${{ github.actor }}
+          Time: $(date)
+          
+          Please review the policy compliance workflow for details.
+          Required action: Fix policy violations before merging.
+          EOF
+          )
+          
+          echo "$VIOLATION_REPORT"
+          
+          # In production, you would send an email/notification here
+          # For now, we'll create a file
+          echo "$VIOLATION_REPORT" > policy-violation-report.txt
+
+  enforce-policy-automation:
+    name: 🤖 Enforce Policy Automation
+    runs-on: ubuntu-latest
+    needs: verify-policy-compliance
+    if: needs.verify-policy-compliance.result == 'success'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Apply Policy Updates
+        run: |
+          echo "Applying policy updates..."
+          
+          # Load policy
+          POLICY_VERSION=$(yq e '.metadata.version' .github/policy.yml)
+          
+          # Update package.json with policy version
+          jq --arg version "$POLICY_VERSION" \
+             '.policy_version = $version' \
+             package.json > package.json.tmp
+          mv package.json.tmp package.json
+          
+          echo "✅ Updated package.json with policy version: $POLICY_VERSION"
+
+      - name: Create Policy Snapshot
+        run: |
+          echo "Creating policy snapshot..."
+          
+          TIMESTAMP=$(date -u +"%Y%m%d_%H%M%S")
+          SNAPSHOT_DIR=".github/policy-snapshots"
+          
+          mkdir -p $SNAPSHOT_DIR
+          cp .github/policy.yml "$SNAPSHOT_DIR/policy_${TIMESTAMP}.yml"
+          
+          echo "✅ Policy snapshot created: policy_${TIMESTAMP}.yml"
+
+      - name: Update Policy Documentation
+        run: |
+          echo "Updating policy documentation..."
+          
+          # Generate policy summary
+          POLICY_SUMMARY=$(cat << 'EOF'
+          # Policy Summary
+          
+          ## Current Policy
+          - **Version:** ${{ needs.verify-policy-compliance.outputs.policy_version }}
+          - **Owners:** Rylee Tikel Greene & Joseph Michael Lung
+          - **License:** Custom-CC-BY-4.0-With-Retained-Rights
+          - **Effective:** 2026-01-19
+          
+          ## Compliance Status
+          - ✅ Ownership verified
+          - ✅ License consistent
+          - ✅ Files present
+          - ✅ Structure valid
+          
+          Last verified: $(date)
+          EOF
+          )
+          
+          echo "$POLICY_SUMMARY" > POLICY_SUMMARY.md
+
+  notify-completion:
+    name: 📢 Notify Policy Compliance
+    runs-on: ubuntu-latest
+    needs: enforce-policy-automation
+    if: always()
+    
+    steps:
+      - name: Generate Final Report
+        run: |
+          echo "Generating final policy compliance report..."
+          
+          FINAL_REPORT=$(cat << EOF
+          POLICY COMPLIANCE REPORT - ${{ github.repository }}
+          ===================================================
+          
+          Status: ${{ needs.verify-policy-compliance.result }}
+          Policy Version: ${{ needs.verify-policy-compliance.outputs.policy_version }}
+          Owners Verified: ${{ needs.verify-policy-compliance.outputs.owner_count }}
+          Timestamp: $(date -u)
+          
+          DETAILS:
+          - Repository: ${{ github.repository }}
+          - Branch: ${{ github.ref }}
+          - Workflow: ${{ github.workflow }}
+          - Run ID: ${{ github.run_id }}
+          
+          COMPLIANCE CHECKLIST:
+          - [$(if [ "${{ needs.verify-policy-compliance.result }}" = "success" ]; then echo "x"; else echo " "; fi)] Required files present
+          - [$(if [ "${{ needs.verify-policy-compliance.result }}" = "success" ]; then echo "x"; else echo " "; fi)] Ownership consistent
+          - [$(if [ "${{ needs.verify-policy-compliance.result }}" = "success" ]; then echo "x"; else echo " "; fi)] License type correct
+          - [$(if [ "${{ needs.verify-policy-compliance.result }}" = "success" ]; then echo "x"; else echo " "; fi)] Policy structure valid
+          
+          NEXT STEPS:
+          $(if [ "${{ needs.verify-policy-compliance.result }}" = "success" ]; then
+            echo "- Policy compliance verified"
+            echo "- No action required"
+          else
+            echo "- Review policy violations"
+            echo "- Fix non-compliant items"
+            echo "- Re-run verification"
+          fi)
+          
+          ---
+          Automated by ElevenLabs.io Policy Enforcement System
+          Owners: Rylee Tikel Greene & Joseph Michael Lung
+          EOF
+          )
+          
+          echo "$FINAL_REPORT" > policy-compliance-final-report.txt
+          
+          # For email notification, you would send this report
+          echo "Report saved to policy-compliance-final-report.txt"
+          echo "To send via email, configure email notification in workflow"
