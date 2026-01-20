@@ -1,4 +1,4 @@
-import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
+import { SessionConfig, AudioWorkletConfig } from "@ambernexus/client";
 import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";

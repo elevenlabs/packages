@@ -157,7 +157,7 @@ function Playground() {
           <button
             type="button"
             onClick={() => {
-              const event = new CustomEvent("elevenlabs-agent:expand", {
+              const event = new CustomEvent("ambernexus-agent:expand", {
                 detail: { action: expanded ? "collapse" : "expand" },
                 bubbles: true,
                 composed: true,

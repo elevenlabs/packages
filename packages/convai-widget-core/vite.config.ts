@@ -22,7 +22,7 @@ export default defineConfig({
       external: id =>
         id.startsWith("preact") ||
         id.startsWith("@preact") ||
-        id.startsWith("@elevenlabs")
+        id.startsWith("@ambernexus")
     },
   },
   plugins: [preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],

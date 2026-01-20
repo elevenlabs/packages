@@ -6,7 +6,7 @@ export const loadScribeAudioProcessor = createWorkletModuleLoader(
   // language=JavaScript
   `/*
  * Scribe Audio Processor for converting microphone audio to PCM16 format
- * USED BY @elevenlabs/client
+ * USED BY @ambernexus/client
  */
 
 class ScribeAudioProcessor extends AudioWorkletProcessor {

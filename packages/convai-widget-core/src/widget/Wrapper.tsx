@@ -71,11 +71,11 @@ export const Wrapper = memo(function Wrapper() {
   // Listen for custom expansion events
   useSignalEffect(() => {
     const handleExpandEvent = ((event: CustomEvent) => {
-      if (!event.detail || event.detail._convaiEventHandled) {
+      if (!event.detail || event.detail._ambernexusAgentEventHandled) {
         return;
       }
 
-      event.detail._convaiEventHandled = true;
+      event.detail._ambernexusAgentEventHandled = true;
       if (event.detail.action === "expand") {
         expanded.value = true;
       } else if (event.detail.action === "collapse") {
@@ -87,15 +87,15 @@ export const Wrapper = memo(function Wrapper() {
 
     const host = shadowHost.value;
     // Listen for custom events on the document
-    document.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
-    host?.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
+    document.addEventListener("ambernexus-agent:expand", handleExpandEvent);
+    host?.addEventListener("ambernexus-agent:expand", handleExpandEvent);
 
     return () => {
       document.removeEventListener(
-        "elevenlabs-agent:expand",
+        "ambernexus-agent:expand",
         handleExpandEvent
       );
-      host?.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
+      host?.removeEventListener("ambernexus-agent:expand", handleExpandEvent);
     };
   });
 

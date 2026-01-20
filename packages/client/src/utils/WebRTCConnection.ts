@@ -26,8 +26,8 @@ import {
 import { arrayBufferToBase64 } from "./audio";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 
-const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
-const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.ambernexus.io";
+const HTTPS_API_ORIGIN = "https://api.ambernexus.io";
 
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
@@ -85,12 +85,12 @@ export class WebRTCConnection extends BaseConnection {
         const source = config.overrides?.client?.source || "js_sdk";
         const configOrigin = config.origin ?? HTTPS_API_ORIGIN;
         const origin = convertWssToHttps(configOrigin); //origin is wss, not https
-        const url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
+        const url = `${origin}/v1/amber-agent/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
         const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(
-            `ElevenLabs API returned ${response.status} ${response.statusText}`
+            `AmberNexus API returned ${response.status} ${response.statusText}`
           );
         }
 

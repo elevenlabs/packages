@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Scribe, RealtimeEvents } from "@elevenlabs/client";
+import { Scribe, RealtimeEvents } from "@ambernexus/client";
 import type {
   RealtimeConnection,
   AudioOptions,
@@ -22,7 +22,7 @@ import type {
   ScribeSessionTimeLimitExceededErrorMessage,
   ScribeChunkSizeExceededErrorMessage,
   ScribeInsufficientAudioActivityErrorMessage,
-} from "@elevenlabs/client";
+} from "@ambernexus/client";
 
 // ============= Types =============
 
@@ -552,5 +552,5 @@ export {
   AudioFormat,
   CommitStrategy,
   RealtimeEvents,
-} from "@elevenlabs/client";
-export type { RealtimeConnection } from "@elevenlabs/client";
+} from "@ambernexus/client";
+export type { RealtimeConnection } from "@ambernexus/client";

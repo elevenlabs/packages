@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import path from 'path';
 import fs from 'fs-extra';
 import App from '../App.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface InitViewProps {
   projectPath: string;
@@ -119,7 +119,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, override = fals
         const envExamplePath = path.join(fullPath, '.env.example');
         const exists = await fs.pathExists(envExamplePath);
         if (override || !exists) {
-          const envContent = `# ElevenLabs API Key\nELEVENLABS_API_KEY=your_api_key_here\n`;
+          const envContent = `# AmberNexus API Key\nELEVENLABS_API_KEY=your_api_key_here\n`;
           await fs.writeFile(envExamplePath, envContent);
           return 'created';
         }
@@ -184,7 +184,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, override = fals
 
   return (
     <App
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
       headerMarginBottom={1}
     >
       <Box flexDirection="column">
@@ -260,7 +260,7 @@ export const InitView: React.FC<InitViewProps> = ({ projectPath, override = fals
               <Text color={theme.colors.text.secondary}>Next steps:</Text>
               <Text color={theme.colors.text.secondary}>1. Set your API key: agents login</Text>
               <Text color={theme.colors.text.secondary}>2. Create an agent: agents add "My Agent" --template default</Text>
-              <Text color={theme.colors.text.secondary}>3. Push to ElevenLabs: agents push</Text>
+              <Text color={theme.colors.text.secondary}>3. Push to AmberNexus: agents push</Text>
             </Box>
           </Box>
         )}

@@ -5,7 +5,7 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as os from "os";
-import { getElevenLabsClient } from "../elevenlabs-api";
+import { getAmberNexusClient } from "../ambernexus-api";
 import { setResidency, setApiKey } from "../config";
 import {
   describe,
@@ -16,9 +16,9 @@ import {
   jest,
 } from "@jest/globals";
 
-// Mock the ElevenLabsClient
-jest.mock("@elevenlabs/elevenlabs-js", () => ({
-  ElevenLabsClient: jest.fn().mockImplementation((options: unknown) => {
+// Mock the AmberNexusClient
+jest.mock("@ambernexus/ambernexus-js", () => ({
+  AmberNexusClient: jest.fn().mockImplementation((options: unknown) => {
     const opts = options as { baseUrl?: string; apiKey: string };
     return {
       baseUrl: opts.baseUrl,
@@ -80,10 +80,10 @@ describe("Residency-specific API Client", () => {
   it("should use correct API endpoint for eu-residency", async () => {
     await setResidency("eu-residency");
 
-    const client = await getElevenLabsClient();
+    const client = await getAmberNexusClient();
 
     expect(client).toEqual({
-      baseUrl: "https://api.eu.residency.elevenlabs.io",
+      baseUrl: "https://api.eu.residency.ambernexus.io",
       apiKey: "test-api-key",
     });
   });
@@ -91,10 +91,10 @@ describe("Residency-specific API Client", () => {
   it("should use correct API endpoint for in-residency", async () => {
     await setResidency("in-residency");
 
-    const client = await getElevenLabsClient();
+    const client = await getAmberNexusClient();
 
     expect(client).toEqual({
-      baseUrl: "https://api.in.residency.elevenlabs.io",
+      baseUrl: "https://api.in.residency.ambernexus.io",
       apiKey: "test-api-key",
     });
   });
@@ -102,10 +102,10 @@ describe("Residency-specific API Client", () => {
   it("should use correct API endpoint for us", async () => {
     await setResidency("us");
 
-    const client = await getElevenLabsClient();
+    const client = await getAmberNexusClient();
 
     expect(client).toEqual({
-      baseUrl: "https://api.us.elevenlabs.io",
+      baseUrl: "https://api.us.ambernexus.io",
       apiKey: "test-api-key",
     });
   });
@@ -113,20 +113,20 @@ describe("Residency-specific API Client", () => {
   it("should use correct API endpoint for global (default)", async () => {
     await setResidency("global");
 
-    const client = await getElevenLabsClient();
+    const client = await getAmberNexusClient();
 
     expect(client).toEqual({
-      baseUrl: "https://api.elevenlabs.io",
+      baseUrl: "https://api.ambernexus.io",
       apiKey: "test-api-key",
     });
   });
 
   it("should use global endpoint when no residency is set", async () => {
     // Don't set residency, should default to global
-    const client = await getElevenLabsClient();
+    const client = await getAmberNexusClient();
 
     expect(client).toEqual({
-      baseUrl: "https://api.elevenlabs.io",
+      baseUrl: "https://api.ambernexus.io",
       apiKey: "test-api-key",
     });
   });
@@ -146,7 +146,7 @@ describe("Residency-specific API Client", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "agents-test-"));
     mockedOs.homedir.mockReturnValue(tempDir);
 
-    await expect(getElevenLabsClient()).rejects.toThrow(
+    await expect(getAmberNexusClient()).rejects.toThrow(
       "No API key found for environment 'prod'. Use 'agents login --env prod' to authenticate or set ELEVENLABS_API_KEY environment variable."
     );
   });

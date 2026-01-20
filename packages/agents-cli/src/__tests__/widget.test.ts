@@ -28,15 +28,15 @@ const mockedOs = os as jest.Mocked<typeof os>;
  * This extracts the core logic from the CLI function for testing
  */
 function generateWidgetHtml(agentId: string, residency: string): string {
-  let htmlSnippet = `<elevenlabs-convai agent-id="${agentId}"`;
+  let htmlSnippet = `<ambernexus-amber-agent agent-id="${agentId}"`;
 
   // Add server-location attribute for isolated regions
   if (residency !== "global" && residency !== "us") {
     htmlSnippet += ` server-location="${residency}"`;
   }
 
-  htmlSnippet += `></elevenlabs-convai>
-<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
+  htmlSnippet += `></ambernexus-amber-agent>
+<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed" async type="text/javascript"></script>`;
 
   return htmlSnippet;
 }
@@ -68,7 +68,7 @@ describe("Widget Generation Logic", () => {
     expect(widget).toContain(`agent-id="${testAgentId}"`);
     expect(widget).not.toContain("server-location");
     expect(widget).toContain(
-      '<script src="https://unpkg.com/@elevenlabs/convai-widget-embed"'
+      '<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed"'
     );
   });
 
@@ -81,7 +81,7 @@ describe("Widget Generation Logic", () => {
     expect(widget).toContain(`agent-id="${testAgentId}"`);
     expect(widget).not.toContain("server-location");
     expect(widget).toContain(
-      '<script src="https://unpkg.com/@elevenlabs/convai-widget-embed"'
+      '<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed"'
     );
   });
 
@@ -94,7 +94,7 @@ describe("Widget Generation Logic", () => {
     expect(widget).toContain(`agent-id="${testAgentId}"`);
     expect(widget).toContain('server-location="eu-residency"');
     expect(widget).toContain(
-      '<script src="https://unpkg.com/@elevenlabs/convai-widget-embed"'
+      '<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed"'
     );
   });
 
@@ -107,7 +107,7 @@ describe("Widget Generation Logic", () => {
     expect(widget).toContain(`agent-id="${testAgentId}"`);
     expect(widget).toContain('server-location="in-residency"');
     expect(widget).toContain(
-      '<script src="https://unpkg.com/@elevenlabs/convai-widget-embed"'
+      '<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed"'
     );
   });
 
@@ -118,8 +118,8 @@ describe("Widget Generation Logic", () => {
     const widget = generateWidgetHtml(testAgentId, residency);
 
     // Check the complete expected output
-    const expectedWidget = `<elevenlabs-convai agent-id="${testAgentId}" server-location="eu-residency"></elevenlabs-convai>
-<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
+    const expectedWidget = `<ambernexus-amber-agent agent-id="${testAgentId}" server-location="eu-residency"></ambernexus-amber-agent>
+<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed" async type="text/javascript"></script>`;
 
     expect(widget).toBe(expectedWidget);
   });

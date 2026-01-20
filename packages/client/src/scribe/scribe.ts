@@ -18,7 +18,7 @@ export enum CommitStrategy {
 
 interface BaseOptions {
   /**
-   * Token to use for the WebSocket connection. Obtained from the ElevenLabs API.
+   * Token to use for the WebSocket connection. Obtained from the AmberNexus API.
    */
   token: string;
   /**
@@ -96,7 +96,7 @@ export interface MicrophoneOptions extends BaseOptions {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: This class is static only because it is a singleton
 export class ScribeRealtime {
-  private static readonly DEFAULT_BASE_URI = "wss://api.elevenlabs.io";
+  private static readonly DEFAULT_BASE_URI = "wss://api.ambernexus.io";
 
   private static getWebSocketUri(
     baseUri: string = ScribeRealtime.DEFAULT_BASE_URI

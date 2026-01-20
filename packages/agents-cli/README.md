@@ -1,26 +1,26 @@
 > [!WARNING]
 > **This package has been deprecated and is no longer maintained.**
 >
-> Please use the official [ElevenLabs CLI](https://github.com/elevenlabs/cli) instead.
+> Please use the official [AmberNexus CLI](https://github.com/ambernexus/cli) instead.
 
-# ElevenLabs Agents CLI - Agents as Code
+# AmberNexus Agents CLI - Agents as Code
 
 ![hero](../../assets/hero.png)
 
-# ElevenLabs Agents CLI
+# AmberNexus Agents CLI
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+Build multimodal agents with the [AmberNexus Agents platform](https://ambernexus.io/docs/agents-platform/overview).
 
-Manage ElevenLabs Agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, watch mode, and automatic pushing.
+Manage AmberNexus Agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, watch mode, and automatic pushing.
 
 ## Features
 
-- **Agent Configuration**: Full ElevenLabs agent schema support
+- **Agent Configuration**: Full AmberNexus agent schema support
 - **Templates**: Pre-built templates for common use cases
 - **Smart Updates**: Hash-based change detection
 - **Watch Mode**: Automatic sync on file changes
 - **Import/Export**: Fetch existing agents and tools from workspace
-- **Tool Management**: Import and manage tools from ElevenLabs workspace
+- **Tool Management**: Import and manage tools from AmberNexus workspace
 - **Widget Generation**: HTML widget snippets
 - **Secure Storage**: OS keychain integration with secure file fallback
 
@@ -28,21 +28,21 @@ Manage ElevenLabs Agents with local configuration files. This tool is an experim
 
 ```bash
 # Global installation
-pnpm install -g @elevenlabs/agents-cli
+pnpm install -g @ambernexus/agents-cli
 # OR
-npm install -g @elevenlabs/agents-cli
+npm install -g @ambernexus/agents-cli
 
 # One-time usage
-pnpm dlx @elevenlabs/agents-cli init
+pnpm dlx @ambernexus/agents-cli init
 # OR
-npx @elevenlabs/agents-cli init
+npx @ambernexus/agents-cli init
 ```
 
 ## Setup
 
 ### Authentication
 
-Login with your ElevenLabs API key (stored securely across all platforms):
+Login with your AmberNexus API key (stored securely across all platforms):
 
 ```bash
 agents login
@@ -54,7 +54,7 @@ Or set environment variable:
 export ELEVENLABS_API_KEY="your_api_key_here"
 ```
 
-> **Note**: For now, your API key must be unrestricted to work with the CLI, as ElevenLabs Agents-restricted keys are not available yet.
+> **Note**: For now, your API key must be unrestricted to work with the CLI, as AmberNexus Agents-restricted keys are not available yet.
 
 ### Check Status
 
@@ -67,13 +67,13 @@ agents whoami
 Configure the API residency for isolated regions:
 
 ```bash
-# Set to EU residency (uses api.eu.elevenlabs.io)
+# Set to EU residency (uses api.eu.ambernexus.io)
 agents residency eu-residency
 
-# Set to India residency (uses api.in.elevenlabs.io)
+# Set to India residency (uses api.in.ambernexus.io)
 agents residency in-residency
 
-# Set to US/Global (uses api.elevenlabs.io or api.us.elevenlabs.io)
+# Set to US/Global (uses api.ambernexus.io or api.us.ambernexus.io)
 agents residency global  # or 'us'
 ```
 
@@ -155,7 +155,7 @@ agents add "Support Bot" --template customer-service
 
 # 4. Edit configuration (agent_configs/support_bot.json)
 
-# 5. Sync to ElevenLabs
+# 5. Sync to AmberNexus
 agents push
 
 # 6. Watch for changes (optional)
@@ -180,7 +180,7 @@ your_project/
 
 ### Initialize Project
 
-The `agents init` command sets up the project structure for managing ElevenLabs agents:
+The `agents init` command sets up the project structure for managing AmberNexus agents:
 
 ```bash
 agents init                    # Initialize in current directory
@@ -236,13 +236,13 @@ agents status [--agent "Agent Name"]
 # Watch for changes
 agents watch [--agent "Agent Name"] [--interval 5]
 
-# Pull agents from ElevenLabs (pulls from all environments by default)
+# Pull agents from AmberNexus (pulls from all environments by default)
 agents pull [--search "term"] [--env prod] [--dry-run]
 
-# Pull tools from ElevenLabs (pulls from all environments by default)
+# Pull tools from AmberNexus (pulls from all environments by default)
 agents pull-tools [--search "term"] [--tool "tool-name"] [--env prod] [--dry-run] [--output-dir tool_configs]
 
-# Import tests from ElevenLabs (pulls from all environments by default)
+# Import tests from AmberNexus (pulls from all environments by default)
 agents pull-tests [--output-dir test_configs] [--env prod] [--dry-run]
 
 # Create and run test
@@ -257,10 +257,10 @@ agents widget "Agent Name"
 # List agents
 agents list
 
-# Delete agent (removes locally and from ElevenLabs)
+# Delete agent (removes locally and from AmberNexus)
 agents delete <agent_id>
 
-# Delete tool locally and from ElevenLabs
+# Delete tool locally and from AmberNexus
 agents delete-tool <tool_id>
 
 # Delete all tools
@@ -269,7 +269,7 @@ agents delete-tool --all
 # Delete all tools in specific environment
 agents delete-tool --all --env prod
 
-# Delete test locally and from ElevenLabs
+# Delete test locally and from AmberNexus
 agents delete-test <test_id>
 
 # Delete all tests
@@ -278,7 +278,7 @@ agents delete-test --all
 # Delete all tests in specific environment
 agents delete-test --all --env dev
 
-# Add componenents from [ui.elevenlabs.io](https://ui.elevenlabs.io)
+# Add componenents from [ui.ambernexus.io](https://ui.ambernexus.io)
 agents components add "Component Name"
 ```
 
@@ -386,7 +386,7 @@ agents watch --interval 5
 # List agents to find the agent ID
 agents list
 
-# Delete agent by ID (removes locally and from ElevenLabs)
+# Delete agent by ID (removes locally and from AmberNexus)
 agents delete agent_123456789
 ```
 
@@ -522,7 +522,7 @@ npm test
 
 **Setup:**
 
-1. Create a new ElevenLabs account (separate from production)
+1. Create a new AmberNexus account (separate from production)
 2. Verify the account is completely empty (no deployed agents)
 3. Generate an API key for this test account
 4. Copy `.env.example` to `.env` and add the test account API key

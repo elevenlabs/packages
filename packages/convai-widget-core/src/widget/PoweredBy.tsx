@@ -17,11 +17,11 @@ export function PoweredBy() {
           : "translate-y-[calc(var(--el-overlay-padding))]"
       )}
     >
-      <span className="opacity-30">Powered by ElevenLabs</span>{" "}
+      <span className="opacity-30">Powered by AmberNexus</span>{" "}
       <a
         href={
           config.value.override_link ||
-          "https://elevenlabs.io/conversational-ai"
+          "https://ambernexus.io/conversational-ai"
         }
         className="underline cursor-pointer pointer-events-auto focus-visible:outline-none opacity-30 hover:opacity-50 focus-visible:opacity-100 focus-visible:underline-offset-2"
         target="_blank"

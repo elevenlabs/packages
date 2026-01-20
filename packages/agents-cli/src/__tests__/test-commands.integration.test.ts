@@ -9,7 +9,7 @@ import {
 import fs from "fs-extra";
 import path from "path";
 import { tmpdir } from "os";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { AmberNexusClient } from "@ambernexus/ambernexus-js";
 
 interface TestDefinition {
   config: string;
@@ -40,9 +40,9 @@ import {
 } from "../utils";
 import { getBasicLLMTestTemplate } from "../test-templates";
 
-// Mock the ElevenLabs API
-jest.mock("../elevenlabs-api", () => ({
-  getElevenLabsClient: jest.fn(),
+// Mock the AmberNexus API
+jest.mock("../ambernexus-api", () => ({
+  getAmberNexusClient: jest.fn(),
   createTestApi: jest.fn(),
   getTestApi: jest.fn(),
   listTestsApi: jest.fn(),
@@ -52,13 +52,13 @@ jest.mock("../elevenlabs-api", () => ({
 }));
 
 // Import the mocked module
-import * as elevenlabsApi from "../elevenlabs-api";
-const mockedApi = jest.mocked(elevenlabsApi);
+import * as ambernexusApi from "../ambernexus-api";
+const mockedApi = jest.mocked(ambernexusApi);
 
 // Set up default mock implementations
 beforeEach(() => {
-  mockedApi.getElevenLabsClient.mockResolvedValue(
-    {} as unknown as ElevenLabsClient
+  mockedApi.getAmberNexusClient.mockResolvedValue(
+    {} as unknown as AmberNexusClient
   );
   mockedApi.createTestApi.mockResolvedValue({ id: "test_123" });
   mockedApi.getTestApi.mockResolvedValue({

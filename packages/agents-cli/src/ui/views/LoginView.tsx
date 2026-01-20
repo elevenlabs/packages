@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { setApiKey } from '../../config.js';
 
 interface LoginViewProps {
@@ -77,20 +77,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete, environment = 
 
   return (
     <App
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {!success ? (
           <>
             <Box marginBottom={1}>
               <Text color={theme.colors.text.primary}>
-                Enter your ElevenLabs API key for environment: <Text color={theme.colors.accent.primary}>{environment}</Text>
+                Enter your AmberNexus API key for environment: <Text color={theme.colors.accent.primary}>{environment}</Text>
               </Text>
             </Box>
 
             <Box marginBottom={1}>
               <Text color={theme.colors.text.secondary}>
-                Get your API key at: <Text color={theme.colors.accent.primary}>https://elevenlabs.io/app/developers/api-keys</Text>
+                Get your API key at: <Text color={theme.colors.accent.primary}>https://ambernexus.io/app/developers/api-keys</Text>
               </Text>
             </Box>
 
@@ -142,7 +142,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onComplete, environment = 
             
             <Box marginTop={1}>
               <Text color={theme.colors.success}>
-                ✓ You are now logged in to ElevenLabs ({environment})
+                ✓ You are now logged in to AmberNexus ({environment})
               </Text>
             </Box>
           </Box>

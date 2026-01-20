@@ -1,32 +1,30 @@
-![hero](../../assets/hero.png)
+# AmberNexus Agents React SDK
 
-# ElevenLabs Agents React SDK
+Build multimodal agents with the [AmberNexus Agents platform](https://ambernexus.io/docs/agents-platform/overview).
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+An SDK library for using AmberNexus Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [AmberNexus Node.js Library](https://www.npmjs.com/package/@ambernexus/ambernexus-js).
 
-An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
-
-![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
-[![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
-[![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+![LOGO](https://github.com/ambernexus/ambernexus-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
+[![Discord](https://badgen.net/badge/black/AmberNexus/icon?icon=discord&label)](https://discord.gg/ambernexus)
+[![Twitter](https://badgen.net/badge/black/ambernexusio/icon?icon=twitter&label)](https://twitter.com/ambernexusio)
 
 ## Installation
 
 Install the package in your project through package manager.
 
 ```shell
-npm install @elevenlabs/react
+npm install @ambernexus/react
 # or
-yarn add @elevenlabs/react
+yarn add @ambernexus/react
 # or
-pnpm install @elevenlabs/react
+pnpm install @ambernexus/react
 ```
 
 ## Usage
 
 ### useConversation
 
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Conversational AI.
+React hook for managing WebSocket and WebRTC connections and audio usage for AmberNexus Conversational AI.
 
 #### Initialize conversation
 
@@ -89,7 +87,7 @@ const conversation = useConversation({
 
 Client tools are a way to enabled agent to invoke client-side functionality. This can be used to trigger actions in the client, such as opening a modal or doing an API call on behalf of the user.
 
-Client tools definition is an object of functions, and needs to be identical with your configuration within the [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
+Client tools definition is an object of functions, and needs to be identical with your configuration within the [AmberNexus UI](https://ambernexus.io/app/conversational-ai), where you can name and describe different tools, as well as set up the parameters passed by the agent.
 
 ```ts
 const conversation = useConversation({
@@ -104,7 +102,7 @@ const conversation = useConversation({
 ```
 
 In case function returns a value, it will be passed back to the agent as a response.
-Note that the tool needs to be explicitly set to be blocking conversation in ElevenLabs UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
+Note that the tool needs to be explicitly set to be blocking conversation in AmberNexus UI for the agent to await and react to the response, otherwise agent assumes success and continues the conversation.
 
 #### Conversation overrides
 
@@ -224,9 +222,9 @@ The SDK automatically routes both WebSocket and WebRTC connections to the approp
 
 ##### startConversation
 
-`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the ElevenLabs Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
+`startConversation` method kicks off the WebSocket or WebRTC connection and starts using the microphone to communicate with the AmberNexus Conversational AI agent. The method accepts an options object, with the `signedUrl`, `conversationToken` or `agentId` option being required.
 
-Agent ID can be acquired through [ElevenLabs UI](https://elevenlabs.io/app/conversational-ai) and is always necessary.
+Agent ID can be acquired through [AmberNexus UI](https://ambernexus.io/app/conversational-ai) and is always necessary.
 
 ```js
 const conversation = useConversation();
@@ -251,12 +249,12 @@ For WebSocket connections:
 
 app.get("/signed-url", yourAuthMiddleware, async (req, res) => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
+    `https://api.ambernexus.io/v1/amber-agent/conversation/get-signed-url?agent_id=${process.env.AGENT_ID}`,
     {
       headers: {
-        // Requesting a signed url requires your ElevenLabs API key
+        // Requesting a signed url requires your AmberNexus API key
         // Do NOT expose your API key to the client!
-        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        "xi-api-key": process.env.AMBERNEXUS_API_KEY,
       },
     }
   );
@@ -291,12 +289,12 @@ For WebRTC connections:
 
 app.get("/conversation-token", yourAuthMiddleware, async (req, res) => {
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${process.env.AGENT_ID}`,
+    `https://api.ambernexus.io/v1/amber-agent/conversation/token?agent_id=${process.env.AGENT_ID}`,
     {
       headers: {
-        // Requesting a conversation token requires your ElevenLabs API key
+        // Requesting a conversation token requires your AmberNexus API key
         // Do NOT expose your API key to the client!
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'xi-api-key': process.env.AMBERNEXUS_API_KEY,
       }
     }
   );
@@ -536,13 +534,13 @@ console.log(canSendFeedback); // boolean
 
 ### useScribe
 
-React hook for managing real-time speech-to-text transcription with ElevenLabs Scribe Realtime v2.
+React hook for managing real-time speech-to-text transcription with AmberNexus Scribe Realtime v2.
 
 #### Quick Start
 
 ```tsx
 import { useEffect } from "react";
-import { useScribe } from "@elevenlabs/react";
+import { useScribe } from "@ambernexus/react";
 
 function MyComponent() {
   const scribe = useScribe({
@@ -614,11 +612,11 @@ Scribe requires a single-use token for authentication. Create an API endpoint on
 // Node.js server
 app.get("/scribe-token", yourAuthMiddleware, async (req, res) => {
   const response = await fetch(
-    "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
+    "https://api.ambernexus.io/v1/single-use-token/realtime_scribe",
     {
       method: "POST",
       headers: {
-        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        "xi-api-key": process.env.AMBERNEXUS_API_KEY,
       },
     }
   );
@@ -628,7 +626,7 @@ app.get("/scribe-token", yourAuthMiddleware, async (req, res) => {
 });
 ```
 
-**Warning:** Your ElevenLabs API key is sensitive, do not leak it to the client. Always generate the token on the server.
+**Warning:** Your AmberNexus API key is sensitive, do not leak it to the client. Always generate the token on the server.
 
 ```tsx
 // Client
@@ -648,7 +646,7 @@ const scribe = useScribe({
   // Connection options (can be overridden in connect())
   token: "optional-default-token",
   modelId: "scribe_v2_realtime",
-  baseUri: "wss://api.elevenlabs.io",
+  baseUri: "wss://api.ambernexus.io",
 
   // VAD options
   commitStrategy: CommitStrategy.AUTOMATIC,
@@ -736,7 +734,7 @@ function MicrophoneTranscription() {
 Transcribe pre-recorded audio files:
 
 ```tsx
-import { useScribe, AudioFormat } from "@elevenlabs/react";
+import { useScribe, AudioFormat } from "@ambernexus/react";
 
 function FileTranscription() {
   const [file, setFile] = useState<File | null>(null);
@@ -941,7 +939,7 @@ const scribe = useScribe({
 Control when transcriptions are committed:
 
 ```tsx
-import { CommitStrategy } from "@elevenlabs/react";
+import { CommitStrategy } from "@ambernexus/react";
 
 // Manual (default) - you control when to commit
 const scribe = useScribe({
@@ -960,7 +958,7 @@ const scribe = useScribe({
 #### Complete Example
 
 ```tsx
-import { useScribe, CommitStrategy } from "@elevenlabs/react";
+import { useScribe, CommitStrategy } from "@ambernexus/react";
 import { useState, useEffect } from "react";
 
 type Mode = "microphone" | "file"
@@ -1054,7 +1052,7 @@ import {
   type ScribeStatus,
   type TranscriptSegment,
   type RealtimeConnection,
-} from "@elevenlabs/react";
+} from "@ambernexus/react";
 
 const scribe: UseScribeReturn = useScribe({
   modelId: "scribe_v2_realtime",
@@ -1070,10 +1068,10 @@ If your application has a tight Content Security Policy and does not allow data:
 
 Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
 
-Add the worklet files to your public folder eg `public/elevenlabs`.
+Add the worklet files to your public folder eg `public/ambernexus`.
 
 ```
-@elevenlabs/client/scripts/
+@ambernexus/client/scripts/
 ```
 
 Then call start with
@@ -1082,9 +1080,9 @@ Then call start with
       await conversation.startSession({
 ...
         workletPaths: {
-          'rawAudioProcessor': '/elevenlabs/rawAudioProcessor.worklet.js',
+          'rawAudioProcessor': '/ambernexus/rawAudioProcessor.worklet.js',
           'audioConcatProcessor':
-            '/elevenlabs/audioConcatProcessor.worklet.js',
+            '/ambernexus/audioConcatProcessor.worklet.js',
         },
       });
 ```
@@ -1103,11 +1101,11 @@ export default {
     viteStaticCopy({
       targets: [
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/audioConcatProcessor.js',
+          src: require.resolve('@ambernexus/client')/dist/worklets/audioConcatProcessor.js',
           dest: 'dist',
         },
         {
-          src: require.resolve('@elevenlabs/client')/dist/worklets/rawAudioProcessor.js',
+          src: require.resolve('@ambernexus/client')/dist/worklets/rawAudioProcessor.js',
           dest: 'dist',
         },
       ],

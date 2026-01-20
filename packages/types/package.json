@@ -1,7 +1,7 @@
 {
-  "name": "@elevenlabs/types",
-  "version": "0.4.0",
-  "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
+  "name": "@ambernexus/types",
+  "version": "0.4.3",
+  "description": "Ambernexus branded wrapper for the ElevenLabs TypeScript types for agent communication",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "files": [
@@ -20,7 +20,7 @@
     "@asyncapi/cli": "^2.17.0",
     "@asyncapi/modelina": "^4.4.3",
     "@asyncapi/parser": "^3.4.0",
-    "@elevenlabs/typescript-config": "workspace:*",
+    "@ambernexus/typescript-config": "^0.0.0",
     "@types/node": "^22.10.5",
     "eslint": "^9.20.0",
     "glob": "^11.0.3",

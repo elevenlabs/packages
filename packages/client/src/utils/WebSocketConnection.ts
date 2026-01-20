@@ -12,9 +12,9 @@ import {
 } from "./events";
 import { constructOverrides } from "./overrides";
 
-const MAIN_PROTOCOL = "convai";
-const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
-const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
+const MAIN_PROTOCOL = "amber-agent";
+const WSS_API_ORIGIN = "wss://api.ambernexus.io";
+const WSS_API_PATHNAME = "/v1/amber-agent/conversation?agent_id=";
 
 export class WebSocketConnection extends BaseConnection {
   public readonly conversationId: string;

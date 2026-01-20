@@ -6,7 +6,7 @@ import {
 } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
-import { Language } from "@elevenlabs/client";
+import { Language } from "@ambernexus/client";
 import { isValidLanguage, LanguageInfo, Languages } from "../types/languages";
 import { useAttribute } from "./attributes";
 import { useWidgetConfig } from "./widget-config";

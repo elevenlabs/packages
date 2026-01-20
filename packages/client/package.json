@@ -1,7 +1,7 @@
 {
-  "name": "@elevenlabs/client",
-  "version": "0.12.2",
-  "description": "ElevenLabs JavaScript Client Library",
+  "name": "@ambernexus/client",
+  "version": "0.13.9",
+  "description": "AmberNexus branded wrapper for the ElevenLabs JavaScript SDK",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
   "source": "src/index.ts",
@@ -16,10 +16,10 @@
     }
   },
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "generate-version": "node -e \"require('fs').writeFileSync('src/version.ts', '// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"' + process.env.npm_package_version + '\\\";\\n')\"",
     "generate-worklets": "node scripts/generateWorklets.js",
     "prebuild": "npm run generate-version && npm run generate-worklets",
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "cross-env BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "pnpm run clean && pnpm run generate-version && pnpm run generate-worklets && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
     "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
@@ -45,14 +45,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elevenlabs/packages.git",
+    "url": "git+https://github.com/ambernexus/packages.git",
     "directory": "packages/client"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@elevenlabs/types": "workspace:*",
+    "@ambernexus/types": "^0.4.1",
     "livekit-client": "^2.11.4"
   }
 }

@@ -12,13 +12,13 @@ import {
   readToolsConfig,
   ToolsConfig,
 } from "../tools";
-import * as elevenLabsApi from "../elevenlabs-api";
+import * as elevenLabsApi from "../ambernexus-api";
 import * as config from "../config";
-import { ElevenLabs, ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { AmberNexus, AmberNexusClient } from "@ambernexus/ambernexus-js";
 
-// Mock the entire elevenlabs-api module
-jest.mock("../elevenlabs-api");
-const mockedElevenLabsApi = elevenLabsApi as jest.Mocked<typeof elevenLabsApi>;
+// Mock the entire ambernexus-api module
+jest.mock("../ambernexus-api");
+const mockedAmberNexusApi = elevenLabsApi as jest.Mocked<typeof elevenLabsApi>;
 
 // Mock the config module
 jest.mock("../config");
@@ -50,8 +50,8 @@ describe("Push Tools Integration Tests", () => {
     mockedConfig.isLoggedIn.mockResolvedValue(true);
     mockedConfig.getResidency.mockResolvedValue("us");
 
-    const mockClient = {} as ElevenLabsClient;
-    mockedElevenLabsApi.getElevenLabsClient.mockResolvedValue(mockClient);
+    const mockClient = {} as AmberNexusClient;
+    mockedAmberNexusApi.getAmberNexusClient.mockResolvedValue(mockClient);
   });
 
   afterEach(async () => {
@@ -175,8 +175,8 @@ describe("Push Tools Integration Tests", () => {
   describe("API integration scenarios", () => {
     beforeEach(() => {
       // Reset mocks for each test
-      mockedElevenLabsApi.createToolApi.mockClear();
-      mockedElevenLabsApi.updateToolApi.mockClear();
+      mockedAmberNexusApi.createToolApi.mockClear();
+      mockedAmberNexusApi.updateToolApi.mockClear();
     });
 
     it("should call createToolApi for new tools", async () => {
@@ -190,7 +190,7 @@ describe("Push Tools Integration Tests", () => {
         accessInfo: {},
         usageStats: {},
       };
-      mockedElevenLabsApi.createToolApi.mockResolvedValue(mockResponse as ElevenLabs.ToolResponseModel);
+      mockedAmberNexusApi.createToolApi.mockResolvedValue(mockResponse as AmberNexus.ToolResponseModel);
 
       const toolConfig = {
         name: "new-tool",
@@ -199,13 +199,13 @@ describe("Push Tools Integration Tests", () => {
       };
 
       // Simulate creating a new tool
-      const mockClient = {} as ElevenLabsClient;
-      const result = await mockedElevenLabsApi.createToolApi(
+      const mockClient = {} as AmberNexusClient;
+      const result = await mockedAmberNexusApi.createToolApi(
         mockClient,
         toolConfig
       );
 
-      expect(mockedElevenLabsApi.createToolApi).toHaveBeenCalledWith(
+      expect(mockedAmberNexusApi.createToolApi).toHaveBeenCalledWith(
         mockClient,
         toolConfig
       );
@@ -223,7 +223,7 @@ describe("Push Tools Integration Tests", () => {
         accessInfo: {},
         usageStats: {},
       };
-      mockedElevenLabsApi.updateToolApi.mockResolvedValue(mockResponse as ElevenLabs.ToolResponseModel);
+      mockedAmberNexusApi.updateToolApi.mockResolvedValue(mockResponse as AmberNexus.ToolResponseModel);
 
       const toolConfig = {
         name: "existing-tool",
@@ -232,11 +232,11 @@ describe("Push Tools Integration Tests", () => {
       };
 
       // Simulate updating an existing tool
-      const mockClient = {} as ElevenLabsClient;
+      const mockClient = {} as AmberNexusClient;
       const toolId = "tool_existing_123";
-      await mockedElevenLabsApi.updateToolApi(mockClient, toolId, toolConfig);
+      await mockedAmberNexusApi.updateToolApi(mockClient, toolId, toolConfig);
 
-      expect(mockedElevenLabsApi.updateToolApi).toHaveBeenCalledWith(
+      expect(mockedAmberNexusApi.updateToolApi).toHaveBeenCalledWith(
         mockClient,
         toolId,
         toolConfig
@@ -245,13 +245,13 @@ describe("Push Tools Integration Tests", () => {
 
     it("should handle API errors gracefully", async () => {
       const apiError = new Error("API Error: Tool creation failed");
-      mockedElevenLabsApi.createToolApi.mockRejectedValue(apiError);
+      mockedAmberNexusApi.createToolApi.mockRejectedValue(apiError);
 
-      const mockClient = {} as ElevenLabsClient;
+      const mockClient = {} as AmberNexusClient;
       const toolConfig = { name: "failing-tool", type: "webhook" };
 
       await expect(
-        mockedElevenLabsApi.createToolApi(mockClient, toolConfig)
+        mockedAmberNexusApi.createToolApi(mockClient, toolConfig)
       ).rejects.toThrow("API Error: Tool creation failed");
     });
   });

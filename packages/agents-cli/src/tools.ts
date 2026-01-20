@@ -1,5 +1,5 @@
 /**
- * Tool management for ElevenLabs agents
+ * Tool management for AmberNexus agents
  */
 
 import fs from 'fs-extra';

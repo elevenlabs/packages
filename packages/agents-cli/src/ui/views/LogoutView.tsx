@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { isLoggedIn, removeApiKey } from '../../config.js';
 
 interface LogoutViewProps {
@@ -71,7 +71,7 @@ export const LogoutView: React.FC<LogoutViewProps> = ({ onComplete, environment 
 
   return (
     <App 
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {notLoggedIn ? (

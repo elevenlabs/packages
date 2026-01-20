@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import SelectInput from 'ink-select-input';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { setResidency, getResidency, LOCATIONS } from '../../config.js';
 
 interface ResidencyViewProps {
@@ -71,7 +71,7 @@ export const ResidencyView: React.FC<ResidencyViewProps> = ({
 
   return (
     <App 
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {isLoading ? (

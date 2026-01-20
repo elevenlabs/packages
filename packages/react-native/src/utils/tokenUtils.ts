@@ -17,7 +17,7 @@ export const getConversationToken = async (
   tokenFetchUrl?: string
 ): Promise<string> => {
   const baseUrl =
-    tokenFetchUrl || "https://api.elevenlabs.io/v1/convai/conversation/token";
+    tokenFetchUrl || "https://api.ambernexus.io/v1/amber-agent/conversation/token";
   const response = await fetch(
     `${baseUrl}?agent_id=${agentId}&source=react_native_sdk&version=${PACKAGE_VERSION}`
   );

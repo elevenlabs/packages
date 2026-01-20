@@ -18,14 +18,14 @@ import { tmpdir } from "os";
  * This validates the fix from commit 8912a719769b64aace09f3f443cfb663941b913d
  */
 
-// Mock the ElevenLabs API
+// Mock the AmberNexus API
 const mockCreateAgentApi = jest.fn();
 const mockCreateToolApi = jest.fn();
 const mockCreateTestApi = jest.fn();
-const mockGetElevenLabsClient = jest.fn();
+const mockGetAmberNexusClient = jest.fn();
 
-jest.mock("../elevenlabs-api", () => ({
-  getElevenLabsClient: mockGetElevenLabsClient,
+jest.mock("../ambernexus-api", () => ({
+  getAmberNexusClient: mockGetAmberNexusClient,
   createAgentApi: mockCreateAgentApi,
   createToolApi: mockCreateToolApi,
   createTestApi: mockCreateTestApi,
@@ -34,7 +34,7 @@ jest.mock("../elevenlabs-api", () => ({
 // Import after mocking
 import { readConfig, writeConfig, generateUniqueFilename, toCamelCaseKeys } from "../utils";
 import { getTemplateByName } from "../templates";
-import { createAgentApi } from "../elevenlabs-api";
+import { createAgentApi } from "../ambernexus-api";
 import { getBasicLLMTestTemplate } from "../test-templates";
 
 describe("Add Commands - Name-based Filenames", () => {
@@ -60,7 +60,7 @@ describe("Add Commands - Name-based Filenames", () => {
     await writeConfig(testsConfigPath, { tests: [] });
 
     // Mock API client
-    mockGetElevenLabsClient.mockResolvedValue({} as never);
+    mockGetAmberNexusClient.mockResolvedValue({} as never);
 
     // Reset mocks
     mockCreateAgentApi.mockReset();

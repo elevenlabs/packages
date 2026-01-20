@@ -3,7 +3,7 @@ import { Box, Text, useApp, useInput } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import CommandPanel from '../components/CommandPanel.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface AgentStatus {
   name: string;

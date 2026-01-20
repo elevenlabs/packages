@@ -1,5 +1,5 @@
 {
-  "name": "@elevenlabs/agents-cli",
+  "name": "@ambernexus/agents-cli",
   "version": "0.6.2",
   "description": "CLI tool to manage ElevenLabs agents",
   "type": "module",
@@ -14,12 +14,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elevenlabs/packages.git",
+    "url": "https://github.com/ambernexus/packages.git",
     "directory": "agents-cli"
   },
-  "homepage": "https://github.com/elevenlabs/packages/tree/main/packages/agents-cli",
+  "homepage": "https://github.com/ambernexus/packages/tree/main/packages/agents-cli",
   "bugs": {
-    "url": "https://github.com/elevenlabs/packages/issues"
+    "url": "https://github.com/ambernexus/packages/issues"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -43,6 +43,7 @@
     "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
+    "@ambernexus/ambernexus-js": "workspace:*",
     "@elevenlabs/elevenlabs-js": "2.18.0",
     "@inkjs/ui": "^2.0.0",
     "@types/read": "^0.0.32",

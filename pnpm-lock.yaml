@@ -11,6 +11,9 @@ importers:
       args:
         specifier: ^5.0.3
         version: 5.0.3
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
       fs-extra:
         specifier: ^11.2.0
         version: 11.3.2
@@ -29,12 +32,12 @@ importers:
 
   examples/react-native-expo:
     dependencies:
+      '@ambernexus/react-native':
+        specifier: workspace:*
+        version: link:../../packages/react-native
       '@config-plugins/react-native-webrtc':
         specifier: ^12.0.0
         version: 12.0.0(expo@54.0.27(@babel/core@7.28.5)(graphql@16.12.0)(react-native@0.79.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.0.0))(react@19.0.0))
-      '@elevenlabs/react-native':
-        specifier: workspace:*
-        version: link:../../packages/react-native
       '@livekit/react-native':
         specifier: ^2.7.6
         version: 2.9.6(@livekit/react-native-webrtc@125.0.11(react-native@0.79.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.0.0)))(livekit-client@2.16.0(@types/dom-mediacapture-record@1.0.22))(react-dom@19.0.0(react@19.0.0))(react-native@0.79.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.0.0))(react@19.0.0)(tslib@2.8.1)
@@ -75,6 +78,9 @@ importers:
 
   packages/agents-cli:
     dependencies:
+      '@ambernexus/ambernexus-js':
+        specifier: workspace:*
+        version: link:../ambernexus-js
       '@elevenlabs/elevenlabs-js':
         specifier: 2.18.0
         version: 2.18.0(encoding@0.1.13)
@@ -167,10 +173,22 @@ importers:
         specifier: ^5.2.2
         version: 5.9.3
 
+  packages/amber-agent-widget-core:
+    dependencies:
+      '@ambernexus/convai-widget-core':
+        specifier: workspace:*
+        version: link:../convai-widget-core
+
+  packages/ambernexus-js:
+    dependencies:
+      '@elevenlabs/elevenlabs-js':
+        specifier: 2.18.0
+        version: 2.18.0(encoding@0.1.13)
+
   packages/client:
     dependencies:
-      '@elevenlabs/types':
-        specifier: workspace:*
+      '@ambernexus/types':
+        specifier: ^0.4.1
         version: link:../types
       livekit-client:
         specifier: ^2.11.4
@@ -206,8 +224,8 @@ importers:
 
   packages/convai-widget-core:
     dependencies:
-      '@elevenlabs/client':
-        specifier: workspace:*
+      '@ambernexus/client':
+        specifier: ^0.12.3
         version: link:../client
       '@lezer/common':
         specifier: ^1.3.0
@@ -321,7 +339,10 @@ importers:
 
   packages/convai-widget-embed:
     devDependencies:
-      '@elevenlabs/convai-widget-core':
+      '@ambernexus/amber-agent-widget-core':
+        specifier: workspace:*
+        version: link:../amber-agent-widget-core
+      '@ambernexus/convai-widget-core':
         specifier: workspace:*
         version: link:../convai-widget-core
       eslint:
@@ -342,8 +363,8 @@ importers:
 
   packages/react:
     dependencies:
-      '@elevenlabs/client':
-        specifier: workspace:*
+      '@ambernexus/client':
+        specifier: ^0.12.3
         version: link:../client
       react:
         specifier: '>=16.8.0'
@@ -382,7 +403,7 @@ importers:
 
   packages/react-native:
     dependencies:
-      '@elevenlabs/types':
+      '@ambernexus/types':
         specifier: workspace:*
         version: link:../types
       '@livekit/react-native':
@@ -437,6 +458,9 @@ importers:
 
   packages/types:
     devDependencies:
+      '@ambernexus/typescript-config':
+        specifier: ^0.0.0
+        version: link:../typescript-config
       '@asyncapi/cli':
         specifier: ^2.17.0
         version: 2.17.0(@babel/core@7.12.9)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
@@ -446,9 +470,6 @@ importers:
       '@asyncapi/parser':
         specifier: ^3.4.0
         version: 3.4.0(encoding@0.1.13)
-      '@elevenlabs/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.2
@@ -1559,9 +1580,18 @@ packages:
       react: '>16.8.0'
       react-dom: '>16.8.0'
 
+  '@elevenlabs/client@0.13.0':
+    resolution: {integrity: sha512-0UjouSOVK+mECJuYg/DqM9V1NIsabIrlRmw/RjEMS5UmOpsAga3KxMC3et8fKh8G/MI2cZtLr2764wIOZgyrQg==}
+
   '@elevenlabs/elevenlabs-js@2.18.0':
     resolution: {integrity: sha512-nHePkqhcxon43Oms87EhrAYHBhZ7Lhdiw4TkQiwM3zSDFzJ/8tWlrwUAFnS2oZi6fRQAdAwON1NJsz3yStKsQg==}
     engines: {node: '>=18.0.0'}
+
+  '@elevenlabs/types@0.4.0':
+    resolution: {integrity: sha512-6CQb4r9DjepILhLybDxW0h8rvbsR8jPAp74HvFGYuvYdXcQRTkYTD9BQ4PV6VcuC1iqx0UljzJj8js3ADQ8EXw==}
+
+  '@epic-web/invariant@1.0.0':
+    resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -5342,6 +5372,11 @@ packages:
   crelt@1.0.6:
     resolution: {integrity: sha512-VQ2MBenTq1fWZUH9DJNGti7kKv6EeAuYr3cLwxUWhIu1baTaXh4Ib5W2CqHVqib4/MqbYGJqiL3Zb8GJZr3l4g==}
 
+  cross-env@10.1.0:
+    resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -8221,6 +8256,7 @@ packages:
   next@14.2.3:
     resolution: {integrity: sha512-dowFkFTR8v79NPJO4QsBUtxv0g9BrS/phluVpMAt2ku7H+cbcBJlopXjkWlwxrk/xGqMemr7JkGPGemPrLLX7A==}
     engines: {node: '>=18.17.0'}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -8239,6 +8275,7 @@ packages:
   next@14.2.33:
     resolution: {integrity: sha512-GiKHLsD00t4ACm1p00VgrI0rUFAC9cRDGReKyERlM57aeEZkOQGcZTpIbsGn0b562FTPJWmYfKwplfO9EaT6ng==}
     engines: {node: '>=18.17.0'}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -10914,10 +10951,12 @@ packages:
 
   whatwg-encoding@1.0.5:
     resolution: {integrity: sha512-b5lim54JOPN9HtzvK9HFXvBma/rnfFeqsic0hSpjtDbVxR3dJKLc+KB4V6GgiGOvl7CY/KNh8rxSo9DKQrnUEw==}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
@@ -13774,12 +13813,23 @@ snapshots:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
+  '@elevenlabs/client@0.13.0(@types/dom-mediacapture-record@1.0.22)':
+    dependencies:
+      '@elevenlabs/types': 0.4.0
+      livekit-client: 2.16.0(@types/dom-mediacapture-record@1.0.22)
+    transitivePeerDependencies:
+      - '@types/dom-mediacapture-record'
+
   '@elevenlabs/elevenlabs-js@2.18.0(encoding@0.1.13)':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
+
+  '@elevenlabs/types@0.4.0': {}
+
+  '@epic-web/invariant@1.0.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -18527,6 +18577,11 @@ snapshots:
   create-require@1.1.1: {}
 
   crelt@1.0.6: {}
+
+  cross-env@10.1.0:
+    dependencies:
+      '@epic-web/invariant': 1.0.0
+      cross-spawn: 7.0.6
 
   cross-spawn@7.0.6:
     dependencies:

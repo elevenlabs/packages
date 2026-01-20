@@ -1,5 +1,5 @@
-import { Outgoing } from "@elevenlabs/types";
-import type { AudioAlignmentEvent } from "@elevenlabs/types";
+import { Outgoing } from "@ambernexus/types";
+import type { AudioAlignmentEvent } from "@ambernexus/types";
 import {
   AgentChatResponsePartClientEvent,
   AgentResponse,
@@ -18,7 +18,7 @@ import {
   InternalTentativeAgentResponse as TentativeAgentResponseInternal,
   UserTranscript,
   VadScore,
-} from "@elevenlabs/types/generated/types/asyncapi-types";
+} from "@ambernexus/types/generated/types/asyncapi-types";
 
 // Compatibility layer - incoming events
 export type UserTranscriptionEvent = UserTranscript;

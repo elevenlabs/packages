@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface HeaderProps {
   title?: string;
@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
-  title = 'ElevenLabs Agents', 
+  title = 'AmberNexus Agents', 
   showLogo = true,
   marginBottom = 2
 }) => {
@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
     <Box flexDirection="column" marginBottom={marginBottom}>
       {showLogo && (
         <Box flexDirection="column">
-          {/* Clean, minimalist ElevenLabs header */}
+          {/* Clean, minimalist AmberNexus header */}
           <Box>
             <Text color={theme.colors.text.primary} bold>
               ║║ {title}

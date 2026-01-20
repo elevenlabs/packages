@@ -1,4 +1,4 @@
-import { Callbacks, Mode, Status } from "@elevenlabs/types";
+import { Callbacks, Mode, Status } from "@ambernexus/types";
 import type {
   BaseConnection,
   DisconnectionDetails,
@@ -26,7 +26,7 @@ import type {
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
 
-export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
+export type { Role, Mode, Status, Callbacks } from "@ambernexus/types";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {

@@ -4,7 +4,7 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface AddTestViewProps {
   initialName?: string;
@@ -150,9 +150,9 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
         toolId
       });
 
-      // Create test in ElevenLabs first to get ID
-      const { getElevenLabsClient, createTestApi } = await import('../../elevenlabs-api.js');
-      const client = await getElevenLabsClient(environment);
+      // Create test in AmberNexus first to get ID
+      const { getAmberNexusClient, createTestApi } = await import('../../ambernexus-api.js');
+      const client = await getAmberNexusClient(environment);
 
       const { toCamelCaseKeys, generateUniqueFilename } = await import('../../utils.js');
       const testApiConfig = toCamelCaseKeys(testConfig) as unknown as any;
@@ -328,7 +328,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
           <Box flexDirection="column">
             <Text color={theme.colors.accent.primary} bold>Creating test...</Text>
             <Box marginTop={1}>
-              <Text color={theme.colors.text.muted}>⏳ Generating configuration and uploading to ElevenLabs...</Text>
+              <Text color={theme.colors.text.muted}>⏳ Generating configuration and uploading to AmberNexus...</Text>
             </Box>
             {error && (
               <Box marginTop={1}>
@@ -343,7 +343,7 @@ export const AddTestView: React.FC<AddTestViewProps> = ({
           <Box flexDirection="column">
             <Text color={theme.colors.success} bold>✅ Test created successfully!</Text>
             <Box marginTop={1}>
-              <Text color={theme.colors.text.primary}>Test "{testName}" has been created and uploaded to ElevenLabs.</Text>
+              <Text color={theme.colors.text.primary}>Test "{testName}" has been created and uploaded to AmberNexus.</Text>
             </Box>
           </Box>
         );

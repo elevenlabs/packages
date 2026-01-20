@@ -1,4 +1,4 @@
-import type { Language } from "@elevenlabs/client";
+import type { Language } from "@ambernexus/client";
 
 export interface LanguageInfo {
   name: string;

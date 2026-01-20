@@ -1,4 +1,4 @@
-import type * as Types from "@elevenlabs/types";
+import type * as Types from "@ambernexus/types";
 import type {
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   AudioAlignmentEvent,
@@ -11,8 +11,8 @@ import type {
   Outgoing,
   Ping,
   Status,
-} from "@elevenlabs/types";
-export type { Callbacks } from "@elevenlabs/types";
+} from "@ambernexus/types";
+export type { Callbacks } from "@ambernexus/types";
 
 /**
  * Role in the conversation
