@@ -1,17 +1,17 @@
-# @elevenlabs/types
+# @ambernexus/types
 
-TypeScript type definitions for ElevenLabs APIs, auto-generated from AsyncAPI specifications.
+TypeScript type definitions for AmberNexus APIs, auto-generated from AsyncAPI specifications.
 
 ## Overview
 
-This package provides strongly-typed interfaces for all messages exchanged between ElevenLabs clients and various APIs (Agents, Scribe). Types are automatically generated from AsyncAPI specifications to ensure they stay in sync with the API contracts.
+This package provides strongly-typed interfaces for all messages exchanged between AmberNexus clients and various APIs (Agents, Scribe). Types are automatically generated from AsyncAPI specifications to ensure they stay in sync with the API contracts.
 
 ## Usage
 
 ### Basic Import
 
 ```typescript
-import { Incoming, Outgoing } from "@elevenlabs/types";
+import { Incoming, Outgoing } from "@ambernexus/types";
 
 // Handle incoming messages from the server
 const handleAudio = (message: Incoming.AudioClientEvent) => {
@@ -34,7 +34,7 @@ import {
   UserTranscript,
   AgentResponse,
   ConversationInitiation,
-} from "@elevenlabs/types";
+} from "@ambernexus/types";
 
 // Use types in your application
 const audio: Audio = {
@@ -50,7 +50,7 @@ const audio: Audio = {
 
 The types are organized into two main categories:
 
-- **`Incoming`** - Messages received from the ElevenLabs server
+- **`Incoming`** - Messages received from the AmberNexus server
   - **Agent API:**
     - `AudioClientEvent` - Audio data from the agent
     - `AudioAlignmentEvent` - Character-level timing data embedded in audio events for text-to-speech synchronization
@@ -65,7 +65,7 @@ The types are organized into two main categories:
     - `ScribeErrorMessage` - Error events
     - `ScribeAuthErrorMessage` - Authentication errors
 
-- **`Outgoing`** - Messages sent to the ElevenLabs server
+- **`Outgoing`** - Messages sent to the AmberNexus server
   - **Agent API:**
     - `UserMessage` - Text messages from the user
     - `UserFeedback` - User feedback (like/dislike)

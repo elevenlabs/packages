@@ -8,8 +8,8 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { TextInput } from "react-native";
-import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type { ConversationStatus } from "@elevenlabs/react-native";
+import { AmberNexusProvider, useConversation } from "@ambernexus/react-native";
+import type { ConversationStatus } from "@ambernexus/react-native";
 
 const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
@@ -152,7 +152,7 @@ const ConversationScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
-        <Text style={styles.title}>ElevenLabs React Native Example</Text>
+        <Text style={styles.title}>AmberNexus React Native Example</Text>
         <Text style={styles.subtitle}>
           Remember to set the agentId in the code
         </Text>
@@ -322,9 +322,9 @@ const ConversationScreen = () => {
 
 export default function App() {
   return (
-    <ElevenLabsProvider>
+    <AmberNexusProvider>
       <ConversationScreen />
-    </ElevenLabsProvider>
+    </AmberNexusProvider>
   );
 }
 

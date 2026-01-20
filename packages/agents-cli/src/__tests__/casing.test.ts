@@ -1,5 +1,5 @@
-import { createAgentApi, updateAgentApi, getAgentApi } from "../elevenlabs-api";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { createAgentApi, updateAgentApi, getAgentApi } from "../ambernexus-api";
+import { AmberNexusClient } from "@ambernexus/ambernexus-js";
 
 describe("Key casing normalization", () => {
   function makeMockClient() {
@@ -29,7 +29,7 @@ describe("Key casing normalization", () => {
       conversationalAi: {
         agents: { create, update, get },
       },
-    } as unknown as ElevenLabsClient;
+    } as unknown as AmberNexusClient;
   }
 
   it("createAgentApi camelizes outbound conversation_config and platform_settings", async () => {

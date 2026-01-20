@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { ProgressBar } from '@inkjs/ui';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface ProgressFlowProps {
   value: number; // 0-100

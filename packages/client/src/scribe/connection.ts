@@ -17,7 +17,7 @@ import type {
   ScribeSessionTimeLimitExceededErrorMessage,
   ScribeChunkSizeExceededErrorMessage,
   ScribeInsufficientAudioActivityErrorMessage,
-} from "@elevenlabs/types";
+} from "@ambernexus/types";
 
 // Re-export types for public API
 export type {

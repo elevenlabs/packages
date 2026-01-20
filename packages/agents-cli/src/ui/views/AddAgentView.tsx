@@ -4,11 +4,11 @@ import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { getTemplateByName, getTemplateOptions } from '../../templates.js';
 import { writeConfig, generateUniqueFilename } from '../../utils.js';
-import { createAgentApi } from '../../elevenlabs-api.js';
-import { getElevenLabsClient } from '../../elevenlabs-api.js';
+import { createAgentApi } from '../../ambernexus-api.js';
+import { getAmberNexusClient } from '../../ambernexus-api.js';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -66,9 +66,9 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
       setStatusMessage('Generating agent configuration...');
       const agentConfig = getTemplateByName(agentName, selectedTemplate);
       
-      // Step 2: Upload to ElevenLabs first to get ID
-      setStatusMessage(`Creating agent in ElevenLabs (${environment})...`);
-      const client = await getElevenLabsClient(environment);
+      // Step 2: Upload to AmberNexus first to get ID
+      setStatusMessage(`Creating agent in AmberNexus (${environment})...`);
+      const client = await getAmberNexusClient(environment);
       const conversationConfig = agentConfig.conversation_config || {};
       const platformSettings = agentConfig.platform_settings;
       const tags = agentConfig.tags || [];
@@ -133,7 +133,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
 
   return (
     <App
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {/* Step 1: Agent Name */}
@@ -192,7 +192,7 @@ export const AddAgentView: React.FC<AddAgentViewProps> = ({
                 • Template: <Text color={theme.colors.accent.primary}>{selectedTemplate}</Text>
               </Text>
               <Text color={theme.colors.text.secondary}>
-                • Upload to ElevenLabs: <Text color={theme.colors.accent.primary}>Yes</Text>
+                • Upload to AmberNexus: <Text color={theme.colors.accent.primary}>Yes</Text>
               </Text>
             </Box>
             <Box marginTop={2}>

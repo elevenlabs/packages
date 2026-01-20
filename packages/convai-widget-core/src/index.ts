@@ -4,7 +4,7 @@ import { ConvAIWidget } from "./widget";
 
 export type { CustomAttributes } from "./types/attributes";
 
-export function registerWidget(tagName = "elevenlabs-convai") {
+export function registerWidget(tagName = "ambernexus-amber-agent") {
   register(ConvAIWidget, tagName, [...CustomAttributeList], {
     shadow: true,
     mode: "open",

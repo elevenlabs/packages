@@ -1,7 +1,7 @@
 {
-  "name": "@elevenlabs/typescript-config",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@ambernexus/typescript-config",
+  "version": "0.0.1",
+  "private": false,
   "license": "MIT",
   "publishConfig": {
     "access": "public"

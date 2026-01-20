@@ -1,7 +1,7 @@
 /*
  * ulaw decoding logic taken from the wavefile library
  * https://github.com/rochars/wavefile/blob/master/lib/codecs/mulaw.js
- * USED BY @elevenlabs/client
+ * USED BY @ambernexus/client
  */
 
 const decodeTable = [0,132,396,924,1980,4092,8316,16764];

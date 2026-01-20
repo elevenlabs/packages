@@ -69,7 +69,7 @@ export function getDefaultAgentTemplate(name: string): AgentConfig {
     conversation_config: {
       asr: {
         quality: "high",
-        provider: "elevenlabs",
+        provider: "ambernexus",
         user_input_audio_format: "pcm_16000",
         keywords: []
       },

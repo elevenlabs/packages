@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { ElevenLabsProvider, useConversation } from './ElevenLabsProvider';
+import { AmberNexusProvider, useConversation } from './AmberNexusProvider';
 import type { ReactNode } from 'react';
 
 // Suppress react-test-renderer deprecation warnings during tests
@@ -40,7 +40,7 @@ jest.mock('./hooks/useConversationSession', () => ({
     endSession: jest.fn(),
     overrides: {},
     customLlmExtraBody: undefined,
-    defaultServerUrl: 'https://api.elevenlabs.io/v1/convai',
+    defaultServerUrl: 'https://api.ambernexus.io/v1/amber-agent',
   }),
 }));
 
@@ -79,13 +79,13 @@ jest.mock('./components/MessageHandler', () => ({
 
 jest.mock('./components/LiveKitRoomWrapper', () => ({
   LiveKitRoomWrapper: ({ children }: { children: ReactNode }) => (
-    // The actual LiveKitRoomWrapper receives key prop from parent (ElevenLabsProvider)
+    // The actual LiveKitRoomWrapper receives key prop from parent (AmberNexusProvider)
     // Children are passed through and should not remount when key changes
     <div>{children}</div>
   ),
 }));
 
-describe('ElevenLabsProvider', () => {
+describe('AmberNexusProvider', () => {
   describe('Core Functionality', () => {
     it('should throw error when useConversation is used outside provider', () => {
       const BadComponent = () => {
@@ -98,7 +98,7 @@ describe('ElevenLabsProvider', () => {
 
       expect(() => {
         render(<BadComponent />);
-      }).toThrow('useConversation must be used within ElevenLabsProvider');
+      }).toThrow('useConversation must be used within AmberNexusProvider');
 
       console.error = originalError;
     });
@@ -125,9 +125,9 @@ describe('ElevenLabsProvider', () => {
 
       expect(() => {
         render(
-          <ElevenLabsProvider>
+          <AmberNexusProvider>
             <TestComponent />
-          </ElevenLabsProvider>
+          </AmberNexusProvider>
         );
       }).not.toThrow();
     });
@@ -156,9 +156,9 @@ describe('ElevenLabsProvider', () => {
 
       expect(() => {
         render(
-          <ElevenLabsProvider>
+          <AmberNexusProvider>
             <TestComponent />
-          </ElevenLabsProvider>
+          </AmberNexusProvider>
         );
       }).not.toThrow();
     });
@@ -167,9 +167,9 @@ describe('ElevenLabsProvider', () => {
       // Simple test - if rendering doesn't throw, children are successfully rendered
       expect(() => {
         render(
-          <ElevenLabsProvider>
+          <AmberNexusProvider>
             <TestText>Child component rendered</TestText>
-          </ElevenLabsProvider>
+          </AmberNexusProvider>
         );
       }).not.toThrow();
     });
@@ -188,9 +188,9 @@ describe('ElevenLabsProvider', () => {
 
       expect(() => {
         render(
-          <ElevenLabsProvider>
+          <AmberNexusProvider>
             <TestComponent />
-          </ElevenLabsProvider>
+          </AmberNexusProvider>
         );
       }).not.toThrow();
     });
@@ -220,9 +220,9 @@ describe('ElevenLabsProvider', () => {
       };
 
       const { rerender } = render(
-        <ElevenLabsProvider>
+        <AmberNexusProvider>
           <TestComponent />
-        </ElevenLabsProvider>
+        </AmberNexusProvider>
       );
 
       // Initial render - effect should run once
@@ -237,9 +237,9 @@ describe('ElevenLabsProvider', () => {
 
       // Force a re-render by calling rerender
       rerender(
-        <ElevenLabsProvider>
+        <AmberNexusProvider>
           <TestComponent />
-        </ElevenLabsProvider>
+        </AmberNexusProvider>
       );
 
       // After re-render, verify conversation reference is still the same

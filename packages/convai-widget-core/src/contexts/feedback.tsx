@@ -1,4 +1,4 @@
-import { postOverallFeedback } from "@elevenlabs/client";
+import { postOverallFeedback } from "@ambernexus/client";
 import { type Signal, useSignal, useSignalEffect } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { createContext, useCallback, useMemo } from "preact/compat";

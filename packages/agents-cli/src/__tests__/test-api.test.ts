@@ -6,14 +6,14 @@ import {
   updateTestApi,
   runTestsOnAgentApi,
   getTestInvocationApi,
-} from "../elevenlabs-api";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import { ElevenLabs } from "@elevenlabs/elevenlabs-js";
+} from "../ambernexus-api";
+import { AmberNexusClient } from "@ambernexus/ambernexus-js";
+import { AmberNexus } from "@ambernexus/ambernexus-js";
 
 type MockedFunction<T extends (...args: unknown[]) => unknown> =
   jest.MockedFunction<T>;
 
-// Mock the ElevenLabs client
+// Mock the AmberNexus client
 const mockClient = {
   conversationalAi: {
     tests: {
@@ -62,8 +62,8 @@ describe("Test API Functions", () => {
       };
 
       const result = await createTestApi(
-        mockClient as unknown as ElevenLabsClient,
-        testConfig as ElevenLabs.conversationalAi.CreateUnitTestRequest
+        mockClient as unknown as AmberNexusClient,
+        testConfig as AmberNexus.conversationalAi.CreateUnitTestRequest
       );
 
       expect(mockClient.conversationalAi.tests.create).toHaveBeenCalledWith(
@@ -81,8 +81,8 @@ describe("Test API Functions", () => {
 
       await expect(
         createTestApi(
-          mockClient as unknown as ElevenLabsClient,
-          testConfig as ElevenLabs.conversationalAi.CreateUnitTestRequest
+          mockClient as unknown as AmberNexusClient,
+          testConfig as AmberNexus.conversationalAi.CreateUnitTestRequest
         )
       ).rejects.toThrow("API Error");
     });
@@ -100,7 +100,7 @@ describe("Test API Functions", () => {
       mockClient.conversationalAi.tests.get.mockResolvedValue(mockResponse);
 
       const result = await getTestApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "test_123"
       );
 
@@ -121,7 +121,7 @@ describe("Test API Functions", () => {
       );
 
       await expect(
-        getTestApi(mockClient as unknown as ElevenLabsClient, "nonexistent")
+        getTestApi(mockClient as unknown as AmberNexusClient, "nonexistent")
       ).rejects.toThrow("Test not found");
     });
   });
@@ -138,7 +138,7 @@ describe("Test API Functions", () => {
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
       const result = await listTestsApi(
-        mockClient as unknown as ElevenLabsClient
+        mockClient as unknown as AmberNexusClient
       );
 
       expect(mockClient.conversationalAi.tests.list).toHaveBeenCalledWith({
@@ -151,7 +151,7 @@ describe("Test API Functions", () => {
       const mockResponse = { tests: [] };
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
-      await listTestsApi(mockClient as unknown as ElevenLabsClient, 50);
+      await listTestsApi(mockClient as unknown as AmberNexusClient, 50);
 
       expect(mockClient.conversationalAi.tests.list).toHaveBeenCalledWith({
         pageSize: 50,
@@ -163,7 +163,7 @@ describe("Test API Functions", () => {
       mockClient.conversationalAi.tests.list.mockResolvedValue(mockResponse);
 
       const result = await listTestsApi(
-        mockClient as unknown as ElevenLabsClient
+        mockClient as unknown as AmberNexusClient
       );
 
       expect(result).toEqual([]);
@@ -193,7 +193,7 @@ describe("Test API Functions", () => {
       };
 
       const result = await updateTestApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "test_123",
         testConfig
       );
@@ -230,7 +230,7 @@ describe("Test API Functions", () => {
 
       const testIds = ["test_1", "test_2"];
       const result = await runTestsOnAgentApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "agent_123",
         testIds
       );
@@ -274,7 +274,7 @@ describe("Test API Functions", () => {
       };
 
       await runTestsOnAgentApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "agent_123",
         testIds,
         agentConfigOverride
@@ -296,7 +296,7 @@ describe("Test API Functions", () => {
       );
 
       await runTestsOnAgentApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "agent_123",
         []
       );
@@ -340,7 +340,7 @@ describe("Test API Functions", () => {
       );
 
       const result = await getTestInvocationApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "invocation_123"
       );
 
@@ -378,7 +378,7 @@ describe("Test API Functions", () => {
 
       await expect(
         getTestInvocationApi(
-          mockClient as unknown as ElevenLabsClient,
+          mockClient as unknown as AmberNexusClient,
           "nonexistent"
         )
       ).rejects.toThrow("Invocation not found");
@@ -400,7 +400,7 @@ describe("Test API Functions", () => {
       };
       await expect(
         createTestApi(
-          mockClient as unknown as ElevenLabsClient,
+          mockClient as unknown as AmberNexusClient,
           validTestConfig
         )
       ).rejects.toThrow("Network error");
@@ -412,7 +412,7 @@ describe("Test API Functions", () => {
       mockClient.conversationalAi.tests.list.mockRejectedValue(authError);
 
       await expect(
-        listTestsApi(mockClient as unknown as ElevenLabsClient)
+        listTestsApi(mockClient as unknown as AmberNexusClient)
       ).rejects.toThrow("Unauthorized");
     });
 
@@ -425,7 +425,7 @@ describe("Test API Functions", () => {
 
       await expect(
         runTestsOnAgentApi(
-          mockClient as unknown as ElevenLabsClient,
+          mockClient as unknown as AmberNexusClient,
           "agent_123",
           ["test_1"]
         )
@@ -462,7 +462,7 @@ describe("Test API Functions", () => {
       );
 
       const result = await getTestApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "test_123"
       );
 
@@ -513,7 +513,7 @@ describe("Test API Functions", () => {
       );
 
       const result = await getTestInvocationApi(
-        mockClient as unknown as ElevenLabsClient,
+        mockClient as unknown as AmberNexusClient,
         "inv_123"
       );
 

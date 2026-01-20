@@ -4,7 +4,7 @@ import {
   Role,
   SessionConfig,
   Status,
-} from "@elevenlabs/client";
+} from "@ambernexus/client";
 import { PACKAGE_VERSION } from "../version";
 import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
@@ -386,7 +386,7 @@ function triggerCallEvent(
   config: SessionConfig
 ): SessionConfig {
   try {
-    const event = new CustomEvent("elevenlabs-convai:call", {
+    const event = new CustomEvent("ambernexus-amber-agent:call", {
       bubbles: true,
       composed: true,
       detail: { config },

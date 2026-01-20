@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { getApiKey, getResidency, listEnvironments } from '../../config.js';
 
 interface WhoamiViewProps {
@@ -74,7 +74,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
 
   return (
     <App 
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {loading ? (
@@ -143,7 +143,7 @@ export const WhoamiView: React.FC<WhoamiViewProps> = ({ onComplete }) => {
             
             <Box marginTop={1}>
               <Text color={theme.colors.warning}>
-                ⚠ You are not logged in to ElevenLabs
+                ⚠ You are not logged in to AmberNexus
               </Text>
             </Box>
             

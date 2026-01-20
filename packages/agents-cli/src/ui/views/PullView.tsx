@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import path from 'path';
 import fs from 'fs-extra';
 import { readConfig, writeConfig, generateUniqueFilename } from '../../utils.js';
-import { getElevenLabsClient, listAgentsApi, getAgentApi } from '../../elevenlabs-api.js';
+import { getAmberNexusClient, listAgentsApi, getAgentApi } from '../../ambernexus-api.js';
 
 interface PullAgent {
   name: string;
@@ -60,7 +60,7 @@ export const PullView: React.FC<PullViewProps> = ({
 
         // Loop through each environment
         for (const environment of environments) {
-          const client = await getElevenLabsClient(environment);
+          const client = await getAmberNexusClient(environment);
 
           // Fetch agents list - either specific agent by ID or all agents
           let agentsList: unknown[];
@@ -196,7 +196,7 @@ export const PullView: React.FC<PullViewProps> = ({
     await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
-      const client = await getElevenLabsClient(agent.env);
+      const client = await getAmberNexusClient(agent.env);
       const agentName = agent.name;
       
       // Find existing entry for this agent ID in this environment
@@ -298,7 +298,7 @@ export const PullView: React.FC<PullViewProps> = ({
   const errorCount = agents.filter(a => a.status === 'error').length;
 
   return (
-    <App title="ElevenLabs Agents">
+    <App title="AmberNexus Agents">
       <Box flexDirection="column">
         {error ? (
           <Box>

@@ -1,12 +1,12 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
 import type { Mode } from "../BaseConversation";
-import type { ConversationConfigOverrideAgentLanguage as Language } from "@elevenlabs/types/generated/types/asyncapi-types";
-import type { DisconnectionDetails } from "@elevenlabs/types";
+import type { ConversationConfigOverrideAgentLanguage as Language } from "@ambernexus/types/generated/types/asyncapi-types";
+import type { DisconnectionDetails } from "@ambernexus/types";
 
 export type {
   DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
-} from "@elevenlabs/types";
+} from "@ambernexus/types";
 
 export type DelayConfig = {
   default: number;

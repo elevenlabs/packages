@@ -1,7 +1,7 @@
 {
-  "name": "@elevenlabs/convai-widget-embed",
-  "version": "0.5.5",
-  "description": "The Conversational AI Widget bundled with all dependencies for easy embedding.",
+  "name": "@ambernexus/convai-widget-embed",
+  "version": "0.5.6",
+  "description": "AmberNexus branded wrapper for the Elevenlabs Conversational AI Widget",
   "main": "./dist/index.js",
   "unpkg": "./dist/index.js",
   "source": "src/index.ts",
@@ -19,7 +19,8 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "devDependencies": {
-    "@elevenlabs/convai-widget-core": "workspace:*",
+    "@ambernexus/amber-agent-widget-core": "workspace:*",
+    "@ambernexus/convai-widget-core": "workspace:*",
     "eslint": "^9.8.0",
     "microbundle": "^0.15.1",
     "typescript": "^5.5.4",

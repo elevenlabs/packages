@@ -82,7 +82,7 @@ function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
 
 export const Worker = setupWorker(
   http.get<{ agentId: string }>(
-    `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
+    `${import.meta.env.VITE_SERVER_URL_US}/v1/amber-agent/agents/:agentId/widget`,
     ({ params }) => {
       if (isValidAgentId(params.agentId)) {
         return HttpResponse.json({
@@ -95,7 +95,7 @@ export const Worker = setupWorker(
     }
   ),
   ws
-    .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
+    .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/amber-agent/conversation`)
     .addEventListener("connection", async ({ client }) => {
       const agentId = client.url.searchParams.get(
         "agent_id"

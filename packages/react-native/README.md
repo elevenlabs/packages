@@ -1,10 +1,10 @@
 ![hero](../../assets/hero.png)
 
-# ElevenLabs Agents React Native SDK
+# AmberNexus Agents React Native SDK
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+Build multimodal agents with the [AmberNexus Agents platform](https://ambernexus.io/docs/agents-platform/overview).
 
-An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
+An SDK library for using AmberNexus Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [AmberNexus Node.js Library](https://www.npmjs.com/package/@ambernexus/ambernexus-js).
 
 ## Features
 
@@ -23,7 +23,7 @@ There is an example app using this SDK located in the examples/react-native-expo
 ## Installation
 
 ```bash
-npm install @elevenlabs/react-native @livekit/react-native @livekit/react-native-webrtc livekit-client
+npm install @ambernexus/react-native @livekit/react-native @livekit/react-native-webrtc livekit-client
 ```
 
 **Required Dependencies:**
@@ -42,34 +42,34 @@ _Note: LiveKit dependencies are required due to React Native's native module arc
 
 ```typescript
 import React from 'react';
-import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
+import { AmberNexusProvider, useConversation } from '@ambernexus/react-native';
 
 function App() {
   return (
-    <ElevenLabsProvider>
+    <AmberNexusProvider>
       <ConversationComponent />
-    </ElevenLabsProvider>
+    </AmberNexusProvider>
   );
 }
 ```
 
 ### Audio Session Configuration
 
-By default, ElevenLabs uses an exclusive audio session for optimal voice quality. To allow concurrent audio playback (e.g., sound effects, notifications, background music):
+By default, AmberNexus uses an exclusive audio session for optimal voice quality. To allow concurrent audio playback (e.g., sound effects, notifications, background music):
 
 ```typescript
 import React from 'react';
-import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
+import { AmberNexusProvider, useConversation } from '@ambernexus/react-native';
 
 function App() {
   return (
-    <ElevenLabsProvider
+    <AmberNexusProvider
       audioSessionConfig={{
         allowMixingWithOthers: true,
       }}
     >
       <ConversationComponent />
-    </ElevenLabsProvider>
+    </AmberNexusProvider>
   );
 }
 
@@ -120,8 +120,8 @@ Starts a new conversation session.
 
 **Parameters:**
 
-- `config.agentId`: ElevenLabs agent ID, not needed if you provide a conversationToken.
-- `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your ElevenLabs API key.
+- `config.agentId`: AmberNexus agent ID, not needed if you provide a conversationToken.
+- `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your AmberNexus API key.
 - `config.userId`: You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server.
 
 ```typescript
@@ -228,7 +228,7 @@ console.log(conversation.isSpeaking);
 console.log(conversation.canSendFeedback);
 ```
 
-### ElevenLabsProvider Configuration
+### AmberNexusProvider Configuration
 
 Configure the provider with optional settings:
 
@@ -237,13 +237,13 @@ Configure the provider with optional settings:
 Control how the SDK manages audio sessions with other audio sources:
 
 ```typescript
-<ElevenLabsProvider
+<AmberNexusProvider
   audioSessionConfig={{
     allowMixingWithOthers: true, // Default: false
   }}
 >
   {/* Your app */}
-</ElevenLabsProvider>
+</AmberNexusProvider>
 ```
 
 **When to use `allowMixingWithOthers: true`:**
@@ -266,7 +266,7 @@ Pass to `useConversation` hook to customize SDK behavior:
 
 #### Server URL Override
 
-Override the WebRTC server URL (defaults to ElevenLabs' LiveKit server):
+Override the WebRTC server URL (defaults to AmberNexus' LiveKit server):
 
 ```typescript
 const conversation = useConversation({
@@ -276,7 +276,7 @@ const conversation = useConversation({
 
 #### Token Fetch URL Override
 
-Override the token fetch endpoint (defaults to ElevenLabs' token API):
+Override the token fetch endpoint (defaults to AmberNexus' token API):
 
 ```typescript
 const conversation = useConversation({
@@ -306,7 +306,7 @@ const conversation = useConversation({
 
 ### Callback Options
 
-**Note:** Not all client events are enabled by default for an agent. If you have enabled a callback but aren’t seeing events come through, ensure that your ElevenLabs agent has the corresponding event enabled. You can do this in the “Advanced” tab of the agent settings in the ElevenLabs dashboard.
+**Note:** Not all client events are enabled by default for an agent. If you have enabled a callback but aren’t seeing events come through, ensure that your AmberNexus agent has the corresponding event enabled. You can do this in the “Advanced” tab of the agent settings in the AmberNexus dashboard.
 
 Pass to `useConversation` hook to handle various conversation events:
 

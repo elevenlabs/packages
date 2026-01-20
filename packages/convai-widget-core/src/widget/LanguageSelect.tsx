@@ -1,5 +1,5 @@
 import * as Select from "@radix-ui/react-select";
-import { Language } from "@elevenlabs/client";
+import { Language } from "@ambernexus/client";
 import { useState } from "preact/compat";
 import { Icon } from "../components/Icon";
 import { useLanguageConfig } from "../contexts/language-config";

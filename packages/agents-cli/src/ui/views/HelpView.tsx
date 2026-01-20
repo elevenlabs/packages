@@ -4,7 +4,7 @@ import { Box, Text, useApp } from "ink";
 import Gradient from "ink-gradient";
 import BigText from "ink-big-text";
 import App from "../App.js";
-import theme from "../themes/elevenlabs.js";
+import theme from "../themes/ambernexus.js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -30,7 +30,7 @@ const commands: Command[][] = [
     },
     {
       name: "login",
-      description: "Login with your ElevenLabs API key",
+      description: "Login with your AmberNexus API key",
     },
     {
       name: "logout",
@@ -64,11 +64,11 @@ const commands: Command[][] = [
     },
     {
       name: "push",
-      description: "Push agents to ElevenLabs",
+      description: "Push agents to AmberNexus",
     },
     {
       name: "pull",
-      description: "Pull agents from ElevenLabs",
+      description: "Pull agents from AmberNexus",
       subcommands: [
         {
           name: "(default)",
@@ -104,11 +104,11 @@ const commands: Command[][] = [
     },
     {
       name: "push-tools",
-      description: "Push tools to ElevenLabs API",
+      description: "Push tools to AmberNexus API",
     },
     {
       name: "pull-tools",
-      description: "Pull tools from ElevenLabs (see pull for options)",
+      description: "Pull tools from AmberNexus (see pull for options)",
     },
   ],
   [
@@ -122,11 +122,11 @@ const commands: Command[][] = [
     },
     {
       name: "push-tests",
-      description: "Push tests to ElevenLabs API",
+      description: "Push tests to AmberNexus API",
     },
     {
       name: "pull-tests",
-      description: "Pull tests from ElevenLabs (see pull for options)",
+      description: "Pull tests from AmberNexus (see pull for options)",
     },
     {
       name: "test <agent>",
@@ -161,7 +161,7 @@ const commands: Command[][] = [
     {
       name: "components",
       description:
-        "Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)",
+        "Import components from the AmberNexus UI registry (https://ui.ambernexus.io)",
       subcommands: [
         {
           name: "add [name]",
@@ -195,7 +195,7 @@ export const HelpView: React.FC = () => {
 
         <Box marginBottom={1}>
           <Text color={theme.colors.text.secondary}>
-            ElevenLabs Agents Manager CLI v{version}
+            AmberNexus Agents Manager CLI v{version}
           </Text>
         </Box>
       </Box>
@@ -270,7 +270,7 @@ export const HelpView: React.FC = () => {
             </Text>
           </Text>
           <Text color={theme.colors.text.secondary}>
-            4. Push to ElevenLabs:{" "}
+            4. Push to AmberNexus:{" "}
             <Text color={theme.colors.success}>agents push</Text>
           </Text>
         </Box>

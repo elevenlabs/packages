@@ -1,11 +1,11 @@
 /**
- * ElevenLabs Agents Manager
+ * AmberNexus Agents Manager
  * TypeScript/Node.js implementation
  */
 
 export * from './utils.js';
 export * from './templates.js';
-export * from './elevenlabs-api.js';
+export * from './ambernexus-api.js';
 export * from './config.js';
 
 // Re-export main types

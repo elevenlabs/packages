@@ -4,12 +4,12 @@ import { Worker } from "./mocks/browser";
 import { setupWebComponent } from "./mocks/web-component";
 import { Variants } from "./types/config";
 
-describe("elevenlabs-convai", () => {
+describe("ambernexus-amber-agent", () => {
   beforeAll(() => Worker.start({ quiet: true }));
   afterAll(() => Worker.stop());
 
   it("should register a custom component", async () => {
-    expect(window.customElements.get("elevenlabs-convai")).toBeDefined();
+    expect(window.customElements.get("ambernexus-amber-agent")).toBeDefined();
   });
 
   it.each(Variants)(
@@ -227,7 +227,7 @@ describe("elevenlabs-convai", () => {
 
   describe("expansion events", () => {
     it.each(["document", "widget"])(
-      "should expand and collapse widget when elevenlabs-agent:expand event is dispatched (%s)",
+      "should expand and collapse widget when ambernexus-agent:expand event is dispatched (%s)",
       async source => {
         const widget = setupWebComponent({
           "agent-id": "basic",
@@ -242,7 +242,7 @@ describe("elevenlabs-convai", () => {
           .toBeInTheDocument();
 
         // Dispatch expand event
-        const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
+        const expandEvent = new CustomEvent("ambernexus-agent:expand", {
           detail: { action: "expand" },
           bubbles: true,
           composed: true,
@@ -256,7 +256,7 @@ describe("elevenlabs-convai", () => {
           .toBeInTheDocument();
 
         // Now collapse it
-        const collapseEvent = new CustomEvent("elevenlabs-agent:expand", {
+        const collapseEvent = new CustomEvent("ambernexus-agent:expand", {
           detail: { action: "collapse" },
           bubbles: true,
           composed: true,
@@ -271,7 +271,7 @@ describe("elevenlabs-convai", () => {
     );
 
     it.each(["document", "widget"])(
-      "should toggle widget when elevenlabs-agent:expand event is dispatched with toggle action (%s)",
+      "should toggle widget when ambernexus-agent:expand event is dispatched with toggle action (%s)",
       async source => {
         const widget = setupWebComponent({
           "agent-id": "basic",
@@ -287,7 +287,7 @@ describe("elevenlabs-convai", () => {
           .toBeInTheDocument();
 
         // First toggle - should expand
-        const toggleEvent1 = new CustomEvent("elevenlabs-agent:expand", {
+        const toggleEvent1 = new CustomEvent("ambernexus-agent:expand", {
           detail: { action: "toggle" },
           bubbles: true,
           composed: true,
@@ -300,7 +300,7 @@ describe("elevenlabs-convai", () => {
           .toBeInTheDocument();
 
         // Second toggle - should collapse
-        const toggleEvent2 = new CustomEvent("elevenlabs-agent:expand", {
+        const toggleEvent2 = new CustomEvent("ambernexus-agent:expand", {
           detail: { action: "toggle" },
           bubbles: true,
           composed: true,
@@ -325,7 +325,7 @@ describe("elevenlabs-convai", () => {
         const sourceElement = source === "document" ? document : widget;
 
         // Dispatch expand event
-        const expandEvent = new CustomEvent("elevenlabs-agent:expand", {
+        const expandEvent = new CustomEvent("ambernexus-agent:expand", {
           detail: { action: "expand" },
           bubbles: true,
           composed: true,

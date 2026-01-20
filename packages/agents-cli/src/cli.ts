@@ -16,7 +16,7 @@ import {
   AgentConfig 
 } from './templates.js';
 import {
-  getElevenLabsClient,
+  getAmberNexusClient,
   getApiBaseUrl,
   createAgentApi,
   updateAgentApi,
@@ -33,8 +33,8 @@ import {
   listTestsApi,
   updateTestApi,
   deleteTestApi
-} from './elevenlabs-api.js';
-import { ElevenLabs, ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+} from './ambernexus-api.js';
+import { AmberNexus, AmberNexusClient } from '@ambernexus/ambernexus-js';
 import { 
   getApiKey, 
   setApiKey, 
@@ -176,7 +176,7 @@ interface TemplateShowOptions {
 
 program
   .name('agents')
-  .description('ElevenLabs Agents Manager CLI')
+  .description('AmberNexus Agents Manager CLI')
   .version(version)
   .configureHelp({
     // Override the default help to use our Ink UI
@@ -271,7 +271,7 @@ program
         if (!options.override && await fs.pathExists(envExamplePath)) {
           console.log('.env.example already exists (skipped)');
         } else {
-          const envExample = `# ElevenLabs API Key
+          const envExample = `# AmberNexus API Key
 ELEVENLABS_API_KEY=your_api_key_here
 `;
           await fs.writeFile(envExamplePath, envExample);
@@ -280,11 +280,11 @@ ELEVENLABS_API_KEY=your_api_key_here
         
         console.log('\nProject initialized successfully!');
         console.log('Next steps:');
-        console.log('1. Set your ElevenLabs API key: agents login');
+        console.log('1. Set your AmberNexus API key: agents login');
         console.log('2. Create an agent: agents add "My Agent" --template default');
         console.log('3. Create tools: agents add-webhook-tool "My Webhook" or agents add-client-tool "My Client"');
         console.log('4. Create tests: agents add-test "My Test" --template basic-llm');
-        console.log('5. Push to ElevenLabs: agents push && agents push-tools && agents push-tests');
+        console.log('5. Push to AmberNexus: agents push && agents push-tools && agents push-tests');
         console.log('6. Run tests: agents test "My Agent"');
       }
     } catch (error) {
@@ -295,7 +295,7 @@ ELEVENLABS_API_KEY=your_api_key_here
 
 program
   .command('login')
-  .description('Login with your ElevenLabs API key')
+  .description('Login with your AmberNexus API key')
   .option('--env <environment>', 'Environment name', 'prod')
   .option('--no-ui', 'Disable interactive UI')
   .action(async (options: { ui: boolean; env: string }) => {
@@ -314,7 +314,7 @@ program
         
         console.log(`Logging in to environment: ${environment}`);
         const apiKey = await read({
-          prompt: 'Enter your ElevenLabs API key: ',
+          prompt: 'Enter your AmberNexus API key: ',
           silent: true,
           replace: '*'
         });
@@ -328,7 +328,7 @@ program
         // Create client directly with the provided API key for validation
         const config = await loadConfig();
         const baseURL = getApiBaseUrl(config.residency);
-        const testClient = new ElevenLabsClient({
+        const testClient = new AmberNexusClient({
           apiKey: apiKey.trim(),
           baseUrl: baseURL,
           headers: {
@@ -344,7 +344,7 @@ program
           if (err?.statusCode === 401 || err?.message?.includes('401')) {
             console.error('Invalid API key');
           } else if (err?.code === 'ENOTFOUND' || err?.code === 'ETIMEDOUT' || err?.message?.includes('network')) {
-            console.error('Network error: Unable to connect to ElevenLabs API');
+            console.error('Network error: Unable to connect to AmberNexus API');
           } else {
             console.error('Error verifying API key:', err?.message || error);
           }
@@ -493,7 +493,7 @@ program
 
 program
   .command('add')
-  .description('Add a new agent - creates config, uploads to ElevenLabs, and saves ID')
+  .description('Add a new agent - creates config, uploads to AmberNexus, and saves ID')
   .argument('<name>', 'Name of the agent to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--template <template>', 'Template type to use', 'default')
@@ -532,11 +532,11 @@ program
         process.exit(1);
       }
       
-      // Create agent in ElevenLabs first to get ID
+      // Create agent in AmberNexus first to get ID
       const environment = options.env || 'prod';
-      console.log(`Creating agent '${name}' in ElevenLabs (environment: ${environment})...`);
+      console.log(`Creating agent '${name}' in AmberNexus (environment: ${environment})...`);
       
-      const client = await getElevenLabsClient(environment);
+      const client = await getAmberNexusClient(environment);
       
       // Extract config components
       const conversationConfig = agentConfig.conversation_config || {};
@@ -552,7 +552,7 @@ program
         tags
       );
       
-      console.log(`Created agent in ElevenLabs with ID: ${agentId}`);
+      console.log(`Created agent in AmberNexus with ID: ${agentId}`);
       
       // Generate config path using agent name (or custom path if provided)
       let configPath = options.configPath;
@@ -589,7 +589,7 @@ program
 
 program
   .command('add-webhook-tool')
-  .description('Add a new webhook tool - creates config and uploads to ElevenLabs')
+  .description('Add a new webhook tool - creates config and uploads to AmberNexus')
   .argument('<name>', 'Name of the webhook tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--env <environment>', 'Environment to create tool in', 'prod')
@@ -604,7 +604,7 @@ program
 
 program
   .command('add-client-tool')
-  .description('Add a new client tool - creates config and uploads to ElevenLabs')
+  .description('Add a new client tool - creates config and uploads to AmberNexus')
   .argument('<name>', 'Name of the client tool to create')
   .option('--config-path <path>', 'Custom config path (optional)')
   .option('--env <environment>', 'Environment to create tool in', 'prod')
@@ -657,7 +657,7 @@ templatesCommand
 
 program
   .command('push')
-  .description('Push agents to ElevenLabs API when configs change')
+  .description('Push agents to AmberNexus API when configs change')
   .option('--env <environment>', 'Filter agents by environment (defaults to all environments)')
   .option('--dry-run', 'Show what would be done without making changes', false)
   .option('--no-ui', 'Disable interactive UI')
@@ -768,7 +768,7 @@ program
 
 program
   .command('delete')
-  .description('Delete an agent locally and from ElevenLabs')
+  .description('Delete an agent locally and from AmberNexus')
   .argument('[agent_id]', 'ID of the agent to delete (omit with --all to delete all agents)')
   .option('--all', 'Delete all agents', false)
   .option('--env <environment>', 'Filter agents by environment (use with --all)')
@@ -803,7 +803,7 @@ program
 
 program
   .command('delete-tool')
-  .description('Delete a tool locally and from ElevenLabs')
+  .description('Delete a tool locally and from AmberNexus')
   .argument('[tool_id]', 'ID of the tool to delete (omit with --all to delete all tools)')
   .option('--all', 'Delete all tools', false)
   .option('--env <environment>', 'Filter tools by environment (use with --all)')
@@ -838,7 +838,7 @@ program
 
 program
   .command('delete-test')
-  .description('Delete a test locally and from ElevenLabs')
+  .description('Delete a test locally and from AmberNexus')
   .argument('[test_id]', 'ID of the test to delete (omit with --all to delete all tests)')
   .option('--all', 'Delete all tests', false)
   .option('--env <environment>', 'Filter tests by environment (use with --all)')
@@ -873,7 +873,7 @@ program
 
 program
   .command('pull')
-  .description('Pull all agents from ElevenLabs workspace and add them to local configuration')
+  .description('Pull all agents from AmberNexus workspace and add them to local configuration')
   .option('--agent <id>', 'Specific agent ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled agent configs', 'agent_configs')
   .option('--update', 'Update existing agents only (skip new)', false)
@@ -918,7 +918,7 @@ program
 
 program
   .command('pull-tools')
-  .description('Pull all tools from ElevenLabs workspace and add them to local configuration')
+  .description('Pull all tools from AmberNexus workspace and add them to local configuration')
   .option('--tool <id>', 'Specific tool ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled tool configs', 'tool_configs')
   .option('--update', 'Update existing tools only (skip new)', false)
@@ -976,7 +976,7 @@ program
 
 program
   .command('add-test')
-  .description('Add a new test - creates config and uploads to ElevenLabs')
+  .description('Add a new test - creates config and uploads to AmberNexus')
   .argument('<name>', 'Name of the test to create')
   .option('--template <template>', 'Test template type to use', 'basic-llm')
   .option('--env <environment>', 'Environment to create test in', 'prod')
@@ -1003,7 +1003,7 @@ program
 
 program
   .command('push-tests')
-  .description('Push tests to ElevenLabs API when configs change')
+  .description('Push tests to AmberNexus API when configs change')
   .option('--test <id>', 'Specific test ID to push (defaults to all tests)')
   .option('--env <environment>', 'Filter tests by environment (defaults to all environments)')
   .option('--dry-run', 'Show what would be done without making changes', false)
@@ -1020,7 +1020,7 @@ program
 
 program
   .command('push-tools')
-  .description('Push tools to ElevenLabs API when configs change')
+  .description('Push tools to AmberNexus API when configs change')
   .option('--tool <id>', 'Specific tool ID to push (defaults to all tools)')
   .option('--env <environment>', 'Filter tools by environment (defaults to all environments)')
   .option('--dry-run', 'Show what would be done without making changes', false)
@@ -1097,7 +1097,7 @@ program
 
 program
   .command('pull-tests')
-  .description('Pull all tests from ElevenLabs workspace and add them to local configuration')
+  .description('Pull all tests from AmberNexus workspace and add them to local configuration')
   .option('--test <id>', 'Specific test ID to pull')
   .option('--output-dir <dir>', 'Directory to store pulled test configs', 'test_configs')
   .option('--update', 'Update existing tests only (skip new)', false)
@@ -1135,11 +1135,11 @@ program
 
 const componentsCommand = program
   .command('components')
-  .description('Import components from the ElevenLabs UI registry (https://ui.elevenlabs.io)');
+  .description('Import components from the AmberNexus UI registry (https://ui.ambernexus.io)');
 
 componentsCommand
   .command('add')
-  .description('Add a new component from the ElevenLabs UI registry')
+  .description('Add a new component from the AmberNexus UI registry')
   .argument('[name]', 'Name of the component')
   .action(async (name?: string) => {
     function getCommandPrefix(): string {
@@ -1166,12 +1166,12 @@ componentsCommand
 
     const targetUrl = new URL(
       `/r/${component}.json`,
-      'https://ui.elevenlabs.io'
+      'https://ui.ambernexus.io'
     ).toString();
 
     const fullCommand = `${commandPrefix} shadcn@latest add ${targetUrl}`;
 
-    console.log(`Installing ${component} from ElevenLabs UI registry...`);
+    console.log(`Installing ${component} from AmberNexus UI registry...`);
     console.log(`Running: ${fullCommand}`);
 
     const result = spawnSync(fullCommand, {
@@ -1249,17 +1249,17 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     };
   }
   
-  // Create tool in ElevenLabs first to get ID
+  // Create tool in AmberNexus first to get ID
   const env = environment || 'prod';
-  console.log(`Creating ${type} tool '${name}' in ElevenLabs (environment: ${env})...`);
+  console.log(`Creating ${type} tool '${name}' in AmberNexus (environment: ${env})...`);
   
-  const client = await getElevenLabsClient(env);
+  const client = await getAmberNexusClient(env);
   
   try {
     const response = await createToolApi(client, toolConfig);
     const toolId = response.id;
     
-    console.log(`Created ${type} tool in ElevenLabs with ID: ${toolId}`);
+    console.log(`Created ${type} tool in AmberNexus with ID: ${toolId}`);
     
     // Generate config path using tool name (or custom path if provided)
     if (!configPath) {
@@ -1287,7 +1287,7 @@ async function addTool(name: string, type: 'webhook' | 'client', configPath?: st
     console.log(`Edit ${configPath} to customize your tool, then run 'agents push-tools' to update`);
     
   } catch (error) {
-    console.error(`Error creating tool in ElevenLabs: ${error}`);
+    console.error(`Error creating tool in AmberNexus: ${error}`);
     process.exit(1);
   }
 }
@@ -1355,10 +1355,10 @@ async function pushAgents(dryRun = false, environment?: string): Promise<void> {
       continue;
     }
     
-    // Initialize ElevenLabs client for this agent's environment
+    // Initialize AmberNexus client for this agent's environment
     let client;
     try {
-      client = await getElevenLabsClient(environment);
+      client = await getAmberNexusClient(environment);
     } catch (error) {
       console.log(`Error: ${error}`);
       console.log(`Skipping agent ${agentDefName} - environment '${environment}' not configured`);
@@ -1626,7 +1626,7 @@ async function pullAgents(options: PullOptions): Promise<void> {
 }
 
 async function pullAgentsFromEnvironment(options: PullOptions, environment: string, agentsConfigPath: string): Promise<void> {
-  const client = await getElevenLabsClient(environment);
+  const client = await getAmberNexusClient(environment);
   
   // Load existing config
   let agentsConfig: AgentsConfig;
@@ -1658,12 +1658,12 @@ async function pullAgentsFromEnvironment(options: PullOptions, environment: stri
       throw new Error(`Failed to fetch agent with ID '${options.agent}': ${error}`);
     }
   } else {
-    // Pull all agents from ElevenLabs
-    console.log('Pulling all agents from ElevenLabs...');
+    // Pull all agents from AmberNexus
+    console.log('Pulling all agents from AmberNexus...');
     agentsList = await listAgentsApi(client, 30);
     
     if (agentsList.length === 0) {
-      console.log('No agents found in your ElevenLabs workspace.');
+      console.log('No agents found in your AmberNexus workspace.');
       return;
     }
     
@@ -1871,7 +1871,7 @@ async function pullToolsFromEnvironment(options: PullToolsOptions, environment: 
     toolsConfig = await readToolsConfig(toolsConfigPath);
   }
 
-  const client = await getElevenLabsClient(environment);
+  const client = await getAmberNexusClient(environment);
 
   let filteredTools: unknown[];
 
@@ -1899,12 +1899,12 @@ async function pullToolsFromEnvironment(options: PullToolsOptions, environment: 
       throw new Error(`Failed to fetch tool with ID '${options.tool}': ${error}`);
     }
   } else {
-    // Pull all tools from ElevenLabs
-    console.log('Pulling all tools from ElevenLabs...');
+    // Pull all tools from AmberNexus
+    console.log('Pulling all tools from AmberNexus...');
     const toolsList = await listToolsApi(client);
 
     if (toolsList.length === 0) {
-      console.log('No tools found in your ElevenLabs workspace.');
+      console.log('No tools found in your AmberNexus workspace.');
       return;
     }
 
@@ -2089,15 +2089,15 @@ async function generateWidget(agentId: string): Promise<void> {
   const residency = await getResidency();
   
   // Generate HTML widget snippet with server-location attribute
-  let htmlSnippet = `<elevenlabs-convai agent-id="${agentId}"`;
+  let htmlSnippet = `<ambernexus-amber-agent agent-id="${agentId}"`;
   
   // Add server-location attribute for isolated regions
   if (residency !== 'global' && residency !== 'us') {
     htmlSnippet += ` server-location="${residency}"`;
   }
   
-  htmlSnippet += `></elevenlabs-convai>
-<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>`;
+  htmlSnippet += `></ambernexus-amber-agent>
+<script src="https://unpkg.com/@ambernexus/amber-agent-widget-embed" async type="text/javascript"></script>`;
   
   const agentName = await getAgentName(agentDef.config);
   console.log(`HTML Widget for agent '${agentName}' (residency: ${residency}):`);
@@ -2128,18 +2128,18 @@ async function addTest(name: string, templateType: string = "basic-llm", environ
   // Create test config using template (in memory first)
   const testConfig = getTestTemplateByName(name, templateType);
 
-  // Create test in ElevenLabs first to get ID
+  // Create test in AmberNexus first to get ID
   const env = environment || 'prod';
-  console.log(`Creating test '${name}' in ElevenLabs (environment: ${env})...`);
+  console.log(`Creating test '${name}' in AmberNexus (environment: ${env})...`);
 
-  const client = await getElevenLabsClient(env);
+  const client = await getAmberNexusClient(env);
 
   try {
-    const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
+    const testApiConfig = toCamelCaseKeys(testConfig) as unknown as AmberNexus.conversationalAi.CreateUnitTestRequest;
     const response = await createTestApi(client, testApiConfig);
     const testId = response.id;
 
-    console.log(`Created test in ElevenLabs with ID: ${testId}`);
+    console.log(`Created test in AmberNexus with ID: ${testId}`);
 
     // Generate config path using test name
     const configPath = await generateUniqueFilename('test_configs', name);
@@ -2165,7 +2165,7 @@ async function addTest(name: string, templateType: string = "basic-llm", environ
     console.log(`Edit ${configPath} to customize your test, then run 'agents push-tests' to update`);
 
   } catch (error) {
-    console.error(`Error creating test in ElevenLabs: ${error}`);
+    console.error(`Error creating test in AmberNexus: ${error}`);
     process.exit(1);
   }
 }
@@ -2237,10 +2237,10 @@ async function pushTests(testId?: string, dryRun = false, environment?: string):
       continue;
     }
 
-    // Initialize ElevenLabs client for this test's environment
+    // Initialize AmberNexus client for this test's environment
     let client;
     try {
-      client = await getElevenLabsClient(environment);
+      client = await getAmberNexusClient(environment);
     } catch (error) {
       console.log(`Error: ${error}`);
       console.log(`Skipping test ${testDefName} - environment '${environment}' not configured`);
@@ -2249,7 +2249,7 @@ async function pushTests(testId?: string, dryRun = false, environment?: string):
 
     // Perform API operation
     try {
-      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as ElevenLabs.conversationalAi.CreateUnitTestRequest;
+      const testApiConfig = toCamelCaseKeys(testConfig) as unknown as AmberNexus.conversationalAi.CreateUnitTestRequest;
 
       if (!testId) {
         // Create new test
@@ -2262,7 +2262,7 @@ async function pushTests(testId?: string, dryRun = false, environment?: string):
         changesMade = true;
       } else {
         // Update existing test
-        await updateTestApi(client, testId, testApiConfig as ElevenLabs.conversationalAi.UpdateUnitTestRequest);
+        await updateTestApi(client, testId, testApiConfig as AmberNexus.conversationalAi.UpdateUnitTestRequest);
         console.log(`Updated test ${testDefName} (ID: ${testId}) [${environment}]`);
       }
 
@@ -2351,10 +2351,10 @@ async function pushTools(toolId?: string, dryRun = false, environment?: string):
       continue;
     }
 
-    // Initialize ElevenLabs client for this tool's environment
+    // Initialize AmberNexus client for this tool's environment
     let client;
     try {
-      client = await getElevenLabsClient(environment);
+      client = await getAmberNexusClient(environment);
     } catch (error) {
       console.log(`Error: ${error}`);
       console.log(`Skipping tool ${toolDefName} - environment '${environment}' not configured`);
@@ -2430,7 +2430,7 @@ async function pullTestsFromEnvironment(options: { test?: string; outputDir: str
     console.log(`Created ${TESTS_CONFIG_FILE}`);
   }
 
-  const client = await getElevenLabsClient(environment);
+  const client = await getAmberNexusClient(environment);
 
   let testsList: unknown[];
 
@@ -2450,12 +2450,12 @@ async function pullTestsFromEnvironment(options: { test?: string; outputDir: str
       throw new Error(`Failed to fetch test with ID '${options.test}': ${error}`);
     }
   } else {
-    // Fetch all tests from ElevenLabs
-    console.log('Fetching all tests from ElevenLabs...');
+    // Fetch all tests from AmberNexus
+    console.log('Fetching all tests from AmberNexus...');
     testsList = await listTestsApi(client, 30);
 
     if (testsList.length === 0) {
-      console.log('No tests found in your ElevenLabs workspace.');
+      console.log('No tests found in your AmberNexus workspace.');
       return;
     }
 
@@ -2687,11 +2687,11 @@ async function runAgentTests(agentId: string): Promise<void> {
   console.log('');
 
   // Run tests without UI
-  const client = await getElevenLabsClient(environment);
+  const client = await getAmberNexusClient(environment);
   
   try {
     // Import the API functions we need
-    const { runTestsOnAgentApi, getTestInvocationApi } = await import('./elevenlabs-api.js');
+    const { runTestsOnAgentApi, getTestInvocationApi } = await import('./ambernexus-api.js');
     
     // Start the test run
     const invocationResponse = await runTestsOnAgentApi(client, agentId, testIds) as { id: string };
@@ -2779,15 +2779,15 @@ async function deleteAgent(agentId: string): Promise<void> {
   
   console.log(`Deleting agent '${agentName}' (ID: ${agentId}) [${environment}]...`);
   
-  // Delete from ElevenLabs (globally)
-  console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient(environment);
+  // Delete from AmberNexus (globally)
+  console.log('Deleting from AmberNexus...');
+  const client = await getAmberNexusClient(environment);
   
   try {
     await deleteAgentApi(client, agentId);
-    console.log('✓ Successfully deleted from ElevenLabs');
+    console.log('✓ Successfully deleted from AmberNexus');
   } catch (error) {
-    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.error(`Warning: Failed to delete from AmberNexus: ${error}`);
     console.log('Continuing with local deletion...');
   }
   
@@ -2842,8 +2842,8 @@ async function deleteAllAgents(ui: boolean = true, env?: string): Promise<void> 
   // Confirm deletion (skip if --no-ui)
   if (ui) {
     const warningMsg = env 
-      ? `\nWARNING: This will delete ${agentsToDelete.length} agent(s) from environment '${env}' in both local configuration and ElevenLabs.`
-      : '\nWARNING: This will delete ALL agents from both local configuration and ElevenLabs.';
+      ? `\nWARNING: This will delete ${agentsToDelete.length} agent(s) from environment '${env}' in both local configuration and AmberNexus.`
+      : '\nWARNING: This will delete ALL agents from both local configuration and AmberNexus.';
     console.log(warningMsg);
     const confirmed = await promptForConfirmation('Are you sure you want to delete these agents?');
     
@@ -2866,17 +2866,17 @@ async function deleteAllAgents(ui: boolean = true, env?: string): Promise<void> 
       const environment = agentDef.env || 'prod';
       console.log(`Deleting '${agentName}' (${agentDef.id}) [${environment}]...`);
       
-      // Delete from ElevenLabs
+      // Delete from AmberNexus
       if (agentDef.id) {
         try {
-          const client = await getElevenLabsClient(environment);
+          const client = await getAmberNexusClient(environment);
           await deleteAgentApi(client, agentDef.id);
-          console.log(`  ✓ Deleted from ElevenLabs`);
+          console.log(`  ✓ Deleted from AmberNexus`);
         } catch (error) {
-          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+          console.error(`  Warning: Failed to delete from AmberNexus: ${error}`);
         }
       } else {
-        console.log(`  Warning: No agent ID found, skipping ElevenLabs deletion`);
+        console.log(`  Warning: No agent ID found, skipping AmberNexus deletion`);
       }
       
       // Remove config file
@@ -2938,15 +2938,15 @@ async function deleteTool(toolId: string): Promise<void> {
   
   console.log(`Deleting tool '${toolName}' (ID: ${toolId}) [${environment}]...`);
   
-  // Delete from ElevenLabs
-  console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient(environment);
+  // Delete from AmberNexus
+  console.log('Deleting from AmberNexus...');
+  const client = await getAmberNexusClient(environment);
   
   try {
     await deleteToolApi(client, toolId);
-    console.log('✓ Successfully deleted from ElevenLabs');
+    console.log('✓ Successfully deleted from AmberNexus');
   } catch (error) {
-    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.error(`Warning: Failed to delete from AmberNexus: ${error}`);
     console.log('Continuing with local deletion...');
   }
   
@@ -3009,8 +3009,8 @@ async function deleteAllTools(ui: boolean = true, env?: string): Promise<void> {
   // Confirm deletion (skip if --no-ui)
   if (ui) {
     const warningMsg = env 
-      ? `\nWARNING: This will delete ${toolsToDelete.length} tool(s) from environment '${env}' in both local configuration and ElevenLabs.`
-      : '\nWARNING: This will delete ALL tools from both local configuration and ElevenLabs.';
+      ? `\nWARNING: This will delete ${toolsToDelete.length} tool(s) from environment '${env}' in both local configuration and AmberNexus.`
+      : '\nWARNING: This will delete ALL tools from both local configuration and AmberNexus.';
     console.log(warningMsg);
     const confirmed = await promptForConfirmation('Are you sure you want to delete these tools?');
     
@@ -3044,17 +3044,17 @@ async function deleteAllTools(ui: boolean = true, env?: string): Promise<void> {
       
       console.log(`Deleting '${toolName}' (${toolDef.id}) [${environment}]...`);
       
-      // Delete from ElevenLabs
+      // Delete from AmberNexus
       if (toolDef.id) {
         try {
-          const client = await getElevenLabsClient(environment);
+          const client = await getAmberNexusClient(environment);
           await deleteToolApi(client, toolDef.id);
-          console.log(`  ✓ Deleted from ElevenLabs`);
+          console.log(`  ✓ Deleted from AmberNexus`);
         } catch (error) {
-          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+          console.error(`  Warning: Failed to delete from AmberNexus: ${error}`);
         }
       } else {
-        console.log(`  Warning: No tool ID found, skipping ElevenLabs deletion`);
+        console.log(`  Warning: No tool ID found, skipping AmberNexus deletion`);
       }
       
       // Remove config file
@@ -3115,15 +3115,15 @@ async function deleteTest(testId: string): Promise<void> {
   
   console.log(`Deleting test '${testName}' (ID: ${testId}) [${environment}]...`);
   
-  // Delete from ElevenLabs
-  console.log('Deleting from ElevenLabs...');
-  const client = await getElevenLabsClient(environment);
+  // Delete from AmberNexus
+  console.log('Deleting from AmberNexus...');
+  const client = await getAmberNexusClient(environment);
   
   try {
     await deleteTestApi(client, testId);
-    console.log('✓ Successfully deleted from ElevenLabs');
+    console.log('✓ Successfully deleted from AmberNexus');
   } catch (error) {
-    console.error(`Warning: Failed to delete from ElevenLabs: ${error}`);
+    console.error(`Warning: Failed to delete from AmberNexus: ${error}`);
     console.log('Continuing with local deletion...');
   }
   
@@ -3186,8 +3186,8 @@ async function deleteAllTests(ui: boolean = true, env?: string): Promise<void> {
   // Confirm deletion (skip if --no-ui)
   if (ui) {
     const warningMsg = env 
-      ? `\nWARNING: This will delete ${testsToDelete.length} test(s) from environment '${env}' in both local configuration and ElevenLabs.`
-      : '\nWARNING: This will delete ALL tests from both local configuration and ElevenLabs.';
+      ? `\nWARNING: This will delete ${testsToDelete.length} test(s) from environment '${env}' in both local configuration and AmberNexus.`
+      : '\nWARNING: This will delete ALL tests from both local configuration and AmberNexus.';
     console.log(warningMsg);
     const confirmed = await promptForConfirmation('Are you sure you want to delete these tests?');
     
@@ -3221,17 +3221,17 @@ async function deleteAllTests(ui: boolean = true, env?: string): Promise<void> {
       
       console.log(`Deleting '${testName}' (${testDef.id}) [${environment}]...`);
       
-      // Delete from ElevenLabs
+      // Delete from AmberNexus
       if (testDef.id) {
         try {
-          const client = await getElevenLabsClient(environment);
+          const client = await getAmberNexusClient(environment);
           await deleteTestApi(client, testDef.id);
-          console.log(`  ✓ Deleted from ElevenLabs`);
+          console.log(`  ✓ Deleted from AmberNexus`);
         } catch (error) {
-          console.error(`  Warning: Failed to delete from ElevenLabs: ${error}`);
+          console.error(`  Warning: Failed to delete from AmberNexus: ${error}`);
         }
       } else {
-        console.log(`  Warning: No test ID found, skipping ElevenLabs deletion`);
+        console.log(`  Warning: No test ID found, skipping AmberNexus deletion`);
       }
       
       // Remove config file
@@ -3312,7 +3312,7 @@ if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.error('Usage: agents components <add>');
     console.error('');
     console.error('Available subcommands:');
-    console.error('  add [name]     Add a component from ElevenLabs UI registry');
+    console.error('  add [name]     Add a component from AmberNexus UI registry');
     console.error('');
     console.error('Examples:');
     console.error('  agents components add');

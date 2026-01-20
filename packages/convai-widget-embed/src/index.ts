@@ -1,3 +1,3 @@
-import { registerWidget } from "@elevenlabs/convai-widget-core";
+import { registerWidget } from "@ambernexus/amber-agent-widget-core";
 
 registerWidget();

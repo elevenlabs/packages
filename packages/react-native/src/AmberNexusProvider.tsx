@@ -32,7 +32,7 @@ export interface Conversation {
   setMicMuted: (muted: boolean) => void;
 }
 
-interface ElevenLabsContextType {
+interface AmberNexusContextType {
   conversation: Conversation;
   callbacksRef: { current: Callbacks };
   serverUrl: string;
@@ -44,12 +44,12 @@ interface ElevenLabsContextType {
   setClientTools: (tools: ClientToolsConfig['clientTools']) => void;
 }
 
-const ElevenLabsContext = createContext<ElevenLabsContextType | null>(null);
+const AmberNexusContext = createContext<AmberNexusContextType | null>(null);
 
 export const useConversation = (options: ConversationOptions = {}): Conversation => {
-  const context = useContext(ElevenLabsContext);
+  const context = useContext(AmberNexusContext);
   if (!context) {
-    throw new Error('useConversation must be used within ElevenLabsProvider');
+    throw new Error('useConversation must be used within AmberNexusProvider');
   }
 
   const { serverUrl, tokenFetchUrl, clientTools, ...callbacks } = options;
@@ -79,12 +79,12 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
   return context.conversation;
 };
 
-interface ElevenLabsProviderProps {
+interface AmberNexusProviderProps {
   children: React.ReactNode;
   audioSessionConfig?: AudioSessionConfig;
 }
 
-export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, audioSessionConfig }) => {
+export const AmberNexusProvider: React.FC<AmberNexusProviderProps> = ({ children, audioSessionConfig }) => {
   // Initialize globals on mount
   registerGlobals();
 
@@ -305,7 +305,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   }), []); // Empty deps - object is created once and never recreated
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
-  const contextValue = React.useMemo<ElevenLabsContextType>(() => ({
+  const contextValue = React.useMemo<AmberNexusContextType>(() => ({
     conversation,
     callbacksRef,
     serverUrl,
@@ -325,7 +325,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   ]);
 
   return (
-    <ElevenLabsContext.Provider value={contextValue}>
+    <AmberNexusContext.Provider value={contextValue}>
       <LiveKitRoomWrapper
         serverUrl={serverUrl}
         token={token}
@@ -345,6 +345,6 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
       >
         {children}
       </LiveKitRoomWrapper>
-    </ElevenLabsContext.Provider>
+    </AmberNexusContext.Provider>
   );
 };

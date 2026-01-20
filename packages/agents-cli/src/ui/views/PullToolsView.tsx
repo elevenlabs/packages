@@ -3,8 +3,8 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
-import theme from '../themes/elevenlabs.js';
-import { getElevenLabsClient, listToolsApi, getToolApi } from '../../elevenlabs-api.js';
+import theme from '../themes/ambernexus.js';
+import { getAmberNexusClient, listToolsApi, getToolApi } from '../../ambernexus-api.js';
 import {
   readToolsConfig,
   writeToolsConfig,
@@ -79,7 +79,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
 
         // Loop through each environment
         for (const environment of environments) {
-          const client = await getElevenLabsClient(environment);
+          const client = await getAmberNexusClient(environment);
 
           // Build ID-based map for existing tools in this environment
           const existingToolIds = new Map(
@@ -221,7 +221,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
       }
 
       try {
-        const client = await getElevenLabsClient(toolToPull.env);
+        const client = await getAmberNexusClient(toolToPull.env);
         const toolDetails = await getToolApi(client, toolToPull.id);
 
         // Extract the tool_config from the response
@@ -333,7 +333,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
 
   return (
     <App
-      title="ElevenLabs Agents CLI"
+      title="AmberNexus Agents CLI"
     >
       <Box flexDirection="column" gap={1}>
         {!state.loading && !state.error && (
@@ -349,7 +349,7 @@ export const PullToolsView: React.FC<PullToolsViewProps> = ({
           <StatusCard
             title="Initializing"
             status="loading"
-            message="Connecting to ElevenLabs and discovering tools..."
+            message="Connecting to AmberNexus and discovering tools..."
           />
         ) : state.error ? (
           <StatusCard

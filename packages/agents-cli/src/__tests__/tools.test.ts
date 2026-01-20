@@ -9,19 +9,19 @@ import {
   calculateConfigHash,
 } from "../utils";
 import {
-  getElevenLabsClient,
+  getAmberNexusClient,
   listToolsApi,
   getToolApi,
-} from "../elevenlabs-api";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+} from "../ambernexus-api";
+import { AmberNexusClient } from "@ambernexus/ambernexus-js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
 
-// Mock the elevenlabs-api module
-jest.mock("../elevenlabs-api");
-const mockGetElevenLabsClient = getElevenLabsClient as jest.MockedFunction<
-  typeof getElevenLabsClient
+// Mock the ambernexus-api module
+jest.mock("../ambernexus-api");
+const mockGetAmberNexusClient = getAmberNexusClient as jest.MockedFunction<
+  typeof getAmberNexusClient
 >;
 const mockListToolsApi = listToolsApi as jest.MockedFunction<
   typeof listToolsApi
@@ -309,15 +309,15 @@ describe("Tool Fetching", () => {
     // Reset mocks
     jest.clearAllMocks();
 
-    // Mock the ElevenLabs client
-    mockGetElevenLabsClient.mockResolvedValue({
+    // Mock the AmberNexus client
+    mockGetAmberNexusClient.mockResolvedValue({
       conversationalAi: {
         tools: {
           list: jest.fn(),
           get: jest.fn(),
         },
       },
-    } as unknown as ElevenLabsClient);
+    } as unknown as AmberNexusClient);
   });
 
   afterEach(async () => {
@@ -326,7 +326,7 @@ describe("Tool Fetching", () => {
   });
 
   describe("listToolsApi", () => {
-    it("should fetch tools from ElevenLabs API", async () => {
+    it("should fetch tools from AmberNexus API", async () => {
       const mockTools = [
         {
           id: "tool_123",
@@ -348,7 +348,7 @@ describe("Tool Fetching", () => {
 
       mockListToolsApi.mockResolvedValue(mockTools);
 
-      const client = await getElevenLabsClient();
+      const client = await getAmberNexusClient();
       const tools = await listToolsApi(client);
 
       expect(tools).toEqual(mockTools);
@@ -358,7 +358,7 @@ describe("Tool Fetching", () => {
     it("should return empty array when no tools exist", async () => {
       mockListToolsApi.mockResolvedValue([]);
 
-      const client = await getElevenLabsClient();
+      const client = await getAmberNexusClient();
       const tools = await listToolsApi(client);
 
       expect(tools).toEqual([]);
@@ -367,7 +367,7 @@ describe("Tool Fetching", () => {
   });
 
   describe("getToolApi", () => {
-    it("should fetch specific tool details from ElevenLabs API", async () => {
+    it("should fetch specific tool details from AmberNexus API", async () => {
       const mockToolDetails: WebhookTool = {
         name: "Test Webhook Tool",
         description: "A test webhook tool",
@@ -392,7 +392,7 @@ describe("Tool Fetching", () => {
 
       mockGetToolApi.mockResolvedValue(mockToolDetails);
 
-      const client = await getElevenLabsClient();
+      const client = await getAmberNexusClient();
       const toolDetails = await getToolApi(client, "tool_123");
 
       expect(toolDetails).toEqual(mockToolDetails);
@@ -466,7 +466,7 @@ describe("Tool Fetching", () => {
       mockGetToolApi.mockResolvedValue(mockToolDetails);
 
       // Simulate fetching tools
-      const client = await getElevenLabsClient();
+      const client = await getAmberNexusClient();
       const toolsList = await listToolsApi(client);
 
       expect(toolsList).toHaveLength(1);
@@ -477,7 +477,7 @@ describe("Tool Fetching", () => {
       expect(toolDetails).toEqual(mockToolDetails);
 
       // Verify API calls
-      expect(mockGetElevenLabsClient).toHaveBeenCalled();
+      expect(mockGetAmberNexusClient).toHaveBeenCalled();
       expect(mockListToolsApi).toHaveBeenCalledWith(client);
       expect(mockGetToolApi).toHaveBeenCalledWith(client, "tool_123");
     });
@@ -509,7 +509,7 @@ describe("Tool Fetching", () => {
 
       mockListToolsApi.mockResolvedValue(mockToolsList);
 
-      const client = await getElevenLabsClient();
+      const client = await getAmberNexusClient();
       const allTools = await listToolsApi(client);
 
       // Simulate filtering by search term 'webhook'

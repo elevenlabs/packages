@@ -11,7 +11,7 @@ import {
   type Mode,
   type Status,
   type Callbacks,
-} from "@elevenlabs/client";
+} from "@ambernexus/client";
 
 // Device configuration types for audio device switching
 export type DeviceFormatConfig = {
@@ -46,10 +46,10 @@ export function parseLocation(location: string = "us"): Location {
 
 export function getOriginForLocation(location: Location): string {
   const originMap: Record<Location, string> = {
-    us: "wss://api.elevenlabs.io",
-    "eu-residency": "wss://api.eu.residency.elevenlabs.io",
-    "in-residency": "wss://api.in.residency.elevenlabs.io",
-    global: "wss://api.elevenlabs.io",
+    us: "wss://api.ambernexus.io",
+    "eu-residency": "wss://api.eu.residency.ambernexus.io",
+    "in-residency": "wss://api.in.residency.ambernexus.io",
+    global: "wss://api.ambernexus.io",
   };
 
   return originMap[location];
@@ -57,10 +57,10 @@ export function getOriginForLocation(location: Location): string {
 
 export function getLivekitUrlForLocation(location: Location): string {
   const livekitUrlMap: Record<Location, string> = {
-    us: "wss://livekit.rtc.elevenlabs.io",
-    "eu-residency": "wss://livekit.rtc.eu.residency.elevenlabs.io",
-    "in-residency": "wss://livekit.rtc.in.residency.elevenlabs.io",
-    global: "wss://livekit.rtc.elevenlabs.io",
+    us: "wss://livekit.rtc.ambernexus.io",
+    "eu-residency": "wss://livekit.rtc.eu.residency.ambernexus.io",
+    "in-residency": "wss://livekit.rtc.in.residency.ambernexus.io",
+    global: "wss://livekit.rtc.ambernexus.io",
   };
 
   return livekitUrlMap[location];
@@ -80,8 +80,8 @@ export type {
   VoiceConversation,
   TextConversation,
   Callbacks,
-} from "@elevenlabs/client";
-export { postOverallFeedback } from "@elevenlabs/client";
+} from "@ambernexus/client";
+export { postOverallFeedback } from "@ambernexus/client";
 
 // Scribe exports
 export {

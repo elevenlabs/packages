@@ -3,7 +3,7 @@ import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
 import ProgressFlow from '../components/ProgressFlow.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 
 interface TestRun {
   test_run_id: string;
@@ -52,8 +52,8 @@ export const TestView: React.FC<TestViewProps> = ({
   useEffect(() => {
     const startTests = async () => {
       try {
-        const { getElevenLabsClient, runTestsOnAgentApi } = await import('../../elevenlabs-api.js');
-        const client = await getElevenLabsClient();
+        const { getAmberNexusClient, runTestsOnAgentApi } = await import('../../ambernexus-api.js');
+        const client = await getAmberNexusClient();
 
         const result = await runTestsOnAgentApi(client, agentId, testIds) as TestInvocation;
         setTestInvocation(result);
@@ -73,8 +73,8 @@ export const TestView: React.FC<TestViewProps> = ({
 
     const pollInterval = setInterval(async () => {
       try {
-        const { getElevenLabsClient, getTestInvocationApi } = await import('../../elevenlabs-api.js');
-        const client = await getElevenLabsClient();
+        const { getAmberNexusClient, getTestInvocationApi } = await import('../../ambernexus-api.js');
+        const client = await getAmberNexusClient();
 
         const result = await getTestInvocationApi(client, testInvocation.id) as TestInvocation;
         setTestRuns(result.test_runs || []);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
 import StatusCard from '../components/StatusCard.js';
-import theme from '../themes/elevenlabs.js';
+import theme from '../themes/ambernexus.js';
 import { readConfig } from '../../utils.js';
 import path from 'path';
 import fs from 'fs-extra';
@@ -107,7 +107,7 @@ export const StatusView: React.FC<StatusViewProps> = ({
 
   return (
     <App 
-      title="ElevenLabs Agents"
+      title="AmberNexus Agents"
     >
       <Box flexDirection="column" gap={1}>
         {loading ? (

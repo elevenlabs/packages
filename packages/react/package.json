@@ -1,7 +1,7 @@
 {
-  "name": "@elevenlabs/react",
-  "version": "0.12.3",
-  "description": "ElevenLabs React Library",
+  "name": "@ambernexus/react",
+  "version": "0.13.10",
+  "description": "AmberNexus branded wrapper for the ElevenLabs React Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
   "source": "src/index.ts",
@@ -16,9 +16,9 @@
     }
   },
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "generate-version": "node -e \"require('fs').writeFileSync('src/version.ts', '// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"' + process.env.npm_package_version + '\\\";\\n')\"",
     "prebuild": "npm run generate-version",
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "cross-env BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
     "clean": "rm -rf ./dist",
     "dev": "pnpm run clean && pnpm run generate-version && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
     "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
@@ -32,7 +32,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "dependencies": {
-    "@elevenlabs/client": "workspace:*"
+    "@ambernexus/client": "^0.13.5"
   },
   "peerDependencies": {
     "react": ">=16.8.0"
@@ -51,7 +51,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elevenlabs/packages.git",
+    "url": "git+https://github.com/ambernexus/packages.git",
     "directory": "packages/react"
   },
   "publishConfig": {

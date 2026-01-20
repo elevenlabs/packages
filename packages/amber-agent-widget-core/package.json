@@ -1,0 +1,16 @@
+{
+  "name": "@ambernexus/amber-agent-widget-core",
+  "version": "0.5.5",
+  "description": "AmberNexus branded entrypoint for the Conversational AI widget core.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "dependencies": {
+    "@ambernexus/convai-widget-core": "workspace:*"
+  },
+  "license": "MIT"
+}

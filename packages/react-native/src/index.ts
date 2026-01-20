@@ -1,8 +1,8 @@
 export {
-  ElevenLabsProvider,
+  AmberNexusProvider,
   useConversation,
   type Conversation,
-} from "./ElevenLabsProvider";
+} from "./AmberNexusProvider";
 
 export type {
   ConversationStatus,

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useApp } from 'ink';
 import App from '../App.js';
-import theme from '../themes/elevenlabs.js';
-import { getElevenLabsClient, createAgentApi, updateAgentApi } from '../../elevenlabs-api.js';
+import theme from '../themes/ambernexus.js';
+import { getAmberNexusClient, createAgentApi, updateAgentApi } from '../../ambernexus-api.js';
 import { readConfig, writeConfig } from '../../utils.js';
 import fs from 'fs-extra';
 import path from 'path';
@@ -94,8 +94,8 @@ export const PushView: React.FC<PushViewProps> = ({
             )
           );
 
-          // Get ElevenLabs client for this agent's environment
-          const client = await getElevenLabsClient(agent.env);
+          // Get AmberNexus client for this agent's environment
+          const client = await getAmberNexusClient(agent.env);
 
           // Extract config components
           const conversationConfig = agentConfig.conversation_config || {};
@@ -188,7 +188,7 @@ export const PushView: React.FC<PushViewProps> = ({
 
   return (
     <App 
-      title="ElevenLabs Agents" 
+      title="AmberNexus Agents" 
     >
       <Box flexDirection="column">
         {/* Agent Status List - Compact Table */}

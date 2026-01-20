@@ -35,7 +35,7 @@ describe("Conversation", () => {
     "invokes respective callbacks (%s)",
     async conversationType => {
       const server = new Server(
-        `wss://api.elevenlabs.io/${conversationType}/1`
+        `wss://api.ambernexus.io/${conversationType}/1`
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => {
@@ -54,7 +54,7 @@ describe("Conversation", () => {
       let mode: Mode | null = null;
 
       const conversationPromise = Conversation.startSession({
-        signedUrl: `wss://api.elevenlabs.io/${conversationType}/1`,
+        signedUrl: `wss://api.ambernexus.io/${conversationType}/1`,
         userId: TEST_USER_ID,
         overrides: {
           agent: {
@@ -249,7 +249,7 @@ describe("Conversation", () => {
     "throws upon immediate cancellation (%s)",
     async conversationType => {
       const server = new Server(
-        `wss://api.elevenlabs.io/${conversationType}/2`
+        `wss://api.ambernexus.io/${conversationType}/2`
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => {
@@ -266,7 +266,7 @@ describe("Conversation", () => {
 
       await expect(async () => {
         await Conversation.startSession({
-          signedUrl: `wss://api.elevenlabs.io/${conversationType}/2`,
+          signedUrl: `wss://api.ambernexus.io/${conversationType}/2`,
           connectionDelay: { default: 0 },
           textOnly: conversationType === "text",
         });
@@ -284,7 +284,7 @@ describe("Conversation", () => {
     "terminates when server closes connection (%s)",
     async conversationType => {
       const server = new Server(
-        `wss://api.elevenlabs.io/${conversationType}/3`
+        `wss://api.ambernexus.io/${conversationType}/3`
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", socket => resolve(socket));
@@ -294,7 +294,7 @@ describe("Conversation", () => {
 
       const disconnectionPromise = new Promise((resolve, reject) => {
         Conversation.startSession({
-          signedUrl: `wss://api.elevenlabs.io/${conversationType}/3`,
+          signedUrl: `wss://api.ambernexus.io/${conversationType}/3`,
           onDisconnect: resolve,
           connectionDelay: { default: 0 },
           textOnly: conversationType === "text",
@@ -349,7 +349,7 @@ describe("Connection Types", () => {
       "establishes websocket connection properly (%s)",
       async conversationType => {
         const server = new Server(
-          `wss://api.elevenlabs.io/${conversationType}/websocket`
+          `wss://api.ambernexus.io/${conversationType}/websocket`
         );
         const clientPromise = new Promise<Client>((resolve, reject) => {
           server.on("connection", (socket: Client) => {
@@ -364,7 +364,7 @@ describe("Connection Types", () => {
         let status: Status | null = null;
 
         const conversationPromise = Conversation.startSession({
-          signedUrl: `wss://api.elevenlabs.io/${conversationType}/websocket`,
+          signedUrl: `wss://api.ambernexus.io/${conversationType}/websocket`,
           connectionType: "websocket",
           onConnect,
           onDisconnect,
@@ -404,7 +404,7 @@ describe("Connection Types", () => {
 
     it("handles websocket connection errors properly", async () => {
       const server = new Server(
-        "wss://api.elevenlabs.io/voice/websocket-error"
+        "wss://api.ambernexus.io/voice/websocket-error"
       );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", (socket: Client) => {
@@ -421,7 +421,7 @@ describe("Connection Types", () => {
 
       await expect(async () => {
         await Conversation.startSession({
-          signedUrl: "wss://api.elevenlabs.io/voice/websocket-error",
+          signedUrl: "wss://api.ambernexus.io/voice/websocket-error",
           connectionType: "websocket",
           connectionDelay: { default: 0 },
         });
@@ -454,7 +454,7 @@ describe("Connection Types", () => {
       // Verify fetch was called with correct URL base (version may vary)
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https:\/\/api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+          /^https:\/\/api\.ambernexus\.io\/v1\/amber-agent\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
         )
       );
     });
@@ -463,7 +463,7 @@ describe("Connection Types", () => {
       const config = {
         agentId: "test-agent",
         connectionType: "webrtc" as const,
-        origin: "wss://custom.api.elevenlabs.io",
+        origin: "wss://custom.api.ambernexus.io",
       };
 
       // Mock fetch to return an error so we can test the URL
@@ -481,7 +481,7 @@ describe("Connection Types", () => {
       // Verify fetch was called with custom origin converted from WSS to HTTPS
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https:\/\/custom\.api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+          /^https:\/\/custom\.api\.ambernexus\.io\/v1\/amber-agent\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
         )
       );
     });
@@ -490,7 +490,7 @@ describe("Connection Types", () => {
       const config = {
         agentId: "test-agent",
         connectionType: "webrtc" as const,
-        origin: "wss://eu.api.elevenlabs.io",
+        origin: "wss://eu.api.ambernexus.io",
       };
 
       // Mock fetch to return an error so we can test the URL
@@ -508,7 +508,7 @@ describe("Connection Types", () => {
       // Verify WSS was converted to HTTPS
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https:\/\/eu\.api\.elevenlabs\.io\/v1\/convai\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
+          /^https:\/\/eu\.api\.ambernexus\.io\/v1\/amber-agent\/conversation\/token\?agent_id=test-agent&source=js_sdk&version=/
         )
       );
     });
@@ -617,7 +617,7 @@ describe("Volume Control", () => {
   });
 
   it("sets volume immediately on WebSocket voice conversation", async () => {
-    const server = new Server("wss://api.elevenlabs.io/voice/volume-test");
+    const server = new Server("wss://api.ambernexus.io/voice/volume-test");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
       server.on("error", reject);
@@ -661,7 +661,7 @@ describe("Volume Control", () => {
     }));
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/volume-test",
+      signedUrl: "wss://api.ambernexus.io/voice/volume-test",
       connectionDelay: { default: 0 },
       textOnly: false, // Voice conversation
     });
@@ -696,7 +696,7 @@ describe("Volume Control", () => {
   });
 
   it("handles volume setting on text conversation gracefully", async () => {
-    const server = new Server("wss://api.elevenlabs.io/text/volume-test");
+    const server = new Server("wss://api.ambernexus.io/text/volume-test");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
       server.on("error", reject);
@@ -704,7 +704,7 @@ describe("Volume Control", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/text/volume-test",
+      signedUrl: "wss://api.ambernexus.io/text/volume-test",
       connectionDelay: { default: 0 },
       textOnly: true, // Text conversation
     });
@@ -735,7 +735,7 @@ describe("Volume Control", () => {
 
   it("applies volume to new audio chunks in WebSocket connection", async () => {
     const server = new Server(
-      "wss://api.elevenlabs.io/voice/volume-audio-test"
+      "wss://api.ambernexus.io/voice/volume-audio-test"
     );
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
@@ -780,7 +780,7 @@ describe("Volume Control", () => {
     }));
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/volume-audio-test",
+      signedUrl: "wss://api.ambernexus.io/voice/volume-audio-test",
       connectionDelay: { default: 0 },
       textOnly: false,
     });
@@ -914,7 +914,7 @@ describe("WebRTC Volume Control", () => {
 
 describe("Agent Chat Response Part Streaming", () => {
   it("handles streaming text chunks with start, delta, and stop events", async () => {
-    const server = new Server("wss://api.elevenlabs.io/text/streaming-test");
+    const server = new Server("wss://api.ambernexus.io/text/streaming-test");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => {
         resolve(socket);
@@ -927,7 +927,7 @@ describe("Agent Chat Response Part Streaming", () => {
     const streamChunks: Array<{ text: string; type: string }> = [];
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/text/streaming-test",
+      signedUrl: "wss://api.ambernexus.io/text/streaming-test",
       textOnly: true,
       onAgentChatResponsePart: chunk => {
         onAgentChatResponsePart(chunk);
@@ -1058,7 +1058,7 @@ describe("Agent Chat Response Part Streaming", () => {
 
   it("handles streaming without onAgentChatResponsePart callback", async () => {
     const server = new Server(
-      "wss://api.elevenlabs.io/text/streaming-no-callback"
+      "wss://api.ambernexus.io/text/streaming-no-callback"
     );
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => {
@@ -1070,7 +1070,7 @@ describe("Agent Chat Response Part Streaming", () => {
 
     // Start conversation without the callback
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/text/streaming-no-callback",
+      signedUrl: "wss://api.ambernexus.io/text/streaming-no-callback",
       textOnly: true,
       connectionDelay: { default: 0 },
     });
@@ -1140,7 +1140,7 @@ describe("Agent Chat Response Part Streaming", () => {
 describe("Device Change Default Device", () => {
   it("successfully changes to default device when no deviceId is provided", async () => {
     const server = new Server(
-      "wss://api.elevenlabs.io/voice/default-device-test"
+      "wss://api.ambernexus.io/voice/default-device-test"
     );
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
@@ -1149,7 +1149,7 @@ describe("Device Change Default Device", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/default-device-test",
+      signedUrl: "wss://api.ambernexus.io/voice/default-device-test",
       connectionDelay: { default: 0 },
       textOnly: false,
     });
@@ -1268,7 +1268,7 @@ describe("Wake Lock", () => {
     const mockSentinel = mockWakeLockSentinel();
     const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
 
-    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-default");
+    const server = new Server("wss://api.ambernexus.io/voice/wakelock-default");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
       server.on("error", reject);
@@ -1276,7 +1276,7 @@ describe("Wake Lock", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-default",
+      signedUrl: "wss://api.ambernexus.io/voice/wakelock-default",
       connectionDelay: { default: 0 },
       textOnly: false,
     });
@@ -1307,7 +1307,7 @@ describe("Wake Lock", () => {
     const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
 
     const server = new Server(
-      "wss://api.elevenlabs.io/voice/wakelock-disabled"
+      "wss://api.ambernexus.io/voice/wakelock-disabled"
     );
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
@@ -1316,7 +1316,7 @@ describe("Wake Lock", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-disabled",
+      signedUrl: "wss://api.ambernexus.io/voice/wakelock-disabled",
       connectionDelay: { default: 0 },
       textOnly: false,
       useWakeLock: false,
@@ -1349,7 +1349,7 @@ describe("Wake Lock", () => {
     const mockSentinel = mockWakeLockSentinel();
     setupMockWakeLock(() => Promise.resolve(mockSentinel));
 
-    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-release");
+    const server = new Server("wss://api.ambernexus.io/voice/wakelock-release");
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
       server.on("error", reject);
@@ -1357,7 +1357,7 @@ describe("Wake Lock", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-release",
+      signedUrl: "wss://api.ambernexus.io/voice/wakelock-release",
       connectionDelay: { default: 0 },
       textOnly: false,
     });
@@ -1399,7 +1399,7 @@ describe("Wake Lock", () => {
     });
 
     const server = new Server(
-      "wss://api.elevenlabs.io/voice/wakelock-reacquire"
+      "wss://api.ambernexus.io/voice/wakelock-reacquire"
     );
     const clientPromise = new Promise<Client>((resolve, reject) => {
       server.on("connection", socket => resolve(socket));
@@ -1408,7 +1408,7 @@ describe("Wake Lock", () => {
     });
 
     const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-reacquire",
+      signedUrl: "wss://api.ambernexus.io/voice/wakelock-reacquire",
       connectionDelay: { default: 0 },
       textOnly: false,
     });
@@ -1449,7 +1449,7 @@ describe("Wake Lock", () => {
     setupMockWakeLock(() => Promise.resolve(mockSentinel));
 
     const server = new Server(
-      "wss://api.elevenlabs.io/voice/wakelock-setup-error"
+      "wss://api.ambernexus.io/voice/wakelock-setup-error"
     );
 
     server.on("connection", socket => {
@@ -1462,7 +1462,7 @@ describe("Wake Lock", () => {
 
     await expect(
       Conversation.startSession({
-        signedUrl: "wss://api.elevenlabs.io/voice/wakelock-setup-error",
+        signedUrl: "wss://api.ambernexus.io/voice/wakelock-setup-error",
         connectionDelay: { default: 0 },
         textOnly: false,
       })

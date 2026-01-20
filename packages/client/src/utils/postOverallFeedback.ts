@@ -1,4 +1,4 @@
-const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const HTTPS_API_ORIGIN = "https://api.ambernexus.io";
 
 export interface RatingFeedback {
   rating: number;
@@ -35,7 +35,7 @@ export function postOverallFeedback(
     body.comment = likeOrFeedback.comment;
   }
 
-  return fetch(`${origin}/v1/convai/conversations/${conversationId}/feedback`, {
+  return fetch(`${origin}/v1/amber-agent/conversations/${conversationId}/feedback`, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {

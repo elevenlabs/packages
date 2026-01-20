@@ -1,8 +1,8 @@
 import { renderHook, act } from "@testing-library/react";
-import { Conversation } from "@elevenlabs/client";
+import { Conversation } from "@ambernexus/client";
 import { useConversation } from "./index";
 
-jest.mock("@elevenlabs/client", () => ({
+jest.mock("@ambernexus/client", () => ({
   Conversation: {
     startSession: jest.fn(),
   },

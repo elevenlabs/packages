@@ -1,5 +1,5 @@
 /**
- * ElevenLabs Design System Theme
+ * AmberNexus Design System Theme
  * Terminal-adaptive color palette and design tokens
  */
 
@@ -39,8 +39,8 @@ export const gradients = {
   morning: 'morning',
   vice: 'vice',
   passion: 'passion',
-  // Custom ElevenLabs gradient
-  elevenlabs: 'passion', // Purple to blue gradient similar to brand
+  // Custom AmberNexus gradient
+  ambernexus: 'passion', // Purple to blue gradient similar to brand
 };
 
 export const spacing = {

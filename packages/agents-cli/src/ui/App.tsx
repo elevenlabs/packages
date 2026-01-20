@@ -9,7 +9,7 @@ interface AppProps {
 }
 
 export const App: React.FC<AppProps> = ({ 
-  title = 'ElevenLabs Agents',
+  title = 'AmberNexus Agents',
   headerMarginBottom,
   children 
 }) => {

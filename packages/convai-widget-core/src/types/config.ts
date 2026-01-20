@@ -1,4 +1,4 @@
-import { Language } from "@elevenlabs/client";
+import { Language } from "@ambernexus/client";
 
 export const Variants = ["tiny", "compact", "full"] as const;
 export type Variant = (typeof Variants)[number];

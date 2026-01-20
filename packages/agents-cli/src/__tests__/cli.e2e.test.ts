@@ -16,7 +16,7 @@
  * Any existing agents in the workspace could be PERMANENTLY LOST.
  * 
  * Setup:
- * 1. Create a new ElevenLabs account (separate from production)
+ * 1. Create a new AmberNexus account (separate from production)
  * 2. Verify the account is empty
  * 3. Copy .env.example to .env
  * 4. Add the test account API key to .env
@@ -170,7 +170,7 @@ describe("CLI End-to-End Tests", () => {
     it("should show help", async () => {
       const result = await runCli(["--help"]);
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("ElevenLabs Agents Manager CLI");
+      expect(result.stdout).toContain("AmberNexus Agents Manager CLI");
       expect(result.stdout).toContain("Usage:");
     });
 
@@ -541,7 +541,7 @@ describe("CLI End-to-End Tests", () => {
       });
 
       expect(addResult.exitCode).toBe(0);
-      expect(addResult.stdout).toContain(`Created agent in ElevenLabs`);
+      expect(addResult.stdout).toContain(`Created agent in AmberNexus`);
 
       // Read agents.json to get the agent ID
       const agentsJsonPath = path.join(pushPullTempDir, "agents.json");
@@ -615,7 +615,7 @@ describe("CLI End-to-End Tests", () => {
       });
 
       expect(addResult.exitCode).toBe(0);
-      expect(addResult.stdout).toContain(`Created agent in ElevenLabs`);
+      expect(addResult.stdout).toContain(`Created agent in AmberNexus`);
 
       // Read the created agent config
       let agentsConfig = JSON.parse(
@@ -952,7 +952,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult1.exitCode).toBe(0);
-      expect(addResult1.stdout).toContain(`Created agent in ElevenLabs`);
+      expect(addResult1.stdout).toContain(`Created agent in AmberNexus`);
 
       // Step 2: Create second agent with the same name
       const addResult2 = await runCli(
@@ -964,7 +964,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult2.exitCode).toBe(0);
-      expect(addResult2.stdout).toContain(`Created agent in ElevenLabs`);
+      expect(addResult2.stdout).toContain(`Created agent in AmberNexus`);
 
       // Read agents.json to verify both agents were created
       let agentsConfig = JSON.parse(
@@ -1380,7 +1380,7 @@ describe("CLI End-to-End Tests", () => {
       });
 
       expect(addResult.exitCode).toBe(0);
-      expect(addResult.stdout).toContain(`Created test in ElevenLabs`);
+      expect(addResult.stdout).toContain(`Created test in AmberNexus`);
 
       // Read tests.json to get the test ID
       const testsJsonPath = path.join(pushPullTempDir, "tests.json");
@@ -1442,7 +1442,7 @@ describe("CLI End-to-End Tests", () => {
       });
 
       expect(addResult.exitCode).toBe(0);
-      expect(addResult.stdout).toContain(`Created test in ElevenLabs`);
+      expect(addResult.stdout).toContain(`Created test in AmberNexus`);
 
       // Read the created test config
       let testsConfig = JSON.parse(
@@ -1760,7 +1760,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult1.exitCode).toBe(0);
-      expect(addResult1.stdout).toContain(`Created test in ElevenLabs`);
+      expect(addResult1.stdout).toContain(`Created test in AmberNexus`);
 
       // Step 2: Create second test with the same name
       const addResult2 = await runCli(
@@ -1772,7 +1772,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult2.exitCode).toBe(0);
-      expect(addResult2.stdout).toContain(`Created test in ElevenLabs`);
+      expect(addResult2.stdout).toContain(`Created test in AmberNexus`);
 
       // Read tests.json to verify both tests were created
       let testsConfig = JSON.parse(
@@ -2381,7 +2381,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult1.exitCode).toBe(0);
-      expect(addResult1.stdout).toContain(`Created webhook tool in ElevenLabs`);
+      expect(addResult1.stdout).toContain(`Created webhook tool in AmberNexus`);
 
       // Step 2: Create second tool with the same name
       const addResult2 = await runCli(
@@ -2393,7 +2393,7 @@ describe("CLI End-to-End Tests", () => {
       );
 
       expect(addResult2.exitCode).toBe(0);
-      expect(addResult2.stdout).toContain(`Created webhook tool in ElevenLabs`);
+      expect(addResult2.stdout).toContain(`Created webhook tool in AmberNexus`);
 
       // Read tools.json to verify both tools were created
       let toolsConfig = JSON.parse(

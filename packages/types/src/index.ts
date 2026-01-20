@@ -1,7 +1,7 @@
 /**
- * @elevenlabs/types
+ * @ambernexus/types
  *
- * TypeScript types for ElevenLabs Agent API communication
+ * TypeScript types for AmberNexus Agent API communication
  */
 
 export * as Incoming from "../generated/types/incoming";
