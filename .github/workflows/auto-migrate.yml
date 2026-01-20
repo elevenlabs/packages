@@ -1,0 +1,16 @@
+name: Auto Migrate and Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+jobs:
+  migrate-and-release:
+    runs-on: ubuntu-latest
+    if: github.actor == 'ryleetikelgreene' || github.actor == 'josephlung'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
