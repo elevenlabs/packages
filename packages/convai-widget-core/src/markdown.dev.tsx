@@ -134,6 +134,8 @@ function MockConversationProvider({
       canSendFeedback: signal(false),
       conversationIndex: signal(0),
       conversationTextOnly: signal<boolean | null>(null),
+      voiceEnabled: signal<boolean>(false),
+      enablingVoice: signal<boolean>(false),
       transcript: mockTranscript,
       toolCallStatus: signal(new Map()),
       startSession: async () => "",
@@ -146,6 +148,7 @@ function MockConversationProvider({
       sendUserMessage: () => {},
       sendUserActivity: () => {},
       addModeToggleEntry: () => {},
+      enableVoiceMode: async () => {},
     }),
     [mockTranscript]
   );

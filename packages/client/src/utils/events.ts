@@ -1,5 +1,4 @@
-import { Outgoing } from "@elevenlabs/types";
-import type { AudioAlignmentEvent } from "@elevenlabs/types";
+import { Outgoing, AudioAlignmentEvent } from "@elevenlabs/types";
 import {
   AgentChatResponsePartClientEvent,
   AgentResponse,
