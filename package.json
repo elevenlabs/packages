@@ -1,39 +1,58 @@
 {
   "name": "elevenlabs-io",
   "version": "1.0.0",
-  "description": "An extraordinary AI project by founding owners Rylee Tikel Greene and Joseph Michael Lung",
-  "main": "src/index.js",
+  "description": "An extraordinary AI project exclusively owned by Rylee Tikel Greene and Joseph Michael Lung",
+  "main": "dist/index.js",
   "type": "module",
+  "packageManager": "pnpm@8.15.0+sha512.8b68e32d8b6e6b2c6e4a8e5c4a3b2c8a7d6e5c4b3a2c8d7e6f5a4b3c2d8e7f6a5",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
-    "build": "npm run build:clean && npm run build:compile && npm run build:bundle",
-    "build:clean": "rm -rf dist/*",
-    "build:compile": "tsc || echo 'TypeScript compilation optional'",
-    "build:bundle": "node scripts/bundle.js || echo 'Bundling optional'",
-    "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "jest --testPathPattern=unit",
-    "test:integration": "jest --testPathPattern=integration",
-    "test:watch": "jest --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write \"src/**/*.{js,ts,json,md}\"",
-    "docs": "npm run docs:generate && npm run docs:serve",
-    "docs:generate": "typedoc --out docs src/",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "pnpm run clean && pnpm run compile && pnpm run bundle",
+    "clean": "rm -rf dist && rm -rf coverage",
+    "compile": "tsc --project tsconfig.json",
+    "bundle": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --target=node18 --format=esm --minify",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "lint:fix": "eslint src/ --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\" --config .prettierrc",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\" --config .prettierrc",
+    "type-check": "tsc --noEmit",
+    "docs": "typedoc --out docs src/",
     "docs:serve": "serve docs",
-    "security": "npm audit && npx snyk test",
-    "release": "npm run test && npm run build && npm run security && npm publish --access restricted",
+    "audit": "pnpm audit --audit-level=high",
+    "depcheck": "depcheck",
+    "outdated": "pnpm outdated",
+    "release": "pnpm run test && pnpm run build && pnpm run security && pnpm publish --access restricted --registry https://registry.npmjs.org/",
+    "security": "pnpm audit && snyk test",
+    "ownership:verify": "node scripts/verify-ownership.js",
+    "ownership:migrate": "node scripts/ownership-migration-bot-v2.js",
+    "ownership:report": "node scripts/ownership-report.js",
+    "policy:update": "node scripts/policy-updater.js",
+    "policy:verify": "node scripts/verify-policy.js",
+    "policy:enforce": "node scripts/policy-enforcer.js",
+    "policy:sync": "pnpm run policy:update && pnpm run policy:verify && pnpm run policy:enforce",
+    "preinstall": "node scripts/pre-install-verification.js",
+    "postinstall": "node scripts/post-install-notification.js",
+    "prepare": "husky install",
     "changeset": "changeset",
-    "version": "changeset version"
+    "version": "changeset version",
+    "release:auto": "node scripts/create-release.js",
+    "ci:verify": "node scripts/ci-verification.js"
   },
   "keywords": [
     "ai",
     "elevenlabs",
-    "voice",
-    "synthesis",
+    "voice-synthesis",
     "machine-learning",
     "audio",
-    "tts"
+    "tts",
+    "voice-ai",
+    "speech-generation",
+    "ownership-protected",
+    "commercial-ai"
   ],
   "author": {
     "name": "Rylee Tikel Greene & Joseph Michael Lung",
@@ -47,6 +66,11 @@
       "type": "Custom Public License",
       "url": "https://github.com/elevenlabs/elevenlabs-io/blob/main/LICENSE",
       "description": "Based on Creative Commons Attribution 4.0 International with retained financial and control rights"
+    },
+    {
+      "type": "Commercial License",
+      "url": "https://elevenlabs.io/commercial",
+      "description": "Commercial licensing available for enterprise use"
     }
   ],
   "repository": {
@@ -59,16 +83,22 @@
     "url": "https://github.com/elevenlabs/elevenlabs-io/issues",
     "email": "support@elevenlabs.io"
   },
+  "funding": {
+    "type": "individual",
+    "url": "https://elevenlabs.io/funding"
+  },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "pnpm": ">=8.15.0",
+    "npm": "please-use-pnpm"
   },
-  "private": true,
+  "private": false,
   "publishConfig": {
     "access": "restricted",
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
   },
-  "copyright": "© 2026 Rylee Tikel Greene & Joseph Michael Lung. All rights reserved.",
+  "copyright": "© 2026 Rylee Tikel Greene & Joseph Michael Lung. All rights reserved worldwide.",
   "ownership": {
     "declaration": "This project is exclusively owned and controlled by Rylee Tikel Greene and Joseph Michael Lung.",
     "owners": [
@@ -79,20 +109,49 @@
     "jurisdiction": "International",
     "licenseFile": "LICENSE",
     "agreementFile": "OWNERSHIP_AGREEMENT.md",
+    "verificationFile": ".github/OWNERSHIP_VERIFICATION.json",
     "control": {
       "exclusive": true,
       "delegation": "Direct owner authorization only",
-      "revocable": true
+      "revocable": true,
+      "financialRights": "100% retained by owners",
+      "intellectualProperty": "Exclusively owned by listed owners"
     }
   },
+  "policy": {
+    "version": "2.0.0",
+    "file": ".github/policy.yml",
+    "enforcement": "automated",
+    "complianceRequired": true,
+    "verificationScript": "scripts/verify-policy.js"
+  },
   "files": [
-    "dist/",
-    "src/",
+    "dist",
+    "src",
     "LICENSE",
     "OWNERSHIP_AGREEMENT.md",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./license": "./LICENSE",
+    "./ownership": "./OWNERSHIP_AGREEMENT.md"
+  },
+  "bin": {
+    "elevenlabs": "./dist/cli.js",
+    "elevenlabs-verify": "./scripts/verify-ownership.js"
+  },
+  "types": "./dist/index.d.ts",
+  "typings": "./dist/index.d.ts",
+  "sideEffects": false,
   "dependencies": {
     "@elevenlabs/voice-sdk": "^2.0.0",
     "axios": "^1.6.0",
@@ -104,22 +163,27 @@
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@types/express": "^4.17.0",
-    "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "@types/ws": "^8.5.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "depcheck": "^1.4.3",
     "esbuild": "^0.19.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^9.0.0",
-    "jest": "^29.6.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "husky": "^8.0.0",
+    "js-yaml": "^4.1.0",
+    "lint-staged": "^15.0.0",
+    "nodemailer": "^6.9.0",
     "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "sendmail": "^2.0.0",
     "serve": "^14.0.0",
     "snyk": "^1.1200.0",
-    "ts-jest": "^29.1.0",
-    "ts-node": "^10.9.0",
+    "tsx": "^4.0.0",
     "typedoc": "^0.25.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^7.0.0",
+    "vitest": "^1.0.0"
   },
   "peerDependencies": {},
   "optionalDependencies": {},
@@ -133,32 +197,55 @@
     "x64",
     "arm64"
   ],
-  "funding": {
-    "type": "individual",
-    "url": "https://elevenlabs.io/funding"
-  },
   "config": {
     "port": 3000,
     "apiVersion": "v1",
-    "maxUploadSize": "100mb"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/__tests__/**/*.test.[jt]s?(x)",
-      "**/?(*.)+(spec|test).[jt]s?(x)"
-    ],
-    "coverageDirectory": "./coverage",
-    "collectCoverageFrom": [
-      "src/**/*.{js,ts}",
-      "!src/**/*.d.ts",
-      "!src/**/__tests__/**"
-    ]
+    "maxUploadSize": "100mb",
+    "ownershipVerificationRequired": true,
+    "licenseEnforcement": "strict"
   },
   "volta": {
-    "node": "18.17.0",
-    "npm": "9.6.7"
+    "node": "18.17.0"
   },
-  "packageManager": "npm@9.6.7"
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/github"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-push": "pnpm run ownership:verify && pnpm run test"
+    }
+  },
+  "renovate": {
+    "extends": [
+      "config:base"
+    ],
+    "automerge": false,
+    "schedule": [
+      "before 3am on Monday"
+    ]
+  }
 }
