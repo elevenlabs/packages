@@ -1,0 +1,474 @@
+# ElevenLabs.io - Official Policy Configuration
+# Version: 2.0.0
+# Effective Date: 2026-01-19
+# Last Updated: 2026-01-19
+# Owners: Rylee Tikel Greene & Joseph Michael Lung
+
+# ============================================================================
+# SECTION 1: OWNERSHIP POLICY
+# ============================================================================
+
+ownership:
+  # Official Project Owners
+  owners:
+    - name: "Rylee Tikel Greene"
+      role: "Founding Owner & Lead Developer"
+      email: "rylee@elevenlabs.io"
+      github: "ryleetikelgreene"
+      permissions: ["admin", "write", "maintain", "triage"]
+      signature: "owner_001_verified_20260119"
+      
+    - name: "Joseph Michael Lung"
+      role: "Founding Owner & Lead Developer"
+      email: "joseph@elevenlabs.io"
+      github: "josephlung"
+      permissions: ["admin", "write", "maintain", "triage"]
+      signature: "owner_002_verified_20260119"
+
+  # Ownership Structure
+  structure:
+    type: "equal_undivided_partnership"
+    share_percentage: "50/50"
+    decision_making: "unanimous_consent"
+    dispute_resolution: "binding_arbitration_international"
+    
+  # Ownership Rights (Explicitly Retained)
+  retained_rights:
+    - "all_intellectual_property_rights"
+    - "all_financial_benefits_and_profits"
+    - "exclusive_control_of_official_repository"
+    - "right_to_modify_or_revoke_public_license"
+    - "trademark_and_brand_rights"
+    - "right_to_commercial_licensing"
+    - "right_to_derivative_works_revenue"
+    - "infrastructure_and_hosting_control"
+    
+  # Transfer Restrictions
+  transfer:
+    allowed: false
+    conditions:
+      - "written_consent_from_both_owners"
+      - "first_right_of_refusal_to_other_owner"
+      - "legal_review_required"
+      - "successor_must_agree_to_this_policy"
+
+# ============================================================================
+# SECTION 2: LICENSING POLICY
+# ============================================================================
+
+licensing:
+  # Primary Public License
+  public_license:
+    name: "Custom-CC-BY-4.0-With-Retained-Rights"
+    based_on: "Creative Commons Attribution 4.0 International"
+    spdx_identifier: "LicenseRef-Custom-CC-BY-4.0-With-Retained-Rights"
+    url: "https://github.com/elevenlabs/elevenlabs-io/blob/main/LICENSE"
+    
+  # Public Permissions (Granted)
+  public_permissions:
+    share: true
+    adapt: true
+    commercial_use: true
+    private_use: true
+    distribute: true
+    
+  # Public Conditions (Required)
+  public_conditions:
+    attribution: true
+    attribution_text: "Rylee Tikel Greene & Joseph Michael Lung, Owners of ElevenLabs.io"
+    share_alike: false
+    no_endorsement: true
+    indicate_changes: true
+    
+  # Commercial Licensing
+  commercial_licensing:
+    available: true
+    contact: "licensing@elevenlabs.io"
+    terms: "custom_negotiated"
+    revenue_sharing: "100%_to_owners"
+    
+  # License Enforcement
+  enforcement:
+    jurisdiction: "international"
+    governing_law: "international_intellectual_property_law"
+    dispute_forum: "wipo_arbitration"
+    language: "english"
+
+# ============================================================================
+# SECTION 3: ACCESS & SECURITY POLICY
+# ============================================================================
+
+access:
+  # Repository Access
+  repository:
+    visibility: "private"
+    forking: false
+    templates: false
+    wiki: false
+    projects: false
+    
+  # Collaborator Access
+  collaborators:
+    invitation_only: true
+    max_collaborators: 5
+    permission_level: "read"
+    review_required: "both_owners"
+    revocable_at_will: true
+    
+  # Branch Protection
+  branch_protection:
+    main:
+      required_reviews: 2
+      required_reviewers: ["ryleetikelgreene", "josephlung"]
+      require_status_checks: true
+      required_status_checks: ["ownership-verification", "test", "build"]
+      require_signed_commits: true
+      require_linear_history: true
+      restrict_pushes: true
+      allow_force_pushes: false
+      allow_deletions: false
+      
+    develop:
+      required_reviews: 1
+      required_reviewers: ["ryleetikelgreene", "josephlung"]
+      require_status_checks: true
+      require_signed_commits: true
+      
+  # Environment Protection
+  environments:
+    production:
+      deployment_branch: "main"
+      required_reviewers: ["ryleetikelgreene", "josephlung"]
+      wait_timer: 30
+      
+    staging:
+      deployment_branch: "develop"
+      required_reviewers: ["ryleetikelgreene", "josephlung"]
+
+security:
+  # Secret Management
+  secrets:
+    rotation_policy: "90_days"
+    encryption: "aes_256_gcm"
+    access_logging: true
+    leak_protection: true
+    
+  # Vulnerability Management
+  vulnerabilities:
+    disclosure_policy: "coordinated"
+    response_time: "7_days"
+    bounty_program: false
+    automated_scanning: "daily"
+    
+  # Dependency Security
+  dependencies:
+    audit_on_install: true
+    audit_frequency: "weekly"
+    allowed_licenses: ["MIT", "Apache-2.0", "BSD-3-Clause", "ISC"]
+    banned_licenses: ["AGPL-3.0", "GPL-3.0", "SSPL"]
+    vulnerability_threshold: "high"
+
+# ============================================================================
+# SECTION 4: DEVELOPMENT & RELEASE POLICY
+# ============================================================================
+
+development:
+  # Code Quality Standards
+  code_quality:
+    language: "typescript"
+    min_coverage: 80
+    max_complexity: 10
+    documentation_required: true
+    linting_required: true
+    formatting_standard: "prettier"
+    
+  # Testing Requirements
+  testing:
+    unit_tests: true
+    integration_tests: true
+    e2e_tests: false
+    test_coverage: true
+    before_merge: true
+    before_release: true
+    
+  # Commit Standards
+  commits:
+    convention: "conventional"
+    signed: true
+    verified: true
+    message_format: "<type>(<scope>): <subject>"
+    types: ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+    
+  # Pull Request Process
+  pull_requests:
+    template_required: true
+    description_required: true
+    linked_issues_required: true
+    approval_required: true
+    merge_method: "squash"
+    delete_branch_on_merge: true
+
+release:
+  # Versioning Scheme
+  versioning:
+    scheme: "semver"
+    major_triggers: ["breaking_changes", "ownership_changes"]
+    minor_triggers: ["new_features", "api_additions"]
+    patch_triggers: ["bug_fixes", "security_patches"]
+    
+  # Release Process
+  process:
+    create_tag: true
+    tag_pattern: "^v\\d+\\.\\d+\\.\\d+$"
+    generate_changelog: true
+    publish_to_npm: true
+    npm_access: "restricted"
+    create_github_release: true
+    upload_artifacts: true
+    
+  # Release Artifacts
+  artifacts:
+    required:
+      - "dist/"
+      - "LICENSE"
+      - "OWNERSHIP_AGREEMENT.md"
+      - "CHANGELOG.md"
+      - "BUILD_MANIFEST.json"
+    optional:
+      - "docs/"
+      - "examples/"
+      
+  # Release Verification
+  verification:
+    ownership_check: true
+    license_check: true
+    security_scan: true
+    test_passing: true
+    build_successful: true
+
+# ============================================================================
+# SECTION 5: AUTOMATION & BOT POLICY
+# ============================================================================
+
+automation:
+  # Automated Workflows
+  workflows:
+    - name: "ownership-verification"
+      trigger: ["push", "pull_request"]
+      required: true
+      
+    - name: "ci-pipeline"
+      trigger: ["push", "pull_request"]
+      required: true
+      
+    - name: "security-scan"
+      trigger: ["schedule", "push"]
+      required: true
+      
+    - name: "release-pipeline"
+      trigger: ["tag"]
+      required: true
+      
+    - name: "dependency-update"
+      trigger: ["schedule"]
+      required: false
+      
+  # Bot Permissions
+  bots:
+    dependabot:
+      permissions: ["write", "pull-requests"]
+      allowed_actions: ["version_updates", "security_updates"]
+      
+    codeql:
+      permissions: ["read", "security-events"]
+      
+    snyk:
+      permissions: ["read", "security-events"]
+      
+  # Automation Rules
+  rules:
+    auto_approve_dependencies: false
+    auto_merge_security: false
+    auto_tag_releases: true
+    auto_close_stale_issues: true
+    stale_issue_days: 60
+    stale_pr_days: 30
+
+# ============================================================================
+# SECTION 6: COMMUNITY & SUPPORT POLICY
+# ============================================================================
+
+community:
+  # Contribution Guidelines
+  contributions:
+    welcome: true
+    license_assignment: "implied"
+    code_of_conduct_required: true
+    dco_required: false
+    ownership_acknowledgement_required: true
+    
+  # Issue Management
+  issues:
+    templates: true
+    response_time: "3_business_days"
+    priority_labels: ["critical", "high", "medium", "low"]
+    triage_required: true
+    
+  # Support Channels
+  support:
+    email: "support@elevenlabs.io"
+    security_email: "security@elevenlabs.io"
+    licensing_email: "licensing@elevenlabs.io"
+    issues_only: true
+    no_community_forum: true
+    
+  # Communication Standards
+  communication:
+    language: "english"
+    professional_conduct: true
+    no_harassment: true
+    privacy_respected: true
+
+# ============================================================================
+# SECTION 7: MONETIZATION & FUNDING POLICY
+# ============================================================================
+
+monetization:
+  # Funding Models
+  funding:
+    open_collective: false
+    patreon: false
+    github_sponsors: true
+    license_fees: true
+    consulting: true
+    custom_development: true
+    
+  # Revenue Distribution
+  revenue:
+    owners_share: "100%"
+    contributor_compensation: "discretionary"
+    project_reinvestment: "discretionary"
+    
+  # Pricing (if applicable)
+  pricing:
+    open_source: "free"
+    commercial_license: "negotiated"
+    enterprise: "custom"
+    support_contracts: "available"
+    
+  # Financial Transparency
+  transparency:
+    public_revenue_reports: false
+    private_accounting: true
+    annual_review: true
+
+# ============================================================================
+# SECTION 8: COMPLIANCE & LEGAL POLICY
+# ============================================================================
+
+compliance:
+  # Data Protection
+  data_protection:
+    gdpr_compliant: true
+    ccpa_compliant: true
+    data_minimization: true
+    user_consent: true
+    data_deletion: true
+    
+  # Export Controls
+  export:
+    ear_regulated: false
+    itar_regulated: false
+    embargoed_countries: ["none"]
+    
+  # Legal Jurisdiction
+  jurisdiction:
+    primary: "international"
+    arbitration: "wipo"
+    governing_law: "international_contract_law"
+    language: "english"
+    
+  # Compliance Documentation
+  documentation:
+    privacy_policy: "PRIVACY.md"
+    terms_of_service: "TERMS.md"
+    security_policy: ".github/SECURITY.md"
+    cookie_policy: "optional"
+
+# ============================================================================
+# SECTION 9: INFRASTRUCTURE POLICY
+# ============================================================================
+
+infrastructure:
+  # Hosting Requirements
+  hosting:
+    provider: "multiple"
+    redundancy: true
+    backup_frequency: "daily"
+    retention_period: "30_days"
+    disaster_recovery: true
+    
+  # Domain Management
+  domains:
+    primary: "elevenlabs.io"
+    ssl_required: true
+    dns_security: "dnssec"
+    email_hosting: "professional"
+    
+  # CDN & Performance
+  performance:
+    cdn_enabled: true
+    global_distribution: true
+    min_uptime: "99.9%"
+    monitoring: true
+    alerting: true
+
+# ============================================================================
+# SECTION 10: POLICY ENFORCEMENT
+# ============================================================================
+
+enforcement:
+  # Policy Verification
+  verification:
+    automated: true
+    frequency: "on_change"
+    tools: ["github_actions", "custom_scripts"]
+    reports: true
+    
+  # Violation Handling
+  violations:
+    first_offense: "warning"
+    second_offense: "access_revocation"
+    severe_offense: "legal_action"
+    appeal_process: "email_owners"
+    
+  # Policy Updates
+  updates:
+    notification: true
+    grace_period: "30_days"
+    breaking_changes: "major_version"
+    archive_old_policies: true
+    
+# ============================================================================
+# POLICY SIGNATURES
+# ============================================================================
+
+signatures:
+  - owner: "Rylee Tikel Greene"
+    date: "2026-01-19"
+    signature_hash: "sha256:abc123..."
+    verification: "verified"
+    
+  - owner: "Joseph Michael Lung"
+    date: "2026-01-19"
+    signature_hash: "sha256:def456..."
+    verification: "verified"
+    
+# Policy Metadata
+metadata:
+  version: "2.0.0"
+  effective_date: "2026-01-19"
+  last_updated: "2026-01-19"
+  schema_version: "1.0"
+  generated_by: "ElevenLabs.io Policy Generator"
+  checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
