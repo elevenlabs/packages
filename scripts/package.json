@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "ownership:migrate": "node scripts/ownership-migration-bot.js",
-    "ownership:fix": "node scripts/fix-failed-runs.js",
-    "ownership:update-all": "node scripts/update-all-releases.js",
-    "bot:run": "node scripts/ownership-migration-bot.js --auto"
+    "release:auto": "node scripts/create-release.js",
+    "migrate:full": "node scripts/ownership-migration-bot-v2.js",
+    "clean:all": "node scripts/cleanup-old-data.js",
+    "notify:owners": "node scripts/send-notification.js",
+    "publish:all": "npm run migrate:full && npm run release:auto && npm run notify:owners"
   }
 }
