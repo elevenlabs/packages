@@ -405,7 +405,6 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
-<<<<<<< HEAD
       addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active
         if (!conversationRef.current?.isOpen()) return;
@@ -417,12 +416,6 @@ function useConversationSetup() {
             conversationIndex: conversationIndex.peek(),
           },
         ];
-      },
-    };
-  }, [config]);
-=======
-      setMicMuted: (muted: boolean) => {
-        conversationRef.current?.setMicMuted(muted);
       },
       enableVoiceMode: async () => {
         const conversation = conversationRef.current;
@@ -447,7 +440,6 @@ function useConversationSetup() {
           conversationRef.current = upgradedConversation;
           
           conversationTextOnly.value = false;
-          setIsMuted(false);
           
           (conversationRef.current as any).setTextOnlyMode(false);
           console.log('[Widget] Voice mode upgrade sent, waiting for backend confirmation...');          
@@ -458,8 +450,7 @@ function useConversationSetup() {
         }
       },
     };
-  }, [config, isMuted, setIsMuted]);
->>>>>>> 282eb45 (add a button to the widget that will send a conversation_config_update to the backend to switch to voice mode)
+  }, [config]);
 }
 
 function triggerCallEvent(
