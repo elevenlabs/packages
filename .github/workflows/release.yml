@@ -11,14 +11,19 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
+    environment: main
     env:
       # See https://docs.npmjs.com/generating-provenance-statements#using-third-party-package-publishing-tools
       NPM_CONFIG_PROVENANCE: true
     steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          # See https://github.com/organizations/elevenlabs/settings/apps/packages-release-automation
+          app-id: 2699583
+          private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+
       - name: Checkout Repo
         uses: actions/checkout@v6
 
@@ -40,6 +45,6 @@ jobs:
         with:
           publish: pnpm run publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           # Don't run the Husky pre-commit hook (see https://typicode.github.io/husky/how-to.html)
           HUSKY: 0
