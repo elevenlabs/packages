@@ -51,6 +51,14 @@ export type TranscriptEntry =
       type: "mode_toggle";
       mode: ConversationMode;
       conversationIndex: number;
+    }
+  | {
+      type: "tool_call";
+      toolName: string;
+      toolCallId: string;
+      toolType: string;
+      state: "loading" | "success" | "error";
+      conversationIndex: number;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
@@ -285,6 +293,26 @@ function useConversationSetup() {
               } else if (type === "stop") {
                 streamingMessageIndexRef.current = null;
               }
+            },
+            onAgentToolRequest: ({ tool_name, tool_call_id, tool_type }) => {
+              transcript.value = [
+                ...transcript.value,
+                {
+                  type: "tool_call",
+                  toolName: tool_name,
+                  toolCallId: tool_call_id,
+                  toolType: tool_type,
+                  state: "loading",
+                  conversationIndex: conversationIndex.peek(),
+                },
+              ];
+            },
+            onAgentToolResponse: ({ tool_call_id, is_error }) => {
+              transcript.value = transcript.value.map(entry =>
+                entry.type === "tool_call" && entry.toolCallId === tool_call_id
+                  ? { ...entry, state: is_error ? "error" : "success" }
+                  : entry
+              );
             },
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;

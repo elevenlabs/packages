@@ -50,6 +50,7 @@ import { SessionConfigProvider } from "./contexts/session-config";
 import { AvatarConfigProvider } from "./contexts/avatar-config";
 import { TermsProvider } from "./contexts/terms";
 import { SheetContentProvider } from "./contexts/sheet-content";
+import { ShadowHostProvider } from "./contexts/shadow-host";
 import {
   ConversationContext,
   type TranscriptEntry,
@@ -58,7 +59,6 @@ import { Status, Mode, Role } from "@elevenlabs/client";
 import { cn } from "./utils/cn";
 
 import { FeedbackProvider } from "./contexts/feedback";
-import { ShadowHostProvider } from "./contexts/shadow-host";
 
 import { Wrapper } from "./widget/Wrapper";
 
@@ -94,15 +94,17 @@ const DEFAULT_TEXT =
 // Mock conversation provider for the markdown playground
 function MockConversationProvider({
   displayTextSignal,
+  toolStateSignal,
   children,
 }: {
   displayTextSignal: Signal<string>;
+  toolStateSignal: Signal<"loading" | "success" | "error">;
   children: any;
 }) {
   const mockTranscript = useComputed<TranscriptEntry[]>(() => [
     {
       type: "message",
-      role: "ai" as Role,
+      role: "agent" as Role,
       message: "Hello, how can I help you?",
       isText: true,
       conversationIndex: 0,
@@ -110,16 +112,40 @@ function MockConversationProvider({
     {
       type: "message",
       role: "user" as Role,
-      message: "hi",
+      message: "Can you check the weather?",
       isText: true,
-      conversationIndex: 1,
+      conversationIndex: 0,
     },
     {
       type: "message",
-      role: "ai" as Role,
+      role: "agent" as Role,
+      message: "Sure, let me check that for you.",
+      isText: true,
+      conversationIndex: 0,
+    },
+    // Multiple parallel tool calls - state controlled by signal
+    {
+      type: "tool_call",
+      toolName: "get_weather",
+      toolCallId: "tool-1",
+      toolType: "webhook",
+      state: toolStateSignal.value,
+      conversationIndex: 0,
+    },
+    {
+      type: "tool_call",
+      toolName: "get_location",
+      toolCallId: "tool-2",
+      toolType: "webhook",
+      state: toolStateSignal.value,
+      conversationIndex: 0,
+    },
+    {
+      type: "message",
+      role: "agent" as Role,
       message: displayTextSignal.value,
       isText: true,
-      conversationIndex: 2,
+      conversationIndex: 0,
     },
   ]);
 
@@ -159,10 +185,12 @@ function MockConversationProvider({
 function WidgetSandbox({
   theme,
   displayTextSignal,
+  toolStateSignal,
   allowedDomains,
 }: {
   theme: "light" | "dark";
   displayTextSignal: Signal<string>;
+  toolStateSignal: Signal<"loading" | "success" | "error">;
   allowedDomains: string[];
 }) {
   return (
@@ -171,72 +199,73 @@ function WidgetSandbox({
         value={{
           "agent-id": import.meta.env.VITE_AGENT_ID,
           "override-config": JSON.stringify({
-          variant: "full",
-          placement: "bottom-right",
-          avatar: {
-            type: "orb",
-            color_1: "#2E2E2E",
-            color_2: "#B8B8B8",
-          },
-          feedback_mode: "none",
-          language: "en",
-          supported_language_overrides: ["en"],
-          mic_muting_enabled: false,
-          transcript_enabled: true,
-          text_input_enabled: true,
-          default_expanded: true,
-          always_expanded: false,
-          text_contents: {},
-          language_presets: {},
-          disable_banner: true,
-          text_only: true,
-          supports_text_only: true,
-          styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
-          syntax_highlight_theme: theme === "light" ? "light" : "dark",
-          markdown_link_allowed_hosts: allowedDomains.map(d => ({ hostname: d })),
-        }),
-      }}
-    >
-      <ServerLocationProvider>
-        <WidgetConfigProvider>
-          <WidgetSizeProvider>
-            <LanguageConfigProvider>
-              <TermsProvider>
-                <SessionConfigProvider>
-                  <MockConversationProvider
-                    displayTextSignal={displayTextSignal}
-                  >
-                    <ConversationModeProvider>
-                      <AudioConfigProvider>
-                        <TextContentsProvider>
-                          <AvatarConfigProvider>
-                            <SheetContentProvider>
-                              <FeedbackProvider>
-                                <div className="dev-host">
-                                  <Style />
-                                  <Wrapper />
-                                  {theme === "dark" && (
-                                    <style>{`
-                                .dev-host {
-                                  scrollbar-color: #4b5563 transparent !important;
-                                }
-                              `}</style>
-                                  )}
-                                </div>
-                              </FeedbackProvider>
-                            </SheetContentProvider>
-                          </AvatarConfigProvider>
-                        </TextContentsProvider>
-                      </AudioConfigProvider>
-                    </ConversationModeProvider>
-                  </MockConversationProvider>
-                </SessionConfigProvider>
-              </TermsProvider>
-            </LanguageConfigProvider>
-          </WidgetSizeProvider>
-        </WidgetConfigProvider>
-      </ServerLocationProvider>
-    </AttributesProvider>
+            variant: "full",
+            placement: "bottom-right",
+            avatar: {
+              type: "orb",
+              color_1: "#2E2E2E",
+              color_2: "#B8B8B8",
+            },
+            feedback_mode: "none",
+            language: "en",
+            supported_language_overrides: ["en"],
+            mic_muting_enabled: false,
+            transcript_enabled: true,
+            text_input_enabled: true,
+            default_expanded: true,
+            always_expanded: false,
+            text_contents: {},
+            language_presets: {},
+            disable_banner: true,
+            text_only: true,
+            supports_text_only: true,
+            styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
+            syntax_highlight_theme: theme === "light" ? "light" : "dark",
+            markdown_link_allowed_hosts: allowedDomains.map(d => ({ hostname: d })),
+          }),
+        }}
+      >
+        <ServerLocationProvider>
+          <WidgetConfigProvider>
+            <WidgetSizeProvider>
+              <LanguageConfigProvider>
+                <TermsProvider>
+                  <SessionConfigProvider>
+                    <MockConversationProvider
+                      displayTextSignal={displayTextSignal}
+                      toolStateSignal={toolStateSignal}
+                    >
+                      <ConversationModeProvider>
+                        <AudioConfigProvider>
+                          <TextContentsProvider>
+                            <AvatarConfigProvider>
+                              <SheetContentProvider>
+                                <FeedbackProvider>
+                                  <div className="dev-host">
+                                    <Style />
+                                    <Wrapper />
+                                    {theme === "dark" && (
+                                      <style>{`
+                                  .dev-host {
+                                    scrollbar-color: #4b5563 transparent !important;
+                                  }
+                                `}</style>
+                                    )}
+                                  </div>
+                                </FeedbackProvider>
+                              </SheetContentProvider>
+                            </AvatarConfigProvider>
+                          </TextContentsProvider>
+                        </AudioConfigProvider>
+                      </ConversationModeProvider>
+                    </MockConversationProvider>
+                  </SessionConfigProvider>
+                </TermsProvider>
+              </LanguageConfigProvider>
+            </WidgetSizeProvider>
+          </WidgetConfigProvider>
+        </ServerLocationProvider>
+      </AttributesProvider>
     </ShadowHostProvider>
   );
 }
@@ -255,6 +284,7 @@ function MarkdownPlayground() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const displayTextSignal = useSignal(text);
+  const toolStateSignal = useSignal<"loading" | "success" | "error">("success");
 
   const allowedDomains = useMemo(() => {
     const trimmed = allowedDomainsInput.trim();
@@ -280,6 +310,7 @@ function MarkdownPlayground() {
   const startStreaming = () => {
     setIsStreaming(true);
     displayTextSignal.value = "";
+    toolStateSignal.value = "loading";
 
     const maxChunkSize = 50;
     let currentPos = 0;
@@ -297,6 +328,7 @@ function MarkdownPlayground() {
       } else {
         setIsStreaming(false);
         displayTextSignal.value = text;
+        toolStateSignal.value = "success";
       }
     };
 
@@ -357,7 +389,7 @@ function MarkdownPlayground() {
           </div>
         </div>
       </div>
-      <WidgetSandbox theme={theme} displayTextSignal={displayTextSignal} allowedDomains={allowedDomains} />
+      <WidgetSandbox theme={theme} displayTextSignal={displayTextSignal} toolStateSignal={toolStateSignal} allowedDomains={allowedDomains} />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { Feedback } from "../components/Feedback";
+import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
 import { useAvatarConfig } from "../contexts/avatar-config";
 import type { TranscriptEntry } from "../contexts/conversation";
@@ -7,6 +8,7 @@ import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { useMarkdownLinkConfig, useEndFeedbackType } from "../contexts/widget-config";
 import { WidgetStreamdown } from "../markdown";
+
 
 interface TranscriptMessageProps {
   entry: TranscriptEntry;
@@ -134,12 +136,52 @@ function ModeToggleMessage({ entry }: ModeToggleMessageProps) {
   );
 }
 
+function ToolCallMessage({
+  entry,
+}: {
+  entry: Extract<TranscriptEntry, { type: "tool_call" }>;
+}) {
+  const isError = entry.state === "error";
+  const isLoading = entry.state === "loading";
+
+  return (
+    <div
+      className={clsx(
+        "relative inline-flex w-fit items-center h-7 px-2 rounded-[10px] text-xs font-medium border transition-colors duration-200",
+        isError
+          ? "bg-base text-base-error border-base-error"
+          : "bg-base text-base-primary border-base-border"
+      )}
+    >
+      {/* Loading state */}
+      <span
+        data-shown={isLoading}
+        className="inline-flex items-center gap-1 whitespace-nowrap transition-opacity duration-150 data-shown:opacity-100 data-hidden:opacity-0 data-hidden:absolute data-hidden:pointer-events-none"
+      >
+        <div className="loader shrink-0" />
+        <span>Thinking...</span>
+      </span>
+      {/* Done/error state */}
+      <span
+        data-shown={!isLoading}
+        className="inline-flex items-center gap-1 whitespace-nowrap transition-opacity duration-150 data-shown:opacity-100 data-hidden:opacity-0 data-hidden:absolute data-hidden:pointer-events-none"
+      >
+        <Icon name="check" size="sm" className="shrink-0" />
+        <span>{isError ? "Something went wrong" : "Done"}</span>
+      </span>
+    </div>
+  );
+}
+
 function getMessageComponent(entry: TranscriptEntry, isStreaming?: boolean) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
   }
   if (entry.type === "mode_toggle") {
     return <ModeToggleMessage entry={entry} />;
+  }
+  if (entry.type === "tool_call") {
+    return <ToolCallMessage entry={entry} />;
   }
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
