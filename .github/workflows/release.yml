@@ -43,7 +43,7 @@ jobs:
       - name: Verify GitHub app token
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run:
+        run: |
           # Setup git name and email, create a test file, commit it and force push to a known branch for testing
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
