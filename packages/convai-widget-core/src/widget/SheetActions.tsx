@@ -141,7 +141,7 @@ function SheetTextarea({
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
       }
-      className="w-full h-full resize-none bg-base leading-5 outline-none text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-[4.5rem] max-h-full [field-sizing:content]"
+      className="w-full h-full resize-none bg-base leading-5 outline-hidden text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-18 max-h-full field-sizing-content"
     />
   );
 }

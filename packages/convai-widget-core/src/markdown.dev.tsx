@@ -58,6 +58,7 @@ import { Status, Mode, Role } from "@elevenlabs/client";
 import { cn } from "./utils/cn";
 
 import { FeedbackProvider } from "./contexts/feedback";
+import { ShadowHostProvider } from "./contexts/shadow-host";
 
 import { Wrapper } from "./widget/Wrapper";
 
@@ -165,10 +166,11 @@ function WidgetSandbox({
   allowedDomains: string[];
 }) {
   return (
-    <AttributesProvider
-      value={{
-        "agent-id": import.meta.env.VITE_AGENT_ID,
-        "override-config": JSON.stringify({
+    <ShadowHostProvider>
+      <AttributesProvider
+        value={{
+          "agent-id": import.meta.env.VITE_AGENT_ID,
+          "override-config": JSON.stringify({
           variant: "full",
           placement: "bottom-right",
           avatar: {
@@ -198,8 +200,8 @@ function WidgetSandbox({
       <ServerLocationProvider>
         <WidgetConfigProvider>
           <WidgetSizeProvider>
-            <TermsProvider>
-              <LanguageConfigProvider>
+            <LanguageConfigProvider>
+              <TermsProvider>
                 <SessionConfigProvider>
                   <MockConversationProvider
                     displayTextSignal={displayTextSignal}
@@ -229,12 +231,13 @@ function WidgetSandbox({
                     </ConversationModeProvider>
                   </MockConversationProvider>
                 </SessionConfigProvider>
-              </LanguageConfigProvider>
-            </TermsProvider>
+              </TermsProvider>
+            </LanguageConfigProvider>
           </WidgetSizeProvider>
         </WidgetConfigProvider>
       </ServerLocationProvider>
     </AttributesProvider>
+    </ShadowHostProvider>
   );
 }
 

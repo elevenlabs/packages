@@ -1,8 +1,7 @@
 @import url(https://fonts.googleapis.com/css2?family=Inter:wght@400,500&display=swap);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../../tailwind.config.js";
+@import "tailwindcss";
 
 .dev-host,
 :host {
@@ -31,13 +30,13 @@
 
 @layer utilities {
   .overlay {
-    position: absolute;
-    inset: var(--el-overlay-padding);
+  position: absolute;
+  inset: var(--el-overlay-padding);
     /* Make sure the widget doesn't shift when opening dropdowns */
     right: calc(
       var(--el-overlay-padding) + var(--removed-body-scroll-bar-size, 0px)
     );
-  }
+}
 
   .focus-ring {
     @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
@@ -52,7 +51,7 @@
   [data-variant="expanded"] {
     &.sheet {
       @apply rounded-sheet w-full max-w-[600px] h-full max-h-[calc(100%-80px)];
-    }
+}
   }
 
   [data-variant="fullscreen"] {
@@ -66,52 +65,52 @@
   }
 
   .animate-text {
-    background-image: linear-gradient(
-      75deg,
-      var(--el-base-primary),
-      var(--el-base-subtle),
-      var(--el-base-primary),
-      var(--el-base-subtle)
-    );
-    background-size: 300% 100%;
-    background-clip: text;
-    color: transparent;
+  background-image: linear-gradient(
+    75deg,
+    var(--el-base-primary),
+    var(--el-base-subtle),
+    var(--el-base-primary),
+    var(--el-base-subtle)
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  color: transparent;
 
-    animation: TextAnimation 2s linear infinite;
-  }
+  animation: TextAnimation 2s linear infinite;
+}
 
-  @keyframes TextAnimation {
-    0% {
-      background-position: 0 0;
-    }
-    100% {
-      background-position: 100% 0;
-    }
+@keyframes TextAnimation {
+  0% {
+    background-position: 0 0;
   }
+  100% {
+    background-position: 100% 0;
+  }
+}
 
-  .terms h6 {
-    @apply text-base-primary font-medium text-xs;
-  }
+.terms h6 {
+  @apply text-base-primary font-medium text-xs;
+}
 
-  .terms h5 {
-    @apply text-base-primary font-medium text-sm;
-  }
+.terms h5 {
+  @apply text-base-primary font-medium text-sm;
+}
 
-  .terms h4 {
-    @apply text-base-primary font-medium text-md;
-  }
+.terms h4 {
+  @apply text-base-primary font-medium text-md;
+}
 
-  .terms h3 {
-    @apply text-base-primary font-medium text-lg;
-  }
+.terms h3 {
+  @apply text-base-primary font-medium text-lg;
+}
 
-  .terms h2 {
-    @apply text-base-primary font-medium text-xl;
-  }
+.terms h2 {
+  @apply text-base-primary font-medium text-xl;
+}
 
-  .terms h2 {
-    @apply text-base-primary font-medium text-2xl;
-  }
+.terms h1 {
+  @apply text-base-primary font-medium text-2xl;
+}
 }
 
 .markdown {

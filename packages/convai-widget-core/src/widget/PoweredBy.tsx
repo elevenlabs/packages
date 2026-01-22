@@ -23,7 +23,7 @@ export function PoweredBy() {
           config.value.override_link ||
           "https://elevenlabs.io/conversational-ai"
         }
-        className="underline cursor-pointer pointer-events-auto focus-visible:outline-none opacity-30 hover:opacity-50 focus-visible:opacity-100 focus-visible:underline-offset-2"
+        className="underline cursor-pointer pointer-events-auto focus-visible:outline-hidden opacity-30 hover:opacity-50 focus-visible:opacity-100 focus-visible:underline-offset-2"
         target="_blank"
       >
         Agents

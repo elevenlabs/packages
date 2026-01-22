@@ -50,7 +50,7 @@ export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
               <Select.Item
                 key={language.languageCode}
                 value={language.languageCode}
-                className="flex select-none items-center p-1.5 pr-3 gap-2 cursor-pointer rounded-input relative focus-visible:outline-none data-[highlighted]:bg-base-active text-sm"
+                className="flex select-none items-center p-1.5 pr-3 gap-2 cursor-pointer rounded-input relative focus-visible:outline-hidden data-highlighted:bg-base-active text-sm"
               >
                 <Flag flagCode={language.flagCode} />
                 <Select.ItemText>{language.name}</Select.ItemText>
