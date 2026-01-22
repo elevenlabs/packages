@@ -11,10 +11,10 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      # Needed to push branches to GitHub
+      contents: write
     environment: main
-    env:
-      # See https://docs.npmjs.com/generating-provenance-statements#using-third-party-package-publishing-tools
-      NPM_CONFIG_PROVENANCE: true
     steps:
       - name: Create GitHub App Token
         uses: actions/create-github-app-token@v1
@@ -40,11 +40,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Verify GitHub app token
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run:
+          # Setup git name and email, create a test file, commit it and force push to a known branch for testing
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "test" > test.txt
+          git add test.txt
+          git commit -m "test"
+          git push origin test-branch --force
+
       - name: Create Release Pull Request
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
         with:
           publish: pnpm run publish
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          # See https://docs.npmjs.com/generating-provenance-statements#using-third-party-package-publishing-tools
+          NPM_CONFIG_PROVENANCE: true
           # Don't run the Husky pre-commit hook (see https://typicode.github.io/husky/how-to.html)
           HUSKY: 0
