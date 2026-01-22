@@ -28,7 +28,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "msw"
+      "msw",
+      "lightningcss",
+      "@tailwindcss/oxide"
     ]
   },
   "packageManager": "pnpm@10.13.1"
