@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react-native",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "ElevenLabs React Native SDK for the Agents Platform",
   "main": "./dist/lib.js",
   "module": "./dist/lib.module.js",
