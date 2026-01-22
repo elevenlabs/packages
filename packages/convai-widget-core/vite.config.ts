@@ -23,10 +23,14 @@ export default defineConfig({
       external: id =>
         id.startsWith("preact") ||
         id.startsWith("@preact") ||
-        id.startsWith("@elevenlabs")
+        id.startsWith("@elevenlabs"),
     },
   },
-  plugins: [tailwindcss(), preact(), ...(process.env.ANALYZE ? [analyzer()] : [])],
+  plugins: [
+    tailwindcss(),
+    preact(),
+    ...(process.env.ANALYZE ? [analyzer()] : []),
+  ],
   test: {
     name: "ConvAI Widget Tests",
     browser: {
