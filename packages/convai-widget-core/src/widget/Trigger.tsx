@@ -8,10 +8,10 @@ import { clsx } from "clsx";
 import { FullTrigger } from "./FullTrigger";
 import { CompactTrigger } from "./CompactTrigger";
 import { useTerms } from "../contexts/terms";
+import { DismissButton } from "../components/DismissButton";
 
 export interface ExpandableProps extends HTMLAttributes<HTMLDivElement> {
   expanded: Signal<boolean>;
-  onDismiss?: () => void;
 }
 
 interface TriggerProps {
@@ -33,22 +33,37 @@ export function Trigger({ expandable, expanded, onDismiss }: TriggerProps) {
   if (expandable) {
     const Layout = isFull ? FullExpandableTrigger : CompactExpandableTrigger;
     return (
-      <Layout
-        expanded={expanded}
-        onDismiss={onDismiss}
-        className={clsx(
-          "bg-base shadow-md pointer-events-auto overflow-hidden",
-          (isDisconnected.value || expanded.value) && "cursor-pointer"
+      <div className="relative">
+        {onDismiss && (
+          <DismissButton
+            onDismiss={onDismiss}
+            className="absolute -top-1 -right-1 z-10"
+          />
         )}
-        onClick={
-          isDisconnected.value || expanded.value ? toggleExpanded : undefined
-        }
-      />
+        <Layout
+          expanded={expanded}
+          className={clsx(
+            "bg-base shadow-md pointer-events-auto overflow-hidden",
+            (isDisconnected.value || expanded.value) && "cursor-pointer"
+          )}
+          onClick={
+            isDisconnected.value || expanded.value ? toggleExpanded : undefined
+          }
+        />
+      </div>
     );
   }
 
   const Layout = isFull ? FullTrigger : CompactTrigger;
   return (
-    <Layout className="bg-base shadow-md pointer-events-auto overflow-hidden" onDismiss={onDismiss} />
+    <div className="relative">
+      {onDismiss && (
+        <DismissButton
+          onDismiss={onDismiss}
+          className="absolute -top-1 -right-1 z-10"
+        />
+      )}
+      <Layout className="bg-base shadow-md pointer-events-auto overflow-hidden" />
+    </div>
   );
 }
