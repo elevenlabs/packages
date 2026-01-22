@@ -11,6 +11,9 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      # Needed to push branches to GitHub
+      contents: write
     environment: main
     steps:
       - name: Create GitHub App Token
