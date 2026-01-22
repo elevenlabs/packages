@@ -12,9 +12,12 @@
     "generate:types": "turbo run generate --filter=@elevenlabs/types",
     "prepare": "husky install",
     "dev": "turbo dev",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "changeset": "changeset",
+    "publish": "turbo build lint && changeset version && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "args": "^5.0.3",
     "fs-extra": "^11.2.0",
     "husky": "^9.1.3",
