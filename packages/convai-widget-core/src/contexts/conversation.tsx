@@ -10,16 +10,19 @@ import { computed, signal, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
-import { useMicConfig } from "./mic-config";
 import { useSessionConfig } from "./session-config";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import { ConversationMode } from "./conversation-mode";
+import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
-const ConversationContext = createContext<ConversationSetup | null>(null);
+export const ConversationContext = createContext<ConversationSetup | null>(
+  null
+);
 
 interface ConversationProviderProps {
   children: ComponentChildren;
@@ -42,6 +45,11 @@ export type TranscriptEntry =
   | {
       type: "error";
       message: string;
+      conversationIndex: number;
+    }
+  | {
+      type: "mode_toggle";
+      mode: ConversationMode;
       conversationIndex: number;
     };
 
@@ -78,17 +86,15 @@ export function useConversation() {
 function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  const receivedFirstMessageRef = useRef(false);
+  const streamingMessageIndexRef = useRef<number | null>(null);
+  const isReceivingStreamRef = useRef(false);
+  const shadowHost = useShadowHost();
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
   const terms = useTerms();
   const config = useSessionConfig();
-  const { isMuted } = useMicConfig();
-
-  useSignalEffect(() => {
-    const muted = isMuted.value;
-    conversationRef?.current?.setMicMuted(muted);
-  });
 
   // Stop the conversation when the component unmounts.
   // This can happen when the widget is used inside another framework.
@@ -148,7 +154,10 @@ function useConversationSetup() {
         }
 
         try {
-          processedConfig = triggerCallEvent(element, processedConfig);
+          processedConfig = triggerCallEvent(
+            shadowHost.value ?? element,
+            processedConfig
+          );
         } catch (error) {
           console.error(
             "[ConversationalAI] Error triggering call event:",
@@ -190,11 +199,56 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ source, message }) => {
+            onMessage: ({ role, message }) => {
               if (
+                firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
-                source === "ai" &&
-                message === firstMessage.peek()
+                role === "agent" &&
+                !receivedFirstMessageRef.current
+              ) {
+                receivedFirstMessageRef.current = true;
+                // Text mode is always started by the user sending a text message.
+                // We need to ignore the first agent message as it is immediately
+                // interrupted by the user input.
+                return;
+              } else if (role === "agent") {
+                receivedFirstMessageRef.current = true;
+              }
+
+              if (role === "agent" && isReceivingStreamRef.current) {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null) {
+                  const currentTranscript = transcript.peek();
+                  const updatedTranscript = [...currentTranscript];
+                  updatedTranscript[streamingIndex] = {
+                    type: "message",
+                    role: "agent",
+                    message,
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  };
+                  transcript.value = updatedTranscript;
+                }
+                isReceivingStreamRef.current = false;
+                return;
+              }
+
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "message",
+                  role,
+                  message,
+                  isText: false,
+                  conversationIndex: conversationIndex.peek(),
+                },
+              ];
+            },
+            onAgentChatResponsePart: ({ text, type }) => {
+              if (
+                firstMessage.peek() &&
+                conversationTextOnly.peek() === true &&
+                !receivedFirstMessageRef.current
               ) {
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
@@ -202,21 +256,43 @@ function useConversationSetup() {
                 return;
               }
 
-              transcript.value = [
-                ...transcript.value,
-                {
-                  type: "message",
-                  role: source,
-                  message,
-                  isText: false,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
+              const currentTranscript = transcript.peek();
+              if (type === "start") {
+                isReceivingStreamRef.current = true;
+                streamingMessageIndexRef.current = currentTranscript.length;
+              } else if (type === "delta") {
+                const streamingIndex = streamingMessageIndexRef.current;
+                if (streamingIndex !== null && text) {
+                  const updatedTranscript = [...currentTranscript];
+                  const streamingMessage = (updatedTranscript[
+                    streamingIndex
+                  ] ??= {
+                    type: "message",
+                    role: "agent",
+                    message: "",
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  });
+
+                  if (streamingMessage.type === "message") {
+                    updatedTranscript[streamingIndex] = {
+                      ...streamingMessage,
+                      message: streamingMessage.message + text,
+                    };
+                    transcript.value = updatedTranscript;
+                  }
+                }
+              } else if (type === "stop") {
+                streamingMessageIndexRef.current = null;
+              }
             },
             onDisconnect: details => {
+              receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
+              streamingMessageIndexRef.current = null;
+              isReceivingStreamRef.current = false;
               transcript.value = [
-                ...transcript.value,
+                ...transcript.peek(),
                 details.reason === "error"
                   ? {
                       type: "error",
@@ -225,7 +301,7 @@ function useConversationSetup() {
                     }
                   : {
                       type: "disconnection",
-                      role: details.reason === "user" ? "user" : "ai",
+                      role: details.reason === "user" ? "user" : "agent",
                       conversationIndex: conversationIndex.peek(),
                     },
               ];
@@ -241,7 +317,6 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          conversationRef.current.setMicMuted(isMuted.peek());
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
@@ -283,6 +358,12 @@ function useConversationSetup() {
       getOutputVolume: () => {
         return conversationRef.current?.getOutputVolume() ?? 0;
       },
+      setVolume: (volume: number) => {
+        conversationRef.current?.setVolume({ volume });
+      },
+      setMicMuted: (muted: boolean) => {
+        conversationRef.current?.setMicMuted(muted);
+      },
       sendFeedback: (like: boolean) => {
         conversationRef.current?.sendFeedback(like);
       },
@@ -302,8 +383,20 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
+      addModeToggleEntry: (mode: ConversationMode) => {
+        // Only add entry if conversation is active
+        if (!conversationRef.current?.isOpen()) return;
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "mode_toggle",
+            mode,
+            conversationIndex: conversationIndex.peek(),
+          },
+        ];
+      },
     };
-  }, [config, isMuted]);
+  }, [config]);
 }
 
 function triggerCallEvent(

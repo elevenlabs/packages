@@ -1,8 +1,10 @@
-# ElevenLabs JavaScript Client Library
+![hero](../../assets/hero.png)
 
-An SDK library for using ElevenLabs in browser based applications. If you're looking for a Node.js library, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/elevenlabs).
+# ElevenLabs Agents Typescript SDK
 
-> Note that this library is launching to primarily support Conversational AI. The support for speech synthesis and other more generic use cases is planned for the future.
+Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+
+An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
 
 ![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
 [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
@@ -38,7 +40,7 @@ First, initialize the Conversation instance:
 const conversation = await Conversation.startSession(options);
 ```
 
-This will kick off the websocket connection and start using microphone to communicate with the ElevenLabs Conversational AI agent. Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
+This will kick off the websocket connection and start using microphone to communicate with the ElevenLabs agent. Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
 // call after explaning to the user why the microphone access is needed
@@ -160,6 +162,19 @@ The options passed to `startSession` can also be used to register optional callb
 - **onStatusChange** - handler called whenever connection status changes. Can be `connected`, `connecting` and `disconnected` (initial).
 - **onModeChange** - handler called when a status changes, eg. agent switches from `speaking` to `listening`, or the other way around.
 - **onCanSendFeedbackChange** - handler called when sending feedback becomes available or unavailable.
+- **onUnhandledClientToolCall** - handler called when a client tool is invoked but no corresponding client tool was defined
+- **onDebug** - handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.
+- **onAudio** - handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.
+- **onInterruption** - handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.
+- **onVadScore** - handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.
+- **onMCPToolCall** - handler called when an MCP (Model Context Protocol) tool is invoked by the agent.
+- **onMCPConnectionStatus** - handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.
+- **onAgentToolRequest** - handler called when the agent begins tool execution.
+- **onAgentToolResponse** - handler called when the agent receives a response from a tool execution.
+- **onConversationMetadata** - handler called with conversation initiation metadata, providing information about the conversation setup.
+- **onAsrInitiationMetadata** - handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.
+- **onAgentChatResponsePart** - handler called with streaming text chunks during text-only conversations. Provides start, delta, and stop events for real-time text streaming.
+- **onAudioAlignment** - handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization.
 
 #### Setting input/output devices
 
@@ -209,12 +224,16 @@ const conversation = await Conversation.startSession({
     agent: {
       prompt: {
         prompt: "My custom prompt",
+        llm: "gemini-2.5-flash",
       },
       firstMessage: "My custom first message",
       language: "en",
     },
     tts: {
       voiceId: "custom voice id",
+      speed: 1.0,
+      stability: 0.5,
+      similarityBoost: 0.8,
     },
     conversation: {
       textOnly: true,
@@ -428,6 +447,419 @@ await conversation.changeOutputDevice({
 ```
 
 **Note:** Device switching only works for voice conversations. If no specific `deviceId` is provided, the browser will use its default device selection. You can enumerate available devices using the [MediaDevices.enumerateDevices()](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices) API.
+
+## Scribe - Real-time Speech-to-Text
+
+Scribe is ElevenLabs' real-time speech-to-text API that provides low-latency transcription with support for both streaming microphone input and pre-recorded audio files.
+
+### Quick Start
+
+```js
+import { Scribe, RealtimeEvents } from "@elevenlabs/client";
+
+// Connect with microphone streaming
+const connection = Scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  microphone: {
+    echoCancellation: true,
+    noiseSuppression: true,
+  },
+});
+
+// Listen for transcripts
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
+  console.log("Partial:", data.text);
+});
+
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+  console.log("Committed:", data.text);
+});
+
+// Close connection when done
+connection.close();
+```
+
+### Getting a Token
+
+Scribe requires a single-use token for authentication. These tokens are generated via the ElevenLabs API on the server.
+
+You should create an API endpoint on your server to generate these tokens:
+
+```js
+// Node.js server
+app.get("/scribe-token", yourAuthMiddleware, async (req, res) => {
+  const response = await fetch(
+    "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      },
+    }
+  );
+
+  const data = await response.json();
+  res.json({ token: data.token });
+});
+```
+
+```js
+// Client
+const response = await fetch("/scribe-token");
+const { token } = await response.json();
+```
+
+**Warning:** Your ElevenLabs API key is sensitive, do not leak it to the client. Always generate the token on the server.
+
+### Microphone Mode
+
+Automatically stream audio from the user's microphone:
+
+```js
+import { Scribe, RealtimeEvents } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  microphone: {
+    deviceId: "optional-device-id", // Optional: specific microphone
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+  },
+});
+```
+
+The microphone stream is automatically converted to PCM16 format required by the API. In this mode audio is automatically committed.
+
+### Manual Audio Mode
+
+For transcribing pre-recorded audio files or custom audio sources:
+
+```js
+import { Scribe, AudioFormat, RealtimeEvents } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  audioFormat: AudioFormat.PCM_16000,
+  sampleRate: 16000,
+});
+
+// Send audio chunks as base64
+connection.send({ audioBase64: base64AudioChunk });
+
+// Signal end of audio segment
+connection.commit();
+```
+
+#### Example: Transcribing an Audio File
+
+```js
+// Get file from input element
+const fileInput = document.querySelector('input[type="file"]');
+const audioFile = fileInput.files[0];
+
+// Read file as ArrayBuffer
+const arrayBuffer = await audioFile.arrayBuffer();
+const audioData = new Uint8Array(arrayBuffer);
+
+// Convert to base64 and send in chunks
+const chunkSize = 8192; // 8KB chunks
+for (let i = 0; i < audioData.length; i += chunkSize) {
+  const chunk = audioData.slice(i, i + chunkSize);
+  const base64 = btoa(String.fromCharCode(...chunk));
+  connection.send({ audioBase64: base64 });
+
+  // Optional: Add delay to simulate real-time streaming
+  await new Promise((resolve) => setTimeout(resolve, 100));
+}
+
+// Signal end of audio
+connection.commit();
+```
+
+### Event Handlers
+
+Subscribe to events using the connection instance:
+
+```js
+import { RealtimeEvents } from "@elevenlabs/client";
+
+// Session started
+connection.on(RealtimeEvents.SESSION_STARTED, () => {
+  console.log("Session started");
+});
+
+// Partial transcripts (interim results)
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
+  console.log("Partial:", data.text);
+});
+
+// Committed transcripts
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+  console.log("Committed:", data.text);
+});
+
+// Committed transcripts with word-level timestamps
+// Only received when `includeTimestamps = true`
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
+  console.log("Committed:", data.text);
+  console.log("Timestamps:", data.words);
+});
+
+// Errors
+connection.on(RealtimeEvents.ERROR, (error) => {
+  console.error("Error:", error);
+});
+
+// Authentication errors
+connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
+  console.error("Auth error:", data.error);
+});
+
+// Connection opened
+connection.on(RealtimeEvents.OPEN, () => {
+  console.log("Connection opened");
+});
+
+// Connection closed
+connection.on(RealtimeEvents.CLOSE, () => {
+  console.log("Connection closed");
+});
+
+// Quota exceeded
+connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+  console.log("Quota exceeded:", data.error)
+})
+```
+
+### Configuration Options
+
+#### Common Options
+
+All connection modes support these options:
+
+```js
+const connection = await scribe.connect({
+  token: "your-token", // Required: Single-use token
+  modelId: "scribe_v2_realtime", // Required: Model ID
+  baseUri: "wss://api.elevenlabs.io", // Optional: Custom endpoint
+
+  // Voice Activity Detection (VAD) settings
+  commitStrategy: CommitStrategy.MANUAL, // or CommitStrategy.VAD
+  vadSilenceThresholdSecs: 0.5, // Seconds of silence before committing
+  vadThreshold: 0.5, // VAD sensitivity (0-1)
+  minSpeechDurationMs: 100, // Minimum speech duration to process
+  minSilenceDurationMs: 500, // Minimum silence to detect pause
+
+  languageCode: "en", // ISO 639-1 language code
+
+  includeTimestamps: true // Whether to receive the committed_transcript_with_timestamps event after committing
+});
+```
+
+#### Microphone-Specific Options
+
+```js
+const connection = await scribe.connect({
+  // ... common options
+  microphone: {
+    deviceId: "optional-device-id",
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+  },
+});
+```
+
+#### Manual Audio Options
+
+```js
+import { AudioFormat } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  // ... common options
+  audioFormat: AudioFormat.PCM_16000, // or AudioFormat.PCM_24000
+  sampleRate: 16000, // Must match audioFormat
+});
+```
+
+### Commit Strategies
+
+Scribe supports two commit strategies when in manual audio mode:
+
+#### Manual
+
+You explicitly control when to commit transcriptions:
+
+```js
+import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  commitStrategy: CommitStrategy.MANUAL,
+  audioFormat: AudioFormat.PCM_16000,
+  sampleRate: 16000,
+});
+
+connection.send({ audioBase64: base64Audio });
+
+// Later, when you want to commit the segment
+connection.commit();
+```
+
+#### Voice Activity Detection (VAD)
+
+The API automatically detects when speech ends and commits the transcription:
+
+```js
+import { Scribe, CommitStrategy, RealtimeEvents } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  commitStrategy: CommitStrategy.VAD,
+  audioFormat: AudioFormat.PCM_16000,
+  sampleRate: 16000,
+});
+```
+
+### Connection Methods
+
+#### close()
+
+Close the connection and clean up resources:
+
+```js
+connection.close();
+```
+
+#### send(options)
+
+Send audio data (manual mode only):
+
+```js
+connection.send({
+  audioBase64: base64AudioData,
+  commit: false, // Optional: commit immediately
+  sampleRate: 16000, // Optional: override sample rate
+  previousText: "Previous transcription text", // Optional: include text from a previous transcription or base64 encoded audio data. Will be used to provide context to the model. Can only be sent in the first audio chunk.
+});
+```
+
+**Warning:** The `previousText`field can only be sent in the first audio chunk of a session. If sent in any other chunk an error will be returned.
+
+#### commit()
+
+Manually commit the current segment:
+
+```js
+connection.commit();
+```
+
+### TypeScript Support
+
+Full TypeScript types are included:
+
+```typescript
+import {
+  Scribe,
+  RealtimeConnection,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+  type AudioOptions,
+  type MicrophoneOptions,
+  type PartialTranscriptMessage,
+  type CommittedTranscriptMessage,
+} from "@elevenlabs/client";
+
+const connection: RealtimeConnection = await scribe.connect({
+  token: "your-token",
+  modelId: "scribe_v2_realtime",
+  microphone: {
+    echoCancellation: true,
+  },
+});
+```
+
+### Error Handling
+
+Always handle errors appropriately:
+
+```js
+import { Scribe, RealtimeEvents } from "@elevenlabs/client";
+
+try {
+  const connection = Scribe.connect({
+    token: "your-token",
+    modelId: "scribe_v2_realtime",
+    microphone: {},
+  });
+
+  // Generic event that fires on all errors, including auth and quota exceeded
+  connection.on(RealtimeEvents.ERROR, (error) => {
+    console.error("Connection error:", error);
+  });
+
+  connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
+    console.error("Authentication failed:", data.error);
+  });
+
+  connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+    console.error("Quota exceeded:", data.error);
+  });
+} catch (error) {
+  console.error("Failed to connect:", error);
+}
+```
+
+## CSP compliance
+
+If your application has a tight Content Security Policy and does not allow data: or blob: in the `script-src` (w3.org/TR/CSP2#source-list-guid-matching), you self-host the needed files in the public folder.
+
+Whitelisting these values is not recommended w3.org/TR/CSP2#source-list-guid-matching.
+
+Add the worklet files to your public folder eg `public/elevenlabs`.
+
+```
+@elevenlabs/client/scripts/
+```
+
+Then call start with values in options as workletPaths.
+
+It is recommended to update the scripts with a build script like
+
+```js
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { createRequire } from 'node:module';
+import path from 'path';
+
+
+const require = createRequire(import.meta.url);
+
+export default {
+  plugins: [
+    viteStaticCopy({
+      targets: [
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/audioConcatProcessor.js',
+          dest: 'dist',
+        },
+        {
+          src: require.resolve('@elevenlabs/client')/dist/worklets/rawAudioProcessor.js',
+          dest: 'dist',
+        },
+      ],
+    }),
+  ],
+}
+```
 
 ## Development
 

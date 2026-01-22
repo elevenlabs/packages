@@ -12,6 +12,7 @@ __pycache__
 
 # dependencies
 node_modules
+.pnpm-store
 
 # IDEs and editors
 /.idea
@@ -47,6 +48,7 @@ testem.log
 Thumbs.db
 
 # env
+.env
 .env.local
 .env.*.local
 venv
@@ -68,3 +70,6 @@ turbo-*.log
 out/
 build
 dist
+
+# Auto-generated version files
+**/src/version.ts

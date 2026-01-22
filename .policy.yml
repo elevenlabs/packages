@@ -1,0 +1,79 @@
+policy:
+  approval:
+    - or:
+        - convai-widget-core changes approved by widget team
+        - convai-widget-embed changes approved by widget team
+        - client changes approved by owner
+        - react-native changes approved by owner
+
+approval_rules:
+  - name: convai-widget-core changes approved by widget team
+    description: ConvAI widget core changes require approval from kamilk-11 or kalvin807
+    if:
+      changed_files:
+        paths:
+          - "^packages/convai-widget-core/.*$"
+    requires:
+      count: 1
+      users: ["kamilk-11", "kalvin807"]
+    options: &default_options
+      allow_author: false
+      allow_contributor: false
+      allow_non_author_contributor: false
+      invalidate_on_push: false
+      ignore_update_merges: true
+      methods:
+        github_review: true
+        comment_patterns:
+          - "^:\\+1:$"
+          - "^👍$"
+          - "^(?i:lgtm)$"
+        comments: []
+      request_review:
+        enabled: true
+        mode: all-users
+
+  - name: convai-widget-embed changes approved by widget team
+    description: ConvAI widget embed changes require approval from kamilk-11 or kalvin807
+    if:
+      changed_files:
+        paths:
+          - "^packages/convai-widget-embed/.*$"
+    requires:
+      count: 1
+      users: ["kamilk-11", "kalvin807"]
+    options:
+      <<: *default_options
+      request_review:
+        enabled: true
+        mode: all-users
+
+  - name: client changes approved by owner
+    description: Client package changes require approval from PaulAsjes or AngeloGiacco
+    if:
+      changed_files:
+        paths:
+          - "^packages/client/.*$"
+    requires:
+      count: 1
+      users: ["PaulAsjes", "AngeloGiacco"]
+    options:
+      <<: *default_options
+      request_review:
+        enabled: true
+        mode: all-users
+
+  - name: react-native changes approved by owner
+    description: React Native package changes require approval from PaulAsjes or AngeloGiacco
+    if:
+      changed_files:
+        paths:
+          - "^packages/react-native/.*$"
+    requires:
+      count: 1
+      users: ["PaulAsjes", "AngeloGiacco"]
+    options:
+      <<: *default_options
+      request_review:
+        enabled: true
+        mode: all-users

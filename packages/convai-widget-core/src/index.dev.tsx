@@ -11,12 +11,13 @@ import {
   Location,
   parseLocation,
 } from "./types/config";
-import { useState } from "preact/compat";
+import { useMemo, useRef, useState } from "preact/compat";
 
 /**
  * A dev-only playground for testing the ConvAIWidget component.
  */
 function Playground() {
+  const ref = useRef<HTMLDivElement>(null);
   const [variant, setVariant] = useState<Variant>("compact");
   const [placement, setPlacement] = useState<Placement>("bottom-right");
   const [location, setLocation] = useState<Location>("us");
@@ -26,6 +27,23 @@ function Playground() {
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
   const [dismissible, setDismissible] = useState(true);
+  const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);
+  const [firstMessage, setFirstMessage] = useState(
+    "Hi, how can I help you today?"
+  );
+
+  const dynamicVariables = useMemo(
+    () =>
+      dynamicVariablesStr
+        .split("\n")
+        .reduce<Record<string, string>>((acc, expr) => {
+          const [name, value] = expr.split("=");
+          return { ...acc, [name]: value };
+        }, {}),
+    [dynamicVariablesStr]
+  );
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-base-hover text-base-primary">
@@ -103,6 +121,36 @@ function Playground() {
           Dismissible
         </label>
         <label className="flex flex-col">
+          Dynamic variables (i.e., new-line separated name=value)
+          <textarea
+            className="p-1 bg-base border border-base-border"
+            onChange={e => setDynamicVariablesStr(e.currentTarget.value)}
+            value={dynamicVariablesStr}
+            rows={5}
+          />
+        </label>
+        <label className="flex flex-row gap-1">
+          <div>
+            <input
+              type="checkbox"
+              checked={overrideFirstMessage}
+              onChange={e => setOverrideFirstMessage(e.currentTarget.checked)}
+            />
+          </div>
+          <div>
+            First message:
+            {overrideFirstMessage && (
+              <input
+                type="text"
+                className="p-1 bg-base border border-base-border"
+                value={firstMessage}
+                disabled={!overrideFirstMessage}
+                onChange={e => setFirstMessage(e.currentTarget.value)}
+              />
+            )}
+          </div>
+        </label>
+        <label className="flex flex-col">
           Server Location
           <select
             value={location}
@@ -114,8 +162,25 @@ function Playground() {
             ))}
           </select>
         </label>
+        {(textOnly || textInput || transcript) && (
+          <button
+            type="button"
+            onClick={() => {
+              const event = new CustomEvent("elevenlabs-agent:expand", {
+                detail: { action: expanded ? "collapse" : "expand" },
+                bubbles: true,
+                composed: true,
+              });
+              ref.current?.dispatchEvent(event);
+              setExpanded(!expanded);
+            }}
+            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Toggle expand
+          </button>
+        )}
       </div>
-      <div className="dev-host">
+      <div ref={ref} className="dev-host">
         <ConvAIWidget
           agent-id={import.meta.env.VITE_AGENT_ID}
           variant={variant}
@@ -126,7 +191,11 @@ function Playground() {
           override-text-only={JSON.stringify(textOnly)}
           always-expanded={JSON.stringify(alwaysExpanded)}
           dismissible={JSON.stringify(dismissible)}
+          dynamic-variables={JSON.stringify(dynamicVariables)}
           server-location={location}
+          override-first-message={
+            overrideFirstMessage ? firstMessage : undefined
+          }
         />
       </div>
     </div>

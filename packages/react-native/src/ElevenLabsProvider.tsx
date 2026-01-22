@@ -2,7 +2,7 @@ import React from 'react';
 import { createContext, useContext, useState } from 'react';
 import { registerGlobals } from '@livekit/react-native';
 import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig } from './types';
+import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig, AudioSessionConfig } from './types';
 import { constructOverrides } from './utils/overrides';
 import { DEFAULT_SERVER_URL } from './utils/constants';
 import { useConversationCallbacks } from './hooks/useConversationCallbacks';
@@ -18,7 +18,7 @@ interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
 
 export interface Conversation {
   startSession: (config: ConversationConfig) => Promise<void>;
-  endSession: () => Promise<void>;
+  endSession: (reason?: "user" | "agent") => Promise<void>;
   status: ConversationStatus;
   isSpeaking: boolean;
   // TODO: Implement setVolume when LiveKit React Native supports it
@@ -66,10 +66,14 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
     }
   }, [context, tokenFetchUrl]);
 
-  if (clientTools) {
-    context.setClientTools(clientTools);
-  }
+  React.useEffect(() => {
+    if (clientTools) {
+      context.setClientTools(clientTools);
+    }
+  }, [context, clientTools]);
 
+  // Update callbacks - since this only updates a ref, it's safe to call on every render
+  // and doesn't cause re-renders of the provider or its consumers
   context.setCallbacks(callbacks);
 
   return context.conversation;
@@ -77,9 +81,10 @@ export const useConversation = (options: ConversationOptions = {}): Conversation
 
 interface ElevenLabsProviderProps {
   children: React.ReactNode;
+  audioSessionConfig?: AudioSessionConfig;
 }
 
-export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children }) => {
+export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, audioSessionConfig }) => {
   // Initialize globals on mount
   registerGlobals();
 
@@ -124,6 +129,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     userId,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
 
+  const textOnly = overrides?.conversation?.textOnly ?? false;
+
   const {
     roomConnected,
     localParticipant,
@@ -131,7 +138,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleConnected,
     handleDisconnected,
     handleError,
-  } = useLiveKitRoom(callbacksRef, setStatus, conversationId);
+  } = useLiveKitRoom(callbacksRef, setStatus, conversationId, status, textOnly);
 
   // Enhanced connection handler to initialize feedback state
   const handleConnectedWithFeedback = React.useCallback(() => {
@@ -147,6 +154,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   // Enhanced disconnection handler to reset feedback state
   const handleDisconnectedWithFeedback = React.useCallback(() => {
     setCanSendFeedback(false);
+    setIsSpeaking(false);
     handleDisconnected();
   }, [handleDisconnected]);
 
@@ -187,7 +195,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     console.warn('setVolume is not yet implemented in React Native SDK');
   }, []);
 
-  const getId = () => conversationId;
+  const getId = React.useCallback(() => conversationId, [conversationId]);
 
   const setMicMuted = React.useCallback((muted: boolean) => {
     if (localParticipant) {
@@ -205,52 +213,99 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
     handleParticipantReady(participant);
 
-    if (localParticipant) {
-      const overridesEvent = constructOverrides({
-        overrides,
-        customLlmExtraBody,
-        dynamicVariables,
-        userId,
-      });
-      sendMessage(overridesEvent);
-    }
-  }, [handleParticipantReady, localParticipant, overrides, customLlmExtraBody, dynamicVariables, userId, sendMessage]);
+    const overridesEvent = constructOverrides({
+      overrides,
+      customLlmExtraBody,
+      dynamicVariables,
+      userId,
+    });
 
-  const conversation: Conversation = {
-    startSession,
-    endSession,
-    status,
-    isSpeaking,
-    // setVolume,
-    canSendFeedback,
-    getId,
-    setMicMuted,
-    sendFeedback,
-    sendContextualUpdate: (text: string) => {
-      sendMessage({
-        type: "contextual_update",
-        text,
-      });
-    },
-    sendUserMessage: (text: string) => {
-      sendMessage({
-        type: "user_message",
-        text,
-      });
-    },
-    sendUserActivity: () => {
-      sendMessage({
-        type: "user_activity",
-      });
-    },
-  };
+    if (overridesEvent) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(JSON.stringify(overridesEvent));
+        participant.publishData(data, { reliable: true });
+      } catch (error) {
+        console.error("Failed to send overrides:", error);
+        callbacksRef.current.onError?.(error as string);
+      }
+    }
+  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
 
   // Create setClientTools function that only updates ref
   const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {
     clientToolsRef.current = tools;
   }, []);
 
-  const contextValue: ElevenLabsContextType = {
+  // Memoize inline callback functions
+  const sendContextualUpdate = React.useCallback((text: string) => {
+    sendMessage({
+      type: "contextual_update",
+      text,
+    });
+  }, [sendMessage]);
+
+  const sendUserMessage = React.useCallback((text: string) => {
+    sendMessage({
+      type: "user_message",
+      text,
+    });
+  }, [sendMessage]);
+
+  const sendUserActivity = React.useCallback(() => {
+    sendMessage({
+      type: "user_activity",
+    });
+  }, [sendMessage]);
+
+  // Store all conversation values/functions in refs for stable access
+  const conversationValuesRef = React.useRef({
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  });
+
+  // Update ref on every render
+  conversationValuesRef.current = {
+    startSession,
+    endSession,
+    status,
+    isSpeaking,
+    canSendFeedback,
+    getId,
+    setMicMuted,
+    sendFeedback,
+    sendContextualUpdate,
+    sendUserMessage,
+    sendUserActivity,
+  };
+
+  // Create a stable conversation object that never changes reference
+  // This prevents infinite loops when conversation is used in useEffect dependencies
+  const conversation = React.useMemo<Conversation>(() => ({
+    get startSession() { return conversationValuesRef.current.startSession; },
+    get endSession() { return conversationValuesRef.current.endSession; },
+    get status() { return conversationValuesRef.current.status; },
+    get isSpeaking() { return conversationValuesRef.current.isSpeaking; },
+    get canSendFeedback() { return conversationValuesRef.current.canSendFeedback; },
+    get getId() { return conversationValuesRef.current.getId; },
+    get setMicMuted() { return conversationValuesRef.current.setMicMuted; },
+    get sendFeedback() { return conversationValuesRef.current.sendFeedback; },
+    get sendContextualUpdate() { return conversationValuesRef.current.sendContextualUpdate; },
+    get sendUserMessage() { return conversationValuesRef.current.sendUserMessage; },
+    get sendUserActivity() { return conversationValuesRef.current.sendUserActivity; },
+  }), []); // Empty deps - object is created once and never recreated
+
+  // Memoize the context value to prevent unnecessary re-renders of consumers
+  const contextValue = React.useMemo<ElevenLabsContextType>(() => ({
     conversation,
     callbacksRef,
     serverUrl,
@@ -258,9 +313,16 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     clientTools: clientToolsRef.current,
     setCallbacks,
     setServerUrl,
-    setTokenFetchUrl: setTokenFetchUrl,
+    setTokenFetchUrl,
     setClientTools,
-  };
+  }), [
+    conversation,
+    callbacksRef,
+    serverUrl,
+    tokenFetchUrl,
+    setCallbacks,
+    setClientTools,
+  ]);
 
   return (
     <ElevenLabsContext.Provider value={contextValue}>
@@ -277,6 +339,9 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         sendMessage={sendMessage}
         clientTools={clientToolsRef.current}
         updateCurrentEventId={updateCurrentEventId}
+        onEndSession={endSession}
+        audioSessionConfig={audioSessionConfig}
+        textOnly={textOnly}
       >
         {children}
       </LiveKitRoomWrapper>

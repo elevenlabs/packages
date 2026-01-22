@@ -1,6 +1,10 @@
-# ElevenLabs React Native SDK
+![hero](../../assets/hero.png)
 
-A React Native SDK for ElevenLabs Conversational AI.
+# ElevenLabs Agents React Native SDK
+
+Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+
+An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
 
 ## Features
 
@@ -23,11 +27,12 @@ npm install @elevenlabs/react-native @livekit/react-native @livekit/react-native
 ```
 
 **Required Dependencies:**
+
 - `@livekit/react-native` - LiveKit React Native SDK (native modules)
 - `@livekit/react-native-webrtc` - WebRTC implementation for React Native
 - `livekit-client` - LiveKit JavaScript client
 
-*Note: LiveKit dependencies are required due to React Native's native module architecture and must be installed in your app's root dependencies.*
+_Note: LiveKit dependencies are required due to React Native's native module architecture and must be installed in your app's root dependencies._
 
 > **Installation Note:** You may see peer dependency warnings during installation. This is normal - the warnings ensure you have the required LiveKit packages installed for native module linking.
 
@@ -42,6 +47,27 @@ import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
 function App() {
   return (
     <ElevenLabsProvider>
+      <ConversationComponent />
+    </ElevenLabsProvider>
+  );
+}
+```
+
+### Audio Session Configuration
+
+By default, ElevenLabs uses an exclusive audio session for optimal voice quality. To allow concurrent audio playback (e.g., sound effects, notifications, background music):
+
+```typescript
+import React from 'react';
+import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
+
+function App() {
+  return (
+    <ElevenLabsProvider
+      audioSessionConfig={{
+        allowMixingWithOthers: true,
+      }}
+    >
       <ConversationComponent />
     </ElevenLabsProvider>
   );
@@ -93,13 +119,14 @@ Returns a conversation object with the following methods and properties:
 Starts a new conversation session.
 
 **Parameters:**
+
 - `config.agentId`: ElevenLabs agent ID, not needed if you provide a conversationToken.
 - `config.conversationToken`: Optional pre-generated token, used for private agents that require authentication via your ElevenLabs API key.
 - `config.userId`: You can optionally pass a user ID to identify the user in the conversation. This can be your own customer identifier. This will be included in the conversation initiation data sent to the server.
 
 ```typescript
 await conversation.startSession({
-  agentId: 'your-agent-id'
+  agentId: "your-agent-id",
 });
 ```
 
@@ -116,6 +143,7 @@ await conversation.endSession();
 Sends binary feedback for the most recent agent response.
 
 **Parameters:**
+
 - `like`: `true` for positive feedback, `false` for negative feedback
 
 ```typescript
@@ -131,6 +159,7 @@ conversation.sendFeedback(false);
 Sends contextual information to the agent that won't trigger a response.
 
 **Parameters:**
+
 - `text`: Contextual information for the agent
 
 ```typescript
@@ -144,6 +173,7 @@ conversation.sendContextualUpdate(
 Sends a text message to the agent as if the user spoke it.
 
 **Parameters:**
+
 - `text`: The message text to send
 
 ```typescript
@@ -158,7 +188,7 @@ The agent will pause speaking for ~2 seconds after receiving this signal.
 
 ```typescript
 // Prevent interruption while user is typing
-textInput.addEventListener('input', () => {
+textInput.addEventListener("input", () => {
   conversation.sendUserActivity();
 });
 ```
@@ -178,11 +208,12 @@ console.log(id);
 Mutes/unmutes the microphone
 
 **Parameters:**
+
 - `muted`: Whether the mic should be muted or not
 
 ```typescript
 conversation.setMicMuted(true); // mute
-conversation.setMicMuted(false) // unmute
+conversation.setMicMuted(false); // unmute
 ```
 
 #### Properties
@@ -197,7 +228,39 @@ console.log(conversation.isSpeaking);
 console.log(conversation.canSendFeedback);
 ```
 
-### Configuration Options
+### ElevenLabsProvider Configuration
+
+Configure the provider with optional settings:
+
+#### Audio Session Configuration
+
+Control how the SDK manages audio sessions with other audio sources:
+
+```typescript
+<ElevenLabsProvider
+  audioSessionConfig={{
+    allowMixingWithOthers: true, // Default: false
+  }}
+>
+  {/* Your app */}
+</ElevenLabsProvider>
+```
+
+**When to use `allowMixingWithOthers: true`:**
+- Playing connection/disconnection sound effects during conversations
+- Background music in your app
+- Notification sounds while agent is speaking
+- Multiple concurrent audio sources
+
+**Default behavior (`false`):**
+- Exclusive audio session for best voice quality
+- Other audio sources will be paused during conversations
+
+**Platform Notes:**
+- **iOS**: Adds `AVAudioSessionCategoryOptionMixWithOthers` to the audio session
+- **Android**: Uses `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` for audio focus
+
+### Conversation Hook Options
 
 Pass to `useConversation` hook to customize SDK behavior:
 
@@ -207,7 +270,7 @@ Override the WebRTC server URL (defaults to ElevenLabs' LiveKit server):
 
 ```typescript
 const conversation = useConversation({
-  serverUrl: 'wss://your-custom-livekit-server.com'
+  serverUrl: "wss://your-custom-livekit-server.com",
 });
 ```
 
@@ -217,7 +280,7 @@ Override the token fetch endpoint (defaults to ElevenLabs' token API):
 
 ```typescript
 const conversation = useConversation({
-  tokenFetchUrl: 'https://your-api.com/v1/conversation/token'
+  tokenFetchUrl: "https://your-api.com/v1/conversation/token",
 });
 ```
 
@@ -225,8 +288,8 @@ You can also override the token fetch URL on a per-session basis:
 
 ```typescript
 await conversation.startSession({
-  agentId: 'your-agent-id',
-  tokenFetchUrl: 'https://your-api.com/v1/conversation/token'
+  agentId: "your-agent-id",
+  tokenFetchUrl: "https://your-api.com/v1/conversation/token",
 });
 ```
 
@@ -234,25 +297,57 @@ await conversation.startSession({
 
 ```typescript
 const conversation = useConversation({
-  serverUrl: 'wss://your-custom-livekit-server.com',
-  tokenFetchUrl: 'https://your-api.com/v1/conversation/token',
-  onConnect: () => console.log('Connected!'),
-  onError: (error) => console.error('Error:', error)
+  serverUrl: "wss://your-custom-livekit-server.com",
+  tokenFetchUrl: "https://your-api.com/v1/conversation/token",
+  onConnect: () => console.log("Connected!"),
+  onError: error => console.error("Error:", error),
 });
 ```
 
 ### Callback Options
 
-Pass to `useConversation` hook:
+**Note:** Not all client events are enabled by default for an agent. If you have enabled a callback but aren’t seeing events come through, ensure that your ElevenLabs agent has the corresponding event enabled. You can do this in the “Advanced” tab of the agent settings in the ElevenLabs dashboard.
 
-- `onConnect: () => void` - Called when connected
-- `onDisconnect: (details?: unknown) => void` - Called when disconnected
-- `onMessage: (message: unknown) => void` - Called when message received
-- `onError: (error: unknown) => void` - Called on error
+Pass to `useConversation` hook to handle various conversation events:
+
+#### Connection & Status
+- `onConnect?: (props: { conversationId: string }) => void` - Called when successfully connected to a conversation
+- `onDisconnect?: (details: DisconnectionDetails) => void` - Called when disconnected (includes reason: "user", "agent", or "error")
+- `onStatusChange?: (props: { status: Status }) => void` - Called when connection status changes ("disconnected", "connecting", "connected", "disconnecting")
+- `onError?: (message: string, context?: any) => void` - Called when an error occurs
+
+#### Messages & Transcription
+- `onMessage?: (props: { message: string; source: Role }) => void` - Called when a message is received from user or AI
+- `onModeChange?: (props: { mode: Mode }) => void` - Called when conversation mode changes ("speaking" or "listening")
+
+#### Audio & Voice Activity
+- `onAudio?: (base64Audio: string) => void` - Called when audio chunks are received from the agent
+- `onVadScore?: (props: { vadScore: number }) => void` - Called with Voice Activity Detection scores
+
+#### Conversation Events
+- `onInterruption?: (props: Interruption) => void` - Called when the conversation is interrupted
+- `onAgentChatResponsePart?: (props: AgentChatResponsePart) => void` - Called for streaming agent response parts
+- `onConversationMetadata?: (props: ConversationMetadata) => void` - Called with conversation initiation metadata
+- `onAsrInitiationMetadata?: (props: AsrInitiationMetadata) => void` - Called with ASR (speech recognition) initialization metadata
+- `onAudioAlignment?: (props: AudioAlignmentEvent) => void` - Called with character-level timing data for text-to-speech synchronization
+
+#### Feedback
+- `onCanSendFeedbackChange?: (props: { canSendFeedback: boolean }) => void` - Called when feedback availability changes
+
+#### Tools & MCP
+- `onUnhandledClientToolCall?: (props: ClientToolCall) => void` - Called when a client tool is invoked but not defined
+- `onMCPToolCall?: (props: McpToolCall) => void` - Called when an MCP (Model Context Protocol) tool is invoked
+- `onMCPConnectionStatus?: (props: McpConnectionStatus) => void` - Called when MCP connection status changes
+- `onAgentToolRequest?: (props: AgentToolRequest) => void` - Called when the agent begins executing a tool
+- `onAgentToolResponse?: (props: AgentToolResponse) => void` - Called when the agent receives a tool execution response
+
+#### Debug
+- `onDebug?: (props: any) => void` - Called with debug information (internal events)
 
 ## Requirements
 
 This SDK requires:
+
 - React Native with LiveKit dependencies installed and configured
 - Microphone permissions
 

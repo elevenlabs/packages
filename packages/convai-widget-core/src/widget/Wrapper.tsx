@@ -12,6 +12,9 @@ import { useTerms } from "../contexts/terms";
 import { TermsModal } from "./TermsModal";
 import { ErrorModal } from "./ErrorModal";
 import { PoweredBy } from "./PoweredBy";
+import { useWidgetSize } from "../contexts/widget-size";
+import { cn } from "../utils/cn";
+import { useShadowHost } from "../contexts/shadow-host";
 
 const HORIZONTAL = {
   left: "items-start",
@@ -46,15 +49,21 @@ export const Wrapper = memo(function Wrapper() {
   const sawError = useSignal(false);
   const { error, isDisconnected } = useConversation();
   const terms = useTerms();
+  const { variant } = useWidgetSize();
   const expandable = useComputed(
     () => config.value.transcript_enabled || config.value.text_input_enabled
   );
+  const shadowHost = useShadowHost();
   const className = useComputed(() =>
-    clsx(
-      "overlay !flex transition-opacity duration-200 data-hidden:opacity-0",
+    cn(
+      "overlay !flex transition-[opacity] duration-200 data-hidden:opacity-0",
       PLACEMENT_CLASSES[config.value.placement]
     )
   );
+  // Powered by should always at bottom of the viewport in fullscreen mode
+  const poweredByClassName = useComputed(() => (
+    variant.value === "fullscreen" ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
+  ));
 
   useSignalEffect(() => {
     if (error.value) {
@@ -65,6 +74,34 @@ export const Wrapper = memo(function Wrapper() {
         sawError.value = false;
       }
     }
+  });
+
+  // Listen for custom expansion events
+  useSignalEffect(() => {
+    const handleExpandEvent = ((event: CustomEvent) => {
+      if (!event.detail || event.detail._convaiEventHandled) {
+        return;
+      }
+
+      event.detail._convaiEventHandled = true;
+      if (event.detail.action === "expand") {
+        expanded.value = true;
+      } else if (event.detail.action === "collapse") {
+        expanded.value = false;
+      } else if (event.detail.action === "toggle") {
+        expanded.value = !expanded.value;
+      }
+    }) as EventListener;
+
+    const host = shadowHost.value;
+    // Listen for custom events on the document
+    document.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
+    host?.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
+
+    return () => {
+      document.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
+      host?.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
+    };
   });
 
   const state = useComputed(() => {
@@ -122,7 +159,7 @@ export const Wrapper = memo(function Wrapper() {
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={showPoweredBy}>
-        <Root className={className} style={HIDDEN_STYLE}>
+        <Root className={poweredByClassName} style={HIDDEN_STYLE}>
           <PoweredBy />
         </Root>
       </InOutTransition>

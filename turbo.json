@@ -8,7 +8,7 @@
       "outputs": ["src/version.ts"]
     },
     "build": {
-      "dependsOn": ["^build", "generate-version"],
+      "dependsOn": ["^build", "^generate", "generate-version"],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
@@ -31,11 +31,7 @@
       "passThroughEnv": ["PLAYWRIGHT_*", "HOME", "CI"]
     },
     "lint": {
-      "dependsOn": ["^build"]
-    },
-    "lint:ts": {
-      "dependsOn": ["^build"],
-      "cache": true
+      "dependsOn": ["^build", "^generate"]
     },
     "lint:es": {
       "cache": true,
@@ -46,7 +42,7 @@
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^generate"],
       "cache": true,
       "inputs": ["src/**", "tsconfig.json"]
     },

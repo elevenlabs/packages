@@ -1,6 +1,7 @@
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import { BaseButtonProps, Button } from "../components/Button";
+import { cn } from "../utils/cn";
 
 interface CallButtonProps extends BaseButtonProps {
   iconOnly?: boolean;

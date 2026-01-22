@@ -1,6 +1,7 @@
-import { loadRawAudioProcessor } from "./rawAudioProcessor";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
+import type { AudioWorkletConfig } from "../BaseConversation";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
@@ -25,7 +26,9 @@ export class Input {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
-  }: FormatConfig & InputConfig): Promise<Input> {
+    workletPaths,
+    libsampleratePath,
+  }: FormatConfig & InputConfig & AudioWorkletConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -53,7 +56,7 @@ export class Input {
       }
 
       if (inputDeviceId) {
-        options.deviceId = { exact: inputDeviceId };
+        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -64,9 +67,14 @@ export class Input {
       );
       const analyser = context.createAnalyser();
       if (!supportsSampleRateConstraint) {
-        await context.audioWorklet.addModule(LIBSAMPLERATE_JS);
+        // Use custom libsamplerate path if provided, otherwise fallback to CDN
+        const libsamplerateUrl = libsampleratePath || LIBSAMPLERATE_JS;
+        await context.audioWorklet.addModule(libsamplerateUrl);
       }
-      await loadRawAudioProcessor(context.audioWorklet);
+      await loadRawAudioProcessor(
+        context.audioWorklet,
+        workletPaths?.["rawAudioProcessor"]
+      );
 
       const constraints = { voiceIsolation: true, ...options };
       inputStream = await navigator.mediaDevices.getUserMedia({
@@ -74,7 +82,7 @@ export class Input {
       });
 
       const source = context.createMediaStreamSource(inputStream);
-      const worklet = new AudioWorkletNode(context, "raw-audio-processor");
+      const worklet = new AudioWorkletNode(context, "rawAudioProcessor");
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
 
       source.connect(analyser);
@@ -90,6 +98,16 @@ export class Input {
       context?.close();
       throw error;
     }
+  }
+
+  // Use { ideal } on iOS as a defensive measure - some iOS versions may not support { exact } for deviceId constraints
+  private static getDeviceIdConstraint(
+    inputDeviceId?: string
+  ): MediaTrackConstraints["deviceId"] {
+    if (!inputDeviceId) {
+      return undefined;
+    }
+    return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
   }
 
   private constructor(
@@ -112,17 +130,17 @@ export class Input {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
-  public async setInputDevice(inputDeviceId: string): Promise<void> {
-    if (!inputDeviceId) {
-      throw new Error("Input device ID is required");
-    }
-
+  public async setInputDevice(inputDeviceId?: string): Promise<void> {
     try {
-      // Create new constraints with the specified device
+      // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
-        deviceId: { exact: inputDeviceId },
         ...defaultConstraints,
       };
+
+      if (inputDeviceId) {
+        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
+      }
+      // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
       const constraints = { voiceIsolation: true, ...options };
 

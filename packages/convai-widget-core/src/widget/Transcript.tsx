@@ -1,9 +1,7 @@
-import { ReadonlySignal, Signal, useSignalEffect } from "@preact/signals";
+import { ReadonlySignal, Signal } from "@preact/signals";
 import { TranscriptEntry } from "../contexts/conversation";
-import { useEffect, useRef } from "preact/compat";
 import { TranscriptMessage } from "./TranscriptMessage";
-
-const SCROLL_PIN_PADDING = 16;
+import { useStickToBottom } from "../utils/useStickToBottom";
 
 interface TranscriptProps {
   scrollPinned: Signal<boolean>;
@@ -11,46 +9,34 @@ interface TranscriptProps {
 }
 
 export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
-  const scrollContainer = useRef<HTMLDivElement>(null);
-  const scrollToBottom = (smooth: boolean) => {
-    scrollContainer.current?.scrollTo({
-      top: scrollContainer.current.scrollHeight,
-      behavior: smooth ? "smooth" : "instant",
-    });
-  };
-
-  const firstRender = useRef(true);
-  useEffect(() => {
-    firstRender.current = false;
-    scrollToBottom(false);
-  }, []);
-
-  useSignalEffect(() => {
-    transcript.value;
-    if (scrollPinned.peek()) {
-      scrollToBottom(true);
-    }
-  });
+  const {
+    scrollContainer,
+    contentRef,
+    handleScroll,
+    handleWheel,
+    handleTouchStart,
+    handleTouchMove,
+    firstRender,
+  } = useStickToBottom({ scrollPinned });
 
   return (
     <div
       ref={scrollContainer}
-      onScroll={e => {
-        scrollPinned.value =
-          e.currentTarget.scrollTop >=
-          e.currentTarget.scrollHeight -
-            e.currentTarget.clientHeight -
-            SCROLL_PIN_PADDING;
-      }}
-      className="px-4 pb-3 grow flex flex-col gap-3 overflow-x-hidden overflow-y-auto"
+      className="px-4 pt-20 pb-4 grow overflow-y-auto z-2"
+      onScroll={handleScroll}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
     >
-      {transcript.value.map((entry, index) => (
-        <TranscriptMessage
-          key={`${entry.message}-${index}-${entry.conversationIndex}`}
-          entry={entry}
-          animateIn={!firstRender.current}
-        />
-      ))}
+      <div ref={contentRef} className="flex flex-col gap-6">
+        {transcript.value.map((entry, index) => (
+          <TranscriptMessage
+            key={`${index}-${entry.conversationIndex}`}
+            entry={entry}
+            animateIn={!firstRender.current}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,12 +1,18 @@
-import { loadAudioConcatProcessor } from "./audioConcatProcessor";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
 import type { FormatConfig } from "./connection";
+import type { AudioWorkletConfig } from "../BaseConversation";
+
+export type OutputConfig = {
+  outputDeviceId?: string;
+};
 
 export class Output {
   public static async create({
     sampleRate,
     format,
     outputDeviceId,
-  }: FormatConfig): Promise<Output> {
+    workletPaths,
+  }: FormatConfig & OutputConfig & AudioWorkletConfig): Promise<Output> {
     let context: AudioContext | null = null;
     let audioElement: HTMLAudioElement | null = null;
     try {
@@ -30,8 +36,11 @@ export class Output {
       gain.connect(analyser);
       analyser.connect(destination);
 
-      await loadAudioConcatProcessor(context.audioWorklet);
-      const worklet = new AudioWorkletNode(context, "audio-concat-processor");
+      await loadAudioConcatProcessor(
+        context.audioWorklet,
+        workletPaths?.["audioConcatProcessor"]
+      );
+      const worklet = new AudioWorkletNode(context, "audioConcatProcessor");
       worklet.port.postMessage({ type: "setFormat", format });
       worklet.connect(gain);
 
@@ -73,12 +82,13 @@ export class Output {
     public readonly audioElement: HTMLAudioElement
   ) {}
 
-  public async setOutputDevice(deviceId: string): Promise<void> {
+  public async setOutputDevice(deviceId?: string): Promise<void> {
     if (!("setSinkId" in HTMLAudioElement.prototype)) {
       throw new Error("setSinkId is not supported in this browser");
     }
 
-    await this.audioElement.setSinkId(deviceId);
+    // If deviceId is undefined, use empty string which resets to default device
+    await this.audioElement.setSinkId(deviceId || "");
   }
 
   public async close() {

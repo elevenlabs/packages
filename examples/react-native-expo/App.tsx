@@ -9,29 +9,28 @@ import {
 } from "react-native";
 import { TextInput } from "react-native";
 import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type { ConversationStatus, ConversationEvent, Role } from "@elevenlabs/react-native";
+import type { ConversationStatus } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
+  const [isStarting, setIsStarting] = useState(false);
+  const [textInput, setTextInput] = useState("");
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+
   const conversation = useConversation({
     onConnect: ({ conversationId }: { conversationId: string }) => {
       console.log("✅ Connected to conversation", conversationId);
       setCurrentConversationId(conversationId);
     },
-    onDisconnect: (details: string) => {
+    onDisconnect: (details) => {
       console.log("❌ Disconnected from conversation", details);
       setCurrentConversationId(null);
     },
     onError: (message: string, context?: Record<string, unknown>) => {
       console.error("❌ Conversation error:", message, context);
     },
-    onMessage: ({
-      message,
-      source,
-    }: {
-      message: ConversationEvent;
-      source: Role;
-    }) => {
-      console.log(`💬 Message from ${source}:`, message);
+    onMessage: ({ message, role }) => {
+      console.log(`💬 Message from ${role}:`, message);
     },
     onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
       console.log(`🔊 Mode: ${mode}`);
@@ -45,13 +44,52 @@ const ConversationScreen = () => {
       canSendFeedback: boolean;
     }) => {
       console.log(`🔊 Can send feedback: ${canSendFeedback}`);
-    }
+    },
+    onVadScore: ({ vadScore }: { vadScore: number }) => {
+      // commented out as it's quite noisy
+      // console.log(`🎙️ VAD Score: ${vadScore}`);
+    },
+    onInterruption: (event) => {
+      console.log("⚡ Interruption detected:", event);
+    },
+    onAudio: (base64Audio: string) => {
+      console.log(`🔊 Audio chunk received: ${base64Audio} bytes`);
+    },
+    onMCPToolCall: (event) => {
+      console.log("🔧 MCP Tool Call:", event);
+    },
+    onMCPConnectionStatus: (event) => {
+      console.log("🔌 MCP Connection Status:", event);
+    },
+    onAgentToolRequest: (event) => {
+      console.log("🛠️ Agent Tool Request:", event);
+    },
+    onAgentToolResponse: (event) => {
+      console.log("🛠️ Agent Tool Response:", event);
+    },
+    onConversationMetadata: (metadata) => {
+      console.log("📋 Conversation Metadata:", metadata);
+    },
+    onAsrInitiationMetadata: (metadata) => {
+      console.log("🎤 ASR Metadata:", metadata);
+    },
+    onAgentChatResponsePart: (part) => {
+      console.log("📝 Agent Response Part:", part);
+    },
+    onAudioAlignment: (alignment) => {
+      console.log("🎯 Audio Alignment:", {
+        chars: alignment.chars.join(""),
+        charCount: alignment.chars.length,
+        totalDuration: alignment.char_durations_ms.reduce((a, b) => a + b, 0),
+      });
+    },
+    onUnhandledClientToolCall: (toolCall) => {
+      console.warn("⚠️ Unhandled Client Tool Call:", toolCall);
+    },
+    onDebug: (data) => {
+      console.log("🐛 Debug:", data);
+    },
   });
-
-  const [isStarting, setIsStarting] = useState(false);
-  const [textInput, setTextInput] = useState("");
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [isMicMuted, setIsMicMuted] = useState(false);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {

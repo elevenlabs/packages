@@ -40,7 +40,7 @@ servers:
 
 channels:
   AgentMessages:
-    description: Main WebSocket channel for conversational AI
+    description: Main WebSocket channel for agents
     publish:
       summary: Messages sent from server to client
       message:
@@ -51,9 +51,11 @@ channels:
           - $ref: "#/components/messages/TentativeUserTranscript"
           - $ref: "#/components/messages/AgentResponse"
           - $ref: "#/components/messages/AgentResponseCorrection"
+          - $ref: "#/components/messages/AgentChatResponsePart"
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
           - $ref: "#/components/messages/ClientToolCallMessage"
+          - $ref: "#/components/messages/AgentToolRequestMessage"
           - $ref: "#/components/messages/AgentToolResponseMessage"
           - $ref: "#/components/messages/MCPToolCall"
           - $ref: "#/components/messages/MCPConnectionStatusMessage"
@@ -62,6 +64,7 @@ channels:
           - $ref: "#/components/messages/ASRInitiationMetadata"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
+          - $ref: "#/components/messages/ErrorMessage"
     subscribe:
       summary: Messages received from client to server
       message:
@@ -194,6 +197,14 @@ components:
       payload:
         $ref: "#/components/schemas/AgentResponseCorrectionPayload"
 
+    AgentChatResponsePart:
+      name: AgentChatResponsePartClientEvent
+      title: Agent Chat Response Part
+      summary: Streaming text chunk from agent (text-only mode)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentChatResponsePartPayload"
+
     Interruption:
       name: InterruptionEvent
       title: Interruption
@@ -217,6 +228,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ClientToolCallPayload"
+
+    AgentToolRequestMessage:
+      name: AgentToolRequestClientEvent
+      title: Agent Tool Request
+      summary: Event emitted when a tool request is received
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentToolRequestPayload"
 
     AgentToolResponseMessage:
       name: AgentToolResponseClientEvent
@@ -282,6 +301,16 @@ components:
       payload:
         $ref: "#/components/schemas/InternalTentativeAgentResponsePayload"
 
+    # ===== ERROR MESSAGES =====
+
+    ErrorMessage:
+      name: ErrorClientEvent
+      title: Error Message
+      summary: Error event sent when connection is closing due to an error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ErrorPayload"
+
   schemas:
     ClientEvent:
       type: string
@@ -289,11 +318,13 @@ components:
         - audio
         - agent_response
         - agent_response_correction
+        - agent_chat_response_part
         - interruption
         - user_transcript
         - tentative_user_transcript
         - conversation_initiation_metadata
         - client_tool_call
+        - agent_tool_request
         - agent_tool_response
         - mcp_tool_call
         - mcp_connection_status
@@ -340,6 +371,45 @@ components:
         - no
         - vi
         - tl
+        - af
+        - hy
+        - as
+        - az
+        - be
+        - bn
+        - bs
+        - ca
+        - et
+        - gl
+        - ka
+        - gu
+        - ha
+        - he
+        - is
+        - ga
+        - jv
+        - kn
+        - kk
+        - ky
+        - lv
+        - lt
+        - lb
+        - mk
+        - ml
+        - mr
+        - ne
+        - ps
+        - fa
+        - pa
+        - sr
+        - sd
+        - sl
+        - so
+        - sw
+        - te
+        - th
+        - ur
+        - cy
       description: Language code for ASR and TTS
 
     AudioFormat:
@@ -632,6 +702,16 @@ components:
         agent_response_correction_event:
           $ref: "#/components/schemas/AgentResponseCorrectionData"
 
+    AgentChatResponsePartPayload:
+      type: object
+      required: [text_response_part, type]
+      properties:
+        type:
+          type: string
+          const: agent_chat_response_part
+        text_response_part:
+          $ref: "#/components/schemas/AgentChatResponsePartData"
+
     InterruptionPayload:
       type: object
       required: [interruption_event, type]
@@ -661,7 +741,15 @@ components:
           const: client_tool_call
         client_tool_call:
           $ref: "#/components/schemas/ClientToolCallData"
-
+    AgentToolRequestPayload:
+      type: object
+      required: [agent_tool_request, type]
+      properties:
+        type:
+          type: string
+          const: agent_tool_request
+        agent_tool_request:
+          $ref: "#/components/schemas/AgentToolRequestData"
     AgentToolResponsePayload:
       type: object
       required: [agent_tool_response, type]
@@ -729,6 +817,9 @@ components:
           format: base64
         event_id:
           type: integer
+        alignment:
+          $ref: "#/components/schemas/AudioAlignmentData"
+         
 
     UserTranscriptionData:
       type: object
@@ -768,6 +859,24 @@ components:
         event_id:
           type: integer
 
+    AgentChatResponsePartType:
+      type: string
+      enum:
+        - start
+        - delta
+        - stop
+      description: Type of streaming response chunk
+
+    AgentChatResponsePartData:
+      type: object
+      required: [text, type]
+      properties:
+        text:
+          type: string
+          description: Text chunk (empty for start/stop events)
+        type:
+          $ref: "#/components/schemas/AgentChatResponsePartType"
+
     InterruptionData:
       type: object
       required: [event_id]
@@ -800,9 +909,27 @@ components:
         event_id:
           type: integer
 
+    AgentToolRequestData:
+      type: object
+      required: [tool_name, tool_call_id, tool_type, event_id]
+      properties:
+        tool_name:
+          type: string
+          description: Name of the tool being requested
+        tool_call_id:
+          type: string
+          description: Unique identifier for the tool call
+        tool_type:
+          type: string
+          description: Type of tool (client, webhook, or mcp)
+        event_id:
+          type: integer
+          description: Event ID when the tool was requested
+
     AgentToolResponseData:
       type: object
-      required: [tool_name, tool_call_id, tool_type, is_error, event_id]
+      required:
+        [tool_name, tool_call_id, tool_type, is_error, is_called, event_id]
       properties:
         tool_name:
           type: string
@@ -816,6 +943,9 @@ components:
         is_error:
           type: boolean
           description: Whether the tool execution resulted in an error
+        is_called:
+          type: boolean
+          description: Whether the tool has been called and execution started
         event_id:
           type: integer
 
@@ -876,6 +1006,26 @@ components:
         asr_initiation_metadata_event:
           type: object
           description: ASR initialization metadata
+
+    AudioAlignmentData:
+      type: object
+      required: [chars, char_start_times_ms, char_durations_ms]
+      properties:
+        chars:
+          type: array
+          items:
+            type: string
+          description: Array of individual characters in the synthesized text
+        char_start_times_ms:
+          type: array
+          items:
+            type: integer
+          description: Start time in milliseconds for each character
+        char_durations_ms:
+          type: array
+          items:
+            type: integer
+          description: Duration in milliseconds for each character
 
     InternalTurnProbabilityPayload:
       type: object
@@ -1014,3 +1164,110 @@ components:
             [audio, interruption, agent_response, user_transcript, tentative_user_transcript,
              conversation_initiation_metadata, ping]
           minItems: 1
+
+    # ===== ERROR MESSAGE SCHEMAS =====
+
+    ErrorPayload:
+      type: object
+      required: [type, error_event]
+      properties:
+        type:
+          type: string
+          const: error
+        error_event:
+          $ref: "#/components/schemas/ErrorData"
+
+    ErrorData:
+      type: object
+      required: [code]
+      properties:
+        code:
+          $ref: "#/components/schemas/WebSocketCloseCode"
+        message:
+          type: string
+          description: Human-readable error description
+        error_type:
+          $ref: "#/components/schemas/ErrorType"
+          nullable: true
+          description: Specific error type for programmatic handling
+        reason:
+          type: string
+          nullable: true
+          description: Generic reason without sensitive details (sent to all clients)
+        debug_message:
+          type: string
+          nullable: true
+          description: Detailed debug message (only sent based on error reporting access level)
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional error context
+
+    WebSocketCloseCode:
+      type: integer
+      enum: [1000, 1002, 1008, 1011]
+      description: |
+        WebSocket close codes used by the conversation API:
+        - 1000: Normal closure (agent ended conversation, max duration exceeded)
+        - 1002: Protocol/operational error (timeouts, safety/policy violations, LLM/TTS/ASR failures, HTTP exceptions)
+        - 1008: Input/contract error (invalid messages, missing required fields, auth/validation errors)
+        - 1011: Internal server error (unexpected errors)
+
+    ErrorType:
+      type: string
+      enum:
+        - unknown
+        - invalid_message
+        - telephony_agent_error
+        - mcp_tool_error
+        - mcp_https_error
+        - value_error
+        - missing_fields
+        - override_error
+        - missing_dynamic_variable_transfer
+        - missing_dynamic_variable
+        - websocket_disconnect
+        - safety_violation
+        - llm_timeout
+        - transport_receive_timeout
+        - asyncio_timeout
+        - http_exception
+        - max_duration_exceeded
+        - llm_error
+        - custom_llm_error
+        - cascade_brain_error
+        - asr_transcription_error
+        - vad_error
+        - turn_probability_error
+        - tts_cascade_error
+        - redis_timeout_error
+        - unknown_websocket_crash
+      description: |
+        Specific error types that can occur:
+        - unknown: Default/unknown error type
+        - invalid_message: Invalid JSON or WebSocket message format (code 1008)
+        - telephony_agent_error: ASR-only agents cannot handle telephony calls (code 1008)
+        - mcp_tool_error: Invalid MCP tool schema or conversion error (code 1008)
+        - mcp_https_error: MCP servers require HTTPS URLs (code 1008)
+        - value_error: ValueError in message processing (code 1008)
+        - missing_fields: Required fields missing from message (code 1008)
+        - override_error: Invalid override configuration (code 1008)
+        - missing_dynamic_variable_transfer: Missing dynamic variable after agent transfer (code 1008)
+        - missing_dynamic_variable: Required dynamic variable not provided (code 1008)
+        - websocket_disconnect: WebSocket disconnected
+        - safety_violation: Content policy violation detected (code 1002)
+        - llm_timeout: LLM response took over 20 seconds (code 1002)
+        - transport_receive_timeout: No user input for 60 seconds (code 1002)
+        - asyncio_timeout: Internal asyncio task timeout (code 1002)
+        - http_exception: HTTP exception converted to WebSocket error (code 1002)
+        - max_duration_exceeded: Max call duration exceeded (code 1000)
+        - llm_error: OpenAI or custom LLM error (code 1002)
+        - custom_llm_error: Custom LLM generation failed (code 1002)
+        - cascade_brain_error: All LLMs have failed (code 1002)
+        - asr_transcription_error: Audio transcription failed (code 1002)
+        - vad_error: Voice activity detection failed (code 1002)
+        - turn_probability_error: Turn detection failed (code 1002)
+        - tts_cascade_error: All TTS models have failed (code 1002)
+        - redis_timeout_error: Redis queries timed out (code 1002)
+        - unknown_websocket_crash: Unexpected server error (code 1011)

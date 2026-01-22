@@ -43,25 +43,25 @@ export function LanguageSelect({ children, ...rest }: LanguageSelectProps) {
           {...rest}
         >
           <Select.ScrollUpButton className="flex items-center justify-center h-6 bg-base text-base-subtle cursor-default">
-            <Icon size="sm" name="chevron-up" />
+            <Icon size="xs" name="chevron-up" />
           </Select.ScrollUpButton>
           <Select.Viewport className="p-1.5">
             {options.value.map(language => (
               <Select.Item
                 key={language.languageCode}
                 value={language.languageCode}
-                className="flex select-none items-center p-1.5 pr-3 gap-2 cursor-pointer rounded-input relative focus-visible:outline-none data-[highlighted]:bg-base-active text-sm"
+                className="flex select-none items-center p-1.5 pr-3 gap-2 cursor-pointer rounded-input relative focus-visible:outline-hidden data-highlighted:bg-base-active text-sm"
               >
                 <Flag flagCode={language.flagCode} />
                 <Select.ItemText>{language.name}</Select.ItemText>
                 <Select.ItemIndicator className="text-base-primary p-1.5 -mr-1.5 ml-auto">
-                  <Icon size="sm" name="check" />
+                  <Icon size="xs" name="check" />
                 </Select.ItemIndicator>
               </Select.Item>
             ))}
           </Select.Viewport>
           <Select.ScrollDownButton className="flex items-center justify-center h-6 bg-base text-base-subtle cursor-default">
-            <Icon size="sm" name="chevron-down" />
+            <Icon size="xs" name="chevron-down" />
           </Select.ScrollDownButton>
         </Select.Content>
       </Select.Portal>

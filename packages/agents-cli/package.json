@@ -1,0 +1,86 @@
+{
+  "name": "@elevenlabs/agents-cli",
+  "version": "0.6.2",
+  "private": true,
+  "description": "CLI tool to manage ElevenLabs agents",
+  "type": "module",
+  "keywords": [
+    "elevenlabs",
+    "cli",
+    "ai",
+    "agents",
+    "typescript"
+  ],
+  "author": "ElevenLabs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elevenlabs/packages.git",
+    "directory": "agents-cli"
+  },
+  "homepage": "https://github.com/elevenlabs/packages/tree/main/packages/agents-cli",
+  "bugs": {
+    "url": "https://github.com/elevenlabs/packages/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agents": "./bin/agents"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "prepublishOnly": "npm run build",
+    "test": "jest --testPathIgnorePatterns='e2e'",
+    "test:unit": "jest --testPathIgnorePatterns='e2e'",
+    "test:e2e": "jest --testPathPattern='e2e'",
+    "test:all": "jest",
+    "lint": "eslint src -c eslint.config.js",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "2.18.0",
+    "@inkjs/ui": "^2.0.0",
+    "@types/read": "^0.0.32",
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.1",
+    "fs-extra": "^11.1.1",
+    "ink": "^6.0.0",
+    "ink-ascii": "^0.0.4",
+    "ink-big-text": "^2.0.0",
+    "ink-gradient": "^3.0.0",
+    "ink-select-input": "^6.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "19.1.0",
+    "read": "^4.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@jest/globals": "^30.0.4",
+    "@types/fs-extra": "^11.0.2",
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.8.0",
+    "@types/react": "19.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^9.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.4.0",
+    "tsx": "^3.14.0",
+    "typescript": "^5.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

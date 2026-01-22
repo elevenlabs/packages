@@ -11,6 +11,9 @@ const BASIC_CONFIG: WidgetConfig = {
     color_2: "#ffffff",
   },
   feedback_mode: "end",
+  end_feedback: {
+    type: "rating",
+  },
   language: "en",
   mic_muting_enabled: false,
   transcript_enabled: false,
@@ -27,6 +30,7 @@ const BASIC_CONFIG: WidgetConfig = {
   text_only: false,
   supports_text_only: true,
   first_message: "Agent response",
+  use_rtc: false,
 };
 
 export const AGENTS = {
@@ -35,7 +39,105 @@ export const AGENTS = {
     ...BASIC_CONFIG,
     text_only: true,
   },
+  webrtc: {
+    ...BASIC_CONFIG,
+    use_rtc: true,
+  },
   fail: BASIC_CONFIG,
+  end_call_test: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    first_message: "",
+  },
+  localized: {
+    ...BASIC_CONFIG,
+    terms_html: "<p>Default Terms in English</p>",
+    terms_key: "terms_default",
+    supported_language_overrides: ["es", "fr"],
+    language_presets: {
+      es: {
+        text_contents: {
+          start_chat: "Iniciar una llamada",
+        },
+        first_message: "¡Hola! ¿Cómo puedo ayudarte?",
+        terms_html: "<p>Términos en Español</p>",
+        terms_key: "terms_es",
+      },
+      fr: {
+        text_contents: {
+          start_chat: "Commencer un appel",
+        },
+        first_message: "Bonjour! Comment puis-je vous aider?",
+        terms_html: "<p>Termes en Français</p>",
+        terms_key: "terms_fr",
+      },
+    },
+  },
+  markdown: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
+    first_message: `# Heading 1
+
+This is **bold** and *italic* text.
+
+- List item 1
+- List item 2
+
+1. Ordered item 1
+2. Ordered item 2
+
+\`inline code\`
+
+\`\`\`javascript
+const codeBlock = true;
+\`\`\`
+
+[Link text](https://example.com)
+
+![Alt text](data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs=)
+
+> Blockquote text
+
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+
+---
+`,
+  },
+  markdown_no_links: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [],
+    first_message: `No links should be clickable: [Link text](https://example.com/allowed)`,
+  },
+  markdown_domain_allowlist: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "example.com" }],
+    first_message: `[Allowed https link](https://example.com/allowed)
+
+[Allowed http link](http://example.com/http-allowed)
+
+[Blocked link](https://evil.com/blocked)
+`,
+  },
+  markdown_default_domain: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: `[Relative link](/relative)`,
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -81,7 +183,7 @@ export const Worker = setupWorker(
           agent_response_event: { agent_response: config.first_message },
         })
       );
-      if (config.text_only) {
+      if (config.text_only && agentId !== "end_call_test") {
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -92,7 +194,7 @@ export const Worker = setupWorker(
         );
         await new Promise(resolve => setTimeout(resolve, 1000));
         client.close();
-      } else {
+      } else if (!config.text_only) {
         client.send(
           JSON.stringify({
             type: "user_transcript",
@@ -103,6 +205,40 @@ export const Worker = setupWorker(
       if (agentId === "fail") {
         client.addEventListener("message", () => {
           client.close(3000, "Test reason");
+        });
+      }
+      if (agentId === "end_call_test") {
+        client.addEventListener("message", async () => {
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "start",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Goodbye! Have a great day!",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "",
+                type: "stop",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.close(1000);
         });
       }
     })

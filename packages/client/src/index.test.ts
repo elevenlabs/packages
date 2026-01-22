@@ -1,4 +1,12 @@
-import { it, expect, describe, vi, beforeAll } from "vitest";
+import {
+  it,
+  expect,
+  describe,
+  vi,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from "vitest";
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk";
 import { Mode, Status, Conversation } from "./index";
@@ -16,6 +24,9 @@ const CLIENT_TOOL_PARAMETERS = { some: "param" };
 const CUSTOM_PROMPT = "CUSTOM_PROMPT";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
 const TEST_USER_ID = "test-user-123";
+const AGENT_CHAT_RESPONSE_CHUNK_1 = "Hello";
+const AGENT_CHAT_RESPONSE_CHUNK_2 = ", how";
+const AGENT_CHAT_RESPONSE_CHUNK_3 = " can I help?";
 
 const ConversationTypes = ["voice", "text"] as const;
 
@@ -174,6 +185,7 @@ describe("Conversation", () => {
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "ai",
+        role: "agent",
         message: AGENT_RESPONSE,
       });
 
@@ -186,6 +198,7 @@ describe("Conversation", () => {
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "user",
+        role: "user",
         message: USER_TRANSCRIPT,
       });
 
@@ -260,8 +273,9 @@ describe("Conversation", () => {
         await clientPromise;
       }).rejects.toThrowError(
         expect.objectContaining({
-          code: 3000,
-          reason: "Test cancellation reason",
+          name: "SessionConnectionError",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
         })
       );
     }
@@ -311,6 +325,8 @@ describe("Conversation", () => {
         expect.objectContaining({
           reason: "error",
           message: "Test cancellation reason",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
         })
       );
     }
@@ -535,6 +551,7 @@ describe("Volume Control", () => {
   beforeAll(() => {
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
@@ -542,7 +559,10 @@ describe("Volume Control", () => {
       })),
       createGain: vi.fn(() => ({
         connect: vi.fn(),
-        gain: { value: 1 },
+        gain: {
+          value: 1,
+          cancelScheduledValues: vi.fn(),
+        },
       })),
       createMediaStreamSource: vi.fn(() => ({
         connect: vi.fn(),
@@ -609,7 +629,10 @@ describe("Volume Control", () => {
 
     // Create a shared gain node that we can test
     const mockGainNode = {
-      gain: { value: 1 },
+      gain: {
+        value: 1,
+        cancelScheduledValues: vi.fn(),
+      },
       connect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
@@ -617,6 +640,7 @@ describe("Volume Control", () => {
     // Override the AudioContext mock for this test
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
@@ -724,7 +748,10 @@ describe("Volume Control", () => {
 
     // Create a shared gain node that we can test
     const mockGainNode = {
-      gain: { value: 1 },
+      gain: {
+        value: 1,
+        cancelScheduledValues: vi.fn(),
+      },
       connect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
@@ -732,6 +759,7 @@ describe("Volume Control", () => {
     // Override the AudioContext mock for this test
     globalThis.AudioContext = vi.fn().mockImplementation(() => ({
       sampleRate: 16000,
+      currentTime: 0,
       createAnalyser: vi.fn(() => ({
         connect: vi.fn(),
         frequencyBinCount: 1024,
@@ -884,6 +912,568 @@ describe("WebRTC Volume Control", () => {
     expect(mockElement.parentNode.removeChild).toHaveBeenCalledWith(
       mockElement
     );
+  });
+});
+
+describe("Agent Chat Response Part Streaming", () => {
+  it("handles streaming text chunks with start, delta, and stop events", async () => {
+    const server = new Server("wss://api.elevenlabs.io/text/streaming-test");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const onAgentChatResponsePart = vi.fn();
+    const streamChunks: Array<{ text: string; type: string }> = [];
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/streaming-test",
+      textOnly: true,
+      onAgentChatResponsePart: chunk => {
+        onAgentChatResponsePart(chunk);
+        streamChunks.push({ text: chunk.text, type: chunk.type });
+      },
+      connectionDelay: { default: 0 },
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    await sleep(100);
+
+    // Send START event
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: "",
+          type: "start",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Send DELTA events with text chunks
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_1,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_2,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: AGENT_CHAT_RESPONSE_CHUNK_3,
+          type: "delta",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Send STOP event
+    client.send(
+      JSON.stringify({
+        type: "agent_chat_response_part",
+        text_response_part: {
+          text: "",
+          type: "stop",
+        },
+      })
+    );
+    await sleep(50);
+
+    // Verify callback was called for each event
+    expect(onAgentChatResponsePart).toHaveBeenCalledTimes(5);
+
+    // Verify the sequence of events
+    expect(streamChunks).toHaveLength(5);
+    expect(streamChunks[0]).toEqual({ text: "", type: "start" });
+    expect(streamChunks[1]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_1,
+      type: "delta",
+    });
+    expect(streamChunks[2]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_2,
+      type: "delta",
+    });
+    expect(streamChunks[3]).toEqual({
+      text: AGENT_CHAT_RESPONSE_CHUNK_3,
+      type: "delta",
+    });
+    expect(streamChunks[4]).toEqual({ text: "", type: "stop" });
+
+    // Verify the callback received correct data
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(1, {
+      text: "",
+      type: "start",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(2, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_1,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(3, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_2,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(4, {
+      text: AGENT_CHAT_RESPONSE_CHUNK_3,
+      type: "delta",
+    });
+    expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(5, {
+      text: "",
+      type: "stop",
+    });
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("handles streaming without onAgentChatResponsePart callback", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/text/streaming-no-callback"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    // Start conversation without the callback
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/streaming-no-callback",
+      textOnly: true,
+      connectionDelay: { default: 0 },
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    await sleep(100);
+
+    // Send streaming events - should not throw even without callback
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "",
+            type: "start",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await sleep(50);
+
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "Hello",
+            type: "delta",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await sleep(50);
+
+    expect(() => {
+      client.send(
+        JSON.stringify({
+          type: "agent_chat_response_part",
+          text_response_part: {
+            text: "",
+            type: "stop",
+          },
+        })
+      );
+    }).not.toThrow();
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
+describe("Device Change Default Device", () => {
+  it("successfully changes to default device when no deviceId is provided", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/default-device-test"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/default-device-test",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+
+    // Start session
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    // Test that changeInputDevice works without deviceId (uses default)
+    const inputResult = await (
+      conversation as VoiceConversation
+    ).changeInputDevice({
+      sampleRate: 16000,
+      format: "pcm",
+      // No inputDeviceId provided - should use browser default
+    });
+
+    expect(inputResult).toBeDefined();
+    expect(inputResult.inputStream).toBeDefined();
+
+    // Test that changeOutputDevice works without deviceId (uses default)
+    const outputResult = await (
+      conversation as VoiceConversation
+    ).changeOutputDevice({
+      sampleRate: 16000,
+      format: "pcm",
+      // No outputDeviceId provided - should use browser default
+    });
+
+    expect(outputResult).toBeDefined();
+    expect(outputResult.audioElement).toBeDefined();
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
+describe("Wake Lock", () => {
+  let originalWakeLock: WakeLock | undefined;
+  let visibilityChangeListeners: (() => void)[] = [];
+
+  beforeAll(() => {
+    originalWakeLock = navigator.wakeLock;
+
+    vi.spyOn(document, "addEventListener").mockImplementation(
+      (type: string, listener: any) => {
+        if (type === "visibilitychange") {
+          visibilityChangeListeners.push(listener);
+        }
+      }
+    );
+
+    vi.spyOn(document, "removeEventListener").mockImplementation(
+      (type: string, listener: any) => {
+        if (type === "visibilitychange") {
+          visibilityChangeListeners = visibilityChangeListeners.filter(
+            l => l !== listener
+          );
+        }
+      }
+    );
+  });
+
+  afterEach(() => {
+    visibilityChangeListeners = [];
+  });
+
+  afterAll(() => {
+    // Restore original wakeLock
+    if (originalWakeLock) {
+      Object.defineProperty(navigator, "wakeLock", {
+        value: originalWakeLock,
+        writable: true,
+        configurable: true,
+      });
+    }
+    vi.restoreAllMocks();
+  });
+
+  const mockWakeLockSentinel = (released = false) => ({
+    released,
+    release: vi.fn(() => Promise.resolve()),
+    onrelease: null,
+    type: "screen" as WakeLockType,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  });
+
+  const setupMockWakeLock = (
+    requestFn: () => Promise<WakeLockSentinel>
+  ): WakeLock => {
+    const mockWakeLock = {
+      request: vi.fn(requestFn),
+    };
+    Object.defineProperty(navigator, "wakeLock", {
+      value: mockWakeLock,
+      writable: true,
+      configurable: true,
+    });
+    return mockWakeLock;
+  };
+
+  it("acquires wake lock by default when starting session", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-default");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-default",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect(mockWakeLock.request).toHaveBeenCalledWith("screen");
+
+    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("does not acquire wake lock when useWakeLock is false", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    const mockWakeLock = setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-disabled"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-disabled",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+      useWakeLock: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    // Verify wake lock was NOT requested
+    expect(mockWakeLock.request).not.toHaveBeenCalled();
+
+    // Verify the conversation does not have a wake lock
+    expect((conversation as VoiceConversation).wakeLock).toBeNull();
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("releases wake lock when session ends", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server("wss://api.elevenlabs.io/voice/wakelock-release");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-release",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
+
+    await conversation.endSession();
+
+    expect(mockSentinel.release).toHaveBeenCalled();
+    expect((conversation as VoiceConversation).wakeLock).toBeNull();
+
+    server.close();
+  });
+
+  it("re-acquires wake lock when page becomes visible and lock was released", async () => {
+    let requestCallCount = 0;
+    const firstSentinel = mockWakeLockSentinel(true); // Already released
+    const secondSentinel = mockWakeLockSentinel(false);
+
+    setupMockWakeLock(() => {
+      requestCallCount++;
+      if (requestCallCount === 1) {
+        return Promise.resolve(firstSentinel);
+      }
+      return Promise.resolve(secondSentinel);
+    });
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-reacquire"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/wakelock-reacquire",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: "TEST_CONVERSATION_ID",
+          agent_output_audio_format: "pcm_16000",
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+
+    expect(requestCallCount).toBe(1);
+
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+
+    visibilityChangeListeners.forEach(listener => listener());
+
+    await sleep(100);
+
+    expect(requestCallCount).toBe(2);
+    expect((conversation as VoiceConversation).wakeLock).toBe(secondSentinel);
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("releases wake lock on connection error during session setup", async () => {
+    const mockSentinel = mockWakeLockSentinel();
+    setupMockWakeLock(() => Promise.resolve(mockSentinel));
+
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/wakelock-setup-error"
+    );
+
+    server.on("connection", socket => {
+      socket.close({
+        code: 3000,
+        reason: "Test setup error",
+        wasClean: true,
+      });
+    });
+
+    await expect(
+      Conversation.startSession({
+        signedUrl: "wss://api.elevenlabs.io/voice/wakelock-setup-error",
+        connectionDelay: { default: 0 },
+        textOnly: false,
+      })
+    ).rejects.toThrow();
+
+    expect(mockSentinel.release).toHaveBeenCalled();
+
+    server.close();
   });
 });
 

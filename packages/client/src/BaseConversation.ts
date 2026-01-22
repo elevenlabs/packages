@@ -1,12 +1,13 @@
+import { Callbacks, Mode, Status } from "@elevenlabs/types";
 import type {
   BaseConnection,
   DisconnectionDetails,
-  OnDisconnectCallback,
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection";
 import type {
   AgentAudioEvent,
+  AgentChatResponsePartEvent,
   AgentResponseEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
@@ -19,22 +20,37 @@ import type {
   ConversationMetadataEvent,
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
+  ErrorMessageEvent,
+  AgentToolRequestEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
-import type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
+import type { OutputConfig } from "./utils/output";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
+
+/** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
+export type AudioWorkletConfig = {
+  workletPaths?: {
+    rawAudioProcessor?: string;
+    audioConcatProcessor?: string;
+  };
+  libsampleratePath?: string;
+};
 
 export type Options = SessionConfig &
   Callbacks &
   ClientToolsConfig &
-  InputConfig;
+  InputConfig &
+  OutputConfig &
+  AudioWorkletConfig;
 
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   Partial<ClientToolsConfig> &
   Partial<InputConfig> &
-  Partial<FormatConfig>;
+  Partial<OutputConfig> &
+  Partial<FormatConfig> &
+  Partial<AudioWorkletConfig>;
 
 export type ClientToolsConfig = {
   clientTools: Record<
@@ -148,6 +164,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "ai",
+        role: "agent",
         message: event.agent_response_event.agent_response,
       });
     }
@@ -157,6 +174,7 @@ export class BaseConversation {
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "user",
+        role: "user",
         message: event.user_transcription_event.user_transcript,
       });
     }
@@ -256,7 +274,20 @@ export class BaseConversation {
     }
   }
 
+  protected handleAgentToolRequest(event: AgentToolRequestEvent) {
+    if (this.options.onAgentToolRequest) {
+      this.options.onAgentToolRequest(event.agent_tool_request);
+    }
+  }
+
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
+    if (event.agent_tool_response.tool_name === "end_call") {
+      this.endSessionWithDetails({
+        reason: "agent",
+        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+      });
+    }
+
     if (this.options.onAgentToolResponse) {
       this.options.onAgentToolResponse(event.agent_tool_response);
     }
@@ -274,6 +305,34 @@ export class BaseConversation {
     if (this.options.onAsrInitiationMetadata) {
       this.options.onAsrInitiationMetadata(event.asr_initiation_metadata_event);
     }
+  }
+
+  protected handleAgentChatResponsePart(event: AgentChatResponsePartEvent) {
+    if (this.options.onAgentChatResponsePart) {
+      this.options.onAgentChatResponsePart(event.text_response_part);
+    }
+  }
+
+  protected handleErrorEvent(event: ErrorMessageEvent) {
+    const errorType = event.error_event.error_type;
+    const message =
+      event.error_event.message || event.error_event.reason || "Unknown error";
+
+    if (errorType === "max_duration_exceeded") {
+      this.endSessionWithDetails({
+        reason: "error",
+        message: message,
+        context: new Event("max_duration_exceeded"),
+      });
+      return;
+    }
+
+    this.onError(`Server error: ${message}`, {
+      errorType,
+      code: event.error_event.code,
+      debugMessage: event.error_event.debug_message,
+      details: event.error_event.details,
+    });
   }
 
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
@@ -338,6 +397,11 @@ export class BaseConversation {
         return;
       }
 
+      case "agent_tool_request": {
+        this.handleAgentToolRequest(parsedEvent);
+        return;
+      }
+
       case "agent_tool_response": {
         this.handleAgentToolResponse(parsedEvent);
         return;
@@ -353,7 +417,16 @@ export class BaseConversation {
         return;
       }
 
-      // unhandled events are expected to be internal events
+      case "agent_chat_response_part": {
+        this.handleAgentChatResponsePart(parsedEvent);
+        return;
+      }
+
+      case "error": {
+        this.handleErrorEvent(parsedEvent);
+        return;
+      }
+
       default: {
         if (this.options.onDebug) {
           this.options.onDebug(parsedEvent);

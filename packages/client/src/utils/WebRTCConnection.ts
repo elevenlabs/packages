@@ -17,13 +17,14 @@ import type {
   RemoteAudioTrack,
   Participant,
   TrackPublication,
+  RemoteParticipant,
 } from "livekit-client";
 import {
   constructOverrides,
   CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
 } from "./overrides";
 import { arrayBufferToBase64 } from "./audio";
-import { loadRawAudioProcessor } from "./rawAudioProcessor";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -155,8 +156,10 @@ export class WebRTCConnection extends BaseConnection {
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
-      // Enable microphone and send overrides
-      await room.localParticipant.setMicrophoneEnabled(true);
+      // Enable microphone only if not text-only mode
+      if (!config.textOnly) {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      }
 
       const overridesEvent = constructOverrides(config);
 
@@ -280,6 +283,18 @@ export class WebRTCConnection extends BaseConnection {
           );
         } else {
           this.updateMode("listening");
+        }
+      }
+    );
+
+    this.room.on(
+      RoomEvent.ParticipantDisconnected,
+      (participant: RemoteParticipant) => {
+        if (participant.identity?.startsWith("agent")) {
+          this.disconnect({
+            reason: "agent",
+            context: new CloseEvent("close", { reason: "agent disconnected" }),
+          });
         }
       }
     );
@@ -408,7 +423,7 @@ export class WebRTCConnection extends BaseConnection {
       source.connect(this.outputAnalyser);
 
       await loadRawAudioProcessor(audioContext.audioWorklet);
-      const worklet = new AudioWorkletNode(audioContext, "raw-audio-processor");
+      const worklet = new AudioWorkletNode(audioContext, "rawAudioProcessor");
 
       // Connect analyser to worklet for processing
       this.outputAnalyser.connect(worklet);

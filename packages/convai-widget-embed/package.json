@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-widget-embed",
-  "version": "0.2.1",
+  "version": "0.6.1",
   "description": "The Conversational AI Widget bundled with all dependencies for easy embedding.",
   "main": "./dist/index.js",
   "unpkg": "./dist/index.js",
@@ -8,8 +8,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
-    "lint:ts": "tsc --noEmit --skipLibCheck",
+    "build:analyze": "ANALYZE=true vite build",
+    "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
+    "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts'",
     "prepublishOnly": "pnpm run build"
@@ -22,7 +23,11 @@
     "eslint": "^9.8.0",
     "microbundle": "^0.15.1",
     "typescript": "^5.5.4",
-    "vite": "^6.3.2"
+    "vite": "^6.4.1",
+    "vite-bundle-analyzer": "^1.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
