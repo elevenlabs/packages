@@ -25,7 +25,6 @@
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
-    "prepublishOnly": "pnpm run build",
     "test": "jest"
   },
   "keywords": [],

@@ -35,7 +35,6 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
-    "prepublishOnly": "npm run build",
     "test": "jest --testPathIgnorePatterns='e2e'",
     "test:unit": "jest --testPathIgnorePatterns='e2e'",
     "test:e2e": "jest --testPathPattern='e2e'",

@@ -14,6 +14,8 @@ jobs:
     permissions:
       # Needed to push branches to GitHub
       contents: write
+      # Needed for provenance generation
+      id-token: write
     environment: main
     steps:
       - name: Create GitHub App Token
@@ -61,4 +63,4 @@ jobs:
           # See https://docs.npmjs.com/generating-provenance-statements#using-third-party-package-publishing-tools
           NPM_CONFIG_PROVENANCE: true
           # Don't run the Husky pre-commit hook (see https://typicode.github.io/husky/how-to.html)
-          HUSKY: 0
+          HUSKY: "0"

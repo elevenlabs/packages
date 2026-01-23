@@ -14,7 +14,7 @@
     "dev": "turbo dev",
     "clean": "turbo clean",
     "changeset": "changeset",
-    "publish": "turbo build lint && changeset version && changeset publish"
+    "publish": "turbo build lint && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
