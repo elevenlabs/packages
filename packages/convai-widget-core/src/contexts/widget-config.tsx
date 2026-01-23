@@ -136,7 +136,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     const patchedDismissible =
       parseBoolAttribute(dismissible.value) ??
       fetchedConfig.value.dismissible ??
-      true;
+      false;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
 

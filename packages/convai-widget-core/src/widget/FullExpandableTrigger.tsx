@@ -6,11 +6,16 @@ import { Avatar } from "../components/Avatar";
 import { ExpandableTriggerActions } from "./ExpandableTriggerActions";
 import { ExpandableProps } from "./Trigger";
 
+interface FullExpandableTriggerProps extends ExpandableProps {
+  onDismiss?: () => void;
+}
+
 export function FullExpandableTrigger({
   expanded,
   className,
+  onDismiss,
   ...rest
-}: ExpandableProps) {
+}: FullExpandableTriggerProps) {
   const { isDisconnected } = useConversation();
   const text = useTextContents();
 
@@ -35,7 +40,7 @@ export function FullExpandableTrigger({
         </div>
       </SizeTransition>
       <div className="flex items-center">
-        <ExpandableTriggerActions expanded={expanded} />
+        <ExpandableTriggerActions expanded={expanded} onDismiss={onDismiss} />
       </div>
     </div>
   );

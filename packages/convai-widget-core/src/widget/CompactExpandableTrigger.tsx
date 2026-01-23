@@ -4,11 +4,16 @@ import { Avatar } from "../components/Avatar";
 import { ExpandableTriggerActions } from "./ExpandableTriggerActions";
 import { ExpandableProps } from "./Trigger";
 
+interface CompactExpandableTriggerProps extends ExpandableProps {
+  onDismiss?: () => void;
+}
+
 export function CompactExpandableTrigger({
   expanded,
   className,
+  onDismiss,
   ...rest
-}: ExpandableProps) {
+}: CompactExpandableTriggerProps) {
   return (
     <div
       className={clsx("rounded-compact-sheet flex items-center p-2", className)}
@@ -17,7 +22,7 @@ export function CompactExpandableTrigger({
       <SizeTransition visible={!expanded.value} className="p-1">
         <Avatar />
       </SizeTransition>
-      <ExpandableTriggerActions expanded={expanded} />
+      <ExpandableTriggerActions expanded={expanded} onDismiss={onDismiss} />
     </div>
   );
 }

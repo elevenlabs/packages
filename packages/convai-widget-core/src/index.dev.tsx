@@ -26,7 +26,7 @@ function Playground() {
   const [textInput, setTextInput] = useState(false);
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
-  const [dismissible, setDismissible] = useState(true);
+  const [dismissible, setDismissible] = useState(false);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);

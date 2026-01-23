@@ -7,10 +7,15 @@ import { InOutTransition } from "../components/InOutTransition";
 import { TriggerActions } from "./TriggerActions";
 import { StatusLabel } from "./StatusLabel";
 
+interface FullTriggerProps extends HTMLAttributes<HTMLDivElement> {
+  onDismiss?: () => void;
+}
+
 export function FullTrigger({
   className,
+  onDismiss,
   ...rest
-}: HTMLAttributes<HTMLDivElement>) {
+}: FullTriggerProps) {
   const { isDisconnected } = useConversation();
   const text = useTextContents();
 
@@ -36,7 +41,7 @@ export function FullTrigger({
         </div>
       </div>
       <div className="flex items-center">
-        <TriggerActions />
+        <TriggerActions onDismiss={onDismiss} />
       </div>
     </div>
   );

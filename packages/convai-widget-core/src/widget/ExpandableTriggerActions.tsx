@@ -12,8 +12,13 @@ import { Button } from "../components/Button";
 import { clsx } from "clsx";
 import { ExpandableProps } from "./Trigger";
 import { Avatar } from "../components/Avatar";
+import { DismissButton } from "../components/DismissButton";
 
-export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
+interface ExpandableTriggerActionsProps extends ExpandableProps {
+  onDismiss?: () => void;
+}
+
+export function ExpandableTriggerActions({ expanded, onDismiss }: ExpandableTriggerActionsProps) {
   const textOnly = useIsConversationTextOnly();
   const variant = useWidgetConfig().value.variant;
   const { isDisconnected } = useConversation();
@@ -84,6 +89,9 @@ export function ExpandableTriggerActions({ expanded }: ExpandableProps) {
               : text.start_call
             : undefined}
         </Button>
+      </SizeTransition>
+      <SizeTransition visible={!!onDismiss} className="p-1">
+        <DismissButton onDismiss={onDismiss} />
       </SizeTransition>
     </>
   );
