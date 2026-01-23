@@ -10,7 +10,7 @@ describe("Dismiss Button", () => {
 
   describe("when dismissible is enabled", () => {
     it.each(Variants)(
-      "$0 variant should show dismiss button when not in call",
+      "$0 variant should show dismiss button, hide widget on click, and show orb",
       async variant => {
         setupWebComponent({
           "agent-id": "basic",
@@ -18,13 +18,42 @@ describe("Dismiss Button", () => {
           dismissible: "true",
         });
 
+        // Dismiss button should be visible
         const dismissButton = page.getByRole("button", { name: "Dismiss" });
         await expect.element(dismissButton).toBeVisible();
 
+        // Clicking dismiss should hide widget and show orb
         await dismissButton.click();
 
-        const widget = page.getByRole("button", { name: "Start a call" });
-        await expect.element(widget).not.toBeInTheDocument();
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await expect.element(startButton).not.toBeInTheDocument();
+
+        const expandButton = page.getByRole("button", { name: "Open chat" });
+        await expect.element(expandButton).toBeVisible();
+      }
+    );
+
+    it.each(Variants)(
+      "$0 variant should restore widget when clicking orb",
+      async variant => {
+        setupWebComponent({
+          "agent-id": "basic",
+          variant,
+          dismissible: "true",
+        });
+
+        // Dismiss the widget
+        const dismissButton = page.getByRole("button", { name: "Dismiss" });
+        await dismissButton.click();
+
+        // Click the orb to restore
+        const expandButton = page.getByRole("button", { name: "Open chat" });
+        await expandButton.click();
+
+        // Widget should be restored
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await expect.element(startButton).toBeVisible();
+        await expect.element(dismissButton).toBeVisible();
       }
     );
 
@@ -41,6 +70,7 @@ describe("Dismiss Button", () => {
         const dismissButton = page.getByRole("button", { name: "Dismiss" });
         await expect.element(dismissButton).toBeVisible();
 
+        // Start a call
         const startButton = page.getByRole("button", { name: "Start a call" });
         await startButton.click();
 
@@ -49,8 +79,10 @@ describe("Dismiss Button", () => {
 
         await startButton.click();
 
+        // Dismiss button should be hidden during call
         await expect.element(dismissButton).not.toBeInTheDocument();
 
+        // End call - dismiss button should reappear
         const endButton = page.getByRole("button", {
           name: "End",
           exact: true,
@@ -61,7 +93,7 @@ describe("Dismiss Button", () => {
       }
     );
 
-    it("should work with expandable widget", async () => {
+    it("expandable widget should hide all elements when dismissed", async () => {
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
@@ -70,28 +102,27 @@ describe("Dismiss Button", () => {
         "text-input": "true",
       });
 
-      // Dismiss button should be visible on expandable widget
       const dismissButton = page.getByRole("button", { name: "Dismiss" });
-      await expect.element(dismissButton).toBeVisible();
-
-      // Dismissing should hide the entire widget
       await dismissButton.click();
 
-      // Verify widget is gone
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await expect.element(startButton).not.toBeInTheDocument();
+      // Both widget and expandable elements should be gone
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .not.toBeInTheDocument();
 
-      // Also verify text input is gone (part of expandable widget)
-      const textInput = page.getByRole("textbox", {
-        name: "Text message input",
-      });
-      await expect.element(textInput).not.toBeInTheDocument();
+      // Orb should be visible
+      await expect
+        .element(page.getByRole("button", { name: "Open chat" }))
+        .toBeVisible();
     });
   });
 
   describe("when dismissible is disabled", () => {
     it.each(Variants)(
-      "$0 variant should not show dismiss button",
+      "$0 variant should not show dismiss button or orb",
       async variant => {
         setupWebComponent({
           "agent-id": "basic",
@@ -99,13 +130,17 @@ describe("Dismiss Button", () => {
           dismissible: "false",
         });
 
-        const dismissButton = page.getByRole("button", { name: "Dismiss" });
-        await expect.element(dismissButton).not.toBeInTheDocument();
+        await expect
+          .element(page.getByRole("button", { name: "Dismiss" }))
+          .not.toBeInTheDocument();
+        await expect
+          .element(page.getByRole("button", { name: "Open chat" }))
+          .not.toBeInTheDocument();
       }
     );
   });
 
-  describe("when dismissible is not specified", () => {
+  describe("when dismissible is not specified (opt-in behavior)", () => {
     it.each(Variants)(
       "$0 variant should not show dismiss button by default",
       async variant => {
@@ -114,31 +149,10 @@ describe("Dismiss Button", () => {
           variant,
         });
 
-        const dismissButton = page.getByRole("button", { name: "Dismiss" });
-        await expect.element(dismissButton).not.toBeInTheDocument();
+        await expect
+          .element(page.getByRole("button", { name: "Dismiss" }))
+          .not.toBeInTheDocument();
       }
     );
-  });
-
-  describe("fade out animation", () => {
-    it("should fade out smoothly when dismissed", async () => {
-      setupWebComponent({
-        "agent-id": "basic",
-        variant: "compact",
-        dismissible: "true",
-      });
-
-      const dismissButton = page.getByRole("button", { name: "Dismiss" });
-
-      // Widget should be visible
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await expect.element(startButton).toBeVisible();
-
-      // Click dismiss
-      await dismissButton.click();
-
-      // Widget should fade out and be removed
-      await expect.element(startButton).not.toBeInTheDocument();
-    });
   });
 });
