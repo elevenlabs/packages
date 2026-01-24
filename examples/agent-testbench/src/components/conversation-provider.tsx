@@ -1,12 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Conversation, type PartialOptions } from "@elevenlabs/client";
-import { CallLogEntry, spyOnMethods } from "@/lib/utils";
 
 const ConversationControlContext = createContext<{
     start(options: PartialOptions): void;
     end(): void;
 } | null>(null);
-
 
 export type ConversationStatus = {
     status: "disconnected" | "connecting" | "connected" | "error";
@@ -20,8 +18,6 @@ const ConversationMicrophoneContext = createContext<{
     setMicMuted: (isMicMuted: boolean) => void;
 } | null>(null);
 
-const ConversationEventsContext = createContext<{ events: CallLogEntry[], clearEvents: () => void } | null>(null);
-
 const STATUS = {
     disconnected: {
         status: "disconnected",
@@ -34,29 +30,6 @@ const STATUS = {
     },
 } as const satisfies Record<string, ConversationStatus>;
 
-const EVENT_METHOD_NAMES = [
-    "onConnect",
-    "onDisconnect",
-    "onError",
-    "onMessage",
-    "onAudio",
-    "onModeChange",
-    "onStatusChange",
-    "onCanSendFeedbackChange",
-    "onUnhandledClientToolCall",
-    "onVadScore",
-    "onMCPToolCall",
-    "onMCPConnectionStatus",
-    "onAgentToolRequest",
-    "onAgentToolResponse",
-    "onConversationMetadata",
-    "onAsrInitiationMetadata",
-    "onInterruption",
-    "onAgentChatResponsePart",
-    "onAudioAlignment",
-    "onDebug"
-] satisfies (keyof PartialOptions)[];
-
 export function ConversationProvider({ children }: React.PropsWithChildren) {
     const conversationRef = useRef<Conversation | null>(null);
     const conversationStartingRef = useRef<boolean>(false);
@@ -64,18 +37,12 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
     const [status, setStatus] = useState<ConversationStatus>(STATUS.disconnected);
     const [isMicMuted, setMicMuted] = useState(false);
 
-    const [eventLog, setEventLog] = useState<CallLogEntry[]>([]);
-    const handleEventCall = useCallback((entry: CallLogEntry) => {
-        setEventLog(prev => [...prev, entry]);
-    }, [setEventLog]);
-
     const start = useCallback((options: PartialOptions) => {
         if (conversationStartingRef.current) {
             throw new Error("Conversation already starting");
         }
         conversationStartingRef.current = true;
-        const instrumentedOptions = spyOnMethods<PartialOptions>(options, EVENT_METHOD_NAMES, handleEventCall);
-        Conversation.startSession(instrumentedOptions).then(conversation => {
+        Conversation.startSession(options).then(conversation => {
             conversationRef.current = conversation;
             setStatus(STATUS.connected);
         }, err => {
@@ -84,7 +51,7 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
             conversationStartingRef.current = false;
         });
         setStatus(STATUS.connecting);
-    }, [conversationRef, setStatus, setEventLog]);
+    }, [conversationRef, setStatus]);
 
     const end = useCallback(() => {
         const { current: conversation } = conversationRef;
@@ -127,18 +94,11 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
         setMicMuted: handleMicMutedChange,
     }), [isMicMuted, handleMicMutedChange]);
 
-    const eventContextValue = useMemo(() => ({
-        events: eventLog,
-        clearEvents: () => setEventLog([]),
-    }), [eventLog, setEventLog]);
-
     return (
         <ConversationControlContext.Provider value={controlContextValue}>
             <ConversationStatusContext.Provider value={status}>
                 <ConversationMicrophoneContext.Provider value={microphoneContextValue}>
-                    <ConversationEventsContext.Provider value={eventContextValue}>
-                        {children}
-                    </ConversationEventsContext.Provider>
+                    {children}
                 </ConversationMicrophoneContext.Provider>
             </ConversationStatusContext.Provider>
         </ConversationControlContext.Provider>
@@ -159,12 +119,4 @@ export function useConversationStatus() {
         throw new Error("Expected a ConversationProvider");
     }
     return status;
-}
-
-export function useConversationEvents() {
-    const events = useContext(ConversationEventsContext);
-    if (!events) {
-        throw new Error("Expected a ConversationProvider");
-    }
-    return events;
 }

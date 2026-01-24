@@ -15,8 +15,9 @@ import {
 import { ConversationProvider } from '@/components/conversation-provider'
 import { AgentControls } from '@/components/agent-controls'
 import { ConnectionTypeControls } from '@/components/connection-type-controls'
-import { EventTable } from '@/components/event-table'
+import { EventTable } from '@/components/log-table'
 import { MediaDevicesControls } from '@/components/media-devices-controls'
+import { LogProvider } from '@/components/log-provider'
 
 const AgentIdSchema = z.object({
   agentId: z.string()
@@ -68,20 +69,22 @@ function RouteComponent() {
 
   return (
     <Page title={agent.name}>
-      <ConversationProvider>
-        <Button className='fixed top-2 left-2' variant="outline" onClick={() => navigate({ to: "/agents" })}>
-          <ArrowLeft />
-          Back
-        </Button>
-        <Card>
-          <CardContent className='flex flex-row gap-2'>
-            <ConnectionTypeControls value={connectionType} onChange={setConnectionType} />
-            <MediaDevicesControls />
-          </CardContent>
-        </Card>
-        <AgentControls agentId={agent.agentId} options={{ connectionType, agentId: agent.agentId }} />
-        <EventTable />
-      </ConversationProvider>
+      <LogProvider>
+        <ConversationProvider>
+          <Button className='fixed top-2 left-2' variant="outline" onClick={() => navigate({ to: "/agents" })}>
+            <ArrowLeft />
+            Back
+          </Button>
+          <Card>
+            <CardContent className='flex flex-row gap-2'>
+              <ConnectionTypeControls value={connectionType} onChange={setConnectionType} />
+              <MediaDevicesControls />
+            </CardContent>
+          </Card>
+          <AgentControls agentId={agent.agentId} options={{ connectionType, agentId: agent.agentId }} />
+          <EventTable />
+        </ConversationProvider>
+      </LogProvider>
     </Page>
   )
 }

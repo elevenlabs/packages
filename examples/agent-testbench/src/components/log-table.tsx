@@ -1,8 +1,5 @@
 
 
-
-import { useConversationEvents } from "@/components/conversation-provider";
-
 import {
     Table,
     TableBody,
@@ -12,6 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { useLogEntries } from "./log-provider";
 
 function formatArgs(args: unknown[]) {
     return args.map(arg => {
@@ -23,23 +21,25 @@ function formatArgs(args: unknown[]) {
 }
 
 export function EventTable() {
-    const { events } = useConversationEvents();
+    const entries = useLogEntries();
     return (
         <Table>
             <TableCaption>Log of events from the conversation</TableCaption>
             <TableHeader>
                 <TableRow>
-                    <TableHead className="w-[120px]">Method</TableHead>
+                    <TableHead className="w-[100px]">Part</TableHead>
+                    <TableHead className="w-[100px]">Method</TableHead>
                     <TableHead>Arguments</TableHead>
                     <TableHead className="w-[100px] text-right">Δt [ms]</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {events.map((entry, index) => {
-                    const previousEntry = events[index - 1];
+                {entries.map((entry, index) => {
+                    const previousEntry = entries[index - 1];
                     const delta = previousEntry ? entry.when - previousEntry.when : 0;
                     return (
                         <TableRow key={index}>
+                            <TableCell className="font-medium">{entry.part}</TableCell>
                             <TableCell className="font-medium">{entry.method}</TableCell>
                             <TableCell className="truncate max-w-0">{formatArgs(entry.args)}</TableCell>
                             <TableCell className="text-right">{delta}</TableCell>
