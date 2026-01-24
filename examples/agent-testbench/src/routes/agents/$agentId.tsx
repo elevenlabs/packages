@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, ClientOnly } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { useState } from 'react'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
-import type { ConnectionType, PartialOptions } from '@elevenlabs/client'
+import type { ConnectionType } from '@elevenlabs/client'
 
 import { elevenlabs } from '@/lib/elevenlabs.server'
 import { Page } from '@/components/page'
@@ -18,6 +18,7 @@ import { ConnectionTypeControls } from '@/components/connection-type-controls'
 import { EventTable } from '@/components/log-table'
 import { MediaDevicesControls } from '@/components/media-devices-controls'
 import { LogProvider } from '@/components/log-provider'
+import { PermissionsLogger } from '@/components/permissions-logger'
 
 const AgentIdSchema = z.object({
   agentId: z.string()
@@ -84,6 +85,9 @@ function RouteComponent() {
           <AgentControls agentId={agent.agentId} options={{ connectionType, agentId: agent.agentId }} />
           <EventTable />
         </ConversationProvider>
+        <ClientOnly>
+          <PermissionsLogger />
+        </ClientOnly>
       </LogProvider>
     </Page>
   )
