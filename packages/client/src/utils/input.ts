@@ -151,8 +151,13 @@ export class Input {
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
+  private settingInput: boolean = false;
   public async setInputDevice(inputDeviceId?: string): Promise<void> {
     try {
+      if (this.settingInput) {
+        throw new Error("Input device is already being set");
+      }
+      this.settingInput = true;
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
         ...defaultConstraints,
@@ -183,22 +188,25 @@ export class Input {
     } catch (error) {
       console.error("Failed to switch input device:", error);
       throw error;
+    } finally {
+      this.settingInput = false;
     }
   }
 
   private handlePermissionsChange = () => {
-    const [track] = this.inputStream.getAudioTracks();
-    const { deviceId } = track.getSettings();
     if (this.permissions.state === "denied") {
       console.error("Microphone permission denied");
       // TODO: Tell the user to grant permission in some other way
-    } else if (
-      this.permissions.state === "prompt" ||
-      (this.permissions.state === "granted" && track.readyState === "ended")
-    ) {
-      // Assuming this track was stopped because the user denied permission
-      // - let's try to re-set the input device
-      this.setInputDevice(deviceId);
+    } else if (!this.settingInput) {
+      // Let's try to reset the input device, but only if we're not already in the process of setting it
+      const [track] = this.inputStream.getAudioTracks();
+      const { deviceId } = track.getSettings();
+      this.setInputDevice(deviceId).catch(error => {
+        console.error(
+          "Failed to reset input device after permission change:",
+          error
+        );
+      });
     }
   };
 }
