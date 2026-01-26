@@ -326,6 +326,7 @@ export class VoiceConversation extends BaseConversation {
         inputDeviceId,
         workletPaths: this.options.workletPaths,
         libsampleratePath: this.options.libsampleratePath,
+        onError: this.options.onError,
       });
 
       this.input = newInput;

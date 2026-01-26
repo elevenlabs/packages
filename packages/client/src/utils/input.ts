@@ -6,6 +6,7 @@ import type { AudioWorkletConfig } from "../BaseConversation";
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
   inputDeviceId?: string;
+  onError?(message: string, context?: unknown): void;
 };
 
 const LIBSAMPLERATE_JS =
@@ -28,6 +29,7 @@ export class Input {
     inputDeviceId,
     workletPaths,
     libsampleratePath,
+    onError,
   }: FormatConfig & InputConfig & AudioWorkletConfig): Promise<Input> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
@@ -99,7 +101,8 @@ export class Input {
         worklet,
         inputStream,
         source,
-        permissions
+        permissions,
+        onError
       );
     } catch (error) {
       inputStream?.getTracks().forEach(track => {
@@ -126,7 +129,11 @@ export class Input {
     public readonly worklet: AudioWorkletNode,
     public inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
-    private permissions: PermissionStatus
+    private permissions: PermissionStatus,
+    private onError: (
+      message: string,
+      context?: unknown
+    ) => void = console.error
   ) {
     this.permissions.addEventListener("change", this.handlePermissionsChange);
   }
@@ -186,7 +193,7 @@ export class Input {
       // Reconnect the audio graph
       this.mediaStreamSource.connect(this.analyser);
     } catch (error) {
-      console.error("Failed to switch input device:", error);
+      this.onError("Failed to switch input device:", error);
       throw error;
     } finally {
       this.settingInput = false;
@@ -195,14 +202,14 @@ export class Input {
 
   private handlePermissionsChange = () => {
     if (this.permissions.state === "denied") {
-      console.error("Microphone permission denied");
+      this.onError("Microphone permission denied");
       // TODO: Tell the user to grant permission in some other way
     } else if (!this.settingInput) {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
       const { deviceId } = track?.getSettings() ?? {};
       this.setInputDevice(deviceId).catch(error => {
-        console.error(
+        this.onError(
           "Failed to reset input device after permission change:",
           error
         );
