@@ -200,7 +200,7 @@ export class Input {
     } else if (!this.settingInput) {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
-      const { deviceId } = track.getSettings();
+      const { deviceId } = track?.getSettings() ?? {};
       this.setInputDevice(deviceId).catch(error => {
         console.error(
           "Failed to reset input device after permission change:",
