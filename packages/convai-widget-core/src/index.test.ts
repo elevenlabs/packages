@@ -472,4 +472,117 @@ describe("elevenlabs-convai", () => {
         .not.toBeInTheDocument();
     });
   });
+
+  describe("dismissable behavior", () => {
+    it("should not show dismiss button by default (opt-in)", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+      });
+
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeVisible();
+      await expect
+        .element(page.getByRole("button", { name: "Dismiss" }))
+        .not.toBeInTheDocument();
+    });
+
+    it.each(Variants)(
+      "$0 variant should allow dismiss and restore via orb",
+      async variant => {
+        setupWebComponent({
+          "agent-id": "basic",
+          variant,
+          dismissible: "true",
+        });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        const dismissButton = page.getByRole("button", { name: "Dismiss" });
+
+        // Widget and dismiss button should be visible
+        await expect.element(startButton).toBeVisible();
+        await expect.element(dismissButton).toBeVisible();
+
+        // Dismiss the widget
+        await dismissButton.click();
+
+        // Widget should be hidden, orb should appear
+        await expect.element(startButton).not.toBeInTheDocument();
+        const orbButton = page.getByRole("button", { name: "Open chat" });
+        await expect.element(orbButton).toBeVisible();
+
+        // Click orb to restore widget
+        await orbButton.click();
+
+        // Widget should be restored
+        await expect.element(startButton).toBeVisible();
+        await expect.element(dismissButton).toBeVisible();
+      }
+    );
+
+    it("should hide dismiss button during active call and show after ending", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        dismissible: "true",
+        transcript: "true",
+      });
+
+      const dismissButton = page.getByRole("button", { name: "Dismiss" });
+      await expect.element(dismissButton).toBeVisible();
+
+      // Start a call
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await startButton.click();
+
+      // Dismiss button should be hidden during active call
+      await expect.element(dismissButton).not.toBeInTheDocument();
+
+      // End the call
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await endButton.click();
+
+      // Dismiss button should reappear
+      await expect.element(dismissButton).toBeVisible();
+    });
+
+    it("should dismiss expandable widget completely", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        dismissible: "true",
+        transcript: "true",
+        "text-input": "true",
+        "default-expanded": "true",
+      });
+
+      // Verify expandable elements are visible
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .toBeInTheDocument();
+
+      // Dismiss the widget
+      const dismissButton = page.getByRole("button", { name: "Dismiss" });
+      await dismissButton.click();
+
+      // All widget elements should be hidden
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .not.toBeInTheDocument();
+
+      // Orb should be visible
+      await expect
+        .element(page.getByRole("button", { name: "Open chat" }))
+        .toBeVisible();
+    });
+  });
 });
