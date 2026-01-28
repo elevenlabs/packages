@@ -15,12 +15,10 @@ function TranscriptSpacer({
   entry: TranscriptEntry;
   prevEntry: TranscriptEntry;
 }) {
-  // Tool call entries have smaller gap (8px)
   if (entry.type === "tool_call" || prevEntry.type === "tool_call") {
     return <div className="h-2" />;
   }
 
-  // Default gap (24px)
   return <div className="h-6" />;
 }
 

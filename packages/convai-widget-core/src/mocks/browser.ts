@@ -257,7 +257,6 @@ export const Worker = setupWorker(
       }
       if (agentId === "tool_call") {
         client.addEventListener("message", async () => {
-          // Send tool request
           client.send(
             JSON.stringify({
               type: "agent_tool_request",
@@ -269,7 +268,6 @@ export const Worker = setupWorker(
             })
           );
           await new Promise(resolve => setTimeout(resolve, 100));
-          // Send tool response (success)
           client.send(
             JSON.stringify({
               type: "agent_tool_response",
@@ -281,7 +279,6 @@ export const Worker = setupWorker(
             })
           );
           await new Promise(resolve => setTimeout(resolve, 100));
-          // Send agent response
           client.send(
             JSON.stringify({
               type: "agent_response",

@@ -315,8 +315,6 @@ function useConversationSetup() {
               updated.set(event_id, turnMap);
               toolCallStatus.value = updated;
 
-              // Create ONE transcript entry per turn (first tool creates it)
-              // Only add if show_agent_status is enabled in config
               if (isFirstToolAtTurn && widgetConfig.value.show_agent_status) {
                 transcript.value = [
                   ...transcript.peek(),
@@ -334,7 +332,6 @@ function useConversationSetup() {
               const turnMap = current.get(event_id);
               if (!turnMap?.has(tool_call_id)) return;
 
-              // Update tool status to success or error
               const updated = new Map(current);
               const newTurnMap = new Map(turnMap);
               newTurnMap.set(
@@ -344,7 +341,6 @@ function useConversationSetup() {
               updated.set(event_id, newTurnMap);
               toolCallStatus.value = updated;
 
-              // Only update transcript if show_agent_status is enabled
               if (!widgetConfig.value.show_agent_status) return;
 
               const allDone = ![...newTurnMap.values()].some(
