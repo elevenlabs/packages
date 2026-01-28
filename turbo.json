@@ -27,23 +27,19 @@
         "vitest.config.ts",
         "jest.config.*"
       ],
-      "cache": true,
       "passThroughEnv": ["PLAYWRIGHT_*", "HOME", "CI"]
     },
     "lint": {
       "dependsOn": ["^build", "^generate"]
     },
     "lint:es": {
-      "cache": true,
       "inputs": ["src/**", ".eslintrc*", "eslint.config.*"]
     },
     "lint:prettier": {
-      "cache": true,
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
       "dependsOn": ["^build", "^generate"],
-      "cache": true,
       "inputs": ["src/**", "tsconfig.json"]
     },
     "clean": {
@@ -56,8 +52,7 @@
     },
     "generate": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
-      "outputs": ["generated/**"],
-      "cache": true
+      "outputs": ["generated/**"]
     }
   }
 }
