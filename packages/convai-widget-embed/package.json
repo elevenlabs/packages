@@ -19,7 +19,6 @@
   "devDependencies": {
     "@elevenlabs/convai-widget-core": "workspace:*",
     "eslint": "^9.8.0",
-    "microbundle": "^0.15.1",
     "typescript": "^5.5.4",
     "vite": "^6.4.1",
     "vite-bundle-analyzer": "^1.2.3"
