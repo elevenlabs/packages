@@ -18,9 +18,10 @@
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "bundle": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "BROWSERSLIST_ENV=modern node --run bundle",
+    "dev": "BROWSERSLIST_ENV=development node --run bundle -- --watch --format modern",
     "clean": "rm -rf ./dist",
-    "dev": "node --run build -- --watch --format modern",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
