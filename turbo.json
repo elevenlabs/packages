@@ -49,13 +49,19 @@
       "dependsOn": ["generate"]
     },
     "generate": {
-      "dependsOn": ["generate-version"],
+      "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
+    },
+    "generate-types": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
       "outputs": ["generated/**"]
     },
     "generate-version": {
       "inputs": ["package.json"],
       "outputs": ["src/version.ts"]
+    },
+    "generate-worklets": {
+      "inputs": ["scripts/generateWorklets.js", "worklets/**/*.js"],
+      "outputs": ["src/utils/*.generated.ts"]
     }
   }
 }

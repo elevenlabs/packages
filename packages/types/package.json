@@ -9,9 +9,9 @@
     "generated"
   ],
   "scripts": {
-    "generate": "tsx ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
-    "build": "pnpm generate && tsc",
-    "dev": "pnpm generate",
+    "generate-types": "tsx ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "clean": "rm -rf dist generated/types",
     "check-types": "tsc --noEmit",
     "lint:es": "eslint . --max-warnings 0"
