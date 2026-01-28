@@ -46,7 +46,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["generate-version"]
+      "dependsOn": ["generate"]
     },
     "generate": {
       "dependsOn": ["generate-version"],
