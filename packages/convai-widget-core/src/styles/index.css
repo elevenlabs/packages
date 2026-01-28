@@ -101,24 +101,6 @@
     animation: spin 1s linear infinite;
   }
 
-  .loader {
-    width: 1em;
-    height: 1em;
-    border-radius: 50%;
-    background:
-      radial-gradient(farthest-side, currentColor 94%, #0000) top/2px 2px no-repeat,
-      conic-gradient(#0000 30%, currentColor);
-    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 0);
-    mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 0);
-    animation: l13 1s infinite linear;
-  }
-
-  @keyframes l13 {
-    100% {
-      transform: rotate(1turn);
-    }
-  }
-
   @keyframes fade-in {
     from {
       opacity: 0;

@@ -138,6 +138,9 @@ export const DefaultTextContents = {
   copy: "Copy",
   download: "Download",
   wrap: "Wrap",
+  agent_working: "Thinking...",
+  agent_done: "Completed",
+  agent_error: "Error occurred",
 };
 
 export const TextKeys = Object.keys(

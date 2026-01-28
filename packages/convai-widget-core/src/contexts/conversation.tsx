@@ -20,6 +20,15 @@ import { useShadowHost } from "./shadow-host";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
+export const ToolCallStatus = {
+  LOADING: "loading",
+  SUCCESS: "success",
+  ERROR: "error",
+} as const;
+
+export type ToolCallStatusType =
+  (typeof ToolCallStatus)[keyof typeof ToolCallStatus];
+
 export const ConversationContext = createContext<ConversationSetup | null>(
   null
 );
@@ -54,11 +63,9 @@ export type TranscriptEntry =
     }
   | {
       type: "tool_call";
-      toolName: string;
-      toolCallId: string;
-      toolType: string;
-      state: "loading" | "success" | "error";
+      eventId: number;
       conversationIndex: number;
+      status?: ToolCallStatusType;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
@@ -125,6 +132,9 @@ function useConversationSetup() {
     const transcript = signal<TranscriptEntry[]>([]);
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
+    const toolCallStatus = signal<
+      Map<number, Map<string, ToolCallStatusType>>
+    >(new Map());
 
     return {
       status,
@@ -137,6 +147,7 @@ function useConversationSetup() {
       conversationIndex,
       conversationTextOnly,
       transcript,
+      toolCallStatus,
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
 
@@ -294,31 +305,68 @@ function useConversationSetup() {
                 streamingMessageIndexRef.current = null;
               }
             },
-            onAgentToolRequest: ({ tool_name, tool_call_id, tool_type }) => {
-              transcript.value = [
-                ...transcript.value,
-                {
-                  type: "tool_call",
-                  toolName: tool_name,
-                  toolCallId: tool_call_id,
-                  toolType: tool_type,
-                  state: "loading",
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
+            onAgentToolRequest: ({ tool_call_id, event_id }) => {
+              const current = toolCallStatus.peek();
+              const isFirstToolAtTurn = !current.has(event_id);
+
+              const updated = new Map(current);
+              const turnMap = new Map(updated.get(event_id) ?? []);
+              turnMap.set(tool_call_id, ToolCallStatus.LOADING);
+              updated.set(event_id, turnMap);
+              toolCallStatus.value = updated;
+
+              // Create ONE transcript entry per turn (first tool creates it)
+              if (isFirstToolAtTurn) {
+                transcript.value = [
+                  ...transcript.peek(),
+                  {
+                    type: "tool_call",
+                    eventId: event_id,
+                    conversationIndex: conversationIndex.peek(),
+                    status: ToolCallStatus.LOADING,
+                  },
+                ];
+              }
             },
-            onAgentToolResponse: ({ tool_call_id, is_error }) => {
-              transcript.value = transcript.value.map(entry =>
-                entry.type === "tool_call" && entry.toolCallId === tool_call_id
-                  ? { ...entry, state: is_error ? "error" : "success" }
-                  : entry
+            onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
+              const current = toolCallStatus.peek();
+              const turnMap = current.get(event_id);
+              if (!turnMap?.has(tool_call_id)) return;
+
+              // Update tool status to success or error
+              const updated = new Map(current);
+              const newTurnMap = new Map(turnMap);
+              newTurnMap.set(
+                tool_call_id,
+                is_error ? ToolCallStatus.ERROR : ToolCallStatus.SUCCESS
               );
+              updated.set(event_id, newTurnMap);
+              toolCallStatus.value = updated;
+
+              const allDone = ![...newTurnMap.values()].some(
+                s => s === ToolCallStatus.LOADING
+              );
+              if (allDone) {
+                const hasError = [...newTurnMap.values()].some(
+                  s => s === ToolCallStatus.ERROR
+                );
+                const finalStatus = hasError
+                  ? ToolCallStatus.ERROR
+                  : ToolCallStatus.SUCCESS;
+
+                transcript.value = transcript.peek().map(entry =>
+                  entry.type === "tool_call" && entry.eventId === event_id
+                    ? { ...entry, status: finalStatus }
+                    : entry
+                );
+              }
             },
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               streamingMessageIndexRef.current = null;
               isReceivingStreamRef.current = false;
+              toolCallStatus.value = new Map();
               transcript.value = [
                 ...transcript.peek(),
                 details.reason === "error"
