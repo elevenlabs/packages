@@ -30,16 +30,18 @@
       "passThroughEnv": ["PLAYWRIGHT_*", "HOME", "CI"]
     },
     "lint": {
-      "dependsOn": ["^build", "^generate"]
+      "dependsOn": ["^build", "lint:es", "lint:prettier", "check-types"]
     },
     "lint:es": {
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".eslintrc*", "eslint.config.*"]
     },
     "lint:prettier": {
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
-      "dependsOn": ["^build", "^generate"],
+      "dependsOn": ["^build", "generate"],
       "inputs": ["src/**", "tsconfig.json"]
     },
     "clean": {
@@ -51,6 +53,7 @@
       "dependsOn": ["generate-version"]
     },
     "generate": {
+      "dependsOn": ["generate-version"],
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
       "outputs": ["generated/**"]
     }

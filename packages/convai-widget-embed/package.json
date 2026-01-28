@@ -9,7 +9,6 @@
   "scripts": {
     "build": "vite build",
     "build:analyze": "ANALYZE=true vite build",
-    "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts'"

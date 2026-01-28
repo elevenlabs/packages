@@ -13,7 +13,6 @@
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
     "build:analyze": "ANALYZE=true vite build",
     "dev": "npm run generate-version && vite",
-    "lint": "npm run check-types && npm run lint:es && npm run lint:prettier",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
