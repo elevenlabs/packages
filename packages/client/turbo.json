@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "generate-worklets": {
+      "inputs": ["scripts/generateWorklets.js", "worklets/**/*.js"],
+      "outputs": ["src/utils/*.generated.ts"]
+    },
+    "generate": {
+      "dependsOn": ["generate-version", "generate-worklets"]
+    }
+  }
+}
