@@ -1,7 +1,8 @@
 @import url(https://fonts.googleapis.com/css2?family=Inter:wght@400,500&display=swap);
 
-@config "../../tailwind.config.js";
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .dev-host,
 :host {
@@ -108,7 +109,7 @@
     @apply text-base-primary font-medium text-xl;
   }
 
-  .terms h1 {
+  .terms h2 {
     @apply text-base-primary font-medium text-2xl;
   }
 }
