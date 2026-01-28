@@ -3,10 +3,6 @@
   "ui": "tui",
   "globalEnv": ["NODE_ENV"],
   "tasks": {
-    "generate-version": {
-      "inputs": ["package.json"],
-      "outputs": ["src/version.ts"]
-    },
     "build": {
       "dependsOn": ["^build", "^generate", "generate-version"],
       "inputs": [
@@ -56,6 +52,10 @@
       "dependsOn": ["generate-version"],
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
       "outputs": ["generated/**"]
+    },
+    "generate-version": {
+      "inputs": ["package.json"],
+      "outputs": ["src/version.ts"]
     }
   }
 }
