@@ -101,6 +101,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const dismissible = useAttribute("dismissible");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
+  const showAgentStatus = useAttribute("show-agent-status");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -139,6 +140,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       false;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
+    const patchedShowAgentStatus =
+      parseBoolAttribute(showAgentStatus.value) ??
+      fetchedConfig.value.show_agent_status ??
+      false;
 
     return {
       ...fetchedConfig.value,
@@ -152,6 +157,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       default_expanded: patchedDefaultExpanded,
       dismissible: patchedDismissible,
       use_rtc: patchedUseRtc,
+      show_agent_status: patchedShowAgentStatus,
     };
   });
 

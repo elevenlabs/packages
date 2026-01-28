@@ -76,6 +76,7 @@ export interface WidgetConfig {
   use_rtc?: boolean;
   syntax_highlight_theme?: SyntaxHighlightTheme;
   conversation_mode_toggle_enabled?: boolean;
+  show_agent_status?: boolean;
 }
 
 export type AvatarConfig =
