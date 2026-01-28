@@ -4,7 +4,7 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "^generate", "generate-version"],
+      "dependsOn": ["generate", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
