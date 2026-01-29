@@ -585,4 +585,49 @@ describe("elevenlabs-convai", () => {
         .toBeVisible();
     });
   });
+
+  describe("agent status", () => {
+    it("should show tool status when show-agent-status is enabled", async () => {
+      setupWebComponent({
+        "agent-id": "tool_call",
+        variant: "compact",
+        "show-agent-status": "true",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Run tool");
+      await userEvent.keyboard("{Enter}");
+
+      // Tool status should appear
+      await expect.element(page.getByText("Thinking...")).toBeInTheDocument();
+      await expect.element(page.getByText("Completed")).toBeInTheDocument();
+    });
+
+    it("should NOT show tool status when show-agent-status is disabled", async () => {
+      setupWebComponent({
+        "agent-id": "tool_call",
+        variant: "compact",
+        "show-agent-status": "false",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Run tool");
+      await userEvent.keyboard("{Enter}");
+
+      // Tool status should NOT appear
+      await expect
+        .element(page.getByText("Thinking..."))
+        .not.toBeInTheDocument();
+      await expect.element(page.getByText("Completed")).not.toBeInTheDocument();
+
+      // But the agent response should still appear
+      await expect
+        .element(page.getByText("Tool completed successfully"))
+        .toBeInTheDocument();
+    });
+  });
 });

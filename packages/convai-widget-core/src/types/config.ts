@@ -76,6 +76,7 @@ export interface WidgetConfig {
   use_rtc?: boolean;
   syntax_highlight_theme?: SyntaxHighlightTheme;
   conversation_mode_toggle_enabled?: boolean;
+  show_agent_status?: boolean;
 }
 
 export type AvatarConfig =
@@ -138,6 +139,9 @@ export const DefaultTextContents = {
   copy: "Copy",
   download: "Download",
   wrap: "Wrap",
+  agent_working: "Thinking...",
+  agent_done: "Completed",
+  agent_error: "Error occurred",
 };
 
 export const TextKeys = Object.keys(

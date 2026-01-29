@@ -8,6 +8,20 @@ interface TranscriptProps {
   transcript: ReadonlySignal<TranscriptEntry[]>;
 }
 
+function TranscriptSpacer({
+  entry,
+  prevEntry,
+}: {
+  entry: TranscriptEntry;
+  prevEntry: TranscriptEntry;
+}) {
+  if (entry.type === "tool_call" || prevEntry.type === "tool_call") {
+    return <div className="h-2" />;
+  }
+
+  return <div className="h-6" />;
+}
+
 export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
   const {
     scrollContainer,
@@ -28,13 +42,22 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
     >
-      <div ref={contentRef} className="flex flex-col gap-6">
+      <div ref={contentRef} className="flex flex-col">
         {transcript.value.map((entry, index) => (
-          <TranscriptMessage
-            key={`${index}-${entry.conversationIndex}`}
-            entry={entry}
-            animateIn={!firstRender.current}
-          />
+          <>
+            {index > 0 && (
+              <TranscriptSpacer
+                key={`spacer-${index}`}
+                entry={entry}
+                prevEntry={transcript.value[index - 1]}
+              />
+            )}
+            <TranscriptMessage
+              key={`${index}-${entry.conversationIndex}`}
+              entry={entry}
+              animateIn={!firstRender.current}
+            />
+          </>
         ))}
       </div>
     </div>
