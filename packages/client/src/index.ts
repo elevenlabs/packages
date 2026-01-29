@@ -36,6 +36,7 @@ export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { SessionConnectionError } from "./utils/errors";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
+export { BaseConversation } from "./BaseConversation";
 
 // Scribe exports
 export {
