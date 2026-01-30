@@ -46,7 +46,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["generate"]
+      "dependsOn": ["generate", "^build"]
     },
     "generate": {
       "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
