@@ -39,8 +39,7 @@
     "test:unit": "jest --testPathIgnorePatterns='e2e'",
     "test:e2e": "jest --testPathPattern='e2e'",
     "test:all": "jest",
-    "lint:es": "eslint src -c eslint.config.js",
-    "format": "prettier --write src/**/*.ts"
+    "lint:es": "eslint src -c eslint.config.js"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "2.18.0",
