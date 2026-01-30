@@ -11,7 +11,7 @@
     "build:analyze": "ANALYZE=true vite build",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts'"
+    "lint:prettier": "prettier . --check"
   },
   "keywords": [],
   "author": "ElevenLabs",

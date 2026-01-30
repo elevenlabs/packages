@@ -13,7 +13,7 @@
     "dev": "vite",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier . --check",
     "test": "vitest"
   },
   "files": [
