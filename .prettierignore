@@ -1,0 +1,4 @@
+examples/react-native-expo/.expo/
+examples/react-native-expo/android/
+examples/react-native-expo/ios/
+pnpm-lock.yaml
