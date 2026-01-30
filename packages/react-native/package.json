@@ -22,7 +22,7 @@
     "clean": "rm -rf ./dist",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier . --check",
+    "lint:prettier": "prettier . --check --ignore-path ../../.prettierignore",
     "test": "jest"
   },
   "keywords": [

@@ -23,7 +23,7 @@
     "dev": "pnpm run clean && pnpm run generate-version && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier . --check",
+    "lint:prettier": "prettier . --check --ignore-path ../../.prettierignore",
     "test": "jest"
   },
   "keywords": [],
