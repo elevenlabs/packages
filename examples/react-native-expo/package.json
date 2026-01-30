@@ -4,9 +4,9 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "start": "expo start --tunnel",
-    "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && npm start",
-    "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && npm start",
+    "dev": "expo start",
+    "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && node --run dev",
+    "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && node --run dev",
     "build:android": "eas build -p android",
     "build:ios": "eas build -p ios",
     "check-types": "tsc --noEmit"
