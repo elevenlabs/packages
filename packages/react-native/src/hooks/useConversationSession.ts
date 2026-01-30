@@ -8,6 +8,7 @@ import {
   getConversationToken,
   extractConversationIdFromToken,
 } from "../utils/tokenUtils";
+import { isTextOnly } from "../utils/text-only";
 
 export const useConversationSession = (
   callbacksRef: { current: Callbacks },
@@ -35,11 +36,19 @@ export const useConversationSession = (
         setStatus("connecting");
         callbacksRef.current.onStatusChange?.({ status: "connecting" });
 
-        setOverrides(config.overrides || {});
+        const textOnly = isTextOnly(config);
+
+        setOverrides({
+          ...config.overrides,
+          conversation: {
+            ...config.overrides?.conversation,
+            textOnly,
+          },
+        });
         setCustomLlmExtraBody(config.customLlmExtraBody || null);
         setDynamicVariables(config.dynamicVariables || {});
         setUserId(config.userId);
-        setTextOnly(config.textOnly);
+        setTextOnly(textOnly);
 
         let conversationToken: string;
 
