@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 0.14.0-beta.0
+
+### Minor Changes
+
+- b559f42: Reduce audio chunk length from 250ms to 100ms for lower latency
+
 ## 0.13.1
 
 ### Patch Changes
