@@ -69,8 +69,9 @@ export type {
 
 export class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {
-    return options.textOnly
-      ? TextConversation.startSession(options)
-      : VoiceConversation.startSession(options);
+    const fullOptions = Conversation.getFullOptions(options);
+    return fullOptions.textOnly
+      ? TextConversation.startSession(fullOptions)
+      : VoiceConversation.startSession(fullOptions);
   }
 }

@@ -154,7 +154,9 @@ describe("Conversation", () => {
           conversation_config_override: {
             agent: { prompt: { prompt: "CUSTOM_PROMPT" } },
             tts: {},
-            conversation: {},
+            conversation: {
+              text_only: conversationType === "text",
+            },
           },
           custom_llm_extra_body: CUSTOM_LLM_EXTRA_BODY,
           user_id: TEST_USER_ID,
