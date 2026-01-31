@@ -158,7 +158,18 @@ export class WebRTCConnection extends BaseConnection {
 
       // Enable microphone only if not text-only mode
       if (!config.textOnly) {
-        await room.localParticipant.setMicrophoneEnabled(true);
+        const audioConstraints = {
+          voiceIsolation: true,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: { ideal: 1 },
+        };
+        const audioTrack = await createLocalAudioTrack(audioConstraints);
+        await room.localParticipant.publishTrack(audioTrack, {
+          name: "microphone",
+          source: Track.Source.Microphone,
+        });
       }
 
       const overridesEvent = constructOverrides(config);
@@ -515,7 +526,8 @@ export class WebRTCConnection extends BaseConnection {
       }
 
       // Create constraints for the new input device
-      const audioConstraints: MediaTrackConstraints = {
+      const audioConstraints = {
+        voiceIsolation: true,
         deviceId: { exact: deviceId },
         echoCancellation: true,
         noiseSuppression: true,
