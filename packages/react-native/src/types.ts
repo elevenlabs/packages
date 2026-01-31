@@ -85,6 +85,7 @@ export type ConversationConfig = {
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
+  textOnly?: boolean;
   userId?: string;
 };
 

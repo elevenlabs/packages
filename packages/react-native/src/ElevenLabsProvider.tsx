@@ -127,9 +127,8 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     customLlmExtraBody,
     dynamicVariables,
     userId,
+    textOnly,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
-
-  const textOnly = overrides?.conversation?.textOnly ?? false;
 
   const {
     roomConnected,
