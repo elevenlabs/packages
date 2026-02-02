@@ -63,6 +63,26 @@ export type ClientToolsConfig = {
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
+export function isTextOnly(options: PartialOptions): boolean | undefined {
+  const { textOnly: textOnlyOverride } = options.overrides?.conversation ?? {};
+  const { textOnly } = options;
+  if (typeof textOnly === "boolean") {
+    if (
+      typeof textOnlyOverride === "boolean" &&
+      textOnly !== textOnlyOverride
+    ) {
+      console.warn(
+        `Conflicting textOnly options provided: ${textOnly} via options.textOnly (will be used) and ${textOnlyOverride} via options.overrides.conversation.textOnly (will be ignored)`
+      );
+    }
+    return textOnly;
+  } else if (typeof textOnlyOverride === "boolean") {
+    return textOnlyOverride;
+  } else {
+    return undefined;
+  }
+}
+
 export class BaseConversation {
   protected lastInterruptTimestamp = 0;
   protected mode: Mode = "listening";
@@ -73,6 +93,7 @@ export class BaseConversation {
   protected canSendFeedback = false;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
+    const textOnly = isTextOnly(partialOptions);
     return {
       clientTools: {},
       onConnect: () => {},
@@ -86,6 +107,14 @@ export class BaseConversation {
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
       ...partialOptions,
+      textOnly,
+      overrides: {
+        ...partialOptions.overrides,
+        conversation: {
+          ...partialOptions.overrides?.conversation,
+          textOnly,
+        },
+      },
     };
   }
 
