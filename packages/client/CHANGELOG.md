@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 0.14.0-beta.1
+
+### Patch Changes
+
+- 23ed493: Normalize the `textOnly` option (passable both on the top-level and via the overrides object): Providing one will propagate to the other, with the top-level taking precedence, in case of conflict.
+
 ## 0.14.0-beta.0
 
 ### Minor Changes
