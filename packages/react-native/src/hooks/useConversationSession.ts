@@ -8,6 +8,7 @@ import {
   getConversationToken,
   extractConversationIdFromToken,
 } from "../utils/tokenUtils";
+import { isTextOnly } from "../utils/text-only";
 
 export const useConversationSession = (
   callbacksRef: { current: Callbacks },
@@ -26,6 +27,8 @@ export const useConversationSession = (
     ConversationConfig["dynamicVariables"]
   >({});
   const [userId, setUserId] = useState<ConversationConfig["userId"]>(undefined);
+  const [textOnly, setTextOnly] =
+    useState<ConversationConfig["textOnly"]>(false);
 
   const startSession = useCallback(
     async (config: ConversationConfig) => {
@@ -33,10 +36,19 @@ export const useConversationSession = (
         setStatus("connecting");
         callbacksRef.current.onStatusChange?.({ status: "connecting" });
 
-        setOverrides(config.overrides || {});
+        const textOnly = isTextOnly(config);
+
+        setOverrides({
+          ...config.overrides,
+          conversation: {
+            ...config.overrides?.conversation,
+            textOnly,
+          },
+        });
         setCustomLlmExtraBody(config.customLlmExtraBody || null);
         setDynamicVariables(config.dynamicVariables || {});
         setUserId(config.userId);
+        setTextOnly(textOnly);
 
         let conversationToken: string;
 
@@ -76,6 +88,7 @@ export const useConversationSession = (
       setConnect,
       setToken,
       setConversationId,
+      setTextOnly,
       tokenFetchUrl,
     ]
   );
@@ -111,5 +124,6 @@ export const useConversationSession = (
     customLlmExtraBody,
     dynamicVariables,
     userId,
+    textOnly,
   };
 };
