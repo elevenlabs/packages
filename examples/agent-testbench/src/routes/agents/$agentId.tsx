@@ -81,7 +81,7 @@ function RouteComponent() {
           <Button
             className="fixed top-2 left-2"
             variant="outline"
-            onClick={() => navigate({ to: "/agents" })}
+            onClick={() => navigate({ to: "/" })}
           >
             <ArrowLeft />
             Back
