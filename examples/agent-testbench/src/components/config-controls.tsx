@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { useConversationStatus } from "@/components/conversation-provider";
 
 export type ConfigControls = {
   value: BaseSessionConfig & { connectionType?: ConnectionType };
@@ -19,6 +20,10 @@ export type ConfigControls = {
 };
 
 export function ConfigControls({ value, onChange }: ConfigControls) {
+  const {status} = useConversationStatus();
+
+  const disabled = status === "connecting" || status === "connected";
+  
   return (
     <>
       <FieldGroup>
@@ -34,8 +39,8 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
             }
           >
             <TabsList>
-              <TabsTrigger value="webrtc">WebRTC</TabsTrigger>
-              <TabsTrigger value="websocket">WebSocket</TabsTrigger>
+              <TabsTrigger disabled={disabled} value="webrtc">WebRTC</TabsTrigger>
+              <TabsTrigger disabled={disabled} value="websocket">WebSocket</TabsTrigger>
             </TabsList>
           </Tabs>
         </Field>
@@ -46,6 +51,7 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
           <div className="flex items-center space-x-2">
             <Switch
               id="session-config-text-only"
+              disabled={disabled}
               checked={value.textOnly}
               onCheckedChange={checked =>
                 onChange({
@@ -66,6 +72,7 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
           <div className="flex items-center space-x-2">
             <Switch
               id="session-config-overrides-conversation-text-only"
+              disabled={disabled}
               checked={value.overrides?.conversation?.textOnly}
               onCheckedChange={checked =>
                 onChange({
@@ -91,6 +98,7 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
           </FieldLabel>
           <Input
             id="session-config-overrides-client-source"
+            disabled={disabled}
             value={value.overrides?.client?.source}
             onChange={e =>
               onChange({
@@ -112,6 +120,7 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
           </FieldLabel>
           <Input
             id="session-config-overrides-client-version"
+            disabled={disabled}
             value={value.overrides?.client?.version}
             onChange={e =>
               onChange({
