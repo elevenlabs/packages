@@ -58,7 +58,7 @@ export const Route = createFileRoute("/agents/$agentId")({
 function RouteComponent() {
   const { agent, error } = Route.useLoaderData();
   const navigate = useNavigate();
-
+  
   if (error) {
     return (
       <Page title="Error">
@@ -86,12 +86,8 @@ function RouteComponent() {
             <ArrowLeft />
             Back
           </Button>
-          <main className="flex flex-row grow gap-5">
-            <section className="flex flex-col grow">
-              <AgentControls agentId={agent.agentId} options={sessionConfig} />
-              <LogTable />
-            </section>
-            <Card className="w-md self-start">
+          <main className="flex flex-col gap-5">
+            <Card className="w-md self-center">
               <CardContent className="flex flex-col gap-4">
                 <ConfigControls
                   value={sessionConfig}
@@ -99,6 +95,10 @@ function RouteComponent() {
                 />
               </CardContent>
             </Card>
+            <section className="flex flex-col grow min-h-screen">
+              <AgentControls agentId={agent.agentId} options={sessionConfig} />
+              <LogTable />
+            </section>
           </main>
         </Page>
       </ConversationProvider>

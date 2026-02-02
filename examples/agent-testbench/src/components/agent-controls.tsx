@@ -3,6 +3,7 @@ import type {
   ConnectionType,
   PartialOptions,
 } from "@elevenlabs/client";
+import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,6 @@ import {
   useConversationStatus,
 } from "@/components/conversation-provider";
 import { useLogControls, useLogEntries } from "./log-provider";
-import { useCallback } from "react";
 import { spyOnMethods } from "@/lib/utils";
 
 const EVENT_METHOD_NAMES = [
@@ -61,8 +61,6 @@ export function AgentControls({
   const status = useConversationStatus();
   const { start, end } = useConversationControls();
   const { appendLogEntry } = useLogControls();
-
-  console.log("options", options);
 
   const handleStart = useCallback(() => {
     const instrumentedOptions = spyOnMethods<PartialOptions>(
