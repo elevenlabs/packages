@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef } from "react";
+
 import {
   Table,
   TableBody,
@@ -8,7 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { useLogEntries } from "./log-provider";
+import { useLogEntries } from "@/components/log-provider";
+import { useConversationStatus } from "@/components/conversation-provider";
 
 function formatArgs(args: unknown[]) {
   return args
@@ -23,8 +26,21 @@ function formatArgs(args: unknown[]) {
 
 export function LogTable() {
   const entries = useLogEntries();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const status = useConversationStatus();
+
+  const scrollToEvents = useCallback(() => {
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+  }, [containerRef]);
+
+  useEffect(() => {
+    if (status.status === "connecting") {
+      scrollToEvents();
+    }
+  }, [status.status, scrollToEvents]);
+
   return (
-    <div className="basis-0 grow overflow-y-auto">
+    <div className="basis-0 grow overflow-y-auto" ref={containerRef}>
       <Table>
         <TableCaption>Log of events from the conversation</TableCaption>
         <TableHeader>
