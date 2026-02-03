@@ -2,6 +2,7 @@ import type { BaseSessionConfig, ConnectionType } from "@elevenlabs/client";
 
 import {
   Field,
+  FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
@@ -156,11 +157,76 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             }
           />
         </Field>
-        {/*
-          useWakeLock?: boolean;
-          connectionDelay?: DelayConfig;
-          userId?: string;
-        */}
+        <Field>
+          <FieldLabel htmlFor="session-config-connection-delay">
+            Connection Delay
+          </FieldLabel>
+          <FieldDescription>
+            The delay in milliseconds to wait before connecting to the server.
+          </FieldDescription>
+          <Input
+            id="session-config-connection-delay"
+            placeholder="Default delay (ms)"
+            disabled={disabled}
+            value={value.connectionDelay?.default ?? ""}
+            type="number"
+            min={0}
+            step={1}
+            onChange={e =>
+              onChange({
+                ...value,
+                connectionDelay: e.target.value
+                  ? {
+                      ...value.connectionDelay,
+                      default: e.target.value
+                        ? parseInt(e.target.value, 10)
+                        : 0,
+                    }
+                  : undefined,
+              })
+            }
+          />
+          <Input
+            id="session-config-connection-delay-android"
+            placeholder="Android delay (ms)"
+            disabled={disabled || !value.connectionDelay}
+            value={value.connectionDelay?.android ?? ""}
+            type="number"
+            min={0}
+            step={1}
+            onChange={e => {
+              if (value.connectionDelay) {
+                const newConnectionDelay = { ...value.connectionDelay };
+                if (e.target.value) {
+                  newConnectionDelay.android = parseInt(e.target.value, 10);
+                } else {
+                  delete newConnectionDelay.android;
+                }
+                onChange({ ...value, connectionDelay: newConnectionDelay });
+              }
+            }}
+          />
+          <Input
+            id="session-config-connection-delay-ios"
+            placeholder="iOS delay (ms)"
+            disabled={disabled || !value.connectionDelay}
+            value={value.connectionDelay?.ios ?? ""}
+            type="number"
+            min={0}
+            step={1}
+            onChange={e => {
+              if (value.connectionDelay) {
+                const newConnectionDelay = { ...value.connectionDelay };
+                if (e.target.value) {
+                  newConnectionDelay.ios = parseInt(e.target.value, 10);
+                } else {
+                  delete newConnectionDelay.ios;
+                }
+                onChange({ ...value, connectionDelay: newConnectionDelay });
+              }
+            }}
+          />
+        </Field>
       </FieldGroup>
       <CollapsibleFieldGroup title="Dynamic Variables">
         <DynamicVariablesInput
