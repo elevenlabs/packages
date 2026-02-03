@@ -93,6 +93,62 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             </FieldLabel>
           </div>
         </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-origin">Origin</FieldLabel>
+          <Input
+            id="session-config-origin"
+            disabled={disabled}
+            value={value.origin ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                origin: e.target.value ? e.target.value : undefined,
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-authorization">
+            Authorization
+          </FieldLabel>
+          <Input
+            id="session-config-authorization"
+            disabled={disabled}
+            value={value.authorization ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                authorization: e.target.value ? e.target.value : undefined,
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-livekit-url">
+            LiveKit URL
+          </FieldLabel>
+          <Input
+            id="session-config-livekit-url"
+            disabled={disabled}
+            value={value.livekitUrl ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                livekitUrl: e.target.value ? e.target.value : undefined,
+              })
+            }
+          />
+        </Field>
+        {/*
+          origin?: string;
+          authorization?: string;
+          livekitUrl?: string;
+          customLlmExtraBody?: unknown;
+          dynamicVariables?: Record<string, string | number | boolean>;
+          useWakeLock?: boolean;
+          connectionDelay?: DelayConfig;
+          userId?: string;
+        */}
       </FieldGroup>
       <CollapsibleFieldGroup title="Dynamic Variables">
         <DynamicVariablesInput
