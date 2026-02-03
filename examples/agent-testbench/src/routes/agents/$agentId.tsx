@@ -57,7 +57,6 @@ export const Route = createFileRoute("/agents/$agentId")({
 
 function RouteComponent() {
   const { agent, error } = Route.useLoaderData();
-  const navigate = useNavigate();
   
   if (error) {
     return (
@@ -78,14 +77,6 @@ function RouteComponent() {
     <LogProvider>
       <ConversationProvider>
         <Page title={agent.name}>
-          <Button
-            className="fixed top-2 left-2"
-            variant="outline"
-            onClick={() => navigate({ to: "/" })}
-          >
-            <ArrowLeft />
-            Back
-          </Button>
           <main className="flex flex-col gap-5">
             <Card className="w-md self-center">
               <CardContent className="flex flex-col gap-4">
