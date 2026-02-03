@@ -202,3 +202,11 @@ export function useConversationStatus() {
   }
   return status;
 }
+
+export function useConversationMicrophone() {
+  const microphone = useContext(ConversationMicrophoneContext);
+  if (!microphone) {
+    throw new Error("Expected a ConversationProvider");
+  }
+  return microphone;
+}
