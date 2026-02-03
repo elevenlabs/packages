@@ -79,7 +79,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             <Switch
               id="session-config-text-only"
               disabled={disabled}
-              checked={value.textOnly}
+              checked={value.textOnly ?? false}
               onCheckedChange={checked =>
                 onChange({
                   ...value,
@@ -94,6 +94,78 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
         </Field>
       </FieldGroup>
       <FieldSeparator />
+      <CollapsibleFieldGroup title="Overrides (Agent)">
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-agent-prompt">
+            Prompt
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-agent-prompt"
+            disabled={disabled}
+            value={value.overrides?.agent?.prompt?.prompt ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  agent: {
+                    ...value.overrides?.agent,
+                    prompt: e.target.value
+                      ? {
+                          prompt: e.target.value,
+                        }
+                      : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-agent-first-message">
+            First Message
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-agent-first-message"
+            disabled={disabled}
+            value={value.overrides?.agent?.firstMessage ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  agent: {
+                    ...value.overrides?.agent,
+                    firstMessage: e.target.value,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-agent-language">
+            Language
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-agent-language"
+            disabled={disabled}
+            value={value.overrides?.agent?.language ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  agent: {
+                    ...value.overrides?.agent,
+                    language: e.target.value ? e.target.value : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+      </CollapsibleFieldGroup>
       <CollapsibleFieldGroup title="Overrides (TTS)">
         <Field>
           <FieldLabel htmlFor="session-config-overrides-tts-voice-id">
@@ -102,7 +174,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           <Input
             id="session-config-overrides-tts-voice-id"
             disabled={disabled}
-            value={value.overrides?.tts?.voiceId}
+            value={value.overrides?.tts?.voiceId ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -128,7 +200,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             min={0.7}
             max={1.2}
             step={0.01}
-            value={value.overrides?.tts?.speed}
+            value={value.overrides?.tts?.speed ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -156,7 +228,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             min={0}
             max={1}
             step={0.01}
-            value={value.overrides?.tts?.stability}
+            value={value.overrides?.tts?.stability ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -184,7 +256,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             min={0}
             max={1}
             step={0.01}
-            value={value.overrides?.tts?.similarityBoost}
+            value={value.overrides?.tts?.similarityBoost ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -208,7 +280,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             <Switch
               id="session-config-overrides-conversation-text-only"
               disabled={disabled}
-              checked={value.overrides?.conversation?.textOnly}
+              checked={value.overrides?.conversation?.textOnly ?? false}
               onCheckedChange={checked =>
                 onChange({
                   ...value,
@@ -233,7 +305,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           <Input
             id="session-config-overrides-client-source"
             disabled={disabled}
-            value={value.overrides?.client?.source}
+            value={value.overrides?.client?.source ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -255,7 +327,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           <Input
             id="session-config-overrides-client-version"
             disabled={disabled}
-            value={value.overrides?.client?.version}
+            value={value.overrides?.client?.version ?? ""}
             onChange={e =>
               onChange({
                 ...value,
@@ -270,30 +342,6 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             }
           />
         </Field>
-        {/* 
-          overrides?: {
-            agent?: {
-                prompt?: {
-                    prompt?: string;
-                };
-                firstMessage?: string;
-                language?: Language;
-            };
-            tts?: {
-                voiceId?: string;
-                speed?: number;
-                stability?: number;
-                similarityBoost?: number;
-            };
-            conversation?: {
-                textOnly?: boolean;
-            };
-            client?: {
-                source?: string;
-                version?: string;
-            };
-          };
-        */}
       </CollapsibleFieldGroup>
     </>
   );
