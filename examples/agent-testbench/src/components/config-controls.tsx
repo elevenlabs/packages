@@ -55,7 +55,7 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
 
   return (
     <>
-      <FieldGroup>
+      <FieldGroup className="flex flex-row gap-2 items-center">
         <Field>
           <FieldLabel>Connection Type</FieldLabel>
           <Tabs
@@ -78,7 +78,10 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           </Tabs>
         </Field>
         <Field>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-end space-x-2">
+            <FieldLabel htmlFor="session-config-text-only">
+              Text Only
+            </FieldLabel>
             <Switch
               id="session-config-text-only"
               disabled={disabled}
@@ -90,11 +93,26 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
                 })
               }
             />
-            <FieldLabel htmlFor="session-config-text-only">
-              Text Only
+          </div>
+          <div className="flex items-center justify-end space-x-2">
+            <FieldLabel htmlFor="session-config-use-wake-lock">
+              Use Wake Lock
             </FieldLabel>
+            <Switch
+              id="session-config-use-wake-lock"
+              disabled={disabled}
+              checked={value.useWakeLock ?? false}
+              onCheckedChange={checked =>
+                onChange({
+                  ...value,
+                  useWakeLock: checked,
+                })
+              }
+            />
           </div>
         </Field>
+      </FieldGroup>
+      <FieldGroup>
         <Field>
           <FieldLabel htmlFor="session-config-origin">Origin</FieldLabel>
           <Input
