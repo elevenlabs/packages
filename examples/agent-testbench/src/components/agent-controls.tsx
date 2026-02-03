@@ -10,8 +10,10 @@ import {
   useConversationControls,
   useConversationStatus,
 } from "@/components/conversation-provider";
+import { Spinner } from "@/components/ui/spinner";
 import { useLogControls, useLogEntries } from "./log-provider";
 import { spyOnMethods } from "@/lib/utils";
+import { ChatControls } from "./chat-controls";
 
 const EVENT_METHOD_NAMES = [
   "onConnect",
@@ -82,14 +84,21 @@ export function AgentControls({
   }, [options, start, appendLogEntry]);
 
   return (
-    <section className="flex flex-row gap-2 my-4">
-      <Button disabled={status.status !== "disconnected"} onClick={handleStart}>
-        Start
-      </Button>
-      <Button disabled={status.status !== "connected"} onClick={() => end()}>
-        End
-      </Button>
-      <ClearEventsButton />
-    </section>
+    <>
+      <section className="flex flex-row gap-2 my-4">
+        <Button
+          disabled={status.status !== "disconnected"}
+          onClick={handleStart}
+        >
+          Start
+          {status.status === "connecting" && <Spinner />}
+        </Button>
+        <Button disabled={status.status !== "connected"} onClick={() => end()}>
+          End
+        </Button>
+        <ChatControls />
+        <ClearEventsButton />
+      </section>
+    </>
   );
 }
