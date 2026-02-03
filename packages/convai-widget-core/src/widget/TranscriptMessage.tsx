@@ -144,7 +144,7 @@ function ToolCallMessage({
   const state = entry.status ?? ToolCallStatus.LOADING;
 
   return (
-    <div className="flex items-center">
+    <div className="-my-4 first:mt-0 last:mb-0 flex items-center">
       <div className="flex items-center h-7 px-2 gap-1 rounded-button border border-base-border bg-base">
         {state === ToolCallStatus.LOADING && (
           <>
