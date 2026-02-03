@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Table,
@@ -56,7 +63,7 @@ function ArgumentsContent({ entry }: { entry: CallLogEntry }) {
 
 export function LogTable() {
   const containerRef = useRef<HTMLTableElement>(null);
-  const status = useConversationStatus();
+  const { status } = useConversationStatus();
   const [hiddenMethods, setHiddenMethods] = useState<string[]>(
     getHiddenMethodsFromStorage
   );
@@ -82,20 +89,34 @@ export function LogTable() {
     return [...new Set(allEntries.map(entry => entry.method))];
   }, [allEntries]);
 
-  const scrollToEvents = useCallback(() => {
-    // Targeting parent, since the table's height doesn't extend until it has content
-    containerRef.current?.parentElement?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-      inline: "end",
-    });
-  }, [containerRef]);
+  const scrollToEvents = useEffectEvent(() => {
+    const { current: table } = containerRef;
+    if (table) {
+      const { parentElement, lastElementChild } = table;
+      if (!parentElement || !lastElementChild) return;
+      // Targeting parent instead of the table, since the table's height doesn't extend until it has content
+      if (parentElement.clientHeight > lastElementChild.clientHeight) {
+        parentElement.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+          inline: "end",
+        });
+      } else {
+        lastElementChild.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+          inline: "start",
+        });
+      }
+    }
+  });
 
+  // Scroll the the bottom when connecting, connected or when new entries are added
   useEffect(() => {
-    if (status.status === "connecting") {
+    if (status === "connecting" || status === "connected") {
       scrollToEvents();
     }
-  }, [status.status, scrollToEvents]);
+  }, [status, entries]);
 
   return (
     <Table
