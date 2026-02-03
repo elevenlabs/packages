@@ -1,17 +1,42 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
+import { FunnelIcon } from "lucide-react";
+
 import { useLogEntries } from "@/components/log-provider";
 import { useConversationStatus } from "@/components/conversation-provider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { CallLogEntry } from "@/lib/utils";
+
+function getHiddenMethodsFromStorage() {
+  const hiddenMethods = localStorage.getItem("log-table-hidden-methods");
+  return hiddenMethods ? JSON.parse(hiddenMethods) : [];
+}
+
+function setHiddenMethodsToStorage(hiddenMethods: string[]) {
+  localStorage.setItem(
+    "log-table-hidden-methods",
+    JSON.stringify(hiddenMethods)
+  );
+}
 
 function formatArgs(args: unknown[]) {
   return args
@@ -24,13 +49,46 @@ function formatArgs(args: unknown[]) {
     .join(", ");
 }
 
+function ArgumentsContent({ entry }: { entry: CallLogEntry }) {
+  const formattedArgs = formatArgs(entry.args);
+  return <>{formattedArgs}</>;
+}
+
 export function LogTable() {
-  const entries = useLogEntries();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLTableElement>(null);
   const status = useConversationStatus();
+  const [hiddenMethods, setHiddenMethods] = useState<string[]>(
+    getHiddenMethodsFromStorage
+  );
+
+  useEffect(() => {
+    setHiddenMethodsToStorage(hiddenMethods);
+  }, [hiddenMethods]);
+
+  const allEntries = useLogEntries();
+  const entries = useMemo(() => {
+    return allEntries.filter(entry => !hiddenMethods.includes(entry.method));
+  }, [allEntries, hiddenMethods]);
+
+  const toggleMethodHidden = useCallback((methodName: string) => {
+    setHiddenMethods(prev =>
+      prev.includes(methodName)
+        ? prev.filter(name => name !== methodName)
+        : [...prev, methodName]
+    );
+  }, []);
+
+  const allMethodNames = useMemo(() => {
+    return [...new Set(allEntries.map(entry => entry.method))];
+  }, [allEntries]);
 
   const scrollToEvents = useCallback(() => {
-    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    // Targeting parent, since the table's height doesn't extend until it has content
+    containerRef.current?.parentElement?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+      inline: "end",
+    });
   }, [containerRef]);
 
   useEffect(() => {
@@ -40,35 +98,67 @@ export function LogTable() {
   }, [status.status, scrollToEvents]);
 
   return (
-    <div className="basis-0 grow overflow-y-auto" ref={containerRef}>
-      <Table>
-        <TableCaption>Log of events from the conversation</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Part</TableHead>
-            <TableHead className="w-[100px]">Method</TableHead>
-            <TableHead>Arguments</TableHead>
-            <TableHead className="w-[100px] text-right">Δt [ms]</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {entries.map((entry, index) => {
-            const previousEntry = entries[index - 1];
-            const delta = previousEntry ? entry.when - previousEntry.when : 0;
-            const formattedArgs = formatArgs(entry.args);
-            return (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{entry.part}</TableCell>
-                <TableCell className="font-medium">{entry.method}</TableCell>
-                <TableCell className="truncate max-w-0" title={formattedArgs}>
-                  {formattedArgs}
-                </TableCell>
-                <TableCell className="text-right">{delta}</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <Table
+      containerClassName="h-full"
+      className="relative overflow-y-auto"
+      ref={containerRef}
+    >
+      <TableHeader className="sticky top-0 bg-background z-10">
+        <TableRow>
+          <TableHead className="w-[100px]">Part</TableHead>
+          <TableHead className="w-[100px]">
+            Method
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="link" size="icon">
+                  <FunnelIcon className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Methods</DropdownMenuLabel>
+                  {allMethodNames.map(methodName => (
+                    <DropdownMenuCheckboxItem
+                      key={methodName}
+                      checked={!hiddenMethods.includes(methodName)}
+                      onCheckedChange={() => toggleMethodHidden(methodName)}
+                    >
+                      {methodName}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setHiddenMethods([])}>
+                    Show all
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setHiddenMethods(allMethodNames)}
+                  >
+                    Hide all
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableHead>
+          <TableHead>Arguments</TableHead>
+          <TableHead className="w-[100px] text-right">Δt [ms]</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody className="font-mono">
+        {entries.map((entry, index) => {
+          const previousEntry = entries[index - 1];
+          const delta = previousEntry ? entry.when - previousEntry.when : 0;
+          return (
+            <TableRow key={index}>
+              <TableCell className="font-medium">{entry.part}</TableCell>
+              <TableCell className="font-medium">{entry.method}</TableCell>
+              <TableCell className="truncate max-w-0">
+                <ArgumentsContent entry={entry} />
+              </TableCell>
+              <TableCell className="text-right">{delta}</TableCell>
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 }
