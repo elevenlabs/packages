@@ -86,10 +86,12 @@ function RouteComponent() {
                 />
               </CardContent>
             </Card>
-            <section className="flex flex-col grow h-screen">
-              <AgentControls agentId={agent.agentId} options={sessionConfig} />
-              <LogTable />
-            </section>
+            <ClientOnly>
+              <section className="flex flex-col grow h-screen">
+                <AgentControls agentId={agent.agentId} options={sessionConfig} />
+                <LogTable />
+              </section>
+            </ClientOnly>
           </main>
         </Page>
       </ConversationProvider>
