@@ -11,9 +11,11 @@ import {
   useConversationStatus,
 } from "@/components/conversation-provider";
 import { Spinner } from "@/components/ui/spinner";
-import { useLogControls, useLogEntries } from "./log-provider";
 import { spyOnMethods } from "@/lib/utils";
+
+import { useLogControls, useLogEntries } from "./log-provider";
 import { ChatControls } from "./chat-controls";
+import { MuteSwitch } from "./mute-switch";
 
 const EVENT_METHOD_NAMES = [
   "onConnect",
@@ -48,7 +50,7 @@ function ClearEventsButton() {
       variant="outline"
       onClick={clearLog}
     >
-      Clear Events
+      Clear log
     </Button>
   );
 }
@@ -98,6 +100,7 @@ export function AgentControls({
           End
         </Button>
         <ChatControls />
+        <MuteSwitch disabled={status.status !== "connected"} />
         <ClearEventsButton />
       </section>
     </>
