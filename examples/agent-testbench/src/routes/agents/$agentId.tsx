@@ -6,12 +6,10 @@ import {
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
 import type { BaseSessionConfig, ConnectionType } from "@elevenlabs/client";
 
 import { elevenlabs } from "@/lib/elevenlabs.server";
 import { Page } from "@/components/page";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConversationProvider } from "@/components/conversation-provider";
 import { AgentControls } from "@/components/agent-controls";

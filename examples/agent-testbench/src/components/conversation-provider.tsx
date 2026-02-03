@@ -9,10 +9,21 @@ import {
 } from "react";
 import { Conversation, type PartialOptions } from "@elevenlabs/client";
 
-const ConversationControlContext = createContext<{
+type ConversationControlContextValue = {
   start(options: PartialOptions): void;
   end(): void;
-} | null>(null);
+} & Pick<
+  Conversation,
+  | "sendUserMessage"
+  | "sendContextualUpdate"
+  | "sendUserActivity"
+  | "sendFeedback"
+  | "sendMCPToolApprovalResult"
+  | "setMicMuted"
+>;
+
+const ConversationControlContext =
+  createContext<ConversationControlContextValue | null>(null);
 
 export type ConversationStatus = {
   status: "disconnected" | "connecting" | "connected" | "error";
@@ -47,6 +58,17 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
   const [status, setStatus] = useState<ConversationStatus>(STATUS.disconnected);
   const [isMicMuted, setMicMuted] = useState(false);
 
+  const handleMicMutedChange = useCallback(
+    (isMicMuted: boolean) => {
+      setMicMuted(isMicMuted);
+      const { current: conversation } = conversationRef;
+      if (conversation) {
+        conversation.setMicMuted(isMicMuted);
+      }
+    },
+    [conversationRef, setMicMuted]
+  );
+
   const start = useCallback(
     (options: PartialOptions) => {
       if (conversationStartingRef.current) {
@@ -71,33 +93,68 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
         });
       setStatus(STATUS.connecting);
     },
-    [conversationRef, setStatus]
+    [setStatus]
   );
 
-  const end = useCallback(() => {
-    const { current: conversation } = conversationRef;
-    if (conversation) {
-      conversation.endSession().then(
-        () => {
-          // TODO: Determine if this is actually needed or we can rely on status change events instead
-          setStatus(STATUS.disconnected);
-        },
-        err => {
-          setStatus({
-            status: "error",
-            message: `Failed to end session: ${err instanceof Error ? err.message : String(err)}`,
-          });
-        }
-      );
-    }
-  }, [conversationRef, setStatus]);
-
-  const controlContextValue = useMemo(
+  const controlContextValue = useMemo<ConversationControlContextValue>(
     () => ({
       start,
-      end,
+      end() {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.endSession().then(
+          () => {
+            // TODO: Determine if this is actually needed or we can rely on status change events instead
+            setStatus(STATUS.disconnected);
+          },
+          err => {
+            setStatus({
+              status: "error",
+              message: `Failed to end session: ${err instanceof Error ? err.message : String(err)}`,
+            });
+          }
+        );
+      },
+      sendUserMessage(message: string) {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.sendUserMessage(message);
+      },
+      sendContextualUpdate(message: string) {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.sendContextualUpdate(message);
+      },
+      sendUserActivity() {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.sendUserActivity();
+      },
+      sendFeedback(like: boolean) {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.sendFeedback(like);
+      },
+      sendMCPToolApprovalResult(toolCallId: string, isApproved: boolean) {
+        const { current: conversation } = conversationRef;
+        if (!conversation) {
+          throw new Error("Conversation not started");
+        }
+        conversation.sendMCPToolApprovalResult(toolCallId, isApproved);
+      },
+      setMicMuted: handleMicMutedChange,
     }),
-    [start, end]
+    [start, handleMicMutedChange]
   );
 
   useEffect(() => {
@@ -110,17 +167,6 @@ export function ConversationProvider({ children }: React.PropsWithChildren) {
       }
     };
   }, []);
-
-  const handleMicMutedChange = useCallback(
-    (isMicMuted: boolean) => {
-      setMicMuted(isMicMuted);
-      const { current: conversation } = conversationRef;
-      if (conversation) {
-        conversation.setMicMuted(isMicMuted);
-      }
-    },
-    [conversationRef, setMicMuted]
-  );
 
   const microphoneContextValue = useMemo(
     () => ({
