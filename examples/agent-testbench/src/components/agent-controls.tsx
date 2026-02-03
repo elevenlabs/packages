@@ -62,7 +62,7 @@ export function AgentControls({
 }) {
   const status = useConversationStatus();
   const { start, end } = useConversationControls();
-  const { appendLogEntry } = useLogControls();
+  const { appendLogEntry, clearLog } = useLogControls();
 
   const handleStart = useCallback(() => {
     const instrumentedOptions = spyOnMethods<PartialOptions>(
@@ -74,6 +74,7 @@ export function AgentControls({
       EVENT_METHOD_NAMES,
       entry => appendLogEntry({ part: "conversation", ...entry })
     );
+    clearLog();
     appendLogEntry({
       part: "conversation",
       method: "start",
