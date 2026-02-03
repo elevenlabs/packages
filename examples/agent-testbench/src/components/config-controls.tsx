@@ -142,6 +142,20 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           />
         </Field>
         <Field>
+          <FieldLabel htmlFor="session-config-user-id">User ID</FieldLabel>
+          <Input
+            id="session-config-user-id"
+            disabled={disabled}
+            value={value.userId ?? ""}
+            onChange={e =>
+              onChange({
+                ...value,
+                userId: e.target.value ? e.target.value : undefined,
+              })
+            }
+          />
+        </Field>
+        <Field>
           <FieldLabel htmlFor="session-config-custom-llm-extra-body">
             Custom LLM Extra Body
           </FieldLabel>
