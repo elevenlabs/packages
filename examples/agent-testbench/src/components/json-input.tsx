@@ -17,8 +17,7 @@ export function JsonInput({ value, onChange, ...props }: JsonInputProps) {
         value={text}
         placeholder={error ?? props.placeholder}
         aria-invalid={error !== null}
-        onChange={e => {
-          const { value } = e.target;
+        onValueChange={value => {
           setText(value);
           try {
             onChange(value ? JSON.parse(value) : undefined);
