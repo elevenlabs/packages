@@ -57,7 +57,7 @@ export const Route = createFileRoute("/agents/$agentId")({
 
 function RouteComponent() {
   const { agent, error } = Route.useLoaderData();
-  
+
   if (error) {
     return (
       <Page title="Error">
@@ -88,7 +88,10 @@ function RouteComponent() {
             </Card>
             <ClientOnly>
               <section className="flex flex-col grow h-screen">
-                <AgentControls agentId={agent.agentId} options={sessionConfig} />
+                <AgentControls
+                  agentId={agent.agentId}
+                  options={sessionConfig}
+                />
                 <LogTable />
               </section>
             </ClientOnly>

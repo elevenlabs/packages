@@ -1,8 +1,7 @@
 import { useCallback, useEffect } from "react";
 
-
 export function MediaDevicesControls() {
-    /*
+  /*
     const { mediaDevices } = navigator;
 
     const handleDeviceChange = useCallback(() => {
@@ -25,9 +24,9 @@ export function MediaDevicesControls() {
     }, [handleDeviceChange]);
     */
 
-    return (
-        <div>
-            <h1>Media Devices Controls</h1>
-        </div>
-    )
+  return (
+    <div>
+      <h1>Media Devices Controls</h1>
+    </div>
+  );
 }

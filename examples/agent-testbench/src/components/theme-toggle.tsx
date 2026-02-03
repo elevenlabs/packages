@@ -1,16 +1,16 @@
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useTheme } from "@/components/theme-provider"
+} from "@/components/ui/dropdown-menu";
+import { useTheme } from "@/components/theme-provider";
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
 
   return (
     <div className="fixed bottom-2 left-2">
@@ -35,5 +35,5 @@ export function ThemeToggle() {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export type CallLogEntry = {
@@ -27,7 +27,7 @@ export function spyOnMethods<T extends Record<string, unknown>>(
         when: Date.now(),
       });
 
-      if (typeof originalMethod === 'function') {
+      if (typeof originalMethod === "function") {
         return originalMethod.apply(options, args);
       }
     }) as T[typeof methodName];
