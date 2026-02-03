@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDownIcon } from "lucide-react";
 import { DynamicVariablesInput } from "@/components/dynamic-variables-input";
+import { JsonInput } from "./json-input";
 
 export type ConfigControlsProps = {
   value: BaseSessionConfig & { connectionType?: ConnectionType };
@@ -139,12 +140,23 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             }
           />
         </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-custom-llm-extra-body">
+            Custom LLM Extra Body
+          </FieldLabel>
+          <JsonInput
+            id="session-config-custom-llm-extra-body"
+            disabled={disabled}
+            value={value.customLlmExtraBody}
+            onChange={customLlmExtraBody =>
+              onChange({
+                ...value,
+                customLlmExtraBody,
+              })
+            }
+          />
+        </Field>
         {/*
-          origin?: string;
-          authorization?: string;
-          livekitUrl?: string;
-          customLlmExtraBody?: unknown;
-          dynamicVariables?: Record<string, string | number | boolean>;
           useWakeLock?: boolean;
           connectionDelay?: DelayConfig;
           userId?: string;
