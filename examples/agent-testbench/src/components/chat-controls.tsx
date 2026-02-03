@@ -32,7 +32,7 @@ export function ChatControls() {
         type="text"
         placeholder="Message"
         value={message}
-        onChange={e => setMessage(e.target.value)}
+        onValueChange={setMessage}
         onKeyDown={e => e.key === "Enter" && handleSend("user-message")}
         disabled={status !== "connected"}
       />

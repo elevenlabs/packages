@@ -37,7 +37,7 @@ export function TypedInput({ value, onChange, placeholder }: TypedInputProps) {
         <Input
           placeholder={placeholder}
           value={value.toString()}
-          onChange={e => handleChange(e.target.value)}
+          onValueChange={handleChange}
         />
       )}
       {type === "number" && (
@@ -45,7 +45,7 @@ export function TypedInput({ value, onChange, placeholder }: TypedInputProps) {
           placeholder={placeholder}
           value={value.toString()}
           type="number"
-          onChange={e => handleChange(Number(e.target.value))}
+          onValueChange={v => handleChange(Number(v))}
         />
       )}
       {type === "boolean" && (

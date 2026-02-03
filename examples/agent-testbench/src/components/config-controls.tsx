@@ -119,10 +119,10 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-origin"
             disabled={disabled}
             value={value.origin ?? ""}
-            onChange={e =>
+            onValueChange={origin =>
               onChange({
                 ...value,
-                origin: e.target.value ? e.target.value : undefined,
+                origin: origin ? origin : undefined,
               })
             }
           />
@@ -135,10 +135,10 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-authorization"
             disabled={disabled}
             value={value.authorization ?? ""}
-            onChange={e =>
+            onValueChange={authorization =>
               onChange({
                 ...value,
-                authorization: e.target.value ? e.target.value : undefined,
+                authorization: authorization ? authorization : undefined,
               })
             }
           />
@@ -151,10 +151,10 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-livekit-url"
             disabled={disabled}
             value={value.livekitUrl ?? ""}
-            onChange={e =>
+            onValueChange={livekitUrl =>
               onChange({
                 ...value,
-                livekitUrl: e.target.value ? e.target.value : undefined,
+                livekitUrl: livekitUrl ? livekitUrl : undefined,
               })
             }
           />
@@ -165,10 +165,10 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-user-id"
             disabled={disabled}
             value={value.userId ?? ""}
-            onChange={e =>
+            onValueChange={userId =>
               onChange({
                 ...value,
-                userId: e.target.value ? e.target.value : undefined,
+                userId: userId ? userId : undefined,
               })
             }
           />
@@ -204,15 +204,13 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             type="number"
             min={0}
             step={1}
-            onChange={e =>
+            onValueChange={delay =>
               onChange({
                 ...value,
-                connectionDelay: e.target.value
+                connectionDelay: delay
                   ? {
                       ...value.connectionDelay,
-                      default: e.target.value
-                        ? parseInt(e.target.value, 10)
-                        : 0,
+                      default: delay ? parseInt(delay, 10) : 0,
                     }
                   : undefined,
               })
@@ -226,11 +224,11 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             type="number"
             min={0}
             step={1}
-            onChange={e => {
+            onValueChange={delay => {
               if (value.connectionDelay) {
                 const newConnectionDelay = { ...value.connectionDelay };
-                if (e.target.value) {
-                  newConnectionDelay.android = parseInt(e.target.value, 10);
+                if (delay) {
+                  newConnectionDelay.android = parseInt(delay, 10);
                 } else {
                   delete newConnectionDelay.android;
                 }
@@ -246,11 +244,11 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             type="number"
             min={0}
             step={1}
-            onChange={e => {
+            onValueChange={delay => {
               if (value.connectionDelay) {
                 const newConnectionDelay = { ...value.connectionDelay };
-                if (e.target.value) {
-                  newConnectionDelay.ios = parseInt(e.target.value, 10);
+                if (delay) {
+                  newConnectionDelay.ios = parseInt(delay, 10);
                 } else {
                   delete newConnectionDelay.ios;
                 }
@@ -278,16 +276,16 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-agent-prompt"
             disabled={disabled}
             value={value.overrides?.agent?.prompt?.prompt ?? ""}
-            onChange={e =>
+            onValueChange={prompt =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   agent: {
                     ...value.overrides?.agent,
-                    prompt: e.target.value
+                    prompt: prompt
                       ? {
-                          prompt: e.target.value,
+                          prompt: prompt ? prompt : undefined,
                         }
                       : undefined,
                   },
@@ -304,14 +302,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-agent-first-message"
             disabled={disabled}
             value={value.overrides?.agent?.firstMessage ?? ""}
-            onChange={e =>
+            onValueChange={firstMessage =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   agent: {
                     ...value.overrides?.agent,
-                    firstMessage: e.target.value,
+                    firstMessage: firstMessage ? firstMessage : undefined,
                   },
                 },
               })
@@ -326,14 +324,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-agent-language"
             disabled={disabled}
             value={value.overrides?.agent?.language ?? ""}
-            onChange={e =>
+            onValueChange={language =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   agent: {
                     ...value.overrides?.agent,
-                    language: e.target.value ? e.target.value : undefined,
+                    language: language ? language : undefined,
                   },
                 },
               })
@@ -350,14 +348,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-tts-voice-id"
             disabled={disabled}
             value={value.overrides?.tts?.voiceId ?? ""}
-            onChange={e =>
+            onValueChange={voiceId =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   tts: {
                     ...value.overrides?.tts,
-                    voiceId: e.target.value ? e.target.value : undefined,
+                    voiceId: voiceId ? voiceId : undefined,
                   },
                 },
               })
@@ -376,16 +374,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             max={1.2}
             step={0.01}
             value={value.overrides?.tts?.speed ?? ""}
-            onChange={e =>
+            onValueChange={speed =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   tts: {
                     ...value.overrides?.tts,
-                    speed: e.target.value
-                      ? parseFloat(e.target.value)
-                      : undefined,
+                    speed: speed ? parseFloat(speed) : undefined,
                   },
                 },
               })
@@ -404,16 +400,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             max={1}
             step={0.01}
             value={value.overrides?.tts?.stability ?? ""}
-            onChange={e =>
+            onValueChange={stability =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   tts: {
                     ...value.overrides?.tts,
-                    stability: e.target.value
-                      ? parseFloat(e.target.value)
-                      : undefined,
+                    stability: stability ? parseFloat(stability) : undefined,
                   },
                 },
               })
@@ -432,15 +426,15 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             max={1}
             step={0.01}
             value={value.overrides?.tts?.similarityBoost ?? ""}
-            onChange={e =>
+            onValueChange={similarityBoost =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   tts: {
                     ...value.overrides?.tts,
-                    similarityBoost: e.target.value
-                      ? parseFloat(e.target.value)
+                    similarityBoost: similarityBoost
+                      ? parseFloat(similarityBoost)
                       : undefined,
                   },
                 },
@@ -481,14 +475,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-client-source"
             disabled={disabled}
             value={value.overrides?.client?.source ?? ""}
-            onChange={e =>
+            onValueChange={source =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   client: {
                     ...value.overrides?.client,
-                    source: e.target.value,
+                    source: source ? source : undefined,
                   },
                 },
               })
@@ -503,14 +497,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
             id="session-config-overrides-client-version"
             disabled={disabled}
             value={value.overrides?.client?.version ?? ""}
-            onChange={e =>
+            onValueChange={version =>
               onChange({
                 ...value,
                 overrides: {
                   ...value.overrides,
                   client: {
                     ...value.overrides?.client,
-                    version: e.target.value,
+                    version: version ? version : undefined,
                   },
                 },
               })

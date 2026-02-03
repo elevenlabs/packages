@@ -24,10 +24,10 @@ export function DynamicVariablesInput({
             <Input
               placeholder="Variable Name"
               value={key}
-              onChange={e => {
+              onValueChange={newKey => {
                 const newValues = { ...values };
                 delete newValues[key];
-                newValues[e.target.value] = entryValue;
+                newValues[newKey] = entryValue;
                 onChange(newValues);
               }}
             />
@@ -53,7 +53,7 @@ export function DynamicVariablesInput({
       <Field>
         <Input
           value={newKey}
-          onChange={e => setNewKey(e.target.value)}
+          onValueChange={setNewKey}
           placeholder="New Variable Name"
         />
         <Button
