@@ -45,20 +45,16 @@ function setHiddenMethodsToStorage(hiddenMethods: string[]) {
   );
 }
 
-function formatArgs(args: unknown[]) {
-  return args
-    .map(arg => {
-      if (typeof arg === "object") {
-        return JSON.stringify(arg, null, 2);
-      }
-      return String(arg);
-    })
-    .join(", ");
-}
-
 function ArgumentsContent({ entry }: { entry: CallLogEntry }) {
-  const formattedArgs = formatArgs(entry.args);
-  return <>{formattedArgs}</>;
+  return entry.args.map((arg, index) => {
+    const formattedArg =
+      typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg);
+    return (
+      <pre className="whitespace-pre-wrap truncate" key={index}>
+        {formattedArg}
+      </pre>
+    );
+  });
 }
 
 export function LogTable() {
@@ -170,12 +166,12 @@ export function LogTable() {
           const delta = previousEntry ? entry.when - previousEntry.when : 0;
           return (
             <TableRow key={index}>
-              <TableCell className="font-medium">{entry.part}</TableCell>
-              <TableCell className="font-medium">{entry.method}</TableCell>
-              <TableCell className="truncate max-w-0">
+              <TableCell className="align-top">{entry.part}</TableCell>
+              <TableCell className="align-top">{entry.method}</TableCell>
+              <TableCell className="max-w-0">
                 <ArgumentsContent entry={entry} />
               </TableCell>
-              <TableCell className="text-right">{delta}</TableCell>
+              <TableCell className="align-top text-right">{delta}</TableCell>
             </TableRow>
           );
         })}
