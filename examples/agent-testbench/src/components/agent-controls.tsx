@@ -43,7 +43,7 @@ function ClearEventsButton() {
     <Button
       disabled={events.length === 0}
       className="ml-auto"
-      variant="destructive"
+      variant="outline"
       onClick={clearLog}
     >
       Clear Events
