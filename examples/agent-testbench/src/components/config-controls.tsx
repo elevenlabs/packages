@@ -11,13 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useConversationStatus } from "@/components/conversation-provider";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDownIcon } from "lucide-react";
-import { Button } from "./ui/button";
+import { DynamicVariablesInput } from "@/components/dynamic-variables-input";
 
 export type ConfigControlsProps = {
   value: BaseSessionConfig & { connectionType?: ConnectionType };
@@ -93,6 +94,14 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
           </div>
         </Field>
       </FieldGroup>
+      <CollapsibleFieldGroup title="Dynamic Variables">
+        <DynamicVariablesInput
+          values={value.dynamicVariables ?? {}}
+          onChange={dynamicVariables =>
+            onChange({ ...value, dynamicVariables })
+          }
+        />
+      </CollapsibleFieldGroup>
       <FieldSeparator />
       <CollapsibleFieldGroup title="Overrides (Agent)">
         <Field>
