@@ -11,19 +11,45 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useConversationStatus } from "@/components/conversation-provider";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDownIcon } from "lucide-react";
+import { Button } from "./ui/button";
 
-export type ConfigControls = {
+export type ConfigControlsProps = {
   value: BaseSessionConfig & { connectionType?: ConnectionType };
   onChange: (
     connectionType: BaseSessionConfig & { connectionType?: ConnectionType }
   ) => void;
 };
 
-export function ConfigControls({ value, onChange }: ConfigControls) {
-  const {status} = useConversationStatus();
+function CollapsibleFieldGroup({
+  children,
+  title,
+}: React.PropsWithChildren<{ title: string }>) {
+  return (
+    <Collapsible className="data-[state=open]:border rounded-md -mx-3">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="group w-full">
+          {title}
+          <ChevronDownIcon className="ml-auto group-data-[state=open]:rotate-180" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <FieldGroup className="p-3">{children}</FieldGroup>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+export function ConfigControls({ value, onChange }: ConfigControlsProps) {
+  const { status } = useConversationStatus();
 
   const disabled = status === "connecting" || status === "connected";
-  
+
   return (
     <>
       <FieldGroup>
@@ -39,14 +65,15 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
             }
           >
             <TabsList>
-              <TabsTrigger disabled={disabled} value="webrtc">WebRTC</TabsTrigger>
-              <TabsTrigger disabled={disabled} value="websocket">WebSocket</TabsTrigger>
+              <TabsTrigger disabled={disabled} value="webrtc">
+                WebRTC
+              </TabsTrigger>
+              <TabsTrigger disabled={disabled} value="websocket">
+                WebSocket
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </Field>
-      </FieldGroup>
-      <FieldSeparator className="my-2">Session Config</FieldSeparator>
-      <FieldGroup>
         <Field>
           <div className="flex items-center space-x-2">
             <Switch
@@ -66,8 +93,8 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
           </div>
         </Field>
       </FieldGroup>
-      <FieldSeparator className="my-2">Overrides (Conversation)</FieldSeparator>
-      <FieldGroup>
+      <FieldSeparator />
+      <CollapsibleFieldGroup title="Overrides (Conversation)">
         <Field>
           <div className="flex items-center space-x-2">
             <Switch
@@ -89,9 +116,8 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
             </FieldLabel>
           </div>
         </Field>
-      </FieldGroup>
-      <FieldSeparator className="my-2">Overrides (Client)</FieldSeparator>
-      <FieldGroup>
+      </CollapsibleFieldGroup>
+      <CollapsibleFieldGroup title="Overrides (Client)">
         <Field>
           <FieldLabel htmlFor="session-config-overrides-client-source">
             Source
@@ -160,7 +186,7 @@ export function ConfigControls({ value, onChange }: ConfigControls) {
             };
           };
         */}
-      </FieldGroup>
+      </CollapsibleFieldGroup>
     </>
   );
 }
