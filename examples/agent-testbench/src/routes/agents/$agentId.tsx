@@ -95,7 +95,7 @@ function RouteComponent() {
                 />
               </CardContent>
             </Card>
-            <section className="flex flex-col grow min-h-screen">
+            <section className="flex flex-col grow h-screen">
               <AgentControls agentId={agent.agentId} options={sessionConfig} />
               <LogTable />
             </section>
