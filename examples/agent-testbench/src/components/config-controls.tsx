@@ -94,6 +94,114 @@ export function ConfigControls({ value, onChange }: ConfigControlsProps) {
         </Field>
       </FieldGroup>
       <FieldSeparator />
+      <CollapsibleFieldGroup title="Overrides (TTS)">
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-tts-voice-id">
+            Voice ID
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-tts-voice-id"
+            disabled={disabled}
+            value={value.overrides?.tts?.voiceId}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  tts: {
+                    ...value.overrides?.tts,
+                    voiceId: e.target.value ? e.target.value : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-tts-speed">
+            Speed
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-tts-speed"
+            disabled={disabled}
+            type="number"
+            min={0.7}
+            max={1.2}
+            step={0.01}
+            value={value.overrides?.tts?.speed}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  tts: {
+                    ...value.overrides?.tts,
+                    speed: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-tts-stability">
+            Stability
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-tts-stability"
+            disabled={disabled}
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={value.overrides?.tts?.stability}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  tts: {
+                    ...value.overrides?.tts,
+                    stability: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="session-config-overrides-tts-similarity-boost">
+            Similarity Boost
+          </FieldLabel>
+          <Input
+            id="session-config-overrides-tts-similarity-boost"
+            disabled={disabled}
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={value.overrides?.tts?.similarityBoost}
+            onChange={e =>
+              onChange({
+                ...value,
+                overrides: {
+                  ...value.overrides,
+                  tts: {
+                    ...value.overrides?.tts,
+                    similarityBoost: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  },
+                },
+              })
+            }
+          />
+        </Field>
+      </CollapsibleFieldGroup>
       <CollapsibleFieldGroup title="Overrides (Conversation)">
         <Field>
           <div className="flex items-center space-x-2">
