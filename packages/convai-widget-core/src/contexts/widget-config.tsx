@@ -99,6 +99,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const defaultExpanded = useAttribute("default-expanded");
   const alwaysExpanded = useAttribute("always-expanded");
   const dismissible = useAttribute("dismissible");
+  const stripAudioTags = useAttribute("strip-audio-tags");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
 
@@ -137,6 +138,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(dismissible.value) ??
       fetchedConfig.value.dismissible ??
       false;
+    const patchedStripAudioTags =
+      parseBoolAttribute(stripAudioTags.value) ??
+      fetchedConfig.value.strip_audio_tags ??
+      !textOnly;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
 
@@ -151,6 +156,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       always_expanded: patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
       dismissible: patchedDismissible,
+      strip_audio_tags: patchedStripAudioTags,
       use_rtc: patchedUseRtc,
     };
   });
