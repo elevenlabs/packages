@@ -21,7 +21,6 @@ const BASIC_CONFIG: WidgetConfig = {
   default_expanded: false,
   always_expanded: false,
   dismissible: false,
-  strip_audio_tags: true,
   text_contents: {
     start_chat: "Start a call",
   },
@@ -138,6 +137,22 @@ const codeBlock = true;
     terms_html: undefined,
     default_expanded: true,
     first_message: `[Relative link](/relative)`,
+  },
+  audio_tags_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_no_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
 } as const satisfies Record<string, WidgetConfig>;
 
