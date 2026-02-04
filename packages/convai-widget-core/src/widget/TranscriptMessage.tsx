@@ -5,7 +5,8 @@ import { useAvatarConfig } from "../contexts/avatar-config";
 import type { TranscriptEntry } from "../contexts/conversation";
 import { useConversation } from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
-import { useMarkdownLinkConfig, useEndFeedbackType } from "../contexts/widget-config";
+import { useMarkdownLinkConfig, useEndFeedbackType, useTextOnly } from "../contexts/widget-config";
+import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
 
 interface TranscriptMessageProps {
@@ -19,10 +20,18 @@ function AgentMessageBubble({
   entry: Extract<TranscriptEntry, { type: "message" }>;
 }) {
   const linkConfig = useMarkdownLinkConfig();
+  const textOnly = useTextOnly();
+
+  // Strip TTS emotional tags when voice is enabled (agent speaks)
+  // In text-only mode, show raw messages
+  const displayMessage = textOnly.value
+    ? entry.message
+    : stripAudioTags(entry.message);
+
   return (
     <div className="pr-8">
       <WidgetStreamdown linkConfig={linkConfig.value}>
-        {entry.message}
+        {displayMessage}
       </WidgetStreamdown>
     </div>
   );
