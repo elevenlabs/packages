@@ -4,10 +4,15 @@ import type { InitiationClientDataEvent } from "./events";
 export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
   "conversation_initiation_client_data";
 
+// Extended type to include branch field which may not be in generated types yet
+export type ExtendedInitiationClientDataEvent = InitiationClientDataEvent & {
+  branch?: string;
+};
+
 export function constructOverrides(
   config: SessionConfig
-): InitiationClientDataEvent {
-  const overridesEvent: InitiationClientDataEvent = {
+): ExtendedInitiationClientDataEvent {
+  const overridesEvent: ExtendedInitiationClientDataEvent = {
     type: CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
   };
 
@@ -47,6 +52,10 @@ export function constructOverrides(
       source: config.overrides.client.source,
       version: config.overrides.client.version,
     };
+  }
+
+  if (config.branch) {
+    overridesEvent.branch = config.branch;
   }
 
   return overridesEvent;
