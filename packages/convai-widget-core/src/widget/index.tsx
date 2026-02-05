@@ -16,6 +16,7 @@ import { FeedbackProvider } from "../contexts/feedback";
 import { ShadowHostProvider } from "../contexts/shadow-host";
 import { WidgetSizeProvider } from "../contexts/widget-size";
 import { ConversationModeProvider } from "../contexts/conversation-mode";
+import { EventBridge } from "./EventBridge";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -35,7 +36,9 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                               <SheetContentProvider>
                                 <FeedbackProvider>
                                   <Style />
-                                  <Wrapper />
+                                  <EventBridge>
+                                    <Wrapper />
+                                  </EventBridge>
                                 </FeedbackProvider>
                               </SheetContentProvider>
                             </AvatarConfigProvider>
