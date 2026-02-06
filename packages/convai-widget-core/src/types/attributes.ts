@@ -53,6 +53,7 @@ export const CustomAttributeList = [
   "markdown-link-allowed-hosts",
   "markdown-link-include-www",
   "markdown-link-allow-http",
+  "show-agent-status",
 ] as const;
 
 export type CustomAttributes = {

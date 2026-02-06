@@ -102,6 +102,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const stripAudioTags = useAttribute("strip-audio-tags");
   const overrideTextOnly = useAttribute("override-text-only");
   const useRtc = useAttribute("use-rtc");
+  const showAgentStatus = useAttribute("show-agent-status");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -144,6 +145,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       !textOnly;
     const patchedUseRtc =
       parseBoolAttribute(useRtc.value) ?? fetchedConfig.value.use_rtc ?? false;
+    const patchedShowAgentStatus =
+      parseBoolAttribute(showAgentStatus.value) ??
+      fetchedConfig.value.show_agent_status ??
+      false;
 
     return {
       ...fetchedConfig.value,
@@ -158,6 +163,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       dismissible: patchedDismissible,
       strip_audio_tags: patchedStripAudioTags,
       use_rtc: patchedUseRtc,
+      show_agent_status: patchedShowAgentStatus,
     };
   });
 
