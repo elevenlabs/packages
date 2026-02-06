@@ -1,5 +1,16 @@
 # @elevenlabs/convai-widget-core
 
+## 0.9.0
+
+### Minor Changes
+
+- 6846068: Ability to show agent tool usage status
+- 6846068: New agent status badge for long tool call
+
+### Patch Changes
+
+- a71950d: strip emotion tag
+
 ## 0.8.2
 
 ### Patch Changes
