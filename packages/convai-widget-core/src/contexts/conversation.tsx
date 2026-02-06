@@ -383,6 +383,9 @@ function useConversationSetup() {
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
       },
+      sendContextualUpdate: (text: string) => {
+        conversationRef.current?.sendContextualUpdate(text)
+      },
       addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active
         if (!conversationRef.current?.isOpen()) return;

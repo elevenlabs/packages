@@ -29,6 +29,7 @@ function Playground() {
   const [dismissible, setDismissible] = useState(false);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [allowEvents, setAllowEvents] = useState(false);
   const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);
   const [firstMessage, setFirstMessage] = useState(
     "Hi, how can I help you today?"
@@ -120,6 +121,14 @@ function Playground() {
           />{" "}
           Dismissible
         </label>
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={allowEvents}
+            onChange={e => setAllowEvents(e.currentTarget.checked)}
+          />{" "}
+          Allow events
+        </label>
         <label className="flex flex-col">
           Dynamic variables (i.e., new-line separated name=value)
           <textarea
@@ -196,6 +205,7 @@ function Playground() {
           override-first-message={
             overrideFirstMessage ? firstMessage : undefined
           }
+          allow-events={JSON.stringify(allowEvents)}
         />
       </div>
     </div>
