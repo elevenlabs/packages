@@ -28,12 +28,19 @@ interface AudioConfigProviderProps {
 export function AudioConfigProvider({ children }: AudioConfigProviderProps) {
   const widgetConfig = useWidgetConfig();
   const { isTextMode } = useConversationMode();
-  const { setMicMuted } = useConversation();
+  const { setMicMuted, status } = useConversation();
   const isMutingEnabled = useComputed(
     () => widgetConfig.value.mic_muting_enabled ?? false
   );
   const isMuted = useSignal(false);
   const prevMuteStateRef = useRef<boolean | null>(null);
+
+  // Reset mute state when call disconnects to ensure each call starts fresh
+  useSignalEffect(() => {
+    if (status.value === "disconnected") {
+      isMuted.value = false;
+    }
+  });
 
   // Handle mute state based on conversation mode and user preference
   useSignalEffect(() => {

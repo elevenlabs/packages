@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react-native",
-  "version": "0.5.8",
+  "version": "0.5.10",
   "description": "ElevenLabs React Native SDK for the Agents Platform",
   "main": "./dist/lib.js",
   "module": "./dist/lib.module.js",
@@ -16,10 +16,10 @@
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "bundle": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "BROWSERSLIST_ENV=modern node --run bundle",
+    "dev": "BROWSERSLIST_ENV=modern node --run bundle -- --watch --no-compress",
     "clean": "rm -rf ./dist",
-    "dev": "pnpm run clean && pnpm run generate-version && BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w --no-compress",
-    "lint": "pnpm run check-types && pnpm run lint:es && pnpm run lint:prettier",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",

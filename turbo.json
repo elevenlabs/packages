@@ -3,12 +3,8 @@
   "ui": "tui",
   "globalEnv": ["NODE_ENV"],
   "tasks": {
-    "generate-version": {
-      "inputs": ["package.json"],
-      "outputs": ["src/version.ts"]
-    },
     "build": {
-      "dependsOn": ["^build", "^generate", "generate-version"],
+      "dependsOn": ["generate", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
@@ -27,23 +23,21 @@
         "vitest.config.ts",
         "jest.config.*"
       ],
-      "cache": true,
       "passThroughEnv": ["PLAYWRIGHT_*", "HOME", "CI"]
     },
     "lint": {
-      "dependsOn": ["^build", "^generate"]
+      "dependsOn": ["^build", "lint:es", "lint:prettier", "check-types"]
     },
     "lint:es": {
-      "cache": true,
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".eslintrc*", "eslint.config.*"]
     },
     "lint:prettier": {
-      "cache": true,
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
-      "dependsOn": ["^build", "^generate"],
-      "cache": true,
+      "dependsOn": ["^build", "generate"],
       "inputs": ["src/**", "tsconfig.json"]
     },
     "clean": {
@@ -52,12 +46,22 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["generate-version"]
+      "dependsOn": ["generate", "^build"]
     },
     "generate": {
+      "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
+    },
+    "generate-types": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
-      "outputs": ["generated/**"],
-      "cache": true
+      "outputs": ["generated/**"]
+    },
+    "generate-version": {
+      "inputs": ["package.json"],
+      "outputs": ["src/version.ts"]
+    },
+    "generate-worklets": {
+      "inputs": ["scripts/generateWorklets.js", "worklets/**/*.js"],
+      "outputs": ["src/utils/*.generated.ts"]
     }
   }
 }

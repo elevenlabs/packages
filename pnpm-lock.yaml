@@ -351,9 +351,6 @@ importers:
       eslint:
         specifier: ^9.8.0
         version: 9.39.1(jiti@2.6.1)
-      microbundle:
-        specifier: ^0.15.1
-        version: 0.15.1(@types/babel__core@7.20.5)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
@@ -463,7 +460,7 @@ importers:
     devDependencies:
       '@asyncapi/cli':
         specifier: ^2.17.0
-        version: 2.17.0(@babel/core@7.12.9)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
+        version: 2.17.0(@babel/core@7.28.5)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
       '@asyncapi/modelina':
         specifier: ^4.4.3
         version: 4.4.3(encoding@0.1.13)
@@ -11387,7 +11384,7 @@ snapshots:
       js-yaml: 4.1.1
       lodash: 4.17.21
 
-  '@asyncapi/cli@2.17.0(@babel/core@7.12.9)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
+  '@asyncapi/cli@2.17.0(@babel/core@7.28.5)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
     dependencies:
       '@asyncapi/avro-schema-parser': 3.0.24(encoding@0.1.13)
       '@asyncapi/bundler': 0.6.4
@@ -11400,7 +11397,7 @@ snapshots:
       '@asyncapi/parser': 3.4.0(encoding@0.1.13)
       '@asyncapi/protobuf-schema-parser': 3.6.0(encoding@0.1.13)
       '@asyncapi/raml-dt-schema-parser': 4.0.24(encoding@0.1.13)
-      '@asyncapi/studio': 0.23.1(@babel/core@7.12.9)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
+      '@asyncapi/studio': 0.23.1(@babel/core@7.28.5)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
       '@changesets/changelog-git': 0.2.1
       '@clack/prompts': 0.7.0
       '@oclif/core': 4.8.0
@@ -11414,7 +11411,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       inquirer: 8.2.7(@types/node@22.19.2)
       js-yaml: 4.1.1
-      next: 14.2.33(@babel/core@7.12.9)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      next: 14.2.33(@babel/core@7.28.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       node-fetch: 2.7.0(encoding@0.1.13)
       oclif: 4.22.54(@types/node@22.19.2)
       open: 8.4.2
@@ -11792,7 +11789,7 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
 
-  '@asyncapi/studio@0.23.1(@babel/core@7.12.9)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
+  '@asyncapi/studio@0.23.1(@babel/core@7.28.5)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
     dependencies:
       '@asyncapi/avro-schema-parser': 3.0.24(encoding@0.1.13)
       '@asyncapi/converter': 1.5.0(encoding@0.1.13)
@@ -11821,7 +11818,7 @@ snapshots:
       js-yaml: 4.1.1
       monaco-editor: 0.34.1
       monaco-yaml: 4.0.2(monaco-editor@0.34.1)
-      next: 14.2.3(@babel/core@7.12.9)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      next: 14.2.3(@babel/core@7.28.5)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -22607,7 +22604,7 @@ snapshots:
 
   nested-error-stacks@2.0.1: {}
 
-  next@14.2.3(@babel/core@7.12.9)(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  next@14.2.3(@babel/core@7.28.5)(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
       '@next/env': 14.2.3
       '@swc/helpers': 0.5.5
@@ -22617,7 +22614,7 @@ snapshots:
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      styled-jsx: 5.1.1(@babel/core@7.12.9)(react@18.2.0)
+      styled-jsx: 5.1.1(@babel/core@7.28.5)(react@18.2.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.3
       '@next/swc-darwin-x64': 14.2.3
@@ -22632,7 +22629,7 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@14.2.33(@babel/core@7.12.9)(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  next@14.2.33(@babel/core@7.28.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 14.2.33
       '@swc/helpers': 0.5.5
@@ -22640,9 +22637,9 @@ snapshots:
       caniuse-lite: 1.0.30001760
       graceful-fs: 4.2.11
       postcss: 8.4.31
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      styled-jsx: 5.1.1(@babel/core@7.12.9)(react@18.2.0)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      styled-jsx: 5.1.1(@babel/core@7.28.5)(react@19.1.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.33
       '@next/swc-darwin-x64': 14.2.33
@@ -24657,12 +24654,19 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  styled-jsx@5.1.1(@babel/core@7.12.9)(react@18.2.0):
+  styled-jsx@5.1.1(@babel/core@7.28.5)(react@18.2.0):
     dependencies:
       client-only: 0.0.1
       react: 18.2.0
     optionalDependencies:
-      '@babel/core': 7.12.9
+      '@babel/core': 7.28.5
+
+  styled-jsx@5.1.1(@babel/core@7.28.5)(react@19.1.0):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.1.0
+    optionalDependencies:
+      '@babel/core': 7.28.5
 
   stylehacks@5.1.1(postcss@8.5.6):
     dependencies:

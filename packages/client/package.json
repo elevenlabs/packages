@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/client",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "ElevenLabs JavaScript Client Library",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -18,11 +18,10 @@
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
-    "prebuild": "npm run generate-version && npm run generate-worklets",
-    "build": "BROWSERSLIST_ENV=modern microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "bundle": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
+    "build": "BROWSERSLIST_ENV=modern node --run bundle",
+    "dev": "BROWSERSLIST_ENV=development node --run bundle -- --watch --format modern",
     "clean": "rm -rf ./dist",
-    "dev": "pnpm run clean && pnpm run generate-version && pnpm run generate-worklets && BROWSERSLIST_ENV=development microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts -w -f modern",
-    "lint": "pnpm run lint:ts && pnpm run lint:es && pnpm run lint:prettier",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",

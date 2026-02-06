@@ -42,6 +42,7 @@ export const CustomAttributeList = [
   "default-expanded",
   "always-expanded",
   "dismissible",
+  "strip-audio-tags",
   "user-id",
   "use-rtc",
   "collect-feedback",
