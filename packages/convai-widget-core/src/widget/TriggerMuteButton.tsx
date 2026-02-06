@@ -9,7 +9,7 @@ export function TriggerMuteButton(props: Omit<ButtonProps, "icon">) {
 
   const onClick = useCallback(() => {
     setIsMuted(!isMuted.peek());
-  }, [setIsMuted]);
+  }, [setIsMuted, isMuted]);
 
   if (!isMutingEnabled.value) {
     return null;

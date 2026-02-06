@@ -22,6 +22,7 @@ import type {
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
   AgentToolRequestEvent,
+  ConversationModeChangeEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -364,6 +365,14 @@ export class BaseConversation {
     });
   }
 
+  protected handleConversationModeChange(event: ConversationModeChangeEvent) {
+    if (this.options.onConversationModeChange) {
+      this.options.onConversationModeChange(
+        event.conversation_mode_change_event
+      );
+    }
+  }
+
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
     switch (parsedEvent.type) {
       case "interruption": {
@@ -453,6 +462,11 @@ export class BaseConversation {
 
       case "error": {
         this.handleErrorEvent(parsedEvent);
+        return;
+      }
+
+      case "conversation_mode_change": {
+        this.handleConversationModeChange(parsedEvent);
         return;
       }
 
@@ -548,6 +562,22 @@ export class BaseConversation {
       type: "mcp_tool_approval_result",
       tool_call_id: toolCallId,
       is_approved: isApproved,
+    });
+  }
+
+  public setTextOnlyMode(textOnly: boolean): void {
+    if (!this.isOpen()) {
+      console.warn("Cannot change mode: conversation is not active");
+      return;
+    }
+
+    this.connection.sendMessage({
+      type: "conversation_config_update",
+      conversation_config_override: {
+        conversation: {
+          text_only: textOnly,
+        },
+      },
     });
   }
 }
