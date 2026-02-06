@@ -54,6 +54,7 @@ export interface WidgetConfig {
   default_expanded: boolean;
   always_expanded: boolean;
   dismissible: boolean;
+  strip_audio_tags?: boolean;
   text_contents: Partial<TextContents>;
   styles?: Partial<Styles>;
   language_presets: Partial<

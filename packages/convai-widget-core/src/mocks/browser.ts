@@ -138,6 +138,22 @@ const codeBlock = true;
     default_expanded: true,
     first_message: `[Relative link](/relative)`,
   },
+  audio_tags_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_no_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
