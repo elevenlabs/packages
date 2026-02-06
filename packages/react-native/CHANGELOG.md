@@ -1,5 +1,11 @@
 # @elevenlabs/react-native
 
+## 0.5.10
+
+### Patch Changes
+
+- 3a8cc56: Fix establishing text-only conversations. Note: This change also regresses a bug-fix where access to audio input is requested, even for text-only conversations.
+
 ## 0.5.9
 
 ### Patch Changes
