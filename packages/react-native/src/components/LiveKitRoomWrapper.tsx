@@ -45,7 +45,8 @@ export const LiveKitRoomWrapper = ({
   // Configure audio options based on audioSessionConfig
   const audioOptions = React.useMemo(() => {
     if (textOnly) {
-      return false;
+      // For now, we have to enable an audio session (even for text only conversations) to be able to send messages.
+      return true;
     }
 
     if (!audioSessionConfig?.allowMixingWithOthers) {

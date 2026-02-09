@@ -149,7 +149,7 @@ export const WidgetStreamdown = memo(
     return (
       <ParsersContext.Provider value={parserConfig}>
         <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-          <div className={cn("markdown", className)}>
+          <div className={cn("markdown *:first:mt-0 *:last:mb-0", className)}>
             {blocks.map((block, index) => (
               <Block
                 content={block}

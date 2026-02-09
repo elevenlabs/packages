@@ -135,6 +135,7 @@ function MockConversationProvider({
       conversationIndex: signal(0),
       conversationTextOnly: signal<boolean | null>(null),
       transcript: mockTranscript,
+      toolCallStatus: signal(new Map()),
       startSession: async () => "",
       endSession: async () => {},
       getInputVolume: () => 0,

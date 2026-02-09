@@ -1,5 +1,7 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.8.2
+
 ## 0.0.0-beta.0
 
 ## 0.8.1

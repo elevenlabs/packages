@@ -54,6 +54,7 @@ export interface WidgetConfig {
   default_expanded: boolean;
   always_expanded: boolean;
   dismissible: boolean;
+  strip_audio_tags?: boolean;
   text_contents: Partial<TextContents>;
   styles?: Partial<Styles>;
   language_presets: Partial<
@@ -76,6 +77,7 @@ export interface WidgetConfig {
   use_rtc?: boolean;
   syntax_highlight_theme?: SyntaxHighlightTheme;
   conversation_mode_toggle_enabled?: boolean;
+  show_agent_status?: boolean;
 }
 
 export type AvatarConfig =
@@ -138,6 +140,9 @@ export const DefaultTextContents = {
   copy: "Copy",
   download: "Download",
   wrap: "Wrap",
+  agent_working: "Thinking...",
+  agent_done: "Completed",
+  agent_error: "Error occurred",
 };
 
 export const TextKeys = Object.keys(

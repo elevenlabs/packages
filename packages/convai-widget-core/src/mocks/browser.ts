@@ -138,6 +138,32 @@ const codeBlock = true;
     default_expanded: true,
     first_message: `[Relative link](/relative)`,
   },
+  tool_call: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  audio_tags_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_no_strip: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -183,7 +209,11 @@ export const Worker = setupWorker(
           agent_response_event: { agent_response: config.first_message },
         })
       );
-      if (config.text_only && agentId !== "end_call_test") {
+      if (
+        config.text_only &&
+        agentId !== "end_call_test" &&
+        agentId !== "tool_call"
+      ) {
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -239,6 +269,40 @@ export const Worker = setupWorker(
           );
           await new Promise(resolve => setTimeout(resolve, 50));
           client.close(1000);
+        });
+      }
+      if (agentId === "tool_call") {
+        client.addEventListener("message", async () => {
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "tool_1",
+                event_id: 1,
+                tool_name: "test_tool",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 100));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "tool_1",
+                event_id: 1,
+                is_error: false,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 100));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Tool completed successfully",
+              },
+            })
+          );
         });
       }
     })

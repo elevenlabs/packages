@@ -473,6 +473,58 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("strip audio tags", () => {
+    it("should strip audio tags when strip_audio_tags config is true", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_strip",
+        variant: "compact",
+      });
+
+      // Audio tags should be stripped - message without tags should appear
+      await expect
+        .element(page.getByText("Hello there! How can I help you today?"))
+        .toBeInTheDocument();
+
+      // The raw tags should NOT be visible
+      await expect.element(page.getByText("[happy]")).not.toBeInTheDocument();
+    });
+
+    it("should not strip audio tags when strip_audio_tags config is false", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_no_strip",
+        variant: "compact",
+      });
+
+      // Tags should be visible when stripping is disabled
+      await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
+    });
+
+    it("should strip audio tags when attribute overrides to true", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_no_strip",
+        variant: "compact",
+        "strip-audio-tags": "true",
+      });
+
+      // Attribute override should strip tags
+      await expect
+        .element(page.getByText("Hello there! How can I help you today?"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText("[happy]")).not.toBeInTheDocument();
+    });
+
+    it("should not strip audio tags when attribute overrides to false", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_strip",
+        variant: "compact",
+        "strip-audio-tags": "false",
+      });
+
+      // Attribute override should show tags
+      await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
+    });
+  });
+
   describe("dismissable behavior", () => {
     it("should not show dismiss button by default (opt-in)", async () => {
       setupWebComponent({
@@ -583,6 +635,51 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByRole("button", { name: "Open chat" }))
         .toBeVisible();
+    });
+  });
+
+  describe("agent status", () => {
+    it("should show tool status when show-agent-status is enabled", async () => {
+      setupWebComponent({
+        "agent-id": "tool_call",
+        variant: "compact",
+        "show-agent-status": "true",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Run tool");
+      await userEvent.keyboard("{Enter}");
+
+      // Tool status should appear
+      await expect.element(page.getByText("Thinking...")).toBeInTheDocument();
+      await expect.element(page.getByText("Completed")).toBeInTheDocument();
+    });
+
+    it("should NOT show tool status when show-agent-status is disabled", async () => {
+      setupWebComponent({
+        "agent-id": "tool_call",
+        variant: "compact",
+        "show-agent-status": "false",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Run tool");
+      await userEvent.keyboard("{Enter}");
+
+      // Tool status should NOT appear
+      await expect
+        .element(page.getByText("Thinking..."))
+        .not.toBeInTheDocument();
+      await expect.element(page.getByText("Completed")).not.toBeInTheDocument();
+
+      // But the agent response should still appear
+      await expect
+        .element(page.getByText("Tool completed successfully"))
+        .toBeInTheDocument();
     });
   });
 });
