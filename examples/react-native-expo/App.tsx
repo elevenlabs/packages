@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ const ConversationScreen = () => {
   const [textInput, setTextInput] = useState("");
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isTextOnly, setIsTextOnly] = useState(false);
 
   const conversation = useConversation({
     onConnect: ({ conversationId }: { conversationId: string }) => {
@@ -107,6 +108,7 @@ const ConversationScreen = () => {
       await conversation.startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
         userId: "demo-user",
+        textOnly: isTextOnly || undefined,
       });
     } catch (error) {
       console.error("Failed to start conversation:", error);
@@ -123,10 +125,18 @@ const ConversationScreen = () => {
     }
   };
 
+  useEffect(() => {
+    conversation.setMicMuted(isMicMuted);
+  }, [isMicMuted]);
+
   const toggleMicMute = () => {
-    const newMutedState = !isMicMuted;
-    setIsMicMuted(newMutedState);
-    conversation.setMicMuted(newMutedState);
+    setIsMicMuted(value => {
+      return !value;
+    });
+  };
+
+  const toggleTextOnly = () => {
+    setIsTextOnly(value => !value);
   };
 
   const getStatusColor = (status: ConversationStatus): string => {
@@ -203,6 +213,24 @@ const ConversationScreen = () => {
           </View>
         )}
 
+        {/* Microphone Controls */}
+        {conversation.status === "disconnected" && (
+          <View style={styles.toggleControlContainer}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.toggleButton,
+                isTextOnly ? styles.toggleButtonActive : styles.toggleButtonPassive,
+              ]}
+              onPress={toggleTextOnly}
+            >
+              <Text style={styles.buttonText}>
+                {isTextOnly ? "✍️ Text only" : "Enable text only"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[
@@ -233,12 +261,12 @@ const ConversationScreen = () => {
 
         {/* Microphone Controls */}
         {conversation.status === "connected" && (
-          <View style={styles.micControlContainer}>
+          <View style={styles.toggleControlContainer}>
             <TouchableOpacity
               style={[
                 styles.button,
-                styles.micButton,
-                isMicMuted ? styles.mutedButton : styles.unmutedButton,
+                styles.toggleButton,
+                isMicMuted ? styles.toggleButtonActive : styles.toggleButtonPassive,
               ]}
               onPress={toggleMicMute}
             >
@@ -519,17 +547,20 @@ const styles = StyleSheet.create({
   activityButton: {
     backgroundColor: "#F59E0B",
   },
-  micControlContainer: {
-    marginTop: 24,
+  toggleControlContainer: {
+    margin: 12,
     alignItems: "center",
   },
-  micButton: {
+  toggleButton: {
     paddingHorizontal: 24,
+    backgroundColor: "#808080",
+    borderColor: "#000000",
+    borderWidth: 2,
   },
-  mutedButton: {
-    backgroundColor: "#EF4444",
+  toggleButtonActive: {
+    borderColor: "#000000",
   },
-  unmutedButton: {
-    backgroundColor: "#059669",
+  toggleButtonPassive: {
+    borderColor: "transparent",
   },
 });
