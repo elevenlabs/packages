@@ -1,10 +1,10 @@
 ![hero](../../assets/hero.png)
 
-# ElevenLabs Agents React SDK
+# ElevenAgents React SDK
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+Build multimodal agents with the [ElevenAgents platform](https://elevenlabs.io/docs/eleven-agents/overview).
 
-An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
+An SDK library for using ElevenAgents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
 
 ![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
 [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
@@ -26,7 +26,7 @@ pnpm install @elevenlabs/react
 
 ### useConversation
 
-React hook for managing WebSocket and WebRTC connections and audio usage for ElevenLabs Agents Platform.
+React hook for managing WebSocket and WebRTC connections and audio usage for ElevenAgents.
 
 #### Initialize conversation
 
@@ -36,7 +36,7 @@ First, initialize the Conversation instance.
 const conversation = useConversation();
 ```
 
-Note that Agents Platform requires microphone access.
+Note that ElevenAgents requires microphone access.
 Consider explaining and allowing microphone access in your apps UI before the Conversation kicks off. The microphone may also be blocked for the current page by default, resulting in the allow prompt not showing up at all. You should handle such use case in your application and display appropriate message to the user:
 
 ```js
@@ -51,7 +51,7 @@ try {
 
 #### Options
 
-The Conversation can be initialized with certain options. Those are all optional.
+The conversation can be initialized with certain options. Those are all optional.
 
 ```tsx
 const conversation = useConversation({
@@ -988,7 +988,7 @@ function ScribeDemo() {
   };
 
   const handleDisconnect = () => scribe.disconnect();
-  
+
   const handleClearTranscripts = () => scribe.clearTranscripts();
 
   useEffect(() => {

@@ -1,8 +1,8 @@
 ![hero](assets/hero.png)
 
-# ElevenLabs Agents SDK
+# ElevenAgents SDK
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview). Our SDKs provide seamless integration with popular JavaScript/TypeScript frameworks, enabling you to create multimodal AI agents.
+Build multimodal agents with [ElevenAgents](https://elevenlabs.io/docs/eleven-agents/overview). Our SDKs provide seamless integration with popular JavaScript/TypeScript frameworks, enabling you to create multimodal AI agents.
 
 ## Installation
 
@@ -25,7 +25,7 @@ conversation.startSession();
 
 ## Overview
 
-The ElevenLabs Agents SDKs provide a unified interface for integrating multimodal AI agents into your applications.
+The ElevenAgents SDKs provide a unified interface for integrating multimodal AI agents into your applications.
 
 ### Available Packages
 
@@ -103,13 +103,13 @@ Add the following permissions to your `AndroidManifest.xml`:
 
 ### Widgets
 
-The ElevenLabs Agents Widgets provide an easy way to embed AI agents into any website as a web component.
+The ElevenAgents Widgets provide an easy way to embed AI agents into any website as a web component.
 
 Learn how to embed the widget into your website [here](https://elevenlabs.io/docs/agents-platform/customization/widget).
 
 ### Agents CLI
 
-The ElevenLabs Agents CLI allows you to manage your agents as code, with features like version control, templates, and multi-environment deployments.
+The ElevenAgents CLI allows you to manage your agents as code, with features like version control, templates, and multi-environment deployments.
 
 #### Installation
 
