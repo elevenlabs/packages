@@ -1,10 +1,10 @@
 ![hero](../../assets/hero.png)
 
-# ElevenLabs Agents React Native SDK
+# ElevenAgents React Native SDK
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+Build multimodal agents with [ElevenAgents](https://elevenlabs.io/docs/eleven-agents/overview).
 
-An SDK library for using ElevenLabs Agents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
+An SDK library for using ElevenAgents. If you're looking for a Node.js library for other audio APIs, please refer to the [ElevenLabs Node.js Library](https://www.npmjs.com/package/@elevenlabs/elevenlabs-js).
 
 ## Features
 

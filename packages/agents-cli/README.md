@@ -3,15 +3,15 @@
 >
 > Please use the official [ElevenLabs CLI](https://github.com/elevenlabs/cli) instead.
 
-# ElevenLabs Agents CLI - Agents as Code
+# ElevenAgents CLI - Agents as Code
 
 ![hero](../../assets/hero.png)
 
-# ElevenLabs Agents CLI
+# ElevenAgents CLI
 
-Build multimodal agents with the [ElevenLabs Agents platform](https://elevenlabs.io/docs/agents-platform/overview).
+Build multimodal agents with [ElevenAgents](https://elevenlabs.io/docs/eleven-agents/overview).
 
-Manage ElevenLabs Agents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, watch mode, and automatic pushing.
+Manage ElevenAgents with local configuration files. This tool is an experimental exploration of treating agents as code, with features like templates, watch mode, and automatic pushing.
 
 ## Features
 
@@ -128,7 +128,7 @@ Agent, tool, and test definitions include an `env` field:
       "env": "prod"
     },
     {
-      "config": "agent_configs/support_bot_dev.json", 
+      "config": "agent_configs/support_bot_dev.json",
       "id": "agent_456",
       "env": "dev"
     }
@@ -516,7 +516,7 @@ npm test
 
 ### E2E Tests
 
-**CRITICAL**: E2E tests require a **dedicated, empty test account**. 
+**CRITICAL**: E2E tests require a **dedicated, empty test account**.
 
 **DO NOT use your production account!** E2E tests will create, modify, and **delete agents** during testing. Any existing agents could be permanently lost.
 
