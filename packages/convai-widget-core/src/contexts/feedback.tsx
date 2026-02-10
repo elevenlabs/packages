@@ -36,11 +36,10 @@ export function FeedbackProvider({
 
   const submitRating = useCallback(async (ratingValue: number) => {
     const conversationId = lastId.value;
-    const currentAgentId = agentId.value;
 
-    if (!conversationId || !currentAgentId) {
+    if (!conversationId) {
       console.warn(
-        "[ConversationalAI] Cannot submit rating: missing agent_id or conversation_id"
+        "[ConversationalAI] Cannot submit rating: missing conversation_id"
       );
       return;
     }
@@ -62,11 +61,10 @@ export function FeedbackProvider({
 
   const submitFeedback = useCallback(async () => {
     const conversationId = lastId.value;
-    const currentAgentId = agentId.value;
 
-    if (!conversationId || !currentAgentId) {
+    if (!conversationId) {
       console.warn(
-        "[ConversationalAI] Cannot submit feedback: missing agent_id or conversation_id"
+        "[ConversationalAI] Cannot submit feedback: missing conversation_id"
       );
       return;
     }
