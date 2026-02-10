@@ -48,6 +48,8 @@ jobs:
           publish: pnpm run publish
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          # Use app token when using the GitHub CLI to enable sub-sequent workflow runs from created PRs
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           # See https://docs.npmjs.com/generating-provenance-statements#using-third-party-package-publishing-tools
           NPM_CONFIG_PROVENANCE: true
           # Don't run the Husky pre-commit hook (see https://typicode.github.io/husky/how-to.html)
