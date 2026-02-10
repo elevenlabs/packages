@@ -16,7 +16,7 @@ export function Page({
               width="1em"
               className="inline-block align-[-0.15em]"
             />
-            ElevenLabs Agent Testbench
+            ElevenAgents Testbench
           </h1>
           <h2 className="text-xl">{title}</h2>
         </div>
