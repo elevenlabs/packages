@@ -1,3 +1,6 @@
+// NOTE: This file does not represent a good example of how to use the ElevenLabs SDK from React.
+// We will eventually move these providers into the ElevenLabs React SDK (@elevenlabs/react).
+
 import {
   createContext,
   useCallback,
