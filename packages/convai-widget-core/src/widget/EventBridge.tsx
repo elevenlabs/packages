@@ -15,48 +15,39 @@ export const EventBridge = memo(function EventBridge({ children }) {
   
   useSignalEffect(() => {
     function handleUserActivity(event: Event): void {
-      if (!isCustomEvent(event) || event.detail._convaiEventHandled) {
+      if (!isCustomEvent(event)) {
         return;
       }
 
-      event.detail._convaiEventHandled = true;
       sendUserActivity();
     }
 
     function handleUserMessage(event: Event): void {
-      if (!isCustomEventWithMessage(event) || event.detail._convaiEventHandled) {
+      if (!isCustomEventWithMessage(event)) {
         return;
       }
 
-      event.detail._convaiEventHandled = true;
       sendUserMessage(event.detail.message);
     }
 
     function handleContextualUpdate(event: Event): void {
-      if (!isCustomEventWithMessage(event) || event.detail._convaiEventHandled) {
+      if (!isCustomEventWithMessage(event)) {
         return;
       }
 
-      event.detail._convaiEventHandled = true;
       sendContextualUpdate(event.detail.message);
     }
 
     const host = shadowHost.value;
     if (allowEvents.value) {
-      document.addEventListener(eventUserActivity, handleUserActivity);
       host?.addEventListener(eventUserActivity, handleUserActivity);
-      document.addEventListener(eventUserMessage, handleUserMessage);
       host?.addEventListener(eventUserMessage, handleUserMessage);
-      document.addEventListener(eventContextualUpdate, handleContextualUpdate);
       host?.addEventListener(eventContextualUpdate, handleContextualUpdate);
     }
 
     return () => {
-      document.removeEventListener(eventUserActivity, handleUserActivity);
       host?.removeEventListener(eventUserActivity, handleUserActivity);
-      document.removeEventListener(eventUserMessage, handleUserMessage);
       host?.removeEventListener(eventUserMessage, handleUserMessage);
-      document.removeEventListener(eventContextualUpdate, handleContextualUpdate);
       host?.removeEventListener(eventContextualUpdate, handleContextualUpdate);
     };
   });
@@ -68,6 +59,6 @@ function isCustomEvent(event: Event): event is CustomEvent {
   return "detail" in event && !!event.detail;
 }
 
-function isCustomEventWithMessage(event: Event): event is CustomEvent<{ _convaiEventHandled?: boolean, message: string }> {
+function isCustomEventWithMessage(event: Event): event is CustomEvent<{ message: string }> {
   return isCustomEvent(event) && typeof event.detail.message === "string" && !!event.detail.message;
 }
