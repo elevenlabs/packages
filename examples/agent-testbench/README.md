@@ -15,7 +15,3 @@ Run `pnpm install` (from this directory or the repo root).
 ### Start the development server
 
 Run `pnpm dev` (from this directory).
-
-### Access the app:
-
-Visit [http://localhost:3000](http://localhost:3000) in your browser.
