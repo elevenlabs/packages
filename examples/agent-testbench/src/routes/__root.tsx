@@ -51,8 +51,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         </ThemeProvider>
         <TanStackDevtools
           config={{
-            position: "top-left",
-            hideUntilHover: true,
+            triggerHidden: true,
           }}
           plugins={[
             {
