@@ -1,4 +1,3 @@
-import { useCallback, useEffect } from "react";
 
 export function MediaDevicesControls() {
   /*

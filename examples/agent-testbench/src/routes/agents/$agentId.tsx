@@ -1,21 +1,15 @@
 import {
   createFileRoute,
-  useNavigate,
   ClientOnly,
 } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { useState } from "react";
 import { z } from "zod";
-import type { BaseSessionConfig, ConnectionType } from "@elevenlabs/client";
 
 import { elevenlabs } from "@/lib/elevenlabs.server";
 import { Page } from "@/components/page";
 import { ConversationProvider } from "@/components/conversation-provider";
-import { AgentControls } from "@/components/agent-controls";
-import { LogTable } from "@/components/log-table";
 import { LogProvider } from "@/components/log-provider";
 import { PermissionsLogger } from "@/components/permissions-logger";
-import { ConfigSidebar } from "@/components/config-sidebar/config-sidebar";
 import { AgentPage } from "@/components/agent-page";
 
 const AgentIdSchema = z.object({

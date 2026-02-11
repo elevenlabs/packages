@@ -1,8 +1,3 @@
-import type {
-  BaseSessionConfig,
-  ConnectionType,
-  PartialOptions,
-} from "@elevenlabs/client";
 import { useCallback } from "react";
 import { EllipsisVertical } from "lucide-react";
 
@@ -13,7 +8,6 @@ import {
   useConversationStatus,
 } from "@/components/conversation-provider";
 import { Spinner } from "@/components/ui/spinner";
-import { spyOnMethods } from "@/lib/utils";
 
 import { useLogControls, useLogEntries } from "./log-provider";
 import { ChatControls } from "./chat-controls";
