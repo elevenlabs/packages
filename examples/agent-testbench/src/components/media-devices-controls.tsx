@@ -1,4 +1,3 @@
-
 export function MediaDevicesControls() {
   /*
     const { mediaDevices } = navigator;

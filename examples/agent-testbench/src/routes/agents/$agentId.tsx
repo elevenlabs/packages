@@ -1,7 +1,4 @@
-import {
-  createFileRoute,
-  ClientOnly,
-} from "@tanstack/react-router";
+import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
