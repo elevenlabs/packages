@@ -4,8 +4,10 @@ import type {
   PartialOptions,
 } from "@elevenlabs/client";
 import { useCallback } from "react";
+import { EllipsisVertical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
   useConversationControls,
   useConversationStatus,
@@ -16,29 +18,7 @@ import { spyOnMethods } from "@/lib/utils";
 import { useLogControls, useLogEntries } from "./log-provider";
 import { ChatControls } from "./chat-controls";
 import { MuteSwitch } from "./mute-switch";
-
-const EVENT_METHOD_NAMES = [
-  "onConnect",
-  "onDisconnect",
-  "onError",
-  "onMessage",
-  "onAudio",
-  "onModeChange",
-  "onStatusChange",
-  "onCanSendFeedbackChange",
-  "onUnhandledClientToolCall",
-  "onVadScore",
-  "onMCPToolCall",
-  "onMCPConnectionStatus",
-  "onAgentToolRequest",
-  "onAgentToolResponse",
-  "onConversationMetadata",
-  "onAsrInitiationMetadata",
-  "onInterruption",
-  "onAgentChatResponsePart",
-  "onAudioAlignment",
-  "onDebug",
-] satisfies (keyof PartialOptions)[];
+import { useSidebar } from "./ui/sidebar";
 
 function ClearEventsButton() {
   const events = useLogEntries();
@@ -55,47 +35,34 @@ function ClearEventsButton() {
   );
 }
 
-export function AgentControls({
-  agentId,
-  options,
-}: {
-  agentId: string;
-  options: BaseSessionConfig & { connectionType?: ConnectionType };
-}) {
+export function AgentControls({ onStart }: { onStart: () => void }) {
   const status = useConversationStatus();
-  const { start, end } = useConversationControls();
-  const { appendLogEntry, clearLog } = useLogControls();
+  const { end } = useConversationControls();
+  const { setOpen: setSidebarOpen } = useSidebar();
 
-  const handleStart = useCallback(() => {
-    const instrumentedOptions = spyOnMethods<PartialOptions>(
-      {
-        ...options,
-        agentId,
-        connectionType: options?.connectionType ?? "webrtc",
-      },
-      EVENT_METHOD_NAMES,
-      entry => appendLogEntry({ part: "conversation", ...entry })
-    );
-    clearLog();
-    appendLogEntry({
-      part: "conversation",
-      method: "start",
-      args: [instrumentedOptions],
-      when: Date.now(),
-    });
-    start(instrumentedOptions);
-  }, [options, start, appendLogEntry]);
+  const handleConfigure = useCallback(() => {
+    setSidebarOpen(true);
+  }, [setSidebarOpen]);
 
   return (
     <>
       <section className="flex flex-row gap-2 my-4">
-        <Button
-          disabled={status.status !== "disconnected"}
-          onClick={handleStart}
-        >
-          Start
-          {status.status === "connecting" && <Spinner />}
-        </Button>
+        <ButtonGroup>
+          <Button disabled={status.status !== "disconnected"} onClick={onStart}>
+            Start
+          </Button>
+          <Button
+            title="Configure before starting"
+            disabled={status.status !== "disconnected"}
+            onClick={handleConfigure}
+          >
+            {status.status === "connecting" ? (
+              <Spinner />
+            ) : (
+              <EllipsisVertical />
+            )}
+          </Button>
+        </ButtonGroup>
         <Button disabled={status.status !== "connected"} onClick={() => end()}>
           End
         </Button>
