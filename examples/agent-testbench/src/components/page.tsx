@@ -5,7 +5,7 @@ export function Page({
   title,
 }: React.PropsWithChildren<{ title: string }>) {
   return (
-    <div className="h-screen flex flex-col max-w-7xl mx-auto px-2">
+    <div className="h-screen flex flex-col w-7xl mx-auto px-2">
       <section className="p-10 text-center">
         <div className="flex flex-row items-center justify-center gap-4">
           <h1 className="text-xl md:text-xl font-black">

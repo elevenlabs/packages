@@ -6,6 +6,8 @@ import appCss from "../styles.css?url";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -40,12 +42,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          {children}
-          <ThemeToggle />
+          <TooltipProvider>
+            <SidebarProvider defaultOpen={false}>
+              {children}
+              <ThemeToggle />
+            </SidebarProvider>
+          </TooltipProvider>
         </ThemeProvider>
         <TanStackDevtools
           config={{
-            position: "bottom-right",
+            position: "top-left",
+            hideUntilHover: true,
           }}
           plugins={[
             {

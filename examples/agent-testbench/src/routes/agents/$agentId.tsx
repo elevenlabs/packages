@@ -10,13 +10,13 @@ import type { BaseSessionConfig, ConnectionType } from "@elevenlabs/client";
 
 import { elevenlabs } from "@/lib/elevenlabs.server";
 import { Page } from "@/components/page";
-import { Card, CardContent } from "@/components/ui/card";
 import { ConversationProvider } from "@/components/conversation-provider";
 import { AgentControls } from "@/components/agent-controls";
 import { LogTable } from "@/components/log-table";
 import { LogProvider } from "@/components/log-provider";
 import { PermissionsLogger } from "@/components/permissions-logger";
-import { ConfigControls } from "@/components/config-controls";
+import { ConfigSidebar } from "@/components/config-sidebar/config-sidebar";
+import { AgentPage } from "@/components/agent-page";
 
 const AgentIdSchema = z.object({
   agentId: z.string(),
@@ -67,34 +67,10 @@ function RouteComponent() {
     return <Page title="Agent not found" />;
   }
 
-  const [sessionConfig, setSessionConfig] = useState<
-    BaseSessionConfig & { connectionType?: ConnectionType }
-  >({});
-
   return (
     <LogProvider>
       <ConversationProvider>
-        <Page title={agent.name}>
-          <main className="flex flex-col gap-5">
-            <Card className="w-md self-center">
-              <CardContent className="flex flex-col gap-4">
-                <ConfigControls
-                  value={sessionConfig}
-                  onChange={setSessionConfig}
-                />
-              </CardContent>
-            </Card>
-            <ClientOnly>
-              <section className="flex flex-col grow h-screen">
-                <AgentControls
-                  agentId={agent.agentId}
-                  options={sessionConfig}
-                />
-                <LogTable />
-              </section>
-            </ClientOnly>
-          </main>
-        </Page>
+        <AgentPage agent={agent} />
       </ConversationProvider>
       <ClientOnly>
         <PermissionsLogger />

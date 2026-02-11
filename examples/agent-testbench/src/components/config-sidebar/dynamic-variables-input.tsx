@@ -1,7 +1,7 @@
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { TypedInput } from "@/components/typed-input";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { useState } from "react";
 import { XIcon } from "lucide-react";
 
@@ -19,7 +19,7 @@ export function DynamicVariablesInput({
   return (
     <>
       {Object.entries(values).map(([key, entryValue], index) => (
-        <FieldGroup key={index}>
+        <Field key={index}>
           <div className="flex flex-row gap-1">
             <Input
               placeholder="Variable Name"
@@ -48,7 +48,7 @@ export function DynamicVariablesInput({
             value={entryValue ?? ""}
             onChange={newValue => onChange({ ...values, [key]: newValue })}
           />
-        </FieldGroup>
+        </Field>
       ))}
       <Field>
         <Input
