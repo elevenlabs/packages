@@ -6,7 +6,8 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "lint:es": "eslint ."
+    "lint:es": "eslint .",
+    "lint:prettier": "prettier . --check"
   },
   "dependencies": {
     "@elevenlabs/client": "workspace:*",
