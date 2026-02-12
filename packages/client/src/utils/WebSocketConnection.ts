@@ -106,8 +106,14 @@ export class WebSocketConnection extends BaseConnection {
       if (config.signedUrl) {
         const separator = config.signedUrl.includes("?") ? "&" : "?";
         url = `${config.signedUrl}${separator}source=${source}&version=${version}`;
+        if (config.branch) {
+          url += `&branch=${encodeURIComponent(config.branch)}`;
+        }
       } else {
         url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=${source}&version=${version}`;
+        if (config.branch) {
+          url += `&branch=${encodeURIComponent(config.branch)}`;
+        }
       }
 
       const protocols = [MAIN_PROTOCOL];

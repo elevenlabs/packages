@@ -55,6 +55,8 @@ export type BaseSessionConfig = {
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
   userId?: string;
+  /** Optional branch identifier for selecting a specific agent branch */
+  branch?: string;
 };
 
 export type ConnectionType = "websocket" | "webrtc";
