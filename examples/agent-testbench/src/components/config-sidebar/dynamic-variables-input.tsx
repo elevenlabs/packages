@@ -1,4 +1,4 @@
-import { Field, FieldGroup } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { TypedInput } from "@/components/typed-input";
 import { Button } from "../ui/button";

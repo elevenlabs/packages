@@ -9,9 +9,5 @@
   "addOnOptions": {},
   "version": 1,
   "framework": "react-cra",
-  "chosenAddOns": [
-    "start",
-    "shadcn",
-    "nitro"
-  ]
+  "chosenAddOns": ["start", "shadcn", "nitro"]
 }
