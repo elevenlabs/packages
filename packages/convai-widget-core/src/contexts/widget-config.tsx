@@ -310,6 +310,13 @@ export function useSyntaxTheme() {
   });
 }
 
+export function useAllowEvents() {
+  const allowEvents = useAttribute("allow-events");
+  return useComputed(() => {
+    return parseBoolAttribute(allowEvents.value) ?? false
+  })
+}
+
 async function fetchConfig(
   agentId: string,
   serverUrl: string,

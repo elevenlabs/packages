@@ -145,6 +145,7 @@ function MockConversationProvider({
       sendFeedback: () => {},
       sendUserMessage: () => {},
       sendUserActivity: () => {},
+      sendContextualUpdate: () => {},
       addModeToggleEntry: () => {},
     }),
     [mockTranscript]
