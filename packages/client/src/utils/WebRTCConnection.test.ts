@@ -2,22 +2,27 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Track mock calls using a global object that can be accessed after mocking
 const mockCalls = {
-  setMicrophoneEnabled: [] as boolean[],
+  createLocalAudioTrack: [] as unknown[],
+  publishTrack: [] as unknown[],
 };
 
 vi.mock("livekit-client", () => {
+  const mockAudioTrack = { id: "mock-audio-track" };
+
   const mockLocalParticipant = {
-    setMicrophoneEnabled: vi.fn((enabled: boolean) => {
+    setMicrophoneEnabled: vi.fn(() => Promise.resolve()),
+    publishData: vi.fn(() => Promise.resolve()),
+    publishTrack: vi.fn((track: unknown, options: unknown) => {
       (globalThis as Record<string, unknown>).__mockCalls__ ??= {
-        setMicrophoneEnabled: [],
+        createLocalAudioTrack: [],
+        publishTrack: [],
       };
       (
         (globalThis as Record<string, unknown>)
           .__mockCalls__ as typeof mockCalls
-      ).setMicrophoneEnabled.push(enabled);
+      ).publishTrack.push({ track, options });
       return Promise.resolve();
     }),
-    publishData: vi.fn(() => Promise.resolve()),
     audioTrackPublications: new Map(),
   };
 
@@ -49,7 +54,17 @@ vi.mock("livekit-client", () => {
       Connected: "connected",
       Disconnected: "disconnected",
     },
-    createLocalAudioTrack: vi.fn(),
+    createLocalAudioTrack: vi.fn((constraints: unknown) => {
+      (globalThis as Record<string, unknown>).__mockCalls__ ??= {
+        createLocalAudioTrack: [],
+        publishTrack: [],
+      };
+      (
+        (globalThis as Record<string, unknown>)
+          .__mockCalls__ as typeof mockCalls
+      ).createLocalAudioTrack.push(constraints);
+      return Promise.resolve(mockAudioTrack);
+    }),
   };
 });
 
@@ -60,7 +75,8 @@ describe("WebRTCConnection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (globalThis as Record<string, unknown>).__mockCalls__ = {
-      setMicrophoneEnabled: [],
+      createLocalAudioTrack: [],
+      publishTrack: [],
     };
   });
 
@@ -89,15 +105,21 @@ describe("WebRTCConnection", () => {
         // Connection may fail in test environment
       }
 
-      const calls = (
+      const trackCalls = (
         (globalThis as Record<string, unknown>)
           .__mockCalls__ as typeof mockCalls
-      ).setMicrophoneEnabled;
+      ).createLocalAudioTrack;
 
       if (shouldEnableMic) {
-        expect(calls).toContain(true);
+        expect(trackCalls.length).toBeGreaterThan(0);
+        expect(trackCalls[0]).toMatchObject({
+          voiceIsolation: true,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        });
       } else {
-        expect(calls).not.toContain(true);
+        expect(trackCalls.length).toBe(0);
       }
     }
   );
