@@ -93,7 +93,7 @@ export type Callbacks = {
   ) => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onConversationModeChange?: (
-    props: Generated.ConversationModeChangeClientEvent["conversation_mode_change_event"]
+    props: Generated.ConversationConfigUpdateAppliedClientEvent["conversation_config_update_applied_event"]
   ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;

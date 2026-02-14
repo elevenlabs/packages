@@ -22,7 +22,7 @@ import type {
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
   AgentToolRequestEvent,
-  ConversationModeChangeEvent,
+  ConversationConfigUpdateAppliedEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -365,10 +365,12 @@ export class BaseConversation {
     });
   }
 
-  protected handleConversationModeChange(event: ConversationModeChangeEvent) {
+  protected handleConversationConfigUpdateApplied(
+    event: ConversationConfigUpdateAppliedEvent
+  ) {
     if (this.options.onConversationModeChange) {
       this.options.onConversationModeChange(
-        event.conversation_mode_change_event
+        event.conversation_config_update_applied_event
       );
     }
   }
@@ -465,8 +467,8 @@ export class BaseConversation {
         return;
       }
 
-      case "conversation_mode_change": {
-        this.handleConversationModeChange(parsedEvent);
+      case "conversation_config_update_applied": {
+        this.handleConversationConfigUpdateApplied(parsedEvent);
         return;
       }
 

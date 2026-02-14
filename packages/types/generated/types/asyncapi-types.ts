@@ -493,16 +493,16 @@ export type ErrorEventErrorType =
   | "redis_timeout_error"
   | "unknown_websocket_crash";
 
-export interface ConversationModeChange {
-  type: "conversation_mode_change";
-  conversation_mode_change_event: ConversationModeChangeEvent;
+export interface ConversationConfigUpdateApplied {
+  type: "conversation_config_update_applied";
+  conversation_config_update_applied_event: ConversationConfigUpdateAppliedEvent;
 }
 
-export interface ConversationModeChangeEvent {
-  mode: ConversationModeChangeEventMode;
+export interface ConversationConfigUpdateAppliedEvent {
+  mode: ConversationConfigUpdateAppliedEventMode;
 }
 
-export type ConversationModeChangeEventMode = "text" | "voice";
+export type ConversationConfigUpdateAppliedEventMode = "text" | "voice";
 
 export interface AudioClientEvent {
   type: "audio";
@@ -588,9 +588,9 @@ export interface ErrorClientEvent {
   error_event: ErrorEvent;
 }
 
-export interface ConversationModeChangeClientEvent {
-  type: "conversation_mode_change";
-  conversation_mode_change_event: ConversationModeChangeEvent;
+export interface ConversationConfigUpdateAppliedClientEvent {
+  type: "conversation_config_update_applied";
+  conversation_config_update_applied_event: ConversationConfigUpdateAppliedEvent;
 }
 
 export interface PongClientToOrchestratorEvent {

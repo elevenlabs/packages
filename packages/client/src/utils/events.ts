@@ -40,8 +40,8 @@ export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type { AudioAlignmentEvent };
-export type ConversationModeChangeEvent =
-  import("@elevenlabs/types/generated/types/asyncapi-types").ConversationModeChangeClientEvent;
+export type ConversationConfigUpdateAppliedEvent =
+  import("@elevenlabs/types/generated/types/asyncapi-types").ConversationConfigUpdateAppliedClientEvent;
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent
@@ -62,7 +62,7 @@ export type IncomingSocketEvent =
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
   | ErrorMessageEvent
-  | ConversationModeChangeEvent;
+  | ConversationConfigUpdateAppliedEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;
