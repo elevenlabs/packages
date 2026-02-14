@@ -89,9 +89,12 @@ class RawAudioProcessor extends AudioWorkletProcessor {
       const maxVolume = Math.sqrt(sum / channelData.length);
       // Check if buffer size has reached or exceeded the threshold
       if (this.buffer.length >= this.bufferSize) {
-        const float32Array = this.isMuted 
-          ? new Float32Array(this.buffer.length)
-          : new Float32Array(this.buffer);
+        if (this.isMuted) {
+          this.buffer = [];
+          return true;
+        }
+
+        const float32Array = new Float32Array(this.buffer);
 
         let encodedArray = this.format === "ulaw"
           ? new Uint8Array(float32Array.length)
