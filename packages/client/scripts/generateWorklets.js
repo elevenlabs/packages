@@ -24,12 +24,6 @@ const worklets = [
     tsFile: 'audioConcatProcessor.generated.ts',
     exportName: 'loadAudioConcatProcessor',
     processorName: 'audioConcatProcessor'
-  },
-  {
-    jsFile: 'scribeAudioProcessor.js',
-    tsFile: 'scribeAudioProcessor.generated.ts',
-    exportName: 'loadScribeAudioProcessor',
-    processorName: 'scribeAudioProcessor'
   }
 ];
 

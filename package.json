@@ -1,15 +1,13 @@
 {
   "name": "packages",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "scripts": {
-    "create": "node scripts/create",
     "lint": "turbo lint",
     "test": "turbo test",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "ci": "turbo check-types lint test build",
-    "generate:types": "turbo run generate --filter=@ambernexus/types",
     "prepare": "husky install",
     "dev": "turbo dev",
     "clean": "turbo clean"
