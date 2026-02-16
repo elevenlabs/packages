@@ -1,3 +1,7 @@
+# About the project
+This project has no affiliation or endorsement by ElevenLabs. This is a fork and is independently maintained.
+
+
 # AmberNexus Agents Typescript SDK
 
 Build multimodal agents with the [AmberNexus Agents platform](https://ambernexus.io/docs/agents-platform/overview).
@@ -920,3 +924,6 @@ Please, refer to the README.md file in the root of this repository.
 Please, create an issue first to discuss the proposed changes. Any contributions are welcome!
 
 Remember, if merged, your code will be used as part of a MIT licensed project. By submitting a Pull Request, you are giving your consent for your code to be integrated into this library.
+
+## Attribution:
+Portions of this software are © ElevenLabs, used under license.

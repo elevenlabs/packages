@@ -1,3 +1,7 @@
+# About the project
+This project has no affiliation or endorsement by ElevenLabs. This is a fork and is independently maintained.
+
+
 # AmberNexus React Native Example
 
 A minimal React Native Expo app demonstrating the AmberNexus React Native SDK for voice conversations.
@@ -93,3 +97,6 @@ Note that React Native Web is currently not supported. For web implementations p
 - For iOS, run `cd ios && pod install` if needed
 - Check that your development environment is set up correctly for React Native
 - Use a physical device rather than simulators
+
+## Attribution:
+Portions of this software are © ElevenLabs, used under license.

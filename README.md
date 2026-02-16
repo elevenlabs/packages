@@ -1,3 +1,5 @@
+# About the project
+This project has no affiliation or endorsement by ElevenLabs. This is a fork and is independently maintained.
 
 
 # AmberNexus Agents SDK
@@ -202,3 +204,5 @@ pnpm run create --name=my-new-package
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Attribution:
+Portions of this software are © ElevenLabs, used under license.
