@@ -1,2 +1,4 @@
 packages:
   - "packages/client"
+  - "packages/types"
+  - "packages/typescript-config"

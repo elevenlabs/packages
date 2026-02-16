@@ -1,6 +1,6 @@
 {
   "name": "@ambernexus/client",
-  "version": "0.13.10",
+  "version": "0.13.13",
   "description": "AmberNexus branded wrapper for the ElevenLabs JavaScript SDK",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -52,7 +52,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@ambernexus/types": "^0.4.1",
+    "@ambernexus/types": "^0.4.6",
     "livekit-client": "^2.11.4"
   }
 }

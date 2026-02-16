@@ -1,6 +1,6 @@
 {
   "name": "@ambernexus/types",
-  "version": "0.4.3",
+  "version": "0.4.6",
   "description": "Ambernexus branded wrapper for the ElevenLabs TypeScript types for agent communication",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -20,7 +20,7 @@
     "@asyncapi/cli": "^2.17.0",
     "@asyncapi/modelina": "^4.4.3",
     "@asyncapi/parser": "^3.4.0",
-    "@ambernexus/typescript-config": "^0.0.0",
+    "@ambernexus/typescript-config": "^0.0.4",
     "@types/node": "^22.10.5",
     "eslint": "^9.20.0",
     "glob": "^11.0.3",
@@ -36,7 +36,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elevenlabs/packages.git",
+    "url": "git+https://github.com/Kamalnbk/amber-nexus/packages.git",
     "directory": "packages/types"
   },
   "publishConfig": {
