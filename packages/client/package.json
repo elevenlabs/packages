@@ -1,6 +1,6 @@
 {
   "name": "@ambernexus/client",
-  "version": "0.13.9",
+  "version": "0.13.10",
   "description": "AmberNexus branded wrapper for the ElevenLabs JavaScript SDK",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",

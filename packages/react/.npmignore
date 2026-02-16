@@ -1,6 +1,0 @@
-node_modules/
-src/
-pnpm-lock.yaml
-tsconfig.json
-vitest.workspace.ts
-eslint.config.cjs
