@@ -1,3 +1,7 @@
+# About the project
+This project has no affiliation or endorsement by ElevenLabs. This is a fork and is independently maintained.
+
+
 # @ambernexus/types
 
 TypeScript type definitions for AmberNexus APIs, auto-generated from AsyncAPI specifications.
@@ -120,3 +124,6 @@ packages/types/
 1. Create a new AsyncAPI specification in `schemas/` with the naming pattern `*.asyncapi.yaml`
 2. Run `pnpm generate` - the script will automatically discover and process all schema files
 3. The generated types will be merged into the existing type exports
+
+## Attribution:
+Portions of this software are © ElevenLabs, used under license.

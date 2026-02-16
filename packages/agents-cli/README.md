@@ -1,3 +1,7 @@
+# About the project
+This project has no affiliation or endorsement by ElevenLabs. This is a fork and is independently maintained.
+
+
 > [!WARNING]
 > **This package has been deprecated and is no longer maintained.**
 >
@@ -549,3 +553,6 @@ Configuration files are stored in `~/.agents/` with secure directory permissions
 - Use `agents --help` or `agents <command> --help`
 - Check GitHub issues
 - Create new issue with problem details
+
+## Attribution:
+Portions of this software are © ElevenLabs, used under license.
