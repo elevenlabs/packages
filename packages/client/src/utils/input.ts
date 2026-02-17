@@ -2,6 +2,7 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
+import type { InputController } from "../InputController";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
@@ -21,7 +22,7 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
-export class Input {
+export class Input implements InputController {
   public static async create({
     sampleRate,
     format,
@@ -123,6 +124,8 @@ export class Input {
     return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
   }
 
+  private muted = false;
+
   private constructor(
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
@@ -136,6 +139,10 @@ export class Input {
     ) => void = console.error
   ) {
     this.permissions.addEventListener("change", this.handlePermissionsChange);
+  }
+
+  public get isMuted(): boolean {
+    return this.muted;
   }
 
   private forgetInputStreamAndSource() {
@@ -155,6 +162,7 @@ export class Input {
   }
 
   public setMuted(isMuted: boolean) {
+    this.muted = isMuted;
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
