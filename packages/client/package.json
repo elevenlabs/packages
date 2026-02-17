@@ -1,6 +1,6 @@
 {
   "name": "@ambernexus/client",
-  "version": "0.13.13",
+  "version": "0.13.15",
   "description": "AmberNexus branded wrapper for the ElevenLabs JavaScript SDK",
   "main": "./dist/lib.umd.js",
   "module": "./dist/lib.module.js",
@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ambernexus/packages.git",
+    "url": "git+https://github.com/Kamalnbk/amber-nexus.git",
     "directory": "packages/client"
   },
   "publishConfig": {
