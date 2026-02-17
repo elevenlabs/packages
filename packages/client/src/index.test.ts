@@ -582,13 +582,16 @@ describe("Volume Control", () => {
       close: vi.fn(() => Promise.resolve()),
     }));
 
-    globalThis.AudioWorkletNode = vi.fn().mockImplementation(() => ({
-      connect: vi.fn(),
-      port: {
-        postMessage: vi.fn(),
-        onmessage: null,
-      },
-    }));
+    globalThis.AudioWorkletNode = vi.fn().mockImplementation(() => {
+      return {
+        connect: vi.fn(),
+        port: {
+          postMessage: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        },
+      };
+    });
 
     // Mock getUserMedia by mocking the mediaDevices property
     const mockMediaStream = {

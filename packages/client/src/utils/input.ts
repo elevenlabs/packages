@@ -22,6 +22,9 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
+export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputListener = (event: InputMessageEvent) => void;
+
 export class Input implements InputController {
   public static async create({
     sampleRate,
@@ -129,7 +132,7 @@ export class Input implements InputController {
   private constructor(
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
-    public readonly worklet: AudioWorkletNode,
+    private worklet: AudioWorkletNode,
     public inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
     private permissions: PermissionStatus,
@@ -143,6 +146,22 @@ export class Input implements InputController {
 
   public get isMuted(): boolean {
     return this.muted;
+  }
+
+  public addEventListener(type: "input", listener: InputListener): void {
+    if (type === "input") {
+      this.worklet.port.addEventListener("message", listener);
+    } else {
+      throw new Error(`Unsupported event type: ${type}`);
+    }
+  }
+
+  public removeEventListener(type: "input", listener: InputListener): void {
+    if (type === "input") {
+      this.worklet.port.removeEventListener("message", listener);
+    } else {
+      throw new Error(`Unsupported event type: ${type}`);
+    }
   }
 
   private forgetInputStreamAndSource() {
