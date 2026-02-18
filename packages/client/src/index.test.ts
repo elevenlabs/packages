@@ -589,6 +589,7 @@ describe("Volume Control", () => {
           postMessage: vi.fn(),
           addEventListener: vi.fn(),
           removeEventListener: vi.fn(),
+          start: vi.fn(),
         },
       };
     });

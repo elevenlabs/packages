@@ -25,7 +25,12 @@ const defaultConstraints = {
 export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
 export type InputListener = (event: InputMessageEvent) => void;
 
-export class Input implements InputController {
+export type InputEventTarget = {
+  addEventListener(type: "input", listener: InputListener): void;
+  removeEventListener(type: "input", listener: InputListener): void;
+};
+
+export class Input implements InputController, InputEventTarget {
   public static async create({
     sampleRate,
     format,
@@ -132,7 +137,7 @@ export class Input implements InputController {
   private constructor(
     public readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
-    private worklet: AudioWorkletNode,
+    public readonly worklet: AudioWorkletNode,
     public inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
     private permissions: PermissionStatus,
@@ -142,6 +147,9 @@ export class Input implements InputController {
     ) => void = console.error
   ) {
     this.permissions.addEventListener("change", this.handlePermissionsChange);
+    // Start the MessagePort to enable addEventListener to work
+    // (required when using addEventListener instead of onmessage)
+    this.worklet.port.start();
   }
 
   public get isMuted(): boolean {
