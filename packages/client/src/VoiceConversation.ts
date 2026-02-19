@@ -178,7 +178,7 @@ export class VoiceConversation extends BaseConversation {
       };
     }
 
-    (window as any).__ELEVENLABS_EXTENSION__ = ext;
+    (window as any).__ELEVENLABS_SDK__ = ext;
   }
 
   protected override async handleEndSession() {
