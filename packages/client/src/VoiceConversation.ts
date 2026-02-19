@@ -115,7 +115,7 @@ export class VoiceConversation extends BaseConversation {
     public wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
-    this.input.worklet.port.onmessage = this.onInputWorkletMessage;
+    this.input.addListener(this.onInputWorkletMessage);
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
 
     if (wakeLock) {
@@ -183,7 +183,9 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
-  private onInputWorkletMessage = (event: MessageEvent): void => {
+  private onInputWorkletMessage = (
+    event: MessageEvent<[Uint8Array, number]>
+  ): void => {
     const rawAudioPcmData = event.data[0];
 
     // TODO: When supported, maxVolume can be used to avoid sending silent audio
@@ -330,7 +332,7 @@ export class VoiceConversation extends BaseConversation {
       });
 
       this.input = newInput;
-      this.input.worklet.port.onmessage = this.onInputWorkletMessage;
+      this.input.addListener(this.onInputWorkletMessage);
 
       return this.input;
     } catch (error) {
