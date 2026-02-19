@@ -134,77 +134,37 @@ export class VoiceConversation extends BaseConversation {
       );
     }
 
-    // Expose LiveKit room for browser extensions (e.g., voice recorder extension)
-    this.exposeForExtension();
+    // Expose connection for browser extensions and debugging
+    this.exposeConnectionGlobally();
   }
 
-  /**
-   * Exposes the conversation for browser extensions.
-   * This allows extensions to inject pre-recorded audio into conversations.
-   * Supports both WebRTC (LiveKit room) and WebSocket connections.
-   */
-  private extLog(...args: any[]) {
-    if ((window as any).__ELEVENLABS_LOGGING_ENABLED__ !== false) {
-      console.log("[ElevenLabs SDK]", ...args);
-    }
-  }
+  private exposeConnectionGlobally() {
+    if (typeof window === "undefined") return;
 
-  private exposeForExtension() {
-    this.extLog("exposeForExtension called");
-    if (typeof window === "undefined") {
-      this.extLog("No window object, skipping");
-      return;
-    }
-
-    const connectionType =
-      this.connection instanceof WebRTCConnection ? "webrtc" : "websocket";
-    this.extLog("Connection type:", connectionType);
-
-    // Always expose the conversation instance
-    (window as any).__ELEVENLABS_CONVERSATION__ = this;
+    const self = this;
+    const ext: Record<string, any> = {
+      conversation: {
+        get status() {
+          return self.status;
+        },
+        get conversationId() {
+          return self.connection.conversationId;
+        },
+        get inputFormat() {
+          return self.connection.inputFormat;
+        },
+        sendUserMessage(text: string) {
+          self.sendUserMessage(text);
+        },
+      },
+      room: null,
+      sendAudio: null,
+    };
 
     if (this.connection instanceof WebRTCConnection) {
-      const room = this.connection.getRoom();
-      this.extLog("Got room:", room?.name, "state:", room?.state);
-
-      // Expose LiveKit room for WebRTC
-      (window as any).__ELEVENLABS_ROOM__ = room;
-      (window as any).__ELEVENLABS_CONNECTION_TYPE__ = "webrtc";
-      (window as any).__ELEVENLABS_WS__ = null;
-      this.extLog("Set window.__ELEVENLABS_ROOM__ =", room);
-
-      // Call extension registration function if available
-      if (
-        typeof (window as any).__ELEVENLABS_EXTENSION_REGISTER_ROOM__ ===
-        "function"
-      ) {
-        this.extLog("Calling __ELEVENLABS_EXTENSION_REGISTER_ROOM__");
-        (window as any).__ELEVENLABS_EXTENSION_REGISTER_ROOM__(room);
-      }
-
-      // Dispatch custom event for extensions
-      this.extLog("Dispatching elevenlabs-conversation-started event");
-      window.dispatchEvent(
-        new CustomEvent("elevenlabs-conversation-started", {
-          detail: {
-            conversationId: this.connection.conversationId,
-            room,
-            connectionType: "webrtc",
-            inputFormat: this.connection.inputFormat,
-          },
-        })
-      );
+      ext.room = this.connection.getRoom();
     } else if (this.connection instanceof WebSocketConnection) {
-      this.extLog("WebSocket connection detected");
-
-      // Expose WebSocket connection info
-      (window as any).__ELEVENLABS_ROOM__ = null;
-      (window as any).__ELEVENLABS_CONNECTION_TYPE__ = "websocket";
-      (window as any).__ELEVENLABS_WS__ = this.connection;
-      (window as any).__ELEVENLABS_INPUT_FORMAT__ = this.connection.inputFormat;
-
-      // Create a helper function to send audio chunks
-      (window as any).__ELEVENLABS_SEND_AUDIO__ = (base64Audio: string) => {
+      ext.sendAudio = (base64Audio: string) => {
         if (
           this.status === "connected" &&
           this.connection instanceof WebSocketConnection
@@ -216,83 +176,9 @@ export class VoiceConversation extends BaseConversation {
         }
         return false;
       };
-
-      this.extLog(
-        "Exposed WebSocket connection. Input format:",
-        this.connection.inputFormat
-      );
-
-      // Call extension registration function if available
-      if (
-        typeof (window as any).__ELEVENLABS_EXTENSION_REGISTER_WEBSOCKET__ ===
-        "function"
-      ) {
-        this.extLog("Calling __ELEVENLABS_EXTENSION_REGISTER_WEBSOCKET__");
-        (window as any).__ELEVENLABS_EXTENSION_REGISTER_WEBSOCKET__(
-          this.connection,
-          this.connection.inputFormat
-        );
-      }
-
-      // Dispatch custom event for extensions
-      this.extLog("Dispatching elevenlabs-conversation-started event");
-      window.dispatchEvent(
-        new CustomEvent("elevenlabs-conversation-started", {
-          detail: {
-            conversationId: this.connection.conversationId,
-            connectionType: "websocket",
-            inputFormat: this.connection.inputFormat,
-          },
-        })
-      );
     }
-  }
 
-  /**
-   * Get the LiveKit room instance for advanced usage.
-   * Only available for WebRTC connections.
-   * @returns The LiveKit Room instance or null if not using WebRTC
-   */
-  public getLiveKitRoom(): any | null {
-    if (this.connection instanceof WebRTCConnection) {
-      return this.connection.getRoom();
-    }
-    return null;
-  }
-
-  /**
-   * Get the connection type being used.
-   * @returns "webrtc" | "websocket"
-   */
-  public getConnectionType(): "webrtc" | "websocket" {
-    return this.connection instanceof WebRTCConnection ? "webrtc" : "websocket";
-  }
-
-  /**
-   * Get the input audio format configuration.
-   * @returns The format configuration (sample rate, format type)
-   */
-  public getInputFormat(): FormatConfig {
-    return this.connection.inputFormat;
-  }
-
-  /**
-   * Send a pre-recorded audio chunk to the conversation (WebSocket only).
-   * For WebRTC, use the LiveKit room directly.
-   * @param base64Audio - Base64 encoded PCM audio data
-   * @returns true if sent successfully, false otherwise
-   */
-  public sendAudioChunk(base64Audio: string): boolean {
-    if (
-      this.status === "connected" &&
-      this.connection instanceof WebSocketConnection
-    ) {
-      this.connection.sendMessage({
-        user_audio_chunk: base64Audio,
-      });
-      return true;
-    }
-    return false;
+    (window as any).__ELEVENLABS_EXTENSION__ = ext;
   }
 
   protected override async handleEndSession() {
