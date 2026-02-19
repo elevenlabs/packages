@@ -10,6 +10,10 @@ export function attachInputToConnection(
 ): () => void {
   const listener: InputListener = event => {
     const rawAudioPcmData = event.data[0];
+
+    // TODO: When supported, maxVolume can be used to avoid sending silent audio
+    // const maxVolume = event.data[1];
+
     connection.sendMessage({
       user_audio_chunk: arrayBufferToBase64(rawAudioPcmData.buffer),
     });
