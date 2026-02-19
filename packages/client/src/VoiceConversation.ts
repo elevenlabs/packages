@@ -1,4 +1,4 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
+import { base64ToArrayBuffer } from "./utils/audio";
 import { Input, type InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
@@ -12,6 +12,7 @@ import {
   type PartialOptions,
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
+import { attachInputToConnection } from "./utils/attachInputToConnection";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -106,6 +107,7 @@ export class VoiceConversation extends BaseConversation {
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
   private visibilityChangeHandler: (() => void) | null = null;
+  private detachInput: (() => void) | null = null;
 
   protected constructor(
     options: Options,
@@ -115,7 +117,7 @@ export class VoiceConversation extends BaseConversation {
     public wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
-    this.input.addListener(this.onInputWorkletMessage);
+    this.detachInput = attachInputToConnection(this.input, this.connection);
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
 
     if (wakeLock) {
@@ -136,6 +138,8 @@ export class VoiceConversation extends BaseConversation {
   }
 
   protected override async handleEndSession() {
+    this.detachInput?.();
+    this.detachInput = null;
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
@@ -182,21 +186,6 @@ export class VoiceConversation extends BaseConversation {
       this.updateMode("speaking");
     }
   }
-
-  private onInputWorkletMessage = (
-    event: MessageEvent<[Uint8Array, number]>
-  ): void => {
-    const rawAudioPcmData = event.data[0];
-
-    // TODO: When supported, maxVolume can be used to avoid sending silent audio
-    // const maxVolume = event.data[1];
-
-    if (this.status === "connected") {
-      this.connection.sendMessage({
-        user_audio_chunk: arrayBufferToBase64(rawAudioPcmData.buffer),
-      });
-    }
-  };
 
   private onOutputWorkletMessage = ({ data }: MessageEvent): void => {
     if (data.type === "process") {
@@ -332,7 +321,8 @@ export class VoiceConversation extends BaseConversation {
       });
 
       this.input = newInput;
-      this.input.addListener(this.onInputWorkletMessage);
+      this.detachInput?.();
+      this.detachInput = attachInputToConnection(this.input, this.connection);
 
       return this.input;
     } catch (error) {
