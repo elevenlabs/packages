@@ -26,8 +26,8 @@ export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
 export type InputListener = (event: InputMessageEvent) => void;
 
 export type InputEventTarget = {
-  addEventListener(type: "input", listener: InputListener): void;
-  removeEventListener(type: "input", listener: InputListener): void;
+  addListener(listener: InputListener): void;
+  removeListener(listener: InputListener): void;
 };
 
 export class Input implements InputController, InputEventTarget {
@@ -156,20 +156,12 @@ export class Input implements InputController, InputEventTarget {
     return this.muted;
   }
 
-  public addEventListener(type: "input", listener: InputListener): void {
-    if (type === "input") {
-      this.worklet.port.addEventListener("message", listener);
-    } else {
-      throw new Error(`Unsupported event type: ${type}`);
-    }
+  public addListener(listener: InputListener): void {
+    this.worklet.port.addEventListener("message", listener);
   }
 
-  public removeEventListener(type: "input", listener: InputListener): void {
-    if (type === "input") {
-      this.worklet.port.removeEventListener("message", listener);
-    } else {
-      throw new Error(`Unsupported event type: ${type}`);
-    }
+  public removeListener(listener: InputListener): void {
+    this.worklet.port.removeEventListener("message", listener);
   }
 
   private forgetInputStreamAndSource() {

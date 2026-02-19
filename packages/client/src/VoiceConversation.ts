@@ -115,7 +115,7 @@ export class VoiceConversation extends BaseConversation {
     public wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
-    this.input.addEventListener("input", this.onInputWorkletMessage);
+    this.input.addListener(this.onInputWorkletMessage);
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
 
     if (wakeLock) {
@@ -332,7 +332,7 @@ export class VoiceConversation extends BaseConversation {
       });
 
       this.input = newInput;
-      this.input.addEventListener("input", this.onInputWorkletMessage);
+      this.input.addListener(this.onInputWorkletMessage);
 
       return this.input;
     } catch (error) {
