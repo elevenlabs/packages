@@ -135,10 +135,10 @@ export class Input implements InputController, InputEventTarget {
   private muted = false;
 
   private constructor(
-    public readonly context: AudioContext,
+    private readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
-    public readonly worklet: AudioWorkletNode,
-    public inputStream: MediaStream,
+    private readonly worklet: AudioWorkletNode,
+    private inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
     private permissions: PermissionStatus,
     private onError: (
