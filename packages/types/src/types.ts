@@ -91,9 +91,24 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
-  onAudioAlignment?: (
-    props: AudioAlignmentEvent
-  ) => void;
+  onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
+
+/**
+ * Shape of `window.__ELEVENLABS_SDK__`, exposed by the SDK so any JavaScript
+ * running on the page can interact with an active conversation.
+ */
+export interface ElevenAgentsGlobalAPI {
+  conversation: {
+    readonly status: Status;
+    readonly conversationId: string;
+    readonly inputFormat: { sampleRate: number; format: string };
+    sendUserMessage(text: string): void;
+  };
+  /** LiveKit Room instance for WebRTC connections, null otherwise. */
+  room: unknown;
+  /** Sends a base64-encoded PCM audio chunk over a WebSocket connection. */
+  sendAudio: ((base64Audio: string) => boolean) | null;
+}

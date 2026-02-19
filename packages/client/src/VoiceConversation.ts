@@ -12,6 +12,7 @@ import {
   type PartialOptions,
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
+import type { ElevenAgentsGlobalAPI } from "@elevenlabs/types";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -134,15 +135,14 @@ export class VoiceConversation extends BaseConversation {
       );
     }
 
-    // Expose connection for browser extensions and debugging
-    this.exposeConnectionGlobally();
+    this.exposeGlobalAPI();
   }
 
-  private exposeConnectionGlobally() {
+  private exposeGlobalAPI() {
     if (typeof window === "undefined") return;
 
     const self = this;
-    const ext: Record<string, any> = {
+    const api: ElevenAgentsGlobalAPI = {
       conversation: {
         get status() {
           return self.status;
@@ -162,9 +162,9 @@ export class VoiceConversation extends BaseConversation {
     };
 
     if (this.connection instanceof WebRTCConnection) {
-      ext.room = this.connection.getRoom();
+      api.room = this.connection.getRoom();
     } else if (this.connection instanceof WebSocketConnection) {
-      ext.sendAudio = (base64Audio: string) => {
+      api.sendAudio = (base64Audio: string) => {
         if (
           this.status === "connected" &&
           this.connection instanceof WebSocketConnection
@@ -178,7 +178,7 @@ export class VoiceConversation extends BaseConversation {
       };
     }
 
-    (window as any).__ELEVENLABS_SDK__ = ext;
+    (window as any).__ELEVENLABS_SDK__ = api;
   }
 
   protected override async handleEndSession() {
