@@ -22,7 +22,15 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
-export class Input implements InputController {
+export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputListener = (event: InputMessageEvent) => void;
+
+export type InputEventTarget = {
+  addListener(listener: InputListener): void;
+  removeListener(listener: InputListener): void;
+};
+
+export class Input implements InputController, InputEventTarget {
   public static async create({
     sampleRate,
     format,
@@ -139,10 +147,21 @@ export class Input implements InputController {
     ) => void = console.error
   ) {
     this.permissions.addEventListener("change", this.handlePermissionsChange);
+    // Start the MessagePort to enable addEventListener to work
+    // (required when using addEventListener instead of onmessage)
+    this.worklet.port.start();
   }
 
   public get isMuted(): boolean {
     return this.muted;
+  }
+
+  public addListener(listener: InputListener): void {
+    this.worklet.port.addEventListener("message", listener);
+  }
+
+  public removeListener(listener: InputListener): void {
+    this.worklet.port.removeEventListener("message", listener);
   }
 
   private forgetInputStreamAndSource() {
