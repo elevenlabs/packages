@@ -207,10 +207,4 @@ export class WebSocketConnection extends BaseConnection {
   public sendMessage(message: OutgoingSocketEvent) {
     this.socket.send(JSON.stringify(message));
   }
-
-  public async setMicMuted(isMuted: boolean): Promise<void> {
-    console.warn(
-      `WebSocket connection setMicMuted called with ${isMuted}, but this is handled by VoiceConversation`
-    );
-  }
 }

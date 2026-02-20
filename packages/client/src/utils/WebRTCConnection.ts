@@ -350,13 +350,6 @@ export class WebRTCConnection
     return this._isMuted;
   }
 
-  public setMuted(isMuted: boolean): void {
-    this._isMuted = isMuted;
-    this.setMicMuted(isMuted).catch(error => {
-      console.error("Failed to set muted state:", error);
-    });
-  }
-
   public async setInputDevice(
     config?: Partial<FormatConfig> & InputDeviceConfig
   ): Promise<void> {
@@ -417,7 +410,7 @@ export class WebRTCConnection
     return this.room;
   }
 
-  public async setMicMuted(isMuted: boolean): Promise<void> {
+  public async setInputMuted(isMuted: boolean): Promise<void> {
     if (!this.isConnected || !this.room.localParticipant) {
       console.warn(
         "Cannot set microphone muted: room not connected or no local participant"

@@ -234,9 +234,11 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    // Delegate to InputController.setMuted()
+    // Delegate to InputController.setInputMuted()
     // Both MediaDeviceInput and WebRTCConnection implement this
-    this.input.setMuted(isMuted);
+    this.input.setInputMuted(isMuted).catch(error => {
+      this.options.onError?.("Failed to set input muted state", error);
+    });
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
