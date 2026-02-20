@@ -39,10 +39,7 @@ export type ConnectionConfig = SessionConfig & {
   onDebug?: (info: unknown) => void;
 };
 
-export class WebRTCConnection
-  extends BaseConnection
-  implements InputController
-{
+export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;
@@ -57,9 +54,84 @@ export class WebRTCConnection
   private outputAnalyser: AnalyserNode | null = null;
   private outputFrequencyData: Uint8Array<ArrayBuffer> | null = null;
 
-  // InputController implementation
+  // InputController state
   private _isMuted = false;
-  public readonly analyser?: AnalyserNode = undefined; // WebRTC doesn't provide input analyser
+
+  // InputController interface exposed as a property
+  public readonly input: InputController = {
+    close: async () => {
+      // Close only microphone tracks, not the entire connection
+      if (this.isConnected) {
+        try {
+          this.room.localParticipant.audioTrackPublications.forEach(
+            publication => {
+              if (publication.track) {
+                publication.track.stop();
+              }
+            }
+          );
+        } catch (error) {
+          console.warn("Error stopping local tracks:", error);
+        }
+      }
+    },
+    setInputDevice: async (
+      config?: Partial<FormatConfig> & InputDeviceConfig
+    ) => {
+      // WebRTC only supports changing deviceId
+      // sampleRate, format, and preferHeadphonesForIosDevices are not supported
+      if (
+        config?.sampleRate !== undefined ||
+        config?.format !== undefined ||
+        config?.preferHeadphonesForIosDevices !== undefined
+      ) {
+        throw new Error(
+          "WebRTC input device does not support sampleRate, format, or preferHeadphonesForIosDevices options"
+        );
+      }
+
+      const deviceId = config?.deviceId;
+      if (!deviceId) {
+        // No device ID specified - this is a no-op for WebRTC
+        // The default device is already being used
+        return;
+      }
+      await this.setAudioInputDevice(deviceId);
+    },
+    setInputMuted: async (isMuted: boolean) => {
+      if (!this.isConnected || !this.room.localParticipant) {
+        console.warn(
+          "Cannot set microphone muted: room not connected or no local participant"
+        );
+        return;
+      }
+
+      // Get the microphone track publication
+      const micTrackPublication =
+        this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
+
+      if (micTrackPublication?.track) {
+        try {
+          // Use LiveKit's built-in track muting
+          if (isMuted) {
+            await micTrackPublication.track.mute();
+          } else {
+            await micTrackPublication.track.unmute();
+          }
+        } catch (_error) {
+          // If track muting fails, fall back to participant-level control
+          await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+        }
+      } else {
+        // No track found, use participant-level control directly
+        await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+      }
+
+      this._isMuted = isMuted;
+    },
+    isMuted: () => this._isMuted,
+    analyser: undefined, // WebRTC doesn't provide input analyser
+  };
 
   private constructor(
     room: Room,
@@ -308,7 +380,7 @@ export class WebRTCConnection
     );
   }
 
-  public async close(): Promise<void> {
+  public close() {
     if (this.isConnected) {
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
@@ -323,13 +395,11 @@ export class WebRTCConnection
         console.warn("Error stopping local tracks:", error);
       }
 
-      // Clean up audio capture context
+      // Clean up audio capture context (non-blocking)
       if (this.audioCaptureContext) {
-        try {
-          await this.audioCaptureContext.close();
-        } catch (error) {
+        this.audioCaptureContext.close().catch(error => {
           console.warn("Error closing audio capture context:", error);
-        }
+        });
         this.audioCaptureContext = null;
       }
 
@@ -343,35 +413,6 @@ export class WebRTCConnection
 
       this.room.disconnect();
     }
-  }
-
-  // InputController interface implementation
-  public get isMuted(): boolean {
-    return this._isMuted;
-  }
-
-  public async setInputDevice(
-    config?: Partial<FormatConfig> & InputDeviceConfig
-  ): Promise<void> {
-    // WebRTC only supports changing deviceId
-    // sampleRate, format, and preferHeadphonesForIosDevices are not supported
-    if (
-      config?.sampleRate !== undefined ||
-      config?.format !== undefined ||
-      config?.preferHeadphonesForIosDevices !== undefined
-    ) {
-      throw new Error(
-        "WebRTC input device does not support sampleRate, format, or preferHeadphonesForIosDevices options"
-      );
-    }
-
-    const deviceId = config?.deviceId;
-    if (!deviceId) {
-      // No device ID specified - this is a no-op for WebRTC
-      // The default device is already being used
-      return;
-    }
-    await this.setAudioInputDevice(deviceId);
   }
 
   public async sendMessage(message: OutgoingSocketEvent) {
@@ -408,39 +449,6 @@ export class WebRTCConnection
   // Get the room instance for advanced usage
   public getRoom(): Room {
     return this.room;
-  }
-
-  public async setInputMuted(isMuted: boolean): Promise<void> {
-    if (!this.isConnected || !this.room.localParticipant) {
-      console.warn(
-        "Cannot set microphone muted: room not connected or no local participant"
-      );
-      return;
-    }
-
-    // Get the microphone track publication
-    const micTrackPublication = this.room.localParticipant.getTrackPublication(
-      Track.Source.Microphone
-    );
-
-    if (micTrackPublication?.track) {
-      try {
-        // Use LiveKit's built-in track muting
-        if (isMuted) {
-          await micTrackPublication.track.mute();
-        } else {
-          await micTrackPublication.track.unmute();
-        }
-      } catch (_error) {
-        // If track muting fails, fall back to participant-level control
-        await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
-      }
-    } else {
-      // No track found, use participant-level control directly
-      await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
-    }
-
-    this._isMuted = isMuted;
   }
 
   private async setupAudioCapture(track: RemoteAudioTrack) {

@@ -152,7 +152,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.worklet.port.start();
   }
 
-  public get isMuted(): boolean {
+  public isMuted(): boolean {
     return this.muted;
   }
 
