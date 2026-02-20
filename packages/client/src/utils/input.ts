@@ -2,6 +2,7 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
+import type { InputController } from "../InputController";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
@@ -21,7 +22,15 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
-export class Input {
+export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputListener = (event: InputMessageEvent) => void;
+
+export type InputEventTarget = {
+  addListener(listener: InputListener): void;
+  removeListener(listener: InputListener): void;
+};
+
+export class MediaDeviceInput implements InputController, InputEventTarget {
   public static async create({
     sampleRate,
     format,
@@ -30,7 +39,9 @@ export class Input {
     workletPaths,
     libsampleratePath,
     onError,
-  }: FormatConfig & InputConfig & AudioWorkletConfig): Promise<Input> {
+  }: FormatConfig &
+    InputConfig &
+    AudioWorkletConfig): Promise<MediaDeviceInput> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -58,7 +69,8 @@ export class Input {
       }
 
       if (inputDeviceId) {
-        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -95,7 +107,7 @@ export class Input {
       const permissions = await navigator.permissions.query({
         name: "microphone",
       });
-      return new Input(
+      return new MediaDeviceInput(
         context,
         analyser,
         worklet,
@@ -123,11 +135,13 @@ export class Input {
     return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
   }
 
+  private muted = false;
+
   private constructor(
-    public readonly context: AudioContext,
+    private readonly context: AudioContext,
     public readonly analyser: AnalyserNode,
-    public readonly worklet: AudioWorkletNode,
-    public inputStream: MediaStream,
+    private readonly worklet: AudioWorkletNode,
+    private inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
     private permissions: PermissionStatus,
     private onError: (
@@ -136,6 +150,21 @@ export class Input {
     ) => void = console.error
   ) {
     this.permissions.addEventListener("change", this.handlePermissionsChange);
+    // Start the MessagePort to enable addEventListener to work
+    // (required when using addEventListener instead of onmessage)
+    this.worklet.port.start();
+  }
+
+  public get isMuted(): boolean {
+    return this.muted;
+  }
+
+  public addListener(listener: InputListener): void {
+    this.worklet.port.addEventListener("message", listener);
+  }
+
+  public removeListener(listener: InputListener): void {
+    this.worklet.port.removeEventListener("message", listener);
   }
 
   private forgetInputStreamAndSource() {
@@ -155,6 +184,7 @@ export class Input {
   }
 
   public setMuted(isMuted: boolean) {
+    this.muted = isMuted;
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
@@ -171,7 +201,8 @@ export class Input {
       };
 
       if (inputDeviceId) {
-        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
       // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
