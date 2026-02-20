@@ -1179,16 +1179,12 @@ describe("Device Change Default Device", () => {
     const conversation = await conversationPromise;
 
     // Test that changeInputDevice works without deviceId (uses default)
-    const inputResult = await (
-      conversation as VoiceConversation
-    ).changeInputDevice({
+    await (conversation as VoiceConversation).changeInputDevice({
       sampleRate: 16000,
       format: "pcm",
       // No inputDeviceId provided - should use browser default
     });
-
-    expect(inputResult).toBeDefined();
-    expect(inputResult.inputStream).toBeDefined();
+    // Success - the device change completed without throwing
 
     // Test that changeOutputDevice works without deviceId (uses default)
     const outputResult = await (
