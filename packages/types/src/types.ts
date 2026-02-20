@@ -97,18 +97,36 @@ export type Callbacks = {
 };
 
 /**
- * Shape of `window.__ELEVENLABS_SDK__`, exposed by the SDK so any JavaScript
- * running on the page can interact with an active conversation.
+ * The well-known symbol used to store the active conversation on `window`.
+ * Exposed by the SDK when `debug: true` is set in the session options.
+ *
+ * @example
+ * ```ts
+ * const api = window[Symbol.for("ElevenLabs.SDK.CurrentAgentConversation")];
+ * api?.sendUserMessage("hello");
+ * ```
  */
-export interface ElevenAgentsGlobalAPI {
-  conversation: {
-    readonly status: Status;
-    readonly conversationId: string;
-    readonly inputFormat: { sampleRate: number; format: string };
-    sendUserMessage(text: string): void;
-  };
-  /** LiveKit Room instance for WebRTC connections, null otherwise. */
-  room: unknown;
-  /** Sends a base64-encoded PCM audio chunk over a WebSocket connection. */
-  sendAudio: ((base64Audio: string) => boolean) | null;
+export const ELEVENLABS_CONVERSATION_SYMBOL = Symbol.for(
+  "ElevenLabs.SDK.CurrentAgentConversation"
+);
+
+/**
+ * Shape of the object stored at {@link ELEVENLABS_CONVERSATION_SYMBOL} on
+ * `window`. Provides a transport-agnostic interface for any JavaScript
+ * running on the page to interact with an active conversation.
+ */
+export interface ElevenLabsConversationAPI {
+  readonly status: Status;
+  readonly conversationId: string;
+  readonly inputFormat: { sampleRate: number; format: string };
+  sendUserMessage(text: string): void;
+  /**
+   * Injects base64-encoded PCM audio into the conversation as user input.
+   * Works identically for both WebSocket and WebRTC connections.
+   * Returns a cancel function that stops the injection and restores state.
+   */
+  sendAudio(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }>;
 }
