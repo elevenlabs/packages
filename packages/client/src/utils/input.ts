@@ -2,11 +2,9 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
-import type { InputController } from "../InputController";
+import type { InputController, InputDeviceConfig } from "../InputController";
 
-export type InputConfig = {
-  preferHeadphonesForIosDevices?: boolean;
-  inputDeviceId?: string;
+export type InputConfig = InputDeviceConfig & {
   onError?(message: string, context?: unknown): void;
 };
 
@@ -35,7 +33,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     sampleRate,
     format,
     preferHeadphonesForIosDevices,
-    inputDeviceId,
+    deviceId,
     workletPaths,
     libsampleratePath,
     onError,
@@ -68,9 +66,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
         }
       }
 
-      if (inputDeviceId) {
-        options.deviceId =
-          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
+      if (deviceId) {
+        options.deviceId = MediaDeviceInput.getDeviceIdConstraint(deviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -127,12 +124,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   // Use { ideal } on iOS as a defensive measure - some iOS versions may not support { exact } for deviceId constraints
   private static getDeviceIdConstraint(
-    inputDeviceId?: string
+    deviceId?: string
   ): MediaTrackConstraints["deviceId"] {
-    if (!inputDeviceId) {
+    if (!deviceId) {
       return undefined;
     }
-    return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
+    return isIosDevice() ? { ideal: deviceId } : { exact: deviceId };
   }
 
   private muted = false;
@@ -189,22 +186,31 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
   }
 
   private settingInput: boolean = false;
-  public async setInputDevice(inputDeviceId?: string): Promise<void> {
+  public async setInputDevice(
+    config?: Partial<FormatConfig> & InputDeviceConfig
+  ): Promise<void> {
     try {
       if (this.settingInput) {
         throw new Error("Input device is already being set");
       }
       this.settingInput = true;
+
+      // Extract deviceId from config
+      const deviceId = config?.deviceId;
+
+      // Note: sampleRate, format, and preferHeadphonesForIosDevices cannot be
+      // changed on an existing input (would require recreating the AudioContext).
+      // These options are only used during initial MediaDeviceInput.create()
+
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
         ...defaultConstraints,
       };
 
-      if (inputDeviceId) {
-        options.deviceId =
-          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
+      if (deviceId) {
+        options.deviceId = MediaDeviceInput.getDeviceIdConstraint(deviceId);
       }
-      // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
+      // If deviceId is undefined, don't set deviceId constraint - browser uses default
 
       const constraints = { voiceIsolation: true, ...options };
 
@@ -239,7 +245,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
       const { deviceId } = track?.getSettings() ?? {};
-      this.setInputDevice(deviceId).catch(error => {
+      this.setInputDevice({ deviceId }).catch(error => {
         this.onError(
           "Failed to reset input device after permission change:",
           error

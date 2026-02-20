@@ -25,6 +25,7 @@ import {
 } from "./overrides";
 import { arrayBufferToBase64 } from "./audio";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
+import type { InputController, InputDeviceConfig } from "../InputController";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -38,7 +39,10 @@ export type ConnectionConfig = SessionConfig & {
   onDebug?: (info: unknown) => void;
 };
 
-export class WebRTCConnection extends BaseConnection {
+export class WebRTCConnection
+  extends BaseConnection
+  implements InputController
+{
   public conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;
@@ -52,6 +56,10 @@ export class WebRTCConnection extends BaseConnection {
 
   private outputAnalyser: AnalyserNode | null = null;
   private outputFrequencyData: Uint8Array<ArrayBuffer> | null = null;
+
+  // InputController implementation
+  private _isMuted = false;
+  public readonly analyser?: AnalyserNode = undefined; // WebRTC doesn't provide input analyser
 
   private constructor(
     room: Room,
@@ -300,7 +308,7 @@ export class WebRTCConnection extends BaseConnection {
     );
   }
 
-  public close() {
+  public async close(): Promise<void> {
     if (this.isConnected) {
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
@@ -315,11 +323,13 @@ export class WebRTCConnection extends BaseConnection {
         console.warn("Error stopping local tracks:", error);
       }
 
-      // Clean up audio capture context (non-blocking)
+      // Clean up audio capture context
       if (this.audioCaptureContext) {
-        this.audioCaptureContext.close().catch(error => {
+        try {
+          await this.audioCaptureContext.close();
+        } catch (error) {
           console.warn("Error closing audio capture context:", error);
-        });
+        }
         this.audioCaptureContext = null;
       }
 
@@ -333,6 +343,42 @@ export class WebRTCConnection extends BaseConnection {
 
       this.room.disconnect();
     }
+  }
+
+  // InputController interface implementation
+  public get isMuted(): boolean {
+    return this._isMuted;
+  }
+
+  public setMuted(isMuted: boolean): void {
+    this._isMuted = isMuted;
+    this.setMicMuted(isMuted).catch(error => {
+      console.error("Failed to set muted state:", error);
+    });
+  }
+
+  public async setInputDevice(
+    config?: Partial<FormatConfig> & InputDeviceConfig
+  ): Promise<void> {
+    // WebRTC only supports changing deviceId
+    // sampleRate, format, and preferHeadphonesForIosDevices are not supported
+    if (
+      config?.sampleRate !== undefined ||
+      config?.format !== undefined ||
+      config?.preferHeadphonesForIosDevices !== undefined
+    ) {
+      throw new Error(
+        "WebRTC input device does not support sampleRate, format, or preferHeadphonesForIosDevices options"
+      );
+    }
+
+    const deviceId = config?.deviceId;
+    if (!deviceId) {
+      // No device ID specified - this is a no-op for WebRTC
+      // The default device is already being used
+      return;
+    }
+    await this.setAudioInputDevice(deviceId);
   }
 
   public async sendMessage(message: OutgoingSocketEvent) {
@@ -400,6 +446,8 @@ export class WebRTCConnection extends BaseConnection {
       // No track found, use participant-level control directly
       await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
     }
+
+    this._isMuted = isMuted;
   }
 
   private async setupAudioCapture(track: RemoteAudioTrack) {

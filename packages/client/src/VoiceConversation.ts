@@ -1,9 +1,5 @@
 import { base64ToArrayBuffer } from "./utils/audio";
-import {
-  MediaDeviceInput,
-  type InputConfig,
-  type InputEventTarget,
-} from "./utils/input";
+import type { InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
@@ -16,8 +12,8 @@ import {
   type PartialOptions,
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
-import { attachInputToConnection } from "./utils/attachInputToConnection";
 import type { InputController } from "./InputController";
+import { setupStrategy } from "./platform/VoiceSessionSetup";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -44,9 +40,10 @@ export class VoiceConversation extends BaseConversation {
       fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
     }
 
-    let input: MediaDeviceInput | null = null;
+    let input: InputController | null = null;
     let connection: BaseConnection | null = null;
     let output: Output | null = null;
+    let detachInput: (() => void) | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
     const useWakeLock = options.useWakeLock ?? true;
@@ -64,20 +61,12 @@ export class VoiceConversation extends BaseConversation {
 
       await applyDelay(fullOptions.connectionDelay);
       connection = await createConnection(options);
-      [input, output] = await Promise.all([
-        MediaDeviceInput.create({
-          ...connection.inputFormat,
-          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
-          inputDeviceId: options.inputDeviceId,
-          workletPaths: options.workletPaths,
-          libsampleratePath: options.libsampleratePath,
-        }),
-        Output.create({
-          ...connection.outputFormat,
-          outputDeviceId: options.outputDeviceId,
-          workletPaths: options.workletPaths,
-        }),
-      ]);
+
+      // Use platform-specific setup strategy to create input/output
+      const sessionSetup = await setupStrategy(fullOptions, connection);
+      input = sessionSetup.input;
+      output = sessionSetup.output;
+      detachInput = sessionSetup.detachInput;
 
       preliminaryInputStream?.getTracks().forEach(track => {
         track.stop();
@@ -89,6 +78,7 @@ export class VoiceConversation extends BaseConversation {
         connection,
         input,
         output,
+        detachInput,
         wakeLock
       );
     } catch (error) {
@@ -117,12 +107,13 @@ export class VoiceConversation extends BaseConversation {
   protected constructor(
     options: Options,
     connection: BaseConnection,
-    public input: InputController & InputEventTarget,
+    public input: InputController,
     public output: Output,
+    detachInput: (() => void) | null,
     public wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
-    this.detachInput = attachInputToConnection(this.input, this.connection);
+    this.detachInput = detachInput;
     this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
 
     if (wakeLock) {
@@ -243,13 +234,9 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    // Use LiveKit track muting for WebRTC connections
-    if (this.connection instanceof WebRTCConnection) {
-      this.connection.setMicMuted(isMuted);
-    } else {
-      // Use input muting for WebSocket connections
-      this.input.setMuted(isMuted);
-    }
+    // Delegate to InputController.setMuted()
+    // Both MediaDeviceInput and WebRTCConnection implement this
+    this.input.setMuted(isMuted);
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
@@ -293,45 +280,17 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     preferHeadphonesForIosDevices,
-    inputDeviceId,
+    deviceId,
   }: FormatConfig & InputConfig): Promise<void> {
     try {
-      // For WebSocket connections, try to change device on existing input first
-      if (this.connection instanceof WebSocketConnection) {
-        try {
-          await this.input.setInputDevice(inputDeviceId);
-          return;
-        } catch (error) {
-          console.warn(
-            "Failed to change device on existing input, recreating:",
-            error
-          );
-          // Fall back to recreating the input
-        }
-      }
-
-      // Handle WebRTC connections differently
-      if (this.connection instanceof WebRTCConnection) {
-        await this.connection.setAudioInputDevice(inputDeviceId || "");
-        return;
-      }
-
-      // Fallback: recreate the input
-      await this.input.close();
-
-      const newInput = await MediaDeviceInput.create({
-        sampleRate: sampleRate ?? this.connection.inputFormat.sampleRate,
-        format: format ?? this.connection.inputFormat.format,
+      // Delegate to InputController.setInputDevice()
+      // Both MediaDeviceInput and WebRTCConnection implement this
+      await this.input.setInputDevice({
+        deviceId,
+        sampleRate,
+        format,
         preferHeadphonesForIosDevices,
-        inputDeviceId,
-        workletPaths: this.options.workletPaths,
-        libsampleratePath: this.options.libsampleratePath,
-        onError: this.options.onError,
       });
-
-      this.input = newInput;
-      this.detachInput?.();
-      this.detachInput = attachInputToConnection(this.input, this.connection);
     } catch (error) {
       console.error("Error changing input device", error);
       throw error;
