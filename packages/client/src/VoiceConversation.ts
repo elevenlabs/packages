@@ -1,5 +1,9 @@
 import { base64ToArrayBuffer } from "./utils/audio";
-import { Input, type InputConfig } from "./utils/input";
+import {
+  MediaDeviceInput,
+  type InputConfig,
+  type InputEventTarget,
+} from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
@@ -13,6 +17,7 @@ import {
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
 import { attachInputToConnection } from "./utils/attachInputToConnection";
+import type { InputController } from "./InputController";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -39,7 +44,7 @@ export class VoiceConversation extends BaseConversation {
       fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
     }
 
-    let input: Input | null = null;
+    let input: MediaDeviceInput | null = null;
     let connection: BaseConnection | null = null;
     let output: Output | null = null;
     let preliminaryInputStream: MediaStream | null = null;
@@ -60,7 +65,7 @@ export class VoiceConversation extends BaseConversation {
       await applyDelay(fullOptions.connectionDelay);
       connection = await createConnection(options);
       [input, output] = await Promise.all([
-        Input.create({
+        MediaDeviceInput.create({
           ...connection.inputFormat,
           preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
           inputDeviceId: options.inputDeviceId,
@@ -112,7 +117,7 @@ export class VoiceConversation extends BaseConversation {
   protected constructor(
     options: Options,
     connection: BaseConnection,
-    public input: Input,
+    public input: InputController & InputEventTarget,
     public output: Output,
     public wakeLock: WakeLockSentinel | null
   ) {
@@ -248,6 +253,9 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
+    if (!this.input.analyser) {
+      throw new Error("Input analyser is not available");
+    }
     this.inputFrequencyData ??= new Uint8Array(
       this.input.analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
@@ -286,13 +294,13 @@ export class VoiceConversation extends BaseConversation {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
-  }: FormatConfig & InputConfig): Promise<Input> {
+  }: FormatConfig & InputConfig): Promise<void> {
     try {
       // For WebSocket connections, try to change device on existing input first
       if (this.connection instanceof WebSocketConnection) {
         try {
           await this.input.setInputDevice(inputDeviceId);
-          return this.input;
+          return;
         } catch (error) {
           console.warn(
             "Failed to change device on existing input, recreating:",
@@ -305,12 +313,13 @@ export class VoiceConversation extends BaseConversation {
       // Handle WebRTC connections differently
       if (this.connection instanceof WebRTCConnection) {
         await this.connection.setAudioInputDevice(inputDeviceId || "");
+        return;
       }
 
       // Fallback: recreate the input
       await this.input.close();
 
-      const newInput = await Input.create({
+      const newInput = await MediaDeviceInput.create({
         sampleRate: sampleRate ?? this.connection.inputFormat.sampleRate,
         format: format ?? this.connection.inputFormat.format,
         preferHeadphonesForIosDevices,
@@ -323,8 +332,6 @@ export class VoiceConversation extends BaseConversation {
       this.input = newInput;
       this.detachInput?.();
       this.detachInput = attachInputToConnection(this.input, this.connection);
-
-      return this.input;
     } catch (error) {
       console.error("Error changing input device", error);
       throw error;

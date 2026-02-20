@@ -30,7 +30,7 @@ export type InputEventTarget = {
   removeListener(listener: InputListener): void;
 };
 
-export class Input implements InputController, InputEventTarget {
+export class MediaDeviceInput implements InputController, InputEventTarget {
   public static async create({
     sampleRate,
     format,
@@ -39,7 +39,9 @@ export class Input implements InputController, InputEventTarget {
     workletPaths,
     libsampleratePath,
     onError,
-  }: FormatConfig & InputConfig & AudioWorkletConfig): Promise<Input> {
+  }: FormatConfig &
+    InputConfig &
+    AudioWorkletConfig): Promise<MediaDeviceInput> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -67,7 +69,8 @@ export class Input implements InputController, InputEventTarget {
       }
 
       if (inputDeviceId) {
-        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -104,7 +107,7 @@ export class Input implements InputController, InputEventTarget {
       const permissions = await navigator.permissions.query({
         name: "microphone",
       });
-      return new Input(
+      return new MediaDeviceInput(
         context,
         analyser,
         worklet,
@@ -198,7 +201,8 @@ export class Input implements InputController, InputEventTarget {
       };
 
       if (inputDeviceId) {
-        options.deviceId = Input.getDeviceIdConstraint(inputDeviceId);
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
       // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
