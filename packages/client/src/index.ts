@@ -15,7 +15,6 @@ export type {
 export type { InputController } from "./InputController";
 export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
-export { Input } from "./utils/input";
 export { Output } from "./utils/output";
 export type {
   IncomingSocketEvent,
