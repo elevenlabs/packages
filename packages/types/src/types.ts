@@ -91,9 +91,42 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
-  onAudioAlignment?: (
-    props: AudioAlignmentEvent
-  ) => void;
+  onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
+
+/**
+ * The symbol used to store the active conversation on `window`.
+ * Exposed by the SDK when `debug: true` is set in the session options.
+ *
+ * @example
+ * ```ts
+ * const api = window[Symbol.for("ElevenLabs.SDK.CurrentAgentConversation")];
+ * api?.sendUserMessage("hello");
+ * ```
+ */
+export const ELEVENLABS_CONVERSATION_SYMBOL = Symbol.for(
+  "ElevenLabs.SDK.CurrentAgentConversation"
+);
+
+/**
+ * Shape of the object stored at {@link ELEVENLABS_CONVERSATION_SYMBOL} on
+ * `window`. Provides a transport-agnostic interface for any JavaScript
+ * running on the page to interact with an active conversation.
+ */
+export interface ElevenLabsConversationAPI {
+  readonly status: Status;
+  readonly conversationId: string;
+  readonly inputFormat: { sampleRate: number; format: string };
+  sendUserMessage(text: string): void;
+  /**
+   * Injects base64-encoded PCM audio into the conversation as user input.
+   * Works identically for both WebSocket and WebRTC connections.
+   * Returns a cancel function that stops the injection and restores state.
+   */
+  sendAudio(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }>;
+}

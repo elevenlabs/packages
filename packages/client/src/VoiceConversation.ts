@@ -1,9 +1,15 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
+import {
+  arrayBufferToBase64,
+  base64ToArrayBuffer,
+  int16ArrayToBase64,
+  resamplePCM,
+} from "./utils/audio";
 import { Input, type InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
 import { WebRTCConnection } from "./utils/WebRTCConnection";
+import { Track } from "livekit-client";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events";
 import { applyDelay } from "./utils/applyDelay";
 import {
@@ -12,6 +18,18 @@ import {
   type PartialOptions,
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
+
+// Default sample rate assumed for injected audio when the caller doesn't specify one.
+const DEFAULT_INJECT_SAMPLE_RATE = 48000;
+
+// WebRTC uses 48 kHz natively; LiveKit tracks expect this rate.
+const WEBRTC_SAMPLE_RATE = 48000;
+
+// Int16 PCM range is [-32768, 32767]. Used to convert between Int16 and Float32.
+const INT16_MAX = 32768;
+
+// Interval at which the WebRTC injection loop checks for cancellation.
+const CANCEL_POLL_MS = 100;
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -135,8 +153,288 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
+  private activeInjection: { cancelled: boolean; cleanup?: () => void } | null =
+    null;
+
+  private debugLog(...args: unknown[]) {
+    if (this.options.onDebug) {
+      this.options.onDebug({ type: "debug_log", args });
+    }
+  }
+
+  protected override sendAudioToConversation(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }> {
+    return this.injectAudio(base64Audio, sampleRate);
+  }
+
+  private async injectAudio(
+    base64Audio: string,
+    sourceSampleRate?: number
+  ): Promise<{ cancel: () => void }> {
+    if (this.status !== "connected") {
+      throw new Error("Not connected to a conversation");
+    }
+
+    if (this.activeInjection) {
+      this.activeInjection.cancelled = true;
+      this.activeInjection.cleanup?.();
+    }
+
+    const injection = {
+      cancelled: false,
+      cleanup: undefined as (() => void) | undefined,
+    };
+    this.activeInjection = injection;
+
+    const cancel = () => {
+      injection.cancelled = true;
+      injection.cleanup?.();
+    };
+
+    if (this.connection instanceof WebRTCConnection) {
+      await this.injectAudioWebRTC(base64Audio, injection);
+    } else if (this.connection instanceof WebSocketConnection) {
+      await this.injectAudioWebSocket(
+        base64Audio,
+        sourceSampleRate ?? DEFAULT_INJECT_SAMPLE_RATE,
+        injection
+      );
+    } else {
+      throw new Error("Unknown connection type");
+    }
+
+    if (this.activeInjection === injection) {
+      this.activeInjection = null;
+    }
+
+    return { cancel };
+  }
+
+  private async injectAudioWebSocket(
+    base64Audio: string,
+    sourceSampleRate: number,
+    injection: { cancelled: boolean }
+  ) {
+    if (!(this.connection instanceof WebSocketConnection)) return;
+
+    const bytes = base64ToArrayBuffer(base64Audio);
+    const pcmData = new Int16Array(bytes);
+    const targetSampleRate = this.connection.inputFormat.sampleRate;
+
+    let finalPcm: Int16Array = pcmData;
+    if (sourceSampleRate !== targetSampleRate) {
+      finalPcm = resamplePCM(pcmData, sourceSampleRate, targetSampleRate);
+    }
+
+    // Match the rawAudioProcessor worklet's buffer size (sampleRate / 10 = 100ms)
+    // so injected audio is indistinguishable from mic audio on the server side.
+    const samplesPerChunk = Math.floor(targetSampleRate / 10);
+    const msPerChunk = 100;
+    const startTime = performance.now();
+
+    for (
+      let i = 0, chunkIndex = 0;
+      i < finalPcm.length;
+      i += samplesPerChunk, chunkIndex++
+    ) {
+      if (injection.cancelled || this.status !== "connected") return;
+
+      const chunk = finalPcm.slice(
+        i,
+        Math.min(i + samplesPerChunk, finalPcm.length)
+      );
+      const chunkBase64 = int16ArrayToBase64(chunk);
+
+      this.connection.sendMessage({ user_audio_chunk: chunkBase64 });
+
+      const nextChunkTime = startTime + (chunkIndex + 1) * msPerChunk;
+      const sleepMs = nextChunkTime - performance.now();
+      if (sleepMs > 1) {
+        await new Promise(r => setTimeout(r, sleepMs));
+      }
+    }
+  }
+
+  /**
+   * Injects pre-recorded audio into a WebRTC (LiveKit) connection by swapping
+   * the mic track on the publisher's RTCRtpSender. Falls back to
+   * unpublishing/republishing if the publisher transport or sender isn't available.
+   */
+  private async injectAudioWebRTC(
+    base64Audio: string,
+    injection: { cancelled: boolean; cleanup?: () => void }
+  ) {
+    if (!(this.connection instanceof WebRTCConnection)) return;
+
+    const room = this.connection.getRoom();
+    if (!room || room.state !== "connected") {
+      throw new Error("LiveKit room not connected");
+    }
+
+    // Decode base64 PCM16 → Int16 → Float32 (Web Audio API requires [-1.0, 1.0])
+    const bytes = base64ToArrayBuffer(base64Audio);
+    const int16Data = new Int16Array(bytes);
+    const float32Data = new Float32Array(int16Data.length);
+    for (let i = 0; i < int16Data.length; i++) {
+      float32Data[i] = int16Data[i] / INT16_MAX;
+    }
+
+    const sampleRate = WEBRTC_SAMPLE_RATE;
+    const durationSeconds = float32Data.length / sampleRate;
+    this.debugLog(
+      `[injectAudioWebRTC] Preparing ${durationSeconds.toFixed(2)}s of audio (${int16Data.length} samples @ ${sampleRate}Hz)`
+    );
+
+    // Build audio graph: BufferSource → GainNode → MediaStreamDestination
+    // The destination exposes a MediaStream whose audio track we feed into WebRTC.
+    const audioContext = new AudioContext({ sampleRate });
+    const audioBuffer = audioContext.createBuffer(
+      1,
+      float32Data.length,
+      sampleRate
+    );
+    audioBuffer.copyToChannel(float32Data, 0);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+
+    const destination = audioContext.createMediaStreamDestination();
+    source.connect(destination);
+
+    const newAudioTrack = destination.stream.getAudioTracks()[0];
+
+    const cleanupResources = () => {
+      try {
+        source.stop();
+      } catch (_) {}
+      try {
+        audioContext.close();
+      } catch (_) {}
+      try {
+        newAudioTrack.stop();
+      } catch (_) {}
+    };
+
+    // Try to swap the mic's MediaStreamTrack directly on the RTCRtpSender.
+    // This avoids SDP renegotiation so the server sees an uninterrupted stream.
+    const micPub = room.localParticipant?.getTrackPublication(
+      Track.Source.Microphone
+    );
+    if (micPub?.track) {
+      const originalMicTrack = micPub.track.mediaStreamTrack;
+
+      const publisher = room.engine.pcManager?.publisher;
+      const sender = publisher
+        ?.getSenders()
+        .find((s: RTCRtpSender) => s.track === originalMicTrack);
+
+      if (sender) {
+        this.debugLog(
+          "[injectAudioWebRTC] Primary path: replacing mic track on RTCRtpSender"
+        );
+        source.start(0);
+        await sender.replaceTrack(newAudioTrack);
+
+        injection.cleanup = () => {
+          this.debugLog(
+            "[injectAudioWebRTC] Cancelled — restoring original mic track"
+          );
+          sender.replaceTrack(originalMicTrack).catch(() => {});
+          cleanupResources();
+        };
+
+        // Wait for playback to finish, polling for cancellation
+        const totalMs = durationSeconds * 1000;
+        let elapsed = 0;
+        while (elapsed < totalMs) {
+          if (injection.cancelled) return;
+          await new Promise(r => setTimeout(r, CANCEL_POLL_MS));
+          elapsed += CANCEL_POLL_MS;
+        }
+
+        this.debugLog(
+          "[injectAudioWebRTC] Playback complete — restoring original mic track"
+        );
+        await sender.replaceTrack(originalMicTrack);
+        cleanupResources();
+        injection.cleanup = undefined;
+        return;
+      } else if (!publisher) {
+        console.warn(
+          "[injectAudioWebRTC] Publisher transport not available on pcManager — falling back to republish"
+        );
+      } else {
+        console.warn(
+          "[injectAudioWebRTC] RTCRtpSender for mic track not found — falling back to republish"
+        );
+      }
+    } else {
+      console.warn(
+        "[injectAudioWebRTC] No published mic track found — falling back to republish"
+      );
+    }
+
+    this.debugLog(
+      "[injectAudioWebRTC] Fallback path: publishing injected audio as new track"
+    );
+    if (micPub) {
+      await room.localParticipant.unpublishTrack(micPub.track!);
+    }
+
+    const publication = await room.localParticipant.publishTrack(
+      newAudioTrack,
+      {
+        name: "injected-audio",
+        source: Track.Source.Microphone,
+      }
+    );
+
+    source.start(0);
+
+    injection.cleanup = async () => {
+      this.debugLog(
+        "[injectAudioWebRTC] Cancelled — unpublishing injected track, re-enabling mic"
+      );
+      try {
+        await room.localParticipant.unpublishTrack(publication.track!);
+      } catch (_) {}
+      cleanupResources();
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      } catch (_) {}
+    };
+
+    const totalMs = durationSeconds * 1000;
+    let elapsed = 0;
+    while (elapsed < totalMs) {
+      if (injection.cancelled) return;
+      await new Promise(r => setTimeout(r, CANCEL_POLL_MS));
+      elapsed += CANCEL_POLL_MS;
+    }
+
+    this.debugLog(
+      "[injectAudioWebRTC] Fallback playback complete — re-enabling mic"
+    );
+    try {
+      await room.localParticipant.unpublishTrack(publication.track!);
+    } catch (_) {}
+    cleanupResources();
+    try {
+      await room.localParticipant.setMicrophoneEnabled(true);
+    } catch (_) {}
+    injection.cleanup = undefined;
+  }
+
   protected override async handleEndSession() {
     await super.handleEndSession();
+
+    if (this.activeInjection) {
+      this.activeInjection.cancelled = true;
+      this.activeInjection.cleanup?.();
+      this.activeInjection = null;
+    }
 
     if (this.visibilityChangeHandler) {
       document.removeEventListener(
@@ -184,6 +482,10 @@ export class VoiceConversation extends BaseConversation {
   }
 
   private onInputWorkletMessage = (event: MessageEvent): void => {
+    // Suppress mic audio during injection so silent mic chunks don't
+    // interleave with injected chunks, which causes gaps in the recording.
+    if (this.activeInjection) return;
+
     const rawAudioPcmData = event.data[0];
 
     // TODO: When supported, maxVolume can be used to avoid sending silent audio
