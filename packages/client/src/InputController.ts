@@ -10,7 +10,7 @@ export interface InputController {
   setInputDevice(
     config?: Partial<FormatConfig> & InputDeviceConfig
   ): Promise<void>;
-  setMuted(isMuted: boolean): void;
+  setInputMuted(isMuted: boolean): Promise<void>;
   readonly isMuted: boolean;
   readonly analyser?: AnalyserNode;
 }

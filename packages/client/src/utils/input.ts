@@ -180,7 +180,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     await this.context.close();
   }
 
-  public setMuted(isMuted: boolean) {
+  public async setInputMuted(isMuted: boolean): Promise<void> {
     this.muted = isMuted;
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
