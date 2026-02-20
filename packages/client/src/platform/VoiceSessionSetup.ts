@@ -22,14 +22,14 @@ export type VoiceSessionSetupStrategy = (
  * Web platform session setup strategy.
  * Handles both WebSocket and WebRTC connections:
  * - WebSocket: Creates MediaDeviceInput/Output, attaches input to connection
- * - WebRTC: Uses connection as InputController, creates Output
+ * - WebRTC: Uses connection.input property, creates Output
  */
 export async function webSessionSetup(
   options: Options,
   connection: BaseConnection
 ): Promise<VoiceSessionSetupResult> {
   if (connection instanceof WebRTCConnection) {
-    // WebRTC: Connection IS the input controller
+    // WebRTC: Connection exposes input controller as a property
     const output = await Output.create({
       ...connection.outputFormat,
       outputDeviceId: options.outputDeviceId,
@@ -37,7 +37,7 @@ export async function webSessionSetup(
     });
 
     return {
-      input: connection, // Connection implements InputController
+      input: connection.input, // Use the connection's input property
       output,
       detachInput: null, // No detach needed - audio flows through LiveKit tracks
     };
