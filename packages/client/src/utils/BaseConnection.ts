@@ -108,7 +108,6 @@ export abstract class BaseConnection {
 
   public abstract close(): void;
   public abstract sendMessage(message: OutgoingSocketEvent): void;
-  public abstract setMicMuted(isMuted: boolean): Promise<void>;
 
   public onMessage(callback: OnMessageCallback) {
     this.onMessageCallback = callback;
