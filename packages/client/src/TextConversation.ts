@@ -6,10 +6,6 @@ import {
   type Options,
   type PartialOptions,
 } from "./BaseConversation";
-import {
-  ELEVENLABS_CONVERSATION_SYMBOL,
-  type ElevenLabsConversationAPI,
-} from "@elevenlabs/types";
 
 export class TextConversation extends BaseConversation {
   public static async startSession(
@@ -46,42 +42,5 @@ export class TextConversation extends BaseConversation {
 
   protected constructor(options: Options, connection: BaseConnection) {
     super(options, connection);
-    if (this.options.debug) {
-      this.exposeGlobalAPI();
-    }
-  }
-
-  private exposeGlobalAPI() {
-    if (typeof window === "undefined") return;
-
-    const self = this;
-    const api: ElevenLabsConversationAPI = {
-      get status() {
-        return self.status;
-      },
-      get conversationId() {
-        return self.connection.conversationId;
-      },
-      get inputFormat() {
-        return self.connection.inputFormat;
-      },
-      sendUserMessage(text: string) {
-        self.sendUserMessage(text);
-      },
-      sendAudio() {
-        return Promise.reject(
-          new Error("sendAudio is not available for text-only conversations")
-        );
-      },
-    };
-
-    (window as any)[ELEVENLABS_CONVERSATION_SYMBOL] = api;
-  }
-
-  protected override async handleEndSession() {
-    if (typeof window !== "undefined" && this.options.debug) {
-      delete (window as any)[ELEVENLABS_CONVERSATION_SYMBOL];
-    }
-    await super.handleEndSession();
   }
 }

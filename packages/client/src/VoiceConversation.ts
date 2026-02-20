@@ -18,10 +18,6 @@ import {
   type PartialOptions,
 } from "./BaseConversation";
 import { WebSocketConnection } from "./utils/WebSocketConnection";
-import {
-  ELEVENLABS_CONVERSATION_SYMBOL,
-  type ElevenLabsConversationAPI,
-} from "@elevenlabs/types";
 
 // Default sample rate assumed for injected audio when the caller doesn't specify one.
 const DEFAULT_INJECT_SAMPLE_RATE = 48000;
@@ -32,20 +28,8 @@ const WEBRTC_SAMPLE_RATE = 48000;
 // Int16 PCM range is [-32768, 32767]. Used to convert between Int16 and Float32.
 const INT16_MAX = 32768;
 
-// Gain multiplier applied to injected WebRTC audio to compensate for
-// signal loss through the MediaStreamDestination → RTP pipeline.
-const INJECT_GAIN = 2.0;
-
-// Extra milliseconds to wait after the computed audio duration before
-// restoring the original mic track, ensuring playback fully completes.
-const PLAYBACK_TAIL_MS = 200;
-
 // Interval at which the WebRTC injection loop checks for cancellation.
 const CANCEL_POLL_MS = 100;
-
-// Brief pause after unpublishing the mic track so the server can process
-// the removal before we publish the injected track in its place.
-const UNPUBLISH_SETTLE_MS = 100;
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -167,10 +151,6 @@ export class VoiceConversation extends BaseConversation {
         this.visibilityChangeHandler
       );
     }
-
-    if (this.options.debug) {
-      this.exposeGlobalAPI();
-    }
   }
 
   private activeInjection: { cancelled: boolean; cleanup?: () => void } | null =
@@ -182,29 +162,11 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
-  private exposeGlobalAPI() {
-    if (typeof window === "undefined") return;
-
-    const self = this;
-    const api: ElevenLabsConversationAPI = {
-      get status() {
-        return self.status;
-      },
-      get conversationId() {
-        return self.connection.conversationId;
-      },
-      get inputFormat() {
-        return self.connection.inputFormat;
-      },
-      sendUserMessage(text: string) {
-        self.sendUserMessage(text);
-      },
-      sendAudio(base64Audio: string, sampleRate?: number) {
-        return self.injectAudio(base64Audio, sampleRate);
-      },
-    };
-
-    (window as any)[ELEVENLABS_CONVERSATION_SYMBOL] = api;
+  protected override sendAudioToConversation(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }> {
+    return this.injectAudio(base64Audio, sampleRate);
   }
 
   private async injectAudio(
@@ -338,12 +300,8 @@ export class VoiceConversation extends BaseConversation {
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
 
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = INJECT_GAIN;
-
     const destination = audioContext.createMediaStreamDestination();
-    source.connect(gainNode);
-    gainNode.connect(destination);
+    source.connect(destination);
 
     const newAudioTrack = destination.stream.getAudioTracks()[0];
 
@@ -392,7 +350,7 @@ export class VoiceConversation extends BaseConversation {
         };
 
         // Wait for playback to finish, polling for cancellation
-        const totalMs = durationSeconds * 1000 + PLAYBACK_TAIL_MS;
+        const totalMs = durationSeconds * 1000;
         let elapsed = 0;
         while (elapsed < totalMs) {
           if (injection.cancelled) return;
@@ -429,7 +387,6 @@ export class VoiceConversation extends BaseConversation {
     );
     if (micPub) {
       await room.localParticipant.unpublishTrack(micPub.track!);
-      await new Promise(r => setTimeout(r, UNPUBLISH_SETTLE_MS));
     }
 
     const publication = await room.localParticipant.publishTrack(
@@ -455,7 +412,7 @@ export class VoiceConversation extends BaseConversation {
       } catch (_) {}
     };
 
-    const totalMs = durationSeconds * 1000 + PLAYBACK_TAIL_MS;
+    const totalMs = durationSeconds * 1000;
     let elapsed = 0;
     while (elapsed < totalMs) {
       if (injection.cancelled) return;
@@ -483,10 +440,6 @@ export class VoiceConversation extends BaseConversation {
       this.activeInjection.cancelled = true;
       this.activeInjection.cleanup?.();
       this.activeInjection = null;
-    }
-
-    if (typeof window !== "undefined" && this.options.debug) {
-      delete (window as any)[ELEVENLABS_CONVERSATION_SYMBOL];
     }
 
     if (this.visibilityChangeHandler) {
