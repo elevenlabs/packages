@@ -97,7 +97,7 @@ export type Callbacks = {
 };
 
 /**
- * The well-known symbol used to store the active conversation on `window`.
+ * The symbol used to store the active conversation on `window`.
  * Exposed by the SDK when `debug: true` is set in the session options.
  *
  * @example

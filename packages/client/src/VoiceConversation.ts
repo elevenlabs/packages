@@ -317,7 +317,6 @@ export class VoiceConversation extends BaseConversation {
       } catch (_) {}
     };
 
-    // ── Primary path: seamless track replacement ──
     // Try to swap the mic's MediaStreamTrack directly on the RTCRtpSender.
     // This avoids SDP renegotiation so the server sees an uninterrupted stream.
     const micPub = room.localParticipant?.getTrackPublication(
@@ -326,8 +325,6 @@ export class VoiceConversation extends BaseConversation {
     if (micPub?.track) {
       const originalMicTrack = micPub.track.mediaStreamTrack;
 
-      // Access the publisher's senders through LiveKit's public API:
-      // Room.engine → RTCEngine.pcManager → PCTransportManager.publisher → PCTransport.getSenders()
       const publisher = room.engine.pcManager?.publisher;
       const sender = publisher
         ?.getSenders()
@@ -340,7 +337,6 @@ export class VoiceConversation extends BaseConversation {
         source.start(0);
         await sender.replaceTrack(newAudioTrack);
 
-        // Register cleanup so external cancellation restores the mic
         injection.cleanup = () => {
           this.debugLog(
             "[injectAudioWebRTC] Cancelled — restoring original mic track"
@@ -380,8 +376,6 @@ export class VoiceConversation extends BaseConversation {
       );
     }
 
-    // ── Fallback path: unpublish mic and publish injected track ──
-    // This triggers SDP renegotiation and may cause a brief audio gap.
     this.debugLog(
       "[injectAudioWebRTC] Fallback path: publishing injected audio as new track"
     );

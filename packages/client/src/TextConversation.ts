@@ -1,11 +1,7 @@
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection } from "./utils/BaseConnection";
 import { applyDelay } from "./utils/applyDelay";
-import {
-  BaseConversation,
-  type Options,
-  type PartialOptions,
-} from "./BaseConversation";
+import { BaseConversation, type PartialOptions } from "./BaseConversation";
 
 export class TextConversation extends BaseConversation {
   public static async startSession(
@@ -38,9 +34,5 @@ export class TextConversation extends BaseConversation {
       connection?.close();
       throw error;
     }
-  }
-
-  protected constructor(options: Options, connection: BaseConnection) {
-    super(options, connection);
   }
 }
