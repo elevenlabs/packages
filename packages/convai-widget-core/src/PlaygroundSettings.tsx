@@ -229,6 +229,12 @@ export function PlaygroundSettingsPanel({
           Toggle expand
         </button>
       )}
+      <hr />
+      <nav>
+        <a href="/">Normal DOM</a>
+        <a href="/shadowdom.html">Shadow DOM</a>
+        <a href="/markdown.html">Markdown</a>
+      </nav>
     </aside>
   );
 }

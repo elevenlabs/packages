@@ -1,8 +1,5 @@
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background-color: #f3f4f6;
-  color: #111827;
 }
 
 .playground {
@@ -19,6 +16,18 @@ body {
   flex-direction: column;
   gap: 0.5rem;
   width: 16rem;
+}
+
+.playground nav {
+  display: flex;
+  flex-direction: column;
+  color: blue;
+  gap: 1rem;
+  font-size: 14px;
+}
+
+.playground hr {
+  width: 100%;
 }
 
 .playground label {
@@ -42,23 +51,9 @@ body {
 .playground input[type="text"],
 .playground select,
 .playground textarea {
-  padding: 0.25rem;
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
   margin-top: 0.25rem;
 }
 
 .playground button {
-  padding: 0.5rem;
-  background-color: #3b82f6;
-  color: #ffffff;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
   margin-top: 0.5rem;
-}
-
-.playground button:hover {
-  background-color: #2563eb;
 }
