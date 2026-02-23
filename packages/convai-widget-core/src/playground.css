@@ -1,0 +1,64 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.playground {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  gap: 2rem;
+}
+
+.playground aside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 16rem;
+}
+
+.playground label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.playground label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.playground label > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.playground input[type="text"],
+.playground select,
+.playground textarea {
+  padding: 0.25rem;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.playground button {
+  padding: 0.5rem;
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.playground button:hover {
+  background-color: #2563eb;
+}
