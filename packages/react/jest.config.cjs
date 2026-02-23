@@ -5,10 +5,10 @@ module.exports = {
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      useESM: false,
+      useESM: true,
       tsconfig: {
         target: 'ES2020',
-        module: 'commonjs',
+        module: 'esnext',
         moduleResolution: 'node',
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
@@ -16,6 +16,9 @@ module.exports = {
         jsx: 'react',
       },
     }],
+  },
+  moduleNameMapper: {
+    '^@elevenlabs/client$': '<rootDir>/../client/dist/index.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   clearMocks: true,

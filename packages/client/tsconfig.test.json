@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
+  "exclude": [],
+  "references": [
+    {
+      "path": "./tsconfig.build.json"
+    }
+  ]
+}

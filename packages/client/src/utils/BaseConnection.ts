@@ -1,7 +1,9 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
 import type { Mode } from "../BaseConversation";
-import type { ConversationConfigOverrideAgentLanguage as Language } from "@elevenlabs/types/generated/types/asyncapi-types";
-import type { DisconnectionDetails } from "@elevenlabs/types";
+import type {
+  DisconnectionDetails,
+  ConversationConfigOverrideAgentLanguage as Language,
+} from "@elevenlabs/types";
 
 export type {
   DisconnectionDetails,
