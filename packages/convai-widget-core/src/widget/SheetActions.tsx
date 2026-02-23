@@ -15,6 +15,7 @@ import {
 import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
 import { TriggerMuteButton } from "./TriggerMuteButton";
+import { ModeToggleButton } from "./ModeToggleButton";
 import { useConversationMode } from "../contexts/conversation-mode";
 
 export function SheetActions({
@@ -179,6 +180,7 @@ function SheetButtons({
       <SizeTransition visible={showMuteButton.value}>
         <TriggerMuteButton className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>
+      <ModeToggleButton visible={!isDisconnected.value} />
       <SizeTransition visible={showCallButton.value}>
         <CallButton
           iconOnly

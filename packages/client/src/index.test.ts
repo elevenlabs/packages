@@ -13,6 +13,9 @@ import { Mode, Status, Conversation } from "./index";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { SessionConfig } from "./utils/BaseConnection";
 import { VoiceConversation } from "./VoiceConversation";
+import { TextConversation } from "./TextConversation";
+import { Input } from "./utils/input";
+import { Output } from "./utils/output";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
@@ -1476,6 +1479,156 @@ describe("Wake Lock", () => {
     expect(mockSentinel.release).toHaveBeenCalled();
 
     server.close();
+  });
+});
+
+describe("upgradeFromTextConversation", () => {
+  const mockInputFormat = { format: "pcm" as const, sampleRate: 16000 };
+  const mockOutputFormat = { format: "pcm" as const, sampleRate: 16000 };
+
+  const createMockInput = () => ({
+    close: vi.fn(() => Promise.resolve()),
+    worklet: {
+      port: { postMessage: vi.fn(), onmessage: null as any },
+    },
+    analyser: { frequencyBinCount: 1024, getByteFrequencyData: vi.fn() },
+    inputStream: {} as MediaStream,
+    setMuted: vi.fn(),
+    setInputDevice: vi.fn(() => Promise.resolve()),
+  });
+
+  const createMockOutput = () => ({
+    close: vi.fn(() => Promise.resolve()),
+    worklet: {
+      port: { postMessage: vi.fn(), onmessage: null as any },
+    },
+    gain: { gain: { value: 1, cancelScheduledValues: vi.fn() } },
+    analyser: { frequencyBinCount: 1024, getByteFrequencyData: vi.fn() },
+    context: { currentTime: 0 },
+    audioElement: document.createElement("audio"),
+  });
+
+  beforeAll(() => {
+    const mockMediaStream = {
+      getTracks: () => [{ stop: vi.fn() }],
+      getAudioTracks: () => [{ stop: vi.fn() }],
+    };
+
+    if (!globalThis.navigator.mediaDevices) {
+      Object.defineProperty(globalThis.navigator, "mediaDevices", {
+        value: {
+          getUserMedia: vi.fn(() => Promise.resolve(mockMediaStream)),
+        },
+        writable: true,
+      });
+    } else {
+      vi.spyOn(
+        globalThis.navigator.mediaDevices,
+        "getUserMedia"
+      ).mockImplementation(() => Promise.resolve(mockMediaStream as any));
+    }
+
+    vi.spyOn(navigator, "wakeLock", "get").mockReturnValue({
+      request: vi.fn(() => Promise.resolve(null)),
+    } as any);
+  });
+
+  it("returns a VoiceConversation reusing the text conversation connection", async () => {
+    const server = new Server("wss://api.elevenlabs.io/upgrade-text-to-voice");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    vi.spyOn(Input, "create").mockResolvedValue(createMockInput() as any);
+    vi.spyOn(Output, "create").mockResolvedValue(createMockOutput() as any);
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/upgrade-text-to-voice",
+      connectionDelay: { default: 0 },
+      textOnly: true,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const textConversation = await conversationPromise;
+    expect(textConversation).toBeInstanceOf(TextConversation);
+    const originalId = textConversation.getId();
+    expect(originalId).toBe(CONVERSATION_ID);
+
+    const upgraded = await VoiceConversation.upgradeFromTextConversation(
+      textConversation,
+      { useWakeLock: false }
+    );
+
+    expect(upgraded).toBeInstanceOf(VoiceConversation);
+    expect(upgraded.getId()).toBe(originalId);
+    expect(upgraded.input).toBeDefined();
+    expect(upgraded.output).toBeDefined();
+    expect(upgraded.input.close).toBeDefined();
+    expect(upgraded.output.close).toBeDefined();
+
+    await upgraded.endSession();
+    server.close();
+    vi.restoreAllMocks();
+  });
+
+  it("requests microphone access when upgrading", async () => {
+    const getUserMediaSpy = vi
+      .spyOn(globalThis.navigator.mediaDevices, "getUserMedia")
+      .mockResolvedValue({
+        getTracks: () => [{ stop: vi.fn() }],
+        getAudioTracks: () => [{ stop: vi.fn() }],
+      } as any);
+
+    const server = new Server("wss://api.elevenlabs.io/upgrade-mic-check");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    vi.spyOn(Input, "create").mockResolvedValue(createMockInput() as any);
+    vi.spyOn(Output, "create").mockResolvedValue(createMockOutput() as any);
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/upgrade-mic-check",
+      connectionDelay: { default: 0 },
+      textOnly: true,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const textConversation = await conversationPromise;
+    const upgraded = await VoiceConversation.upgradeFromTextConversation(
+      textConversation,
+      { useWakeLock: false }
+    );
+
+    expect(getUserMediaSpy).toHaveBeenCalledWith({ audio: true });
+
+    await upgraded.endSession();
+    server.close();
+    vi.restoreAllMocks();
   });
 });
 

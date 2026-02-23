@@ -10,6 +10,7 @@ export type {
   ClientToolCallClientEvent,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  ConversationConfigUpdateAppliedClientEvent,
   ConversationInitiationMetadataEvent,
   ErrorClientEvent,
   InterruptionEvent,
