@@ -14,8 +14,3 @@ export interface InputController {
   isMuted(): boolean;
   readonly analyser?: AnalyserNode;
 }
-
-// Workaround: microbundle tree-shakes pure type-only modules, preventing .d.ts generation.
-// This dummy export forces the module to be included in the build.
-// TODO: Remove this once we migrate from microbundle to the TypeScript compiler.
-export const __inputControllerModule = true;
