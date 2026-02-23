@@ -1,12 +1,11 @@
-import { Outgoing } from "@elevenlabs/types";
-import type { AudioAlignmentEvent } from "@elevenlabs/types";
-import {
+import type {
   AgentChatResponsePartClientEvent,
   AgentResponse,
   AgentResponseCorrection,
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
+  AudioAlignmentEvent,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
@@ -14,11 +13,12 @@ import {
   Interruption,
   McpConnectionStatusClientEvent,
   McpToolCall,
+  Outgoing,
   Ping,
   InternalTentativeAgentResponse as TentativeAgentResponseInternal,
   UserTranscript,
   VadScore,
-} from "@elevenlabs/types/generated/types/asyncapi-types";
+} from "@elevenlabs/types";
 
 // Compatibility layer - incoming events
 export type UserTranscriptionEvent = UserTranscript;

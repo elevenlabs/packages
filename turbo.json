@@ -10,7 +10,9 @@
         ".env*",
         "src/**",
         "!src/**/*.test.*",
-        "!src/**/*.spec.*"
+        "!src/**/*.spec.*",
+        "tsconfig.json",
+        "tsconfig.build.json"
       ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**"]
     },
@@ -21,7 +23,9 @@
         "**/*.test.*",
         "**/*.spec.*",
         "vitest.config.ts",
-        "jest.config.*"
+        "jest.config.*",
+        "tsconfig.build.json",
+        "tsconfig.test.json"
       ],
       "passThroughEnv": ["PLAYWRIGHT_*", "HOME", "CI"]
     },
@@ -38,7 +42,7 @@
     },
     "check-types": {
       "dependsOn": ["^build", "generate"],
-      "inputs": ["src/**", "tsconfig.json"]
+      "inputs": ["src/**", "tsconfig.json", "tsconfig.build.json", "tsconfig.test.json"]
     },
     "clean": {
       "cache": false

@@ -2,27 +2,24 @@
   "name": "@elevenlabs/client",
   "version": "0.14.0",
   "description": "ElevenLabs JavaScript Client Library",
-  "main": "./dist/lib.umd.js",
-  "module": "./dist/lib.module.js",
-  "source": "src/index.ts",
   "type": "module",
-  "unpkg": "./dist/lib.umd.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/lib.modern.js",
-      "require": "./dist/lib.cjs"
+      "unpkg": "./dist/lib.umd.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
-    "bundle": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react src/index.ts",
-    "build": "BROWSERSLIST_ENV=modern node --run bundle",
-    "dev": "BROWSERSLIST_ENV=development node --run bundle -- --watch --format modern",
-    "clean": "rm -rf ./dist",
-    "lint:ts": "tsc --noEmit --skipLibCheck",
+    "build:esm": "tsc --build tsconfig.build.json",
+    "build:umd": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react --target web --format umd --output dist/lib.umd.js src/index.ts",
+    "build": "node --run build:esm && BROWSERSLIST_ENV=modern node --run build:umd",
+    "dev": "tsc --build tsconfig.build.json --watch",
+    "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
+    "check-types": "tsc --noEmit --project tsconfig.build.json && tsc --noEmit --project tsconfig.test.json",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
     "test": "vitest"
@@ -46,6 +43,9 @@
     "url": "git+https://github.com/elevenlabs/packages.git",
     "directory": "packages/client"
   },
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
