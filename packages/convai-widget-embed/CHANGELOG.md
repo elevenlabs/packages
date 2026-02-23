@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.9.1
+
+### Patch Changes
+
+- 6946723: Fix style does not show correctly in safari.
+
 ## 0.9.0
 
 ### Minor Changes
