@@ -282,13 +282,13 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     preferHeadphonesForIosDevices,
-    deviceId,
+    inputDeviceId,
   }: FormatConfig & InputConfig): Promise<void> {
     try {
       // Delegate to InputController.setInputDevice()
       // Both MediaDeviceInput and WebRTCConnection implement this
       await this.input.setInputDevice({
-        deviceId,
+        inputDeviceId,
         sampleRate,
         format,
         preferHeadphonesForIosDevices,

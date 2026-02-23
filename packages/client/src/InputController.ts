@@ -1,7 +1,7 @@
 import type { FormatConfig } from "./utils/BaseConnection";
 
 export type InputDeviceConfig = {
-  deviceId?: string;
+  inputDeviceId?: string;
   preferHeadphonesForIosDevices?: boolean;
 };
 

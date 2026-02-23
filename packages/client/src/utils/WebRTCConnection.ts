@@ -78,7 +78,7 @@ export class WebRTCConnection extends BaseConnection {
     setInputDevice: async (
       config?: Partial<FormatConfig> & InputDeviceConfig
     ) => {
-      // WebRTC only supports changing deviceId
+      // WebRTC only supports changing inputDeviceId
       // sampleRate, format, and preferHeadphonesForIosDevices are not supported
       if (
         config?.sampleRate !== undefined ||
@@ -90,13 +90,13 @@ export class WebRTCConnection extends BaseConnection {
         );
       }
 
-      const deviceId = config?.deviceId;
-      if (!deviceId) {
+      const inputDeviceId = config?.inputDeviceId;
+      if (!inputDeviceId) {
         // No device ID specified - this is a no-op for WebRTC
         // The default device is already being used
         return;
       }
-      await this.setAudioInputDevice(deviceId);
+      await this.setAudioInputDevice(inputDeviceId);
     },
     setInputMuted: async (isMuted: boolean) => {
       if (!this.isConnected || !this.room.localParticipant) {

@@ -47,7 +47,7 @@ export async function webSessionSetup(
       MediaDeviceInput.create({
         ...connection.inputFormat,
         preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
-        deviceId: options.deviceId,
+        inputDeviceId: options.inputDeviceId,
         workletPaths: options.workletPaths,
         libsampleratePath: options.libsampleratePath,
       }),

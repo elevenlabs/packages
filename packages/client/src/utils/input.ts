@@ -33,7 +33,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     sampleRate,
     format,
     preferHeadphonesForIosDevices,
-    deviceId,
+    inputDeviceId,
     workletPaths,
     libsampleratePath,
     onError,
@@ -66,8 +66,9 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
         }
       }
 
-      if (deviceId) {
-        options.deviceId = MediaDeviceInput.getDeviceIdConstraint(deviceId);
+      if (inputDeviceId) {
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
 
       const supportsSampleRateConstraint =
@@ -195,8 +196,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       }
       this.settingInput = true;
 
-      // Extract deviceId from config
-      const deviceId = config?.deviceId;
+      // Extract inputDeviceId from config
+      const inputDeviceId = config?.inputDeviceId;
 
       // Note: sampleRate, format, and preferHeadphonesForIosDevices cannot be
       // changed on an existing input (would require recreating the AudioContext).
@@ -207,10 +208,11 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
         ...defaultConstraints,
       };
 
-      if (deviceId) {
-        options.deviceId = MediaDeviceInput.getDeviceIdConstraint(deviceId);
+      if (inputDeviceId) {
+        options.deviceId =
+          MediaDeviceInput.getDeviceIdConstraint(inputDeviceId);
       }
-      // If deviceId is undefined, don't set deviceId constraint - browser uses default
+      // If inputDeviceId is undefined, don't set deviceId constraint - browser uses default
 
       const constraints = { voiceIsolation: true, ...options };
 
@@ -245,7 +247,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
       const { deviceId } = track?.getSettings() ?? {};
-      this.setInputDevice({ deviceId }).catch(error => {
+      this.setInputDevice({ inputDeviceId: deviceId }).catch(error => {
         this.onError(
           "Failed to reset input device after permission change:",
           error
