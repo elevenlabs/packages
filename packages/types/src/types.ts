@@ -44,6 +44,7 @@ export type DisconnectionDetails =
 
 export interface MessagePayload {
   message: string;
+  event_id?: number;
   /**
    * @deprecated use {@link role} instead.
    */

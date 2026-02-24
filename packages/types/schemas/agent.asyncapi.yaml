@@ -869,7 +869,7 @@ components:
 
     AgentChatResponsePartData:
       type: object
-      required: [text, type]
+      required: [text, type, event_id]
       properties:
         text:
           type: string

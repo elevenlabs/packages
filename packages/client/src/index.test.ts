@@ -17,7 +17,10 @@ import { VoiceConversation } from "./VoiceConversation";
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
 const AGENT_RESPONSE = "Hello, how can I help you?";
+const AGENT_RESPONSE_EVENT_ID = 12345;
 const USER_TRANSCRIPT = "Hi, I need help.";
+const USER_TRANSCRIPT_EVENT_ID = 23456;
+const STREAM_EVENT_ID = 34567;
 const CLIENT_TOOL_HANDLER = "CLIENT_TOOL_HANDLER";
 const CLIENT_TOOL_CALL_ID = "CLIENT_TOOL_CALL_ID";
 const CLIENT_TOOL_PARAMETERS = { some: "param" };
@@ -182,26 +185,34 @@ describe("Conversation", () => {
       client.send(
         JSON.stringify({
           type: "agent_response",
-          agent_response_event: { agent_response: AGENT_RESPONSE },
+          agent_response_event: {
+            agent_response: AGENT_RESPONSE,
+            event_id: AGENT_RESPONSE_EVENT_ID,
+          },
         })
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "ai",
         role: "agent",
         message: AGENT_RESPONSE,
+        event_id: AGENT_RESPONSE_EVENT_ID,
       });
 
       // User transcription
       client.send(
         JSON.stringify({
           type: "user_transcript",
-          user_transcription_event: { user_transcript: USER_TRANSCRIPT },
+          user_transcription_event: {
+            user_transcript: USER_TRANSCRIPT,
+            event_id: USER_TRANSCRIPT_EVENT_ID,
+          },
         })
       );
       expect(onMessage).toHaveBeenCalledWith({
         source: "user",
         role: "user",
         message: USER_TRANSCRIPT,
+        event_id: USER_TRANSCRIPT_EVENT_ID,
       });
 
       // Client tools
@@ -929,14 +940,22 @@ describe("Agent Chat Response Part Streaming", () => {
     });
 
     const onAgentChatResponsePart = vi.fn();
-    const streamChunks: Array<{ text: string; type: string }> = [];
+    const streamChunks: Array<{
+      text: string;
+      type: string;
+      event_id: number;
+    }> = [];
 
     const conversationPromise = Conversation.startSession({
       signedUrl: "wss://api.elevenlabs.io/text/streaming-test",
       textOnly: true,
       onAgentChatResponsePart: chunk => {
         onAgentChatResponsePart(chunk);
-        streamChunks.push({ text: chunk.text, type: chunk.type });
+        streamChunks.push({
+          text: chunk.text,
+          type: chunk.type,
+          event_id: chunk.event_id,
+        });
       },
       connectionDelay: { default: 0 },
     });
@@ -964,6 +983,7 @@ describe("Agent Chat Response Part Streaming", () => {
         text_response_part: {
           text: "",
           type: "start",
+          event_id: STREAM_EVENT_ID,
         },
       })
     );
@@ -976,6 +996,7 @@ describe("Agent Chat Response Part Streaming", () => {
         text_response_part: {
           text: AGENT_CHAT_RESPONSE_CHUNK_1,
           type: "delta",
+          event_id: STREAM_EVENT_ID,
         },
       })
     );
@@ -987,6 +1008,7 @@ describe("Agent Chat Response Part Streaming", () => {
         text_response_part: {
           text: AGENT_CHAT_RESPONSE_CHUNK_2,
           type: "delta",
+          event_id: STREAM_EVENT_ID,
         },
       })
     );
@@ -998,6 +1020,7 @@ describe("Agent Chat Response Part Streaming", () => {
         text_response_part: {
           text: AGENT_CHAT_RESPONSE_CHUNK_3,
           type: "delta",
+          event_id: STREAM_EVENT_ID,
         },
       })
     );
@@ -1010,6 +1033,7 @@ describe("Agent Chat Response Part Streaming", () => {
         text_response_part: {
           text: "",
           type: "stop",
+          event_id: STREAM_EVENT_ID,
         },
       })
     );
@@ -1020,41 +1044,57 @@ describe("Agent Chat Response Part Streaming", () => {
 
     // Verify the sequence of events
     expect(streamChunks).toHaveLength(5);
-    expect(streamChunks[0]).toEqual({ text: "", type: "start" });
+    expect(streamChunks[0]).toEqual({
+      text: "",
+      type: "start",
+      event_id: STREAM_EVENT_ID,
+    });
     expect(streamChunks[1]).toEqual({
       text: AGENT_CHAT_RESPONSE_CHUNK_1,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
     expect(streamChunks[2]).toEqual({
       text: AGENT_CHAT_RESPONSE_CHUNK_2,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
     expect(streamChunks[3]).toEqual({
       text: AGENT_CHAT_RESPONSE_CHUNK_3,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
-    expect(streamChunks[4]).toEqual({ text: "", type: "stop" });
+    expect(streamChunks[4]).toEqual({
+      text: "",
+      type: "stop",
+      event_id: STREAM_EVENT_ID,
+    });
 
     // Verify the callback received correct data
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(1, {
       text: "",
       type: "start",
+      event_id: STREAM_EVENT_ID,
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(2, {
       text: AGENT_CHAT_RESPONSE_CHUNK_1,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(3, {
       text: AGENT_CHAT_RESPONSE_CHUNK_2,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(4, {
       text: AGENT_CHAT_RESPONSE_CHUNK_3,
       type: "delta",
+      event_id: STREAM_EVENT_ID,
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(5, {
       text: "",
       type: "stop",
+      event_id: STREAM_EVENT_ID,
     });
 
     await conversation.endSession();
@@ -1104,6 +1144,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text_response_part: {
             text: "",
             type: "start",
+            event_id: STREAM_EVENT_ID,
           },
         })
       );
@@ -1118,6 +1159,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text_response_part: {
             text: "Hello",
             type: "delta",
+            event_id: STREAM_EVENT_ID,
           },
         })
       );
@@ -1132,6 +1174,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text_response_part: {
             text: "",
             type: "stop",
+            event_id: STREAM_EVENT_ID,
           },
         })
       );

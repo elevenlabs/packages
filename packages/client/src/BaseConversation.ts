@@ -195,6 +195,7 @@ export class BaseConversation {
         source: "ai",
         role: "agent",
         message: event.agent_response_event.agent_response,
+        event_id: event.agent_response_event.event_id,
       });
     }
   }
@@ -205,6 +206,7 @@ export class BaseConversation {
         source: "user",
         role: "user",
         message: event.user_transcription_event.user_transcript,
+        event_id: event.user_transcription_event.event_id,
       });
     }
   }
