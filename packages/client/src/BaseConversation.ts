@@ -484,8 +484,8 @@ export class BaseConversation {
     this.volume = volume;
   };
 
-  public setMicMuted(isMuted: boolean) {
-    this.connection.setMicMuted(isMuted);
+  public setMicMuted(_isMuted: boolean) {
+    throw new Error("This conversation does not support microphone muting");
   }
 
   public getInputByteFrequencyData(): Uint8Array {
