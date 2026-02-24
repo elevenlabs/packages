@@ -2,11 +2,9 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
-import type { InputController } from "../InputController";
+import type { InputController, InputDeviceConfig } from "../InputController";
 
-export type InputConfig = {
-  preferHeadphonesForIosDevices?: boolean;
-  inputDeviceId?: string;
+export type InputConfig = InputDeviceConfig & {
   onError?(message: string, context?: unknown): void;
 };
 
@@ -127,12 +125,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   // Use { ideal } on iOS as a defensive measure - some iOS versions may not support { exact } for deviceId constraints
   private static getDeviceIdConstraint(
-    inputDeviceId?: string
+    deviceId?: string
   ): MediaTrackConstraints["deviceId"] {
-    if (!inputDeviceId) {
+    if (!deviceId) {
       return undefined;
     }
-    return isIosDevice() ? { ideal: inputDeviceId } : { exact: inputDeviceId };
+    return isIosDevice() ? { ideal: deviceId } : { exact: deviceId };
   }
 
   private muted = false;
@@ -155,7 +153,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.worklet.port.start();
   }
 
-  public get isMuted(): boolean {
+  public isMuted(): boolean {
     return this.muted;
   }
 
@@ -183,18 +181,28 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     await this.context.close();
   }
 
-  public setMuted(isMuted: boolean) {
+  public async setInputMuted(isMuted: boolean): Promise<void> {
     this.muted = isMuted;
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
   private settingInput: boolean = false;
-  public async setInputDevice(inputDeviceId?: string): Promise<void> {
+  public async setInputDevice(
+    config?: Partial<FormatConfig> & InputDeviceConfig
+  ): Promise<void> {
     try {
       if (this.settingInput) {
         throw new Error("Input device is already being set");
       }
       this.settingInput = true;
+
+      // Extract inputDeviceId from config
+      const inputDeviceId = config?.inputDeviceId;
+
+      // Note: sampleRate, format, and preferHeadphonesForIosDevices cannot be
+      // changed on an existing input (would require recreating the AudioContext).
+      // These options are only used during initial MediaDeviceInput.create()
+
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
         ...defaultConstraints,
@@ -239,7 +247,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
       const { deviceId } = track?.getSettings() ?? {};
-      this.setInputDevice(deviceId).catch(error => {
+      this.setInputDevice({ inputDeviceId: deviceId }).catch(error => {
         this.onError(
           "Failed to reset input device after permission change:",
           error

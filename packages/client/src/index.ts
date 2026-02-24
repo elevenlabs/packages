@@ -12,7 +12,7 @@ export type {
   Status,
   AudioWorkletConfig,
 } from "./BaseConversation";
-export type { InputController } from "./InputController";
+export type { InputController, InputDeviceConfig } from "./InputController";
 export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
 export { Output } from "./utils/output";
