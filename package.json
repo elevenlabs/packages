@@ -29,7 +29,10 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "msw"
-    ]
+    ],
+    "patchedDependencies": {
+      "livekit-client@2.16.0": "patches/livekit-client@2.16.0.patch"
+    }
   },
   "packageManager": "pnpm@10.28.1"
 }
