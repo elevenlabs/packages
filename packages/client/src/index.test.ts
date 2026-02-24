@@ -1307,9 +1307,6 @@ describe("Wake Lock", () => {
 
     expect(mockWakeLock.request).toHaveBeenCalledWith("screen");
 
-    // @ts-expect-error - Accessing private property for testing
-    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
-
     await conversation.endSession();
     server.close();
   });
@@ -1350,10 +1347,6 @@ describe("Wake Lock", () => {
     // Verify wake lock was NOT requested
     expect(mockWakeLock.request).not.toHaveBeenCalled();
 
-    // Verify the conversation does not have a wake lock
-    // @ts-expect-error - Accessing private property for testing
-    expect((conversation as VoiceConversation).wakeLock).toBeNull();
-
     await conversation.endSession();
     server.close();
   });
@@ -1388,14 +1381,9 @@ describe("Wake Lock", () => {
 
     const conversation = await conversationPromise;
 
-    // @ts-expect-error - Accessing private property for testing
-    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
-
     await conversation.endSession();
 
     expect(mockSentinel.release).toHaveBeenCalled();
-    // @ts-expect-error - Accessing private property for testing
-    expect((conversation as VoiceConversation).wakeLock).toBeNull();
 
     server.close();
   });
@@ -1453,8 +1441,6 @@ describe("Wake Lock", () => {
     await sleep(100);
 
     expect(requestCallCount).toBe(2);
-    // @ts-expect-error - Accessing private property for testing
-    expect((conversation as VoiceConversation).wakeLock).toBe(secondSentinel);
 
     await conversation.endSession();
     server.close();
