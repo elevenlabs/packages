@@ -1,5 +1,16 @@
 # @elevenlabs/client
 
+## 0.15.0
+
+### Minor Changes
+
+- 3a2d602: Propagate event_id through transcript and streaming callbacks. Refactor tool status from Map-based tracking to inline transcript entries with display-transcript utility.
+
+### Patch Changes
+
+- Updated dependencies [3a2d602]
+  - @elevenlabs/types@0.6.0
+
 ## 0.14.0
 
 ### Minor Changes

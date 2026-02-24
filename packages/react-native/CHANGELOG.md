@@ -1,5 +1,12 @@
 # @elevenlabs/react-native
 
+## 0.5.11
+
+### Patch Changes
+
+- Updated dependencies [3a2d602]
+  - @elevenlabs/types@0.6.0
+
 ## 0.5.10
 
 ### Patch Changes

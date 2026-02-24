@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.10.0
+
+### Minor Changes
+
+- 3a2d602: Propagate event_id through transcript and streaming callbacks. Refactor tool status from Map-based tracking to inline transcript entries with display-transcript utility.
+- 70257ce: Add `show-conversation-id` config option to control visibility of conversation ID in disconnection messages. Defaults to `true`. Error messages always show the conversation ID regardless of this setting.
+
+### Patch Changes
+
+- Updated dependencies [3a2d602]
+  - @elevenlabs/client@0.15.0
+
 ## 0.9.1
 
 ### Patch Changes
