@@ -638,6 +638,72 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("show-conversation-id", () => {
+    it.each(Variants)(
+      "%s variant should NOT show conversation ID after disconnect when show-conversation-id is false",
+      async variant => {
+        setupWebComponent({
+          "agent-id": "text_only",
+          variant,
+          "show-conversation-id": "false",
+        });
+
+        const startButton = page.getByRole("button", {
+          name: "Start a call",
+        });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        await expect
+          .element(page.getByText("Agent response"))
+          .toBeInTheDocument();
+
+        const textInput = page.getByRole("textbox", {
+          name: "Text message input",
+        });
+        await textInput.fill("Text message");
+        await userEvent.keyboard("{Enter}");
+
+        await expect
+          .element(page.getByText("The agent ended the conversation"))
+          .toBeInTheDocument();
+        await expect.element(page.getByText("ID")).not.toBeInTheDocument();
+      }
+    );
+
+    it("should still show conversation ID in error messages when show-conversation-id is false", async () => {
+      setupWebComponent({
+        "agent-id": "fail",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        "show-conversation-id": "false",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await startButton.click();
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("trigger error");
+      await userEvent.keyboard("{Enter}");
+
+      await expect
+        .element(page.getByText("An error occurred"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText("ID")).toBeInTheDocument();
+    });
+  });
+
   describe("agent status", () => {
     it("should render inline tool status when show-agent-status is enabled", async () => {
       setupWebComponent({

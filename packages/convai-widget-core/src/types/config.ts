@@ -78,6 +78,7 @@ export interface WidgetConfig {
   syntax_highlight_theme?: SyntaxHighlightTheme;
   conversation_mode_toggle_enabled?: boolean;
   show_agent_status?: boolean;
+  show_conversation_id?: boolean;
 }
 
 export type AvatarConfig =
