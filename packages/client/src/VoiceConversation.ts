@@ -234,8 +234,6 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    // Delegate to InputController.setInputMuted()
-    // Both MediaDeviceInput and WebRTCConnection implement this
     this.input.setInputMuted(isMuted).catch(error => {
       this.options.onError?.("Failed to set input muted state", error);
     });
@@ -285,8 +283,6 @@ export class VoiceConversation extends BaseConversation {
     inputDeviceId,
   }: FormatConfig & InputConfig): Promise<void> {
     try {
-      // Delegate to InputController.setInputDevice()
-      // Both MediaDeviceInput and WebRTCConnection implement this
       await this.input.setInputDevice({
         inputDeviceId,
         sampleRate,
