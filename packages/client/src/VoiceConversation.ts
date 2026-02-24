@@ -216,13 +216,14 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
-    if (!this.input.analyser) {
+    const analyser = this.input.getAnalyser();
+    if (!analyser) {
       throw new Error("Input analyser is not available");
     }
     this.inputFrequencyData ??= new Uint8Array(
-      this.input.analyser.frequencyBinCount
+      analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
-    this.input.analyser.getByteFrequencyData(this.inputFrequencyData);
+    analyser.getByteFrequencyData(this.inputFrequencyData);
     return this.inputFrequencyData;
   }
 
@@ -237,14 +238,15 @@ export class VoiceConversation extends BaseConversation {
       return new Uint8Array(1024) as Uint8Array<ArrayBuffer>;
     }
 
-    if (!this.output.analyser) {
+    const analyser = this.output.getAnalyser();
+    if (!analyser) {
       throw new Error("Output analyser is not available");
     }
 
     this.outputFrequencyData ??= new Uint8Array(
-      this.output.analyser.frequencyBinCount
+      analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
-    this.output.analyser.getByteFrequencyData(this.outputFrequencyData);
+    analyser.getByteFrequencyData(this.outputFrequencyData);
     return this.outputFrequencyData;
   }
 

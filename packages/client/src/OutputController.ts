@@ -9,5 +9,5 @@ export interface OutputController {
   setDevice(config?: Partial<FormatConfig> & OutputDeviceConfig): Promise<void>;
   setVolume(volume: number): void;
   interrupt(resetDuration?: number): void;
-  readonly analyser?: AnalyserNode;
+  getAnalyser(): AnalyserNode | undefined;
 }
