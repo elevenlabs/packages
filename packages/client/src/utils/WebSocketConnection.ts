@@ -9,18 +9,25 @@ import {
   type ConfigEvent,
   isValidSocketEvent,
   type OutgoingSocketEvent,
+  type IncomingSocketEvent,
 } from "./events";
 import { constructOverrides } from "./overrides";
 import { SessionConnectionError } from "./errors";
+import type { OutputEventTarget, OutputListener } from "./output";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
 const WSS_API_PATHNAME = "/v1/convai/conversation?agent_id=";
 
-export class WebSocketConnection extends BaseConnection {
+export class WebSocketConnection
+  extends BaseConnection
+  implements OutputEventTarget
+{
   public readonly conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;
+
+  private outputListeners: Set<OutputListener> = new Set();
 
   private constructor(
     private readonly socket: WebSocket,
@@ -206,5 +213,25 @@ export class WebSocketConnection extends BaseConnection {
 
   public sendMessage(message: OutgoingSocketEvent) {
     this.socket.send(JSON.stringify(message));
+  }
+
+  public addListener(listener: OutputListener): void {
+    this.outputListeners.add(listener);
+  }
+
+  public removeListener(listener: OutputListener): void {
+    this.outputListeners.delete(listener);
+  }
+
+  protected override handleMessage(parsedEvent: IncomingSocketEvent) {
+    super.handleMessage(parsedEvent);
+
+    // Emit audio events to output listeners
+    if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
+      const audioEvent = {
+        audio_base_64: parsedEvent.audio_event.audio_base_64,
+      };
+      this.outputListeners.forEach(listener => listener(audioEvent));
+    }
   }
 }

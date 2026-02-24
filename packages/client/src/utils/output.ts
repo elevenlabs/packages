@@ -1,18 +1,44 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
 import type { FormatConfig } from "./connection";
 import type { AudioWorkletConfig } from "../BaseConversation";
+import type { OutputController, OutputDeviceConfig } from "../OutputController";
 
-export type OutputConfig = {
-  outputDeviceId?: string;
+export type OutputConfig = OutputDeviceConfig;
+
+// Audio data events from connection to output device
+export type OutputAudioEvent = {
+  audio_base_64: string;
+};
+export type OutputListener = (event: OutputAudioEvent) => void;
+
+export type OutputEventTarget = {
+  addListener(listener: OutputListener): void;
+  removeListener(listener: OutputListener): void;
 };
 
-export class Output {
+// Playback state events from output worklet
+export type PlaybackStateEvent = MessageEvent<{
+  type: "process";
+  finished: boolean;
+}>;
+export type PlaybackListener = (event: PlaybackStateEvent) => void;
+
+export type PlaybackEventTarget = {
+  addListener(listener: PlaybackListener): void;
+  removeListener(listener: PlaybackListener): void;
+};
+
+export class MediaDeviceOutput
+  implements OutputController, PlaybackEventTarget
+{
   public static async create({
     sampleRate,
     format,
     outputDeviceId,
     workletPaths,
-  }: FormatConfig & OutputConfig & AudioWorkletConfig): Promise<Output> {
+  }: FormatConfig &
+    OutputConfig &
+    AudioWorkletConfig): Promise<MediaDeviceOutput> {
     let context: AudioContext | null = null;
     let audioElement: HTMLAudioElement | null = null;
     try {
@@ -51,7 +77,7 @@ export class Output {
         await audioElement.setSinkId(outputDeviceId);
       }
 
-      const newOutput = new Output(
+      const newOutput = new MediaDeviceOutput(
         context,
         analyser,
         gain,
@@ -74,24 +100,92 @@ export class Output {
     }
   }
 
-  private constructor(
-    public readonly context: AudioContext,
-    public readonly analyser: AnalyserNode,
-    public readonly gain: GainNode,
-    public readonly worklet: AudioWorkletNode,
-    public readonly audioElement: HTMLAudioElement
-  ) {}
+  private volume = 1;
+  private interrupted = false;
+  private interruptTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  public async setOutputDevice(deviceId?: string): Promise<void> {
+  private constructor(
+    private readonly context: AudioContext,
+    public readonly analyser: AnalyserNode,
+    private readonly gain: GainNode,
+    private readonly worklet: AudioWorkletNode,
+    private readonly audioElement: HTMLAudioElement
+  ) {
+    // Start the MessagePort to enable addEventListener to work
+    // (required when using addEventListener instead of onmessage)
+    this.worklet.port.start();
+  }
+
+  public addListener(listener: PlaybackListener): void {
+    this.worklet.port.addEventListener("message", listener);
+  }
+
+  public removeListener(listener: PlaybackListener): void {
+    this.worklet.port.removeEventListener("message", listener);
+  }
+
+  public setVolume(volume: number): void {
+    this.volume = volume;
+    this.gain.gain.value = volume;
+  }
+
+  public playAudio(chunk: ArrayBuffer): void {
+    if (this.interrupted) return;
+    this.worklet.port.postMessage({ type: "buffer", buffer: chunk });
+  }
+
+  public interrupt(resetDuration = 2000): void {
+    this.interrupted = true;
+
+    // Clear any existing timeout
+    if (this.interruptTimeout) {
+      clearTimeout(this.interruptTimeout);
+      this.interruptTimeout = null;
+    }
+
+    // Send interrupt message to worklet to flush queued buffers
+    this.worklet.port.postMessage({ type: "interrupt" });
+
+    // Fade out audio gain
+    this.gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      this.context.currentTime + resetDuration / 1000
+    );
+
+    // After fade completes, restore volume and accept new audio
+    this.interruptTimeout = setTimeout(() => {
+      this.interrupted = false;
+      this.gain.gain.value = this.volume;
+      this.worklet.port.postMessage({ type: "clearInterrupted" });
+      this.interruptTimeout = null;
+    }, resetDuration);
+  }
+
+  public async setDevice(
+    config?: Partial<FormatConfig> & OutputDeviceConfig
+  ): Promise<void> {
     if (!("setSinkId" in HTMLAudioElement.prototype)) {
       throw new Error("setSinkId is not supported in this browser");
     }
 
+    // Extract outputDeviceId from config
+    const outputDeviceId = config?.outputDeviceId;
+
+    // Note: sampleRate and format cannot be changed on an existing output
+    // (would require recreating the AudioContext).
+    // These options are only used during initial MediaDeviceOutput.create()
+
     // If deviceId is undefined, use empty string which resets to default device
-    await this.audioElement.setSinkId(deviceId || "");
+    await this.audioElement.setSinkId(outputDeviceId || "");
   }
 
   public async close() {
+    // Clear any pending interrupt timeout
+    if (this.interruptTimeout) {
+      clearTimeout(this.interruptTimeout);
+      this.interruptTimeout = null;
+    }
+
     // Remove audio element from DOM
     if (this.audioElement.parentNode) {
       this.audioElement.parentNode.removeChild(this.audioElement);
