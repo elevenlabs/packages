@@ -250,6 +250,7 @@ export interface AgentChatResponsePart {
 export interface TextResponsePart {
   text: string;
   type: TextResponsePartType;
+  event_id?: number;
 }
 
 export type TextResponsePartType = "start" | "delta" | "stop";

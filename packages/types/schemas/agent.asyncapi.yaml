@@ -876,6 +876,9 @@ components:
           description: Text chunk (empty for start/stop events)
         type:
           $ref: "#/components/schemas/AgentChatResponsePartType"
+        event_id:
+          type: integer
+          description: Event ID of this chat response part
 
     InterruptionData:
       type: object
