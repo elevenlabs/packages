@@ -82,6 +82,7 @@ function DisconnectionMessage({
   const text = useTextContents();
   const { lastId } = useConversation();
   const endFeedbackType = useEndFeedbackType();
+  const config = useWidgetConfig();
 
   return (
     <div className="px-8 flex flex-col">
@@ -91,7 +92,7 @@ function DisconnectionMessage({
           ? text.user_ended_conversation
           : text.agent_ended_conversation}
         <br />
-        {lastId.value && (
+        {lastId.value && config.value.show_conversation_id && (
           <span className="break-all">
             {text.conversation_id}: {lastId.value}
           </span>
