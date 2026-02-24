@@ -17,7 +17,7 @@ jobs:
       contents: write
       # Needed for provenance generation
       id-token: write
-    environment: main
+    environment: ${{ github.ref_name }}
     steps:
       - name: Create GitHub App Token
         uses: actions/create-github-app-token@v1
