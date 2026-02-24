@@ -234,7 +234,7 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    this.input.setInputMuted(isMuted).catch(error => {
+    this.input.setMuted(isMuted).catch(error => {
       this.options.onError?.("Failed to set input muted state", error);
     });
   }
@@ -283,7 +283,7 @@ export class VoiceConversation extends BaseConversation {
     inputDeviceId,
   }: FormatConfig & InputConfig): Promise<void> {
     try {
-      await this.input.setInputDevice({
+      await this.input.setDevice({
         inputDeviceId,
         sampleRate,
         format,
