@@ -75,9 +75,7 @@ export class WebRTCConnection extends BaseConnection {
         }
       }
     },
-    setInputDevice: async (
-      config?: Partial<FormatConfig> & InputDeviceConfig
-    ) => {
+    setDevice: async (config?: Partial<FormatConfig> & InputDeviceConfig) => {
       // WebRTC only supports changing inputDeviceId
       // sampleRate, format, and preferHeadphonesForIosDevices are not supported
       if (
@@ -98,7 +96,7 @@ export class WebRTCConnection extends BaseConnection {
       }
       await this.setAudioInputDevice(inputDeviceId);
     },
-    setInputMuted: async (isMuted: boolean) => {
+    setMuted: async (isMuted: boolean) => {
       if (!this.isConnected || !this.room.localParticipant) {
         console.warn(
           "Cannot set microphone muted: room not connected or no local participant"

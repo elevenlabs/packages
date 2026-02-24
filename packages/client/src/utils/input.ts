@@ -181,13 +181,13 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     await this.context.close();
   }
 
-  public async setInputMuted(isMuted: boolean): Promise<void> {
+  public async setMuted(isMuted: boolean): Promise<void> {
     this.muted = isMuted;
     this.worklet.port.postMessage({ type: "setMuted", isMuted });
   }
 
   private settingInput: boolean = false;
-  public async setInputDevice(
+  public async setDevice(
     config?: Partial<FormatConfig> & InputDeviceConfig
   ): Promise<void> {
     try {
@@ -247,7 +247,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Let's try to reset the input device, but only if we're not already in the process of setting it
       const [track] = this.inputStream.getAudioTracks();
       const { deviceId } = track?.getSettings() ?? {};
-      this.setInputDevice({ inputDeviceId: deviceId }).catch(error => {
+      this.setDevice({ inputDeviceId: deviceId }).catch(error => {
         this.onError(
           "Failed to reset input device after permission change:",
           error
