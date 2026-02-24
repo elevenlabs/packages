@@ -7,10 +7,8 @@ export type InputDeviceConfig = {
 
 export interface InputController {
   close(): Promise<void>;
-  setInputDevice(
-    config?: Partial<FormatConfig> & InputDeviceConfig
-  ): Promise<void>;
-  setInputMuted(isMuted: boolean): Promise<void>;
+  setDevice(config?: Partial<FormatConfig> & InputDeviceConfig): Promise<void>;
+  setMuted(isMuted: boolean): Promise<void>;
   isMuted(): boolean;
   readonly analyser?: AnalyserNode;
 }
