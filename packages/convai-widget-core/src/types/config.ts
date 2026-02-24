@@ -140,7 +140,7 @@ export const DefaultTextContents = {
   copy: "Copy",
   download: "Download",
   wrap: "Wrap",
-  agent_working: "Thinking...",
+  agent_working: "Working...",
   agent_done: "Completed",
   agent_error: "Error occurred",
 };

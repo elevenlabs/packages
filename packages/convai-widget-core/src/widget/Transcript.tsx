@@ -1,11 +1,11 @@
 import { ReadonlySignal, Signal } from "@preact/signals";
-import { TranscriptEntry } from "../contexts/conversation";
+import { DisplayTranscriptEntry } from "../utils/display-transcript";
 import { TranscriptMessage } from "./TranscriptMessage";
 import { useStickToBottom } from "../utils/useStickToBottom";
 
 interface TranscriptProps {
   scrollPinned: Signal<boolean>;
-  transcript: ReadonlySignal<TranscriptEntry[]>;
+  transcript: ReadonlySignal<DisplayTranscriptEntry[]>;
 }
 
 export function Transcript({ scrollPinned, transcript }: TranscriptProps) {

@@ -55,7 +55,6 @@ import {
   type TranscriptEntry,
 } from "./contexts/conversation";
 import { Status, Mode, Role } from "@elevenlabs/client";
-import { cn } from "./utils/cn";
 
 import { FeedbackProvider } from "./contexts/feedback";
 import { ShadowHostProvider } from "./contexts/shadow-host";
@@ -135,7 +134,6 @@ function MockConversationProvider({
       conversationIndex: signal(0),
       conversationTextOnly: signal<boolean | null>(null),
       transcript: mockTranscript,
-      toolCallStatus: signal(new Map()),
       startSession: async () => "",
       endSession: async () => {},
       getInputVolume: () => 0,

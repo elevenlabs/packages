@@ -206,7 +206,10 @@ export const Worker = setupWorker(
       client.send(
         JSON.stringify({
           type: "agent_response",
-          agent_response_event: { agent_response: config.first_message },
+          agent_response_event: {
+            agent_response: config.first_message,
+            event_id: 1,
+          },
         })
       );
       if (
@@ -219,6 +222,7 @@ export const Worker = setupWorker(
             type: "agent_response",
             agent_response_event: {
               agent_response: "Another agent response",
+              event_id: 2,
             },
           })
         );
@@ -228,7 +232,10 @@ export const Worker = setupWorker(
         client.send(
           JSON.stringify({
             type: "user_transcript",
-            user_transcription_event: { user_transcript: "User transcript" },
+            user_transcription_event: {
+              user_transcript: "User transcript",
+              event_id: 3,
+            },
           })
         );
       }
@@ -245,6 +252,7 @@ export const Worker = setupWorker(
               text_response_part: {
                 text: "",
                 type: "start",
+                event_id: 10,
               },
             })
           );
@@ -254,6 +262,7 @@ export const Worker = setupWorker(
               type: "agent_response",
               agent_response_event: {
                 agent_response: "Goodbye! Have a great day!",
+                event_id: 10,
               },
             })
           );
@@ -264,6 +273,7 @@ export const Worker = setupWorker(
               text_response_part: {
                 text: "",
                 type: "stop",
+                event_id: 10,
               },
             })
           );
@@ -273,14 +283,37 @@ export const Worker = setupWorker(
       }
       if (agentId === "tool_call") {
         client.addEventListener("message", async () => {
+          // First message before tool execution (same event_id)
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Running the tool now.",
+                event_id: 2,
+              },
+            })
+          );
           client.send(
             JSON.stringify({
               type: "agent_tool_request",
               agent_tool_request: {
                 tool_call_id: "tool_1",
-                event_id: 1,
+                event_id: 2,
                 tool_name: "test_tool",
               },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -289,17 +322,43 @@ export const Worker = setupWorker(
               type: "agent_tool_response",
               agent_tool_response: {
                 tool_call_id: "tool_1",
-                event_id: 1,
+                event_id: 2,
                 is_error: false,
               },
             })
           );
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 50));
+          // Second message after tool execution (same event_id)
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Tool completed successfully",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
           client.send(
             JSON.stringify({
               type: "agent_response",
               agent_response_event: {
                 agent_response: "Tool completed successfully",
+                event_id: 2,
               },
             })
           );

@@ -639,7 +639,7 @@ describe("elevenlabs-convai", () => {
   });
 
   describe("agent status", () => {
-    it("should show tool status when show-agent-status is enabled", async () => {
+    it("should render inline tool status when show-agent-status is enabled", async () => {
       setupWebComponent({
         "agent-id": "tool_call",
         variant: "compact",
@@ -652,9 +652,16 @@ describe("elevenlabs-convai", () => {
       await textInput.fill("Run tool");
       await userEvent.keyboard("{Enter}");
 
-      // Tool status should appear
-      await expect.element(page.getByText("Thinking...")).toBeInTheDocument();
-      await expect.element(page.getByText("Completed")).toBeInTheDocument();
+      // Tool status is rendered inline with the associated agent message.
+      await expect
+        .element(page.getByText("Tool completed successfully"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Completed", { exact: true }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Working..."))
+        .not.toBeInTheDocument();
     });
 
     it("should NOT show tool status when show-agent-status is disabled", async () => {
@@ -672,13 +679,41 @@ describe("elevenlabs-convai", () => {
 
       // Tool status should NOT appear
       await expect
-        .element(page.getByText("Thinking..."))
+        .element(page.getByText("Working..."))
         .not.toBeInTheDocument();
-      await expect.element(page.getByText("Completed")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("Completed", { exact: true }))
+        .not.toBeInTheDocument();
 
       // But the agent response should still appear
       await expect
         .element(page.getByText("Tool completed successfully"))
+        .toBeInTheDocument();
+    });
+
+    it("should keep completed status visible after disconnect", async () => {
+      setupWebComponent({
+        "agent-id": "tool_call",
+        variant: "compact",
+        "show-agent-status": "true",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Run tool");
+      await userEvent.keyboard("{Enter}");
+
+      await expect
+        .element(page.getByText("Completed", { exact: true }))
+        .toBeInTheDocument();
+
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await endButton.click();
+
+      // Completed status remains visible for historical messages.
+      await expect
+        .element(page.getByText("Completed", { exact: true }))
         .toBeInTheDocument();
     });
   });

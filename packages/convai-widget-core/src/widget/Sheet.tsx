@@ -5,7 +5,8 @@ import {
   useTextOnly,
   useWidgetConfig,
 } from "../contexts/widget-config";
-import { TranscriptEntry, useConversation } from "../contexts/conversation";
+import { useConversation } from "../contexts/conversation";
+import { buildDisplayTranscript, type DisplayTranscriptEntry } from "../utils/display-transcript";
 import { InOutTransition } from "../components/InOutTransition";
 import { cn } from "../utils/cn";
 import { Placement } from "../types/config";
@@ -43,32 +44,19 @@ export function Sheet({ open }: SheetProps) {
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
 
-  const filteredTranscript = useComputed<TranscriptEntry[]>(() => {
-    if (textOnly.value || isConversationTextOnly.value) {
-      if (!firstMessage.value || !textOnly.value) {
-        return transcript.value;
-      }
-      // We only show the first message if the widget does not support voice
-      // altogether. If the widget supports voice but switched to text-only
-      // mode due to user input, we don't show the first message again.
-      return [
-        {
-          type: "message",
-          role: "agent",
-          message: firstMessage.value,
-          isText: true,
-          conversationIndex:
-            transcript.value[0]?.conversationIndex ?? conversationIndex.peek(),
-        },
-        ...transcript.value,
-      ];
-    }
-
-    return config.value.transcript_enabled
-      ? transcript.value
-      : transcript.value.filter(
-          entry => entry.type !== "message" || entry.isText
-        );
+  const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
+    const isTextOnly = textOnly.value || isConversationTextOnly.value;
+    return buildDisplayTranscript(transcript.value, {
+      showAgentStatus: config.value.show_agent_status ?? false,
+      transcriptEnabled: isTextOnly || (config.value.transcript_enabled ?? false),
+      // Prepend first message only when the widget is text-only
+      // (not when it switched to text-only due to user input)
+      firstMessage:
+        isTextOnly && textOnly.value && firstMessage.value
+          ? firstMessage.value
+          : undefined,
+      firstMessageConversationIndex: conversationIndex.peek(),
+    });
   });
   const showTranscript = useComputed(
     () =>
