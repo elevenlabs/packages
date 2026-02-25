@@ -1,10 +1,10 @@
 import {
   Callbacks,
-  ELEVENLABS_CONVERSATION_SYMBOL,
   type ElevenLabsConversationAPI,
   Mode,
   Status,
 } from "@elevenlabs/types";
+import * as debugExtension from "./utils/debug-extension";
 import type {
   BaseConnection,
   DisconnectionDetails,
@@ -137,13 +137,11 @@ export class BaseConversation {
     this.updateStatus("connected");
 
     if (this.options.debug) {
-      this.exposeGlobalAPI();
+      this.registerDebugAPI();
     }
   }
 
-  private exposeGlobalAPI() {
-    if (typeof window === "undefined") return;
-
+  private registerDebugAPI() {
     const self = this;
     const api: ElevenLabsConversationAPI = {
       get status() {
@@ -163,13 +161,7 @@ export class BaseConversation {
       },
     };
 
-    (window as any)[ELEVENLABS_CONVERSATION_SYMBOL] = api;
-  }
-
-  private cleanupGlobalAPI() {
-    if (typeof window !== "undefined") {
-      delete (window as any)[ELEVENLABS_CONVERSATION_SYMBOL];
-    }
+    debugExtension.registerConversation(api);
   }
 
   /** Override in subclasses that support audio injection. */
@@ -198,7 +190,7 @@ export class BaseConversation {
 
   protected async handleEndSession() {
     if (this.options.debug) {
-      this.cleanupGlobalAPI();
+      debugExtension.deregisterConversation(this.connection.conversationId);
     }
     this.connection.close();
   }
