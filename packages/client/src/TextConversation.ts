@@ -3,7 +3,29 @@ import type { BaseConnection } from "./utils/BaseConnection";
 import { applyDelay } from "./utils/applyDelay";
 import { BaseConversation, type PartialOptions } from "./BaseConversation";
 
+const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
+
 export class TextConversation extends BaseConversation {
+  public setVolume(): void {}
+
+  public setMicMuted(): void {}
+
+  public getInputByteFrequencyData(): Uint8Array {
+    return EMPTY_FREQUENCY_DATA;
+  }
+
+  public getOutputByteFrequencyData(): Uint8Array {
+    return EMPTY_FREQUENCY_DATA;
+  }
+
+  public getInputVolume(): number {
+    return 0;
+  }
+
+  public getOutputVolume(): number {
+    return 0;
+  }
+
   public static async startSession(
     options: PartialOptions
   ): Promise<TextConversation> {

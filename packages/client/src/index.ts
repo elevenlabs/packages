@@ -67,7 +67,7 @@ export type {
   ScribeInsufficientAudioActivityErrorMessage,
 } from "./scribe";
 
-export class Conversation extends BaseConversation {
+export abstract class Conversation extends BaseConversation {
   public static startSession(options: PartialOptions): Promise<Conversation> {
     const fullOptions = Conversation.getFullOptions(options);
     return fullOptions.textOnly
