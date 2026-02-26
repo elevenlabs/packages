@@ -169,40 +169,7 @@ else
   pass
 fi
 
-# ===== TEST 8: Package with no workspace dependencies =====
-test_case "Package with no workspace dependencies (@elevenlabs/agents-cli)"
-
-PACKAGE_NAME="@elevenlabs/agents-cli"
-PACKAGE_PATH="packages/$(echo "$PACKAGE_NAME" | sed 's/@elevenlabs\///')"
-
-WORKSPACE_DEPS=$(node -p "
-  const pkg = require('./$PACKAGE_PATH/package.json');
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
-  Object.entries(deps)
-    .filter(([_, version]) => version.startsWith('workspace:'))
-    .map(([name, version]) => {
-      const pkgPath = 'packages/' + name.replace('@elevenlabs/', '') + '/package.json';
-      try {
-        const depPkg = require('./' + pkgPath);
-        return name + '@' + depPkg.version;
-      } catch (e) {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .join(' ');
-" 2>/dev/null || echo "")
-
-echo "  Workspace deps: ${WORKSPACE_DEPS:-<none>}"
-
-if [ -z "$WORKSPACE_DEPS" ]; then
-  echo "  ✓ Correctly identified as having no workspace dependencies"
-  pass
-else
-  fail "Should have no workspace dependencies"
-fi
-
-# ===== TEST 9: Chain of dependencies (react -> client -> types) =====
+# ===== TEST 8: Chain of dependencies (react -> client -> types) =====
 test_case "Verify dependency chain: @elevenlabs/react -> client -> types"
 
 PACKAGE_NAME="@elevenlabs/react"
@@ -304,7 +271,7 @@ pass
 # ===== TEST 11: Test all publishable packages =====
 test_case "Test version extraction for all packages"
 
-for pkg_path in packages/types packages/react-native packages/agents-cli packages/client packages/react packages/convai-widget-core packages/convai-widget-embed; do
+for pkg_path in packages/types packages/react-native packages/client packages/react packages/convai-widget-core packages/convai-widget-embed; do
   PKG_NAME=$(node -p "require('./$pkg_path/package.json').name")
   PKG_VERSION=$(node -p "require('./$pkg_path/package.json').version")
 

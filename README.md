@@ -36,7 +36,6 @@ The ElevenAgents SDKs provide a unified interface for integrating multimodal AI 
 | [`@elevenlabs/react-native`](#elevenlabsreact-native) | React Native SDK for cross-platform applications | [![npm](https://img.shields.io/npm/v/@elevenlabs/react-native)](https://www.npmjs.com/package/@elevenlabs/react-native)               | [README](packages/react-native/README.md) • [Docs](https://elevenlabs.io/docs/agents-platform/libraries/react-native) |
 | [`@elevenlabs/convai-widget-core`](#widgets)          | Core widget library for embedding Agents         | [![npm](https://img.shields.io/npm/v/@elevenlabs/convai-widget-core)](https://www.npmjs.com/package/@elevenlabs/convai-widget-core)   | [Docs](https://elevenlabs.io/docs/agents-platform/customization/widget)                                               |
 | [`@elevenlabs/convai-widget-embed`](#widgets)         | Pre-bundled embeddable widget                    | [![npm](https://img.shields.io/npm/v/@elevenlabs/convai-widget-embed)](https://www.npmjs.com/package/@elevenlabs/convai-widget-embed) | [Docs](https://elevenlabs.io/docs/agents-platform/customization/widget)                                               |
-| [`@elevenlabs/agents-cli`](#agents-cli)               | CLI tool for managing agents as code             | [![npm](https://img.shields.io/npm/v/@elevenlabs/agents-cli)](https://www.npmjs.com/package/@elevenlabs/agents-cli)                   | [README](packages/agents-cli/README.md) • [Docs](https://elevenlabs.io/docs/agents-platform/libraries/agents-cli)     |
 
 ## Package Details
 
@@ -107,23 +106,6 @@ The ElevenAgents Widgets provide an easy way to embed AI agents into any website
 
 Learn how to embed the widget into your website [here](https://elevenlabs.io/docs/agents-platform/customization/widget).
 
-### Agents CLI
-
-The ElevenAgents CLI allows you to manage your agents as code, with features like version control, templates, and multi-environment deployments.
-
-#### Installation
-
-```bash
-# Global installation
-npm install -g @elevenlabs/agents-cli
-# or
-pnpm install -g @elevenlabs/agents-cli
-
-npx @elevenlabs/agents-cli init
-# or
-pnpm dlx @elevenlabs/agents-cli init
-```
-
 ## Client Tools
 
 Client tools allow your agent to trigger actions in your application, for example in React:
@@ -161,7 +143,6 @@ For detailed documentation, visit:
 - [React SDK API](https://elevenlabs.io/docs/agents-platform/libraries/react)
 - [React Native SDK API](https://elevenlabs.io/docs/agents-platform/libraries/react-native)
 - [TypeScript/JavaScript Client API](https://elevenlabs.io/docs/agents-platform/libraries/java-script)
-- [Agents CLI](https://elevenlabs.io/docs/agents-platform/libraries/agents-cli)
 - [Widget](https://elevenlabs.io/docs/agents-platform/customization/widget)
 
 ## Support
