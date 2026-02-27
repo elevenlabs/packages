@@ -1,16 +1,19 @@
 import type { Options } from "../BaseConversation";
 import type { BaseConnection } from "../utils/BaseConnection";
 import type { InputController } from "../InputController";
-import { Output } from "../utils/output";
+import type { OutputController } from "../OutputController";
+import { MediaDeviceOutput, type PlaybackEventTarget } from "../utils/output";
 import { MediaDeviceInput } from "../utils/input";
 import { WebSocketConnection } from "../utils/WebSocketConnection";
 import { WebRTCConnection } from "../utils/WebRTCConnection";
 import { attachInputToConnection } from "../utils/attachInputToConnection";
+import { attachConnectionToOutput } from "../utils/attachConnectionToOutput";
 
 export type VoiceSessionSetupResult = {
   input: InputController;
-  output: Output;
-  detachInput: (() => void) | null;
+  output: OutputController;
+  playbackEventTarget: PlaybackEventTarget | null;
+  detach: () => void;
 };
 
 export type VoiceSessionSetupStrategy = (
@@ -27,16 +30,11 @@ export async function webSessionSetup(
   connection: BaseConnection
 ): Promise<VoiceSessionSetupResult> {
   if (connection instanceof WebRTCConnection) {
-    const output = await Output.create({
-      ...connection.outputFormat,
-      outputDeviceId: options.outputDeviceId,
-      workletPaths: options.workletPaths,
-    });
-
     return {
       input: connection.input,
-      output,
-      detachInput: null,
+      output: connection.output,
+      playbackEventTarget: null,
+      detach: () => {},
     };
   } else if (connection instanceof WebSocketConnection) {
     const [input, output] = await Promise.all([
@@ -47,7 +45,7 @@ export async function webSessionSetup(
         workletPaths: options.workletPaths,
         libsampleratePath: options.libsampleratePath,
       }),
-      Output.create({
+      MediaDeviceOutput.create({
         ...connection.outputFormat,
         outputDeviceId: options.outputDeviceId,
         workletPaths: options.workletPaths,
@@ -55,11 +53,16 @@ export async function webSessionSetup(
     ]);
 
     const detachInput = attachInputToConnection(input, connection);
+    const detachOutput = attachConnectionToOutput(connection, output);
 
     return {
       input,
       output,
-      detachInput,
+      playbackEventTarget: output,
+      detach: () => {
+        detachInput();
+        detachOutput();
+      },
     };
   } else {
     throw new Error(
