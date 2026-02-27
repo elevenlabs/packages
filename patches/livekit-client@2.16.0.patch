@@ -1,8 +1,8 @@
 diff --git a/dist/livekit-client.esm.mjs b/dist/livekit-client.esm.mjs
-index 6fe677d11b9a5caed7737da899375dc3745144e8..13b2e97c1dc07bffb602efd24d5421dd68c774d2 100644
+index 6fe677d11b9a5caed7737da899375dc3745144e8..d0f471fc225671f7b2c06309aa39416f1ad594f7 100644
 --- a/dist/livekit-client.esm.mjs
 +++ b/dist/livekit-client.esm.mjs
-@@ -8471,6 +8471,13 @@ function wrapPeerConnectionEvent(window, eventNameToWrap, wrapper) {
+@@ -8471,6 +8471,10 @@ function wrapPeerConnectionEvent(window, eventNameToWrap, wrapper) {
      return;
    }
    const proto = window.RTCPeerConnection.prototype;
