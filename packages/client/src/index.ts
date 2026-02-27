@@ -13,9 +13,9 @@ export type {
   AudioWorkletConfig,
 } from "./BaseConversation";
 export type { InputController, InputDeviceConfig } from "./InputController";
+export type { OutputController, OutputDeviceConfig } from "./OutputController";
 export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
-export { Output } from "./utils/output";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,

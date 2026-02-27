@@ -137,7 +137,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   private constructor(
     private readonly context: AudioContext,
-    public readonly analyser: AnalyserNode,
+    private readonly analyser: AnalyserNode,
     private readonly worklet: AudioWorkletNode,
     private inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
@@ -151,6 +151,10 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
+  }
+
+  public getAnalyser(): AnalyserNode {
+    return this.analyser;
   }
 
   public isMuted(): boolean {
