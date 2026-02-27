@@ -1,0 +1,15 @@
+diff --git a/dist/livekit-client.esm.mjs b/dist/livekit-client.esm.mjs
+index 6fe677d11b9a5caed7737da899375dc3745144e8..d0f471fc225671f7b2c06309aa39416f1ad594f7 100644
+--- a/dist/livekit-client.esm.mjs
++++ b/dist/livekit-client.esm.mjs
+@@ -8471,6 +8471,10 @@ function wrapPeerConnectionEvent(window, eventNameToWrap, wrapper) {
+     return;
+   }
+   const proto = window.RTCPeerConnection.prototype;
++  // Guard: skip patching if addEventListener is frozen (e.g. Wix security hardening)
++  if (Object.isFrozen(proto)) {
++    return;
++  }
+   const nativeAddEventListener = proto.addEventListener;
+   proto.addEventListener = function (nativeEventName, cb) {
+     if (nativeEventName !== eventNameToWrap) {
