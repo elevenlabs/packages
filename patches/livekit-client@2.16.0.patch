@@ -7,10 +7,7 @@ index 6fe677d11b9a5caed7737da899375dc3745144e8..13b2e97c1dc07bffb602efd24d5421dd
    }
    const proto = window.RTCPeerConnection.prototype;
 +  // Guard: skip patching if addEventListener is frozen (e.g. Wix security hardening)
-+  try {
-+    const orig = proto.addEventListener;
-+    proto.addEventListener = orig;
-+  } catch (e) {
++  if (Object.isFrozen(proto)) {
 +    return;
 +  }
    const nativeAddEventListener = proto.addEventListener;
