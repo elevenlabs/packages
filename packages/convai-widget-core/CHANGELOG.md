@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.10.1-next.0
+
+### Patch Changes
+
+- f15891e: Fix widget crash on Wix sites caused by frozen RTCPeerConnection prototype
+
 ## 0.10.0
 
 ### Minor Changes
