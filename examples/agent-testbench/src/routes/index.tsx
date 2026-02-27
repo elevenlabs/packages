@@ -5,6 +5,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { ElevenLabs, elevenlabs } from "@/lib/elevenlabs.server";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const getAgents = createServerFn().handler(async () => {
   const { agents } = await elevenlabs.conversationalAi.agents.list();
@@ -45,15 +51,20 @@ function AgentsPage() {
   return (
     <Page title={user ? `${user.firstName ?? user.userId}'s Agents` : "Agents"}>
       {error && <p>{error}</p>}
-      <ul className="flex flex-row gap-2">
-        {agents.map(agent => (
-          <li key={agent.agentId}>
-            <Link to={`/agents/$agentId`} params={{ agentId: agent.agentId }}>
-              <Button variant="outline">{agent.name}</Button>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild className="self-center">
+          <Button variant="outline">Select Agent</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {agents.map(agent => (
+            <DropdownMenuItem key={agent.agentId} asChild>
+              <Link to={`/agents/$agentId`} params={{ agentId: agent.agentId }}>
+                {agent.name}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </Page>
   );
 }
