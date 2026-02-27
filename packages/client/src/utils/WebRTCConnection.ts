@@ -26,6 +26,7 @@ import {
 import { arrayBufferToBase64 } from "./audio";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { InputController, InputDeviceConfig } from "../InputController";
+import type { OutputController, OutputDeviceConfig } from "../OutputController";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -128,7 +129,40 @@ export class WebRTCConnection extends BaseConnection {
       this._isMuted = isMuted;
     },
     isMuted: () => this._isMuted,
-    analyser: undefined, // WebRTC doesn't provide input analyser
+    getAnalyser: () => undefined, // WebRTC doesn't provide input analyser
+  };
+
+  // OutputController interface exposed as a property
+  public readonly output: OutputController = {
+    close: async () => {
+      // No-op for WebRTC - LiveKit handles cleanup
+      // Audio elements are cleaned up when the connection closes
+    },
+    setDevice: async (config?: Partial<FormatConfig> & OutputDeviceConfig) => {
+      // WebRTC only supports changing outputDeviceId
+      // sampleRate and format are not supported
+      if (config?.sampleRate !== undefined || config?.format !== undefined) {
+        throw new Error(
+          "WebRTC output device does not support sampleRate or format options"
+        );
+      }
+
+      const outputDeviceId = config?.outputDeviceId;
+      if (!outputDeviceId) {
+        // No device ID specified - this is a no-op for WebRTC
+        // The default device is already being used
+        return;
+      }
+      await this.setAudioOutputDevice(outputDeviceId);
+    },
+    setVolume: (volume: number) => {
+      this.setAudioVolume(volume);
+    },
+    interrupt: (_resetDuration?: number) => {
+      // No-op for WebRTC - LiveKit handles audio playback and interruption
+      // Audio interruption is managed by the server/agent
+    },
+    getAnalyser: () => this.outputAnalyser ?? undefined,
   };
 
   private constructor(
