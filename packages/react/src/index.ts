@@ -17,7 +17,6 @@ import {
 export type DeviceFormatConfig = {
   format: "pcm" | "ulaw";
   sampleRate: number;
-  outputDeviceId?: string;
 };
 
 export type DeviceInputConfig = {
@@ -369,7 +368,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
         "Device switching is only available for voice conversations"
       );
     },
-    changeOutputDevice: async (config: DeviceFormatConfig) => {
+    changeOutputDevice: async (config: DeviceFormatConfig & OutputConfig) => {
       if (
         conversationRef.current &&
         "changeOutputDevice" in conversationRef.current
