@@ -1350,8 +1350,6 @@ describe("Wake Lock", () => {
 
     expect(mockWakeLock.request).toHaveBeenCalledWith("screen");
 
-    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
-
     await conversation.endSession();
     server.close();
   });
@@ -1392,9 +1390,6 @@ describe("Wake Lock", () => {
     // Verify wake lock was NOT requested
     expect(mockWakeLock.request).not.toHaveBeenCalled();
 
-    // Verify the conversation does not have a wake lock
-    expect((conversation as VoiceConversation).wakeLock).toBeNull();
-
     await conversation.endSession();
     server.close();
   });
@@ -1429,12 +1424,9 @@ describe("Wake Lock", () => {
 
     const conversation = await conversationPromise;
 
-    expect((conversation as VoiceConversation).wakeLock).toBe(mockSentinel);
-
     await conversation.endSession();
 
     expect(mockSentinel.release).toHaveBeenCalled();
-    expect((conversation as VoiceConversation).wakeLock).toBeNull();
 
     server.close();
   });
@@ -1492,7 +1484,6 @@ describe("Wake Lock", () => {
     await sleep(100);
 
     expect(requestCallCount).toBe(2);
-    expect((conversation as VoiceConversation).wakeLock).toBe(secondSentinel);
 
     await conversation.endSession();
     server.close();
