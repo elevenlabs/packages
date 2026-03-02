@@ -97,26 +97,12 @@ export type Callbacks = {
 };
 
 /**
- * The symbol used to store the active conversation on `window`.
- * Exposed by the SDK when `debug: true` is set in the session options.
+ * Transport-agnostic interface exposed to debug extensions (e.g. browser
+ * extensions) so they can interact with an active conversation.
  *
- * @example
- * ```ts
- * const api = window[Symbol.for("ElevenLabs.SDK.CurrentAgentConversation")];
- * api?.sendUserMessage("hello");
- * ```
- */
-export const ELEVENLABS_CONVERSATION_SYMBOL = Symbol.for(
-  "ElevenLabs.SDK.CurrentAgentConversation"
-);
-
-/**
- * Shape of the object stored at {@link ELEVENLABS_CONVERSATION_SYMBOL} on
- * `window`. Provides a transport-agnostic interface for any JavaScript
- * running on the page to interact with an active conversation.
+ * Registered/deregistered via the well-known symbols in `debug-extension.ts`.
  */
 export interface ElevenLabsConversationAPI {
-  readonly status: Status;
   readonly conversationId: string;
   readonly inputFormat: { sampleRate: number; format: string };
   sendUserMessage(text: string): void;

@@ -144,9 +144,6 @@ export class BaseConversation {
   private registerDebugAPI() {
     const self = this;
     const api: ElevenLabsConversationAPI = {
-      get status() {
-        return self.status;
-      },
       get conversationId() {
         return self.connection.conversationId;
       },
