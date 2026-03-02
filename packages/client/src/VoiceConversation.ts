@@ -104,8 +104,6 @@ export class VoiceConversation extends BaseConversation {
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
   private visibilityChangeHandler: (() => void) | null = null;
-  private cleanUp: () => void = () => {};
-  private playbackEventTarget: PlaybackEventTarget | null = null;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     if (event.data.type === "process") {
@@ -116,16 +114,14 @@ export class VoiceConversation extends BaseConversation {
   protected constructor(
     options: Options,
     connection: BaseConnection,
-    public input: InputController,
-    public output: OutputController,
-    playbackEventTarget: PlaybackEventTarget | null,
-    cleanUp: () => void,
-    public wakeLock: WakeLockSentinel | null
+    private input: InputController,
+    private output: OutputController,
+    private playbackEventTarget: PlaybackEventTarget | null,
+    private cleanUp: () => void,
+    private wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
 
-    this.cleanUp = cleanUp;
-    this.playbackEventTarget = playbackEventTarget;
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
     if (wakeLock) {
