@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
+  mergeOptions,
   type Options,
   type Callbacks,
 } from "@elevenlabs/client";
@@ -75,12 +76,17 @@ export function ConversationProvider({
   children,
   ...defaultOptions
 }: ConversationProviderProps) {
+  /** The active conversation instance, if any. */
   const conversationRef = useRef<Conversation | null>(null);
+  /** In-flight startSession promise, used to prevent duplicate connections. */
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  /** Signals that endSession was called while a connection was still pending. */
   const shouldEndRef = useRef(false);
+  /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
   defaultOptionsRef.current = defaultOptions;
 
+  /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   const stableCallbacks = useStableCallbacks(defaultOptions);
@@ -101,34 +107,31 @@ export function ConversationProvider({
         options?.serverLocation || defaults?.serverLocation
       );
       const origin = getOriginForLocation(resolvedServerLocation);
-      const calculatedLivekitUrl =
-        getLivekitUrlForLocation(resolvedServerLocation);
+      const calculatedLivekitUrl = getLivekitUrlForLocation(
+        resolvedServerLocation
+      );
 
-      lockRef.current = Conversation.startSession({
-        ...(defaults ?? {}),
-        ...(options ?? {}),
-        origin,
-        livekitUrl:
-          options?.livekitUrl || defaults?.livekitUrl || calculatedLivekitUrl,
-        overrides: {
-          ...(defaults?.overrides ?? {}),
-          ...(options?.overrides ?? {}),
-          client: {
-            ...(defaults?.overrides?.client ?? {}),
-            ...(options?.overrides?.client ?? {}),
-            source:
-              options?.overrides?.client?.source ||
-              defaults?.overrides?.client?.source ||
-              "react_sdk",
-            version:
-              options?.overrides?.client?.version ||
-              defaults?.overrides?.client?.version ||
-              PACKAGE_VERSION,
-          },
-        },
-        // Wire stable callbacks — these always call the latest prop value
-        ...stableCallbacks,
-      } as Options);
+      // Strip raw callbacks from defaults — stableCallbacks provides
+      // ref-backed versions that won't go stale across renders.
+      const defaultConfig = { ...defaults };
+      for (const key of CALLBACK_KEYS) {
+        delete (defaultConfig as Record<string, unknown>)[key];
+      }
+
+      lockRef.current = Conversation.startSession(
+        mergeOptions<Options>(
+          { livekitUrl: calculatedLivekitUrl },
+          defaultConfig,
+          stableCallbacks,
+          options ?? {},
+          {
+            origin,
+            overrides: {
+              client: { source: "react_sdk", version: PACKAGE_VERSION },
+            },
+          }
+        )
+      );
 
       lockRef.current.then(
         conv => {

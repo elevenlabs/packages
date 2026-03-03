@@ -12,15 +12,17 @@ import {
 /** Test helper — accesses the full context value (conversation + lifecycle methods). */
 function useTestContext(): ConversationContextValue {
   const ctx = useContext(ConversationContext);
-  if (!ctx) throw new Error("useTestContext must be used within a ConversationProvider");
+  if (!ctx)
+    throw new Error(
+      "useTestContext must be used within a ConversationProvider"
+    );
   return ctx;
 }
 
-vi.mock("@elevenlabs/client", () => ({
-  Conversation: {
-    startSession: vi.fn(),
-  },
-}));
+vi.mock("@elevenlabs/client", async importOriginal => {
+  const actual = await importOriginal<typeof import("@elevenlabs/client")>();
+  return { ...actual, Conversation: { startSession: vi.fn() } };
+});
 
 const createMockConversation = (id = "test-id") =>
   ({
@@ -236,6 +238,80 @@ describe("ConversationProvider", () => {
     unmount();
 
     expect(mockConversation.endSession).toHaveBeenCalled();
+  });
+
+  it("calls both prop and startSession callbacks when both are provided", async () => {
+    const propCalls: string[] = [];
+    const sessionCalls: string[] = [];
+
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({
+        onConnect: () => propCalls.push("prop"),
+      }),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConnect: () => sessionCalls.push("session"),
+      });
+      await Promise.resolve();
+    });
+
+    // Invoke the composed onConnect that was passed to startSession
+    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    opts.onConnect!({ conversationId: "test-id" });
+
+    expect(propCalls).toEqual(["prop"]);
+    expect(sessionCalls).toEqual(["session"]);
+  });
+
+  it("calls only the prop callback when startSession provides none", async () => {
+    const propCalls: string[] = [];
+
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({
+        onConnect: () => propCalls.push("prop"),
+      }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+      await Promise.resolve();
+    });
+
+    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    opts.onConnect!({ conversationId: "test-id" });
+
+    expect(propCalls).toEqual(["prop"]);
+  });
+
+  it("calls only the startSession callback when no prop callback is set", async () => {
+    const sessionCalls: string[] = [];
+
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConnect: () => sessionCalls.push("session"),
+      });
+      await Promise.resolve();
+    });
+
+    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    opts.onConnect!({ conversationId: "test-id" });
+
+    expect(sessionCalls).toEqual(["session"]);
   });
 
   it("passes stable callbacks that always call the latest prop value", async () => {

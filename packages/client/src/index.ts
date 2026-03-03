@@ -29,6 +29,7 @@ export type {
   ConnectionType,
   FormatConfig,
 } from "./utils/BaseConnection";
+export { mergeOptions } from "./utils/mergeOptions";
 export { createConnection } from "./utils/ConnectionFactory";
 export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
