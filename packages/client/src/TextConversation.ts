@@ -47,7 +47,7 @@ export class TextConversation extends BaseConversation {
     let connection: BaseConnection | null = null;
     try {
       await applyDelay(fullOptions.connectionDelay);
-      connection = await createConnection(options);
+      connection = await createConnection(fullOptions);
       return new TextConversation(fullOptions, connection);
     } catch (error) {
       if (fullOptions.onStatusChange) {
