@@ -3,7 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "types": ["jest"]
+    "types": []
   },
   "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**/*.ts", "src/**/__tests__/**/*.tsx"],
   "exclude": [],
