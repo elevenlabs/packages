@@ -62,7 +62,7 @@ export class VoiceConversation extends BaseConversation {
       });
 
       await applyDelay(fullOptions.connectionDelay);
-      connection = await createConnection(options);
+      connection = await createConnection(fullOptions);
 
       // Use platform-specific setup strategy to create input/output
       const sessionSetup = await setupStrategy(fullOptions, connection);
