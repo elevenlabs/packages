@@ -13,7 +13,7 @@ module.exports = {
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        jsx: 'react',
+        jsx: 'react-jsx',
       },
     }],
   },
