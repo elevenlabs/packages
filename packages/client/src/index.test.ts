@@ -740,10 +740,10 @@ describe("Volume Control", () => {
 
     const conversation = await conversationPromise;
 
-    // Setting volume on text conversation should not throw
+    // Setting volume on text conversation should throw
     expect(() => {
       conversation.setVolume({ volume: 0.5 });
-    }).not.toThrow();
+    }).toThrow("setVolume is not supported in text conversations");
 
     await conversation.endSession();
     server.close();
