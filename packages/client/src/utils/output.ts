@@ -17,6 +17,12 @@ export class Output {
     let audioElement: HTMLAudioElement | null = null;
     try {
       context = new AudioContext({ sampleRate });
+      if (context.sampleRate !== sampleRate) {
+        console.warn(
+          `Requested sample rate of ${sampleRate}Hz is not supported. Using ${context.sampleRate}Hz instead.`
+        );
+      }
+
       const analyser = context.createAnalyser();
       const gain = context.createGain();
 

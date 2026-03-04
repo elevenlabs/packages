@@ -4,7 +4,7 @@
  * USED BY @elevenlabs/client
  */
 
-const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+const decodeTable = [0, 132, 396, 924, 1980, 4092, 8316, 16764];
 
 function decodeSample(muLawSample) {
   let sign;
@@ -12,10 +12,10 @@ function decodeSample(muLawSample) {
   let mantissa;
   let sample;
   muLawSample = ~muLawSample;
-  sign = (muLawSample & 0x80);
+  sign = muLawSample & 0x80;
   exponent = (muLawSample >> 4) & 0x07;
-  mantissa = muLawSample & 0x0F;
-  sample = decodeTable[exponent] + (mantissa << (exponent+3));
+  mantissa = muLawSample & 0x0f;
+  sample = decodeTable[exponent] + (mantissa << (exponent + 3));
   if (sign !== 0) sample = -sample;
 
   return sample;
@@ -25,11 +25,11 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.buffers = []; // Initialize an empty buffer
+    this.bufferIndex = 0;
     this.cursor = 0;
-    this.currentBuffer = null;
     this.wasInterrupted = false;
     this.finished = false;
-    
+
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
@@ -37,11 +37,20 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           break;
         case "buffer":
           this.wasInterrupted = false;
-          this.buffers.push(
+          const buffer =
             this.format === "ulaw"
               ? new Uint8Array(data.buffer)
-              : new Int16Array(data.buffer)
-          );
+              : new Int16Array(data.buffer);
+
+          if (buffer.length > 0) {
+            this.buffers.push(buffer);
+          }
+
+          if (this.bufferIndex > 8) {
+            this.buffers = this.buffers.slice(this.bufferIndex);
+            this.bufferIndex = 0;
+          }
+
           break;
         case "interrupt":
           this.wasInterrupted = true;
@@ -50,33 +59,37 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           if (this.wasInterrupted) {
             this.wasInterrupted = false;
             this.buffers = [];
-            this.currentBuffer = null;
+            this.bufferIndex = 0;
           }
       }
     };
   }
   process(_, outputs) {
     let finished = false;
-    const output = outputs[0][0];
-    for (let i = 0; i < output.length; i++) {
-      if (!this.currentBuffer) {
-        if (this.buffers.length === 0) {
-          finished = true;
-          break;
+    const output = outputs[0];
+    for (let i = 0; i < output[0].length; i++) {
+      const currentBuffer = this.buffers[this.bufferIndex];
+      if (!currentBuffer) {
+        finished = true;
+        for (let channel = 0; channel < output.length; channel++) {
+          output[channel][i] = 0;
         }
-        this.currentBuffer = this.buffers.shift();
-        this.cursor = 0;
+        continue;
       }
 
-      let value = this.currentBuffer[this.cursor];
+      let value = currentBuffer[this.cursor];
       if (this.format === "ulaw") {
         value = decodeSample(value);
       }
-      output[i] = value / 32768;
-      this.cursor++;
 
-      if (this.cursor >= this.currentBuffer.length) {
-        this.currentBuffer = null;
+      for (let channel = 0; channel < output.length; channel++) {
+        output[channel][i] = value / 32768;
+      }
+
+      this.cursor++;
+      if (this.cursor >= currentBuffer.length) {
+        this.bufferIndex++;
+        this.cursor = 0;
       }
     }
 
