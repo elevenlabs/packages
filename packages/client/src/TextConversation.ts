@@ -6,9 +6,13 @@ import { BaseConversation, type PartialOptions } from "./BaseConversation";
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
 export class TextConversation extends BaseConversation {
-  public setVolume(): void {}
+  public setVolume(): void {
+    throw new Error("setVolume is not supported in text conversations");
+  }
 
-  public setMicMuted(): void {}
+  public setMicMuted(): void {
+    throw new Error("setMicMuted is not supported in text conversations");
+  }
 
   public getInputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
