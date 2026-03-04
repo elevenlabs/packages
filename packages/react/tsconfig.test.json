@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "types": ["jest"]
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**/*.ts", "src/**/__tests__/**/*.tsx"],
+  "exclude": [],
+  "references": [
+    { "path": "./tsconfig.build.json" }
+  ]
+}
