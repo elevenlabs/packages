@@ -23,7 +23,7 @@
     "check-types": "tsc --noEmit --project tsconfig.build.json && tsc --noEmit --project tsconfig.test.json",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
-    "test": "jest"
+    "test": "vitest"
   },
   "keywords": [],
   "author": "ElevenLabs",
@@ -36,15 +36,12 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
-    "@types/jest": "^29.5.12",
     "@types/react": "^18.3.3",
     "eslint": "^9.8.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.2.0",
     "microbundle": "^0.15.1",
     "react-dom": "19.1.0",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^3.0.5"
   },
   "repository": {
     "type": "git",

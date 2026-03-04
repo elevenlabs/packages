@@ -1,24 +1,26 @@
+import { it, expect, describe, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { Conversation } from "@elevenlabs/client";
 import { useConversation } from "./index";
 
-jest.mock("@elevenlabs/client", () => ({
+vi.mock("@elevenlabs/client", () => ({
   Conversation: {
-    startSession: jest.fn(),
+    startSession: vi.fn(),
   },
 }));
 
-const createMockConversation = (id = "test-id") => ({
-  getId: jest.fn().mockReturnValue(id),
-  isOpen: jest.fn().mockReturnValue(true),
-  endSession: jest.fn().mockResolvedValue(undefined),
-  setMicMuted: jest.fn(),
-  setVolume: jest.fn(),
-});
+const createMockConversation = (id = "test-id") =>
+  ({
+    getId: vi.fn().mockReturnValue(id),
+    isOpen: vi.fn().mockReturnValue(true),
+    endSession: vi.fn().mockResolvedValue(undefined),
+    setMicMuted: vi.fn(),
+    setVolume: vi.fn(),
+  }) as unknown as Conversation;
 
 describe("useConversation", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("throws error when session is cancelled during connection", async () => {
@@ -29,9 +31,7 @@ describe("useConversation", () => {
         resolveStartSession = resolve;
       }
     );
-    (Conversation.startSession as jest.Mock).mockReturnValue(
-      startSessionPromise
-    );
+    vi.mocked(Conversation.startSession).mockReturnValue(startSessionPromise);
 
     const { result } = renderHook(() =>
       useConversation({ signedUrl: "wss://test.example.com" })
@@ -65,7 +65,7 @@ describe("useConversation", () => {
         resolveFirst = resolve;
       }
     );
-    (Conversation.startSession as jest.Mock).mockReturnValue(
+    vi.mocked(Conversation.startSession).mockReturnValue(
       firstConnectionPromise
     );
 
@@ -81,9 +81,7 @@ describe("useConversation", () => {
 
     expect(mockConversation1.endSession).toHaveBeenCalled();
 
-    (Conversation.startSession as jest.Mock).mockResolvedValue(
-      mockConversation2
-    );
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation2);
 
     let secondSessionId: string | undefined;
     await act(async () => {
