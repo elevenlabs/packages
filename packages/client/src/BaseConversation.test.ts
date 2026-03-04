@@ -6,6 +6,21 @@ class TestConversation extends BaseConversation {
   public static getFullOptions(partialOptions: PartialOptions): Options {
     return super.getFullOptions(partialOptions);
   }
+
+  public setVolume(): void {}
+  public setMicMuted(): void {}
+  public getInputByteFrequencyData(): Uint8Array {
+    return new Uint8Array(0);
+  }
+  public getOutputByteFrequencyData(): Uint8Array {
+    return new Uint8Array(0);
+  }
+  public getInputVolume(): number {
+    return 0;
+  }
+  public getOutputVolume(): number {
+    return 0;
+  }
 }
 
 describe("BaseConversation", () => {
