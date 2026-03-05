@@ -61,8 +61,6 @@ export type ClientToolsConfig = {
   >;
 };
 
-const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
-
 export function isTextOnly(options: PartialOptions): boolean | undefined {
   const { textOnly: textOnlyOverride } = options.overrides?.conversation ?? {};
   const { textOnly } = options;
@@ -83,7 +81,7 @@ export function isTextOnly(options: PartialOptions): boolean | undefined {
   }
 }
 
-export class BaseConversation {
+export abstract class BaseConversation {
   protected lastInterruptTimestamp = 0;
   protected mode: Mode = "listening";
   protected status: Status = "connecting";
@@ -482,29 +480,12 @@ export class BaseConversation {
     return this.status === "connected";
   }
 
-  public setVolume = ({ volume }: { volume: number }) => {
-    this.volume = volume;
-  };
-
-  public setMicMuted(isMuted: boolean) {
-    this.connection.setMicMuted(isMuted);
-  }
-
-  public getInputByteFrequencyData(): Uint8Array {
-    return EMPTY_FREQUENCY_DATA;
-  }
-
-  public getOutputByteFrequencyData(): Uint8Array {
-    return EMPTY_FREQUENCY_DATA;
-  }
-
-  public getInputVolume() {
-    return 0;
-  }
-
-  public getOutputVolume() {
-    return 0;
-  }
+  public abstract setVolume(options: { volume: number }): void;
+  public abstract setMicMuted(isMuted: boolean): void;
+  public abstract getInputByteFrequencyData(): Uint8Array;
+  public abstract getOutputByteFrequencyData(): Uint8Array;
+  public abstract getInputVolume(): number;
+  public abstract getOutputVolume(): number;
 
   public sendFeedback(like: boolean) {
     if (!this.canSendFeedback) {

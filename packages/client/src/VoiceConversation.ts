@@ -1,6 +1,9 @@
-import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
-import { Input, type InputConfig } from "./utils/input";
-import { Output } from "./utils/output";
+import type { InputConfig } from "./utils/input";
+import type {
+  OutputConfig,
+  PlaybackEventTarget,
+  PlaybackListener,
+} from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
 import { WebRTCConnection } from "./utils/WebRTCConnection";
@@ -11,7 +14,9 @@ import {
   type Options,
   type PartialOptions,
 } from "./BaseConversation";
-import { WebSocketConnection } from "./utils/WebSocketConnection";
+import type { InputController } from "./InputController";
+import type { OutputController } from "./OutputController";
+import { setupStrategy } from "./platform/VoiceSessionSetup";
 
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
@@ -38,9 +43,9 @@ export class VoiceConversation extends BaseConversation {
       fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
     }
 
-    let input: Input | null = null;
+    let input: InputController | null = null;
     let connection: BaseConnection | null = null;
-    let output: Output | null = null;
+    let output: OutputController | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
     const useWakeLock = options.useWakeLock ?? true;
@@ -57,21 +62,12 @@ export class VoiceConversation extends BaseConversation {
       });
 
       await applyDelay(fullOptions.connectionDelay);
-      connection = await createConnection(options);
-      [input, output] = await Promise.all([
-        Input.create({
-          ...connection.inputFormat,
-          preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
-          inputDeviceId: options.inputDeviceId,
-          workletPaths: options.workletPaths,
-          libsampleratePath: options.libsampleratePath,
-        }),
-        Output.create({
-          ...connection.outputFormat,
-          outputDeviceId: options.outputDeviceId,
-          workletPaths: options.workletPaths,
-        }),
-      ]);
+      connection = await createConnection(fullOptions);
+
+      // Use platform-specific setup strategy to create input/output
+      const sessionSetup = await setupStrategy(fullOptions, connection);
+      input = sessionSetup.input;
+      output = sessionSetup.output;
 
       preliminaryInputStream?.getTracks().forEach(track => {
         track.stop();
@@ -83,6 +79,8 @@ export class VoiceConversation extends BaseConversation {
         connection,
         input,
         output,
+        sessionSetup.playbackEventTarget,
+        sessionSetup.detach,
         wakeLock
       );
     } catch (error) {
@@ -107,16 +105,24 @@ export class VoiceConversation extends BaseConversation {
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
   private visibilityChangeHandler: (() => void) | null = null;
 
+  private handlePlaybackEvent: PlaybackListener = event => {
+    if (event.data.type === "process") {
+      this.updateMode(event.data.finished ? "listening" : "speaking");
+    }
+  };
+
   protected constructor(
     options: Options,
     connection: BaseConnection,
-    public input: Input,
-    public output: Output,
-    public wakeLock: WakeLockSentinel | null
+    private input: InputController,
+    private output: OutputController,
+    private playbackEventTarget: PlaybackEventTarget | null,
+    private cleanUp: () => void,
+    private wakeLock: WakeLockSentinel | null
   ) {
     super(options, connection);
-    this.input.worklet.port.onmessage = this.onInputWorkletMessage;
-    this.output.worklet.port.onmessage = this.onOutputWorkletMessage;
+
+    playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
     if (wakeLock) {
       // Wake locks are automatically released when a page is hidden like when switching tabs
@@ -136,6 +142,9 @@ export class VoiceConversation extends BaseConversation {
   }
 
   protected override async handleEndSession() {
+    this.cleanUp();
+    this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
+    this.playbackEventTarget = null;
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
@@ -156,7 +165,8 @@ export class VoiceConversation extends BaseConversation {
 
   protected override handleInterruption(event: InterruptionEvent) {
     super.handleInterruption(event);
-    this.fadeOutAudio();
+    this.updateMode("listening");
+    this.output.interrupt();
   }
 
   protected override handleAudio(event: AgentAudioEvent) {
@@ -169,12 +179,8 @@ export class VoiceConversation extends BaseConversation {
     if (this.lastInterruptTimestamp <= event.audio_event.event_id) {
       if (event.audio_event.audio_base_64) {
         this.options.onAudio?.(event.audio_event.audio_base_64);
-
-        // Only play audio through the output worklet for WebSocket connections
-        // WebRTC connections handle audio playback directly through LiveKit tracks
-        if (!(this.connection instanceof WebRTCConnection)) {
-          this.addAudioBase64Chunk(event.audio_event.audio_base_64);
-        }
+        // Audio routing is handled by attachConnectionToOutput for WebSocket
+        // WebRTC handles audio playback directly through LiveKit tracks
       }
 
       this.currentEventId = event.audio_event.event_id;
@@ -182,53 +188,6 @@ export class VoiceConversation extends BaseConversation {
       this.updateMode("speaking");
     }
   }
-
-  private onInputWorkletMessage = (event: MessageEvent): void => {
-    const rawAudioPcmData = event.data[0];
-
-    // TODO: When supported, maxVolume can be used to avoid sending silent audio
-    // const maxVolume = event.data[1];
-
-    if (this.status === "connected") {
-      this.connection.sendMessage({
-        user_audio_chunk: arrayBufferToBase64(rawAudioPcmData.buffer),
-      });
-    }
-  };
-
-  private onOutputWorkletMessage = ({ data }: MessageEvent): void => {
-    if (data.type === "process") {
-      this.updateMode(data.finished ? "listening" : "speaking");
-    }
-  };
-
-  private addAudioBase64Chunk = (chunk: string) => {
-    this.output.gain.gain.cancelScheduledValues(
-      this.output.context.currentTime
-    );
-    this.output.gain.gain.value = this.volume;
-    this.output.worklet.port.postMessage({ type: "clearInterrupted" });
-    this.output.worklet.port.postMessage({
-      type: "buffer",
-      buffer: base64ToArrayBuffer(chunk),
-    });
-  };
-
-  private fadeOutAudio = () => {
-    // mute agent
-    this.updateMode("listening");
-    this.output.worklet.port.postMessage({ type: "interrupt" });
-    this.output.gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      this.output.context.currentTime + 2
-    );
-
-    // reset volume back
-    setTimeout(() => {
-      this.output.gain.gain.value = this.volume;
-      this.output.worklet.port.postMessage({ type: "clearInterrupted" });
-    }, 2000); // Adjust the duration as needed
-  };
 
   private calculateVolume = (frequencyData: Uint8Array) => {
     if (frequencyData.length === 0) {
@@ -247,20 +206,20 @@ export class VoiceConversation extends BaseConversation {
   };
 
   public setMicMuted(isMuted: boolean) {
-    // Use LiveKit track muting for WebRTC connections
-    if (this.connection instanceof WebRTCConnection) {
-      this.connection.setMicMuted(isMuted);
-    } else {
-      // Use input muting for WebSocket connections
-      this.input.setMuted(isMuted);
-    }
+    this.input.setMuted(isMuted).catch(error => {
+      this.options.onError?.("Failed to set input muted state", error);
+    });
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
+    const analyser = this.input.getAnalyser();
+    if (!analyser) {
+      throw new Error("Input analyser is not available");
+    }
     this.inputFrequencyData ??= new Uint8Array(
-      this.input.analyser.frequencyBinCount
+      analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
-    this.input.analyser.getByteFrequencyData(this.inputFrequencyData);
+    analyser.getByteFrequencyData(this.inputFrequencyData);
     return this.inputFrequencyData;
   }
 
@@ -275,10 +234,15 @@ export class VoiceConversation extends BaseConversation {
       return new Uint8Array(1024) as Uint8Array<ArrayBuffer>;
     }
 
+    const analyser = this.output.getAnalyser();
+    if (!analyser) {
+      throw new Error("Output analyser is not available");
+    }
+
     this.outputFrequencyData ??= new Uint8Array(
-      this.output.analyser.frequencyBinCount
+      analyser.frequencyBinCount
     ) as Uint8Array<ArrayBuffer>;
-    this.output.analyser.getByteFrequencyData(this.outputFrequencyData);
+    analyser.getByteFrequencyData(this.outputFrequencyData);
     return this.outputFrequencyData;
   }
 
@@ -295,44 +259,14 @@ export class VoiceConversation extends BaseConversation {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
-  }: FormatConfig & InputConfig): Promise<Input> {
+  }: FormatConfig & InputConfig): Promise<void> {
     try {
-      // For WebSocket connections, try to change device on existing input first
-      if (this.connection instanceof WebSocketConnection) {
-        try {
-          await this.input.setInputDevice(inputDeviceId);
-          return this.input;
-        } catch (error) {
-          console.warn(
-            "Failed to change device on existing input, recreating:",
-            error
-          );
-          // Fall back to recreating the input
-        }
-      }
-
-      // Handle WebRTC connections differently
-      if (this.connection instanceof WebRTCConnection) {
-        await this.connection.setAudioInputDevice(inputDeviceId || "");
-      }
-
-      // Fallback: recreate the input
-      await this.input.close();
-
-      const newInput = await Input.create({
-        sampleRate: sampleRate ?? this.connection.inputFormat.sampleRate,
-        format: format ?? this.connection.inputFormat.format,
-        preferHeadphonesForIosDevices,
+      await this.input.setDevice({
         inputDeviceId,
-        workletPaths: this.options.workletPaths,
-        libsampleratePath: this.options.libsampleratePath,
-        onError: this.options.onError,
+        sampleRate,
+        format,
+        preferHeadphonesForIosDevices,
       });
-
-      this.input = newInput;
-      this.input.worklet.port.onmessage = this.onInputWorkletMessage;
-
-      return this.input;
     } catch (error) {
       console.error("Error changing input device", error);
       throw error;
@@ -343,40 +277,13 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     outputDeviceId,
-  }: FormatConfig): Promise<Output> {
+  }: FormatConfig & OutputConfig): Promise<void> {
     try {
-      // For WebSocket connections, try to change device on existing output first
-      if (this.connection instanceof WebSocketConnection) {
-        try {
-          await this.output.setOutputDevice(outputDeviceId);
-          return this.output;
-        } catch (error) {
-          console.warn(
-            "Failed to change device on existing output, recreating:",
-            error
-          );
-          // Fall back to recreating the output
-        }
-      }
-
-      // Handle WebRTC connections differently
-      if (this.connection instanceof WebRTCConnection) {
-        await this.connection.setAudioOutputDevice(outputDeviceId || "");
-      }
-
-      // Fallback: recreate the output
-      await this.output.close();
-
-      const newOutput = await Output.create({
-        sampleRate: sampleRate ?? this.connection.outputFormat.sampleRate,
-        format: format ?? this.connection.outputFormat.format,
+      await this.output.setDevice({
         outputDeviceId,
-        workletPaths: this.options.workletPaths,
+        sampleRate,
+        format,
       });
-
-      this.output = newOutput;
-
-      return this.output;
     } catch (error) {
       console.error("Error changing output device", error);
       throw error;
@@ -390,12 +297,7 @@ export class VoiceConversation extends BaseConversation {
       : 1;
     this.volume = clampedVolume;
 
-    if (this.connection instanceof WebRTCConnection) {
-      // For WebRTC connections, control volume via HTML audio elements
-      this.connection.setAudioVolume(clampedVolume);
-    } else {
-      // For WebSocket connections, control volume via gain node
-      this.output.gain.gain.value = clampedVolume;
-    }
+    // Delegate to output controller
+    this.output.setVolume(clampedVolume);
   };
 }

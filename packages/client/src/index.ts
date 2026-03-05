@@ -1,4 +1,4 @@
-import { BaseConversation, type PartialOptions } from "./BaseConversation";
+import { isTextOnly, type PartialOptions } from "./BaseConversation";
 import { TextConversation } from "./TextConversation";
 import { VoiceConversation } from "./VoiceConversation";
 
@@ -12,10 +12,10 @@ export type {
   Status,
   AudioWorkletConfig,
 } from "./BaseConversation";
+export type { InputController, InputDeviceConfig } from "./InputController";
+export type { OutputController, OutputDeviceConfig } from "./OutputController";
 export type { InputConfig } from "./utils/input";
 export type { OutputConfig } from "./utils/output";
-export { Input } from "./utils/input";
-export { Output } from "./utils/output";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,
@@ -67,11 +67,12 @@ export type {
   ScribeInsufficientAudioActivityErrorMessage,
 } from "./scribe";
 
-export class Conversation extends BaseConversation {
-  public static startSession(options: PartialOptions): Promise<Conversation> {
-    const fullOptions = Conversation.getFullOptions(options);
-    return fullOptions.textOnly
-      ? TextConversation.startSession(fullOptions)
-      : VoiceConversation.startSession(fullOptions);
-  }
-}
+export type Conversation = TextConversation | VoiceConversation;
+
+export const Conversation = {
+  startSession(options: PartialOptions): Promise<Conversation> {
+    return isTextOnly(options)
+      ? TextConversation.startSession(options)
+      : VoiceConversation.startSession(options);
+  },
+};

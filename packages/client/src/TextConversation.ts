@@ -3,7 +3,33 @@ import type { BaseConnection } from "./utils/BaseConnection";
 import { applyDelay } from "./utils/applyDelay";
 import { BaseConversation, type PartialOptions } from "./BaseConversation";
 
+const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
+
 export class TextConversation extends BaseConversation {
+  public setVolume(): void {
+    throw new Error("setVolume is not supported in text conversations");
+  }
+
+  public setMicMuted(): void {
+    throw new Error("setMicMuted is not supported in text conversations");
+  }
+
+  public getInputByteFrequencyData(): Uint8Array {
+    return EMPTY_FREQUENCY_DATA;
+  }
+
+  public getOutputByteFrequencyData(): Uint8Array {
+    return EMPTY_FREQUENCY_DATA;
+  }
+
+  public getInputVolume(): number {
+    return 0;
+  }
+
+  public getOutputVolume(): number {
+    return 0;
+  }
+
   public static async startSession(
     options: PartialOptions
   ): Promise<TextConversation> {
@@ -25,7 +51,7 @@ export class TextConversation extends BaseConversation {
     let connection: BaseConnection | null = null;
     try {
       await applyDelay(fullOptions.connectionDelay);
-      connection = await createConnection(options);
+      connection = await createConnection(fullOptions);
       return new TextConversation(fullOptions, connection);
     } catch (error) {
       if (fullOptions.onStatusChange) {
