@@ -13,6 +13,12 @@
     "@elevenlabs/typescript-config": "0.0.0"
   },
   "changesets": [
-    "fix-wix-compat"
+    "client-input-class-removed",
+    "client-input-output-controller-interfaces",
+    "conversation-namespace-object",
+    "fix-wix-compat",
+    "output-controller-breaking",
+    "react-device-format-config-output-device",
+    "voice-conversation-wakelock-private"
   ]
 }
