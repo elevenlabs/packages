@@ -94,13 +94,9 @@ describe("ConversationProvider", () => {
 
   it("cancels session if endSession is called during connection", async () => {
     const mockConversation = createMockConversation();
-    let resolveStartSession!: (value: typeof mockConversation) => void;
-    const startSessionPromise = new Promise<typeof mockConversation>(
-      resolve => {
-        resolveStartSession = resolve;
-      }
-    );
-    vi.mocked(Conversation.startSession).mockReturnValue(startSessionPromise);
+    const { promise, resolve: resolveStartSession } =
+      Promise.withResolvers<typeof mockConversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper(),
@@ -146,12 +142,9 @@ describe("ConversationProvider", () => {
 
   it("ignores startSession if a connection is already in progress", async () => {
     const mockConversation = createMockConversation();
-    let resolveStartSession!: (value: typeof mockConversation) => void;
-    vi.mocked(Conversation.startSession).mockReturnValue(
-      new Promise(resolve => {
-        resolveStartSession = resolve;
-      })
-    );
+    const { promise, resolve: resolveStartSession } =
+      Promise.withResolvers<typeof mockConversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper(),
@@ -171,7 +164,6 @@ describe("ConversationProvider", () => {
     // Cleanup
     await act(async () => {
       resolveStartSession(mockConversation);
-      await Promise.resolve();
     });
   });
 
@@ -179,12 +171,9 @@ describe("ConversationProvider", () => {
     const mockConversation1 = createMockConversation("first-id");
     const mockConversation2 = createMockConversation("second-id");
 
-    let resolveFirst!: (value: typeof mockConversation1) => void;
-    vi.mocked(Conversation.startSession).mockReturnValue(
-      new Promise(resolve => {
-        resolveFirst = resolve;
-      })
-    );
+    const { promise: firstPromise, resolve: resolveFirst } =
+      Promise.withResolvers<typeof mockConversation1>();
+    vi.mocked(Conversation.startSession).mockReturnValue(firstPromise);
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper(),
