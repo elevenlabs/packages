@@ -65,8 +65,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      // Let the startSession promise resolve
-      await Promise.resolve();
     });
 
     expect(result.current.conversation).toBe(mockConversation);
@@ -82,7 +80,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     expect(result.current.conversation).toBe(mockConversation);
@@ -119,7 +116,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       resolveStartSession(mockConversation);
-      await Promise.resolve();
     });
 
     // Conversation should have been ended immediately
@@ -138,7 +134,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     // Call startSession again — should be a no-op
@@ -205,7 +200,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       resolveFirst(mockConversation1);
-      await Promise.resolve();
     });
 
     expect(mockConversation1.endSession).toHaveBeenCalled();
@@ -215,7 +209,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     expect(result.current.conversation).toBe(mockConversation2);
@@ -232,7 +225,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     unmount();
@@ -257,7 +249,6 @@ describe("ConversationProvider", () => {
       result.current.startSession({
         onConnect: () => sessionCalls.push("session"),
       });
-      await Promise.resolve();
     });
 
     // Invoke the composed onConnect that was passed to startSession
@@ -282,7 +273,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
@@ -305,7 +295,6 @@ describe("ConversationProvider", () => {
       result.current.startSession({
         onConnect: () => sessionCalls.push("session"),
       });
-      await Promise.resolve();
     });
 
     const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
@@ -332,7 +321,6 @@ describe("ConversationProvider", () => {
 
     await act(async () => {
       result.current.startSession();
-      await Promise.resolve();
     });
 
     // Verify Conversation.startSession was called with callback functions
