@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "0.14.1",
+  "version": "1.0.0-next.0",
   "description": "ElevenLabs React Library",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -11,7 +11,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "prebuild": "npm run generate-version",
