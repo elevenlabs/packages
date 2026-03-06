@@ -42,7 +42,7 @@ export function ConversationStatusProvider({
         setMessage(errorMessage);
       },
     });
-  }, [ctx.registerCallbacks]);
+  }, [ctx]);
 
   const value: ConversationStatusValue = { status, message };
 
