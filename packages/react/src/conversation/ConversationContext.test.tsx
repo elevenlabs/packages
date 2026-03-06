@@ -20,6 +20,7 @@ describe("useRawConversation", () => {
       conversation: mockConversation,
       startSession: vi.fn(),
       endSession: vi.fn(),
+      registerCallbacks: vi.fn(),
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -37,6 +38,7 @@ describe("useRawConversation", () => {
       conversation: null,
       startSession: vi.fn(),
       endSession: vi.fn(),
+      registerCallbacks: vi.fn(),
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
