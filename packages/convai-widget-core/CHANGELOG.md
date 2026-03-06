@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.10.2
+
+### Patch Changes
+
+- e454b9a: Register livekit-client pnpm patch in patchedDependencies (missing from PR #556 cherry-pick)
+
 ## 0.10.1
 
 ### Patch Changes
