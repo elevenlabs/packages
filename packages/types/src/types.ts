@@ -92,9 +92,28 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
-  onAudioAlignment?: (
-    props: AudioAlignmentEvent
-  ) => void;
+  onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
+
+/**
+ * Transport-agnostic interface exposed to debug extensions (e.g. browser
+ * extensions) so they can interact with an active conversation.
+ *
+ * Registered/deregistered via the well-known symbols in `debug-extension.ts`.
+ */
+export interface ElevenLabsConversationAPI {
+  readonly conversationId: string;
+  readonly inputFormat: { sampleRate: number; format: string };
+  sendUserMessage(text: string): void;
+  /**
+   * Injects base64-encoded PCM audio into the conversation as user input.
+   * Works identically for both WebSocket and WebRTC connections.
+   * Returns a cancel function that stops the injection and restores state.
+   */
+  sendAudio(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }>;
+}

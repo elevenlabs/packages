@@ -1,4 +1,10 @@
-import { Callbacks, Mode, Status } from "@elevenlabs/types";
+import {
+  Callbacks,
+  type ElevenLabsConversationAPI,
+  Mode,
+  Status,
+} from "@elevenlabs/types";
+import * as debugExtension from "./utils/debug-extension";
 import type {
   BaseConnection,
   DisconnectionDetails,
@@ -129,6 +135,40 @@ export class BaseConversation {
     this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onModeChange(mode => this.updateMode(mode));
     this.updateStatus("connected");
+
+    if (this.options.debug) {
+      this.registerDebugAPI();
+    }
+  }
+
+  private registerDebugAPI() {
+    const self = this;
+    const api: ElevenLabsConversationAPI = {
+      get conversationId() {
+        return self.connection.conversationId;
+      },
+      get inputFormat() {
+        return self.connection.inputFormat;
+      },
+      sendUserMessage(text: string) {
+        self.sendUserMessage(text);
+      },
+      sendAudio(base64Audio: string, sampleRate?: number) {
+        return self.sendAudioToConversation(base64Audio, sampleRate);
+      },
+    };
+
+    debugExtension.registerConversation(api);
+  }
+
+  /** Override in subclasses that support audio injection. */
+  protected sendAudioToConversation(
+    _base64Audio: string,
+    _sampleRate?: number
+  ): Promise<{ cancel: () => void }> {
+    return Promise.reject(
+      new Error("sendAudio is not available for this conversation type")
+    );
   }
 
   public endSession() {
@@ -146,6 +186,9 @@ export class BaseConversation {
   };
 
   protected async handleEndSession() {
+    if (this.options.debug) {
+      debugExtension.deregisterConversation(this.connection.conversationId);
+    }
     this.connection.close();
   }
 

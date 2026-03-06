@@ -1,4 +1,5 @@
 import { arrayBufferToBase64, base64ToArrayBuffer } from "./utils/audio";
+import { AudioInjector } from "./utils/audio-injector";
 import { Input, type InputConfig } from "./utils/input";
 import { Output } from "./utils/output";
 import { createConnection } from "./utils/ConnectionFactory";
@@ -135,8 +136,26 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
+  private injector = new AudioInjector();
+
+  protected override sendAudioToConversation(
+    base64Audio: string,
+    sampleRate?: number
+  ): Promise<{ cancel: () => void }> {
+    return this.injector.inject(base64Audio, this.connection, {
+      sourceSampleRate: sampleRate,
+      isConnected: () => this.status === "connected",
+      debugLog: this.options.onDebug
+        ? (...args: unknown[]) =>
+            this.options.onDebug!({ type: "debug_log", args })
+        : undefined,
+    });
+  }
+
   protected override async handleEndSession() {
     await super.handleEndSession();
+
+    this.injector.cancel();
 
     if (this.visibilityChangeHandler) {
       document.removeEventListener(
@@ -184,6 +203,10 @@ export class VoiceConversation extends BaseConversation {
   }
 
   private onInputWorkletMessage = (event: MessageEvent): void => {
+    // Suppress mic audio during injection so silent mic chunks don't
+    // interleave with injected chunks, which causes gaps in the recording.
+    if (this.injector.isInjecting) return;
+
     const rawAudioPcmData = event.data[0];
 
     // TODO: When supported, maxVolume can be used to avoid sending silent audio
