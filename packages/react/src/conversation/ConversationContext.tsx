@@ -1,5 +1,5 @@
 import { createContext, useContext, type RefObject } from "react";
-import type { Conversation } from "@elevenlabs/client";
+import type { Callbacks, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "../index";
 
 export type ConversationContextValue = {
@@ -8,6 +8,11 @@ export type ConversationContextValue = {
   conversationRef: RefObject<Conversation | null>;
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
+  /**
+   * For sub-providers — register callback handlers to be composed into the
+   * next `Conversation.startSession()` call. Returns an unsubscribe function.
+   */
+  registerCallbacks: (callbacks: Partial<Callbacks>) => () => void;
 };
 
 export const ConversationContext =
@@ -24,4 +29,3 @@ export function useRawConversation(): Conversation | null {
   const ctx = useContext(ConversationContext);
   return ctx?.conversation ?? null;
 }
-

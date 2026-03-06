@@ -19,6 +19,8 @@ import {
   type ConversationContextValue,
 } from "./ConversationContext";
 import { ConversationControlsProvider } from "./ConversationControls";
+import { ConversationStatusProvider } from "./ConversationStatus";
+import { ListenerMap } from "./ListenerMap";
 import type { ConversationProviderProps } from "./types";
 
 // Keys of HookCallbacks that we need to wrap with refs
@@ -91,10 +93,19 @@ export function ConversationProvider({
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   defaultOptionsRef.current = defaultOptions;
 
+  /** Callback registry for sub-providers (status, mode, feedback, etc.). */
+  const listenerMapRef = useRef(new ListenerMap<Callbacks>());
+
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   const stableCallbacks = useStableCallbacks(defaultOptions);
+
+  const registerCallbacks = useCallback(
+    (callbacks: Partial<Callbacks>) =>
+      listenerMapRef.current.register(callbacks),
+    []
+  );
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -128,6 +139,7 @@ export function ConversationProvider({
           { livekitUrl: calculatedLivekitUrl },
           defaultConfig,
           stableCallbacks,
+          listenerMapRef.current.compose(),
           options ?? {},
           {
             origin,
@@ -184,13 +196,21 @@ export function ConversationProvider({
   }, []);
 
   const contextValue = useMemo<ConversationContextValue>(
-    () => ({ conversation, conversationRef, startSession, endSession }),
-    [conversation, startSession, endSession]
+    () => ({
+      conversation,
+      conversationRef,
+      startSession,
+      endSession,
+      registerCallbacks,
+    }),
+    [conversation, conversationRef, startSession, endSession, registerCallbacks]
   );
 
   return (
     <ConversationContext.Provider value={contextValue}>
-      <ConversationControlsProvider>{children}</ConversationControlsProvider>
+      <ConversationControlsProvider>
+        <ConversationStatusProvider>{children}</ConversationStatusProvider>
+      </ConversationControlsProvider>
     </ConversationContext.Provider>
   );
 }

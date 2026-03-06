@@ -241,7 +241,7 @@ describe("ConversationProvider", () => {
     });
 
     // Invoke the composed onConnect that was passed to startSession
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(propCalls).toEqual(["prop"]);
@@ -264,7 +264,7 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(propCalls).toEqual(["prop"]);
@@ -286,7 +286,7 @@ describe("ConversationProvider", () => {
       });
     });
 
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(sessionCalls).toEqual(["session"]);
