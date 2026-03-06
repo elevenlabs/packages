@@ -270,8 +270,9 @@ describe("useConversationControls", () => {
 
     function Root() {
       const controls = useConversationControls();
-      // Capture startSession once so we can call it from outside React
+      // eslint-disable-next-line react-hooks/globals -- test harness: capturing values for assertions
       if (!capturedStartSession) capturedStartSession = controls.startSession;
+      // eslint-disable-next-line react-hooks/globals -- test harness: capturing values for assertions
       capturedControls = controls;
       return null;
     }
