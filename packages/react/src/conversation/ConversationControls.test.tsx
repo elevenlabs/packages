@@ -29,9 +29,9 @@ const createMockConversation = (id = "test-id") =>
   }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
-  return function Wrapper({ children }: { children: React.ReactNode }) {
+  return function Wrapper({ children }: React.PropsWithChildren) {
     return (
-      <ConversationProvider signedUrl="wss://test.example.com" {...props}>
+      <ConversationProvider {...props}>
         {children}
       </ConversationProvider>
     );
@@ -278,7 +278,7 @@ describe("useConversationControls", () => {
     }
 
     render(
-      <ConversationProvider signedUrl="wss://test.example.com">
+      <ConversationProvider>
         <Root />
         <ControlsConsumer onRender={v => (capturedControls = v)} />
       </ConversationProvider>

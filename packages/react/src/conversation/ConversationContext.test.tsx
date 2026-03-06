@@ -23,7 +23,7 @@ describe("useRawConversation", () => {
       registerCallbacks: vi.fn(),
     };
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
+    const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
         {children}
       </ConversationContext.Provider>
@@ -41,7 +41,7 @@ describe("useRawConversation", () => {
       registerCallbacks: vi.fn(),
     };
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
+    const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
         {children}
       </ConversationContext.Provider>

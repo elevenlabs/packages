@@ -23,9 +23,7 @@ const ConversationInputContext =
  */
 export function ConversationInputProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: React.PropsWithChildren) {
   const ctx = useContext(ConversationContext);
   if (!ctx) {
     throw new Error(
