@@ -13,9 +13,7 @@ const ConversationStatusContext =
  */
 export function ConversationStatusProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: React.PropsWithChildren) {
   const ctx = useContext(ConversationContext);
   if (!ctx) {
     throw new Error(
