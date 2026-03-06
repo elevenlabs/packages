@@ -36,6 +36,7 @@ export function ConversationInputProvider({
   const [isMuted, setIsMuted] = useState(false);
 
   const conversationRef = useRef(ctx.conversation);
+  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   conversationRef.current = ctx.conversation;
 
   const setMuted = useCallback((muted: boolean) => {
