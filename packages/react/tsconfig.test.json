@@ -3,11 +3,15 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "types": []
+    "types": [],
+    "lib": ["ES2024"]
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**/*.ts", "src/**/__tests__/**/*.tsx"],
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx"
+  ],
   "exclude": [],
-  "references": [
-    { "path": "./tsconfig.build.json" }
-  ]
+  "references": [{ "path": "./tsconfig.build.json" }]
 }
