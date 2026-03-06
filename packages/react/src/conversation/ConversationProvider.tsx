@@ -18,6 +18,7 @@ import {
   ConversationContext,
   type ConversationContextValue,
 } from "./ConversationContext";
+import { ConversationControlsProvider } from "./ConversationControls";
 import type { ConversationProviderProps } from "./types";
 
 // Keys of HookCallbacks that we need to wrap with refs
@@ -189,7 +190,7 @@ export function ConversationProvider({
 
   return (
     <ConversationContext.Provider value={contextValue}>
-      {children}
+      <ConversationControlsProvider>{children}</ConversationControlsProvider>
     </ConversationContext.Provider>
   );
 }
