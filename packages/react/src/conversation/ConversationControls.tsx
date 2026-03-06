@@ -51,6 +51,7 @@ export function ConversationControlsProvider({
   // Mirror the reactive conversation into a ref so stable callbacks below
   // can always read the latest instance without being recreated.
   const conversationRef = useRef(ctx.conversation);
+  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   conversationRef.current = ctx.conversation;
 
   const getConversation = useCallback(() => {
