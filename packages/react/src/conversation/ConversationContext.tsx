@@ -1,11 +1,16 @@
 import { createContext, useContext } from "react";
-import type { Conversation } from "@elevenlabs/client";
+import type { Callbacks, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "../index";
 
 export type ConversationContextValue = {
   conversation: Conversation | null;
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
+  /**
+   * For sub-providers — register callback handlers to be composed into the
+   * next `Conversation.startSession()` call. Returns an unsubscribe function.
+   */
+  registerCallbacks: (callbacks: Partial<Callbacks>) => () => void;
 };
 
 export const ConversationContext =
