@@ -18,6 +18,7 @@ import {
   ConversationContext,
   type ConversationContextValue,
 } from "./ConversationContext";
+import { ConversationControlsProvider } from "./ConversationControls";
 import type { ConversationProviderProps } from "./types";
 
 // Keys of HookCallbacks that we need to wrap with refs
@@ -50,20 +51,23 @@ const CALLBACK_KEYS: (keyof HookCallbacks)[] = [
  */
 function useStableCallbacks(props: HookOptions): Callbacks {
   // Store the latest prop value for each callback in a ref
-  const callbackRefs = useRef<Partial<HookCallbacks>>({});
+  const callbackRefs = useRef<Record<string, unknown>>({});
   for (const key of CALLBACK_KEYS) {
-    callbackRefs.current[key] = props[key] as any;
+    // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
+    callbackRefs.current[key] = props[key];
   }
 
   // Build stable wrappers once — they always call the latest ref value
   const [stableCallbacks] = useState(() => {
     const result: Partial<Callbacks> = {};
     for (const key of CALLBACK_KEYS) {
-      (result as any)[key] = (...args: any[]) => {
-        const fn = callbackRefs.current[key];
-        if (fn) {
-          (fn as Function)(...args);
-        }
+      result[key] = (
+        ...args: Parameters<NonNullable<Callbacks[typeof key]>>
+      ) => {
+        const fn = callbackRefs.current[key] as
+          | ((...args: Parameters<NonNullable<Callbacks[typeof key]>>) => void)
+          | undefined;
+        fn?.(...args);
       };
     }
     return result as Callbacks;
@@ -84,6 +88,7 @@ export function ConversationProvider({
   const shouldEndRef = useRef(false);
   /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
+  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   defaultOptionsRef.current = defaultOptions;
 
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
@@ -185,7 +190,7 @@ export function ConversationProvider({
 
   return (
     <ConversationContext.Provider value={contextValue}>
-      {children}
+      <ConversationControlsProvider>{children}</ConversationControlsProvider>
     </ConversationContext.Provider>
   );
 }
