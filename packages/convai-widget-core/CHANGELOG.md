@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.10.1
+
+### Patch Changes
+
+- 29e1dfc: Fix widget crash on Wix sites where addEventListener is made non-writable by Wix security hardening
+
 ## 0.10.0
 
 ### Minor Changes
