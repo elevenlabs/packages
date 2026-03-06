@@ -147,10 +147,22 @@ export function ConversationControlsProvider({
       getOutputVolume,
       getId,
     }),
-    // ctx.startSession and ctx.endSession are stable useCallback refs from the Provider.
-    // All other entries are stable useCallback refs from this component.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ctx.startSession, ctx.endSession]
+    [
+      ctx.startSession,
+      ctx.endSession,
+      sendUserMessage,
+      sendContextualUpdate,
+      sendUserActivity,
+      sendMCPToolApprovalResult,
+      setVolume,
+      changeInputDevice,
+      changeOutputDevice,
+      getInputByteFrequencyData,
+      getOutputByteFrequencyData,
+      getInputVolume,
+      getOutputVolume,
+      getId,
+    ]
   );
 
   return (
