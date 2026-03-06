@@ -13,9 +13,7 @@ const ConversationModeContext =
  */
 export function ConversationModeProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: React.PropsWithChildren) {
   const ctx = useContext(ConversationContext);
   if (!ctx) {
     throw new Error(
@@ -31,7 +29,7 @@ export function ConversationModeProvider({
         setMode(newMode);
       },
     });
-  }, [ctx.registerCallbacks]);
+  }, [ctx]);
 
   const value = useMemo<ConversationModeValue>(
     () => ({
