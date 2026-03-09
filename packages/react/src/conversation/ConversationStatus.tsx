@@ -1,7 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Status } from "@elevenlabs/client";
 import { ConversationContext } from "./ConversationContext";
-import type { ConversationStatusValue } from "./types";
+
+export type ConversationStatusValue = {
+  status: "disconnected" | "connecting" | "connected" | "error";
+  message?: string;
+};
 
 const ConversationStatusContext =
   createContext<ConversationStatusValue | null>(null);
