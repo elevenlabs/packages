@@ -6,6 +6,7 @@ import {
   useRawConversation,
   type ConversationContextValue,
 } from "./ConversationContext";
+import type { Conversation } from "@elevenlabs/client";
 
 describe("useRawConversation", () => {
   it("returns null when used outside a ConversationProvider", () => {
@@ -14,7 +15,7 @@ describe("useRawConversation", () => {
   });
 
   it("returns the conversation instance from the context", () => {
-    const mockConversation = { getId: vi.fn() } as any;
+    const mockConversation = { getId: vi.fn() } as unknown as Conversation;
     const value: ConversationContextValue = {
       conversation: mockConversation,
       startSession: vi.fn(),

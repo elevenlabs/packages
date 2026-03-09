@@ -360,7 +360,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
       ) {
         return await (
           conversationRef.current as unknown as {
-            changeInputDevice: (config: any) => Promise<any>;
+            changeInputDevice: (config: unknown) => Promise<unknown>;
           }
         ).changeInputDevice(config);
       }
@@ -375,7 +375,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
       ) {
         return await (
           conversationRef.current as unknown as {
-            changeOutputDevice: (config: any) => Promise<any>;
+            changeOutputDevice: (config: unknown) => Promise<unknown>;
           }
         ).changeOutputDevice(config);
       }
