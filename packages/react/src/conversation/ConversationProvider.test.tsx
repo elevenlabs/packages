@@ -292,6 +292,51 @@ describe("ConversationProvider", () => {
     expect(sessionCalls).toEqual(["session"]);
   });
 
+  it("clears conversation when onDisconnect fires (external disconnect)", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(result.current.conversation).toBe(mockConversation);
+
+    // Simulate an external disconnect (agent hangs up, raw endSession(), etc.)
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      opts.onDisconnect!({ reason: "agent" });
+    });
+
+    expect(result.current.conversation).toBeNull();
+  });
+
+  it("composes internal onDisconnect with user-provided onDisconnect", async () => {
+    const userOnDisconnect = vi.fn();
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onDisconnect: userOnDisconnect }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      opts.onDisconnect!({ reason: "agent" });
+    });
+
+    expect(userOnDisconnect).toHaveBeenCalledWith({ reason: "agent" });
+    expect(result.current.conversation).toBeNull();
+  });
+
   it("passes stable callbacks that always call the latest prop value", async () => {
     const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationProvider>{children}</ConversationProvider>
