@@ -183,7 +183,7 @@ export function ConversationProvider({
   }, []);
 
   const contextValue = useMemo<ConversationContextValue>(
-    () => ({ conversation, startSession, endSession }),
+    () => ({ conversation, conversationRef, startSession, endSession }),
     [conversation, startSession, endSession]
   );
 

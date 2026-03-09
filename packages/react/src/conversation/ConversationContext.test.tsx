@@ -18,6 +18,7 @@ describe("useRawConversation", () => {
     const mockConversation = { getId: vi.fn() } as unknown as Conversation;
     const value: ConversationContextValue = {
       conversation: mockConversation,
+      conversationRef: { current: mockConversation },
       startSession: vi.fn(),
       endSession: vi.fn(),
     };
@@ -35,6 +36,7 @@ describe("useRawConversation", () => {
   it("returns null when conversation is null in context", () => {
     const value: ConversationContextValue = {
       conversation: null,
+      conversationRef: { current: null },
       startSession: vi.fn(),
       endSession: vi.fn(),
     };
