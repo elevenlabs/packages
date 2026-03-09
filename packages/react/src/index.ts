@@ -352,6 +352,9 @@ export function useConversation<T extends HookOptions & ControlledState>(
         isApproved
       );
     },
+    sendMultimodalMessage: (options: { text?: string; fileId?: string }) => {
+      conversationRef.current?.sendMultimodalMessage(options);
+    },
     changeInputDevice: async (
       config: DeviceFormatConfig & DeviceInputConfig
     ) => {

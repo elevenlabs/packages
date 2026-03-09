@@ -29,6 +29,7 @@ export interface Conversation {
   sendContextualUpdate: (text: string) => void;
   sendUserMessage: (text: string) => void;
   sendUserActivity: () => void;
+  sendMultimodalMessage: (options: { text?: string; fileId?: string }) => void;
   setMicMuted: (muted: boolean) => void;
 }
 
@@ -257,6 +258,18 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     });
   }, [sendMessage]);
 
+  const sendMultimodalMessage = React.useCallback((options: { text?: string; fileId?: string }) => {
+    sendMessage({
+      type: "multimodal_message",
+      text: options.text
+        ? { type: "user_message" as const, text: options.text }
+        : undefined,
+      file: options.fileId
+        ? { type: "file_input" as const, file_id: options.fileId }
+        : undefined,
+    });
+  }, [sendMessage]);
+
   // Store all conversation values/functions in refs for stable access
   const conversationValuesRef = React.useRef({
     startSession,
@@ -270,6 +283,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     sendContextualUpdate,
     sendUserMessage,
     sendUserActivity,
+    sendMultimodalMessage,
   });
 
   // Update ref on every render
@@ -285,6 +299,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     sendContextualUpdate,
     sendUserMessage,
     sendUserActivity,
+    sendMultimodalMessage,
   };
 
   // Create a stable conversation object that never changes reference
@@ -301,6 +316,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     get sendContextualUpdate() { return conversationValuesRef.current.sendContextualUpdate; },
     get sendUserMessage() { return conversationValuesRef.current.sendUserMessage; },
     get sendUserActivity() { return conversationValuesRef.current.sendUserActivity; },
+    get sendMultimodalMessage() { return conversationValuesRef.current.sendMultimodalMessage; },
   }), []); // Empty deps - object is created once and never recreated
 
   // Memoize the context value to prevent unnecessary re-renders of consumers

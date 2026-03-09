@@ -79,6 +79,7 @@ channels:
           - $ref: "#/components/messages/MCPToolApprovalResult"
           - $ref: "#/components/messages/ContextualUpdate"
           - $ref: "#/components/messages/ConversationInitiation"
+          - $ref: "#/components/messages/MultimodalMessage"
 components:
   messages:
     # ===== CLIENT → SERVER MESSAGES =====
@@ -154,6 +155,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ConversationInitiationPayload"
+
+    MultimodalMessage:
+      name: MultimodalMessageClientToOrchestratorEvent
+      title: Multimodal Message
+      summary: Multimodal message combining text and a file reference
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/MultimodalMessagePayload"
 
     # ===== SERVER → CLIENT MESSAGES =====
 
@@ -649,6 +658,33 @@ components:
           description: Unique identifier for the user
         source_info:
           $ref: "#/components/schemas/SourceInfo"
+
+    MultimodalMessageFileData:
+      type: object
+      required: [type, file_id]
+      properties:
+        type:
+          type: string
+          const: file_input
+        file_id:
+          type: string
+          description: The unique identifier of the file to include in the message
+
+    MultimodalMessagePayload:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: multimodal_message
+        text:
+          $ref: "#/components/schemas/UserMessagePayload"
+          nullable: true
+          description: The text component of the multimodal message
+        file:
+          $ref: "#/components/schemas/MultimodalMessageFileData"
+          nullable: true
+          description: The file component of the multimodal message
 
     # ===== SERVER MESSAGE PAYLOADS =====
 

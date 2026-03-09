@@ -552,4 +552,16 @@ export class BaseConversation {
       is_approved: isApproved,
     });
   }
+
+  public sendMultimodalMessage(options: { text?: string; fileId?: string }) {
+    this.connection.sendMessage({
+      type: "multimodal_message",
+      text: options.text
+        ? { type: "user_message" as const, text: options.text }
+        : undefined,
+      file: options.fileId
+        ? { type: "file_input" as const, file_id: options.fileId }
+        : undefined,
+    });
+  }
 }

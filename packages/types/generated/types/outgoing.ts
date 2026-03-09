@@ -5,6 +5,7 @@ export type {
   ConversationInitiationClientToOrchestratorEvent,
   InputAudioChunk,
   McpToolApprovalResultClientToOrchestratorEvent,
+  MultimodalMessageClientToOrchestratorEvent,
   PongClientToOrchestratorEvent,
   UserActivityClientToOrchestratorEvent,
   UserAudio,

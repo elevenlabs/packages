@@ -184,6 +184,22 @@ export interface SourceInfo {
   version?: string;
 }
 
+export interface MultimodalMessage {
+  type: "multimodal_message";
+  text?: ReservedText;
+  file?: File;
+}
+
+export interface ReservedText {
+  type: "user_message";
+  text?: string;
+}
+
+export interface File {
+  type: "file_input";
+  file_id: string;
+}
+
 export interface Audio {
   type: "audio";
   audio_event: AudioEvent;
@@ -618,6 +634,12 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   dynamic_variables?: Record<string, any>;
   user_id?: string;
   source_info?: SourceInfo;
+}
+
+export interface MultimodalMessageClientToOrchestratorEvent {
+  type: "multimodal_message";
+  text?: ReservedText;
+  file?: File;
 }
 
 export interface InputAudioChunk {
