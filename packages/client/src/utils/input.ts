@@ -2,15 +2,13 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
 import type { FormatConfig } from "./connection";
 import { isIosDevice } from "./compatibility";
 import type { AudioWorkletConfig } from "../BaseConversation";
+import { addLibsamplerateModule } from "./addLibsamplerateModule";
 
 export type InputConfig = {
   preferHeadphonesForIosDevices?: boolean;
   inputDeviceId?: string;
   onError?(message: string, context?: unknown): void;
 };
-
-const LIBSAMPLERATE_JS =
-  "https://cdn.jsdelivr.net/npm/@alexanderolsen/libsamplerate-js@2.1.2/dist/libsamplerate.worklet.js";
 
 const defaultConstraints = {
   echoCancellation: true,
@@ -69,13 +67,11 @@ export class Input {
       );
       const analyser = context.createAnalyser();
       if (!supportsSampleRateConstraint) {
-        // Use custom libsamplerate path if provided, otherwise fallback to CDN
-        const libsamplerateUrl = libsampleratePath || LIBSAMPLERATE_JS;
-        await context.audioWorklet.addModule(libsamplerateUrl);
+        await addLibsamplerateModule(context, libsampleratePath);
       }
       await loadRawAudioProcessor(
         context.audioWorklet,
-        workletPaths?.["rawAudioProcessor"]
+        workletPaths?.rawAudioProcessor
       );
 
       const constraints = { voiceIsolation: true, ...options };

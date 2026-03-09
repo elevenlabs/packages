@@ -4,7 +4,7 @@
  * USED BY @elevenlabs/client
  */
 
-const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+const decodeTable = [0, 132, 396, 924, 1980, 4092, 8316, 16764];
 
 function decodeSample(muLawSample) {
   let sign;
@@ -12,10 +12,10 @@ function decodeSample(muLawSample) {
   let mantissa;
   let sample;
   muLawSample = ~muLawSample;
-  sign = (muLawSample & 0x80);
+  sign = muLawSample & 0x80;
   exponent = (muLawSample >> 4) & 0x07;
-  mantissa = muLawSample & 0x0F;
-  sample = decodeTable[exponent] + (mantissa << (exponent+3));
+  mantissa = muLawSample & 0x0f;
+  sample = decodeTable[exponent] + (mantissa << (exponent + 3));
   if (sign !== 0) sample = -sample;
 
   return sample;
@@ -29,11 +29,20 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.currentBuffer = null;
     this.wasInterrupted = false;
     this.finished = false;
-    
+
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
           this.format = data.format;
+          if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
+            globalThis.LibSampleRate.create(
+              1,
+              data.sampleRate,
+              sampleRate
+            ).then(resampler => {
+              this.resampler = resampler;
+            });
+          }
           break;
         case "buffer":
           this.wasInterrupted = false;
@@ -65,6 +74,9 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           break;
         }
         this.currentBuffer = this.buffers.shift();
+        if (this.resampler) {
+          this.currentBuffer = this.resampler.full(this.currentBuffer);
+        }
         this.cursor = 0;
       }
 

@@ -1,6 +1,7 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
 import type { FormatConfig } from "./connection";
 import type { AudioWorkletConfig } from "../BaseConversation";
+import { addLibsamplerateModule } from "./addLibsamplerateModule";
 
 export type OutputConfig = {
   outputDeviceId?: string;
@@ -12,11 +13,17 @@ export class Output {
     format,
     outputDeviceId,
     workletPaths,
+    libsampleratePath,
   }: FormatConfig & OutputConfig & AudioWorkletConfig): Promise<Output> {
     let context: AudioContext | null = null;
     let audioElement: HTMLAudioElement | null = null;
     try {
-      context = new AudioContext({ sampleRate });
+      const supportsSampleRateConstraint =
+        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+      context = new AudioContext(
+        supportsSampleRateConstraint ? { sampleRate } : {}
+      );
+
       const analyser = context.createAnalyser();
       const gain = context.createGain();
 
@@ -36,12 +43,20 @@ export class Output {
       gain.connect(analyser);
       analyser.connect(destination);
 
+      if (!supportsSampleRateConstraint || context.sampleRate !== sampleRate) {
+        if (context.sampleRate !== sampleRate) {
+          console.warn(
+            `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
+          );
+        }
+        await addLibsamplerateModule(context, libsampleratePath);
+      }
       await loadAudioConcatProcessor(
         context.audioWorklet,
-        workletPaths?.["audioConcatProcessor"]
+        workletPaths?.audioConcatProcessor
       );
       const worklet = new AudioWorkletNode(context, "audioConcatProcessor");
-      worklet.port.postMessage({ type: "setFormat", format });
+      worklet.port.postMessage({ type: "setFormat", format, sampleRate });
       worklet.connect(gain);
 
       await context.resume();
