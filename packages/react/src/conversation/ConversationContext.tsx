@@ -1,9 +1,11 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, type RefObject } from "react";
 import type { Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "../index";
 
 export type ConversationContextValue = {
   conversation: Conversation | null;
+  /** Stable ref to the active conversation — use in callbacks to avoid re-renders. */
+  conversationRef: RefObject<Conversation | null>;
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
 };
