@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { elevenlabs } from "@/lib/elevenlabs.server";
 import { Page } from "@/components/page";
-import { ConversationProvider } from "@/components/conversation-provider";
+import { ConversationProvider } from "@elevenlabs/react";
 import { LogProvider } from "@/components/log-provider";
 import { PermissionsLogger } from "@/components/permissions-logger";
 import { AgentPage } from "@/components/agent-page";

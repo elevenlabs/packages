@@ -2,7 +2,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 
 import { Input } from "@/components/ui/input";
-import { useConversationStatus } from "@/components/conversation-provider";
+import { useConversationStatus } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,

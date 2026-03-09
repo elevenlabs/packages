@@ -10,7 +10,7 @@ import {
 } from "@elevenlabs/client";
 import { useCallback, useState } from "react";
 import { spyOnMethods } from "@/lib/utils";
-import { useConversationControls } from "./conversation-provider";
+import { useConversationControls } from "@elevenlabs/react";
 import { useLogControls } from "./log-provider";
 
 type AgentPageProps = {
@@ -44,7 +44,7 @@ export function AgentPage({ agent }: AgentPageProps) {
   const [sessionConfig, setSessionConfig] = useState<
     BaseSessionConfig & { connectionType?: ConnectionType }
   >({});
-  const { start } = useConversationControls();
+  const { startSession } = useConversationControls();
   const { appendLogEntry, clearLog } = useLogControls();
 
   const handleStart = useCallback(() => {
@@ -64,8 +64,8 @@ export function AgentPage({ agent }: AgentPageProps) {
       args: [instrumentedOptions],
       when: Date.now(),
     });
-    start(instrumentedOptions);
-  }, [sessionConfig, start, appendLogEntry]);
+    startSession(instrumentedOptions);
+  }, [sessionConfig, startSession, appendLogEntry]);
 
   return (
     <Page title={agent.name}>

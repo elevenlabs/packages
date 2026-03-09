@@ -6,7 +6,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import {
   useConversationControls,
   useConversationStatus,
-} from "@/components/conversation-provider";
+} from "@elevenlabs/react";
 import { Spinner } from "@/components/ui/spinner";
 
 import { useLogControls, useLogEntries } from "./log-provider";
@@ -31,7 +31,7 @@ function ClearEventsButton() {
 
 export function AgentControls({ onStart }: { onStart: () => void }) {
   const status = useConversationStatus();
-  const { end } = useConversationControls();
+  const { endSession } = useConversationControls();
   const { setOpen: setSidebarOpen } = useSidebar();
 
   const handleConfigure = useCallback(() => {
@@ -57,7 +57,10 @@ export function AgentControls({ onStart }: { onStart: () => void }) {
             )}
           </Button>
         </ButtonGroup>
-        <Button disabled={status.status !== "connected"} onClick={() => end()}>
+        <Button
+          disabled={status.status !== "connected"}
+          onClick={() => endSession()}
+        >
           End
         </Button>
         <ChatControls />
