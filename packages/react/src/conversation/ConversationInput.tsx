@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { ConversationContext } from "./ConversationContext";
@@ -35,9 +34,7 @@ export function ConversationInputProvider({
 
   const [isMuted, setIsMuted] = useState(false);
 
-  const conversationRef = useRef(ctx.conversation);
-  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
-  conversationRef.current = ctx.conversation;
+  const { conversationRef } = ctx;
 
   const setMuted = useCallback((muted: boolean) => {
     const conversation = conversationRef.current;
@@ -46,7 +43,7 @@ export function ConversationInputProvider({
     }
     conversation.setMicMuted(muted);
     setIsMuted(muted);
-  }, []);
+  }, [conversationRef]);
 
   const value = useMemo<ConversationInputValue>(
     () => ({ isMuted, setMuted }),
