@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import { VoiceConversation, type OutputConfig } from "@elevenlabs/client";
 import type {
   HookOptions,
@@ -48,11 +48,7 @@ export function ConversationControlsProvider({
     );
   }
 
-  // Mirror the reactive conversation into a ref so stable callbacks below
-  // can always read the latest instance without being recreated.
-  const conversationRef = useRef(ctx.conversation);
-  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
-  conversationRef.current = ctx.conversation;
+  const { conversationRef } = ctx;
 
   const getConversation = useCallback(() => {
     const conversation = conversationRef.current;
@@ -60,7 +56,7 @@ export function ConversationControlsProvider({
       throw new Error("No active conversation. Call startSession() first.");
     }
     return conversation;
-  }, []);
+  }, [conversationRef]);
 
   const sendUserMessage = useCallback((text: string) => {
     getConversation().sendUserMessage(text);
