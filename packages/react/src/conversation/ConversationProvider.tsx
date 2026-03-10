@@ -24,7 +24,8 @@ import { ConversationInputProvider } from "./ConversationInput";
 import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import { ListenerMap } from "./ListenerMap";
-import type { ConversationProviderProps } from "./types";
+
+export type ConversationProviderProps = React.PropsWithChildren<HookOptions>;
 
 
 
