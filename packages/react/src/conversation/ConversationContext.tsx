@@ -67,6 +67,6 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
       ])
     ) as Partial<Callbacks>;
     return registerCallbacks(stableCallbacks);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- spreading activeKeys so the effect re-runs when the set of keys changes
-  }, [registerCallbacks, ...activeKeys]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeKeys.join() is a stable scalar derived from activeKeys; no split needed since the effect closes over activeKeys directly
+  }, [registerCallbacks, activeKeys.join("|")]);
 }
