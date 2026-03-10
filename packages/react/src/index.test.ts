@@ -3,11 +3,10 @@ import { renderHook, act } from "@testing-library/react";
 import { Conversation } from "@elevenlabs/client";
 import { useConversation } from "./index";
 
-vi.mock("@elevenlabs/client", () => ({
-  Conversation: {
-    startSession: vi.fn(),
-  },
-}));
+vi.mock("@elevenlabs/client", async importOriginal => {
+  const actual = await importOriginal<typeof import("@elevenlabs/client")>();
+  return { ...actual, Conversation: { startSession: vi.fn() } };
+});
 
 const createMockConversation = (id = "test-id") =>
   ({

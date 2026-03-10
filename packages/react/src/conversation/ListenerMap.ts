@@ -13,19 +13,21 @@ function assertFunction(
  * A map of named listener sets. Each key maps to a `ListenerSet` that can have
  * multiple listeners registered. Typed through `T` so that `register` and
  * `compose` preserve per-key callback signatures.
+ *
+ * All keys are pre-initialized in the constructor, so `compose()` always
+ * returns a function for every key — even if no listeners have been registered
+ * yet. This means listeners registered after `compose()` is called still
+ * take effect through the composed callbacks object.
  */
 export class ListenerMap<
   T extends Record<string, ((...args: never[]) => void) | undefined>,
 > {
   private sets = new Map<string, ListenerSet<unknown[]>>();
 
-  private getOrCreate(key: string): ListenerSet<unknown[]> {
-    let set = this.sets.get(key);
-    if (!set) {
-      set = new ListenerSet<unknown[]>();
-      this.sets.set(key, set);
+  constructor(keys: readonly string[]) {
+    for (const key of keys) {
+      this.sets.set(key, new ListenerSet<unknown[]>());
     }
-    return set;
   }
 
   /**
@@ -35,7 +37,12 @@ export class ListenerMap<
   register(callbacks: Partial<T>): () => void {
     const removers = Object.entries(callbacks).map(([key, fn]) => {
       assertFunction(fn, key);
-      return this.getOrCreate(key).add(fn);
+      let set = this.sets.get(key);
+      if (!set) {
+        set = new ListenerSet<unknown[]>();
+        this.sets.set(key, set);
+      }
+      return set.add(fn);
     });
     return () => {
       for (const remove of removers) remove();
@@ -49,14 +56,12 @@ export class ListenerMap<
    */
   compose(): Partial<T> {
     return Object.fromEntries(
-      Array.from(this.sets.entries())
-        .filter(([, set]) => set.size > 0)
-        .map(([key, set]) => [
-          key,
-          (...args: never[]) => {
-            set.invoke(...args);
-          },
-        ])
+      Array.from(this.sets.entries()).map(([key, set]) => [
+        key,
+        (...args: never[]) => {
+          set.invoke(...args);
+        },
+      ])
     ) as Partial<T>;
   }
 }

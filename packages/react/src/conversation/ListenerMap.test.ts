@@ -9,7 +9,11 @@ type TestCallbacks = {
 
 describe("ListenerMap", () => {
   it("invokes a registered listener through compose", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const fn = vi.fn();
     map.register({ onConnect: fn });
 
@@ -20,7 +24,11 @@ describe("ListenerMap", () => {
   });
 
   it("invokes multiple listeners for the same key", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const fn1 = vi.fn();
     const fn2 = vi.fn();
     map.register({ onError: fn1 });
@@ -34,7 +42,11 @@ describe("ListenerMap", () => {
   });
 
   it("register returns a function that removes all its listeners", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const kept = vi.fn();
     const removed = vi.fn();
     map.register({ onError: kept });
@@ -50,7 +62,11 @@ describe("ListenerMap", () => {
   });
 
   it("register handles multiple keys at once", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const onConnect = vi.fn();
     const onError = vi.fn();
     const remove = map.register({ onConnect, onError });
@@ -64,22 +80,35 @@ describe("ListenerMap", () => {
 
     remove();
 
-    // After removal, new compose should have no listeners
+    // After removal, composed functions still exist but calling them is a no-op
     const empty = map.compose();
-    expect(empty.onConnect).toBeUndefined();
-    expect(empty.onError).toBeUndefined();
+    const onConnectSpy = vi.fn();
+    map.register({ onConnect: onConnectSpy });
+    empty.onConnect?.({ id: "y" });
+    // Only the newly registered listener fires, not the removed ones
+    expect(onConnect).not.toHaveBeenCalledWith({ id: "y" });
+    expect(onConnectSpy).toHaveBeenCalledWith({ id: "y" });
   });
 
-  it("compose omits keys with no listeners", () => {
-    const map = new ListenerMap<TestCallbacks>();
+  it("compose includes all pre-initialized keys even with no listeners", () => {
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const composed = map.compose();
 
-    expect(composed).toEqual({});
-    expect(composed.onConnect).toBeUndefined();
+    expect(typeof composed.onConnect).toBe("function");
+    expect(typeof composed.onError).toBe("function");
+    expect(typeof composed.onDisconnect).toBe("function");
   });
 
   it("compose reflects live listener state", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     const fn = vi.fn();
     const remove = map.register({ onDisconnect: fn });
 
@@ -94,8 +123,31 @@ describe("ListenerMap", () => {
     expect(fn).not.toHaveBeenCalled();
   });
 
+  it("compose picks up listeners registered after compose was called", () => {
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
+
+    // Compose before any listeners are registered
+    const composed = map.compose();
+
+    // Register a listener after compose
+    const fn = vi.fn();
+    map.register({ onConnect: fn });
+
+    // The previously composed function should invoke the late listener
+    composed.onConnect?.({ id: "late" });
+    expect(fn).toHaveBeenCalledWith({ id: "late" });
+  });
+
   it("throws on undefined values in the callbacks object", () => {
-    const map = new ListenerMap<TestCallbacks>();
+    const map = new ListenerMap<TestCallbacks>([
+      "onConnect",
+      "onError",
+      "onDisconnect",
+    ]);
     expect(() =>
       map.register({ onConnect: undefined, onError: vi.fn() })
     ).toThrow('Expected function for key "onConnect"');
