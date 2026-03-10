@@ -74,6 +74,14 @@ export async function webSessionSetup(
 /**
  * The active session setup strategy.
  * Defaults to web platform strategy.
- * In the future, this could be swapped out for React Native or other platforms.
+ * Can be overridden by platform-specific entrypoints (e.g. React Native).
  */
-export const setupStrategy: VoiceSessionSetupStrategy = webSessionSetup;
+export let setupStrategy: VoiceSessionSetupStrategy = webSessionSetup;
+
+/**
+ * Override the voice session setup strategy.
+ * Called by platform-specific entrypoints to inject their own input/output handling.
+ */
+export function setSetupStrategy(strategy: VoiceSessionSetupStrategy) {
+  setupStrategy = strategy;
+}
