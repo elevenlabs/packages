@@ -73,7 +73,10 @@ export { useConversationFeedback } from "./conversation/ConversationFeedback";
 export { useRawConversation } from "./conversation/ConversationContext";
 export type { ConversationControlsValue } from "./conversation/ConversationControls";
 export type { ConversationInputValue } from "./conversation/ConversationInput";
-export type { ConversationStatusValue } from "./conversation/ConversationStatus";
+export type {
+  ConversationStatus,
+  ConversationStatusValue,
+} from "./conversation/ConversationStatus";
 export type { ConversationModeValue } from "./conversation/ConversationMode";
 export type { ConversationFeedbackValue } from "./conversation/ConversationFeedback";
 export type { ConversationProviderProps } from "./conversation/ConversationProvider";
