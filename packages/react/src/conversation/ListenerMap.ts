@@ -51,11 +51,11 @@ export class ListenerMap<
   }
 
   /**
-   * Compose all registered listeners into a single `Partial<T>`. Each composed
-   * function delegates to the live listener set, so listeners added/removed
-   * after this call still take effect.
+   * Compose all registered listeners into a single callbacks object. Each
+   * composed function delegates to the live listener set, so listeners
+   * added/removed after this call still take effect.
    */
-  compose(): Partial<T> {
+  compose(): T {
     return Object.fromEntries(
       Array.from(this.sets.entries()).map(([key, set]) => [
         key,
@@ -63,6 +63,6 @@ export class ListenerMap<
           set.invoke(...args);
         },
       ])
-    ) as Partial<T>;
+    ) as T;
   }
 }
