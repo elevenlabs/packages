@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import type { Status } from "@elevenlabs/client";
 import { useRegisterCallbacks } from "./ConversationContext";
 
@@ -17,9 +17,7 @@ const ConversationStatusContext =
  */
 export function ConversationStatusProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: React.PropsWithChildren) {
   const [status, setStatus] = useState<ConversationStatusValue["status"]>("disconnected");
   const [message, setMessage] = useState<string | undefined>(undefined);
 
@@ -39,7 +37,10 @@ export function ConversationStatusProvider({
     },
   });
 
-  const value: ConversationStatusValue = { status, message };
+  const value = useMemo<ConversationStatusValue>(
+    () => ({ status, message }),
+    [status, message]
+  );
 
   return (
     <ConversationStatusContext.Provider value={value}>
