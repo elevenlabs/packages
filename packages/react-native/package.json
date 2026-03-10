@@ -29,16 +29,14 @@
   "peerDependencies": {
     "@livekit/react-native": "^2.9.2",
     "@livekit/react-native-webrtc": "^137.0.2",
-    "livekit-client": "^2.15.4",
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
   },
   "dependencies": {
-    "@elevenlabs/types": "workspace:*"
+    "@elevenlabs/react": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.1.1",
-    "@types/react-native": "^0.73.0",
     "eslint": "^9.8.0",
     "typescript": "^5.5.4"
   },
