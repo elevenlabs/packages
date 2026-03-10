@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, type RefObject } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
 import type { Callbacks, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "../index";
 
@@ -54,7 +54,7 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
     .filter(key => callbacks[key as keyof Callbacks] !== undefined)
     .sort();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const stableCallbacks = Object.fromEntries(
       activeKeys.map((key: string) => [
         key,
