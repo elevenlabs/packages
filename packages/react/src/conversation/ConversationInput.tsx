@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ConversationContext } from "./ConversationContext";
+import { useRawConversationRef } from "./ConversationContext";
 
 export type ConversationInputValue = {
   isMuted: boolean;
@@ -22,19 +22,9 @@ const ConversationInputContext =
  */
 export function ConversationInputProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
-  const ctx = useContext(ConversationContext);
-  if (!ctx) {
-    throw new Error(
-      "ConversationInputProvider must be rendered inside a ConversationProvider"
-    );
-  }
-
+}: React.PropsWithChildren) {
+  const conversationRef = useRawConversationRef();
   const [isMuted, setIsMuted] = useState(false);
-
-  const { conversationRef } = ctx;
 
   const setMuted = useCallback((muted: boolean) => {
     const conversation = conversationRef.current;
