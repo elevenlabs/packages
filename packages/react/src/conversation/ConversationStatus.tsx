@@ -27,11 +27,13 @@ export function ConversationStatusProvider({
     );
   }
 
+  const { registerCallbacks } = ctx;
+
   const [status, setStatus] = useState<ConversationStatusValue["status"]>("disconnected");
   const [message, setMessage] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    return ctx.registerCallbacks({
+    return registerCallbacks({
       onStatusChange: ({ status: newStatus }: { status: Status }) => {
         if (newStatus === "disconnecting") {
           // Transient state — keep current status
@@ -46,7 +48,7 @@ export function ConversationStatusProvider({
         setMessage(errorMessage);
       },
     });
-  }, [ctx]);
+  }, [registerCallbacks]);
 
   const value: ConversationStatusValue = { status, message };
 
