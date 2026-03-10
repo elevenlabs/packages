@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
+  CALLBACK_KEYS,
   mergeOptions,
   type Options,
   type Callbacks,
@@ -8,7 +9,6 @@ import {
 
 import {
   type HookOptions,
-  type HookCallbacks,
   parseLocation,
   getOriginForLocation,
   getLivekitUrlForLocation,
@@ -19,59 +19,40 @@ import {
   type ConversationContextValue,
 } from "./ConversationContext";
 import { ConversationControlsProvider } from "./ConversationControls";
+import { ConversationStatusProvider } from "./ConversationStatus";
+import { ListenerMap } from "./ListenerMap";
 import type { ConversationProviderProps } from "./types";
 
-// Keys of HookCallbacks that we need to wrap with refs
-const CALLBACK_KEYS: (keyof HookCallbacks)[] = [
-  "onConnect",
-  "onDisconnect",
-  "onError",
-  "onMessage",
-  "onAudio",
-  "onModeChange",
-  "onStatusChange",
-  "onCanSendFeedbackChange",
-  "onDebug",
-  "onUnhandledClientToolCall",
-  "onVadScore",
-  "onInterruption",
-  "onAgentToolResponse",
-  "onAgentToolRequest",
-  "onConversationMetadata",
-  "onMCPToolCall",
-  "onMCPConnectionStatus",
-  "onAsrInitiationMetadata",
-  "onAgentChatResponsePart",
-  "onAudioAlignment",
-];
+
 
 /**
  * Wraps user-provided callback props in stable ref-backed functions,
  * preventing stale closure bugs when the session outlives renders.
  */
 function useStableCallbacks(props: HookOptions): Callbacks {
-  // Store the latest prop value for each callback in a ref
+  // Store the latest prop value for each callback in a ref.
+  // Uses Record<string, unknown> to avoid TypeScript's union-to-intersection
+  // issue when indexing Callbacks with a union of all its keys.
   const callbackRefs = useRef<Record<string, unknown>>({});
   for (const key of CALLBACK_KEYS) {
     // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
-    callbackRefs.current[key] = props[key];
+    callbackRefs.current[key] = (props as Record<string, unknown>)[key];
   }
 
   // Build stable wrappers once — they always call the latest ref value
-  const [stableCallbacks] = useState(() => {
-    const result: Partial<Callbacks> = {};
-    for (const key of CALLBACK_KEYS) {
-      result[key] = (
-        ...args: Parameters<NonNullable<Callbacks[typeof key]>>
-      ) => {
-        const fn = callbackRefs.current[key] as
-          | ((...args: Parameters<NonNullable<Callbacks[typeof key]>>) => void)
-          | undefined;
-        fn?.(...args);
-      };
-    }
-    return result as Callbacks;
-  });
+  const [stableCallbacks] = useState(() =>
+    Object.fromEntries(
+      CALLBACK_KEYS.map((key: string) => [
+        key,
+        (...args: unknown[]) => {
+          const fn = callbackRefs.current[key] as
+            | ((...a: unknown[]) => void)
+            | undefined;
+          fn?.(...args);
+        },
+      ])
+    ) as Callbacks
+  );
 
   return stableCallbacks;
 }
@@ -91,10 +72,19 @@ export function ConversationProvider({
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   defaultOptionsRef.current = defaultOptions;
 
+  /** Callback registry for sub-providers (status, mode, feedback, etc.). */
+  const [listenerMap] = useState(() => new ListenerMap<Callbacks>(CALLBACK_KEYS));
+
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
   const stableCallbacks = useStableCallbacks(defaultOptions);
+
+  const registerCallbacks = useCallback(
+    (callbacks: Partial<Callbacks>) =>
+      listenerMap.register(callbacks),
+    [listenerMap]
+  );
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -128,6 +118,7 @@ export function ConversationProvider({
           { livekitUrl: calculatedLivekitUrl },
           defaultConfig,
           stableCallbacks,
+          listenerMap.compose(),
           options ?? {},
           {
             origin,
@@ -154,7 +145,7 @@ export function ConversationProvider({
         }
       );
     },
-    [stableCallbacks]
+    [stableCallbacks, listenerMap]
   );
 
   const endSession = useCallback(() => {
@@ -184,13 +175,21 @@ export function ConversationProvider({
   }, []);
 
   const contextValue = useMemo<ConversationContextValue>(
-    () => ({ conversation, conversationRef, startSession, endSession }),
-    [conversation, startSession, endSession]
+    () => ({
+      conversation,
+      conversationRef,
+      startSession,
+      endSession,
+      registerCallbacks,
+    }),
+    [conversation, conversationRef, startSession, endSession, registerCallbacks]
   );
 
   return (
     <ConversationContext.Provider value={contextValue}>
-      <ConversationControlsProvider>{children}</ConversationControlsProvider>
+      <ConversationControlsProvider>
+        <ConversationStatusProvider>{children}</ConversationStatusProvider>
+      </ConversationControlsProvider>
     </ConversationContext.Provider>
   );
 }

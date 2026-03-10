@@ -12,6 +12,7 @@ export type {
   Status,
   AudioWorkletConfig,
 } from "./BaseConversation";
+export { CALLBACK_KEYS } from "./BaseConversation";
 export type { InputController, InputDeviceConfig } from "./InputController";
 export type { OutputController, OutputDeviceConfig } from "./OutputController";
 export type { InputConfig } from "./utils/input";

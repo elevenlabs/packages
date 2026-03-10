@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
-import { Conversation } from "@elevenlabs/client";
+import { Conversation, CALLBACK_KEYS, type Callbacks } from "@elevenlabs/client";
 import { ConversationProvider } from "./ConversationProvider";
 import {
   ConversationContext,
@@ -241,7 +241,7 @@ describe("ConversationProvider", () => {
     });
 
     // Invoke the composed onConnect that was passed to startSession
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(propCalls).toEqual(["prop"]);
@@ -264,7 +264,7 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(propCalls).toEqual(["prop"]);
@@ -286,7 +286,7 @@ describe("ConversationProvider", () => {
       });
     });
 
-    const opts = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onConnect!({ conversationId: "test-id" });
 
     expect(sessionCalls).toEqual(["session"]);
@@ -318,5 +318,22 @@ describe("ConversationProvider", () => {
     expect(typeof startSessionCall.onConnect).toBe("function");
     expect(typeof startSessionCall.onDisconnect).toBe("function");
     expect(typeof startSessionCall.onError).toBe("function");
+  });
+});
+
+describe("CALLBACK_KEYS", () => {
+  it("contains every key from the Callbacks type", () => {
+    // Create an object with all Callbacks keys satisfied, then verify
+    // CALLBACK_KEYS covers them all.
+    // Compile-time check: if CALLBACK_KEYS is missing a Callbacks key, this
+    // type alias will fail because Missing won't be `never`.
+    type AssertNever<T extends never> = T;
+    type _Check = AssertNever<
+      Exclude<keyof Callbacks, (typeof CALLBACK_KEYS)[number]>
+    >;
+    void (undefined as unknown as _Check);
+
+    // Runtime sanity: no duplicates in the array.
+    expect(new Set(CALLBACK_KEYS).size).toBe(CALLBACK_KEYS.length);
   });
 });
