@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,95 +6,39 @@ import {
   TouchableOpacity,
   Keyboard,
   TouchableWithoutFeedback,
+  TextInput,
 } from "react-native";
-import { TextInput } from "react-native";
-import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
-import type { ConversationStatus } from "@elevenlabs/react-native";
+import {
+  ConversationProvider,
+  useConversationControls,
+  useConversationStatus,
+  useConversationInput,
+  useConversationMode,
+  useConversationFeedback,
+} from "@elevenlabs/react";
+import type { ConversationStatus } from "@elevenlabs/react";
 
 const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [isMicMuted, setIsMicMuted] = useState(false);
   const [isTextOnly, setIsTextOnly] = useState(false);
 
-  const conversation = useConversation({
-    onConnect: ({ conversationId }: { conversationId: string }) => {
-      console.log("✅ Connected to conversation", conversationId);
-      setCurrentConversationId(conversationId);
-    },
-    onDisconnect: (details) => {
-      console.log("❌ Disconnected from conversation", details);
-      setCurrentConversationId(null);
-    },
-    onError: (message: string, context?: Record<string, unknown>) => {
-      console.error("❌ Conversation error:", message, context);
-    },
-    onMessage: ({ message, role }) => {
-      console.log(`💬 Message from ${role}:`, message);
-    },
-    onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
-      console.log(`🔊 Mode: ${mode}`);
-    },
-    onStatusChange: ({ status }: { status: ConversationStatus }) => {
-      console.log(`📡 Status: ${status}`);
-    },
-    onCanSendFeedbackChange: ({
-      canSendFeedback,
-    }: {
-      canSendFeedback: boolean;
-    }) => {
-      console.log(`🔊 Can send feedback: ${canSendFeedback}`);
-    },
-    onVadScore: ({ vadScore }: { vadScore: number }) => {
-      // commented out as it's quite noisy
-      // console.log(`🎙️ VAD Score: ${vadScore}`);
-    },
-    onInterruption: (event) => {
-      console.log("⚡ Interruption detected:", event);
-    },
-    onAudio: (base64Audio: string) => {
-      console.log(`🔊 Audio chunk received: ${base64Audio} bytes`);
-    },
-    onMCPToolCall: (event) => {
-      console.log("🔧 MCP Tool Call:", event);
-    },
-    onMCPConnectionStatus: (event) => {
-      console.log("🔌 MCP Connection Status:", event);
-    },
-    onAgentToolRequest: (event) => {
-      console.log("🛠️ Agent Tool Request:", event);
-    },
-    onAgentToolResponse: (event) => {
-      console.log("🛠️ Agent Tool Response:", event);
-    },
-    onConversationMetadata: (metadata) => {
-      console.log("📋 Conversation Metadata:", metadata);
-    },
-    onAsrInitiationMetadata: (metadata) => {
-      console.log("🎤 ASR Metadata:", metadata);
-    },
-    onAgentChatResponsePart: (part) => {
-      console.log("📝 Agent Response Part:", part);
-    },
-    onAudioAlignment: (alignment) => {
-      console.log("🎯 Audio Alignment:", {
-        chars: alignment.chars.join(""),
-        charCount: alignment.chars.length,
-        totalDuration: alignment.char_durations_ms.reduce((a, b) => a + b, 0),
-      });
-    },
-    onUnhandledClientToolCall: (toolCall) => {
-      console.warn("⚠️ Unhandled Client Tool Call:", toolCall);
-    },
-    onDebug: (data) => {
-      console.log("🐛 Debug:", data);
-    },
-  });
+  const { status, message: statusMessage } = useConversationStatus();
+  const { isSpeaking } = useConversationMode();
+  const { isMuted, setMuted } = useConversationInput();
+  const { canSendFeedback, sendFeedback } = useConversationFeedback();
+  const {
+    startSession,
+    endSession,
+    sendUserMessage,
+    sendContextualUpdate,
+    sendUserActivity,
+    getId,
+  } = useConversationControls();
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
-      conversation.sendUserMessage(textInput.trim());
+      sendUserMessage(textInput.trim());
       setTextInput("");
       Keyboard.dismiss();
     }
@@ -105,7 +49,7 @@ const ConversationScreen = () => {
 
     setIsStarting(true);
     try {
-      await conversation.startSession({
+      startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
         userId: "demo-user",
         textOnly: isTextOnly || undefined,
@@ -117,47 +61,35 @@ const ConversationScreen = () => {
     }
   };
 
-  const endConversation = async () => {
+  const endConversation = () => {
     try {
-      await conversation.endSession();
+      endSession();
     } catch (error) {
       console.error("Failed to end conversation:", error);
     }
   };
 
-  useEffect(() => {
-    conversation.setMicMuted(isMicMuted);
-  }, [isMicMuted]);
-
-  const toggleMicMute = () => {
-    setIsMicMuted(value => {
-      return !value;
-    });
-  };
-
-  const toggleTextOnly = () => {
-    setIsTextOnly(value => !value);
-  };
-
-  const getStatusColor = (status: ConversationStatus): string => {
-    switch (status) {
+  const getStatusColor = (s: ConversationStatus): string => {
+    switch (s) {
       case "connected":
         return "#10B981";
       case "connecting":
         return "#F59E0B";
       case "disconnected":
+        return "#6B7280";
+      case "error":
         return "#EF4444";
       default:
         return "#6B7280";
     }
   };
 
-  const getStatusText = (status: ConversationStatus): string => {
-    return status[0].toUpperCase() + status.slice(1);
+  const getStatusText = (s: ConversationStatus): string => {
+    return s[0].toUpperCase() + s.slice(1);
   };
 
-  const canStart = conversation.status === "disconnected" && !isStarting;
-  const canEnd = conversation.status === "connected";
+  const canStart = (status === "disconnected" || status === "error") && !isStarting;
+  const canEnd = status === "connected";
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -171,61 +103,64 @@ const ConversationScreen = () => {
           <View
             style={[
               styles.statusDot,
-              { backgroundColor: getStatusColor(conversation.status) },
+              { backgroundColor: getStatusColor(status) },
             ]}
           />
-          <Text style={styles.statusText}>
-            {getStatusText(conversation.status)}
-          </Text>
+          <Text style={styles.statusText}>{getStatusText(status)}</Text>
         </View>
 
+        {/* Error Message */}
+        {status === "error" && statusMessage && (
+          <Text style={styles.errorText}>{statusMessage}</Text>
+        )}
+
         {/* Conversation ID Display */}
-        {conversation.status === "connected" && (
+        {status === "connected" && (
           <View style={styles.conversationIdContainer}>
             <Text style={styles.conversationIdLabel}>Conversation ID:</Text>
             <Text style={styles.conversationIdText}>
-              {conversation.getId() || currentConversationId || "N/A"}
+              {getId() || "N/A"}
             </Text>
           </View>
         )}
 
         {/* Speaking Indicator */}
-        {conversation.status === "connected" && (
+        {status === "connected" && (
           <View style={styles.speakingContainer}>
             <View
               style={[
                 styles.speakingDot,
                 {
-                  backgroundColor: conversation.isSpeaking
-                    ? "#8B5CF6"
-                    : "#D1D5DB",
+                  backgroundColor: isSpeaking ? "#8B5CF6" : "#D1D5DB",
                 },
               ]}
             />
             <Text
               style={[
                 styles.speakingText,
-                { color: conversation.isSpeaking ? "#8B5CF6" : "#9CA3AF" },
+                { color: isSpeaking ? "#8B5CF6" : "#9CA3AF" },
               ]}
             >
-              {conversation.isSpeaking ? "🎤 AI Speaking" : "👂 AI Listening"}
+              {isSpeaking ? "AI Speaking" : "AI Listening"}
             </Text>
           </View>
         )}
 
-        {/* Microphone Controls */}
-        {conversation.status === "disconnected" && (
+        {/* Text Only Toggle */}
+        {status === "disconnected" && (
           <View style={styles.toggleControlContainer}>
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.toggleButton,
-                isTextOnly ? styles.toggleButtonActive : styles.toggleButtonPassive,
+                isTextOnly
+                  ? styles.toggleButtonActive
+                  : styles.toggleButtonPassive,
               ]}
-              onPress={toggleTextOnly}
+              onPress={() => setIsTextOnly((v) => !v)}
             >
               <Text style={styles.buttonText}>
-                {isTextOnly ? "✍️ Text only" : "Enable text only"}
+                {isTextOnly ? "Text only" : "Enable text only"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -260,57 +195,58 @@ const ConversationScreen = () => {
         </View>
 
         {/* Microphone Controls */}
-        {conversation.status === "connected" && (
+        {status === "connected" && (
           <View style={styles.toggleControlContainer}>
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.toggleButton,
-                isMicMuted ? styles.toggleButtonActive : styles.toggleButtonPassive,
+                isMuted
+                  ? styles.toggleButtonActive
+                  : styles.toggleButtonPassive,
               ]}
-              onPress={toggleMicMute}
+              onPress={() => setMuted(!isMuted)}
             >
               <Text style={styles.buttonText}>
-                {isMicMuted ? "🔇 Unmute" : "🎤 Mute"}
+                {isMuted ? "Unmute" : "Mute"}
               </Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Feedback Buttons */}
-        {conversation.status === "connected" &&
-          conversation.canSendFeedback && (
-            <View style={styles.feedbackContainer}>
-              <Text style={styles.feedbackLabel}>How was that response?</Text>
-              <View style={styles.feedbackButtons}>
-                <TouchableOpacity
-                  style={[styles.button, styles.likeButton]}
-                  onPress={() => conversation.sendFeedback(true)}
-                >
-                  <Text style={styles.buttonText}>👍 Like</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.dislikeButton]}
-                  onPress={() => conversation.sendFeedback(false)}
-                >
-                  <Text style={styles.buttonText}>👎 Dislike</Text>
-                </TouchableOpacity>
-              </View>
+        {status === "connected" && canSendFeedback && (
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.feedbackLabel}>How was that response?</Text>
+            <View style={styles.feedbackButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.likeButton]}
+                onPress={() => sendFeedback(true)}
+              >
+                <Text style={styles.buttonText}>Like</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.dislikeButton]}
+                onPress={() => sendFeedback(false)}
+              >
+                <Text style={styles.buttonText}>Dislike</Text>
+              </TouchableOpacity>
             </View>
-          )}
+          </View>
+        )}
 
         {/* Text Input and Messaging */}
-        {conversation.status === "connected" && (
+        {status === "connected" && (
           <View style={styles.messagingContainer}>
             <Text style={styles.messagingLabel}>Send Text Message</Text>
             <TextInput
               style={styles.textInput}
               value={textInput}
-              onChangeText={text => {
+              onChangeText={(text) => {
                 setTextInput(text);
                 // Prevent agent from interrupting while user is typing
                 if (text.length > 0) {
-                  conversation.sendUserActivity();
+                  sendUserActivity();
                 }
               }}
               placeholder="Type your message or context... (Press Enter to send)"
@@ -325,20 +261,20 @@ const ConversationScreen = () => {
                 onPress={handleSubmitText}
                 disabled={!textInput.trim()}
               >
-                <Text style={styles.buttonText}>💬 Send Message</Text>
+                <Text style={styles.buttonText}>Send Message</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.contextButton]}
                 onPress={() => {
                   if (textInput.trim()) {
-                    conversation.sendContextualUpdate(textInput.trim());
+                    sendContextualUpdate(textInput.trim());
                     setTextInput("");
                     Keyboard.dismiss();
                   }
                 }}
                 disabled={!textInput.trim()}
               >
-                <Text style={styles.buttonText}>📝 Send Context</Text>
+                <Text style={styles.buttonText}>Send Context</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -350,9 +286,66 @@ const ConversationScreen = () => {
 
 export default function App() {
   return (
-    <ElevenLabsProvider>
+    <ConversationProvider
+      onConnect={({ conversationId }) => {
+        console.log("Connected to conversation", conversationId);
+      }}
+      onDisconnect={(details) => {
+        console.log("Disconnected from conversation", details);
+      }}
+      onError={(message, context) => {
+        console.error("Conversation error:", message, context);
+      }}
+      onMessage={({ message, role }) => {
+        console.log(`Message from ${role}:`, message);
+      }}
+      onModeChange={({ mode }) => {
+        console.log(`Mode: ${mode}`);
+      }}
+      onStatusChange={({ status }) => {
+        console.log(`Status: ${status}`);
+      }}
+      onCanSendFeedbackChange={({ canSendFeedback }) => {
+        console.log(`Can send feedback: ${canSendFeedback}`);
+      }}
+      onVadScore={({ vadScore }) => {
+        // Commented out as it's quite noisy
+        // console.log(`VAD Score: ${vadScore}`);
+      }}
+      onInterruption={(event) => {
+        console.log("Interruption detected:", event);
+      }}
+      onMCPToolCall={(event) => {
+        console.log("MCP Tool Call:", event);
+      }}
+      onMCPConnectionStatus={(event) => {
+        console.log("MCP Connection Status:", event);
+      }}
+      onAgentToolRequest={(event) => {
+        console.log("Agent Tool Request:", event);
+      }}
+      onAgentToolResponse={(event) => {
+        console.log("Agent Tool Response:", event);
+      }}
+      onAgentChatResponsePart={(part) => {
+        console.log("Agent Response Part:", part);
+      }}
+      onAudioAlignment={(alignment) => {
+        console.log("Audio Alignment:", {
+          chars: alignment.chars.join(""),
+          charCount: alignment.chars.length,
+          totalDuration: alignment.char_durations_ms.reduce(
+            (a, b) => a + b,
+            0
+          ),
+        });
+      }}
+      onDebug={(data) => {
+        console.log("Debug:", data);
+      }}
+    >
       <ConversationScreen />
-    </ElevenLabsProvider>
+    </ConversationProvider>
   );
 }
 
@@ -390,6 +383,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#374151",
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#EF4444",
+    marginBottom: 16,
+    textAlign: "center",
   },
   conversationIdContainer: {
     backgroundColor: "#F9FAFB",
@@ -431,25 +430,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  toolsContainer: {
-    backgroundColor: "#E5E7EB",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 24,
-    width: "100%",
-  },
-  toolsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  toolItem: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontFamily: "monospace",
-    marginBottom: 4,
-  },
   buttonContainer: {
     width: "100%",
     gap: 16,
@@ -474,13 +454,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
-  },
-  instructions: {
-    marginTop: 24,
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 20,
   },
   feedbackContainer: {
     marginTop: 24,
@@ -533,19 +506,6 @@ const styles = StyleSheet.create({
   contextButton: {
     backgroundColor: "#4F46E5",
     flex: 1,
-  },
-  activityContainer: {
-    marginTop: 24,
-    alignItems: "center",
-  },
-  activityLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  activityButton: {
-    backgroundColor: "#F59E0B",
   },
   toggleControlContainer: {
     margin: 12,
