@@ -80,12 +80,11 @@ describe("ListenerMap", () => {
 
     remove();
 
-    // After removal, composed functions still exist but calling them is a no-op
-    const empty = map.compose();
+    // Removed listeners are no longer invoked, but late-registered ones still fire
+    const composed2 = map.compose();
     const onConnectSpy = vi.fn();
     map.register({ onConnect: onConnectSpy });
-    empty.onConnect?.({ id: "y" });
-    // Only the newly registered listener fires, not the removed ones
+    composed2.onConnect?.({ id: "y" });
     expect(onConnect).not.toHaveBeenCalledWith({ id: "y" });
     expect(onConnectSpy).toHaveBeenCalledWith({ id: "y" });
   });
