@@ -47,7 +47,6 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
 
   const { registerCallbacks } = ctx;
   const callbacksRef = useRef(callbacks);
-  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   callbacksRef.current = callbacks;
 
   // Re-subscribe when the set of provided callback keys changes.
