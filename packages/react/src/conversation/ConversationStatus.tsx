@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { Status } from "@elevenlabs/client";
-import { ConversationContext } from "./ConversationContext";
+import { useRegisterCallbacks } from "./ConversationContext";
 
 export type ConversationStatusValue = {
   status: "disconnected" | "connecting" | "connected" | "error";
@@ -20,35 +20,24 @@ export function ConversationStatusProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const ctx = useContext(ConversationContext);
-  if (!ctx) {
-    throw new Error(
-      "ConversationStatusProvider must be rendered inside a ConversationProvider"
-    );
-  }
-
-  const { registerCallbacks } = ctx;
-
   const [status, setStatus] = useState<ConversationStatusValue["status"]>("disconnected");
   const [message, setMessage] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    return registerCallbacks({
-      onStatusChange: ({ status: newStatus }: { status: Status }) => {
-        if (newStatus === "disconnecting") {
-          // Transient state — keep current status
-          return;
-        }
-        setStatus(newStatus);
-        // Clear error message when transitioning to a non-error state
-        setMessage(undefined);
-      },
-      onError: (errorMessage: string) => {
-        setStatus("error");
-        setMessage(errorMessage);
-      },
-    });
-  }, [registerCallbacks]);
+  useRegisterCallbacks({
+    onStatusChange: ({ status: newStatus }: { status: Status }) => {
+      if (newStatus === "disconnecting") {
+        // Transient state — keep current status
+        return;
+      }
+      setStatus(newStatus);
+      // Clear error message when transitioning to a non-error state
+      setMessage(undefined);
+    },
+    onError: (errorMessage: string) => {
+      setStatus("error");
+      setMessage(errorMessage);
+    },
+  });
 
   const value: ConversationStatusValue = { status, message };
 
