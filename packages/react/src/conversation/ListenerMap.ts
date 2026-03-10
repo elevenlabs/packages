@@ -24,7 +24,7 @@ export class ListenerMap<
 > {
   private sets = new Map<string, ListenerSet<unknown[]>>();
 
-  constructor(keys: readonly string[]) {
+  constructor(keys: readonly (keyof T & string)[]) {
     for (const key of keys) {
       this.sets.set(key, new ListenerSet<unknown[]>());
     }
