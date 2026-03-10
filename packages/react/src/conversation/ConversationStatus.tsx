@@ -59,7 +59,7 @@ export function ConversationStatusProvider({
 
 /**
  * Returns the current conversation status and any error message.
- * Re-renders only when the connection status changes.
+ * Re-renders when the connection status or error message changes.
  *
  * Must be used within a `ConversationProvider`.
  */
