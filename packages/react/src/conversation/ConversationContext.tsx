@@ -50,22 +50,24 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   callbacksRef.current = callbacks;
 
+  // Re-subscribe when the set of provided callback keys changes.
+  const activeKeys = Object.keys(callbacks)
+    .filter(key => callbacks[key as keyof Callbacks] !== undefined)
+    .sort();
+
   useEffect(() => {
-    // Build stable wrappers that delegate to the ref so callers can pass
-    // inline objects without causing re-subscriptions.
     const stableCallbacks = Object.fromEntries(
-      Object.keys(callbacksRef.current)
-        .filter(key => callbacksRef.current[key as keyof Callbacks] !== undefined)
-        .map(key => [
-          key,
-          (...args: never[]) => {
-            const fn = callbacksRef.current[key as keyof Callbacks];
-            if (typeof fn === "function") {
-              (fn as (...a: never[]) => void)(...args);
-            }
-          },
-        ])
+      activeKeys.map((key: string) => [
+        key,
+        (...args: never[]) => {
+          const fn = callbacksRef.current[key as keyof Callbacks];
+          if (typeof fn === "function") {
+            (fn as (...a: never[]) => void)(...args);
+          }
+        },
+      ])
     ) as Partial<Callbacks>;
     return registerCallbacks(stableCallbacks);
-  }, [registerCallbacks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- spreading activeKeys so the effect re-runs when the set of keys changes
+  }, [registerCallbacks, ...activeKeys]);
 }
