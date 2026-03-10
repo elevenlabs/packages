@@ -326,10 +326,12 @@ describe("CALLBACK_KEYS", () => {
     // Create an object with all Callbacks keys satisfied, then verify
     // CALLBACK_KEYS covers them all.
     // Compile-time check: if CALLBACK_KEYS is missing a Callbacks key, this
-    // type will resolve to that key name and the `never` assertion fails.
-    type Missing = Exclude<keyof Callbacks, (typeof CALLBACK_KEYS)[number]>;
-    const _exhaustive: Missing = undefined as never;
-    void _exhaustive;
+    // type alias will fail because Missing won't be `never`.
+    type AssertNever<T extends never> = T;
+    type _Check = AssertNever<
+      Exclude<keyof Callbacks, (typeof CALLBACK_KEYS)[number]>
+    >;
+    void (undefined as unknown as _Check);
 
     // Runtime sanity: no duplicates in the array.
     expect(new Set(CALLBACK_KEYS).size).toBe(CALLBACK_KEYS.length);

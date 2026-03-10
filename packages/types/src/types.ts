@@ -103,7 +103,7 @@ export type Callbacks = {
  * Runtime array of all keys in `Callbacks`, kept in sync with the type above.
  * Used by the React SDK to pre-initialize listener maps for callback composition.
  */
-export const CALLBACK_KEYS: readonly (keyof Callbacks)[] = [
+export const CALLBACK_KEYS = [
   "onConnect",
   "onDisconnect",
   "onError",
@@ -124,4 +124,4 @@ export const CALLBACK_KEYS: readonly (keyof Callbacks)[] = [
   "onAgentChatResponsePart",
   "onAudioAlignment",
   "onDebug",
-] as const;
+] as const satisfies readonly (keyof Callbacks)[];

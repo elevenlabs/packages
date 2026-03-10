@@ -83,7 +83,7 @@ export function ConversationProvider({
   const registerCallbacks = useCallback(
     (callbacks: Partial<Callbacks>) =>
       listenerMap.register(callbacks),
-    []
+    [listenerMap]
   );
 
   const startSession = useCallback(
@@ -145,7 +145,7 @@ export function ConversationProvider({
         }
       );
     },
-    [stableCallbacks]
+    [stableCallbacks, listenerMap]
   );
 
   const endSession = useCallback(() => {
