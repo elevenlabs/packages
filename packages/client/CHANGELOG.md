@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 0.15.1
+
+### Patch Changes
+
+- 7368ccd: Adds resampling to the output audio when the required sampling rate cannot be acquired
+
 ## 0.15.0
 
 ### Minor Changes
