@@ -73,7 +73,7 @@ export function ConversationProvider({
   defaultOptionsRef.current = defaultOptions;
 
   /** Callback registry for sub-providers (status, mode, feedback, etc.). */
-  const listenerMapRef = useRef(new ListenerMap<Callbacks>(CALLBACK_KEYS));
+  const [listenerMap] = useState(() => new ListenerMap<Callbacks>(CALLBACK_KEYS));
 
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -82,7 +82,7 @@ export function ConversationProvider({
 
   const registerCallbacks = useCallback(
     (callbacks: Partial<Callbacks>) =>
-      listenerMapRef.current.register(callbacks),
+      listenerMap.register(callbacks),
     []
   );
 
@@ -118,7 +118,7 @@ export function ConversationProvider({
           { livekitUrl: calculatedLivekitUrl },
           defaultConfig,
           stableCallbacks,
-          listenerMapRef.current.compose(),
+          listenerMap.compose(),
           options ?? {},
           {
             origin,

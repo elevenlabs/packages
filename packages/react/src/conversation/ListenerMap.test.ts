@@ -142,14 +142,19 @@ describe("ListenerMap", () => {
     expect(fn).toHaveBeenCalledWith({ id: "late" });
   });
 
-  it("throws on undefined values in the callbacks object", () => {
+  it("skips undefined values in the callbacks object", () => {
     const map = new ListenerMap<TestCallbacks>([
       "onConnect",
       "onError",
       "onDisconnect",
     ]);
-    expect(() =>
-      map.register({ onConnect: undefined, onError: vi.fn() })
-    ).toThrow('Expected function for key "onConnect"');
+    const onError = vi.fn();
+    const remove = map.register({ onConnect: undefined, onError });
+    const composed = map.compose();
+    composed.onConnect?.({ id: "test" });
+    expect(onError).not.toHaveBeenCalled();
+    composed.onError?.("boom");
+    expect(onError).toHaveBeenCalledWith("boom");
+    remove();
   });
 });

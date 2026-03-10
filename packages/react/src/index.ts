@@ -82,6 +82,11 @@ export type {
 } from "@elevenlabs/client";
 export { postOverallFeedback } from "@elevenlabs/client";
 
+// Conversation provider exports
+export { ConversationProvider } from "./conversation/ConversationProvider";
+export { useConversationStatus } from "./conversation/ConversationStatus";
+export type { ConversationStatusValue } from "./conversation/ConversationStatus";
+
 // Scribe exports
 export {
   useScribe,

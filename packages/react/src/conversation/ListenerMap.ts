@@ -35,15 +35,17 @@ export class ListenerMap<
    * all listeners added by this call.
    */
   register(callbacks: Partial<T>): () => void {
-    const removers = Object.entries(callbacks).map(([key, fn]) => {
-      assertFunction(fn, key);
-      let set = this.sets.get(key);
-      if (!set) {
-        set = new ListenerSet<unknown[]>();
-        this.sets.set(key, set);
-      }
-      return set.add(fn);
-    });
+    const removers = Object.entries(callbacks)
+      .filter(([, fn]) => fn !== undefined)
+      .map(([key, fn]) => {
+        assertFunction(fn, key);
+        let set = this.sets.get(key);
+        if (!set) {
+          set = new ListenerSet<unknown[]>();
+          this.sets.set(key, set);
+        }
+        return set.add(fn);
+      });
     return () => {
       for (const remove of removers) remove();
     };
