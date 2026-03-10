@@ -37,6 +37,11 @@ export { SessionConnectionError } from "./utils/errors";
 export type { Location } from "./utils/location";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
+export { setSetupStrategy } from "./platform/VoiceSessionSetup";
+export type {
+  VoiceSessionSetupStrategy,
+  VoiceSessionSetupResult,
+} from "./platform/VoiceSessionSetup";
 
 // Scribe exports
 export {
