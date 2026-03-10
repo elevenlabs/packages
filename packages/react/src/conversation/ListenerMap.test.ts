@@ -157,4 +157,11 @@ describe("ListenerMap", () => {
     expect(onError).toHaveBeenCalledWith("boom");
     remove();
   });
+
+  it("throws on unknown callback keys", () => {
+    const map = new ListenerMap<TestCallbacks>(["onConnect"]);
+    expect(() =>
+      map.register({ onError: vi.fn() } as Partial<TestCallbacks>)
+    ).toThrow('Unknown callback key "onError"');
+  });
 });

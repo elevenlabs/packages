@@ -39,10 +39,9 @@ export class ListenerMap<
       .filter(([, fn]) => fn !== undefined)
       .map(([key, fn]) => {
         assertFunction(fn, key);
-        let set = this.sets.get(key);
+        const set = this.sets.get(key);
         if (!set) {
-          set = new ListenerSet<unknown[]>();
-          this.sets.set(key, set);
+          throw new Error(`Unknown callback key "${key}"`);
         }
         return set.add(fn);
       });
