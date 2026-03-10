@@ -1,14 +1,23 @@
 // @ts-check
 
 import { defineConfig, globalIgnores } from "eslint/config";
-import importX from "eslint-plugin-import-x";
+import importPlugin from "eslint-plugin-import";
 
 export default defineConfig(
   globalIgnores(["dist/**"]),
   {
-    plugins: { "import-x": /** @type {any} */ (importX) },
+    plugins: { import: importPlugin },
+    settings: {
+      "import/extensions": [".ts", ".tsx", ".js", ".jsx"],
+      "import/parsers": {
+        "@typescript-eslint/parser": [".ts", ".tsx"],
+      },
+      "import/resolver": {
+        typescript: true,
+      },
+    },
     rules: {
-      "import-x/no-cycle": "error",
+      "import/no-cycle": "error",
     },
   }
 );
