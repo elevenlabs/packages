@@ -1,5 +1,4 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import type { Status } from "@elevenlabs/client";
 import { useRegisterCallbacks } from "./ConversationContext";
 
 export type ConversationStatusValue = {
@@ -24,7 +23,7 @@ export function ConversationStatusProvider({
   const [message, setMessage] = useState<string | undefined>(undefined);
 
   useRegisterCallbacks({
-    onStatusChange: ({ status: newStatus }: { status: Status }) => {
+    onStatusChange({ status: newStatus }) {
       if (newStatus === "disconnecting") {
         // Transient state — keep current status
         return;
@@ -33,7 +32,7 @@ export function ConversationStatusProvider({
       // Clear error message when transitioning to a non-error state
       setMessage(undefined);
     },
-    onError: (errorMessage: string) => {
+    onError(errorMessage) {
       setStatus("error");
       setMessage(errorMessage);
     },

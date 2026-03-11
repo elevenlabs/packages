@@ -23,10 +23,10 @@ export function ConversationModeProvider({
   const [mode, setMode] = useState<Mode>("listening");
 
   useRegisterCallbacks({
-    onModeChange: ({ mode: newMode }: { mode: Mode }) => {
+    onModeChange({ mode: newMode }) {
       setMode(newMode);
     },
-    onDisconnect: () => {
+    onDisconnect() {
       setMode("listening");
     },
   });

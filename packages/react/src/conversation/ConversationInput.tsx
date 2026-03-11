@@ -31,7 +31,7 @@ export function ConversationInputProvider({
   const [isMuted, setIsMuted] = useState(false);
 
   useRegisterCallbacks({
-    onDisconnect: () => setIsMuted(false),
+    onDisconnect() { setIsMuted(false); },
   });
 
   const setMuted = useCallback(

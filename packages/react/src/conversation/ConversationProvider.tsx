@@ -30,6 +30,14 @@ import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import { ListenerMap } from "./ListenerMap";
 
+const SUB_PROVIDERS: React.ComponentType<React.PropsWithChildren>[] = [
+  ConversationControlsProvider,
+  ConversationStatusProvider,
+  ConversationInputProvider,
+  ConversationModeProvider,
+  ConversationFeedbackProvider,
+];
+
 export type ConversationProviderProps = React.PropsWithChildren<HookOptions>;
 
 /**
@@ -206,19 +214,14 @@ export function ConversationProvider({
     [conversation, conversationRef, startSession, endSession, registerCallbacks]
   );
 
+  const wrappedChildren = SUB_PROVIDERS.reduceRight<React.ReactNode>(
+    (nested, Provider) => <Provider>{nested}</Provider>,
+    children
+  );
+
   return (
     <ConversationContext.Provider value={contextValue}>
-      <ConversationControlsProvider>
-        <ConversationStatusProvider>
-          <ConversationInputProvider>
-            <ConversationModeProvider>
-              <ConversationFeedbackProvider>
-                {children}
-              </ConversationFeedbackProvider>
-            </ConversationModeProvider>
-          </ConversationInputProvider>
-        </ConversationStatusProvider>
-      </ConversationControlsProvider>
+      {wrappedChildren}
     </ConversationContext.Provider>
   );
 }
