@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRawConversationRef } from "./ConversationContext";
+import { useRawConversationRef, useRegisterCallbacks } from "./ConversationContext";
 
 export type ConversationInputValue = {
   isMuted: boolean;
@@ -25,6 +25,10 @@ export function ConversationInputProvider({
 }: React.PropsWithChildren) {
   const conversationRef = useRawConversationRef();
   const [isMuted, setIsMuted] = useState(false);
+
+  useRegisterCallbacks({
+    onDisconnect: () => setIsMuted(false),
+  });
 
   const setMuted = useCallback((muted: boolean) => {
     const conversation = conversationRef.current;

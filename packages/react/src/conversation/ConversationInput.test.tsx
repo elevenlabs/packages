@@ -126,4 +126,31 @@ describe("ConversationInput", () => {
 
     expect(result.current.setMuted).toBe(firstSetMuted);
   });
+
+  it("resets isMuted to false when session ends", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.input.setMuted(true);
+    });
+
+    expect(result.current.input.isMuted).toBe(true);
+
+    // Simulate the onDisconnect callback that the conversation instance fires
+    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    act(() => {
+      startSessionCall?.onDisconnect?.({ reason: "agent" });
+    });
+
+    expect(result.current.input.isMuted).toBe(false);
+  });
 });
