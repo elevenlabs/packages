@@ -6,22 +6,19 @@ import {
 import { setSetupStrategy, webSessionSetup } from "../VoiceSessionSetup";
 import type { VoiceSessionSetupResult } from "../VoiceSessionSetup";
 import type { Options } from "../../BaseConversation";
-import type { BaseConnection } from "../../utils/BaseConnection";
 
 registerGlobals();
 
 /**
  * React Native voice session setup strategy.
  *
- * Configures and starts the native AudioSession (required for the polyfilled
- * DOM audio APIs to work), then delegates to the standard web setup strategy.
- * On cleanup, stops the native AudioSession.
+ * 1. Configures and starts the native AudioSession
+ * 2. Delegates connection + input/output setup to the web strategy
+ * 3. Wraps detach to stop the native AudioSession on cleanup
  */
 async function reactNativeSessionSetup(
-  options: Options,
-  connection: BaseConnection
+  options: Options
 ): Promise<VoiceSessionSetupResult> {
-  // Configure and start native audio session before using audio APIs
   await AudioSession.configureAudio({
     android: {
       preferredOutputList: ["speaker"],
@@ -33,9 +30,8 @@ async function reactNativeSessionSetup(
   });
   await AudioSession.startAudioSession();
 
-  const result = await webSessionSetup(options, connection);
+  const result = await webSessionSetup(options);
 
-  // Wrap detach to also stop the native audio session
   const originalDetach = result.detach;
   return {
     ...result,
