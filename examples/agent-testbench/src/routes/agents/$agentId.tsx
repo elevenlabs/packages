@@ -59,13 +59,13 @@ function RouteComponent() {
   }
 
   return (
-    <LogProvider>
-      <ConversationProvider>
-        <AgentPage agent={agent} />
-      </ConversationProvider>
-      <ClientOnly>
+    <ClientOnly>
+      <LogProvider>
+        <ConversationProvider>
+          <AgentPage agent={agent} />
+        </ConversationProvider>
         <PermissionsLogger />
-      </ClientOnly>
-    </LogProvider>
+      </LogProvider>
+    </ClientOnly>
   );
 }
