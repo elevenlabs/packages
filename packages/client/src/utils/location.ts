@@ -9,7 +9,7 @@ export function parseLocation(location: string = "us"): Location {
       return location;
     default:
       console.warn(
-        `[ConversationalAI] Invalid server-location: ${location}. Defaulting to "us"`
+        `[ElevenAgents] Invalid server-location: ${location}. Defaulting to "us"`
       );
       return "us";
   }
