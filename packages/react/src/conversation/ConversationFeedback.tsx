@@ -35,6 +35,9 @@ export function ConversationFeedbackProvider({
     }) => {
       setCanSendFeedback(newValue);
     },
+    onDisconnect: () => {
+      setCanSendFeedback(false);
+    },
   });
 
   const sendFeedback = useCallback((like: boolean) => {

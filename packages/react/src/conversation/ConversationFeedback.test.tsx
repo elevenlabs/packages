@@ -134,4 +134,29 @@ describe("ConversationFeedback", () => {
     });
     expect(result.current.feedback.canSendFeedback).toBe(true);
   });
+
+  it("resets canSendFeedback to false when session disconnects", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+
+    act(() => {
+      opts.onCanSendFeedbackChange!({ canSendFeedback: true });
+    });
+    expect(result.current.feedback.canSendFeedback).toBe(true);
+
+    act(() => {
+      opts.onDisconnect!({ reason: "agent" });
+    });
+    expect(result.current.feedback.canSendFeedback).toBe(false);
+  });
 });
