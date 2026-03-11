@@ -22,6 +22,7 @@ import { ConversationControlsProvider } from "./ConversationControls";
 import { ConversationStatusProvider } from "./ConversationStatus";
 import { ConversationInputProvider } from "./ConversationInput";
 import { ConversationModeProvider } from "./ConversationMode";
+import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import { ListenerMap } from "./ListenerMap";
 import type { ConversationProviderProps } from "./types";
 
@@ -192,7 +193,11 @@ export function ConversationProvider({
       <ConversationControlsProvider>
         <ConversationStatusProvider>
           <ConversationInputProvider>
-            <ConversationModeProvider>{children}</ConversationModeProvider>
+            <ConversationModeProvider>
+              <ConversationFeedbackProvider>
+                {children}
+              </ConversationFeedbackProvider>
+            </ConversationModeProvider>
           </ConversationInputProvider>
         </ConversationStatusProvider>
       </ConversationControlsProvider>
