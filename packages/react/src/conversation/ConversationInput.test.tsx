@@ -30,9 +30,9 @@ function useTestHook() {
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
-  return function Wrapper({ children }: { children: React.ReactNode }) {
+  return function Wrapper({ children }: React.PropsWithChildren) {
     return (
-      <ConversationProvider signedUrl="wss://test.example.com" {...props}>
+      <ConversationProvider {...props}>
         {children}
       </ConversationProvider>
     );

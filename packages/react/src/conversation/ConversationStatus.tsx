@@ -7,8 +7,9 @@ export type ConversationStatusValue = {
   message?: string;
 };
 
-const ConversationStatusContext =
-  createContext<ConversationStatusValue | null>(null);
+const ConversationStatusContext = createContext<ConversationStatusValue | null>(
+  null
+);
 
 /**
  * Reads from `ConversationContext` and registers `onStatusChange` + `onError`
@@ -18,7 +19,8 @@ const ConversationStatusContext =
 export function ConversationStatusProvider({
   children,
 }: React.PropsWithChildren) {
-  const [status, setStatus] = useState<ConversationStatusValue["status"]>("disconnected");
+  const [status, setStatus] =
+    useState<ConversationStatusValue["status"]>("disconnected");
   const [message, setMessage] = useState<string | undefined>(undefined);
 
   useRegisterCallbacks({

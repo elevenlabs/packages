@@ -5,15 +5,19 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRawConversationRef, useRegisterCallbacks } from "./ConversationContext";
+import {
+  useRawConversationRef,
+  useRegisterCallbacks,
+} from "./ConversationContext";
 
 export type ConversationInputValue = {
   isMuted: boolean;
   setMuted: (isMuted: boolean) => void;
 };
 
-const ConversationInputContext =
-  createContext<ConversationInputValue | null>(null);
+const ConversationInputContext = createContext<ConversationInputValue | null>(
+  null
+);
 
 /**
  * Reads from `ConversationContext` and manages microphone mute state.
@@ -30,14 +34,17 @@ export function ConversationInputProvider({
     onDisconnect: () => setIsMuted(false),
   });
 
-  const setMuted = useCallback((muted: boolean) => {
-    const conversation = conversationRef.current;
-    if (!conversation) {
-      throw new Error("No active conversation. Call startSession() first.");
-    }
-    conversation.setMicMuted(muted);
-    setIsMuted(muted);
-  }, [conversationRef]);
+  const setMuted = useCallback(
+    (muted: boolean) => {
+      const conversation = conversationRef.current;
+      if (!conversation) {
+        throw new Error("No active conversation. Call startSession() first.");
+      }
+      conversation.setMicMuted(muted);
+      setIsMuted(muted);
+    },
+    [conversationRef]
+  );
 
   const value = useMemo<ConversationInputValue>(
     () => ({ isMuted, setMuted }),
