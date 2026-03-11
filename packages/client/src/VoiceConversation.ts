@@ -4,7 +4,6 @@ import type {
   PlaybackEventTarget,
   PlaybackListener,
 } from "./utils/output";
-import { createConnection } from "./utils/ConnectionFactory";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
 import { WebRTCConnection } from "./utils/WebRTCConnection";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events";
@@ -43,9 +42,6 @@ export class VoiceConversation extends BaseConversation {
       fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
     }
 
-    let input: InputController | null = null;
-    let connection: BaseConnection | null = null;
-    let output: OutputController | null = null;
     let preliminaryInputStream: MediaStream | null = null;
 
     const useWakeLock = options.useWakeLock ?? true;
@@ -61,24 +57,24 @@ export class VoiceConversation extends BaseConversation {
         audio: true,
       });
 
-      await applyDelay(fullOptions.connectionDelay);
-      connection = await createConnection(fullOptions);
-
-      // Use platform-specific setup strategy to create input/output
-      const sessionSetup = await setupStrategy(fullOptions, connection);
-      input = sessionSetup.input;
-      output = sessionSetup.output;
-
+      // Stop the preliminary stream before creating the connection.
+      // Its only purpose is triggering the browser permission prompt.
+      // Keeping it active can block LiveKit's media negotiation on React Native.
       preliminaryInputStream?.getTracks().forEach(track => {
         track.stop();
       });
       preliminaryInputStream = null;
 
+      await applyDelay(fullOptions.connectionDelay);
+
+      // Platform-specific strategy creates the connection and sets up input/output
+      const sessionSetup = await setupStrategy(fullOptions);
+
       return new VoiceConversation(
         fullOptions,
-        connection,
-        input,
-        output,
+        sessionSetup.connection,
+        sessionSetup.input,
+        sessionSetup.output,
         sessionSetup.playbackEventTarget,
         sessionSetup.detach,
         wakeLock
@@ -90,9 +86,6 @@ export class VoiceConversation extends BaseConversation {
       preliminaryInputStream?.getTracks().forEach(track => {
         track.stop();
       });
-      connection?.close();
-      await input?.close();
-      await output?.close();
       try {
         await wakeLock?.release();
         wakeLock = null;

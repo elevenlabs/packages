@@ -51,6 +51,7 @@ const ConversationScreen = () => {
     try {
       startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+        connectionType: "webrtc",
         userId: "demo-user",
         textOnly: isTextOnly || undefined,
       });

@@ -35,6 +35,10 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc"
+    ]
   }
 }
