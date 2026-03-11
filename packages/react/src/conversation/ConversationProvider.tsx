@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   CALLBACK_KEYS,
@@ -88,6 +88,18 @@ export function ConversationProvider({
       listenerMap.register(callbacks),
     [listenerMap]
   );
+
+  // Sync provider state when session ends externally (agent disconnect,
+  // raw instance endSession(), etc.). Uses the listener map so it composes
+  // with user-provided onDisconnect callbacks.
+  useLayoutEffect(() => {
+    return listenerMap.register({
+      onDisconnect: () => {
+        conversationRef.current = null;
+        setConversation(null);
+      },
+    });
+  }, [listenerMap]);
 
   const startSession = useCallback(
     (options?: HookOptions) => {
