@@ -28,10 +28,10 @@ export function ConversationFeedbackProvider({
   const [canSendFeedback, setCanSendFeedback] = useState(false);
 
   useRegisterCallbacks({
-    onCanSendFeedbackChange: ({ canSendFeedback: newValue }) => {
+    onCanSendFeedbackChange({ canSendFeedback: newValue }) {
       setCanSendFeedback(newValue);
     },
-    onDisconnect: () => {
+    onDisconnect() {
       setCanSendFeedback(false);
     },
   });

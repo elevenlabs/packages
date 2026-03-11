@@ -23,7 +23,7 @@ export function ConversationStatusProvider({
   const [message, setMessage] = useState<string | undefined>(undefined);
 
   useRegisterCallbacks({
-    onStatusChange: ({ status: newStatus }) => {
+    onStatusChange({ status: newStatus }) {
       if (newStatus === "disconnecting") {
         // Transient state — keep current status
         return;
@@ -32,7 +32,7 @@ export function ConversationStatusProvider({
       // Clear error message when transitioning to a non-error state
       setMessage(undefined);
     },
-    onError: (errorMessage) => {
+    onError(errorMessage) {
       setStatus("error");
       setMessage(errorMessage);
     },
