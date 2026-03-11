@@ -34,9 +34,9 @@ const createMockConversation = (id = "test-id") =>
   }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
-  return function Wrapper({ children }: { children: React.ReactNode }) {
+  return function Wrapper({ children }: React.PropsWithChildren) {
     return (
-      <ConversationProvider signedUrl="wss://test.example.com" {...props}>
+      <ConversationProvider {...props}>
         {children}
       </ConversationProvider>
     );
@@ -293,10 +293,8 @@ describe("ConversationProvider", () => {
   });
 
   it("passes stable callbacks that always call the latest prop value", async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <ConversationProvider signedUrl="wss://test.example.com">
-        {children}
-      </ConversationProvider>
+    const wrapper = ({ children }: React.PropsWithChildren) => (
+      <ConversationProvider>{children}</ConversationProvider>
     );
 
     // We test the stable callback pattern by checking that
