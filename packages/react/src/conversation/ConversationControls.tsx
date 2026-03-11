@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
-import { VoiceConversation, type OutputConfig } from "@elevenlabs/client";
-import type {
-  HookOptions,
-  DeviceFormatConfig,
-  DeviceInputConfig,
-} from "../index";
+import {
+  VoiceConversation,
+  type FormatConfig,
+  type InputDeviceConfig,
+  type OutputConfig,
+} from "@elevenlabs/client";
+import type { HookOptions } from "../index";
 import { ConversationContext } from "./ConversationContext";
 
 export type ConversationControlsValue = {
@@ -19,9 +20,9 @@ export type ConversationControlsValue = {
   ) => void;
   setVolume: (options: { volume: number }) => void;
   changeInputDevice: (
-    config: DeviceFormatConfig & DeviceInputConfig
+    config: FormatConfig & InputDeviceConfig
   ) => Promise<void>;
-  changeOutputDevice: (config: DeviceFormatConfig & OutputConfig) => Promise<void>;
+  changeOutputDevice: (config: FormatConfig & OutputConfig) => Promise<void>;
   getInputByteFrequencyData: () => Uint8Array;
   getOutputByteFrequencyData: () => Uint8Array;
   getInputVolume: () => number;
@@ -80,7 +81,7 @@ export function ConversationControlsProvider({
   }, [getConversation]);
 
   const changeInputDevice = useCallback(
-    async (config: DeviceFormatConfig & DeviceInputConfig) => {
+    async (config: FormatConfig & InputDeviceConfig) => {
       const conversation = getConversation();
       if (conversation instanceof VoiceConversation) {
         return await conversation.changeInputDevice(config);
@@ -93,7 +94,7 @@ export function ConversationControlsProvider({
   );
 
   const changeOutputDevice = useCallback(
-    async (config: DeviceFormatConfig & OutputConfig) => {
+    async (config: FormatConfig & OutputConfig) => {
       const conversation = getConversation();
       if (conversation instanceof VoiceConversation) {
         return await conversation.changeOutputDevice(config);

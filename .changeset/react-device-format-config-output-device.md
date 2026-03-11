@@ -2,33 +2,24 @@
 "@elevenlabs/react": major
 ---
 
-**Breaking:** `DeviceFormatConfig.outputDeviceId` has been removed. `changeOutputDevice()` now accepts `DeviceFormatConfig & OutputConfig`.
+**Breaking:** `DeviceFormatConfig` and `DeviceInputConfig` have been removed. Use `FormatConfig` and `InputDeviceConfig` from `@elevenlabs/client` instead.
 
-`outputDeviceId` described device routing, not audio format, so it did not belong on `DeviceFormatConfig`. It is now part of `OutputConfig` from `@elevenlabs/client`.
+These were duplicates of types already exported by `@elevenlabs/client`. `changeOutputDevice()` now accepts `FormatConfig & OutputConfig` (previously `DeviceFormatConfig & OutputConfig`).
 
 **Before:**
 ```ts
-import type { DeviceFormatConfig } from "@elevenlabs/react";
+import type { DeviceFormatConfig, DeviceInputConfig } from "@elevenlabs/react";
 
-const config: DeviceFormatConfig = {
-  format: "pcm",
-  sampleRate: 16000,
-  outputDeviceId: "my-device-id", // was on DeviceFormatConfig
-};
-await conversation.changeOutputDevice(config);
+await conversation.changeInputDevice({ format: "pcm", sampleRate: 16000, inputDeviceId: "my-device" });
+await conversation.changeOutputDevice({ format: "pcm", sampleRate: 16000, outputDeviceId: "my-device" });
 ```
 
 **After:**
 ```ts
-import type { DeviceFormatConfig } from "@elevenlabs/react";
-import type { OutputConfig } from "@elevenlabs/client";
+import type { FormatConfig, InputDeviceConfig, OutputConfig } from "@elevenlabs/client";
 
-const config: DeviceFormatConfig & OutputConfig = {
-  format: "pcm",
-  sampleRate: 16000,
-  outputDeviceId: "my-device-id", // now on OutputConfig
-};
-await conversation.changeOutputDevice(config);
+await conversation.changeInputDevice({ format: "pcm", sampleRate: 16000, inputDeviceId: "my-device" });
+await conversation.changeOutputDevice({ format: "pcm", sampleRate: 16000, outputDeviceId: "my-device" });
 ```
 
-**Migration:** Intersect `DeviceFormatConfig` with `OutputConfig` from `@elevenlabs/client` when passing `outputDeviceId` to `changeOutputDevice()`. The runtime value is unchanged — only the type annotation needs updating.
+**Migration:** Replace `DeviceFormatConfig` with `FormatConfig` and `DeviceInputConfig` with `InputDeviceConfig`, both imported from `@elevenlabs/client`. The runtime values are unchanged — only the type imports need updating.

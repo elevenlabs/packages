@@ -1,18 +1,23 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Conversation,
   CALLBACK_KEYS,
   mergeOptions,
+  parseLocation,
+  getOriginForLocation,
+  getLivekitUrlForLocation,
   type Options,
   type Callbacks,
 } from "@elevenlabs/client";
 
-import {
-  type HookOptions,
-  parseLocation,
-  getOriginForLocation,
-  getLivekitUrlForLocation,
-} from "../index";
+import { type HookOptions } from "../index";
 import { PACKAGE_VERSION } from "../version";
 import {
   ConversationContext,
@@ -24,9 +29,8 @@ import { ConversationInputProvider } from "./ConversationInput";
 import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import { ListenerMap } from "./ListenerMap";
-import type { ConversationProviderProps } from "./types";
 
-
+export type ConversationProviderProps = React.PropsWithChildren<HookOptions>;
 
 /**
  * Wraps user-provided callback props in stable ref-backed functions,
@@ -43,18 +47,19 @@ function useStableCallbacks(props: HookOptions): Callbacks {
   }
 
   // Build stable wrappers once — they always call the latest ref value
-  const [stableCallbacks] = useState(() =>
-    Object.fromEntries(
-      CALLBACK_KEYS.map((key: string) => [
-        key,
-        (...args: unknown[]) => {
-          const fn = callbackRefs.current[key] as
-            | ((...a: unknown[]) => void)
-            | undefined;
-          fn?.(...args);
-        },
-      ])
-    ) as Callbacks
+  const [stableCallbacks] = useState(
+    () =>
+      Object.fromEntries(
+        CALLBACK_KEYS.map((key: string) => [
+          key,
+          (...args: unknown[]) => {
+            const fn = callbackRefs.current[key] as
+              | ((...a: unknown[]) => void)
+              | undefined;
+            fn?.(...args);
+          },
+        ])
+      ) as Callbacks
   );
 
   return stableCallbacks;
@@ -76,7 +81,9 @@ export function ConversationProvider({
   defaultOptionsRef.current = defaultOptions;
 
   /** Callback registry for sub-providers (status, mode, feedback, etc.). */
-  const [listenerMap] = useState(() => new ListenerMap<Callbacks>(CALLBACK_KEYS));
+  const [listenerMap] = useState(
+    () => new ListenerMap<Callbacks>(CALLBACK_KEYS)
+  );
 
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -84,8 +91,7 @@ export function ConversationProvider({
   const stableCallbacks = useStableCallbacks(defaultOptions);
 
   const registerCallbacks = useCallback(
-    (callbacks: Partial<Callbacks>) =>
-      listenerMap.register(callbacks),
+    (callbacks: Partial<Callbacks>) => listenerMap.register(callbacks),
     [listenerMap]
   );
 

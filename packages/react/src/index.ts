@@ -8,62 +8,17 @@ import {
   type AudioWorkletConfig,
   type OutputConfig,
   type FormatConfig,
+  type InputDeviceConfig,
   type Mode,
   type Status,
   type Callbacks,
+  parseLocation,
+  getOriginForLocation,
+  getLivekitUrlForLocation,
+  type Location,
 } from "@elevenlabs/client";
 
-// Device configuration types for audio device switching
-export type DeviceFormatConfig = {
-  format: "pcm" | "ulaw";
-  sampleRate: number;
-};
-
-export type DeviceInputConfig = {
-  preferHeadphonesForIosDevices?: boolean;
-  inputDeviceId?: string;
-};
-
 import { PACKAGE_VERSION } from "./version";
-
-export type Location = "us" | "global" | "eu-residency" | "in-residency";
-
-export function parseLocation(location: string = "us"): Location {
-  switch (location) {
-    case "eu-residency":
-    case "in-residency":
-    case "us":
-    case "global":
-      return location;
-    default:
-      console.warn(
-        `[ConversationalAI] Invalid server-location: ${location}. Defaulting to "us"`
-      );
-      return "us";
-  }
-}
-
-export function getOriginForLocation(location: Location): string {
-  const originMap: Record<Location, string> = {
-    us: "wss://api.elevenlabs.io",
-    "eu-residency": "wss://api.eu.residency.elevenlabs.io",
-    "in-residency": "wss://api.in.residency.elevenlabs.io",
-    global: "wss://api.elevenlabs.io",
-  };
-
-  return originMap[location];
-}
-
-export function getLivekitUrlForLocation(location: Location): string {
-  const livekitUrlMap: Record<Location, string> = {
-    us: "wss://livekit.rtc.elevenlabs.io",
-    "eu-residency": "wss://livekit.rtc.eu.residency.elevenlabs.io",
-    "in-residency": "wss://livekit.rtc.in.residency.elevenlabs.io",
-    global: "wss://livekit.rtc.elevenlabs.io",
-  };
-
-  return livekitUrlMap[location];
-}
 
 export type {
   Role,
@@ -75,12 +30,21 @@ export type {
   VadScoreEvent,
   AudioAlignmentEvent,
   InputConfig,
+  InputDeviceConfig,
   FormatConfig,
+  OutputConfig,
+  OutputDeviceConfig,
   VoiceConversation,
   TextConversation,
   Callbacks,
+  Location,
 } from "@elevenlabs/client";
-export { postOverallFeedback } from "@elevenlabs/client";
+export {
+  postOverallFeedback,
+  parseLocation,
+  getOriginForLocation,
+  getLivekitUrlForLocation,
+} from "@elevenlabs/client";
 
 // Scribe exports
 export {
@@ -98,6 +62,21 @@ export type {
   UseScribeReturn,
   RealtimeConnection,
 } from "./scribe";
+
+// Conversation context API
+export { ConversationProvider } from "./conversation/ConversationProvider";
+export { useConversationControls } from "./conversation/ConversationControls";
+export { useConversationStatus } from "./conversation/ConversationStatus";
+export { useConversationInput } from "./conversation/ConversationInput";
+export { useConversationMode } from "./conversation/ConversationMode";
+export { useConversationFeedback } from "./conversation/ConversationFeedback";
+export { useRawConversation } from "./conversation/ConversationContext";
+export type { ConversationControlsValue } from "./conversation/ConversationControls";
+export type { ConversationInputValue } from "./conversation/ConversationInput";
+export type { ConversationStatusValue } from "./conversation/ConversationStatus";
+export type { ConversationModeValue } from "./conversation/ConversationMode";
+export type { ConversationFeedbackValue } from "./conversation/ConversationFeedback";
+export type { ConversationProviderProps } from "./conversation/ConversationProvider";
 
 export type HookOptions = Partial<
   SessionConfig &
@@ -351,9 +330,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
         isApproved
       );
     },
-    changeInputDevice: async (
-      config: DeviceFormatConfig & DeviceInputConfig
-    ) => {
+    changeInputDevice: async (config: FormatConfig & InputDeviceConfig) => {
       if (
         conversationRef.current &&
         "changeInputDevice" in conversationRef.current
@@ -368,7 +345,7 @@ export function useConversation<T extends HookOptions & ControlledState>(
         "Device switching is only available for voice conversations"
       );
     },
-    changeOutputDevice: async (config: DeviceFormatConfig & OutputConfig) => {
+    changeOutputDevice: async (config: FormatConfig & OutputConfig) => {
       if (
         conversationRef.current &&
         "changeOutputDevice" in conversationRef.current
