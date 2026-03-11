@@ -43,6 +43,9 @@ importers:
       '@elevenlabs/elevenlabs-js':
         specifier: ^2.32.0
         version: 2.33.0(encoding@0.1.13)
+      '@elevenlabs/react':
+        specifier: workspace:*
+        version: link:../../packages/react
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.16
         version: 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)

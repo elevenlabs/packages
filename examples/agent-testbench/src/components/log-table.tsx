@@ -19,7 +19,7 @@ import {
 import { FunnelIcon } from "lucide-react";
 
 import { useLogEntries } from "@/components/log-provider";
-import { useConversationStatus } from "@/components/conversation-provider";
+import { useConversationStatus } from "@elevenlabs/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
