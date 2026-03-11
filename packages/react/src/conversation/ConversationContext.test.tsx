@@ -4,6 +4,7 @@ import { renderHook } from "@testing-library/react";
 import {
   ConversationContext,
   useRawConversation,
+  useRawConversationRef,
   useRegisterCallbacks,
   type ConversationContextValue,
 } from "./ConversationContext";
@@ -52,6 +53,35 @@ describe("useRawConversation", () => {
 
     const { result } = renderHook(() => useRawConversation(), { wrapper });
     expect(result.current).toBeNull();
+  });
+});
+
+describe("useRawConversationRef", () => {
+  it("throws when used outside a ConversationProvider", () => {
+    expect(() => renderHook(() => useRawConversationRef())).toThrow(
+      "useRawConversationRef must be used within a ConversationProvider"
+    );
+  });
+
+  it("returns the conversationRef from the context", () => {
+    const mockConversation = { getId: vi.fn() } as unknown as Conversation;
+    const conversationRef = { current: mockConversation };
+    const value: ConversationContextValue = {
+      conversation: mockConversation,
+      conversationRef,
+      startSession: vi.fn(),
+      endSession: vi.fn(),
+      registerCallbacks: vi.fn(),
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ConversationContext.Provider value={value}>
+        {children}
+      </ConversationContext.Provider>
+    );
+
+    const { result } = renderHook(() => useRawConversationRef(), { wrapper });
+    expect(result.current).toBe(conversationRef);
   });
 });
 
