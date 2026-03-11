@@ -5,7 +5,7 @@ import {
   type InputDeviceConfig,
   type OutputConfig,
 } from "@elevenlabs/client";
-import type { HookOptions } from "../index";
+import type { HookOptions } from "./types";
 import { ConversationContext } from "./ConversationContext";
 
 export type ConversationControlsValue = {

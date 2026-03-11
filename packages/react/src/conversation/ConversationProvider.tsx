@@ -17,7 +17,7 @@ import {
   type Callbacks,
 } from "@elevenlabs/client";
 
-import { type HookOptions } from "../index";
+import { type HookOptions } from "./types";
 import { PACKAGE_VERSION } from "../version";
 import {
   ConversationContext,

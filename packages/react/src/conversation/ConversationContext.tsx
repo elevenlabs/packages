@@ -1,6 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
 import type { Callbacks, Conversation } from "@elevenlabs/client";
-import type { HookOptions } from "../index";
+import type { HookOptions } from "./types";
 
 export type ConversationContextValue = {
   conversation: Conversation | null;
