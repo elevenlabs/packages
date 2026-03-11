@@ -7,7 +7,7 @@ import { useConversationInput } from "./ConversationInput";
 import { useConversationMode } from "./ConversationMode";
 import { useConversationFeedback } from "./ConversationFeedback";
 import {
-  useRawConversationRef,
+  useRawConversation,
   useRegisterCallbacks,
 } from "./ConversationContext";
 import { useStableCallbacks } from "./useStableCallbacks";
@@ -45,7 +45,6 @@ export function useConversation(props: UseConversationOptions = {}) {
   const { isMuted, setMuted } = useConversationInput();
   const { mode, isSpeaking, isListening } = useConversationMode();
   const { canSendFeedback, sendFeedback } = useConversationFeedback();
-  const conversationRef = useRawConversationRef();
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -59,20 +58,22 @@ export function useConversation(props: UseConversationOptions = {}) {
         ...options,
       } as HookOptions);
     },
-    [controls.startSession, hookOptionsRef]
+    [controls, hookOptionsRef]
   );
 
-  useEffect(() => {
-    if (micMuted !== undefined && conversationRef.current) {
-      setMuted(micMuted);
-    }
-  }, [micMuted, conversationRef, setMuted]);
+  const conversation = useRawConversation();
 
   useEffect(() => {
-    if (volume !== undefined) {
-      conversationRef.current?.setVolume({ volume });
+    if (micMuted !== undefined && conversation) {
+      setMuted(micMuted);
     }
-  }, [volume, conversationRef]);
+  }, [micMuted, conversation, setMuted]);
+
+  useEffect(() => {
+    if (volume !== undefined && conversation) {
+      conversation.setVolume({ volume });
+    }
+  }, [volume, conversation]);
 
   return {
     ...controls,

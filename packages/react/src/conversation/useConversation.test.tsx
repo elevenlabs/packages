@@ -142,6 +142,25 @@ describe("useConversation", () => {
     expect(result.current.isMuted).toBe(true);
   });
 
+  it("applies micMuted set before startSession once connected", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(
+      () => useConversation({ micMuted: true }),
+      { wrapper: createWrapper() },
+    );
+
+    expect(result.current.isMuted).toBe(true);
+
+    await act(async () => {
+      result.current.startSession({ signedUrl: "wss://test.example.com" });
+    });
+
+    expect(result.current.isMuted).toBe(true);
+    expect(mockConversation.setMicMuted).toHaveBeenCalledWith(true);
+  });
+
   it("registers hook callbacks so they are invoked during a session", async () => {
     const onConnect = vi.fn();
     const onError = vi.fn();
