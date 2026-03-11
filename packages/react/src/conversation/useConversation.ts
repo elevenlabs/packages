@@ -1,11 +1,16 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { CALLBACK_KEYS } from "@elevenlabs/client";
 
 import { useConversationControls } from "./ConversationControls";
 import { useConversationStatus } from "./ConversationStatus";
 import { useConversationInput } from "./ConversationInput";
 import { useConversationMode } from "./ConversationMode";
 import { useConversationFeedback } from "./ConversationFeedback";
-import { useRawConversationRef } from "./ConversationContext";
+import {
+  useRawConversationRef,
+  useRegisterCallbacks,
+} from "./ConversationContext";
+import { useStableCallbacks } from "./useStableCallbacks";
 import type { HookOptions } from "./types";
 
 export type UseConversationOptions = HookOptions & {
@@ -18,13 +23,22 @@ export type UseConversationOptions = HookOptions & {
  * return value. Less performant than using individual hooks because any state
  * change in any sub-context triggers a re-render of the consuming component.
  *
- * Accepts optional `micMuted` and `volume` props for controlled state,
- * matching the legacy `useConversation` API.
+ * Accepts optional `micMuted`, `volume`, session config, and callback props.
+ * Session config and callbacks passed here are used as defaults when calling
+ * `startSession()` without arguments. Callbacks are also registered with the
+ * provider so they stay up-to-date across re-renders.
  *
  * Must be used within a `ConversationProvider`.
  */
 export function useConversation(props: UseConversationOptions = {}) {
-  const { micMuted, volume } = props;
+  const { micMuted, volume, ...hookOptions } = props;
+
+  const stableCallbacks = useStableCallbacks(hookOptions);
+  useRegisterCallbacks(stableCallbacks);
+
+  const hookOptionsRef = useRef(hookOptions);
+  // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
+  hookOptionsRef.current = hookOptions;
 
   const controls = useConversationControls();
   const { status, message } = useConversationStatus();
@@ -33,7 +47,20 @@ export function useConversation(props: UseConversationOptions = {}) {
   const { canSendFeedback, sendFeedback } = useConversationFeedback();
   const conversationRef = useRawConversationRef();
 
-  // ── Controlled state sync ──
+  const startSession = useCallback(
+    (options?: HookOptions) => {
+      // Strip callbacks — they're handled via useRegisterCallbacks.
+      const sessionConfig = { ...hookOptionsRef.current };
+      for (const key of CALLBACK_KEYS) {
+        delete (sessionConfig as Record<string, unknown>)[key];
+      }
+      controls.startSession({
+        ...sessionConfig,
+        ...options,
+      } as HookOptions);
+    },
+    [controls.startSession, hookOptionsRef]
+  );
 
   useEffect(() => {
     if (micMuted !== undefined && conversationRef.current) {
@@ -49,6 +76,7 @@ export function useConversation(props: UseConversationOptions = {}) {
 
   return {
     ...controls,
+    startSession,
     status,
     message,
     isMuted: micMuted ?? isMuted,
