@@ -31,6 +31,23 @@ export function useRawConversation(): Conversation | null {
 }
 
 /**
+ * Returns a stable ref to the active `Conversation` instance.
+ * The ref's `.current` is `null` when no session is active, and updates
+ * without causing re-renders — ideal for use inside callbacks and sub-providers.
+ *
+ * Must be used within a `ConversationProvider`.
+ */
+export function useRawConversationRef(): RefObject<Conversation | null> {
+  const ctx = useContext(ConversationContext);
+  if (!ctx) {
+    throw new Error(
+      "useRawConversationRef must be used within a ConversationProvider"
+    );
+  }
+  return ctx.conversationRef;
+}
+
+/**
  * Registers callback handlers with the nearest `ConversationProvider`.
  * Uses a ref internally so the latest callback values are always invoked
  * without re-subscribing on every render.
