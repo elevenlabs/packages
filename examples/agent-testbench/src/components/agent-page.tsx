@@ -60,12 +60,12 @@ export function AgentPage({ agent }: AgentPageProps) {
     clearLog();
     appendLogEntry({
       part: "conversation",
-      method: "start",
+      method: "startSession",
       args: [instrumentedOptions],
       when: Date.now(),
     });
     startSession(instrumentedOptions);
-  }, [sessionConfig, startSession, appendLogEntry]);
+  }, [sessionConfig, agent.agentId, startSession, appendLogEntry, clearLog]);
 
   return (
     <Page title={agent.name}>
