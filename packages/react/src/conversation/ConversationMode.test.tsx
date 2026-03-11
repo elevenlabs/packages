@@ -111,4 +111,31 @@ describe("ConversationMode", () => {
     expect(userOnModeChange).toHaveBeenCalledWith({ mode: "speaking" });
     expect(result.current.mode.mode).toBe("speaking");
   });
+
+  it("resets mode to listening when session disconnects", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+
+    act(() => {
+      opts.onModeChange!({ mode: "speaking" });
+    });
+    expect(result.current.mode.mode).toBe("speaking");
+
+    act(() => {
+      opts.onDisconnect!({ reason: "agent" });
+    });
+    expect(result.current.mode.mode).toBe("listening");
+    expect(result.current.mode.isListening).toBe(true);
+    expect(result.current.mode.isSpeaking).toBe(false);
+  });
 });

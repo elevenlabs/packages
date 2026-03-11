@@ -26,6 +26,9 @@ export function ConversationModeProvider({
     onModeChange: ({ mode: newMode }: { mode: Mode }) => {
       setMode(newMode);
     },
+    onDisconnect: () => {
+      setMode("listening");
+    },
   });
 
   const value = useMemo<ConversationModeValue>(
