@@ -338,8 +338,11 @@ describe("ConversationProvider", () => {
   });
 
   it("passes stable callbacks that always call the latest prop value", async () => {
+    const onConnect = vi.fn();
     const wrapper = ({ children }: React.PropsWithChildren) => (
-      <ConversationProvider>{children}</ConversationProvider>
+      <ConversationProvider onConnect={onConnect}>
+        {children}
+      </ConversationProvider>
     );
 
     // We test the stable callback pattern by checking that
@@ -355,12 +358,12 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    // Verify Conversation.startSession was called with callback functions
+    // Verify Conversation.startSession was called with the provided callback
     const startSessionCall = vi.mocked(Conversation.startSession).mock
       .calls[0][0];
     expect(typeof startSessionCall.onConnect).toBe("function");
+    // onDisconnect is registered internally by the provider
     expect(typeof startSessionCall.onDisconnect).toBe("function");
-    expect(typeof startSessionCall.onError).toBe("function");
   });
 });
 

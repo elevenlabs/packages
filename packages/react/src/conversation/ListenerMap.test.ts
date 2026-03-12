@@ -81,15 +81,15 @@ describe("ListenerMap", () => {
     remove();
 
     // Removed listeners are no longer invoked, but late-registered ones still fire
-    const composed2 = map.compose();
     const onConnectSpy = vi.fn();
     map.register({ onConnect: onConnectSpy });
+    const composed2 = map.compose();
     composed2.onConnect?.({ id: "y" });
     expect(onConnect).not.toHaveBeenCalledWith({ id: "y" });
     expect(onConnectSpy).toHaveBeenCalledWith({ id: "y" });
   });
 
-  it("compose includes all pre-initialized keys even with no listeners", () => {
+  it("compose only includes keys with registered listeners", () => {
     const map = new ListenerMap<TestCallbacks>([
       "onConnect",
       "onError",
@@ -97,9 +97,16 @@ describe("ListenerMap", () => {
     ]);
     const composed = map.compose();
 
-    expect(typeof composed.onConnect).toBe("function");
-    expect(typeof composed.onError).toBe("function");
-    expect(typeof composed.onDisconnect).toBe("function");
+    expect(composed.onConnect).toBeUndefined();
+    expect(composed.onError).toBeUndefined();
+    expect(composed.onDisconnect).toBeUndefined();
+
+    // After registering a listener, only that key appears
+    map.register({ onError: vi.fn() });
+    const composed2 = map.compose();
+    expect(composed2.onConnect).toBeUndefined();
+    expect(typeof composed2.onError).toBe("function");
+    expect(composed2.onDisconnect).toBeUndefined();
   });
 
   it("compose reflects live listener state", () => {
@@ -129,16 +136,19 @@ describe("ListenerMap", () => {
       "onDisconnect",
     ]);
 
-    // Compose before any listeners are registered
+    // Register an initial listener so compose includes the key
+    const early = vi.fn();
+    map.register({ onConnect: early });
     const composed = map.compose();
 
-    // Register a listener after compose
-    const fn = vi.fn();
-    map.register({ onConnect: fn });
+    // Register another listener after compose
+    const late = vi.fn();
+    map.register({ onConnect: late });
 
-    // The previously composed function should invoke the late listener
+    // The previously composed function should invoke both listeners
     composed.onConnect?.({ id: "late" });
-    expect(fn).toHaveBeenCalledWith({ id: "late" });
+    expect(early).toHaveBeenCalledWith({ id: "late" });
+    expect(late).toHaveBeenCalledWith({ id: "late" });
   });
 
   it("skips undefined values in the callbacks object", () => {
