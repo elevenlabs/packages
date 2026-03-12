@@ -75,7 +75,7 @@ function useStableCallbacks(props: HookOptions): Partial<Callbacks> {
           },
         ])
       ) as Partial<Callbacks>,
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeKeysKey is a stable scalar derived from activeKeys
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- joined string is a stable scalar derived from activeKeys
     [activeKeys.join("|")]
   );
 }

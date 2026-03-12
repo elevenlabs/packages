@@ -364,6 +364,8 @@ describe("ConversationProvider", () => {
     expect(typeof startSessionCall.onConnect).toBe("function");
     // onDisconnect is registered internally by the provider
     expect(typeof startSessionCall.onDisconnect).toBe("function");
+    // Unprovided callbacks are omitted so client feature guards work
+    expect(startSessionCall.onUnhandledClientToolCall).toBeUndefined();
   });
 });
 

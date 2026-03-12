@@ -17,8 +17,10 @@ function assertFunction(
  * All keys are pre-initialized in the constructor so `register` can validate
  * keys. `compose()` only includes keys with at least one registered listener,
  * preserving callback-presence semantics used by the client as feature guards.
- * Composed functions delegate to the live listener set, so listeners
- * added/removed after `compose()` is called still take effect.
+ * For included keys, composed functions delegate to the live listener set, so
+ * listeners added/removed after `compose()` still take effect. Keys with no
+ * listeners at compose time are omitted entirely; call `compose()` again after
+ * registering listeners to pick up newly populated keys.
  */
 export class ListenerMap<
   T extends Record<string, ((...args: never[]) => void) | undefined>,
