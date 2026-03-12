@@ -85,7 +85,10 @@ export class WebRTCConnection extends BaseConnection {
         const source = config.overrides?.client?.source || "js_sdk";
         const configOrigin = config.origin ?? HTTPS_API_ORIGIN;
         const origin = convertWssToHttps(configOrigin); //origin is wss, not https
-        const url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
+        let url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
+        if (config.branch) {
+          url += `&branch=${encodeURIComponent(config.branch)}`;
+        }
         const response = await fetch(url);
 
         if (!response.ok) {
