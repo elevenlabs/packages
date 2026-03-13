@@ -8,8 +8,10 @@ import { WebSocketConnection } from "../utils/WebSocketConnection";
 import { WebRTCConnection } from "../utils/WebRTCConnection";
 import { attachInputToConnection } from "../utils/attachInputToConnection";
 import { attachConnectionToOutput } from "../utils/attachConnectionToOutput";
+import { createConnection } from "../utils/ConnectionFactory";
 
 export type VoiceSessionSetupResult = {
+  connection: BaseConnection;
   input: InputController;
   output: OutputController;
   playbackEventTarget: PlaybackEventTarget | null;
@@ -17,18 +19,17 @@ export type VoiceSessionSetupResult = {
 };
 
 export type VoiceSessionSetupStrategy = (
-  options: Options,
-  connection: BaseConnection
+  options: Options
 ) => Promise<VoiceSessionSetupResult>;
 
 /**
- * Web platform session setup strategy.
- * Sets up input and output for a connection based on the connection type.
+ * Sets up input and output controllers for an existing connection.
+ * Shared helper used by platform-specific setup strategies.
  */
-export async function webSessionSetup(
+export async function setupInputOutput(
   options: Options,
   connection: BaseConnection
-): Promise<VoiceSessionSetupResult> {
+): Promise<Omit<VoiceSessionSetupResult, "connection">> {
   if (connection instanceof WebRTCConnection) {
     return {
       input: connection.input,
@@ -72,8 +73,28 @@ export async function webSessionSetup(
 }
 
 /**
+ * Web platform session setup strategy.
+ * Creates a connection and sets up input/output based on the connection type.
+ */
+export async function webSessionSetup(
+  options: Options
+): Promise<VoiceSessionSetupResult> {
+  const connection = await createConnection(options);
+  const io = await setupInputOutput(options, connection);
+  return { connection, ...io };
+}
+
+/**
  * The active session setup strategy.
  * Defaults to web platform strategy.
- * In the future, this could be swapped out for React Native or other platforms.
+ * Can be overridden by platform-specific entrypoints (e.g. React Native).
  */
-export const setupStrategy: VoiceSessionSetupStrategy = webSessionSetup;
+export let setupStrategy: VoiceSessionSetupStrategy = webSessionSetup;
+
+/**
+ * Override the voice session setup strategy.
+ * Called by platform-specific entrypoints to inject their own setup handling.
+ */
+export function setSetupStrategy(strategy: VoiceSessionSetupStrategy) {
+  setupStrategy = strategy;
+}

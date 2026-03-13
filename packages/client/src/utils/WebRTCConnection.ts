@@ -247,7 +247,22 @@ export class WebRTCConnection extends BaseConnection {
       // Use configurable LiveKit URL or default if not provided
       const livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
 
-      // Connect to the LiveKit room and wait for the Connected event
+      // Enable microphone on SignalConnected (before room.connect resolves).
+      // The server may wait for the client to publish audio before fully
+      // establishing the subscriber peer connection, matching the behaviour
+      // of @livekit/components-react's useLiveKitRoom hook.
+      const micEnabled = config.textOnly
+        ? Promise.resolve()
+        : new Promise<void>((resolve, reject) => {
+            room.once(RoomEvent.SignalConnected, () => {
+              room.localParticipant
+                .setMicrophoneEnabled(true)
+                .then(() => resolve())
+                .catch(reject);
+            });
+          });
+
+      // Connect to the LiveKit room
       await room.connect(livekitUrl, conversationToken);
 
       // Wait for the Connected event to ensure isConnected is true
@@ -263,14 +278,12 @@ export class WebRTCConnection extends BaseConnection {
         }
       });
 
+      // Ensure the microphone was successfully enabled
+      await micEnabled;
+
       if (room.name) {
         connection.conversationId =
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
-      }
-
-      // Enable microphone only if not text-only mode
-      if (!config.textOnly) {
-        await room.localParticipant.setMicrophoneEnabled(true);
       }
 
       const overridesEvent = constructOverrides(config);
@@ -292,7 +305,6 @@ export class WebRTCConnection extends BaseConnection {
   private setupRoomEventListeners() {
     this.room.on(RoomEvent.Connected, async () => {
       this.isConnected = true;
-      console.info("WebRTC room connected");
     });
 
     this.room.on(RoomEvent.Disconnected, reason => {

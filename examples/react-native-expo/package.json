@@ -7,13 +7,14 @@
     "dev": "expo start",
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && node --run dev",
     "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && node --run dev",
+    "web": "expo start --web",
     "build:android": "eas build -p android",
     "build:ios": "eas build -p ios",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^13.0.0",
-    "@elevenlabs/react-native": "workspace:*",
+    "@elevenlabs/react": "workspace:*",
     "@livekit/react-native": "^2.9.6",
     "@livekit/react-native-expo-plugin": "^1.0.1",
     "@livekit/react-native-webrtc": "^137.0.2",
@@ -21,7 +22,9 @@
     "expo-dev-client": "~6.0.20",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "react-native-web": "~0.19.13",
+    "@expo/metro-runtime": "~4.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
