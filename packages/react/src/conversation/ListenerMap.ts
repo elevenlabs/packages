@@ -14,10 +14,13 @@ function assertFunction(
  * multiple listeners registered. Typed through `T` so that `register` and
  * `compose` preserve per-key callback signatures.
  *
- * All keys are pre-initialized in the constructor, so `compose()` always
- * returns a function for every key — even if no listeners have been registered
- * yet. This means listeners registered after `compose()` is called still
- * take effect through the composed callbacks object.
+ * All keys are pre-initialized in the constructor so `register` can validate
+ * keys. `compose()` only includes keys with at least one registered listener,
+ * preserving callback-presence semantics used by the client as feature guards.
+ * For included keys, composed functions delegate to the live listener set, so
+ * listeners added/removed after `compose()` still take effect. Keys with no
+ * listeners at compose time are omitted entirely; call `compose()` again after
+ * registering listeners to pick up newly populated keys.
  */
 export class ListenerMap<
   T extends Record<string, ((...args: never[]) => void) | undefined>,
@@ -55,14 +58,16 @@ export class ListenerMap<
    * composed function delegates to the live listener set, so listeners
    * added/removed after this call still take effect.
    */
-  compose(): T {
+  compose(): Partial<T> {
     return Object.fromEntries(
-      Array.from(this.sets.entries()).map(([key, set]) => [
-        key,
-        (...args: never[]) => {
-          set.invoke(...args);
-        },
-      ])
-    ) as T;
+      Array.from(this.sets.entries())
+        .filter(([, set]) => set.size > 0)
+        .map(([key, set]) => [
+          key,
+          (...args: never[]) => {
+            set.invoke(...args);
+          },
+        ])
+    ) as Partial<T>;
   }
 }
