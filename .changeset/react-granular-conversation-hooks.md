@@ -46,7 +46,7 @@ function App() {
       <Controls />
       <MuteButton />
       <FeedbackButtons />
-      <AudioVisualizer />
+      <ModeIndicator />
     </ConversationProvider>
   );
 }
@@ -91,11 +91,10 @@ function FeedbackButtons() {
 }
 
 /** Only re-renders when mode changes. */
-function AudioVisualizer() {
-  const { isSpeaking } = useConversationMode();
-  const { getInputVolume, getOutputVolume } = useConversationControls();
-  // getInputVolume/getOutputVolume are stable refs — calling them
-  // in a requestAnimationFrame loop won't cause re-renders.
-  return <canvas data-speaking={isSpeaking} />;
+function ModeIndicator() {
+  const { isSpeaking, isListening } = useConversationMode();
+  return (
+    <p>{isSpeaking ? "Agent is speaking..." : isListening ? "Listening..." : ""}</p>
+  );
 }
 ```
