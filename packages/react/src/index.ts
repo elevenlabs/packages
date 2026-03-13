@@ -26,6 +26,7 @@ export { useConversationMode } from "./conversation/ConversationMode";
 export { useConversationFeedback } from "./conversation/ConversationFeedback";
 export { useRawConversation } from "./conversation/ConversationContext";
 export { useConversation } from "./conversation/useConversation";
+export type { UseConversationOptions } from "./conversation/useConversation";
 export type { ConversationControlsValue } from "./conversation/ConversationControls";
 export type { ConversationInputValue } from "./conversation/ConversationInput";
 export type { ConversationStatusValue } from "./conversation/ConversationStatus";
