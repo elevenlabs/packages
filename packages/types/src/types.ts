@@ -98,3 +98,30 @@ export type Callbacks = {
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
+
+/**
+ * Runtime array of all keys in `Callbacks`, kept in sync with the type above.
+ * Used by the React SDK to pre-initialize listener maps for callback composition.
+ */
+export const CALLBACK_KEYS = [
+  "onConnect",
+  "onDisconnect",
+  "onError",
+  "onMessage",
+  "onAudio",
+  "onModeChange",
+  "onStatusChange",
+  "onCanSendFeedbackChange",
+  "onUnhandledClientToolCall",
+  "onVadScore",
+  "onMCPToolCall",
+  "onMCPConnectionStatus",
+  "onAgentToolRequest",
+  "onAgentToolResponse",
+  "onConversationMetadata",
+  "onAsrInitiationMetadata",
+  "onInterruption",
+  "onAgentChatResponsePart",
+  "onAudioAlignment",
+  "onDebug",
+] as const satisfies readonly (keyof Callbacks)[];
