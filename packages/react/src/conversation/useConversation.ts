@@ -48,7 +48,13 @@ export function useConversation(props: UseConversationOptions = {}) {
 
   const startSession = useCallback(
     (options?: HookOptions) => {
-      // Strip callbacks — they're handled via useRegisterCallbacks.
+      // Strip callbacks from the hook-level defaults: those are registered via
+      // useRegisterCallbacks and kept ref-stable across renders.
+      // NOTE: We intentionally do NOT strip callbacks from the `options` parameter
+      // here. Callbacks passed directly to startSession() are treated as one-shot
+      // per-session overrides, and may capture render-local state. This asymmetry
+      // (hook callbacks are ref-stable; startSession callbacks are one-shot) is
+      // intentional and relied on by the public API.
       const sessionConfig = { ...hookOptionsRef.current };
       for (const key of CALLBACK_KEYS) {
         delete (sessionConfig as Record<string, unknown>)[key];
