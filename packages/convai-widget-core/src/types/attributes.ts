@@ -55,6 +55,7 @@ export const CustomAttributeList = [
   "markdown-link-allow-http",
   "show-agent-status",
   "show-conversation-id",
+  "environment",
 ] as const;
 
 export type CustomAttributes = {

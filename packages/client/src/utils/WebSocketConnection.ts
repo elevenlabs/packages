@@ -110,6 +110,10 @@ export class WebSocketConnection extends BaseConnection {
         url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=${source}&version=${version}`;
       }
 
+      if (config.environment) {
+        url += `&environment=${encodeURIComponent(config.environment)}`;
+      }
+
       const protocols = [MAIN_PROTOCOL];
       if (config.authorization) {
         protocols.push(`bearer.${config.authorization}`);

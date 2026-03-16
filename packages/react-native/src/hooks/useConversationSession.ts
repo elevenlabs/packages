@@ -63,7 +63,8 @@ export const useConversationSession = (
           const urlToUse = config.tokenFetchUrl || tokenFetchUrl;
           conversationToken = await getConversationToken(
             config.agentId,
-            urlToUse
+            urlToUse,
+            config.environment
           );
         } else {
           throw new Error("Either conversationToken or agentId is required");

@@ -76,6 +76,7 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
+  const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
   const value = useComputed<SessionConfig | null>(() => {
@@ -86,6 +87,7 @@ export function SessionConfigProvider({
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
       userId: userId.value || undefined,
+      environment: environment.value || undefined,
       libsampleratePath: libsamplerate.value,
       workletPaths: {
         rawAudioProcessor: rawAudioProcessor.value,

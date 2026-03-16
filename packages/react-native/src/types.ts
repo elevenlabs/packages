@@ -87,6 +87,7 @@ export type ConversationConfig = {
   dynamicVariables?: Record<string, string | number | boolean>;
   textOnly?: boolean;
   userId?: string;
+  environment?: string;
 };
 
 // Incoming event types
