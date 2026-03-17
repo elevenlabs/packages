@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "scheme": "skia",
+    "web": {
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "name": "ElevenLabs Fact Checker",
+    "slug": "fact-checker"
+  }
+}
