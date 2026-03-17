@@ -31,9 +31,10 @@ function AgentMessageBubble({
   const linkConfig = useMarkdownLinkConfig();
   const config = useWidgetConfig();
 
-  const displayMessage = config.value.strip_audio_tags
-    ? stripAudioTags(entry.message)
-    : entry.message;
+  const displayMessage =
+    config.value.strip_audio_tags && !entry.isText
+      ? stripAudioTags(entry.message)
+      : entry.message;
 
   return (
     <div className="pr-8">

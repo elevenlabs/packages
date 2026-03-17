@@ -474,19 +474,14 @@ describe("elevenlabs-convai", () => {
   });
 
   describe("strip audio tags", () => {
-    it("should strip audio tags when strip_audio_tags config is true", async () => {
+    it("should not strip audio tags from text messages even when strip_audio_tags config is true", async () => {
       setupWebComponent({
         "agent-id": "audio_tags_strip",
         variant: "compact",
       });
 
-      // Audio tags should be stripped - message without tags should appear
-      await expect
-        .element(page.getByText("Hello there! How can I help you today?"))
-        .toBeInTheDocument();
-
-      // The raw tags should NOT be visible
-      await expect.element(page.getByText("[happy]")).not.toBeInTheDocument();
+      // Text messages (isText: true) should preserve tags — stripping only applies to voice transcripts
+      await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
     });
 
     it("should not strip audio tags when strip_audio_tags config is false", async () => {
@@ -496,31 +491,6 @@ describe("elevenlabs-convai", () => {
       });
 
       // Tags should be visible when stripping is disabled
-      await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
-    });
-
-    it("should strip audio tags when attribute overrides to true", async () => {
-      setupWebComponent({
-        "agent-id": "audio_tags_no_strip",
-        variant: "compact",
-        "strip-audio-tags": "true",
-      });
-
-      // Attribute override should strip tags
-      await expect
-        .element(page.getByText("Hello there! How can I help you today?"))
-        .toBeInTheDocument();
-      await expect.element(page.getByText("[happy]")).not.toBeInTheDocument();
-    });
-
-    it("should not strip audio tags when attribute overrides to false", async () => {
-      setupWebComponent({
-        "agent-id": "audio_tags_strip",
-        variant: "compact",
-        "strip-audio-tags": "false",
-      });
-
-      // Attribute override should show tags
       await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
     });
   });
