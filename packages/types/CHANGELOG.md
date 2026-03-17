@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.6.1
+
+### Patch Changes
+
+- a85e24d: add multimodal_message WebSocket event
+
 ## 0.6.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 0.14.3
+
+### Patch Changes
+
+- a85e24d: add multimodal_message WebSocket event
+- Updated dependencies [a85e24d]
+  - @elevenlabs/client@0.15.2
+
 ## 0.14.2
 
 ### Patch Changes

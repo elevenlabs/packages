@@ -1,5 +1,12 @@
 # elevenlabs-react-native-example
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [a85e24d]
+  - @elevenlabs/react-native@0.5.12
+
 ## 1.0.4
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @elevenlabs/client
 
+## 0.15.2
+
+### Patch Changes
+
+- a85e24d: add multimodal_message WebSocket event
+- Updated dependencies [a85e24d]
+  - @elevenlabs/types@0.6.1
+
 ## 0.15.1
 
 ### Patch Changes

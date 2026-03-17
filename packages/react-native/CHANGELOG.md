@@ -1,5 +1,13 @@
 # @elevenlabs/react-native
 
+## 0.5.12
+
+### Patch Changes
+
+- a85e24d: add multimodal_message WebSocket event
+- Updated dependencies [a85e24d]
+  - @elevenlabs/types@0.6.1
+
 ## 0.5.11
 
 ### Patch Changes
