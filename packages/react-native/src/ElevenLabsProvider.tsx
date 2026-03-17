@@ -127,6 +127,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    pinnedDynamicVariables,
     userId,
     textOnly,
   } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
@@ -217,6 +218,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
       overrides,
       customLlmExtraBody,
       dynamicVariables,
+      pinnedDynamicVariables,
       userId,
     });
 
@@ -230,7 +232,7 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
         callbacksRef.current.onError?.(error as string);
       }
     }
-  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
+  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, pinnedDynamicVariables, userId, callbacksRef]);
 
   // Create setClientTools function that only updates ref
   const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {

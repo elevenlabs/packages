@@ -26,6 +26,8 @@ export const useConversationSession = (
   const [dynamicVariables, setDynamicVariables] = useState<
     ConversationConfig["dynamicVariables"]
   >({});
+  const [pinnedDynamicVariables, setPinnedDynamicVariables] =
+    useState<ConversationConfig["pinnedDynamicVariables"]>(undefined);
   const [userId, setUserId] = useState<ConversationConfig["userId"]>(undefined);
   const [textOnly, setTextOnly] =
     useState<ConversationConfig["textOnly"]>(false);
@@ -47,6 +49,7 @@ export const useConversationSession = (
         });
         setCustomLlmExtraBody(config.customLlmExtraBody || null);
         setDynamicVariables(config.dynamicVariables || {});
+        setPinnedDynamicVariables(config.pinnedDynamicVariables);
         setUserId(config.userId);
         setTextOnly(textOnly);
 
@@ -105,6 +108,7 @@ export const useConversationSession = (
         setOverrides({});
         setCustomLlmExtraBody(null);
         setDynamicVariables({});
+        setPinnedDynamicVariables(undefined);
         setUserId(undefined);
         setConversationId("");
 
@@ -124,6 +128,7 @@ export const useConversationSession = (
     overrides,
     customLlmExtraBody,
     dynamicVariables,
+    pinnedDynamicVariables,
     userId,
     textOnly,
   };

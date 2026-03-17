@@ -52,6 +52,7 @@ export interface ConversationInitiation {
   conversation_config_override?: ConversationConfigOverride;
   custom_llm_extra_body?: Record<string, any>;
   dynamic_variables?: Record<string, any>;
+  pinned_dynamic_variables?: string[];
   user_id?: string;
   source_info?: SourceInfo;
 }
@@ -632,6 +633,7 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   conversation_config_override?: ConversationConfigOverride;
   custom_llm_extra_body?: Record<string, any>;
   dynamic_variables?: Record<string, any>;
+  pinned_dynamic_variables?: string[];
   user_id?: string;
   source_info?: SourceInfo;
 }

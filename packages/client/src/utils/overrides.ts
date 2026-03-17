@@ -38,6 +38,10 @@ export function constructOverrides(
     overridesEvent.dynamic_variables = config.dynamicVariables;
   }
 
+  if (config.pinnedDynamicVariables) {
+    overridesEvent.pinned_dynamic_variables = config.pinnedDynamicVariables;
+  }
+
   if (config.userId) {
     overridesEvent.user_id = config.userId;
   }
