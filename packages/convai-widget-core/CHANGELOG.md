@@ -1,5 +1,12 @@
 # @elevenlabs/convai-widget-core
 
+## 0.10.4
+
+### Patch Changes
+
+- 424225c: Fix audio tag stripping to only apply to voice transcripts, not text chat responses
+- 17cf538: Update the widget's branding
+
 ## 0.10.3
 
 ### Patch Changes
