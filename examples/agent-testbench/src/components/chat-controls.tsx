@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import {
   useConversationControls,
   useConversationStatus,
-} from "./conversation-provider";
+} from "@elevenlabs/react";
 import { SendIcon } from "lucide-react";
 
 export function ChatControls() {

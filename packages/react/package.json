@@ -11,7 +11,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "prebuild": "npm run generate-version",
@@ -35,12 +37,17 @@
     "react": ">=16.8.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^18.3.3",
     "eslint": "^9.8.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "microbundle": "^0.15.1",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.4",
     "typescript": "^5.5.4",
+    "typescript-eslint": "^8.55.0",
     "vitest": "^3.0.5"
   },
   "repository": {

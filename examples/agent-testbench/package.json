@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@elevenlabs/client": "workspace:*",
+    "@elevenlabs/react": "workspace:*",
     "@elevenlabs/elevenlabs-js": "^2.32.0",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",

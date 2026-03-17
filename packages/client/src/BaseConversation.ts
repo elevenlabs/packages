@@ -27,6 +27,7 @@ import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
+export { CALLBACK_KEYS } from "@elevenlabs/types";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
