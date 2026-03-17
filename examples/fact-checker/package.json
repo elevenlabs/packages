@@ -17,6 +17,7 @@
     "@livekit/react-native-webrtc": "^137.0.2",
     "@shopify/react-native-skia": "2.2.12",
     "expo": "^54.0.1",
+    "expo-audio": "~1.1.1",
     "expo-linking": "^8.0.8",
     "expo-router": "~6.0.0",
     "react": "19.1.0",
@@ -29,5 +30,8 @@
     "react-native-worklets": "0.5.1"
   },
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@types/react": "^19.2.14"
+  }
 }

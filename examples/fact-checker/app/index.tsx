@@ -4,14 +4,14 @@ import { ConversationProvider } from "@elevenlabs/react-native";
 
 import { AsyncSkia } from "../components/async-skia";
 import { ConversationControls } from "../components/ConversationControls";
-
-const AgentSphereScene = React.lazy(
-  () => import("../components/AgentSphereScene")
-);
+import { AgentVisualization } from "../components/AgentVisualization";
 
 export default function Page() {
   return (
-    <ConversationProvider agentId="agent_4101kkxqz39men5sz120w40jsmee">
+    <ConversationProvider
+      agentId="agent_9701kky8je5vf0g8c5xgq1vhvjx1"
+      connectionType="webrtc"
+    >
       <View
         style={{
           flex: 1,
@@ -25,7 +25,7 @@ export default function Page() {
         >
           <React.Suspense fallback={<ActivityIndicator />}>
             <AsyncSkia />
-            <AgentSphereScene />
+            <AgentVisualization />
           </React.Suspense>
         </View>
         <ConversationControls />

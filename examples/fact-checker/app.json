@@ -1,10 +1,14 @@
 {
   "expo": {
     "scheme": "skia",
+    "orientation": "landscape",
     "web": {
       "output": "static"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-audio"
+    ],
     "name": "ElevenLabs Fact Checker",
     "slug": "fact-checker"
   }

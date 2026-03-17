@@ -191,6 +191,9 @@ importers:
       expo:
         specifier: ^54.0.1
         version: 54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0)))(expo-router@6.0.23)(graphql@16.12.0)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
+      expo-audio:
+        specifier: ~1.1.1
+        version: 1.1.1(expo-asset@12.0.12(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
       expo-linking:
         specifier: ^8.0.8
         version: 8.0.11(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
@@ -221,6 +224,10 @@ importers:
       react-native-worklets:
         specifier: 0.5.1
         version: 0.5.1(@babel/core@7.28.5)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
 
   examples/react-native-expo:
     dependencies:
@@ -7546,6 +7553,14 @@ packages:
     resolution: {integrity: sha512-CsXFCQbx2fElSMn0lyTdRIyKlSXOal6ilLJd+yeZ6xaC7I9AICQgscY5nj0QcwgA+KYYCCEQEBndMsmj7drOWQ==}
     peerDependencies:
       expo: '*'
+      react: '*'
+      react-native: '*'
+
+  expo-audio@1.1.1:
+    resolution: {integrity: sha512-CPCpJ+0AEHdzWROc0f00Zh6e+irLSl2ALos/LPvxEeIcJw1APfBa4DuHPkL4CQCWsVe7EnUjFpdwpqsEUWcP0g==}
+    peerDependencies:
+      expo: '*'
+      expo-asset: '*'
       react: '*'
       react-native: '*'
 
@@ -22980,6 +22995,13 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
     transitivePeerDependencies:
       - supports-color
+
+  expo-audio@1.1.1(expo-asset@12.0.12(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0))(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      expo: 54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0)))(expo-router@6.0.23)(graphql@16.12.0)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
+      expo-asset: 12.0.12(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-native: 0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0)
 
   expo-constants@18.0.13(expo@54.0.31)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.1.0)):
     dependencies:
