@@ -9,6 +9,10 @@ import type {
   Location,
 } from "@elevenlabs/client";
 
+export type ClientToolHandler<TParams = unknown> = (
+  parameters: TParams
+) => Promise<string | number | void> | string | number | void;
+
 export type HookCallbacks = Pick<
   Callbacks,
   | "onConnect"

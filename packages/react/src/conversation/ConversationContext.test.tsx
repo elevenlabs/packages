@@ -24,6 +24,7 @@ describe("useRawConversation", () => {
       startSession: vi.fn(),
       endSession: vi.fn(),
       registerCallbacks: vi.fn(),
+      clientToolsTarget: {},
     };
 
     const wrapper = ({ children }: React.PropsWithChildren) => (
@@ -43,6 +44,7 @@ describe("useRawConversation", () => {
       startSession: vi.fn(),
       endSession: vi.fn(),
       registerCallbacks: vi.fn(),
+      clientToolsTarget: {},
     };
 
     const wrapper = ({ children }: React.PropsWithChildren) => (
@@ -72,6 +74,7 @@ describe("useRawConversationRef", () => {
       startSession: vi.fn(),
       endSession: vi.fn(),
       registerCallbacks: vi.fn(),
+      clientToolsTarget: {},
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -101,6 +104,7 @@ describe("useRegisterCallbacks", () => {
       startSession: vi.fn(),
       endSession: vi.fn(),
       registerCallbacks,
+      clientToolsTarget: {},
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -134,6 +138,7 @@ describe("useRegisterCallbacks", () => {
       startSession: vi.fn(),
       endSession: vi.fn(),
       registerCallbacks,
+      clientToolsTarget: {},
     };
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (

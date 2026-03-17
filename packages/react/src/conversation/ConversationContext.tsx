@@ -1,5 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
-import type { Callbacks, Conversation } from "@elevenlabs/client";
+import type { Callbacks, ClientToolsConfig, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "./types";
 
 export type ConversationContextValue = {
@@ -13,6 +13,8 @@ export type ConversationContextValue = {
    * next `Conversation.startSession()` call. Returns an unsubscribe function.
    */
   registerCallbacks: (callbacks: Partial<Callbacks>) => () => void;
+  /** Mutable backing object for the clientTools Proxy. Sub-providers mutate this directly. */
+  clientToolsTarget: Record<string, ClientToolsConfig["clientTools"][string]>;
 };
 
 export const ConversationContext =
