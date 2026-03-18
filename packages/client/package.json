@@ -7,7 +7,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "react-native": "./dist/platform/react-native/index.js",
       "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
     },
@@ -54,14 +53,6 @@
   ],
   "publishConfig": {
     "access": "public"
-  },
-  "peerDependencies": {
-    "@livekit/react-native": "^2.9.2"
-  },
-  "peerDependenciesMeta": {
-    "@livekit/react-native": {
-      "optional": true
-    }
   },
   "dependencies": {
     "@elevenlabs/types": "workspace:*",
