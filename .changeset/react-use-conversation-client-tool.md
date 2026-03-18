@@ -4,7 +4,7 @@
 
 Add `useConversationClientTool` hook for dynamically registering client tools from React components.
 
-The hook uses a `Proxy`-backed mutable target so tools added or removed after session start are immediately visible to `BaseConversation` at call time. It follows the existing sub-provider pattern with a new `ConversationClientToolsProvider` and `ConversationClientToolsContext`.
+Tools added or removed after session start are immediately visible to `BaseConversation` at call time, since it performs dynamic property lookup on the same object reference. A fresh `clientTools` object is created per `startSession` call, merging option-provided tools with hook-registered tools. Duplicate tool names (hook-vs-hook or hook-vs-option) are detected and throw an error.
 
 The hook accepts an optional `ClientTools` type parameter — an interface mapping tool names to function signatures — enabling type-safe tool name constraints and handler param/return inference.
 

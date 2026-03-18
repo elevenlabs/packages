@@ -16,7 +16,7 @@ export function buildClientTools(
 ): Record<string, ClientToolEntry> {
   const clientTools: Record<string, ClientToolEntry> = { ...optionTools };
   for (const [name, handler] of registry) {
-    if (name in clientTools) {
+    if (Object.hasOwn(clientTools, name)) {
       throw new Error(
         `Client tool "${name}" is already provided via props/options. ` +
           `Remove it from props or do not register it with useConversationClientTool.`
