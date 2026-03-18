@@ -7,7 +7,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "unpkg": "./dist/lib.umd.js",
+      "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
     }
   },
@@ -15,8 +15,8 @@
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
     "build:esm": "tsc --build tsconfig.build.json",
-    "build:umd": "microbundle --jsx React.createElement --jsxFragment React.Fragment --jsxImportSource react --target web --format umd --no-generateTypes --output dist/lib.umd.js src/index.ts",
-    "build": "node --run build:esm && BROWSERSLIST_ENV=modern node --run build:umd",
+    "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
+    "build": "node --run build:esm && node --run build:iife",
     "dev": "tsc --build tsconfig.build.json --watch",
     "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
     "check-types": "tsc --noEmit --project tsconfig.build.json && tsc --noEmit --project tsconfig.test.json",
@@ -34,7 +34,7 @@
     "eslint": "^9.8.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
-    "microbundle": "^0.15.1",
+    "rolldown": "^1.0.0-rc.9",
     "mock-socket": "^9.3.1",
     "node-wav": "^0.0.2",
     "playwright": "^1.54.1",
