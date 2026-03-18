@@ -7,6 +7,7 @@ export {
   getOriginForLocation,
   getLivekitUrlForLocation,
 } from "./utils/location";
+export type { Location } from "./utils/location";
 
 export interface SourceInfo {
   name: string;
