@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
     }
   },
   "scripts": {

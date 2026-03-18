@@ -18,7 +18,6 @@ import {
 } from "@elevenlabs/client";
 
 import { type HookOptions } from "./types";
-import { PACKAGE_VERSION } from "../version";
 import {
   ConversationContext,
   type ConversationContextValue,
@@ -117,12 +116,7 @@ export function ConversationProvider({
           stableCallbacks,
           listenerMap.compose(),
           options ?? {},
-          {
-            origin,
-            overrides: {
-              client: { source: "react_sdk", version: PACKAGE_VERSION },
-            },
-          }
+          { origin }
         )
       );
 

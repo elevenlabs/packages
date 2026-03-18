@@ -13,6 +13,7 @@ import { Mode, Status, Conversation } from "./index";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { SessionConfig } from "./utils/BaseConnection";
 import { VoiceConversation } from "./VoiceConversation";
+import { PACKAGE_VERSION } from "./version";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
@@ -159,6 +160,10 @@ describe("Conversation", () => {
           },
           custom_llm_extra_body: CUSTOM_LLM_EXTRA_BODY,
           user_id: TEST_USER_ID,
+          source_info: {
+            source: "js_sdk",
+            version: PACKAGE_VERSION,
+          },
         })
       );
 

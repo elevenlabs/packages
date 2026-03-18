@@ -4,7 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
-import { PACKAGE_VERSION } from "../version";
+import { client } from "../internal";
 import {
   type ConfigEvent,
   isValidSocketEvent,
@@ -107,8 +107,7 @@ export class WebSocketConnection
       const origin = config.origin ?? WSS_API_ORIGIN;
       let url: string;
 
-      const version = config.overrides?.client?.version || PACKAGE_VERSION;
-      const source = config.overrides?.client?.source || "js_sdk";
+      const { name: source, version } = client;
 
       if (config.signedUrl) {
         const separator = config.signedUrl.includes("?") ? "&" : "?";
