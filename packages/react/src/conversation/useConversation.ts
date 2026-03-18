@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { CALLBACK_KEYS } from "@elevenlabs/client";
+import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
 
 import { useConversationControls } from "./ConversationControls";
 import { useConversationStatus } from "./ConversationStatus";

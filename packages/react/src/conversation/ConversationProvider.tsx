@@ -6,16 +6,14 @@ import {
   useRef,
   useState,
 } from "react";
+import { Conversation, type Options, type Callbacks } from "@elevenlabs/client";
 import {
-  Conversation,
   CALLBACK_KEYS,
   mergeOptions,
   parseLocation,
   getOriginForLocation,
   getLivekitUrlForLocation,
-  type Options,
-  type Callbacks,
-} from "@elevenlabs/client";
+} from "@elevenlabs/client/internal";
 
 import { type HookOptions } from "./types";
 import {

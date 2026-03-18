@@ -12,7 +12,6 @@ export type {
   Status,
   AudioWorkletConfig,
 } from "./BaseConversation";
-export { CALLBACK_KEYS } from "./BaseConversation";
 export type { InputController, InputDeviceConfig } from "./InputController";
 export type { OutputController, OutputDeviceConfig } from "./OutputController";
 export type { InputConfig } from "./utils/input";
@@ -30,17 +29,11 @@ export type {
   ConnectionType,
   FormatConfig,
 } from "./utils/BaseConnection";
-export { mergeOptions } from "./utils/mergeOptions";
 export { createConnection } from "./utils/ConnectionFactory";
 export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { SessionConnectionError } from "./utils/errors";
-export {
-  parseLocation,
-  getOriginForLocation,
-  getLivekitUrlForLocation,
-} from "./utils/location";
 export type { Location } from "./utils/location";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";

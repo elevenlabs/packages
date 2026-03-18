@@ -1,5 +1,13 @@
 import { PACKAGE_VERSION } from "./version";
 
+export { CALLBACK_KEYS } from "./BaseConversation";
+export { mergeOptions } from "./utils/mergeOptions";
+export {
+  parseLocation,
+  getOriginForLocation,
+  getLivekitUrlForLocation,
+} from "./utils/location";
+
 export interface SourceInfo {
   name: string;
   version: string;
