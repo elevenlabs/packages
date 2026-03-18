@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
-import { Conversation, CALLBACK_KEYS, type Callbacks } from "@elevenlabs/client";
+import { Conversation, type Callbacks } from "@elevenlabs/client";
+import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
 import { ConversationProvider } from "./ConversationProvider";
 import {
   ConversationContext,
