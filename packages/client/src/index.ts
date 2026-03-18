@@ -34,6 +34,7 @@ export { WebSocketConnection } from "./utils/WebSocketConnection";
 export { WebRTCConnection } from "./utils/WebRTCConnection";
 export { postOverallFeedback } from "./utils/postOverallFeedback";
 export { SessionConnectionError } from "./utils/errors";
+export type { Location } from "./utils/location";
 export { VoiceConversation } from "./VoiceConversation";
 export { TextConversation } from "./TextConversation";
 

@@ -6,8 +6,8 @@ import type {
   OutputConfig,
   FormatConfig,
   Callbacks,
+  Location,
 } from "@elevenlabs/client";
-import type { Location } from "@elevenlabs/client/internal";
 
 export type HookCallbacks = Pick<
   Callbacks,
