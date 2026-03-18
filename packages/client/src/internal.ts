@@ -1,5 +1,3 @@
-import { PACKAGE_VERSION } from "./version";
-
 export { CALLBACK_KEYS } from "./BaseConversation";
 export { mergeOptions } from "./utils/mergeOptions";
 export {
@@ -7,17 +5,13 @@ export {
   getOriginForLocation,
   getLivekitUrlForLocation,
 } from "./utils/location";
-
-export interface SourceInfo {
-  name: string;
-  version: string;
-}
-
-export let sourceInfo: Readonly<SourceInfo> = Object.freeze({
-  name: "js_sdk",
-  version: PACKAGE_VERSION,
-});
-
-export function setSourceInfo(value: SourceInfo): void {
-  sourceInfo = Object.freeze(value);
-}
+export { sourceInfo, setSourceInfo } from "./sourceInfo";
+export type { SourceInfo } from "./sourceInfo";
+export {
+  setSetupStrategy,
+  webSessionSetup,
+} from "./platform/VoiceSessionSetup";
+export type {
+  VoiceSessionSetupStrategy,
+  VoiceSessionSetupResult,
+} from "./platform/VoiceSessionSetup";

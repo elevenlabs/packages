@@ -3,9 +3,12 @@
   "version": "0.5.11",
   "description": "ElevenLabs React Native SDK for the Agents Platform",
   "type": "module",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "browser": "./dist/index.js",
+      "react-native": "./dist/index.native.js",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",

@@ -4,7 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
-import { sourceInfo } from "../internal";
+import { sourceInfo } from "../sourceInfo";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
 import {
   Room,
