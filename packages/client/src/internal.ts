@@ -5,11 +5,11 @@ export interface SourceInfo {
   version: string;
 }
 
-export let sourceInfo: SourceInfo = {
+export let sourceInfo: Readonly<SourceInfo> = Object.freeze({
   name: "js_sdk",
   version: PACKAGE_VERSION,
-};
+});
 
 export function setSourceInfo(value: SourceInfo): void {
-  sourceInfo = value;
+  sourceInfo = Object.freeze(value);
 }
