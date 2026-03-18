@@ -25,6 +25,10 @@ import { ConversationStatusProvider } from "./ConversationStatus";
 import { ConversationInputProvider } from "./ConversationInput";
 import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
+import {
+  ConversationClientToolsProvider,
+  buildClientTools,
+} from "./ConversationClientTools";
 import { ListenerMap } from "./ListenerMap";
 import { useStableCallbacks } from "./useStableCallbacks";
 
@@ -34,6 +38,7 @@ const SUB_PROVIDERS: React.ComponentType<React.PropsWithChildren>[] = [
   ConversationInputProvider,
   ConversationModeProvider,
   ConversationFeedbackProvider,
+  ConversationClientToolsProvider,
 ];
 
 export type ConversationProviderProps = React.PropsWithChildren<HookOptions>;
@@ -48,6 +53,12 @@ export function ConversationProvider({
   const lockRef = useRef<Promise<Conversation> | null>(null);
   /** Signals that endSession was called while a connection was still pending. */
   const shouldEndRef = useRef(false);
+  /** Registry of hook-registered client tools. Survives across sessions. */
+  const [clientToolsRegistry] = useState(
+    () => new Map<string, NonNullable<Options["clientTools"]>[string]>()
+  );
+  /** Ref to the live clientTools object currently held by BaseConversation. */
+  const clientToolsRef = useRef<Record<string, NonNullable<Options["clientTools"]>[string]>>({});
   /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
@@ -107,16 +118,23 @@ export function ConversationProvider({
         delete (defaultConfig as Record<string, unknown>)[key];
       }
 
-      lockRef.current = Conversation.startSession(
-        mergeOptions<Options>(
-          { livekitUrl: calculatedLivekitUrl },
-          defaultConfig,
-          stableCallbacks,
-          listenerMap.compose(),
-          options ?? {},
-          { origin }
-        )
+      const sessionOptions = mergeOptions<Options>(
+        { livekitUrl: calculatedLivekitUrl },
+        defaultConfig,
+        stableCallbacks,
+        listenerMap.compose(),
+        options ?? {},
+        { origin }
       );
+
+      const clientTools = buildClientTools(
+        sessionOptions.clientTools,
+        clientToolsRegistry
+      );
+      clientToolsRef.current = clientTools;
+      sessionOptions.clientTools = clientTools;
+
+      lockRef.current = Conversation.startSession(sessionOptions);
 
       lockRef.current.then(
         conv => {
@@ -134,7 +152,7 @@ export function ConversationProvider({
         }
       );
     },
-    [stableCallbacks, listenerMap]
+    [stableCallbacks, listenerMap, clientToolsRegistry, clientToolsRef]
   );
 
   const endSession = useCallback(() => {
@@ -170,8 +188,10 @@ export function ConversationProvider({
       startSession,
       endSession,
       registerCallbacks,
+      clientToolsRegistry,
+      clientToolsRef,
     }),
-    [conversation, conversationRef, startSession, endSession, registerCallbacks]
+    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
   );
 
   const wrappedChildren = SUB_PROVIDERS.reduceRight<React.ReactNode>(

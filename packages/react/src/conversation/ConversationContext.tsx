@@ -1,6 +1,8 @@
-import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
-import type { Callbacks, Conversation } from "@elevenlabs/client";
+import { createContext, useContext, useLayoutEffect, useRef, type MutableRefObject, type RefObject } from "react";
+import type { Callbacks, ClientToolsConfig, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "./types";
+
+type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 
 export type ConversationContextValue = {
   conversation: Conversation | null;
@@ -13,6 +15,10 @@ export type ConversationContextValue = {
    * next `Conversation.startSession()` call. Returns an unsubscribe function.
    */
   registerCallbacks: (callbacks: Partial<Callbacks>) => () => void;
+  /** Registry of hook-registered client tools. Survives across sessions. */
+  clientToolsRegistry: Map<string, ClientToolEntry>;
+  /** Ref to the live clientTools object currently held by BaseConversation. */
+  clientToolsRef: MutableRefObject<Record<string, ClientToolEntry>>;
 };
 
 export const ConversationContext =

@@ -9,6 +9,15 @@ import type {
   Location,
 } from "@elevenlabs/client";
 
+export type ClientToolResult = string | number | void;
+
+export type ClientTool<
+  Parameters extends Record<string, unknown> = Record<string, unknown>,
+  Result extends ClientToolResult = ClientToolResult,
+> = (parameters: Parameters) => Promise<Result> | Result;
+
+export type ClientTools = Record<string, ClientTool>;
+
 export type HookCallbacks = Pick<
   Callbacks,
   | "onConnect"
