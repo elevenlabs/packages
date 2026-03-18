@@ -195,7 +195,6 @@ function useConversationSetup() {
         try {
           lockRef.current = Conversation.startSession({
             ...processedConfig,
-            overrides: processedConfig.overrides,
             onModeChange: props => {
               mode.value = props.mode;
             },
