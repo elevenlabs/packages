@@ -1,6 +1,6 @@
 import type { SessionConfig } from "./BaseConnection";
 import type { InitiationClientDataEvent } from "./events";
-import { client } from "../internal";
+import { sourceInfo } from "../internal";
 
 export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
   "conversation_initiation_client_data";
@@ -44,8 +44,8 @@ export function constructOverrides(
   }
 
   overridesEvent.source_info = {
-    source: client.name,
-    version: client.version,
+    source: sourceInfo.name,
+    version: sourceInfo.version,
   };
 
   return overridesEvent;

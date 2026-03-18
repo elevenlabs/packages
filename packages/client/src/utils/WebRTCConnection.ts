@@ -4,7 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
-import { client } from "../internal";
+import { sourceInfo } from "../internal";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
 import {
   Room,
@@ -193,7 +193,7 @@ export class WebRTCConnection extends BaseConnection {
     } else if ("agentId" in config && config.agentId) {
       // Agent ID provided - fetch token from API
       try {
-        const { name: source, version } = client;
+        const { name: source, version } = sourceInfo;
         const configOrigin = config.origin ?? HTTPS_API_ORIGIN;
         const origin = convertWssToHttps(configOrigin); //origin is wss, not https
         const url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;

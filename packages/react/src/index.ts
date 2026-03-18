@@ -1,7 +1,7 @@
-import { setClient } from "@elevenlabs/client/internal";
+import { setSourceInfo } from "@elevenlabs/client/internal";
 import { PACKAGE_VERSION } from "./version";
 
-setClient({ name: "react_sdk", version: PACKAGE_VERSION });
+setSourceInfo({ name: "react_sdk", version: PACKAGE_VERSION });
 
 export * from "@elevenlabs/client";
 

@@ -1,15 +1,15 @@
 import { PACKAGE_VERSION } from "./version";
 
-export interface Client {
+export interface SourceInfo {
   name: string;
   version: string;
 }
 
-export let client: Client = {
+export let sourceInfo: SourceInfo = {
   name: "js_sdk",
   version: PACKAGE_VERSION,
 };
 
-export function setClient(value: Client): void {
-  client = value;
+export function setSourceInfo(value: SourceInfo): void {
+  sourceInfo = value;
 }

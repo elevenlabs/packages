@@ -4,7 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection";
-import { client } from "../internal";
+import { sourceInfo } from "../internal";
 import {
   type ConfigEvent,
   isValidSocketEvent,
@@ -107,7 +107,7 @@ export class WebSocketConnection
       const origin = config.origin ?? WSS_API_ORIGIN;
       let url: string;
 
-      const { name: source, version } = client;
+      const { name: source, version } = sourceInfo;
 
       if (config.signedUrl) {
         const separator = config.signedUrl.includes("?") ? "&" : "?";
