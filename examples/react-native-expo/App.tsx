@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Keyboard,
-  TouchableWithoutFeedback,
   TextInput,
 } from "react-native";
 import {
@@ -93,8 +92,7 @@ const ConversationScreen = () => {
   const canEnd = status === "connected";
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <View style={styles.container}>
+    <View style={styles.container}>
         <Text style={styles.title}>ElevenLabs React Native Example</Text>
         <Text style={styles.subtitle}>
           Remember to set the agentId in the code
@@ -281,7 +279,6 @@ const ConversationScreen = () => {
           </View>
         )}
       </View>
-    </TouchableWithoutFeedback>
   );
 };
 
