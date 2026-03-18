@@ -9,7 +9,7 @@
 **Removed exports:**
 - `DeviceFormatConfig` — use `FormatConfig` from `@elevenlabs/client` instead.
 - `DeviceInputConfig` — use `InputDeviceConfig` from `@elevenlabs/client` instead.
-- `parseLocation`, `getOriginForLocation`, `getLivekitUrlForLocation`, `Location` — these were internal utilities not intended for public use.
+- `parseLocation`, `getOriginForLocation`, `getLivekitUrlForLocation`, `Location` — these were internal utilities not intended for public use and have been removed.
 
 **Re-export change:** `@elevenlabs/react` now re-exports all of `@elevenlabs/client` via `export *`, replacing the previous selective re-exports.
 
