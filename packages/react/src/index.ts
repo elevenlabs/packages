@@ -1,3 +1,8 @@
+import { setSourceInfo } from "@elevenlabs/client/internal";
+import { PACKAGE_VERSION } from "./version";
+
+setSourceInfo({ name: "react_sdk", version: PACKAGE_VERSION });
+
 export * from "@elevenlabs/client";
 
 // Scribe exports

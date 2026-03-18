@@ -45,10 +45,6 @@ export type BaseSessionConfig = {
     conversation?: {
       textOnly?: boolean;
     };
-    client?: {
-      source?: string;
-      version?: string;
-    };
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
