@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef } from "react";
 import type { ClientToolsConfig } from "@elevenlabs/client";
 import { ConversationContext } from "./ConversationContext";
-import type { ClientToolHandler } from "./types";
+import type { ClientTool, ClientTools } from "./types";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 
@@ -87,20 +87,27 @@ export function ConversationClientToolsProvider({
  * so it is safe to reference component state or props without listing
  * them as dependencies.
  *
+ * @typeParam TTools - An interface mapping tool names to `{ params, return }` definitions.
+ * @typeParam TName  - The specific tool name (inferred from the first argument).
  * @param name    - The tool name (must match the name configured on the agent).
  * @param handler - The function invoked when the agent calls this tool.
  *
  * @example
  * ```tsx
- * useConversationClientTool<{ city: string }>("get_weather", (params) => {
+ * type Tools = {
+ *   get_weather: (params: { city: string }) => string;
+ *   set_volume: (params: { level: number }) => void;
+ * };
+ *
+ * useConversationClientTool<Tools>("get_weather", (params) => {
  *   return `Weather in ${params.city} is sunny.`;
  * });
  * ```
  */
-export function useConversationClientTool<TParams = unknown>(
-  name: string,
-  handler: ClientToolHandler<TParams>
-): void {
+export function useConversationClientTool<
+  TTools extends ClientTools = Record<string, ClientTool>,
+  TName extends string & keyof TTools = string & keyof TTools,
+>(name: TName, handler: TTools[TName]): void {
   const registerClientTool = useContext(ConversationClientToolsContext);
   if (!registerClientTool) {
     throw new Error(
@@ -114,7 +121,7 @@ export function useConversationClientTool<TParams = unknown>(
 
   useLayoutEffect(() => {
     const stableHandler: ClientToolEntry = parameters =>
-      handlerRef.current(parameters as TParams);
+      handlerRef.current(parameters as Parameters<TTools[TName]>[0]);
     return registerClientTool(name, stableHandler);
   }, [registerClientTool, name]);
 }

@@ -42,5 +42,6 @@ export type { ConversationProviderProps } from "./conversation/ConversationProvi
 export type {
   HookOptions,
   HookCallbacks,
-  ClientToolHandler,
+  ClientTools,
+  ClientToolResult,
 } from "./conversation/types";
