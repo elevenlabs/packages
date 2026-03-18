@@ -6,12 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  Conversation,
-  type Options,
-  type Callbacks,
-  type ClientToolsConfig,
-} from "@elevenlabs/client";
+import { Conversation, type Options, type Callbacks } from "@elevenlabs/client";
 import {
   CALLBACK_KEYS,
   mergeOptions,
@@ -32,7 +27,7 @@ import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import {
   ConversationClientToolsProvider,
-  createClientToolsProxy,
+  buildClientTools,
 } from "./ConversationClientTools";
 import { ListenerMap } from "./ListenerMap";
 import { useStableCallbacks } from "./useStableCallbacks";
@@ -58,14 +53,12 @@ export function ConversationProvider({
   const lockRef = useRef<Promise<Conversation> | null>(null);
   /** Signals that endSession was called while a connection was still pending. */
   const shouldEndRef = useRef(false);
-  /** Mutable target backing the dynamic clientTools Proxy. */
-  const [clientToolsTarget] = useState<
-    Record<string, ClientToolsConfig["clientTools"][string]>
-  >(() => ({}));
-  /** Proxy that delegates to clientToolsTarget — passed as clientTools to the session. */
-  const [clientToolsProxy] = useState(() =>
-    createClientToolsProxy(clientToolsTarget)
+  /** Registry of hook-registered client tools. Survives across sessions. */
+  const [clientToolsRegistry] = useState(
+    () => new Map<string, NonNullable<Options["clientTools"]>[string]>()
   );
+  /** Ref to the live clientTools object currently held by BaseConversation. */
+  const clientToolsRef = useRef<Record<string, NonNullable<Options["clientTools"]>[string]>>({});
   /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
@@ -134,11 +127,12 @@ export function ConversationProvider({
         { origin }
       );
 
-      // Merge statically-provided clientTools into the dynamic target,
-      // then use the Proxy so tools added via useConversationClientTool
-      // are visible to BaseConversation at call time.
-      Object.assign(clientToolsTarget, sessionOptions.clientTools);
-      sessionOptions.clientTools = clientToolsProxy;
+      const clientTools = buildClientTools(
+        sessionOptions.clientTools,
+        clientToolsRegistry
+      );
+      clientToolsRef.current = clientTools;
+      sessionOptions.clientTools = clientTools;
 
       lockRef.current = Conversation.startSession(sessionOptions);
 
@@ -158,7 +152,7 @@ export function ConversationProvider({
         }
       );
     },
-    [stableCallbacks, listenerMap, clientToolsTarget, clientToolsProxy]
+    [stableCallbacks, listenerMap, clientToolsRegistry, clientToolsRef]
   );
 
   const endSession = useCallback(() => {
@@ -194,9 +188,10 @@ export function ConversationProvider({
       startSession,
       endSession,
       registerCallbacks,
-      clientToolsTarget,
+      clientToolsRegistry,
+      clientToolsRef,
     }),
-    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsTarget]
+    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
   );
 
   const wrappedChildren = SUB_PROVIDERS.reduceRight<React.ReactNode>(

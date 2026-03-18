@@ -6,23 +6,25 @@ import type { ClientTool, ClientTools } from "./types";
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 
 /**
- * Creates a Proxy that delegates all property access to `target`.
- * The Proxy ensures `BaseConversation.handleClientToolCall` sees
- * dynamically registered tools via its `hasOwnProperty` + bracket-access
- * pattern, since the underlying target is mutated in place.
+ * Creates a fresh clientTools object by merging option-provided tools with
+ * hook-registered tools from the registry. Throws if a hook-registered tool
+ * name conflicts with an option-provided tool.
  */
-export function createClientToolsProxy(
-  target: Record<string, ClientToolEntry>
+export function buildClientTools(
+  optionTools: Record<string, ClientToolEntry> | undefined,
+  registry: Map<string, ClientToolEntry>
 ): Record<string, ClientToolEntry> {
-  return new Proxy(target, {
-    get: (t, prop, receiver) => Reflect.get(t, prop, receiver),
-    has: (t, prop) => Reflect.has(t, prop),
-    set: (t, prop, value, receiver) => Reflect.set(t, prop, value, receiver),
-    deleteProperty: (t, prop) => Reflect.deleteProperty(t, prop),
-    getOwnPropertyDescriptor: (t, prop) =>
-      Reflect.getOwnPropertyDescriptor(t, prop),
-    ownKeys: t => Reflect.ownKeys(t),
-  });
+  const clientTools: Record<string, ClientToolEntry> = { ...optionTools };
+  for (const [name, handler] of registry) {
+    if (name in clientTools) {
+      throw new Error(
+        `Client tool "${name}" is already provided via props/options. ` +
+          `Remove it from props or do not register it with useConversationClientTool.`
+      );
+    }
+    clientTools[name] = handler;
+  }
+  return clientTools;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,23 +50,28 @@ export function ConversationClientToolsProvider({
     );
   }
 
-  // Capture the mutable target in a ref so the linter does not flag
-  // property writes on a value returned from useContext.
-  const clientToolsTargetRef = useRef(ctx.clientToolsTarget);
+  const { clientToolsRegistry, clientToolsRef } = ctx;
 
   const registerClientTool: RegisterClientTool = useCallback(
     (name, handler) => {
-      const target = clientToolsTargetRef.current;
-      target[name] = handler;
+      if (clientToolsRegistry.has(name)) {
+        throw new Error(
+          `Client tool "${name}" is already registered by another hook. ` +
+            `Each tool name must be unique.`
+        );
+      }
+      clientToolsRegistry.set(name, handler);
+      clientToolsRef.current[name] = handler;
       return () => {
-        // Only delete if the handler still matches — prevents a stale
-        // unmount from removing a newer registration for the same name.
-        if (target[name] === handler) {
-          delete target[name];
+        if (clientToolsRegistry.get(name) === handler) {
+          clientToolsRegistry.delete(name);
+        }
+        if (clientToolsRef.current[name] === handler) {
+          delete clientToolsRef.current[name];
         }
       };
     },
-    []
+    [clientToolsRegistry, clientToolsRef]
   );
 
   return (
@@ -87,7 +94,7 @@ export function ConversationClientToolsProvider({
  * so it is safe to reference component state or props without listing
  * them as dependencies.
  *
- * @typeParam TTools - An interface mapping tool names to `{ params, return }` definitions.
+ * @typeParam TTools - An interface mapping tool names to function signatures.
  * @typeParam TName  - The specific tool name (inferred from the first argument).
  * @param name    - The tool name (must match the name configured on the agent).
  * @param handler - The function invoked when the agent calls this tool.
