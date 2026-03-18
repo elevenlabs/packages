@@ -33,6 +33,7 @@
     "react-native": ">=0.70.0"
   },
   "dependencies": {
+    "@elevenlabs/client": "workspace:*",
     "@elevenlabs/react": "workspace:*"
   },
   "devDependencies": {
