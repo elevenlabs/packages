@@ -15,8 +15,8 @@ import {
   useConversationInput,
   useConversationMode,
   useConversationFeedback,
-} from "@elevenlabs/react";
-import type { ConversationStatus } from "@elevenlabs/react";
+  type ConversationStatus,
+} from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);

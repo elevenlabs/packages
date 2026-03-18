@@ -1,1 +1,21 @@
-export * from "@elevenlabs/react";
+// Conversation context API
+export {
+  ConversationProvider,
+  useConversationControls,
+  useConversationStatus,
+  useConversationInput,
+  useConversationMode,
+  useConversationFeedback,
+  useRawConversation,
+  useConversation,
+  type UseConversationOptions,
+  type ConversationControlsValue,
+  type ConversationInputValue,
+  type ConversationStatus,
+  type ConversationStatusValue,
+  type ConversationModeValue,
+  type ConversationFeedbackValue,
+  type ConversationProviderProps,
+  type HookOptions,
+  type HookCallbacks,
+} from "@elevenlabs/react";
