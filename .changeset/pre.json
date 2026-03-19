@@ -13,6 +13,18 @@
     "@elevenlabs/typescript-config": "0.0.0"
   },
   "changesets": [
-    "fix-wix-compat"
+    "client-input-class-removed",
+    "client-input-output-controller-interfaces",
+    "conversation-namespace-object",
+    "fix-wix-compat",
+    "output-controller-breaking",
+    "react-conversation-context-api",
+    "react-device-format-config-output-device",
+    "react-export-conversation-status",
+    "react-granular-conversation-hooks",
+    "react-native-rewrite",
+    "react-use-conversation-client-tool",
+    "replace-microbundle-with-rolldown",
+    "voice-conversation-wakelock-private"
   ]
 }

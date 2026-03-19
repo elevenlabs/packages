@@ -1,5 +1,97 @@
 # @elevenlabs/react-native
 
+## 1.0.0-rc.0
+
+### Major Changes
+
+- 77798c7: **Breaking:** Complete API rewrite. The custom LiveKit-based implementation (`ElevenLabsProvider`, `useConversation`) has been removed and replaced with re-exports from `@elevenlabs/react`.
+
+  The package now provides `ConversationProvider` and granular hooks (`useConversationControls`, `useConversationStatus`, `useConversationInput`, `useConversationMode`, `useConversationFeedback`) instead of the previous monolithic `useConversation` hook.
+
+  On React Native, the package performs side-effects on import: polyfilling WebRTC globals, configuring native AudioSession, and registering a platform-specific voice session strategy. On web, it re-exports without side-effects.
+
+  ## Migration
+
+  **Before:**
+
+  ```tsx
+  import {
+    ElevenLabsProvider,
+    useConversation,
+  } from "@elevenlabs/react-native";
+
+  function App() {
+    return (
+      <ElevenLabsProvider>
+        <Conversation />
+      </ElevenLabsProvider>
+    );
+  }
+
+  function Conversation() {
+    const conversation = useConversation({
+      onConnect: ({ conversationId }) =>
+        console.log("Connected", conversationId),
+      onError: message => console.error(message),
+    });
+
+    return (
+      <Button
+        onPress={() => conversation.startSession({ agentId: "your-agent-id" })}
+      />
+    );
+  }
+  ```
+
+  **After:**
+
+  ```tsx
+  import {
+    ConversationProvider,
+    useConversationControls,
+    useConversationStatus,
+  } from "@elevenlabs/react-native";
+
+  function App() {
+    return (
+      <ConversationProvider
+        onConnect={({ conversationId }) =>
+          console.log("Connected", conversationId)
+        }
+        onError={message => console.error(message)}
+      >
+        <Conversation />
+      </ConversationProvider>
+    );
+  }
+
+  function Conversation() {
+    const { startSession } = useConversationControls();
+    const { status } = useConversationStatus();
+
+    return (
+      <Button onPress={() => startSession({ agentId: "your-agent-id" })} />
+    );
+  }
+  ```
+
+### Patch Changes
+
+- ea66b5e: Replace microbundle with rolldown for IIFE builds (client, react) and tsc-only builds (react-native). No public API changes — the CDN bundle format changes from UMD to IIFE.
+- Updated dependencies [81013c0]
+- Updated dependencies [81013c0]
+- Updated dependencies [81013c0]
+- Updated dependencies [81013c0]
+- Updated dependencies [cea40aa]
+- Updated dependencies [81013c0]
+- Updated dependencies [77798c7]
+- Updated dependencies [cea40aa]
+- Updated dependencies [cfea047]
+- Updated dependencies [ea66b5e]
+- Updated dependencies [81013c0]
+  - @elevenlabs/client@1.0.0-rc.0
+  - @elevenlabs/react@1.0.0-rc.0
+
 ## 0.5.11
 
 ### Patch Changes
