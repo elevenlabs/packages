@@ -25,6 +25,7 @@
     "react-native-rewrite",
     "react-use-conversation-client-tool",
     "replace-microbundle-with-rolldown",
+    "types-callback-keys",
     "voice-conversation-wakelock-private"
   ]
 }
