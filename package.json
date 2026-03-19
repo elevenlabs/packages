@@ -8,7 +8,7 @@
     "test": "turbo test",
     "build": "turbo build",
     "check-types": "turbo check-types",
-    "ci": "turbo check-types lint test build",
+    "ci": "CI=true turbo check-types lint test build",
     "generate:types": "turbo run generate --filter=@elevenlabs/types",
     "prepare": "husky install",
     "dev": "turbo dev",
