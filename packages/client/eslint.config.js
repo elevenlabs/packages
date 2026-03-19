@@ -14,8 +14,6 @@ export default defineConfig(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // Pre-existing issues — enable incrementally (see #583)
-      "no-empty": "off",
     },
   }
 );

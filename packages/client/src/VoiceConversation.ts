@@ -98,7 +98,9 @@ export class VoiceConversation extends BaseConversation {
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch {}
+      } catch {
+        // Wake lock may fail — proceed if it does
+      }
       throw error;
     }
   }
@@ -148,7 +150,9 @@ export class VoiceConversation extends BaseConversation {
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch {}
+    } catch {
+      // Wake lock may fail — proceed if it does
+    }
 
     await this.input.close();
     await this.output.close();
