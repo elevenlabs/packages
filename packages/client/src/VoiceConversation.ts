@@ -14,6 +14,8 @@ import {
 import { WebSocketConnection } from "./utils/WebSocketConnection";
 
 export class VoiceConversation extends BaseConversation {
+  readonly type = "voice";
+
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
     if ("wakeLock" in navigator) {
       // unavailable without HTTPS, including localhost in dev

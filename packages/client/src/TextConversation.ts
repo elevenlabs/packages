@@ -4,6 +4,8 @@ import { applyDelay } from "./utils/applyDelay";
 import { BaseConversation, type PartialOptions } from "./BaseConversation";
 
 export class TextConversation extends BaseConversation {
+  readonly type = "text";
+
   public static async startSession(
     options: PartialOptions
   ): Promise<TextConversation> {

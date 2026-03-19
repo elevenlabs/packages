@@ -68,7 +68,18 @@ export type {
 } from "./scribe";
 
 export class Conversation extends BaseConversation {
-  public static startSession(options: PartialOptions): Promise<Conversation> {
+  public static startSession(
+    options: PartialOptions & { textOnly: true }
+  ): Promise<TextConversation>;
+  public static startSession(
+    options: PartialOptions & { textOnly: false }
+  ): Promise<VoiceConversation>;
+  public static startSession(
+    options: PartialOptions
+  ): Promise<TextConversation | VoiceConversation>;
+  public static startSession(
+    options: PartialOptions
+  ): Promise<TextConversation | VoiceConversation> {
     const fullOptions = Conversation.getFullOptions(options);
     return fullOptions.textOnly
       ? TextConversation.startSession(fullOptions)
