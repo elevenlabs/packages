@@ -1,5 +1,12 @@
 # @elevenlabs/client
 
+## 1.0.0-rc.1
+
+### Patch Changes
+
+- Updated dependencies [1838c82]
+  - @elevenlabs/types@0.7.0-rc.0
+
 ## 1.0.0-rc.0
 
 ### Major Changes

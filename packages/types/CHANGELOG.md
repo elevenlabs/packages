@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.7.0-rc.0
+
+### Minor Changes
+
+- 1838c82: Export `CALLBACK_KEYS` runtime array of all `Callbacks` keys, used by the React SDK for callback composition
+
 ## 0.6.0
 
 ### Minor Changes
