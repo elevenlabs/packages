@@ -803,4 +803,80 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
     });
   });
+
+  describe("user-id", () => {
+    beforeEach(() => {
+      // Clear localStorage before each test to ensure clean slate
+      localStorage.clear();
+    });
+
+    it.each(Variants)(
+      "$0 variant should create new user-id in local storage after accepting terms",
+      async variant => {
+        // Verify localStorage is empty at the beginning
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+        setupWebComponent({ "agent-id": "basic", variant });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify user-id has been set in localStorage
+        const userId = localStorage.getItem(STORAGE_KEY);
+        expect(userId).not.toBeNull();
+        expect(userId).toBeTruthy();
+      }
+    );
+
+    it.each(Variants)(
+      "$0 variant should NOT set localStorage when user-id attribute is provided",
+      async variant => {
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+        setupWebComponent({
+          "agent-id": "basic",
+          variant,
+          "user-id": "explicit-user-123",
+        });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify localStorage was NOT modified
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+      }
+    );
+
+    it.each(Variants)(
+      "$0 variant should reuse existing user-id from localStorage",
+      async variant => {
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        const existingUserId = "pre-existing-uuid-456";
+        localStorage.setItem(STORAGE_KEY, existingUserId);
+
+        setupWebComponent({ "agent-id": "basic", variant });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify the same user-id is still in localStorage (not replaced)
+        const userId = localStorage.getItem(STORAGE_KEY);
+        expect(userId).toBe(existingUserId);
+      }
+    );
+  });
 });
