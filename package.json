@@ -5,6 +5,7 @@
   "scripts": {
     "create": "node scripts/create",
     "lint": "turbo lint",
+    "lint:prettier": "turbo lint:prettier",
     "test": "turbo test",
     "build": "turbo build",
     "check-types": "turbo check-types",
