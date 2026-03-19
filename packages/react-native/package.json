@@ -50,6 +50,7 @@
     "directory": "packages/react-native"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "next"
   }
 }

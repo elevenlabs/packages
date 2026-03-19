@@ -1,6 +1,6 @@
 {
   "mode": "pre",
-  "tag": "next",
+  "tag": "rc",
   "initialVersions": {
     "elevenlabs-react-native-example": "1.0.3",
     "@elevenlabs/agents-cli": "0.6.2",

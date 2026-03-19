@@ -3,14 +3,16 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [
-    [
-      "@elevenlabs/convai-widget-core",
-      "@elevenlabs/convai-widget-embed"
-    ]
+    ["@elevenlabs/convai-widget-core", "@elevenlabs/convai-widget-embed"]
   ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [
+    "@elevenlabs/convai-widget-core",
+    "@elevenlabs/convai-widget-embed",
+    "@elevenlabs/types",
+    "elevenlabs-react-native-example"
+  ]
 }

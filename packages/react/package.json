@@ -57,6 +57,7 @@
     "directory": "packages/react"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "next"
   }
 }
