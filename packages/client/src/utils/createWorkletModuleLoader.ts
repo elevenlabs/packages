@@ -15,7 +15,8 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
         return;
       } catch (error) {
         throw new Error(
-          `Failed to load the ${name} worklet module from path: ${path}. Error: ${error}`
+          `Failed to load the ${name} worklet module from path: ${path}.`,
+          { cause: error }
         );
       }
     }
@@ -38,9 +39,10 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
       const moduleURL = `data:application/javascript;base64,${base64}`;
       await worklet.addModule(moduleURL);
       URLCache.set(name, moduleURL);
-    } catch {
+    } catch (error) {
       throw new Error(
-        `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets. If you are using a strict CSP, you may need to self-host the worklet files.`
+        `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets. If you are using a strict CSP, you may need to self-host the worklet files.`,
+        { cause: error }
       );
     }
   };

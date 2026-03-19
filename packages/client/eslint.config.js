@@ -14,6 +14,7 @@ export default defineConfig(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "preserve-caught-error": "error",
     },
   }
 );

@@ -111,7 +111,8 @@ export class WebRTCConnection extends BaseConnection {
         }
 
         throw new Error(
-          `Failed to fetch conversation token for agent ${config.agentId}: ${msg}`
+          `Failed to fetch conversation token for agent ${config.agentId}: ${msg}`,
+          { cause: error }
         );
       }
     } else {
