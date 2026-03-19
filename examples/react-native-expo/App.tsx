@@ -21,6 +21,7 @@ const ConversationScreen = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [isTextOnly, setIsTextOnly] = useState(false);
+  const [connectionType, setConnectionType] = useState<"webrtc" | "websocket">("webrtc");
 
   const { status, message: statusMessage } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
@@ -50,7 +51,7 @@ const ConversationScreen = () => {
     try {
       startSession({
         agentId: process.env.EXPO_PUBLIC_AGENT_ID,
-        connectionType: "webrtc",
+        connectionType,
         userId: "demo-user",
         textOnly: isTextOnly || undefined,
       });
@@ -145,9 +146,27 @@ const ConversationScreen = () => {
           </View>
         )}
 
-        {/* Text Only Toggle */}
+        {/* Connection Type & Text Only Toggles */}
         {status === "disconnected" && (
           <View style={styles.toggleControlContainer}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.toggleButton,
+                connectionType === "websocket"
+                  ? styles.toggleButtonActive
+                  : styles.toggleButtonPassive,
+              ]}
+              onPress={() =>
+                setConnectionType((v) =>
+                  v === "webrtc" ? "websocket" : "webrtc"
+                )
+              }
+            >
+              <Text style={styles.buttonText}>
+                {connectionType === "webrtc" ? "WebRTC" : "WebSocket"}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.button,
@@ -506,6 +525,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toggleControlContainer: {
+    flexDirection: "row",
+    gap: 12,
     margin: 12,
     alignItems: "center",
   },
