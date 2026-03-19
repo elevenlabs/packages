@@ -8,6 +8,15 @@ license: MIT
 
 Migration guide for `@elevenlabs/client`, `@elevenlabs/react`, and `@elevenlabs/react-native` breaking changes in the next major release.
 
+## Migration instructions
+
+When migrating a codebase that contains **multiple components using `useConversation`** (or other hooks requiring `ConversationProvider`), ask the user whether they want:
+
+1. **A single shared `ConversationProvider`** wrapping all conversation components higher in the tree (all components share one session), or
+2. **Individual `ConversationProvider` wrappers** for each component (each component manages its own independent session).
+
+This choice affects session sharing, state isolation, and component architecture. Do not assume — ask before proceeding.
+
 ## Installation
 
 ```bash
