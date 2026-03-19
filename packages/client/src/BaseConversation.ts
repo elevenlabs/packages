@@ -56,7 +56,7 @@ export type ClientToolsConfig = {
   clientTools: Record<
     string,
     (
-      parameters: any
+      parameters: Record<string, unknown>
     ) => Promise<string | number | void> | string | number | void
   >;
 };
@@ -467,7 +467,7 @@ export class BaseConversation {
     }
   };
 
-  private onError(message: string, context?: any) {
+  private onError(message: string, context?: unknown) {
     console.error(message, context);
     if (this.options.onError) {
       this.options.onError(message, context);

@@ -618,7 +618,9 @@ describe("Volume Control", () => {
       vi.spyOn(
         globalThis.navigator.mediaDevices,
         "getUserMedia"
-      ).mockImplementation(() => Promise.resolve(mockMediaStream as any));
+      ).mockImplementation(() =>
+        Promise.resolve(mockMediaStream as unknown as MediaStream)
+      );
     }
 
     // Mock document methods we need for audio element tests
@@ -885,7 +887,9 @@ describe("WebRTC Volume Control", () => {
 
       // Directly test the setAudioVolume method by adding mock elements
       // Access the private audioElements array through type assertion
-      (connection as any).audioElements = [mockElement1, mockElement2];
+      (
+        connection as unknown as { audioElements: (typeof mockElement1)[] }
+      ).audioElements = [mockElement1, mockElement2];
 
       // Test volume control
       connection.setAudioVolume(0.5);
@@ -1254,16 +1258,16 @@ describe("Wake Lock", () => {
     originalWakeLock = navigator.wakeLock;
 
     vi.spyOn(document, "addEventListener").mockImplementation(
-      (type: string, listener: any) => {
-        if (type === "visibilitychange") {
-          visibilityChangeListeners.push(listener);
+      (type: string, listener: EventListenerOrEventListenerObject | null) => {
+        if (type === "visibilitychange" && typeof listener === "function") {
+          visibilityChangeListeners.push(listener as () => void);
         }
       }
     );
 
     vi.spyOn(document, "removeEventListener").mockImplementation(
-      (type: string, listener: any) => {
-        if (type === "visibilitychange") {
+      (type: string, listener: EventListenerOrEventListenerObject | null) => {
+        if (type === "visibilitychange" && typeof listener === "function") {
           visibilityChangeListeners = visibilityChangeListeners.filter(
             l => l !== listener
           );

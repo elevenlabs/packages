@@ -91,6 +91,13 @@ export type OutgoingSocketEvent =
   | MCPToolApprovalResultEvent
   | MultimodalMessageEvent;
 
-export function isValidSocketEvent(event: any): event is IncomingSocketEvent {
-  return !!event.type;
+export function isValidSocketEvent(
+  event: unknown
+): event is IncomingSocketEvent {
+  return (
+    typeof event === "object" &&
+    event !== null &&
+    "type" in event &&
+    !!event.type
+  );
 }

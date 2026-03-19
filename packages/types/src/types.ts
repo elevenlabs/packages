@@ -58,7 +58,7 @@ export interface MessagePayload {
 export type Callbacks = {
   onConnect?: (props: { conversationId: string }) => void;
   onDisconnect?: (details: DisconnectionDetails) => void;
-  onError?: (message: string, context?: any) => void;
+  onError?: (message: string, context?: unknown) => void;
   onMessage?: (props: MessagePayload) => void;
   onAudio?: (base64Audio: string) => void;
   onModeChange?: (prop: { mode: Mode }) => void;
@@ -92,9 +92,7 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
-  onAudioAlignment?: (
-    props: AudioAlignmentEvent
-  ) => void;
+  onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };

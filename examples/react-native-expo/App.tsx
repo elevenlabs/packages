@@ -27,7 +27,7 @@ const ConversationScreen = () => {
       console.log("❌ Disconnected from conversation", details);
       setCurrentConversationId(null);
     },
-    onError: (message: string, context?: Record<string, unknown>) => {
+    onError: (message, context) => {
       console.error("❌ Conversation error:", message, context);
     },
     onMessage: ({ message, role }) => {
