@@ -25,6 +25,7 @@ vi.mock("livekit-client", () => {
     connect: vi.fn(() => Promise.resolve()),
     disconnect: vi.fn(),
     on: vi.fn(),
+    once: vi.fn(),
     off: vi.fn(),
     localParticipant: mockLocalParticipant,
     name: "conv_test123",
@@ -34,6 +35,7 @@ vi.mock("livekit-client", () => {
     Room: vi.fn(() => mockRoom),
     RoomEvent: {
       Connected: "connected",
+      SignalConnected: "signalConnected",
       Disconnected: "disconnected",
       ConnectionStateChanged: "connectionStateChanged",
       DataReceived: "dataReceived",
@@ -74,6 +76,13 @@ describe("WebRTCConnection", () => {
       (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
         (event: string, callback: () => void) => {
           if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
             queueMicrotask(callback);
           }
         }

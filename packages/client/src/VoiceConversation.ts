@@ -57,18 +57,19 @@ export class VoiceConversation extends BaseConversation {
         audio: true,
       });
 
-      // Stop the preliminary stream before creating the connection.
-      // Its only purpose is triggering the browser permission prompt.
-      // Keeping it active can block LiveKit's media negotiation on React Native.
-      preliminaryInputStream?.getTracks().forEach(track => {
-        track.stop();
-      });
-      preliminaryInputStream = null;
-
       await applyDelay(fullOptions.connectionDelay);
 
       // Platform-specific strategy creates the connection and sets up input/output
       const sessionSetup = await setupStrategy(fullOptions);
+
+      // Stop the preliminary stream after setting up the session.
+      // Its only purpose was triggering the browser's microphone permission
+      // prompt; it must remain alive until the strategy finishes because
+      // MediaDeviceInput.create (WebSocket path) needs mic access granted.
+      preliminaryInputStream?.getTracks().forEach(track => {
+        track.stop();
+      });
+      preliminaryInputStream = null;
 
       return new VoiceConversation(
         fullOptions,
