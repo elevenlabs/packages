@@ -22,7 +22,7 @@ npm install @elevenlabs/client
 import { Conversation } from "@elevenlabs/client";
 
 const conversation = await Conversation.startSession({
-  agentId: "agent_7101k5zvyjhmfg983brhmhkd98n6",
+  agentId: "agent_7101k5zvyjhmfg983brhmhkd98n6", // replace with your agent's ID
   onConnect: ({ conversationId }) => {
     console.log("Connected:", conversationId);
   },

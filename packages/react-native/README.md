@@ -31,6 +31,7 @@ import {
 
 function App() {
   return (
+    {/* replace with your agent's ID */}
     <ConversationProvider agentId="agent_7101k5zvyjhmfg983brhmhkd98n6">
       <Conversation />
     </ConversationProvider>
