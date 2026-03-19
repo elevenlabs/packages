@@ -247,16 +247,19 @@ Control how the SDK manages audio sessions with other audio sources:
 ```
 
 **When to use `allowMixingWithOthers: true`:**
+
 - Playing connection/disconnection sound effects during conversations
 - Background music in your app
 - Notification sounds while agent is speaking
 - Multiple concurrent audio sources
 
 **Default behavior (`false`):**
+
 - Exclusive audio session for best voice quality
 - Other audio sources will be paused during conversations
 
 **Platform Notes:**
+
 - **iOS**: Adds `AVAudioSessionCategoryOptionMixWithOthers` to the audio session
 - **Android**: Uses `AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK` for audio focus
 
@@ -311,20 +314,24 @@ const conversation = useConversation({
 Pass to `useConversation` hook to handle various conversation events:
 
 #### Connection & Status
+
 - `onConnect?: (props: { conversationId: string }) => void` - Called when successfully connected to a conversation
 - `onDisconnect?: (details: DisconnectionDetails) => void` - Called when disconnected (includes reason: "user", "agent", or "error")
 - `onStatusChange?: (props: { status: Status }) => void` - Called when connection status changes ("disconnected", "connecting", "connected", "disconnecting")
 - `onError?: (message: string, context?: any) => void` - Called when an error occurs
 
 #### Messages & Transcription
+
 - `onMessage?: (props: { message: string; source: Role }) => void` - Called when a message is received from user or AI
 - `onModeChange?: (props: { mode: Mode }) => void` - Called when conversation mode changes ("speaking" or "listening")
 
 #### Audio & Voice Activity
+
 - `onAudio?: (base64Audio: string) => void` - Called when audio chunks are received from the agent
 - `onVadScore?: (props: { vadScore: number }) => void` - Called with Voice Activity Detection scores
 
 #### Conversation Events
+
 - `onInterruption?: (props: Interruption) => void` - Called when the conversation is interrupted
 - `onAgentChatResponsePart?: (props: AgentChatResponsePart) => void` - Called for streaming agent response parts
 - `onConversationMetadata?: (props: ConversationMetadata) => void` - Called with conversation initiation metadata
@@ -332,9 +339,11 @@ Pass to `useConversation` hook to handle various conversation events:
 - `onAudioAlignment?: (props: AudioAlignmentEvent) => void` - Called with character-level timing data for text-to-speech synchronization
 
 #### Feedback
+
 - `onCanSendFeedbackChange?: (props: { canSendFeedback: boolean }) => void` - Called when feedback availability changes
 
 #### Tools & MCP
+
 - `onUnhandledClientToolCall?: (props: ClientToolCall) => void` - Called when a client tool is invoked but not defined
 - `onMCPToolCall?: (props: McpToolCall) => void` - Called when an MCP (Model Context Protocol) tool is invoked
 - `onMCPConnectionStatus?: (props: McpConnectionStatus) => void` - Called when MCP connection status changes
@@ -342,6 +351,7 @@ Pass to `useConversation` hook to handle various conversation events:
 - `onAgentToolResponse?: (props: AgentToolResponse) => void` - Called when the agent receives a tool execution response
 
 #### Debug
+
 - `onDebug?: (props: any) => void` - Called with debug information (internal events)
 
 ## Requirements

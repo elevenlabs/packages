@@ -72,4 +72,3 @@ export const Code = memo((props: CodeProps) => {
   const content = toJsxRuntime(root, { Fragment, jsx, jsxs });
   return <>{content}</>;
 });
-

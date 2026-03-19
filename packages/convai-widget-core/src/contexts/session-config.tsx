@@ -44,8 +44,12 @@ export function SessionConfigProvider({
     tts: {
       voiceId: overrideVoiceId.value,
       speed: overrideSpeed.value ? parseFloat(overrideSpeed.value) : undefined,
-      stability: overrideStability.value ? parseFloat(overrideStability.value) : undefined,
-      similarityBoost: overrideSimilarityBoost.value ? parseFloat(overrideSimilarityBoost.value) : undefined,
+      stability: overrideStability.value
+        ? parseFloat(overrideStability.value)
+        : undefined,
+      similarityBoost: overrideSimilarityBoost.value
+        ? parseFloat(overrideSimilarityBoost.value)
+        : undefined,
     },
     conversation: {
       textOnly: parseBoolAttribute(overrideTextOnly.value) ?? undefined,

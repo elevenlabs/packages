@@ -25,8 +25,7 @@ export function CallButton({
       {...props}
     >
       {!iconOnly
-        ? (children ??
-          (isDisconnected ? text.start_call : text.end_call))
+        ? (children ?? (isDisconnected ? text.start_call : text.end_call))
         : undefined}
     </Button>
   );

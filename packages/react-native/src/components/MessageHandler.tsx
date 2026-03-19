@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import { useLocalParticipant, useDataChannel, useRoomContext } from "@livekit/react-native";
+import {
+  useLocalParticipant,
+  useDataChannel,
+  useRoomContext,
+} from "@livekit/react-native";
 import { RoomEvent } from "livekit-client";
 import type { LocalParticipant, RemoteParticipant } from "livekit-client";
 import type {
@@ -70,7 +74,10 @@ export const MessageHandler = ({
     room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 
     return () => {
-      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+      room.off(
+        RoomEvent.ParticipantDisconnected,
+        handleParticipantDisconnected
+      );
     };
   }, [room]);
 
@@ -119,7 +126,9 @@ export const MessageHandler = ({
       }
     } else {
       if (callbacksRef.current.onUnhandledClientToolCall) {
-        callbacksRef.current.onUnhandledClientToolCall(clientToolCall.client_tool_call);
+        callbacksRef.current.onUnhandledClientToolCall(
+          clientToolCall.client_tool_call
+        );
         return;
       }
 
@@ -201,7 +210,9 @@ export const MessageHandler = ({
         callbacksRef.current.onMCPToolCall?.(message.mcp_tool_call);
         break;
       case "mcp_connection_status":
-        callbacksRef.current.onMCPConnectionStatus?.(message.mcp_connection_status);
+        callbacksRef.current.onMCPConnectionStatus?.(
+          message.mcp_connection_status
+        );
         break;
       case "agent_tool_request":
         callbacksRef.current.onAgentToolRequest?.(message.agent_tool_request);
@@ -225,7 +236,9 @@ export const MessageHandler = ({
         );
         break;
       case "agent_chat_response_part":
-        callbacksRef.current.onAgentChatResponsePart?.(message.text_response_part);
+        callbacksRef.current.onAgentChatResponsePart?.(
+          message.text_response_part
+        );
         break;
       default:
         callbacksRef.current.onDebug?.(message);

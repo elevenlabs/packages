@@ -69,7 +69,7 @@ function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
         defaultOrigin,
         allowDataImages: true,
       },
-    ]
+    ],
   ];
 }
 
@@ -112,14 +112,12 @@ const Block = memo(
       [content, shouldParseIncompleteMarkdown]
     );
 
-    return (
-      <Markdown {...markdownOptions}>{parsedContent}</Markdown>
-    );
+    return <Markdown {...markdownOptions}>{parsedContent}</Markdown>;
   },
   (prevProps, nextProps) =>
     prevProps.content === nextProps.content &&
     prevProps.shouldParseIncompleteMarkdown ===
-    nextProps.shouldParseIncompleteMarkdown &&
+      nextProps.shouldParseIncompleteMarkdown &&
     prevProps.markdownOptions === nextProps.markdownOptions
 );
 

@@ -855,7 +855,6 @@ components:
           type: integer
         alignment:
           $ref: "#/components/schemas/AudioAlignmentData"
-         
 
     UserTranscriptionData:
       type: object

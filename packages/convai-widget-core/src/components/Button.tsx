@@ -16,8 +16,7 @@ const VARIANT_CLASSES = {
     "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active text-sm h-6",
 };
 
-export interface BaseButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface BaseButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   iconClassName?: string;
   variant?: keyof typeof VARIANT_CLASSES;
   disabledStyle?: boolean;
@@ -81,7 +80,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               "block whitespace-nowrap max-w-64 truncate",
               variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
-            >
+          >
             {children}
           </span>
         </SizeTransition>

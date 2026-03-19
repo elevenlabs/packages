@@ -468,11 +468,11 @@ const connection = Scribe.connect({
 });
 
 // Listen for transcripts
-connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, data => {
   console.log("Partial:", data.text);
 });
 
-connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, data => {
   console.log("Committed:", data.text);
 });
 
@@ -574,7 +574,7 @@ for (let i = 0; i < audioData.length; i += chunkSize) {
   connection.send({ audioBase64: base64 });
 
   // Optional: Add delay to simulate real-time streaming
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 100));
 }
 
 // Signal end of audio
@@ -594,29 +594,29 @@ connection.on(RealtimeEvents.SESSION_STARTED, () => {
 });
 
 // Partial transcripts (interim results)
-connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, data => {
   console.log("Partial:", data.text);
 });
 
 // Committed transcripts
-connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, data => {
   console.log("Committed:", data.text);
 });
 
 // Committed transcripts with word-level timestamps
 // Only received when `includeTimestamps = true`
-connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
+connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, data => {
   console.log("Committed:", data.text);
   console.log("Timestamps:", data.words);
 });
 
 // Errors
-connection.on(RealtimeEvents.ERROR, (error) => {
+connection.on(RealtimeEvents.ERROR, error => {
   console.error("Error:", error);
 });
 
 // Authentication errors
-connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
+connection.on(RealtimeEvents.AUTH_ERROR, data => {
   console.error("Auth error:", data.error);
 });
 
@@ -631,9 +631,9 @@ connection.on(RealtimeEvents.CLOSE, () => {
 });
 
 // Quota exceeded
-connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
-  console.log("Quota exceeded:", data.error)
-})
+connection.on(RealtimeEvents.QUOTA_EXCEEDED, data => {
+  console.log("Quota exceeded:", data.error);
+});
 ```
 
 ### Configuration Options
@@ -657,7 +657,7 @@ const connection = await scribe.connect({
 
   languageCode: "en", // ISO 639-1 language code
 
-  includeTimestamps: true // Whether to receive the committed_transcript_with_timestamps event after committing
+  includeTimestamps: true, // Whether to receive the committed_transcript_with_timestamps event after committing
 });
 ```
 
@@ -803,15 +803,15 @@ try {
   });
 
   // Generic event that fires on all errors, including auth and quota exceeded
-  connection.on(RealtimeEvents.ERROR, (error) => {
+  connection.on(RealtimeEvents.ERROR, error => {
     console.error("Connection error:", error);
   });
 
-  connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
+  connection.on(RealtimeEvents.AUTH_ERROR, data => {
     console.error("Authentication failed:", data.error);
   });
 
-  connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data) => {
+  connection.on(RealtimeEvents.QUOTA_EXCEEDED, data => {
     console.error("Quota exceeded:", data.error);
   });
 } catch (error) {

@@ -18,8 +18,8 @@ const ICON_MAP = {
   wrap: WrapTextIcon,
   maximize: MaximizeIcon,
   minimize: MinimizeIcon,
-  "loader": LoaderIcon,
-  "x": XIcon,
+  loader: LoaderIcon,
+  x: XIcon,
 };
 
 const SIZE_CLASSES = {
@@ -461,11 +461,39 @@ function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
 
 function LoaderIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }
 
 function XIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   return (
-<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> );
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
 }

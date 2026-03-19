@@ -170,72 +170,74 @@ function WidgetSandbox({
         value={{
           "agent-id": import.meta.env.VITE_AGENT_ID,
           "override-config": JSON.stringify({
-          variant: "full",
-          placement: "bottom-right",
-          avatar: {
-            type: "orb",
-            color_1: "#2E2E2E",
-            color_2: "#B8B8B8",
-          },
-          feedback_mode: "none",
-          language: "en",
-          supported_language_overrides: ["en"],
-          mic_muting_enabled: false,
-          transcript_enabled: true,
-          text_input_enabled: true,
-          default_expanded: true,
-          always_expanded: false,
-          text_contents: {},
-          language_presets: {},
-          disable_banner: true,
-          text_only: true,
-          supports_text_only: true,
-          styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
-          syntax_highlight_theme: theme === "light" ? "light" : "dark",
-          markdown_link_allowed_hosts: allowedDomains.map(d => ({ hostname: d })),
-        }),
-      }}
-    >
-      <ServerLocationProvider>
-        <WidgetConfigProvider>
-          <WidgetSizeProvider>
-            <LanguageConfigProvider>
-              <TermsProvider>
-                <SessionConfigProvider>
-                  <MockConversationProvider
-                    displayTextSignal={displayTextSignal}
-                  >
-                    <ConversationModeProvider>
-                      <AudioConfigProvider>
-                        <TextContentsProvider>
-                          <AvatarConfigProvider>
-                            <SheetContentProvider>
-                              <FeedbackProvider>
-                                <div className="dev-host">
-                                  <Style />
-                                  <Wrapper />
-                                  {theme === "dark" && (
-                                    <style>{`
+            variant: "full",
+            placement: "bottom-right",
+            avatar: {
+              type: "orb",
+              color_1: "#2E2E2E",
+              color_2: "#B8B8B8",
+            },
+            feedback_mode: "none",
+            language: "en",
+            supported_language_overrides: ["en"],
+            mic_muting_enabled: false,
+            transcript_enabled: true,
+            text_input_enabled: true,
+            default_expanded: true,
+            always_expanded: false,
+            text_contents: {},
+            language_presets: {},
+            disable_banner: true,
+            text_only: true,
+            supports_text_only: true,
+            styles: theme === "light" ? LIGHT_THEME_STYLES : DARK_THEME_STYLES,
+            syntax_highlight_theme: theme === "light" ? "light" : "dark",
+            markdown_link_allowed_hosts: allowedDomains.map(d => ({
+              hostname: d,
+            })),
+          }),
+        }}
+      >
+        <ServerLocationProvider>
+          <WidgetConfigProvider>
+            <WidgetSizeProvider>
+              <LanguageConfigProvider>
+                <TermsProvider>
+                  <SessionConfigProvider>
+                    <MockConversationProvider
+                      displayTextSignal={displayTextSignal}
+                    >
+                      <ConversationModeProvider>
+                        <AudioConfigProvider>
+                          <TextContentsProvider>
+                            <AvatarConfigProvider>
+                              <SheetContentProvider>
+                                <FeedbackProvider>
+                                  <div className="dev-host">
+                                    <Style />
+                                    <Wrapper />
+                                    {theme === "dark" && (
+                                      <style>{`
                                 .dev-host {
                                   scrollbar-color: #4b5563 transparent !important;
                                 }
                               `}</style>
-                                  )}
-                                </div>
-                              </FeedbackProvider>
-                            </SheetContentProvider>
-                          </AvatarConfigProvider>
-                        </TextContentsProvider>
-                      </AudioConfigProvider>
-                    </ConversationModeProvider>
-                  </MockConversationProvider>
-                </SessionConfigProvider>
-              </TermsProvider>
-            </LanguageConfigProvider>
-          </WidgetSizeProvider>
-        </WidgetConfigProvider>
-      </ServerLocationProvider>
-    </AttributesProvider>
+                                    )}
+                                  </div>
+                                </FeedbackProvider>
+                              </SheetContentProvider>
+                            </AvatarConfigProvider>
+                          </TextContentsProvider>
+                        </AudioConfigProvider>
+                      </ConversationModeProvider>
+                    </MockConversationProvider>
+                  </SessionConfigProvider>
+                </TermsProvider>
+              </LanguageConfigProvider>
+            </WidgetSizeProvider>
+          </WidgetConfigProvider>
+        </ServerLocationProvider>
+      </AttributesProvider>
     </ShadowHostProvider>
   );
 }
@@ -258,7 +260,10 @@ function MarkdownPlayground() {
   const allowedDomains = useMemo(() => {
     const trimmed = allowedDomainsInput.trim();
     if (!trimmed) return [];
-    return trimmed.split(",").map(d => d.trim()).filter(Boolean);
+    return trimmed
+      .split(",")
+      .map(d => d.trim())
+      .filter(Boolean);
   }, [allowedDomainsInput]);
 
   useEffect(() => {
@@ -356,7 +361,11 @@ function MarkdownPlayground() {
           </div>
         </div>
       </div>
-      <WidgetSandbox theme={theme} displayTextSignal={displayTextSignal} allowedDomains={allowedDomains} />
+      <WidgetSandbox
+        theme={theme}
+        displayTextSignal={displayTextSignal}
+        allowedDomains={allowedDomains}
+      />
     </>
   );
 }

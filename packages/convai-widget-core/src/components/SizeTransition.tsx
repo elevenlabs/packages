@@ -11,8 +11,9 @@ import { clsx } from "clsx";
 import { useCSSTransition } from "../utils/useCssTransition";
 import { useReducedMotion } from "../utils/useReducedMotion";
 
-interface SizeTransitionProps
-  extends PropsWithoutRef<HTMLAttributes<HTMLSpanElement>> {
+interface SizeTransitionProps extends PropsWithoutRef<
+  HTMLAttributes<HTMLSpanElement>
+> {
   /**
    * Whether the children should be shown.
    *

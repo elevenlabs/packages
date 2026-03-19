@@ -18,7 +18,10 @@ interface ExpandableTriggerActionsProps extends ExpandableProps {
   onDismiss?: () => void;
 }
 
-export function ExpandableTriggerActions({ expanded, onDismiss }: ExpandableTriggerActionsProps) {
+export function ExpandableTriggerActions({
+  expanded,
+  onDismiss,
+}: ExpandableTriggerActionsProps) {
   const textOnly = useIsConversationTextOnly();
   const variant = useWidgetConfig().value.variant;
   const { isDisconnected } = useConversation();
