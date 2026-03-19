@@ -220,6 +220,9 @@ importers:
         specifier: ^2.11.4
         version: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.1
+        version: 9.39.1
       '@types/node-wav':
         specifier: ^0.0.3
         version: 0.0.3
@@ -244,6 +247,9 @@ importers:
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.55.0
+        version: 8.55.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
       vitest:
         specifier: ^3.0.5
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.2)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(msw@2.12.4(@types/node@22.19.2)(typescript@5.9.3))(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
