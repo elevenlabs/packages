@@ -24,7 +24,8 @@
     "clean": "rm -rf ./dist",
     "lint:ts": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier . --check",
+    "format": "prettier . --write",
     "test": "vitest"
   },
   "keywords": [],

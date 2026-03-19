@@ -5,6 +5,7 @@
   "scripts": {
     "create": "node scripts/create",
     "lint": "turbo lint",
+    "lint:prettier": "turbo lint:prettier",
     "test": "turbo test",
     "build": "turbo build",
     "check-types": "turbo check-types",
@@ -12,6 +13,7 @@
     "generate:types": "turbo run generate --filter=@elevenlabs/types",
     "prepare": "husky install",
     "dev": "turbo dev",
+    "format": "turbo format",
     "clean": "turbo clean",
     "changeset": "changeset",
     "publish": "turbo build lint && changeset publish"
