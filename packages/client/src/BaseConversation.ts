@@ -291,7 +291,7 @@ export class BaseConversation {
     }
   }
 
-  protected handleAudio(event: AgentAudioEvent) {}
+  protected handleAudio(_event: AgentAudioEvent) {}
 
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {

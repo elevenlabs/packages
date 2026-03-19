@@ -206,28 +206,25 @@ export class WebRTCConnection extends BaseConnection {
     });
 
     // Handle incoming data messages
-    this.room.on(
-      RoomEvent.DataReceived,
-      (payload: Uint8Array, _participant) => {
-        try {
-          const message = JSON.parse(new TextDecoder().decode(payload));
+    this.room.on(RoomEvent.DataReceived, (payload: Uint8Array) => {
+      try {
+        const message = JSON.parse(new TextDecoder().decode(payload));
 
-          // Filter out audio messages for WebRTC - they're handled via audio tracks
-          if (message.type === "audio") {
-            return;
-          }
-
-          if (isValidSocketEvent(message)) {
-            this.handleMessage(message);
-          } else {
-            console.warn("Invalid socket event received:", message);
-          }
-        } catch (error) {
-          console.warn("Failed to parse incoming data message:", error);
-          console.warn("Raw payload:", new TextDecoder().decode(payload));
+        // Filter out audio messages for WebRTC - they're handled via audio tracks
+        if (message.type === "audio") {
+          return;
         }
+
+        if (isValidSocketEvent(message)) {
+          this.handleMessage(message);
+        } else {
+          console.warn("Invalid socket event received:", message);
+        }
+      } catch (error) {
+        console.warn("Failed to parse incoming data message:", error);
+        console.warn("Raw payload:", new TextDecoder().decode(payload));
       }
-    );
+    });
 
     this.room.on(
       RoomEvent.TrackSubscribed,
@@ -395,7 +392,7 @@ export class WebRTCConnection extends BaseConnection {
         } else {
           await micTrackPublication.track.unmute();
         }
-      } catch (_error) {
+      } catch {
         // If track muting fails, fall back to participant-level control
         await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
       }

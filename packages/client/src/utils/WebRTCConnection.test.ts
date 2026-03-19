@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Track mock calls using a global object that can be accessed after mocking
-const mockCalls = {
-  setMicrophoneEnabled: [] as boolean[],
+type MockCalls = {
+  setMicrophoneEnabled: boolean[];
 };
 
 vi.mock("livekit-client", () => {
@@ -12,8 +12,7 @@ vi.mock("livekit-client", () => {
         setMicrophoneEnabled: [],
       };
       (
-        (globalThis as Record<string, unknown>)
-          .__mockCalls__ as typeof mockCalls
+        (globalThis as Record<string, unknown>).__mockCalls__ as MockCalls
       ).setMicrophoneEnabled.push(enabled);
       return Promise.resolve();
     }),
@@ -90,8 +89,7 @@ describe("WebRTCConnection", () => {
       }
 
       const calls = (
-        (globalThis as Record<string, unknown>)
-          .__mockCalls__ as typeof mockCalls
+        (globalThis as Record<string, unknown>).__mockCalls__ as MockCalls
       ).setMicrophoneEnabled;
 
       if (shouldEnableMic) {

@@ -38,7 +38,7 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
       const moduleURL = `data:application/javascript;base64,${base64}`;
       await worklet.addModule(moduleURL);
       URLCache.set(name, moduleURL);
-    } catch (error) {
+    } catch {
       throw new Error(
         `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets. If you are using a strict CSP, you may need to self-host the worklet files.`
       );

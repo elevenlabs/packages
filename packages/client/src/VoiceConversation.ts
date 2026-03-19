@@ -19,7 +19,7 @@ export class VoiceConversation extends BaseConversation {
       // unavailable without HTTPS, including localhost in dev
       try {
         return await navigator.wakeLock.request("screen");
-      } catch (_e) {
+      } catch {
         // Wake Lock is not required for the conversation to work
       }
     }
@@ -98,7 +98,7 @@ export class VoiceConversation extends BaseConversation {
       try {
         await wakeLock?.release();
         wakeLock = null;
-      } catch (_e) {}
+      } catch {}
       throw error;
     }
   }
@@ -148,7 +148,7 @@ export class VoiceConversation extends BaseConversation {
     try {
       await this.wakeLock?.release();
       this.wakeLock = null;
-    } catch (_e) {}
+    } catch {}
 
     await this.input.close();
     await this.output.close();

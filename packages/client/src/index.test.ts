@@ -897,7 +897,7 @@ describe("WebRTC Volume Control", () => {
       expect(mockElement2.volume).toBe(0.8);
 
       connection.close();
-    } catch (error) {
+    } catch {
       // If WebRTC creation fails (which is expected in test env),
       // we can still test the volume logic separately
       console.log("WebRTC creation failed as expected in test environment");
