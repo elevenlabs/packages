@@ -31,12 +31,7 @@ import {
 
 function App() {
   return (
-    <ConversationProvider
-      onConnect={({ conversationId }) =>
-        console.log("Connected:", conversationId)
-      }
-      onError={(message) => console.error("Error:", message)}
-    >
+    <ConversationProvider agentId="<your-agent-id>">
       <Conversation />
     </ConversationProvider>
   );
@@ -51,7 +46,13 @@ function Conversation() {
       <Text>Status: {status}</Text>
       <Button
         title="Start"
-        onPress={() => startSession({ agentId: "<your-agent-id>" })}
+        onPress={() =>
+          startSession({
+            onConnect: ({ conversationId }) =>
+              console.log("Connected:", conversationId),
+            onError: (message) => console.error("Error:", message),
+          })
+        }
       />
       <Button title="End" onPress={() => endSession()} />
     </>

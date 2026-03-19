@@ -19,35 +19,39 @@ npm install @elevenlabs/react
 ## Quick Start
 
 ```tsx
-import { useConversation } from "@elevenlabs/react";
+import {
+  ConversationProvider,
+  useConversationControls,
+  useConversationStatus,
+} from "@elevenlabs/react";
+
+function App() {
+  return (
+    <ConversationProvider agentId="<your-agent-id>">
+      <Conversation />
+    </ConversationProvider>
+  );
+}
 
 function Conversation() {
-  const conversation = useConversation({
-    onConnect: ({ conversationId }) => {
-      console.log("Connected:", conversationId);
-    },
-    onDisconnect: () => {
-      console.log("Disconnected");
-    },
-    onMessage: (message) => {
-      console.log("Message:", message);
-    },
-    onError: (message) => {
-      console.error("Error:", message);
-    },
-  });
-
-  const handleStart = async () => {
-    await conversation.startSession({
-      agentId: "<your-agent-id>",
-    });
-  };
+  const { startSession, endSession } = useConversationControls();
+  const { status } = useConversationStatus();
 
   return (
     <div>
-      <p>Status: {conversation.status}</p>
-      <button onClick={handleStart}>Start</button>
-      <button onClick={() => conversation.endSession()}>End</button>
+      <p>Status: {status}</p>
+      <button
+        onClick={() =>
+          startSession({
+            onConnect: ({ conversationId }) =>
+              console.log("Connected:", conversationId),
+            onError: (message) => console.error("Error:", message),
+          })
+        }
+      >
+        Start
+      </button>
+      <button onClick={() => endSession()}>End</button>
     </div>
   );
 }
