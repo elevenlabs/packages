@@ -18,7 +18,6 @@ import {
 } from "@elevenlabs/react-native";
 
 const ConversationScreen = () => {
-  const [isStarting, setIsStarting] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [isTextOnly, setIsTextOnly] = useState(false);
   const [connectionType, setConnectionType] = useState<"webrtc" | "websocket">("webrtc");
@@ -35,6 +34,7 @@ const ConversationScreen = () => {
     sendUserActivity,
     getId,
   } = useConversationControls();
+  const isStarting = status === "connecting";
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -44,22 +44,15 @@ const ConversationScreen = () => {
     }
   };
 
-  const startConversation = async () => {
+  const startConversation = () => {
     if (isStarting) return;
 
-    setIsStarting(true);
-    try {
-      startSession({
-        agentId: process.env.EXPO_PUBLIC_AGENT_ID,
-        connectionType,
-        userId: "demo-user",
-        textOnly: isTextOnly || undefined,
-      });
-    } catch (error) {
-      console.error("Failed to start conversation:", error);
-    } finally {
-      setIsStarting(false);
-    }
+    startSession({
+      agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+      connectionType,
+      userId: "demo-user",
+      textOnly: isTextOnly || undefined,
+    });
   };
 
   const endConversation = () => {
