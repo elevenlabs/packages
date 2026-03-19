@@ -12,7 +12,6 @@
   "ignore": [
     "@elevenlabs/convai-widget-core",
     "@elevenlabs/convai-widget-embed",
-    "@elevenlabs/types",
     "elevenlabs-react-native-example"
   ]
 }
