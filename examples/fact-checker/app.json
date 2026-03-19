@@ -10,6 +10,13 @@
       "expo-audio"
     ],
     "name": "ElevenLabs Fact Checker",
-    "slug": "fact-checker"
+    "slug": "fact-checker",
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.anonymous.factchecker"
+    }
   }
 }

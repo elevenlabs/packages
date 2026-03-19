@@ -1,8 +1,10 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   useConversationStatus,
   useConversationClientTool,
+  useConversationInput,
+  useConversationMode,
 } from "@elevenlabs/react-native";
 import { useAudioPlayer } from "expo-audio";
 
@@ -27,6 +29,9 @@ export function AgentVisualization() {
   const [hue, setHue] = useState(0.33);
   const [saturation, setSaturation] = useState(0);
   const [alternative, setAlternative] = useState<string | null>(null);
+  const [background, setBackground] = useState<[number, number, number]>([
+    0, 0, 0,
+  ]);
   const queueRef = useRef<ScoredStatement[]>([]);
   const processingRef = useRef(false);
   const wrongPlayer = useAudioPlayer(wrongSound);
@@ -50,6 +55,8 @@ export function AgentVisualization() {
       if (next.truth_score < 5) {
         wrongPlayer.seekTo(0);
         wrongPlayer.play();
+        setBackground([0.6, 0, 0]);
+        setTimeout(() => setBackground([0, 0, 0]), 500);
       }
       setTimeout(processNext, 2000);
     };
@@ -66,6 +73,14 @@ export function AgentVisualization() {
     }
   );
 
+  const { setMuted } = useConversationInput();
+  const { isSpeaking } = useConversationMode();
+
+  useEffect(() => {
+    if (status !== "connected") return;
+    setMuted(isSpeaking);
+  }, [status, isSpeaking, setMuted]);
+
   const isConnected = status === "connected";
 
   return (
@@ -74,10 +89,24 @@ export function AgentVisualization() {
         paused={!isConnected}
         hue={hue}
         saturation={isConnected ? saturation : 0}
+        background={background}
       />
       {alternative && (
         <View style={styles.overlay}>
           <Text style={styles.alternativeText}>{alternative}</Text>
+        </View>
+      )}
+      {isConnected && (
+        <View style={styles.statusDot}>
+          <View
+            style={[
+              styles.dot,
+              { backgroundColor: isSpeaking ? "#ff6b6b" : "#51cf66" },
+            ]}
+          />
+          <Text style={styles.statusLabel}>
+            {isSpeaking ? "Agent speaking" : "Listening"}
+          </Text>
         </View>
       )}
     </View>
@@ -99,5 +128,22 @@ const styles = StyleSheet.create({
     fontSize: 28,
     textAlign: "center",
     paddingHorizontal: 24,
+  },
+  statusDot: {
+    position: "absolute" as const,
+    bottom: 24,
+    right: 24,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  statusLabel: {
+    color: "white",
+    fontSize: 12,
   },
 });

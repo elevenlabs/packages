@@ -7,6 +7,7 @@ setSourceInfo({ name: "react_native_sdk", version: PACKAGE_VERSION });
 // Conversation context API
 export {
   ConversationProvider,
+  useConversationClientTool,
   useConversationControls,
   useConversationStatus,
   useConversationInput,

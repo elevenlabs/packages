@@ -3,8 +3,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "postinstall": "mkdir public; cp $(node -p \"require.resolve('canvaskit-wasm/bin/full/canvaskit.wasm', { paths: [require.resolve('@shopify/react-native-skia')] })\") public/canvaskit.wasm",
     "deploy": "npx expo export -p web && npx eas-cli@latest deploy"

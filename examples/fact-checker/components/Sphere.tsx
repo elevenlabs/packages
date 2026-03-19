@@ -15,6 +15,7 @@ uniform vec3 uResolution;
 uniform float uTime;
 uniform float uHue;
 uniform float uSaturation;
+uniform vec3 uBackground;
 
 vec3 hueToRGB(float h) {
   float r = clamp(abs(h * 6.0 - 3.0) - 1.0, 0.0, 1.0);
@@ -36,7 +37,8 @@ vec4 main(vec2 FC) {
   float lum = dot(o.rgb, vec3(0.299, 0.587, 0.114));
   vec3 tint = hueToRGB(uHue);
   vec3 colored = mix(vec3(lum), tint * lum, uSaturation);
-  return vec4(colored, o.a);
+  colored = colored + uBackground * (1.0 - colored);
+  return vec4(colored, max(o.a, max(uBackground.r, max(uBackground.g, uBackground.b))));
 }
 `);
 
@@ -46,6 +48,8 @@ export default function Sphere(props: {
   hue?: number;
   /** 0 = grayscale, 1 = fully saturated (default 1) */
   saturation?: number;
+  /** RGB background color as [r, g, b] with values 0-1 (default [0,0,0]) */
+  background?: [number, number, number];
   width?: number;
   height?: number;
 }): React.JSX.Element {
@@ -56,6 +60,13 @@ export default function Sphere(props: {
   hue.value = withTiming(props.hue ?? 0.33, { duration: 300 });
   const saturation = useSharedValue(props.saturation ?? 1);
   saturation.value = withTiming(props.saturation ?? 1, { duration: 300 });
+  const bg = props.background ?? [0, 0, 0];
+  const bgR = useSharedValue(bg[0]);
+  bgR.value = withTiming(bg[0], { duration: 300 });
+  const bgG = useSharedValue(bg[1]);
+  bgG.value = withTiming(bg[1], { duration: 300 });
+  const bgB = useSharedValue(bg[2]);
+  bgB.value = withTiming(bg[2], { duration: 300 });
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const width = props.width ?? screenWidth;
@@ -71,6 +82,7 @@ export default function Sphere(props: {
       uTime: pausedTime.value / 3000,
       uHue: hue.value,
       uSaturation: saturation.value,
+      uBackground: [bgR.value, bgG.value, bgB.value],
     };
   }, [clock, width, height, props.paused]);
 
