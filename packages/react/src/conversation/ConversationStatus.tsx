@@ -1,8 +1,14 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { useRegisterCallbacks } from "./ConversationContext";
 
+export type ConversationStatus =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "error";
+
 export type ConversationStatusValue = {
-  status: "disconnected" | "connecting" | "connected" | "error";
+  status: ConversationStatus;
   message?: string;
 };
 

@@ -1,6 +1,6 @@
 import type { SessionConfig } from "./BaseConnection";
 import type { InitiationClientDataEvent } from "./events";
-import { sourceInfo } from "../internal";
+import { sourceInfo } from "../sourceInfo";
 
 export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
   "conversation_initiation_client_data";
