@@ -1,7 +1,10 @@
 export function arrayBufferToBase64(b: ArrayBufferLike) {
   const buffer = new Uint8Array(b);
-  // @ts-ignore
-  const base64Data = window.btoa(String.fromCharCode(...buffer));
+  let binary = "";
+  for (let i = 0; i < buffer.length; i++) {
+    binary += String.fromCharCode(buffer[i]);
+  }
+  const base64Data = window.btoa(binary);
   return base64Data;
 }
 

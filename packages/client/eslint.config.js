@@ -15,7 +15,6 @@ export default defineConfig(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       // Pre-existing issues — enable incrementally (see #583)
-      "@typescript-eslint/ban-ts-comment": "off",
       "no-empty": "off",
     },
   }
