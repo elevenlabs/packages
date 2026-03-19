@@ -133,7 +133,7 @@ export class WebSocketConnection extends BaseConnection {
           { once: true }
         );
 
-        socket!.addEventListener("error", () => {
+        socket!.addEventListener("error", _event => {
           // In case the error event is followed by a close event, we want the
           // latter to be the one that rejects the promise as it contains more
           // useful information.

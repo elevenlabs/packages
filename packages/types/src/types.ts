@@ -94,5 +94,5 @@ export type Callbacks = {
   ) => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
-  onDebug?: (props: any) => void;
+  onDebug?: (props: unknown) => void;
 };
