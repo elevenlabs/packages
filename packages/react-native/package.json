@@ -6,7 +6,7 @@
   "exports": {
     ".": {
       "browser": "./dist/index.js",
-      "react-native": "./dist/index.native.js",
+      "react-native": "./dist/index.react-native.js",
       "default": "./dist/index.js"
     }
   },
