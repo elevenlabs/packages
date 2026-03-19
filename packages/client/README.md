@@ -6,6 +6,7 @@ Build multimodal agents with [ElevenAgents](https://elevenlabs.io/docs/eleven-ag
 
 A TypeScript / JavaScript client library for using ElevenAgents, or as a base for framework-specific libraries. If you're using React, consider using [`@elevenlabs/react`](https://www.npmjs.com/package/@elevenlabs/react) instead.
 
+![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
 [![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
 [![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
 
