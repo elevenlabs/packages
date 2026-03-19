@@ -6,6 +6,10 @@ Build multimodal agents with [ElevenAgents](https://elevenlabs.io/docs/eleven-ag
 
 This package is a React Native companion to [`@elevenlabs/react`](https://www.npmjs.com/package/@elevenlabs/react). It re-exports the full conversation API and automatically configures the platform for voice conversations on React Native (WebRTC polyfills and native AudioSession setup).
 
+![LOGO](https://github.com/elevenlabs/elevenlabs-python/assets/12028621/21267d89-5e82-4e7e-9c81-caf30b237683)
+[![Discord](https://badgen.net/badge/black/ElevenLabs/icon?icon=discord&label)](https://discord.gg/elevenlabs)
+[![Twitter](https://badgen.net/badge/black/elevenlabsio/icon?icon=twitter&label)](https://twitter.com/elevenlabsio)
+
 ## Installation
 
 ```shell
