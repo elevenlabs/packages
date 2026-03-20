@@ -12,7 +12,6 @@ import chunk from "./__tests__/chunk";
 import { Mode, Status, Conversation } from "./index";
 import { createConnection } from "./utils/ConnectionFactory";
 import type { SessionConfig } from "./utils/BaseConnection";
-import { VoiceConversation } from "./VoiceConversation";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
