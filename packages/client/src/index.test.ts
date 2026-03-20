@@ -360,6 +360,18 @@ describe("Connection Types", () => {
       );
     });
 
+    it("throws error when signedUrl is used with connectionType webrtc", async () => {
+      // @ts-expect-error Testing invalid config: signedUrl doesn't support webrtc
+      const config: SessionConfig = {
+        signedUrl: "wss://api.elevenlabs.io/voice/test",
+        connectionType: "webrtc",
+      };
+
+      await expect(createConnection(config)).rejects.toThrow(
+        "signedUrl only supports websocket connections"
+      );
+    });
+
     it("defaults to webrtc when connectionType is not specified", async () => {
       const config = {
         agentId: "test-agent",
