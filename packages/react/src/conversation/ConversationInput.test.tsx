@@ -287,4 +287,58 @@ describe("ConversationInput", () => {
     expect(secondRender.result.current.input.isMuted).toBe(true);
     expect(secondConversation.setMicMuted).toHaveBeenCalledWith(true);
   });
+
+  it("does not reset controlled isMuted on disconnect", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ isMuted: true }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    act(() => {
+      startSessionCall?.onDisconnect?.({ reason: "agent" });
+    });
+
+    expect(result.current.input.isMuted).toBe(true);
+  });
+
+  it("fires onMutedChange in uncontrolled mode", async () => {
+    const mockConversation = createMockConversation();
+    const onMutedChange = vi.fn();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ onMutedChange }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.input.setMuted(true);
+    });
+
+    // In uncontrolled mode, internal state updates AND onMutedChange fires.
+    expect(result.current.input.isMuted).toBe(true);
+    expect(onMutedChange).toHaveBeenCalledWith(true);
+  });
+
+  it("setMuted throws in controlled mode when no session is active", () => {
+    const { result } = renderHook(() => useConversationInput(), {
+      wrapper: createWrapper({ isMuted: false }),
+    });
+
+    expect(() => {
+      act(() => {
+        result.current.setMuted(true);
+      });
+    }).toThrow("No active conversation. Call startSession() first.");
+  });
 });
