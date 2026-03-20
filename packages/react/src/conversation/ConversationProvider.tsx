@@ -22,7 +22,10 @@ import {
 } from "./ConversationContext";
 import { ConversationControlsProvider } from "./ConversationControls";
 import { ConversationStatusProvider } from "./ConversationStatus";
-import { ConversationInputProvider } from "./ConversationInput";
+import {
+  ConversationInputProvider,
+  type ConversationInputProviderProps,
+} from "./ConversationInput";
 import { ConversationModeProvider } from "./ConversationMode";
 import { ConversationFeedbackProvider } from "./ConversationFeedback";
 import {
@@ -32,19 +35,27 @@ import {
 import { ListenerMap } from "./ListenerMap";
 import { useStableCallbacks } from "./useStableCallbacks";
 
-const SUB_PROVIDERS: React.ComponentType<React.PropsWithChildren>[] = [
+type ConversationInputControlProps = Pick<
+  ConversationInputProviderProps,
+  "isMuted" | "onMutedChange"
+>;
+
+const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[] = [
   ConversationControlsProvider,
   ConversationStatusProvider,
-  ConversationInputProvider,
   ConversationModeProvider,
   ConversationFeedbackProvider,
   ConversationClientToolsProvider,
 ];
 
-export type ConversationProviderProps = React.PropsWithChildren<HookOptions>;
+export type ConversationProviderProps = React.PropsWithChildren<
+  HookOptions & ConversationInputControlProps
+>;
 
 export function ConversationProvider({
   children,
+  isMuted,
+  onMutedChange,
   ...defaultOptions
 }: ConversationProviderProps) {
   /** The active conversation instance, if any. */
@@ -194,9 +205,14 @@ export function ConversationProvider({
     [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
   );
 
-  const wrappedChildren = SUB_PROVIDERS.reduceRight<React.ReactNode>(
+  const wrappedChildren = SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
     (nested, Provider) => <Provider>{nested}</Provider>,
-    children
+    <ConversationInputProvider
+      isMuted={isMuted}
+      onMutedChange={onMutedChange}
+    >
+      {children}
+    </ConversationInputProvider>
   );
 
   return (

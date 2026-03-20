@@ -26,7 +26,7 @@ const createMockConversation = (id = "test-id") =>
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
   const input = useConversationInput();
-  return { startSession: ctx.startSession, input };
+  return { startSession: ctx.startSession, endSession: ctx.endSession, input };
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -152,5 +152,164 @@ describe("ConversationInput", () => {
     });
 
     expect(result.current.input.isMuted).toBe(false);
+  });
+
+  it("supports controlled isMuted state", () => {
+    const { result } = renderHook(() => useConversationInput(), {
+      wrapper: createWrapper({ isMuted: true }),
+    });
+
+    expect(result.current.isMuted).toBe(true);
+  });
+
+  it("calls onMutedChange in controlled mode", async () => {
+    const mockConversation = createMockConversation();
+    const onMutedChange = vi.fn();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({
+        isMuted: true,
+        onMutedChange,
+      }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.input.setMuted(false);
+    });
+
+    // Controlled mode reads value from props, so it remains true
+    // until the parent updates it.
+    expect(result.current.input.isMuted).toBe(true);
+    expect(onMutedChange).toHaveBeenCalledWith(false);
+    expect(mockConversation.setMicMuted).toHaveBeenCalledWith(false);
+  });
+
+  it("syncs current mute state on connect", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ isMuted: true }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    act(() => {
+      startSessionCall?.onConnect?.({ conversationId: "test-id" });
+    });
+
+    expect(mockConversation.setMicMuted).toHaveBeenCalledWith(true);
+  });
+
+  it("syncs controlled isMuted prop changes to active session", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    let setControlledMuted: ((muted: boolean) => void) | null = null;
+    const Wrapper = ({ children }: React.PropsWithChildren) => {
+      const [isMuted, setIsMuted] = React.useState(true);
+      React.useEffect(() => {
+        setControlledMuted = setIsMuted;
+      }, [setIsMuted]);
+      return <ConversationProvider isMuted={isMuted}>{children}</ConversationProvider>;
+    };
+
+    const { result } = renderHook(() => useTestHook(), { wrapper: Wrapper });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    act(() => {
+      startSessionCall?.onConnect?.({ conversationId: "test-id" });
+    });
+
+    act(() => {
+      setControlledMuted?.(false);
+    });
+
+    expect(mockConversation.setMicMuted).toHaveBeenLastCalledWith(false);
+  });
+
+  it("reapplies controlled mute state when a new session starts", async () => {
+    const firstConversation = createMockConversation("first");
+    const secondConversation = createMockConversation("second");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(firstConversation)
+      .mockResolvedValueOnce(secondConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ isMuted: true }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(firstConversation.setMicMuted).toHaveBeenCalledWith(true);
+
+    act(() => {
+      result.current.endSession();
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(secondConversation.setMicMuted).toHaveBeenCalledWith(true);
+  });
+
+  it("restores muted state after remount and reapplies on next session", async () => {
+    const firstConversation = createMockConversation("first");
+    const secondConversation = createMockConversation("second");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(firstConversation)
+      .mockResolvedValueOnce(secondConversation);
+
+    let persistedMuted = false;
+    const Wrapper = ({ children }: React.PropsWithChildren) => {
+      const [isMuted, setIsMuted] = React.useState(() => persistedMuted);
+      const handleMutedChange = React.useCallback((muted: boolean) => {
+        persistedMuted = muted;
+        setIsMuted(muted);
+      }, []);
+
+      return (
+        <ConversationProvider isMuted={isMuted} onMutedChange={handleMutedChange}>
+          {children}
+        </ConversationProvider>
+      );
+    };
+
+    const firstRender = renderHook(() => useTestHook(), { wrapper: Wrapper });
+
+    await act(async () => {
+      firstRender.result.current.startSession();
+    });
+
+    act(() => {
+      firstRender.result.current.input.setMuted(true);
+    });
+
+    expect(persistedMuted).toBe(true);
+    firstRender.unmount();
+
+    const secondRender = renderHook(() => useTestHook(), { wrapper: Wrapper });
+
+    await act(async () => {
+      secondRender.result.current.startSession();
+    });
+
+    expect(secondRender.result.current.input.isMuted).toBe(true);
+    expect(secondConversation.setMicMuted).toHaveBeenCalledWith(true);
   });
 });
