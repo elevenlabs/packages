@@ -377,17 +377,21 @@ describe("Connection Types", () => {
         agentId: "test-agent",
       };
 
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      });
-      globalThis.fetch = mockFetch;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          statusText: "Not Found",
+        })
+      );
 
       // Should attempt WebRTC (which fetches a conversation token)
       await expect(createConnection(config)).rejects.toThrow(
         "Failed to fetch conversation token for agent test-agent"
       );
+
+      vi.unstubAllGlobals();
     });
 
     it("defaults to websocket when textOnly is true and connectionType is not specified", async () => {
