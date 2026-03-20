@@ -379,7 +379,9 @@ describe("Connection Types", () => {
     });
 
     it("defaults to websocket when textOnly is true and connectionType is not specified", async () => {
-      const server = new Server("wss://api.elevenlabs.io/text/infer-ws");
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/convai/conversation"
+      );
       const clientPromise = new Promise<Client>((resolve, reject) => {
         server.on("connection", (socket: Client) => {
           resolve(socket);
@@ -389,7 +391,7 @@ describe("Connection Types", () => {
       });
 
       const config = {
-        signedUrl: "wss://api.elevenlabs.io/text/infer-ws",
+        agentId: "test-agent",
         textOnly: true,
       };
 
