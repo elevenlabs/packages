@@ -40,7 +40,7 @@ export function ConversationInputProvider({
 }: ConversationInputProviderProps) {
   const conversation = useRawConversation();
   const conversationRef = useRawConversationRef();
-  const isControlled = controlledIsMuted !== undefined;
+  const isControlled = typeof controlledIsMuted === "boolean";
   const [uncontrolledIsMuted, setUncontrolledIsMuted] = useState(false);
   const isMuted = isControlled ? controlledIsMuted : uncontrolledIsMuted;
 
