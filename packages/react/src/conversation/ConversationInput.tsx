@@ -2,10 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import {
+  useRawConversation,
   useRawConversationRef,
   useRegisterCallbacks,
 } from "./ConversationContext";
@@ -14,6 +16,13 @@ export type ConversationInputValue = {
   isMuted: boolean;
   setMuted: (isMuted: boolean) => void;
 };
+
+export type ConversationInputProviderProps = React.PropsWithChildren<{
+  /** Controlled mute state. If omitted, provider manages state internally. */
+  isMuted?: boolean;
+  /** Called whenever mute state is changed via setMuted. */
+  onMutedChange?: (isMuted: boolean) => void;
+}>;
 
 const ConversationInputContext = createContext<ConversationInputValue | null>(
   null
@@ -26,13 +35,28 @@ const ConversationInputContext = createContext<ConversationInputValue | null>(
  */
 export function ConversationInputProvider({
   children,
-}: React.PropsWithChildren) {
+  isMuted: controlledIsMuted,
+  onMutedChange,
+}: ConversationInputProviderProps) {
+  const conversation = useRawConversation();
   const conversationRef = useRawConversationRef();
-  const [isMuted, setIsMuted] = useState(false);
+  const isControlled = typeof controlledIsMuted === "boolean";
+  const [uncontrolledIsMuted, setUncontrolledIsMuted] = useState(false);
+  const isMuted = isControlled ? controlledIsMuted : uncontrolledIsMuted;
 
   useRegisterCallbacks({
-    onDisconnect() { setIsMuted(false); },
+    onDisconnect() {
+      if (!isControlled) {
+        setUncontrolledIsMuted(false);
+      }
+    },
   });
+
+  useEffect(() => {
+    if (isControlled && conversation) {
+      conversation.setMicMuted(controlledIsMuted);
+    }
+  }, [conversation, controlledIsMuted, isControlled]);
 
   const setMuted = useCallback(
     (muted: boolean) => {
@@ -40,10 +64,13 @@ export function ConversationInputProvider({
       if (!conversation) {
         throw new Error("No active conversation. Call startSession() first.");
       }
-      conversation.setMicMuted(muted);
-      setIsMuted(muted);
+      if (!isControlled) {
+        conversation.setMicMuted(muted);
+        setUncontrolledIsMuted(muted);
+      }
+      onMutedChange?.(muted);
     },
-    [conversationRef]
+    [conversationRef, isControlled, onMutedChange]
   );
 
   const value = useMemo<ConversationInputValue>(
