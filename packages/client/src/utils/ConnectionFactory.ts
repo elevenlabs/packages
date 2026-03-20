@@ -17,8 +17,13 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     return "webrtc";
   }
 
-  // Default to WebSocket for backward compatibility
-  return "websocket";
+  // If signedUrl is provided, use WebSocket (it only supports websocket)
+  if ("signedUrl" in config && config.signedUrl) {
+    return "websocket";
+  }
+
+  // Infer from conversation mode: text-only uses websocket, voice uses webrtc
+  return config.textOnly ? "websocket" : "webrtc";
 }
 
 export async function createConnection(

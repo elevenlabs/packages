@@ -359,6 +359,58 @@ describe("Connection Types", () => {
         "Unknown connection type: unknown"
       );
     });
+
+    it("defaults to webrtc when connectionType is not specified", async () => {
+      const config = {
+        agentId: "test-agent",
+      };
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+      globalThis.fetch = mockFetch;
+
+      // Should attempt WebRTC (which fetches a conversation token)
+      await expect(createConnection(config)).rejects.toThrow(
+        "Failed to fetch conversation token for agent test-agent"
+      );
+    });
+
+    it("defaults to websocket when textOnly is true and connectionType is not specified", async () => {
+      const server = new Server("wss://api.elevenlabs.io/text/infer-ws");
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", (socket: Client) => {
+          resolve(socket);
+        });
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const config = {
+        signedUrl: "wss://api.elevenlabs.io/text/infer-ws",
+        textOnly: true,
+      };
+
+      const connectionPromise = createConnection(config);
+      const client = await clientPromise;
+
+      client.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+          },
+        })
+      );
+
+      const connection = await connectionPromise;
+      expect(connection).toBeDefined();
+      connection.close();
+      server.close();
+    });
   });
 
   describe("WebSocket Connection", () => {
