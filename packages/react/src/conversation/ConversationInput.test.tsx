@@ -186,7 +186,9 @@ describe("ConversationInput", () => {
     // until the parent updates it.
     expect(result.current.input.isMuted).toBe(true);
     expect(onMutedChange).toHaveBeenCalledWith(false);
-    expect(mockConversation.setMicMuted).toHaveBeenCalledWith(false);
+    // In controlled mode, setMuted does NOT eagerly call setMicMuted.
+    // The useEffect syncs the SDK when the controlled prop changes.
+    expect(mockConversation.setMicMuted).not.toHaveBeenCalledWith(false);
   });
 
   it("syncs controlled isMuted prop changes to active session", async () => {
@@ -328,6 +330,34 @@ describe("ConversationInput", () => {
     // In uncontrolled mode, internal state updates AND onMutedChange fires.
     expect(result.current.input.isMuted).toBe(true);
     expect(onMutedChange).toHaveBeenCalledWith(true);
+  });
+
+  it("does not desync SDK state when parent rejects mute change", async () => {
+    const mockConversation = createMockConversation();
+    // Parent ignores onMutedChange — never updates isMuted prop
+    const onMutedChange = vi.fn();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ isMuted: false, onMutedChange }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    // Clear initial sync call from useEffect
+    mockConversation.setMicMuted = vi.fn();
+
+    act(() => {
+      result.current.input.setMuted(true);
+    });
+
+    // Parent didn't update the prop, so isMuted stays false
+    expect(result.current.input.isMuted).toBe(false);
+    expect(onMutedChange).toHaveBeenCalledWith(true);
+    // SDK should NOT have been mutated since the parent rejected the change
+    expect(mockConversation.setMicMuted).not.toHaveBeenCalled();
   });
 
   it("setMuted throws in controlled mode when no session is active", () => {

@@ -64,8 +64,8 @@ export function ConversationInputProvider({
       if (!conversation) {
         throw new Error("No active conversation. Call startSession() first.");
       }
-      conversation.setMicMuted(muted);
       if (!isControlled) {
+        conversation.setMicMuted(muted);
         setUncontrolledIsMuted(muted);
       }
       onMutedChange?.(muted);
