@@ -189,26 +189,6 @@ describe("ConversationInput", () => {
     expect(mockConversation.setMicMuted).toHaveBeenCalledWith(false);
   });
 
-  it("syncs current mute state on connect", async () => {
-    const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
-
-    const { result } = renderHook(() => useTestHook(), {
-      wrapper: createWrapper({ isMuted: true }),
-    });
-
-    await act(async () => {
-      result.current.startSession();
-    });
-
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
-    act(() => {
-      startSessionCall?.onConnect?.({ conversationId: "test-id" });
-    });
-
-    expect(mockConversation.setMicMuted).toHaveBeenCalledWith(true);
-  });
-
   it("syncs controlled isMuted prop changes to active session", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
@@ -226,11 +206,6 @@ describe("ConversationInput", () => {
 
     await act(async () => {
       result.current.startSession();
-    });
-
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
-    act(() => {
-      startSessionCall?.onConnect?.({ conversationId: "test-id" });
     });
 
     act(() => {

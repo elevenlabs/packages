@@ -45,9 +45,6 @@ export function ConversationInputProvider({
   const isMuted = isControlled ? controlledIsMuted : uncontrolledIsMuted;
 
   useRegisterCallbacks({
-    onConnect() {
-      conversationRef.current?.setMicMuted(isMuted);
-    },
     onDisconnect() {
       if (!isControlled) {
         setUncontrolledIsMuted(false);
