@@ -1,9 +1,13 @@
 // @ts-nocheck - pnpm hoisting causes duplicate React type definitions
-import React from 'react';
-import { LiveKitRoom } from '@livekit/react-native';
-import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ClientToolsConfig, AudioSessionConfig } from '../types';
-import { MessageHandler } from './MessageHandler';
+import React from "react";
+import { LiveKitRoom } from "@livekit/react-native";
+import type { LocalParticipant } from "livekit-client";
+import type {
+  Callbacks,
+  ClientToolsConfig,
+  AudioSessionConfig,
+} from "../types";
+import { MessageHandler } from "./MessageHandler";
 
 interface LiveKitRoomWrapperProps {
   children: React.ReactNode;
@@ -17,7 +21,7 @@ interface LiveKitRoomWrapperProps {
   callbacks: Callbacks;
   onParticipantReady: (participant: LocalParticipant) => void;
   sendMessage: (message: unknown) => void;
-  clientTools: ClientToolsConfig['clientTools'];
+  clientTools: ClientToolsConfig["clientTools"];
   onEndSession: (reason?: "user" | "agent") => void;
   updateCurrentEventId?: (eventId: number) => void;
   audioSessionConfig?: AudioSessionConfig;
@@ -73,7 +77,7 @@ export const LiveKitRoomWrapper = ({
       audio={audioOptions}
       video={false}
       options={{
-        adaptiveStream: { pixelDensity: 'screen' },
+        adaptiveStream: { pixelDensity: "screen" },
       }}
       onConnected={onConnected}
       onDisconnected={onDisconnected}

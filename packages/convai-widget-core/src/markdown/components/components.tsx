@@ -274,9 +274,7 @@ const TableNode = ({ node, ...props }: TableProps) => (
   <TableComponent {...props} />
 );
 
-const MemoTable = memo<TableProps>(TableNode, (p, n) =>
-  sameClassAndNode(p, n)
-);
+const MemoTable = memo<TableProps>(TableNode, (p, n) => sameClassAndNode(p, n));
 MemoTable.displayName = "MarkdownTable";
 
 type TheadProps = WithNode<JSX.IntrinsicElements["thead"]>;
@@ -560,7 +558,7 @@ const CodeComponent = ({
 
   const match =
     typeof className === "string" ? className.match(LANGUAGE_REGEX) : null;
-  const language = (match?.at(1) ?? "");
+  const language = match?.at(1) ?? "";
 
   // Extract code content from children safely
   let code = "";
@@ -590,19 +588,13 @@ const CodeComponent = ({
 
 const MemoCode = memo<
   DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> & ExtraProps
->(
-  CodeComponent,
-  (p, n) => sameClassAndNode(p, n)
-);
+>(CodeComponent, (p, n) => sameClassAndNode(p, n));
 MemoCode.displayName = "MarkdownCode";
 
 const MemoImg = memo<
   DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> &
     ExtraProps
->(
-  ImageComponent,
-  (p, n) => sameClassAndNode(p, n)
-);
+>(ImageComponent, (p, n) => sameClassAndNode(p, n));
 
 MemoImg.displayName = "MarkdownImg";
 
@@ -625,14 +617,22 @@ const MemoParagraph = memo<ParagraphProps>(
 
     // Check if the paragraph contains only any image elements
     if (
-      validChildren.some(child => isValidElement(child) && (child as ReactElement<WithNode<any>>)?.props?.node?.tagName === "img")
+      validChildren.some(
+        child =>
+          isValidElement(child) &&
+          (child as ReactElement<WithNode<any>>)?.props?.node?.tagName === "img"
+      )
     ) {
-      // If only 1 image, render without wrapping 
+      // If only 1 image, render without wrapping
       if (validChildren.length === 1) {
         return <>{children}</>;
       }
       // If >1 image, render a div for correctness
-      return <div className={cn("text-sm", className)} {...props}>{children}</div>;
+      return (
+        <div className={cn("text-sm", className)} {...props}>
+          {children}
+        </div>
+      );
     }
 
     return (

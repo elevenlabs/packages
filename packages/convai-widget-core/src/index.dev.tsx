@@ -26,7 +26,10 @@ function Playground() {
 
   return (
     <div className="playground">
-      <PlaygroundSettingsPanel state={state} onToggleExpand={handleToggleExpand} />
+      <PlaygroundSettingsPanel
+        state={state}
+        onToggleExpand={handleToggleExpand}
+      />
       <div ref={ref} className="dev-host">
         <ConvAIWidget
           agent-id={import.meta.env.VITE_AGENT_ID}

@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint:es": "eslint .",
-    "lint:prettier": "prettier . --check"
+    "lint:prettier": "prettier . --check",
+    "format": "prettier . --write"
   },
   "dependencies": {
     "@elevenlabs/client": "workspace:*",

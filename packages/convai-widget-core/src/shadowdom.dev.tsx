@@ -42,11 +42,11 @@ function Playground() {
         ? state.firstMessage
         : undefined,
     };
-    
+
     for (const [key, value] of Object.entries(attrs)) {
       if (value != null) el.setAttribute(key, value);
     }
-    
+
     container.appendChild(el);
 
     return () => {
@@ -79,7 +79,10 @@ function Playground() {
 
   return (
     <div className="playground">
-      <PlaygroundSettingsPanel state={state} onToggleExpand={handleToggleExpand} />
+      <PlaygroundSettingsPanel
+        state={state}
+        onToggleExpand={handleToggleExpand}
+      />
       <div ref={ref} />
     </div>
   );

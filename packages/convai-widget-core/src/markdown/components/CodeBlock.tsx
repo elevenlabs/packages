@@ -1,8 +1,5 @@
 import { useSignal } from "@preact/signals";
-import {
-  createContext,
-  type HTMLAttributes,
-} from "preact/compat";
+import { createContext, type HTMLAttributes } from "preact/compat";
 import { useCallback, useContext, useEffect, useRef } from "preact/hooks";
 import { Button } from "../../components/Button";
 import { useTextContents } from "../../contexts/text-contents";
@@ -39,22 +36,32 @@ export const CodeBlock = ({
             aria-label={textContents.wrap.value}
             disabled={disabled}
             icon="wrap"
-            onClick={() => isWrapped.value = !isWrapped.value}
+            onClick={() => (isWrapped.value = !isWrapped.value)}
             variant="md-button"
           >
             {textContents.wrap.value}
           </Button>
           <Button
-            aria-label={isCopied.value ? textContents.copied.value : textContents.copy.value}
+            aria-label={
+              isCopied.value
+                ? textContents.copied.value
+                : textContents.copy.value
+            }
             disabled={disabled}
             icon={isCopied.value ? "check" : "copy"}
             onClick={copyToClipboard}
             variant="md-button"
           >
-            {isCopied.value ? textContents.copied.value : textContents.copy.value}
+            {isCopied.value
+              ? textContents.copied.value
+              : textContents.copy.value}
           </Button>
         </ContentBlock.Actions>
-        <ContentBlock.Content className={cn(isWrapped.value ? "overflow-x-hidden" : "overflow-x-auto")}>
+        <ContentBlock.Content
+          className={cn(
+            isWrapped.value ? "overflow-x-hidden" : "overflow-x-auto"
+          )}
+        >
           <div
             className={cn("pt-1.5 pb-2", className)}
             data-code-block
@@ -62,14 +69,22 @@ export const CodeBlock = ({
             data-syntax-theme={syntaxTheme.value}
             {...rest}
           >
-            <pre className={cn(
-              "m-0 font-mono text-[13px] px-4 py-1.5",
-              isWrapped.value ? "whitespace-pre-wrap overflow-x-hidden" : "whitespace-pre overflow-x-auto"
-            )}>
-              <code className={cn(
-                "block",
-                isWrapped.value ? "whitespace-pre-wrap break-all" : "whitespace-pre"
-              )}>
+            <pre
+              className={cn(
+                "m-0 font-mono text-[13px] px-4 py-1.5",
+                isWrapped.value
+                  ? "whitespace-pre-wrap overflow-x-hidden"
+                  : "whitespace-pre overflow-x-auto"
+              )}
+            >
+              <code
+                className={cn(
+                  "block",
+                  isWrapped.value
+                    ? "whitespace-pre-wrap break-all"
+                    : "whitespace-pre"
+                )}
+              >
                 <Code code={code} language={mappedLanguage} />
               </code>
             </pre>

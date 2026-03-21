@@ -14,7 +14,9 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist generated/types",
     "check-types": "tsc --noEmit",
-    "lint:es": "eslint . --max-warnings 0"
+    "lint:es": "eslint . --max-warnings 0",
+    "lint:prettier": "prettier . --check",
+    "format": "prettier . --write"
   },
   "devDependencies": {
     "@asyncapi/cli": "^2.17.0",

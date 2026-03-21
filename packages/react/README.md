@@ -59,31 +59,30 @@ const conversation = useConversation({
 });
 ```
 
-| Property | Description |
-|----------|-------------|
-| **clientTools** | Object definition for client tools that can be invoked by the agent. [See below](#client-tools) for details. |
-| **overrides** | Object definition for conversation settings overrides. [See below](#conversation-overrides) for details. |
-| **textOnly** | Whether the conversation should run in text-only mode. [See below](#text-only) for details. |
-| **onConnect** | Handler called when the conversation connection is established. |
-| **onDisconnect** | Handler called when the conversation connection has ended. |
-| **onMessage** | Handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug messages when a debug option is enabled. |
-| **onError** | Handler called when an error is encountered. |
-| **onStatusChange** | Handler called whenever connection status changes. Can be `connected`, `connecting`, or `disconnected` (initial). |
-| **onModeChange** | Handler called when a status changes, e.g., agent switches from `speaking` to `listening`, or vice versa. |
-| **onCanSendFeedbackChange** | Handler called when sending feedback becomes available or unavailable. |
-| **onUnhandledClientToolCall** | Handler called when a client tool is invoked but no corresponding client tool was defined. |
-| **onDebug** | Handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting. |
-| **onAudio** | Handler called when audio data is received from the agent. Provides access to raw audio events for custom processing. |
-| **onInterruption** | Handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking. |
-| **onVadScore** | Handler called with voice activity detection scores, indicating the likelihood of speech in the audio input. |
-| **onMCPToolCall** | Handler called when an MCP (Model Context Protocol) tool is invoked by the agent. |
-| **onMCPConnectionStatus** | Handler called when the MCP connection status changes, useful for monitoring MCP server connectivity. |
-| **onAgentToolRequest** | Handler called when the agent begins tool execution. |
-| **onAgentToolResponse** | Handler called when the agent receives a response from a tool execution. |
-| **onConversationMetadata** | Handler called with conversation initiation metadata, providing information about the conversation setup. |
-| **onAsrInitiationMetadata** | Handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition. |
-| **onAudioAlignment** | Handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization. |
-
+| Property                      | Description                                                                                                                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **clientTools**               | Object definition for client tools that can be invoked by the agent. [See below](#client-tools) for details.                                                                            |
+| **overrides**                 | Object definition for conversation settings overrides. [See below](#conversation-overrides) for details.                                                                                |
+| **textOnly**                  | Whether the conversation should run in text-only mode. [See below](#text-only) for details.                                                                                             |
+| **onConnect**                 | Handler called when the conversation connection is established.                                                                                                                         |
+| **onDisconnect**              | Handler called when the conversation connection has ended.                                                                                                                              |
+| **onMessage**                 | Handler called when a new message is received. These can be tentative or final transcriptions of user voice, replies produced by LLM, or debug messages when a debug option is enabled. |
+| **onError**                   | Handler called when an error is encountered.                                                                                                                                            |
+| **onStatusChange**            | Handler called whenever connection status changes. Can be `connected`, `connecting`, or `disconnected` (initial).                                                                       |
+| **onModeChange**              | Handler called when a status changes, e.g., agent switches from `speaking` to `listening`, or vice versa.                                                                               |
+| **onCanSendFeedbackChange**   | Handler called when sending feedback becomes available or unavailable.                                                                                                                  |
+| **onUnhandledClientToolCall** | Handler called when a client tool is invoked but no corresponding client tool was defined.                                                                                              |
+| **onDebug**                   | Handler called for debugging events, including tentative agent responses and internal events. Useful for development and troubleshooting.                                               |
+| **onAudio**                   | Handler called when audio data is received from the agent. Provides access to raw audio events for custom processing.                                                                   |
+| **onInterruption**            | Handler called when the conversation is interrupted, typically when the user starts speaking while the agent is talking.                                                                |
+| **onVadScore**                | Handler called with voice activity detection scores, indicating the likelihood of speech in the audio input.                                                                            |
+| **onMCPToolCall**             | Handler called when an MCP (Model Context Protocol) tool is invoked by the agent.                                                                                                       |
+| **onMCPConnectionStatus**     | Handler called when the MCP connection status changes, useful for monitoring MCP server connectivity.                                                                                   |
+| **onAgentToolRequest**        | Handler called when the agent begins tool execution.                                                                                                                                    |
+| **onAgentToolResponse**       | Handler called when the agent receives a response from a tool execution.                                                                                                                |
+| **onConversationMetadata**    | Handler called with conversation initiation metadata, providing information about the conversation setup.                                                                               |
+| **onAsrInitiationMetadata**   | Handler called with ASR (Automatic Speech Recognition) initiation metadata, containing configuration details for speech recognition.                                                    |
+| **onAudioAlignment**          | Handler called with character-level timing data for synthesized audio. Provides arrays of characters, start times, and durations for text-to-speech synchronization.                    |
 
 ##### Client Tools
 
@@ -547,10 +546,10 @@ import { useScribe } from "@elevenlabs/react";
 function MyComponent() {
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    onPartialTranscript: (data) => {
+    onPartialTranscript: data => {
       console.log("Partial:", data.text);
     },
-    onCommittedTranscript: (data) => {
+    onCommittedTranscript: data => {
       console.log("Committed:", data.text);
     },
   });
@@ -597,7 +596,7 @@ function MyComponent() {
       {scribe.partialTranscript && <p>Live: {scribe.partialTranscript}</p>}
 
       <div>
-        {scribe.committedTranscripts.map((t) => (
+        {scribe.committedTranscripts.map(t => (
           <p key={t.id}>{t.text}</p>
         ))}
       </div>
@@ -675,12 +674,13 @@ const scribe = useScribe({
 
   // Event callbacks
   onSessionStarted: () => console.log("Session started"),
-  onPartialTranscript: (data) => console.log("Partial:", data.text),
-  onCommittedTranscript: (data) => console.log("Committed:", data.text),
-  onCommittedTranscriptWithTimestamps: (data) => console.log("With timestamps:", data),
-  onError: (error) => console.error("Error:", error),
-  onAuthError: (data) => console.error("Auth error:", data.error),
-  onQuotaExceededError: (data) => console.error("Quota exceeded:", data.error),
+  onPartialTranscript: data => console.log("Partial:", data.text),
+  onCommittedTranscript: data => console.log("Committed:", data.text),
+  onCommittedTranscriptWithTimestamps: data =>
+    console.log("With timestamps:", data),
+  onError: error => console.error("Error:", error),
+  onAuthError: data => console.error("Auth error:", data.error),
+  onQuotaExceededError: data => console.error("Quota exceeded:", data.error),
   onConnect: () => console.log("Connected"),
   onDisconnect: () => console.log("Disconnected"),
 });
@@ -723,7 +723,7 @@ function MicrophoneTranscription() {
         </div>
       )}
 
-      {scribe.committedTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map(transcript => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -774,7 +774,7 @@ function FileTranscription() {
       const base64 = btoa(String.fromCharCode(...bytes));
 
       scribe.sendAudio(base64);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     // Commit transcription
@@ -786,13 +786,13 @@ function FileTranscription() {
       <input
         type="file"
         accept="audio/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        onChange={e => setFile(e.target.files?.[0] || null)}
       />
       <button onClick={transcribeFile} disabled={!file || scribe.isConnected}>
         Transcribe
       </button>
 
-      {scribe.committedTranscripts.map((transcript) => (
+      {scribe.committedTranscripts.map(transcript => (
         <div key={transcript.id}>{transcript.text}</div>
       ))}
     </div>
@@ -830,7 +830,9 @@ Connect to Scribe. Options provided here override hook defaults:
 ```tsx
 await scribe.connect({
   token: "your-token", // Required
-  microphone: { /* ... */ }, // For microphone mode
+  microphone: {
+    /* ... */
+  }, // For microphone mode
   // OR
   audioFormat: AudioFormat.PCM_16000, // For manual mode
   sampleRate: 16000,
@@ -963,7 +965,7 @@ const scribe = useScribe({
 import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { useState, useEffect } from "react";
 
-type Mode = "microphone" | "file"
+type Mode = "microphone" | "file";
 
 function ScribeDemo() {
   const [mode, setMode] = useState<Mode>("microphone");
@@ -972,8 +974,8 @@ function ScribeDemo() {
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.AUTOMATIC,
     onSessionStarted: () => console.log("Started"),
-    onCommittedTranscript: (data) => console.log("Committed:", data.text),
-    onError: (error) => console.error("Error:", error),
+    onCommittedTranscript: data => console.log("Committed:", data.text),
+    onError: error => console.error("Error:", error),
   });
 
   const startMicrophone = async () => {
@@ -1027,7 +1029,7 @@ function ScribeDemo() {
       {/* Committed Transcripts */}
       <div>
         <h2>Transcripts ({scribe.committedTranscripts.length})</h2>
-        {scribe.committedTranscripts.map((t) => (
+        {scribe.committedTranscripts.map(t => (
           <div key={t.id}>
             <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
             <p>{t.text}</p>

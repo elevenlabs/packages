@@ -1,61 +1,64 @@
 module.exports = {
   // Use React Native preset optimized for TypeScript
-  preset: 'ts-jest',
+  preset: "ts-jest",
 
   // Use node environment with React Native globals
-  testEnvironment: 'node',
+  testEnvironment: "node",
 
   // Define test roots
-  roots: ['<rootDir>/src'],
+  roots: ["<rootDir>/src"],
 
   // Enhanced test file matching patterns
   testMatch: [
-    '**/__tests__/**/*.(test|spec).+(ts|tsx|js|jsx)',
-    '**/*.(test|spec).+(ts|tsx|js|jsx)',
-    '!**/*.d.ts',
-    '!**/node_modules/**',
+    "**/__tests__/**/*.(test|spec).+(ts|tsx|js|jsx)",
+    "**/*.(test|spec).+(ts|tsx|js|jsx)",
+    "!**/*.d.ts",
+    "!**/node_modules/**",
   ],
 
   // TypeScript and JavaScript transformation
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: false,
-      tsconfig: {
-        target: 'ES2020',
-        module: 'commonjs',
-        moduleResolution: 'node',
-        allowJs: true,
-        allowSyntheticDefaultImports: true,
-        esModuleInterop: true,
-        skipLibCheck: true,
-        strict: false, // Relaxed for testing
-        resolveJsonModule: true,
-        isolatedModules: true,
+    "^.+\\.(ts|tsx)$": [
+      "ts-jest",
+      {
+        useESM: false,
+        tsconfig: {
+          target: "ES2020",
+          module: "commonjs",
+          moduleResolution: "node",
+          allowJs: true,
+          allowSyntheticDefaultImports: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          strict: false, // Relaxed for testing
+          resolveJsonModule: true,
+          isolatedModules: true,
+        },
       },
-    }],
-    '^.+\\.(js|jsx)$': 'babel-jest',
+    ],
+    "^.+\\.(js|jsx)$": "babel-jest",
   },
 
   // File extensions to handle
   moduleFileExtensions: [
-    'ts',
-    'tsx',
-    'js',
-    'jsx',
-    'json',
-    'node',
-    'ios.ts',
-    'ios.tsx',
-    'android.ts',
-    'android.tsx',
-    'native.ts',
-    'native.tsx',
+    "ts",
+    "tsx",
+    "js",
+    "jsx",
+    "json",
+    "node",
+    "ios.ts",
+    "ios.tsx",
+    "android.ts",
+    "android.tsx",
+    "native.ts",
+    "native.tsx",
   ],
 
   // Minimal module mapping for React Native modules
   moduleNameMapper: {
-    '^react-native$': '<rootDir>/jest.rn-mock.js',
-    '^react-native/(.*)$': '<rootDir>/jest.rn-mock.js',
+    "^react-native$": "<rootDir>/jest.rn-mock.js",
+    "^react-native/(.*)$": "<rootDir>/jest.rn-mock.js",
   },
 
   // Setup files
@@ -67,14 +70,14 @@ module.exports = {
   // Coverage configuration
   collectCoverage: false, // Enable manually with --coverage
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/*.test.{ts,tsx}',
-    '!src/**/*.spec.{ts,tsx}',
-    '!src/**/test-*.{ts,tsx}',
-    '!src/**/__tests__/**',
-    '!src/**/__mocks__/**',
-    '!**/node_modules/**',
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/*.spec.{ts,tsx}",
+    "!src/**/test-*.{ts,tsx}",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!**/node_modules/**",
   ],
 
   // Coverage thresholds
@@ -86,13 +89,13 @@ module.exports = {
       statements: 80,
     },
     // Per-file thresholds for critical files
-    './src/conversation.ts': {
+    "./src/conversation.ts": {
       branches: 90,
       functions: 90,
       lines: 90,
       statements: 90,
     },
-    './src/errors.ts': {
+    "./src/errors.ts": {
       branches: 95,
       functions: 95,
       lines: 95,
@@ -101,27 +104,21 @@ module.exports = {
   },
 
   // Coverage reporters
-  coverageReporters: [
-    'text',
-    'text-summary',
-    'lcov',
-    'html',
-    'json',
-  ],
+  coverageReporters: ["text", "text-summary", "lcov", "html", "json"],
 
   // Coverage directory
-  coverageDirectory: '<rootDir>/coverage',
+  coverageDirectory: "<rootDir>/coverage",
 
   // Ignore patterns for coverage
   coveragePathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/.next/',
-    '/coverage/',
-    '\\.d\\.ts$',
-    '\\.test\\.ts$',
-    '\\.spec\\.ts$',
+    "/node_modules/",
+    "/dist/",
+    "/build/",
+    "/.next/",
+    "/coverage/",
+    "\\.d\\.ts$",
+    "\\.test\\.ts$",
+    "\\.spec\\.ts$",
   ],
 
   // Test timeout (increased for React Native)
@@ -143,19 +140,19 @@ module.exports = {
   errorOnDeprecated: true,
 
   // Performance optimizations
-  maxWorkers: '50%', // Use half the available CPU cores
+  maxWorkers: "50%", // Use half the available CPU cores
 
   // Cache configuration
   cache: true,
-  cacheDirectory: '<rootDir>/node_modules/.cache/jest',
+  cacheDirectory: "<rootDir>/node_modules/.cache/jest",
 
   // Watch mode configuration
   watchPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/coverage/',
-    '\\.git/',
+    "/node_modules/",
+    "/dist/",
+    "/build/",
+    "/coverage/",
+    "\\.git/",
   ],
 
   // Test result processing
@@ -163,7 +160,7 @@ module.exports = {
 
   // Custom environment variables for React Native
   testEnvironmentOptions: {
-    url: 'http://localhost',
+    url: "http://localhost",
   },
 
   // Resolver configuration for React Native modules
@@ -171,14 +168,11 @@ module.exports = {
 
   // Transform ignore patterns (important for React Native)
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@livekit|livekit-client)/)',
+    "node_modules/(?!(react-native|@react-native|@livekit|livekit-client)/)",
   ],
 
   // Module directories
-  moduleDirectories: [
-    'node_modules',
-    '<rootDir>/src',
-  ],
+  moduleDirectories: ["node_modules", "<rootDir>/src"],
 
   // Global setup and teardown
   globalSetup: undefined,
@@ -186,7 +180,7 @@ module.exports = {
 
   // Custom reporters
   reporters: [
-    'default',
+    "default",
     // Add custom reporters here if needed
     // ['jest-junit', { outputDirectory: 'test-results', outputName: 'junit.xml' }],
   ],
@@ -195,19 +189,14 @@ module.exports = {
   snapshotSerializers: [],
 
   // Test path ignore patterns
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/coverage/',
-  ],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/build/", "/coverage/"],
 
   // Silent mode
   silent: false,
 
   // Notify configuration
   notify: false,
-  notifyMode: 'failure-change',
+  notifyMode: "failure-change",
 
   // Force exit
   forceExit: false,
@@ -225,19 +214,16 @@ module.exports = {
   // collectCoverageOnlyFrom removed - replaced by collectCoverageFrom
 
   // Coverage provider
-  coverageProvider: 'v8', // Faster than babel
+  coverageProvider: "v8", // Faster than babel
 
   // Extensions to ignore
-  modulePathIgnorePatterns: [
-    '<rootDir>/dist/',
-    '<rootDir>/build/',
-  ],
+  modulePathIgnorePatterns: ["<rootDir>/dist/", "<rootDir>/build/"],
 
   // Project configuration for monorepo support
   projects: undefined,
 
   // Runner configuration
-  runner: 'jest-runner',
+  runner: "jest-runner",
 
   // Test name pattern
   testNamePattern: undefined,
@@ -258,6 +244,6 @@ module.exports = {
 
   // Timezone
   fakeTimers: {
-    enableGlobally: false // Use real timers by default
+    enableGlobally: false, // Use real timers by default
   },
 };

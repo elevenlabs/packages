@@ -1,7 +1,7 @@
-import React from 'react';
-import { render } from '@testing-library/react-native';
-import { ElevenLabsProvider, useConversation } from './ElevenLabsProvider';
-import type { ReactNode } from 'react';
+import React from "react";
+import { render } from "@testing-library/react-native";
+import { ElevenLabsProvider, useConversation } from "./ElevenLabsProvider";
+import type { ReactNode } from "react";
 
 // Suppress react-test-renderer deprecation warnings during tests
 const originalWarn = console.warn;
@@ -9,11 +9,11 @@ const originalError = console.error;
 
 beforeAll(() => {
   console.warn = (...args) => {
-    if (args[0]?.includes?.('react-test-renderer is deprecated')) return;
+    if (args[0]?.includes?.("react-test-renderer is deprecated")) return;
     originalWarn(...args);
   };
   console.error = (...args) => {
-    if (args[0]?.includes?.('react-test-renderer is deprecated')) return;
+    if (args[0]?.includes?.("react-test-renderer is deprecated")) return;
     originalError(...args);
   };
 });
@@ -29,29 +29,29 @@ const TestText = ({ children }: { children: ReactNode }) => (
 );
 
 // Mock LiveKit
-jest.mock('@livekit/react-native', () => ({
+jest.mock("@livekit/react-native", () => ({
   registerGlobals: jest.fn(),
 }));
 
 // Mock hooks with inline functions to avoid hoisting issues
-jest.mock('./hooks/useConversationSession', () => ({
+jest.mock("./hooks/useConversationSession", () => ({
   useConversationSession: () => ({
     startSession: jest.fn(),
     endSession: jest.fn(),
     overrides: {},
     customLlmExtraBody: undefined,
-    defaultServerUrl: 'https://api.elevenlabs.io/v1/convai',
+    defaultServerUrl: "https://api.elevenlabs.io/v1/convai",
   }),
 }));
 
-jest.mock('./hooks/useConversationCallbacks', () => ({
+jest.mock("./hooks/useConversationCallbacks", () => ({
   useConversationCallbacks: () => ({
     callbacksRef: { current: {} },
     setCallbacks: jest.fn(),
   }),
 }));
 
-jest.mock('./hooks/useLiveKitRoom', () => ({
+jest.mock("./hooks/useLiveKitRoom", () => ({
   useLiveKitRoom: () => ({
     room: null,
     localParticipant: null,
@@ -63,7 +63,7 @@ jest.mock('./hooks/useLiveKitRoom', () => ({
   }),
 }));
 
-jest.mock('./hooks/useMessageSending', () => ({
+jest.mock("./hooks/useMessageSending", () => ({
   useMessageSending: () => ({
     sendMessage: jest.fn(),
     sendFeedback: jest.fn(),
@@ -73,11 +73,11 @@ jest.mock('./hooks/useMessageSending', () => ({
   }),
 }));
 
-jest.mock('./components/MessageHandler', () => ({
+jest.mock("./components/MessageHandler", () => ({
   MessageHandler: () => null,
 }));
 
-jest.mock('./components/LiveKitRoomWrapper', () => ({
+jest.mock("./components/LiveKitRoomWrapper", () => ({
   LiveKitRoomWrapper: ({ children }: { children: ReactNode }) => (
     // The actual LiveKitRoomWrapper receives key prop from parent (ElevenLabsProvider)
     // Children are passed through and should not remount when key changes
@@ -85,9 +85,9 @@ jest.mock('./components/LiveKitRoomWrapper', () => ({
   ),
 }));
 
-describe('ElevenLabsProvider', () => {
-  describe('Core Functionality', () => {
-    it('should throw error when useConversation is used outside provider', () => {
+describe("ElevenLabsProvider", () => {
+  describe("Core Functionality", () => {
+    it("should throw error when useConversation is used outside provider", () => {
       const BadComponent = () => {
         useConversation();
         return <TestText>Should not render</TestText>;
@@ -98,27 +98,27 @@ describe('ElevenLabsProvider', () => {
 
       expect(() => {
         render(<BadComponent />);
-      }).toThrow('useConversation must be used within ElevenLabsProvider');
+      }).toThrow("useConversation must be used within ElevenLabsProvider");
 
       console.error = originalError;
     });
 
-    it('should provide conversation context and all methods when used within provider', () => {
+    it("should provide conversation context and all methods when used within provider", () => {
       const TestComponent = () => {
         const conversation = useConversation();
 
         // Verify all methods exist and are functions
-        expect(typeof conversation.startSession).toBe('function');
-        expect(typeof conversation.endSession).toBe('function');
-        expect(typeof conversation.sendFeedback).toBe('function');
-        expect(typeof conversation.sendContextualUpdate).toBe('function');
-        expect(typeof conversation.sendUserMessage).toBe('function');
-        expect(typeof conversation.sendUserActivity).toBe('function');
+        expect(typeof conversation.startSession).toBe("function");
+        expect(typeof conversation.endSession).toBe("function");
+        expect(typeof conversation.sendFeedback).toBe("function");
+        expect(typeof conversation.sendContextualUpdate).toBe("function");
+        expect(typeof conversation.sendUserMessage).toBe("function");
+        expect(typeof conversation.sendUserActivity).toBe("function");
 
         // Verify all properties exist with correct types
-        expect(typeof conversation.status).toBe('string');
-        expect(typeof conversation.isSpeaking).toBe('boolean');
-        expect(typeof conversation.canSendFeedback).toBe('boolean');
+        expect(typeof conversation.status).toBe("string");
+        expect(typeof conversation.isSpeaking).toBe("boolean");
+        expect(typeof conversation.canSendFeedback).toBe("boolean");
 
         return <TestText>Test passed</TestText>;
       };
@@ -132,7 +132,7 @@ describe('ElevenLabsProvider', () => {
       }).not.toThrow();
     });
 
-    it('should allow methods to be called without throwing errors', () => {
+    it("should allow methods to be called without throwing errors", () => {
       const TestComponent = () => {
         const conversation = useConversation();
 
@@ -141,11 +141,17 @@ describe('ElevenLabsProvider', () => {
         console.warn = jest.fn();
 
         // Test that all methods can be called safely
-        expect(() => conversation.startSession({ agentId: 'test' })).not.toThrow();
+        expect(() =>
+          conversation.startSession({ agentId: "test" })
+        ).not.toThrow();
         expect(() => conversation.endSession()).not.toThrow();
         expect(() => conversation.sendFeedback(true)).not.toThrow();
-        expect(() => conversation.sendContextualUpdate('test context')).not.toThrow();
-        expect(() => conversation.sendUserMessage('test message')).not.toThrow();
+        expect(() =>
+          conversation.sendContextualUpdate("test context")
+        ).not.toThrow();
+        expect(() =>
+          conversation.sendUserMessage("test message")
+        ).not.toThrow();
         expect(() => conversation.sendUserActivity()).not.toThrow();
 
         // Restore console.warn
@@ -163,7 +169,7 @@ describe('ElevenLabsProvider', () => {
       }).not.toThrow();
     });
 
-    it('should render children components successfully', () => {
+    it("should render children components successfully", () => {
       // Simple test - if rendering doesn't throw, children are successfully rendered
       expect(() => {
         render(
@@ -174,7 +180,7 @@ describe('ElevenLabsProvider', () => {
       }).not.toThrow();
     });
 
-    it('should provide conversation context with options', () => {
+    it("should provide conversation context with options", () => {
       const TestComponent = () => {
         const conversation = useConversation({
           onConnect: jest.fn(),
@@ -195,7 +201,7 @@ describe('ElevenLabsProvider', () => {
       }).not.toThrow();
     });
 
-    it('should maintain stable conversation object reference to prevent infinite loops', () => {
+    it("should maintain stable conversation object reference to prevent infinite loops", () => {
       const useEffectCallCount = jest.fn();
       const conversationRefs: any[] = [];
       let capturedConversation: any = null;
@@ -230,10 +236,10 @@ describe('ElevenLabsProvider', () => {
       const firstConversationRef = conversationRefs[0];
 
       // Verify the conversation object has all required properties
-      expect(firstConversationRef).toHaveProperty('startSession');
-      expect(firstConversationRef).toHaveProperty('endSession');
-      expect(firstConversationRef).toHaveProperty('status');
-      expect(firstConversationRef).toHaveProperty('isSpeaking');
+      expect(firstConversationRef).toHaveProperty("startSession");
+      expect(firstConversationRef).toHaveProperty("endSession");
+      expect(firstConversationRef).toHaveProperty("status");
+      expect(firstConversationRef).toHaveProperty("isSpeaking");
 
       // Force a re-render by calling rerender
       rerender(
@@ -243,7 +249,9 @@ describe('ElevenLabsProvider', () => {
       );
 
       // After re-render, verify conversation reference is still the same
-      expect(conversationRefs[conversationRefs.length - 1]).toBe(firstConversationRef);
+      expect(conversationRefs[conversationRefs.length - 1]).toBe(
+        firstConversationRef
+      );
 
       // Effect should NOT run again because conversation reference is stable
       expect(useEffectCallCount).toHaveBeenCalledTimes(1);

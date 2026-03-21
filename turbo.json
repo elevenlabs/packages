@@ -34,7 +34,11 @@
     },
     "lint:prettier": {
       "dependsOn": ["generate"],
-      "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
+      "inputs": ["**/*", ".prettierrc*", "prettier.config.*", ".prettierignore"]
+    },
+    "format": {
+      "dependsOn": ["generate"],
+      "cache": false
     },
     "check-types": {
       "dependsOn": ["^build", "generate"],

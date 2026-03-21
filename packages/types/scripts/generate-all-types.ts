@@ -183,9 +183,7 @@ async function main() {
       }
     } catch (err) {
       console.error(`\n❌ ERROR processing ${fileName}:`);
-      console.error(
-        `   ${err instanceof Error ? err.message : String(err)}\n`
-      );
+      console.error(`   ${err instanceof Error ? err.message : String(err)}\n`);
       throw err; // Re-throw to fail the build
     }
   }

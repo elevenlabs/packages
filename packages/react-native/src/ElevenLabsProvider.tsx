@@ -1,15 +1,21 @@
-import React from 'react';
-import { createContext, useContext, useState } from 'react';
-import { registerGlobals } from '@livekit/react-native';
-import type { LocalParticipant } from 'livekit-client';
-import type { Callbacks, ConversationConfig, ConversationStatus, ClientToolsConfig, AudioSessionConfig } from './types';
-import { constructOverrides } from './utils/overrides';
-import { DEFAULT_SERVER_URL } from './utils/constants';
-import { useConversationCallbacks } from './hooks/useConversationCallbacks';
-import { useConversationSession } from './hooks/useConversationSession';
-import { useLiveKitRoom } from './hooks/useLiveKitRoom';
-import { useMessageSending } from './hooks/useMessageSending';
-import { LiveKitRoomWrapper } from './components/LiveKitRoomWrapper';
+import React from "react";
+import { createContext, useContext, useState } from "react";
+import { registerGlobals } from "@livekit/react-native";
+import type { LocalParticipant } from "livekit-client";
+import type {
+  Callbacks,
+  ConversationConfig,
+  ConversationStatus,
+  ClientToolsConfig,
+  AudioSessionConfig,
+} from "./types";
+import { constructOverrides } from "./utils/overrides";
+import { DEFAULT_SERVER_URL } from "./utils/constants";
+import { useConversationCallbacks } from "./hooks/useConversationCallbacks";
+import { useConversationSession } from "./hooks/useConversationSession";
+import { useLiveKitRoom } from "./hooks/useLiveKitRoom";
+import { useMessageSending } from "./hooks/useMessageSending";
+import { LiveKitRoomWrapper } from "./components/LiveKitRoomWrapper";
 
 interface ConversationOptions extends Callbacks, Partial<ClientToolsConfig> {
   serverUrl?: string;
@@ -38,19 +44,21 @@ interface ElevenLabsContextType {
   callbacksRef: { current: Callbacks };
   serverUrl: string;
   tokenFetchUrl?: string;
-  clientTools: ClientToolsConfig['clientTools'];
+  clientTools: ClientToolsConfig["clientTools"];
   setCallbacks: (callbacks: Callbacks) => void;
   setServerUrl: (url: string) => void;
   setTokenFetchUrl: (url: string) => void;
-  setClientTools: (tools: ClientToolsConfig['clientTools']) => void;
+  setClientTools: (tools: ClientToolsConfig["clientTools"]) => void;
 }
 
 const ElevenLabsContext = createContext<ElevenLabsContextType | null>(null);
 
-export const useConversation = (options: ConversationOptions = {}): Conversation => {
+export const useConversation = (
+  options: ConversationOptions = {}
+): Conversation => {
   const context = useContext(ElevenLabsContext);
   if (!context) {
-    throw new Error('useConversation must be used within ElevenLabsProvider');
+    throw new Error("useConversation must be used within ElevenLabsProvider");
   }
 
   const { serverUrl, tokenFetchUrl, clientTools, ...callbacks } = options;
@@ -85,17 +93,22 @@ interface ElevenLabsProviderProps {
   audioSessionConfig?: AudioSessionConfig;
 }
 
-export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children, audioSessionConfig }) => {
+export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({
+  children,
+  audioSessionConfig,
+}) => {
   // Initialize globals on mount
   registerGlobals();
 
   // State management
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState("");
   const [connect, setConnect] = useState(false);
-  const [status, setStatus] = useState<ConversationStatus>('disconnected');
+  const [status, setStatus] = useState<ConversationStatus>("disconnected");
   const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
-  const [tokenFetchUrl, setTokenFetchUrl] = useState<string | undefined>(undefined);
-  const [conversationId, setConversationId] = useState<string>('');
+  const [tokenFetchUrl, setTokenFetchUrl] = useState<string | undefined>(
+    undefined
+  );
+  const [conversationId, setConversationId] = useState<string>("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [canSendFeedback, setCanSendFeedback] = useState(false);
 
@@ -104,22 +117,26 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
   const lastFeedbackEventIdRef = React.useRef(1);
 
   // Use ref for clientTools to avoid re-renders (like callbacks)
-  const clientToolsRef = React.useRef<ClientToolsConfig['clientTools']>({});
+  const clientToolsRef = React.useRef<ClientToolsConfig["clientTools"]>({});
 
   // Custom hooks
-  const { callbacksRef, setCallbacks: setCallbacksBase } = useConversationCallbacks();
+  const { callbacksRef, setCallbacks: setCallbacksBase } =
+    useConversationCallbacks();
 
   // Enhanced setCallbacks that wraps onModeChange to update isSpeaking state
-  const setCallbacks = React.useCallback((callbacks: Callbacks) => {
-    const wrappedCallbacks = {
-      ...callbacks,
-      onModeChange: (event: { mode: 'speaking' | 'listening' }) => {
-        setIsSpeaking(event.mode === 'speaking');
-        callbacks.onModeChange?.(event);
-      }
-    };
-    setCallbacksBase(wrappedCallbacks);
-  }, [setCallbacksBase]);
+  const setCallbacks = React.useCallback(
+    (callbacks: Callbacks) => {
+      const wrappedCallbacks = {
+        ...callbacks,
+        onModeChange: (event: { mode: "speaking" | "listening" }) => {
+          setIsSpeaking(event.mode === "speaking");
+          callbacks.onModeChange?.(event);
+        },
+      };
+      setCallbacksBase(wrappedCallbacks);
+    },
+    [setCallbacksBase]
+  );
 
   const {
     startSession,
@@ -129,7 +146,14 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     dynamicVariables,
     userId,
     textOnly,
-  } = useConversationSession(callbacksRef, setStatus, setConnect, setToken, setConversationId, tokenFetchUrl);
+  } = useConversationSession(
+    callbacksRef,
+    setStatus,
+    setConnect,
+    setToken,
+    setConversationId,
+    tokenFetchUrl
+  );
 
   const {
     roomConnected,
@@ -158,99 +182,134 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     handleDisconnected();
   }, [handleDisconnected]);
 
-  const { sendMessage } = useMessageSending(status, localParticipant, callbacksRef);
+  const { sendMessage } = useMessageSending(
+    status,
+    localParticipant,
+    callbacksRef
+  );
 
   const updateCanSendFeedback = React.useCallback(() => {
-    const newCanSendFeedback = currentEventIdRef.current !== lastFeedbackEventIdRef.current;
+    const newCanSendFeedback =
+      currentEventIdRef.current !== lastFeedbackEventIdRef.current;
 
     if (canSendFeedback !== newCanSendFeedback) {
       setCanSendFeedback(newCanSendFeedback);
-      callbacksRef.current.onCanSendFeedbackChange?.({ canSendFeedback: newCanSendFeedback });
+      callbacksRef.current.onCanSendFeedbackChange?.({
+        canSendFeedback: newCanSendFeedback,
+      });
     }
   }, [canSendFeedback, callbacksRef]);
 
-  const sendFeedback = React.useCallback((like: boolean) => {
-    if (!canSendFeedback) {
-      console.warn(
-        lastFeedbackEventIdRef.current === 0
-          ? "Cannot send feedback: the conversation has not started yet."
-          : "Cannot send feedback: feedback has already been sent for the current response."
-      );
-      return;
-    }
+  const sendFeedback = React.useCallback(
+    (like: boolean) => {
+      if (!canSendFeedback) {
+        console.warn(
+          lastFeedbackEventIdRef.current === 0
+            ? "Cannot send feedback: the conversation has not started yet."
+            : "Cannot send feedback: feedback has already been sent for the current response."
+        );
+        return;
+      }
 
-    const feedbackMessage = {
-      type: "feedback",
-      score: like ? "like" : "dislike",
-      event_id: currentEventIdRef.current,
-    };
+      const feedbackMessage = {
+        type: "feedback",
+        score: like ? "like" : "dislike",
+        event_id: currentEventIdRef.current,
+      };
 
-    sendMessage(feedbackMessage);
-    lastFeedbackEventIdRef.current = currentEventIdRef.current;
-    updateCanSendFeedback();
-  }, [canSendFeedback, sendMessage, updateCanSendFeedback]);
+      sendMessage(feedbackMessage);
+      lastFeedbackEventIdRef.current = currentEventIdRef.current;
+      updateCanSendFeedback();
+    },
+    [canSendFeedback, sendMessage, updateCanSendFeedback]
+  );
 
   // setVolume placeholder (to be implemented when LiveKit supports it)
   const setVolume = React.useCallback((volume: number) => {
-    console.warn('setVolume is not yet implemented in React Native SDK');
+    console.warn("setVolume is not yet implemented in React Native SDK");
   }, []);
 
   const getId = React.useCallback(() => conversationId, [conversationId]);
 
-  const setMicMuted = React.useCallback((muted: boolean) => {
-    if (localParticipant) {
-      localParticipant.setMicrophoneEnabled(!muted);
-    }
-  }, [localParticipant]);
+  const setMicMuted = React.useCallback(
+    (muted: boolean) => {
+      if (localParticipant) {
+        localParticipant.setMicrophoneEnabled(!muted);
+      }
+    },
+    [localParticipant]
+  );
 
   // Update current event ID for feedback tracking
-  const updateCurrentEventId = React.useCallback((eventId: number) => {
-    currentEventIdRef.current = eventId;
-    updateCanSendFeedback();
-  }, [updateCanSendFeedback]);
+  const updateCurrentEventId = React.useCallback(
+    (eventId: number) => {
+      currentEventIdRef.current = eventId;
+      updateCanSendFeedback();
+    },
+    [updateCanSendFeedback]
+  );
 
   // Handle participant ready with overrides
-  const handleParticipantReadyWithOverrides = React.useCallback((participant: LocalParticipant) => {
-    handleParticipantReady(participant);
+  const handleParticipantReadyWithOverrides = React.useCallback(
+    (participant: LocalParticipant) => {
+      handleParticipantReady(participant);
 
-    const overridesEvent = constructOverrides({
+      const overridesEvent = constructOverrides({
+        overrides,
+        customLlmExtraBody,
+        dynamicVariables,
+        userId,
+      });
+
+      if (overridesEvent) {
+        try {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(JSON.stringify(overridesEvent));
+          participant.publishData(data, { reliable: true });
+        } catch (error) {
+          console.error("Failed to send overrides:", error);
+          callbacksRef.current.onError?.(error as string);
+        }
+      }
+    },
+    [
+      handleParticipantReady,
       overrides,
       customLlmExtraBody,
       dynamicVariables,
       userId,
-    });
-
-    if (overridesEvent) {
-      try {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(JSON.stringify(overridesEvent));
-        participant.publishData(data, { reliable: true });
-      } catch (error) {
-        console.error("Failed to send overrides:", error);
-        callbacksRef.current.onError?.(error as string);
-      }
-    }
-  }, [handleParticipantReady, overrides, customLlmExtraBody, dynamicVariables, userId, callbacksRef]);
+      callbacksRef,
+    ]
+  );
 
   // Create setClientTools function that only updates ref
-  const setClientTools = React.useCallback((tools: ClientToolsConfig['clientTools']) => {
-    clientToolsRef.current = tools;
-  }, []);
+  const setClientTools = React.useCallback(
+    (tools: ClientToolsConfig["clientTools"]) => {
+      clientToolsRef.current = tools;
+    },
+    []
+  );
 
   // Memoize inline callback functions
-  const sendContextualUpdate = React.useCallback((text: string) => {
-    sendMessage({
-      type: "contextual_update",
-      text,
-    });
-  }, [sendMessage]);
+  const sendContextualUpdate = React.useCallback(
+    (text: string) => {
+      sendMessage({
+        type: "contextual_update",
+        text,
+      });
+    },
+    [sendMessage]
+  );
 
-  const sendUserMessage = React.useCallback((text: string) => {
-    sendMessage({
-      type: "user_message",
-      text,
-    });
-  }, [sendMessage]);
+  const sendUserMessage = React.useCallback(
+    (text: string) => {
+      sendMessage({
+        type: "user_message",
+        text,
+      });
+    },
+    [sendMessage]
+  );
 
   const sendUserActivity = React.useCallback(() => {
     sendMessage({
@@ -258,17 +317,20 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
     });
   }, [sendMessage]);
 
-  const sendMultimodalMessage = React.useCallback((options: { text?: string; fileId?: string }) => {
-    sendMessage({
-      type: "multimodal_message",
-      text: options.text
-        ? { type: "user_message" as const, text: options.text }
-        : undefined,
-      file: options.fileId
-        ? { type: "file_input" as const, file_id: options.fileId }
-        : undefined,
-    });
-  }, [sendMessage]);
+  const sendMultimodalMessage = React.useCallback(
+    (options: { text?: string; fileId?: string }) => {
+      sendMessage({
+        type: "multimodal_message",
+        text: options.text
+          ? { type: "user_message" as const, text: options.text }
+          : undefined,
+        file: options.fileId
+          ? { type: "file_input" as const, file_id: options.fileId }
+          : undefined,
+      });
+    },
+    [sendMessage]
+  );
 
   // Store all conversation values/functions in refs for stable access
   const conversationValuesRef = React.useRef({
@@ -304,40 +366,70 @@ export const ElevenLabsProvider: React.FC<ElevenLabsProviderProps> = ({ children
 
   // Create a stable conversation object that never changes reference
   // This prevents infinite loops when conversation is used in useEffect dependencies
-  const conversation = React.useMemo<Conversation>(() => ({
-    get startSession() { return conversationValuesRef.current.startSession; },
-    get endSession() { return conversationValuesRef.current.endSession; },
-    get status() { return conversationValuesRef.current.status; },
-    get isSpeaking() { return conversationValuesRef.current.isSpeaking; },
-    get canSendFeedback() { return conversationValuesRef.current.canSendFeedback; },
-    get getId() { return conversationValuesRef.current.getId; },
-    get setMicMuted() { return conversationValuesRef.current.setMicMuted; },
-    get sendFeedback() { return conversationValuesRef.current.sendFeedback; },
-    get sendContextualUpdate() { return conversationValuesRef.current.sendContextualUpdate; },
-    get sendUserMessage() { return conversationValuesRef.current.sendUserMessage; },
-    get sendUserActivity() { return conversationValuesRef.current.sendUserActivity; },
-    get sendMultimodalMessage() { return conversationValuesRef.current.sendMultimodalMessage; },
-  }), []); // Empty deps - object is created once and never recreated
+  const conversation = React.useMemo<Conversation>(
+    () => ({
+      get startSession() {
+        return conversationValuesRef.current.startSession;
+      },
+      get endSession() {
+        return conversationValuesRef.current.endSession;
+      },
+      get status() {
+        return conversationValuesRef.current.status;
+      },
+      get isSpeaking() {
+        return conversationValuesRef.current.isSpeaking;
+      },
+      get canSendFeedback() {
+        return conversationValuesRef.current.canSendFeedback;
+      },
+      get getId() {
+        return conversationValuesRef.current.getId;
+      },
+      get setMicMuted() {
+        return conversationValuesRef.current.setMicMuted;
+      },
+      get sendFeedback() {
+        return conversationValuesRef.current.sendFeedback;
+      },
+      get sendContextualUpdate() {
+        return conversationValuesRef.current.sendContextualUpdate;
+      },
+      get sendUserMessage() {
+        return conversationValuesRef.current.sendUserMessage;
+      },
+      get sendUserActivity() {
+        return conversationValuesRef.current.sendUserActivity;
+      },
+      get sendMultimodalMessage() {
+        return conversationValuesRef.current.sendMultimodalMessage;
+      },
+    }),
+    []
+  ); // Empty deps - object is created once and never recreated
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
-  const contextValue = React.useMemo<ElevenLabsContextType>(() => ({
-    conversation,
-    callbacksRef,
-    serverUrl,
-    tokenFetchUrl,
-    clientTools: clientToolsRef.current,
-    setCallbacks,
-    setServerUrl,
-    setTokenFetchUrl,
-    setClientTools,
-  }), [
-    conversation,
-    callbacksRef,
-    serverUrl,
-    tokenFetchUrl,
-    setCallbacks,
-    setClientTools,
-  ]);
+  const contextValue = React.useMemo<ElevenLabsContextType>(
+    () => ({
+      conversation,
+      callbacksRef,
+      serverUrl,
+      tokenFetchUrl,
+      clientTools: clientToolsRef.current,
+      setCallbacks,
+      setServerUrl,
+      setTokenFetchUrl,
+      setClientTools,
+    }),
+    [
+      conversation,
+      callbacksRef,
+      serverUrl,
+      tokenFetchUrl,
+      setCallbacks,
+      setClientTools,
+    ]
+  );
 
   return (
     <ElevenLabsContext.Provider value={contextValue}>
