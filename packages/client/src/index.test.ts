@@ -51,6 +51,7 @@ describe("Conversation", () => {
       const onDisconnect = vi.fn();
       const onMessage = vi.fn();
       const onUnhandledClientToolCall = vi.fn();
+      const onGuardrailTriggered = vi.fn();
       const clientToolHandler = vi.fn();
       let status: Status | null = null;
       let mode: Mode | null = null;
@@ -79,6 +80,7 @@ describe("Conversation", () => {
           status = value.status;
         },
         onUnhandledClientToolCall,
+        onGuardrailTriggered,
         connectionDelay: { default: 0 },
         textOnly: conversationType === "text",
       });
@@ -241,6 +243,15 @@ describe("Conversation", () => {
         parameters: CLIENT_TOOL_PARAMETERS,
         expects_response: true,
       });
+
+      // Guardrail triggered
+      client.send(
+        JSON.stringify({
+          type: "guardrail_triggered",
+        })
+      );
+      await sleep(50);
+      expect(onGuardrailTriggered).toHaveBeenCalledTimes(1);
 
       // End session
       await conversation.endSession();

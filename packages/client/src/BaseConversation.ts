@@ -22,6 +22,7 @@ import type {
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
   AgentToolRequestEvent,
+  GuardrailTriggeredEvent,
 } from "./utils/events";
 import type { InputConfig } from "./utils/input";
 import type { OutputConfig } from "./utils/output";
@@ -344,6 +345,12 @@ export class BaseConversation {
     }
   }
 
+  protected handleGuardrailTriggered(_event: GuardrailTriggeredEvent) {
+    if (this.options.onGuardrailTriggered) {
+      this.options.onGuardrailTriggered();
+    }
+  }
+
   protected handleErrorEvent(event: ErrorMessageEvent) {
     const errorType = event.error_event.error_type;
     const message =
@@ -450,6 +457,11 @@ export class BaseConversation {
 
       case "agent_chat_response_part": {
         this.handleAgentChatResponsePart(parsedEvent);
+        return;
+      }
+
+      case "guardrail_triggered": {
+        this.handleGuardrailTriggered(parsedEvent);
         return;
       }
 

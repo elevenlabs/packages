@@ -92,6 +92,7 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
+  onGuardrailTriggered?: () => void;
   onAudioAlignment?: (
     props: AudioAlignmentEvent
   ) => void;

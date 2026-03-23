@@ -11,6 +11,7 @@ import {
   ClientToolCallMessage,
   ConversationMetadata,
   ErrorMessage,
+  GuardrailTriggered,
   Interruption,
   McpConnectionStatusClientEvent,
   McpToolCall,
@@ -40,6 +41,7 @@ export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
+export type GuardrailTriggeredEvent = GuardrailTriggered;
 export type { AudioAlignmentEvent };
 
 export type IncomingSocketEvent =
@@ -60,7 +62,8 @@ export type IncomingSocketEvent =
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
-  | ErrorMessageEvent;
+  | ErrorMessageEvent
+  | GuardrailTriggeredEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;

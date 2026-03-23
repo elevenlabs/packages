@@ -176,6 +176,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "vad_score"
   | "ping"
   | "asr_initiation_metadata"
+  | "guardrail_triggered"
   | "internal_turn_probability"
   | "internal_tentative_agent_response";
 
@@ -443,6 +444,10 @@ export interface AsrInitiationMetadata {
   asr_initiation_metadata_event: Record<string, any>;
 }
 
+export interface GuardrailTriggered {
+  type: "guardrail_triggered";
+}
+
 export interface InternalTurnProbability {
   type: "internal_turn_probability";
   turn_probability_internal_event: TurnProbabilityInternalEvent;
@@ -572,6 +577,10 @@ export interface VadScoreClientEvent {
 export interface AsrInitiationMetadataEvent {
   type: "asr_initiation_metadata";
   asr_initiation_metadata_event: Record<string, any>;
+}
+
+export interface GuardrailTriggeredClientEvent {
+  type: "guardrail_triggered";
 }
 
 export interface TurnProbabilityInternalClientEvent {

@@ -12,6 +12,7 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ConversationInitiationMetadataEvent,
   ErrorClientEvent,
+  GuardrailTriggeredClientEvent,
   InterruptionEvent,
   McpConnectionStatusClientEvent,
   McpToolCallClientEvent,
