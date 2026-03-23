@@ -124,7 +124,7 @@ export class VoiceConversation extends BaseConversation {
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
-    if (wakeLock && typeof document !== "undefined") {
+    if (wakeLock) {
       // Wake locks are automatically released when a page is hidden like when switching tabs
       // so attempt to re-acquire lock when page becomes visible again
       this.visibilityChangeHandler = () => {
@@ -147,7 +147,7 @@ export class VoiceConversation extends BaseConversation {
     this.playbackEventTarget = null;
     await super.handleEndSession();
 
-    if (this.visibilityChangeHandler && typeof document !== "undefined") {
+    if (this.visibilityChangeHandler) {
       document.removeEventListener(
         "visibilitychange",
         this.visibilityChangeHandler
