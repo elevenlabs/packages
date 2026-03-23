@@ -891,5 +891,40 @@ describe("elevenlabs-convai", () => {
         expect(userId).toBe(existingUserId);
       }
     );
+
+    it("should fallback to random UUID when FingerprintJS fails and conversation is still created", async () => {
+      const STORAGE_KEY = "elevenlabs_convai_user_id";
+
+      // Set up FingerprintJS to fail
+      const originalFingerprint = await import("@fingerprintjs/fingerprintjs");
+      const FingerprintJS = originalFingerprint.default;
+      const originalLoad = FingerprintJS.load;
+
+      // Override to throw error
+      FingerprintJS.load = async () => {
+        throw new Error("FingerprintJS intentionally failed for test");
+      };
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+      setupWebComponent({ "agent-id": "basic", variant: "compact" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const userId = localStorage.getItem(STORAGE_KEY);
+      expect(userId).not.toBeNull();
+      expect(userId).toBeTruthy();
+
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await expect.element(endButton).toBeInTheDocument();
+
+      // Restore original function
+      FingerprintJS.load = originalLoad;
+    });
   });
 });

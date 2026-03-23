@@ -443,10 +443,17 @@ async function getOrCreateUserId(): Promise<string> {
   let userId = localStorage.getItem(STORAGE_KEY);
 
   if (!userId) {
-    // Generate fingerprint-based ID for this user
-    const fp = await FingerprintJS.load();
-    const result = await fp.get();
-    userId = result.visitorId;
+    try {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      userId = result.visitorId;
+    } catch (error) {
+      console.warn(
+        "[ConversationalAI] FingerprintJS failed, falling back to random UUID:",
+        error
+      );
+      userId = crypto.randomUUID();
+    }
     localStorage.setItem(STORAGE_KEY, userId);
   }
   return userId;
