@@ -36,11 +36,6 @@
     "react-native": ">=0.70.0",
     "react-native-audio-api": ">=0.11.0"
   },
-  "peerDependenciesMeta": {
-    "react-native-audio-api": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@elevenlabs/client": "workspace:*",
     "@elevenlabs/react": "workspace:*"
