@@ -810,6 +810,19 @@ describe("elevenlabs-convai", () => {
       localStorage.clear();
     });
 
+    beforeAll(() => {
+      // Mock FingerprintJS for tests
+      vi.mock("@fingerprintjs/fingerprintjs", () => ({
+        default: {
+          load: vi.fn().mockResolvedValue({
+            get: vi.fn().mockResolvedValue({
+              visitorId: "test-fingerprint-id-123",
+            }),
+          }),
+        },
+      }));
+    });
+
     it.each(Variants)(
       "$0 variant should create new user-id in local storage after accepting terms",
       async variant => {

@@ -10,6 +10,7 @@ import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
 import { useSessionConfig } from "./session-config";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
@@ -157,7 +158,7 @@ function useConversationSetup() {
 
         let processedConfig = structuredClone(config.peek());
         if (!processedConfig.userId) {
-          processedConfig.userId = getOrCreateUserId();
+          processedConfig.userId = await getOrCreateUserId();
         }
 
         // If the user started the conversation with a text message, and the
@@ -437,13 +438,15 @@ function useConversationSetup() {
   }, [config]);
 }
 
-function getOrCreateUserId(): string {
+async function getOrCreateUserId(): Promise<string> {
   const STORAGE_KEY = "elevenlabs_convai_user_id";
   let userId = localStorage.getItem(STORAGE_KEY);
 
   if (!userId) {
-    // Generate new UUID for this user
-    userId = crypto.randomUUID();
+    // Generate fingerprint-based ID for this user
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    userId = result.visitorId;
     localStorage.setItem(STORAGE_KEY, userId);
   }
   return userId;
