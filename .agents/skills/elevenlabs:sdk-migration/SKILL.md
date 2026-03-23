@@ -17,6 +17,18 @@ When migrating a codebase that contains **multiple components using `useConversa
 
 This choice affects session sharing, state isolation, and component architecture. Do not assume — ask before proceeding.
 
+After the initial migration compiles, check whether components maintain **local connection state** (e.g. `useState` for `agentState`, `isMuted`, `isSpeaking`) that duplicates what the new granular hooks provide. If so, ask the user whether they want to **replace local state with granular hooks**:
+
+- `useConversationStatus()` replaces local `agentState` / `status` state managed via `onStatusChange` callbacks.
+- `useConversationInput()` replaces local `isMuted` state managed via manual toggles.
+- `useConversationMode()` replaces local `isSpeaking` / `isListening` state.
+- `useConversationControls()` provides stable action refs (`startSession`, `endSession`, `sendUserMessage`, `getInputVolume`, `getOutputVolume`, etc.) that never cause re-renders.
+
+When refactoring to granular hooks:
+- Move event callbacks (`onConnect`, `onDisconnect`, `onError`, `onMessage`) to `ConversationProvider` props when they don't need access to component-local state.
+- Keep `useConversation` for callbacks that reference component-local state (e.g. updating a local `messages` array) — but use granular hooks for reading status/mode/input state.
+- Remove `onStatusChange` from `startSession` options — status is now reactive via `useConversationStatus()`.
+
 ## Installation
 
 ```bash
@@ -163,6 +175,44 @@ function Conversation() {
     </div>
   );
 }
+```
+
+### `startSession` no longer returns a Promise
+
+When using `useConversation` (React), `startSession` is now synchronous and returns `void`. It does not throw if the session fails to start — errors are reported via the `onError` callback or the `useConversationStatus` hook instead.
+
+When migrating:
+- Remove `await` from `startSession()` calls.
+- If `startSession()` was the only awaited call in the function, remove the `async` keyword from the containing function.
+- If there was a `try`/`catch` around `startSession()` to handle connection errors, it no longer catches session failures. Move error handling to the `onError` callback or `useConversationStatus` hook instead.
+
+**Before:**
+
+```ts
+const startConversation = async () => {
+  try {
+    await conversation.startSession({ agentId: "..." });
+  } catch (error) {
+    console.error("Failed to start:", error);
+    setStatus("disconnected");
+  }
+};
+```
+
+**After:**
+
+```ts
+// onError handles failures instead of try/catch
+const conversation = useConversation({
+  onError: (error) => {
+    console.error("Failed to start:", error);
+    setStatus("disconnected");
+  },
+});
+
+const startConversation = () => {
+  conversation.startSession({ agentId: "..." });
+};
 ```
 
 ### Removed type exports
