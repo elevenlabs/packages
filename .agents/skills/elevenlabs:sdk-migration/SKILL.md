@@ -1,6 +1,6 @@
 ---
 name: elevenlabs:sdk-migration
-description: Migrate to the next major version of @elevenlabs/client, @elevenlabs/react, and @elevenlabs/react-native. Use when updating code that uses Conversation, Input, Output, useConversation, ElevenLabsProvider, or related APIs from these packages.
+description: Migrate to the next major version of @elevenlabs/client, @elevenlabs/react, and @elevenlabs/react-native. Use when updating code that uses Conversation, Input, Output, useConversation, ElevenLabsProvider, ConversationProvider, or related APIs from these packages. Also trigger when users mention upgrading ElevenLabs packages, fixing breaking changes after an npm update, moving to the latest ElevenLabs SDK, or encountering type errors or runtime errors after updating @elevenlabs/* dependencies.
 license: MIT
 ---
 
@@ -8,26 +8,15 @@ license: MIT
 
 Migration guide for `@elevenlabs/client`, `@elevenlabs/react`, and `@elevenlabs/react-native` breaking changes in the next major release.
 
-## Migration instructions
+## Migration order
 
-When migrating a codebase that contains **multiple components using `useConversation`** (or other hooks requiring `ConversationProvider`), ask the user whether they want:
+Follow these steps in sequence — each builds on the previous one.
 
-1. **A single shared `ConversationProvider`** wrapping all conversation components higher in the tree (all components share one session), or
-2. **Individual `ConversationProvider` wrappers** for each component (each component manages its own independent session).
-
-This choice affects session sharing, state isolation, and component architecture. Do not assume — ask before proceeding.
-
-After the initial migration compiles, check whether components maintain **local connection state** (e.g. `useState` for `agentState`, `isMuted`, `isSpeaking`) that duplicates what the new granular hooks provide. If so, ask the user whether they want to **replace local state with granular hooks**:
-
-- `useConversationStatus()` replaces local `agentState` / `status` state managed via `onStatusChange` callbacks.
-- `useConversationInput()` replaces local `isMuted` state managed via manual toggles.
-- `useConversationMode()` replaces local `isSpeaking` / `isListening` state.
-- `useConversationControls()` provides stable action refs (`startSession`, `endSession`, `sendUserMessage`, `getInputVolume`, `getOutputVolume`, etc.) that never cause re-renders.
-
-When refactoring to granular hooks:
-- Move event callbacks (`onConnect`, `onDisconnect`, `onError`, `onMessage`) to `ConversationProvider` props when they don't need access to component-local state.
-- Keep `useConversation` for callbacks that reference component-local state (e.g. updating a local `messages` array) — but use granular hooks for reading status/mode/input state.
-- Remove `onStatusChange` from `startSession` options — status is now reactive via `useConversationStatus()`.
+1. **Install** the new packages.
+2. **Fix imports** — remove deleted exports (`Input`, `Output`, `DeviceFormatConfig`, `DeviceInputConfig`, `ElevenLabsProvider`) and replace with their successors.
+3. **Wrap with `ConversationProvider`** — every `useConversation` call now requires a provider ancestor.
+4. **Update API calls** — adapt to changed signatures (`startSession` is now sync in React, `Conversation` is no longer a class, etc.).
+5. **Optimize with granular hooks** *(optional)* — replace local state with `useConversationStatus`, `useConversationMode`, etc. for better render performance.
 
 ## Installation
 
@@ -37,9 +26,11 @@ npm install @elevenlabs/client@next @elevenlabs/react@next @elevenlabs/react-nat
 
 ## `@elevenlabs/client`
 
-### `Conversation` is no longer a class
+### Replace `instanceof Conversation` checks
 
-`Conversation` is now a plain namespace object and a type alias for `TextConversation | VoiceConversation`. `instanceof Conversation` no longer compiles and subclassing is not possible.
+`Conversation` is now a plain namespace object and a type alias for `TextConversation | VoiceConversation`. This enables tree-shaking and simplifies the internal architecture. `instanceof Conversation` no longer compiles and subclassing is not possible.
+
+Use duck-typing to narrow the type instead:
 
 **Before:**
 
@@ -68,9 +59,9 @@ if ("changeInputDevice" in session) {
 const session: Conversation = await Conversation.startSession(options);
 ```
 
-### `Input` and `Output` classes removed
+### Replace `Input` and `Output` usage with conversation methods
 
-The `Input` and `Output` classes are no longer exported. The `input` and `output` fields on `VoiceConversation` are now private. `changeInputDevice()` and `changeOutputDevice()` return `Promise<void>`.
+The `Input` and `Output` classes are no longer exported because direct access to internal audio nodes created tight coupling to implementation details. The `input` and `output` fields on `VoiceConversation` are now private. All audio operations are methods on the conversation instance itself.
 
 Use `InputController` and `OutputController` interfaces if you need the types.
 
@@ -104,9 +95,9 @@ await conversation.changeInputDevice(config); // return value dropped
 await conversation.changeOutputDevice(config); // return value dropped
 ```
 
-### `VoiceConversation.wakeLock` is now private
+### Remove direct `wakeLock` access
 
-The `wakeLock` field is no longer accessible. Wake lock lifecycle is managed automatically. Opt out with `useWakeLock: false`:
+The `wakeLock` field is now private because wake lock lifecycle is managed automatically to prevent accidental interference. Opt out with `useWakeLock: false`:
 
 ```ts
 const conversation = await Conversation.startSession({
@@ -117,11 +108,18 @@ const conversation = await Conversation.startSession({
 
 ## `@elevenlabs/react`
 
-### `useConversation` requires `ConversationProvider`
+### Wrap `useConversation` with `ConversationProvider`
 
-`useConversation` now requires a `ConversationProvider` ancestor. The hook accepts the same options as before and returns the same shape, but must be rendered inside a provider.
+`useConversation` now requires a `ConversationProvider` ancestor. The provider holds shared session state that multiple hooks can subscribe to independently — this is what enables the new granular hooks system and better render performance.
 
-New fields on the return value: `isMuted`, `setMuted`, `isListening`, `mode`, and `message`.
+The hook accepts the same options as before and returns the same shape, plus new fields: `isMuted`, `setMuted`, `isListening`, `mode`, and `message`.
+
+When migrating a codebase with **multiple components using `useConversation`**, ask the user whether they want:
+
+1. **A single shared `ConversationProvider`** wrapping all conversation components higher in the tree (all components share one session), or
+2. **Individual `ConversationProvider` wrappers** for each component (each component manages its own independent session).
+
+This choice affects session sharing, state isolation, and component architecture — do not assume, ask before proceeding.
 
 **Before:**
 
@@ -177,14 +175,14 @@ function Conversation() {
 }
 ```
 
-### `startSession` no longer returns a Promise
+### Remove `await` from `startSession`
 
-When using `useConversation` (React), `startSession` is now synchronous and returns `void`. It does not throw if the session fails to start — errors are reported via the `onError` callback or the `useConversationStatus` hook instead.
+When using `useConversation` (React), `startSession` is now synchronous and returns `void`. Session lifecycle is managed by the provider, and errors flow through callbacks rather than thrown promises.
 
 When migrating:
 - Remove `await` from `startSession()` calls.
 - If `startSession()` was the only awaited call in the function, remove the `async` keyword from the containing function.
-- If there was a `try`/`catch` around `startSession()` to handle connection errors, it no longer catches session failures. Move error handling to the `onError` callback or `useConversationStatus` hook instead.
+- If there was a `try`/`catch` around `startSession()` to handle connection errors, move error handling to the `onError` callback or `useConversationStatus` hook — the synchronous call no longer throws on session failures.
 
 **Before:**
 
@@ -215,18 +213,30 @@ const startConversation = () => {
 };
 ```
 
-### Removed type exports
+### Update removed type imports
 
-- `DeviceFormatConfig` — use `FormatConfig` from `@elevenlabs/client` instead.
-- `DeviceInputConfig` — use `InputDeviceConfig` from `@elevenlabs/client` instead.
+- Replace `DeviceFormatConfig` with `FormatConfig` from `@elevenlabs/client`.
+- Replace `DeviceInputConfig` with `InputDeviceConfig` from `@elevenlabs/client`.
 
 ### Re-export change
 
 `@elevenlabs/react` now re-exports all of `@elevenlabs/client` via `export *`, replacing the previous selective re-exports.
 
-### Granular conversation hooks
+### Adopt granular conversation hooks (optional)
 
-New hooks for better render performance. Each subscribes to an independent slice of conversation state, so a status change won't re-render a component that only uses mode.
+New hooks subscribe to independent slices of conversation state, so a status change won't re-render a component that only reads mode. This is the main benefit of the `ConversationProvider` architecture — shared state enables fine-grained subscriptions.
+
+After the initial migration compiles, check whether components maintain **local connection state** (e.g., `useState` for `agentState`, `isMuted`, `isSpeaking`) that duplicates what these hooks provide. If so, ask the user whether they want to **replace local state with granular hooks**:
+
+- `useConversationStatus()` replaces local `agentState` / `status` state managed via `onStatusChange` callbacks.
+- `useConversationInput()` replaces local `isMuted` state managed via manual toggles.
+- `useConversationMode()` replaces local `isSpeaking` / `isListening` state.
+- `useConversationControls()` provides stable action refs (`startSession`, `endSession`, `sendUserMessage`, `getInputVolume`, `getOutputVolume`, etc.) that never cause re-renders.
+
+When refactoring to granular hooks:
+- Move event callbacks (`onConnect`, `onDisconnect`, `onError`, `onMessage`) to `ConversationProvider` props when they don't need access to component-local state.
+- Keep `useConversation` for callbacks that reference component-local state (e.g., updating a local `messages` array) — but use granular hooks for reading status/mode/input state.
+- Remove `onStatusChange` from `startSession` options — status is now reactive via `useConversationStatus()`.
 
 | Hook                        | Returns                                                                                                                                                      |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -237,30 +247,7 @@ New hooks for better render performance. Each subscribes to an independent slice
 | `useConversationFeedback()` | `canSendFeedback` state and `sendFeedback(like: boolean)` action.                                                                                            |
 | `useRawConversation()`      | Raw `Conversation` instance or `null` (escape hatch).                                                                                                        |
 
-All hooks must be used within a `ConversationProvider`.
-
-### `useConversationClientTool` hook
-
-New hook for dynamically registering client tools from React components. Tools added or removed after session start are immediately visible. Duplicate tool names throw an error.
-
-```tsx
-import { useConversationClientTool } from "@elevenlabs/react";
-
-// Untyped — parameters are Record<string, unknown>
-useConversationClientTool("get_weather", params => {
-  return `Weather in ${params.city} is sunny.`;
-});
-
-// Type-safe — tool names are constrained, params and return types are inferred
-type Tools = {
-  get_weather: (params: { city: string }) => string;
-  set_volume: (params: { level: number }) => void;
-};
-
-useConversationClientTool<Tools>("get_weather", params => {
-  return `Weather in ${params.city} is sunny.`;
-});
-```
+All hooks require a `ConversationProvider` ancestor.
 
 **Mapping from `useConversation`:**
 
@@ -346,11 +333,34 @@ function ModeIndicator() {
 }
 ```
 
+### Register client tools with `useConversationClientTool`
+
+New hook for dynamically registering client tools from React components. Tools added or removed after session start are immediately visible. Duplicate tool names throw an error.
+
+```tsx
+import { useConversationClientTool } from "@elevenlabs/react";
+
+// Untyped — parameters are Record<string, unknown>
+useConversationClientTool("get_weather", params => {
+  return `Weather in ${params.city} is sunny.`;
+});
+
+// Type-safe — tool names are constrained, params and return types are inferred
+type Tools = {
+  get_weather: (params: { city: string }) => string;
+  set_volume: (params: { level: number }) => void;
+};
+
+useConversationClientTool<Tools>("get_weather", params => {
+  return `Weather in ${params.city} is sunny.`;
+});
+```
+
 ## `@elevenlabs/react-native`
 
-### Complete API rewrite
+### Replace `ElevenLabsProvider` with `ConversationProvider`
 
-The custom LiveKit-based implementation (`ElevenLabsProvider`, `useConversation`) has been removed and replaced with re-exports from `@elevenlabs/react`. The package now provides `ConversationProvider` and granular hooks instead of the previous monolithic API.
+The custom LiveKit-based implementation (`ElevenLabsProvider`, `useConversation`) has been entirely removed. The package now re-exports from `@elevenlabs/react`, unifying the API across web and mobile with `ConversationProvider` and the same granular hooks.
 
 On React Native, the package performs side-effects on import: polyfilling WebRTC globals, configuring native AudioSession, and registering a platform-specific voice session strategy. On web, it re-exports without side-effects.
 
