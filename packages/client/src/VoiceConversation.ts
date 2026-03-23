@@ -50,19 +50,19 @@ export class VoiceConversation extends BaseConversation {
       wakeLock = await VoiceConversation.requestWakeLock();
     }
 
+    // some browsers won't allow calling getSupportedConstraints or enumerateDevices
+    // before getting approval for microphone access.
+    // On some platforms (e.g. React Native) this may fail or be unnecessary —
+    // the setup strategy handles its own audio capture.
     try {
-      // some browsers won't allow calling getSupportedConstraints or enumerateDevices
-      // before getting approval for microphone access.
-      // On some platforms (e.g. React Native) this may fail or be unnecessary —
-      // treat it as non-fatal since the setup strategy handles its own audio capture.
-      try {
-        preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      } catch (_e) {
-        // Non-fatal: platform strategy will handle mic access
-      }
+      preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    } catch (e) {
+      console.warn("Failed to acquire preliminary media stream:", e);
+    }
 
+    try {
       await applyDelay(fullOptions.connectionDelay);
 
       // Platform-specific strategy creates the connection and sets up input/output
