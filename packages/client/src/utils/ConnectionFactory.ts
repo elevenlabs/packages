@@ -1,8 +1,4 @@
-import type {
-  BaseConnection,
-  SessionConfig,
-  ConnectionType,
-} from "./BaseConnection";
+import type { SessionConfig, ConnectionType } from "./BaseConnection";
 import { WebSocketConnection } from "./WebSocketConnection";
 import { WebRTCConnection } from "./WebRTCConnection";
 
@@ -22,8 +18,17 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
 }
 
 export async function createConnection(
+  config: SessionConfig & { connectionType: "websocket" }
+): Promise<WebSocketConnection>;
+export async function createConnection(
+  config: SessionConfig & { connectionType: "webrtc" }
+): Promise<WebRTCConnection>;
+export async function createConnection(
   config: SessionConfig
-): Promise<BaseConnection> {
+): Promise<WebSocketConnection | WebRTCConnection>;
+export async function createConnection(
+  config: SessionConfig
+): Promise<WebSocketConnection | WebRTCConnection> {
   const connectionType = determineConnectionType(config);
 
   switch (connectionType) {

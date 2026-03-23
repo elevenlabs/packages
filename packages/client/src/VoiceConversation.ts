@@ -52,10 +52,16 @@ export class VoiceConversation extends BaseConversation {
 
     try {
       // some browsers won't allow calling getSupportedConstraints or enumerateDevices
-      // before getting approval for microphone access
-      preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      // before getting approval for microphone access.
+      // On some platforms (e.g. React Native) this may fail or be unnecessary —
+      // treat it as non-fatal since the setup strategy handles its own audio capture.
+      try {
+        preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      } catch (_e) {
+        // Non-fatal: platform strategy will handle mic access
+      }
 
       await applyDelay(fullOptions.connectionDelay);
 
@@ -118,7 +124,7 @@ export class VoiceConversation extends BaseConversation {
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
-    if (wakeLock) {
+    if (wakeLock && typeof document !== "undefined") {
       // Wake locks are automatically released when a page is hidden like when switching tabs
       // so attempt to re-acquire lock when page becomes visible again
       this.visibilityChangeHandler = () => {
@@ -141,7 +147,7 @@ export class VoiceConversation extends BaseConversation {
     this.playbackEventTarget = null;
     await super.handleEndSession();
 
-    if (this.visibilityChangeHandler) {
+    if (this.visibilityChangeHandler && typeof document !== "undefined") {
       document.removeEventListener(
         "visibilitychange",
         this.visibilityChangeHandler

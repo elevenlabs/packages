@@ -21,6 +21,10 @@ const singletonPackages = {
     appNodeModules,
     "@livekit/react-native-webrtc"
   ),
+  "react-native-audio-api": path.resolve(
+    appNodeModules,
+    "react-native-audio-api"
+  ),
 };
 
 // extraNodeModules is only a fallback. To truly force resolution, we

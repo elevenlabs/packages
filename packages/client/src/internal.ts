@@ -15,3 +15,9 @@ export type {
   VoiceSessionSetupStrategy,
   VoiceSessionSetupResult,
 } from "./platform/VoiceSessionSetup";
+export { attachInputToConnection } from "./utils/attachInputToConnection";
+export { attachConnectionToOutput } from "./utils/attachConnectionToOutput";
+export { createConnection } from "./utils/ConnectionFactory";
+export type { InputEventTarget, InputListener } from "./utils/input";
+export type { PlaybackEventTarget, PlaybackListener } from "./utils/output";
+export type { FormatConfig } from "./utils/BaseConnection";
