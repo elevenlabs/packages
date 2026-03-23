@@ -58,7 +58,7 @@ export type ConnectionType = "websocket" | "webrtc";
 
 export type PublicSessionConfig = BaseSessionConfig & {
   agentId: string;
-  connectionType: ConnectionType;
+  connectionType?: ConnectionType;
   signedUrl?: never;
   conversationToken?: never;
 };
