@@ -12,6 +12,7 @@ import {
   attachConnectionToOutput,
   type VoiceSessionSetupResult,
 } from "@elevenlabs/client/internal";
+import { AudioManager } from "react-native-audio-api";
 import { ReactNativeInputForWebSocket } from "./ReactNativeInputForWebSocket";
 import { ReactNativeOutputForWebSocket } from "./ReactNativeOutputForWebSocket";
 
@@ -55,6 +56,7 @@ async function reactNativeSessionSetup(
       detach: () => {
         detachInput();
         detachOutput();
+        AudioManager.setAudioSessionActivity(false);
       },
     };
   } else {
