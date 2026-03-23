@@ -1,6 +1,8 @@
 ---
 "@elevenlabs/types": minor
 "@elevenlabs/client": minor
+"@elevenlabs/react": minor
+"@elevenlabs/react-native": minor
 ---
 
 Add `guardrail_triggered` server-to-client WebSocket event, emitted when a guardrail is triggered during the conversation.

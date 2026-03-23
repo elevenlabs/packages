@@ -137,6 +137,7 @@ export type HookCallbacks = Pick<
   | "onAsrInitiationMetadata"
   | "onAgentChatResponsePart"
   | "onAudioAlignment"
+  | "onGuardrailTriggered"
 >;
 
 export function useConversation<T extends HookOptions & ControlledState>(
@@ -259,6 +260,9 @@ export function useConversation<T extends HookOptions & ControlledState>(
             defaultOptions?.onAgentChatResponsePart,
           onAudioAlignment:
             options?.onAudioAlignment || defaultOptions?.onAudioAlignment,
+          onGuardrailTriggered:
+            options?.onGuardrailTriggered ||
+            defaultOptions?.onGuardrailTriggered,
           onModeChange: ({ mode }) => {
             setMode(mode);
             (options?.onModeChange || defaultOptions?.onModeChange)?.({ mode });

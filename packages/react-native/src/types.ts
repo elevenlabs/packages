@@ -111,6 +111,7 @@ export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type AgentChatResponsePartEvent =
   Incoming.AgentChatResponsePartClientEvent;
+export type GuardrailTriggeredEvent = Incoming.GuardrailTriggeredClientEvent;
 export type { AudioAlignmentEvent };
 export type AudioEventWithAlignment = {
   audio_base_64?: string;
@@ -150,7 +151,8 @@ export type ConversationEvent =
   | AgentToolResponseEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent
-  | AgentChatResponsePartEvent;
+  | AgentChatResponsePartEvent
+  | GuardrailTriggeredEvent;
 
 /**
  * Audio session configuration for controlling how the SDK handles audio
