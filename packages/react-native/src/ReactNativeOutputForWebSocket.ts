@@ -5,6 +5,7 @@ import type {
   PlaybackListener,
   FormatConfig,
 } from "@elevenlabs/client/internal";
+import { decodeAudio } from "./audio";
 
 /**
  * React Native output controller for WebSocket voice conversations.
@@ -45,11 +46,7 @@ export class ReactNativeOutputForWebSocket
   public playAudio(chunk: ArrayBuffer): void {
     if (this.interrupted) return;
 
-    const pcm = new Int16Array(chunk);
-    const floatData = new Float32Array(pcm.length);
-    for (let i = 0; i < pcm.length; i++) {
-      floatData[i] = pcm[i] / 32768;
-    }
+    const floatData = decodeAudio(chunk, this.config.format);
 
     const audioBuffer = this.ctx.createBuffer(
       1,

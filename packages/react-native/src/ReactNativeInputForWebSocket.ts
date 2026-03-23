@@ -9,6 +9,7 @@ import type {
   InputListener,
   FormatConfig,
 } from "@elevenlabs/client/internal";
+import { encodeAudio, calculateMaxVolume } from "./audio";
 
 /**
  * React Native input controller for WebSocket voice conversations.
@@ -56,21 +57,11 @@ export class ReactNativeInputForWebSocket
         const floatData = event.buffer.getChannelData(0);
         if (floatData.length === 0) return;
 
-        const pcmData = new Uint8Array(floatData.length * 2);
-        const view = new DataView(pcmData.buffer);
-        let maxVolume = 0;
-
-        for (let i = 0; i < floatData.length; i++) {
-          const sample = Math.max(-1, Math.min(1, floatData[i]));
-          const int16 = sample < 0 ? sample * 32768 : sample * 32767;
-          view.setInt16(i * 2, int16, true);
-
-          const normalized = Math.abs(sample);
-          if (normalized > maxVolume) maxVolume = normalized;
-        }
+        const encoded = encodeAudio(floatData, config.format);
+        const maxVolume = calculateMaxVolume(floatData);
 
         const messageEvent = {
-          data: [pcmData, maxVolume],
+          data: [encoded, maxVolume],
         } as MessageEvent<[Uint8Array, number]>;
         this.listeners.forEach(listener => listener(messageEvent));
       }

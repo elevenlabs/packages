@@ -17,7 +17,8 @@
     "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check"
+    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "test": "vitest run"
   },
   "keywords": [
     "elevenlabs",
@@ -44,7 +45,8 @@
     "@types/react": "^19.1.1",
     "react-native-audio-api": ">=0.11.0",
     "eslint": "^9.8.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^3.0.5"
   },
   "repository": {
     "type": "git",
