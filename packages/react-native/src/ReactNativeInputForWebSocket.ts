@@ -1,7 +1,7 @@
 import {
+  AudioContext,
   AudioRecorder,
   AudioManager,
-  type AudioContext,
 } from "react-native-audio-api";
 import type { InputController, InputDeviceConfig } from "@elevenlabs/client";
 import type {
@@ -26,8 +26,7 @@ export class ReactNativeInputForWebSocket
   private recorder: AudioRecorder;
 
   static async create(
-    config: FormatConfig,
-    audioContext: AudioContext
+    config: FormatConfig
   ): Promise<ReactNativeInputForWebSocket> {
     await AudioManager.requestRecordingPermissions();
 
@@ -39,10 +38,11 @@ export class ReactNativeInputForWebSocket
 
     await AudioManager.setAudioSessionActivity(true);
 
-    return new ReactNativeInputForWebSocket(config, audioContext);
+    return new ReactNativeInputForWebSocket(config);
   }
 
-  private constructor(config: FormatConfig, audioContext: AudioContext) {
+  private constructor(config: FormatConfig) {
+    const audioContext = new AudioContext({ sampleRate: config.sampleRate });
     this.recorder = new AudioRecorder();
 
     this.recorder.onAudioReady(

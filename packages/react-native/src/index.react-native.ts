@@ -37,13 +37,10 @@ async function reactNativeSessionSetup(
       ...options,
       connectionType: "websocket",
     });
-    const output = await ReactNativeOutputForWebSocket.create(
-      connection.outputFormat
-    );
-    const input = await ReactNativeInputForWebSocket.create(
-      connection.inputFormat,
-      output.audioContext
-    );
+    const [input, output] = await Promise.all([
+      ReactNativeInputForWebSocket.create(connection.inputFormat),
+      ReactNativeOutputForWebSocket.create(connection.outputFormat),
+    ]);
 
     const detachInput = attachInputToConnection(input, connection);
     const detachOutput = attachConnectionToOutput(connection, output);

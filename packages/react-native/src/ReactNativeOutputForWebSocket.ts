@@ -39,10 +39,6 @@ export class ReactNativeOutputForWebSocket
     this.queueSource.connect(this.gainNode);
   }
 
-  public get audioContext(): AudioContext {
-    return this.ctx;
-  }
-
   public playAudio(chunk: ArrayBuffer): void {
     if (this.interrupted) return;
 
