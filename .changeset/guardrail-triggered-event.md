@@ -3,7 +3,9 @@
 "@elevenlabs/client": minor
 ---
 
-Add `guardrail_triggered` server-to-client event and `onGuardrailTriggered` callback.
+Add `guardrail_triggered` server-to-client WebSocket event, emitted when a guardrail is triggered during the conversation.
+
+**New callback:** `onGuardrailTriggered` on `Callbacks` — fires when the server detects a guardrail violation.
 
 ```js
 const conversation = await Conversation.startSession({
