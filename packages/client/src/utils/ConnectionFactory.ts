@@ -3,6 +3,17 @@ import { WebSocketConnection } from "./WebSocketConnection";
 import { WebRTCConnection } from "./WebRTCConnection";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
+  const hasSignedUrl = "signedUrl" in config && config.signedUrl;
+
+  // Reject invalid combination: signedUrl only supports websocket
+  // Cast needed because TS narrows signedUrl configs to connectionType?: "websocket",
+  // but this guard protects against invalid configs from plain JS callers.
+  if (hasSignedUrl && (config.connectionType as ConnectionType) === "webrtc") {
+    throw new Error(
+      "signedUrl only supports websocket connections. Remove connectionType or set it to 'websocket'."
+    );
+  }
+
   // If connectionType is explicitly specified, use it
   if (config.connectionType) {
     return config.connectionType;
@@ -13,8 +24,13 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     return "webrtc";
   }
 
-  // Default to WebSocket for backward compatibility
-  return "websocket";
+  // If signedUrl is provided, use WebSocket (it only supports websocket)
+  if (hasSignedUrl) {
+    return "websocket";
+  }
+
+  // Infer from conversation mode: text-only uses websocket, voice uses webrtc
+  return config.textOnly ? "websocket" : "webrtc";
 }
 
 export async function createConnection(
