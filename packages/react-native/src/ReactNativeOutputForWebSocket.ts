@@ -75,8 +75,10 @@ export class ReactNativeOutputForWebSocket
       floatData.length,
       this.config.sampleRate
     );
-    audioBuffer?.copyToChannel(floatData, 0);
-    this.queueSource?.enqueueBuffer(audioBuffer);
+    if (audioBuffer) {
+      audioBuffer.copyToChannel(floatData, 0);
+      this.queueSource?.enqueueBuffer(audioBuffer);
+    }
 
     if (!this.started) {
       this.queueSource?.start();
