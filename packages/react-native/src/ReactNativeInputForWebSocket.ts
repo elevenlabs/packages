@@ -23,7 +23,8 @@ export class ReactNativeInputForWebSocket
 {
   private muted = false;
   private listeners = new Set<InputListener>();
-  private recorder: AudioRecorder;
+  private recorder: AudioRecorder | null;
+  private ctx: AudioContext | null;
 
   static async create(
     config: FormatConfig
@@ -38,39 +39,53 @@ export class ReactNativeInputForWebSocket
 
     await AudioManager.setAudioSessionActivity(true);
 
-    return new ReactNativeInputForWebSocket(config);
+    let ctx: AudioContext | null = null;
+    let recorder: AudioRecorder | null = null;
+
+    try {
+      ctx = new AudioContext({ sampleRate: config.sampleRate });
+      recorder = new AudioRecorder();
+
+      const input = new ReactNativeInputForWebSocket(ctx, recorder);
+      recorder.onAudioReady(
+        {
+          sampleRate: config.sampleRate,
+          bufferLength: Math.floor(config.sampleRate * 0.1),
+          channelCount: 1,
+        },
+        event => {
+          if (input.muted) return;
+
+          const floatData = event.buffer.getChannelData(0);
+          if (floatData.length === 0) return;
+
+          const encoded = encodeAudio(floatData, config.format);
+          const maxVolume = calculateMaxVolume(floatData);
+
+          const messageEvent = {
+            data: [encoded, maxVolume],
+          } as MessageEvent<[Uint8Array, number]>;
+          input.listeners.forEach(listener => listener(messageEvent));
+        }
+      );
+
+      const adapterNode = ctx.createRecorderAdapter();
+      adapterNode.connect(ctx.destination);
+      recorder.connect(adapterNode);
+      recorder.start();
+      return input;
+    } catch (error) {
+      await Promise.allSettled([
+        AudioManager.setAudioSessionActivity(false),
+        cleanup(recorder, ctx),
+      ]);
+      throw error;
+    }
   }
 
-  private constructor(config: FormatConfig) {
-    const audioContext = new AudioContext({ sampleRate: config.sampleRate });
-    this.recorder = new AudioRecorder();
-
-    this.recorder.onAudioReady(
-      {
-        sampleRate: config.sampleRate,
-        bufferLength: Math.floor(config.sampleRate * 0.1),
-        channelCount: 1,
-      },
-      event => {
-        if (this.muted) return;
-
-        const floatData = event.buffer.getChannelData(0);
-        if (floatData.length === 0) return;
-
-        const encoded = encodeAudio(floatData, config.format);
-        const maxVolume = calculateMaxVolume(floatData);
-
-        const messageEvent = {
-          data: [encoded, maxVolume],
-        } as MessageEvent<[Uint8Array, number]>;
-        this.listeners.forEach(listener => listener(messageEvent));
-      }
-    );
-
-    const adapterNode = audioContext.createRecorderAdapter();
-    adapterNode.connect(audioContext.destination);
-    this.recorder.connect(adapterNode);
-    this.recorder.start();
+  private constructor(ctx: AudioContext, recorder: AudioRecorder) {
+    this.ctx = ctx;
+    this.recorder = recorder;
   }
 
   public addListener(listener: InputListener): void {
@@ -82,9 +97,11 @@ export class ReactNativeInputForWebSocket
   }
 
   public async close(): Promise<void> {
-    this.recorder.clearOnAudioReady();
-    this.recorder.stop();
-    this.recorder.disconnect();
+    const [recorder, ctx] = [this.recorder, this.ctx];
+    this.listeners.clear();
+    this.recorder = null;
+    this.ctx = null;
+    await cleanup(recorder, ctx);
   }
 
   public async setDevice(
@@ -106,4 +123,14 @@ export class ReactNativeInputForWebSocket
   public getAnalyser(): undefined {
     return undefined;
   }
+}
+
+async function cleanup(
+  recorder: AudioRecorder | null,
+  ctx: AudioContext | null
+): Promise<void> {
+  recorder?.clearOnAudioReady();
+  recorder?.stop();
+  recorder?.disconnect();
+  await ctx?.close();
 }
