@@ -17,6 +17,8 @@ import type { InputController } from "./InputController";
 import type { OutputController } from "./OutputController";
 import { setupStrategy } from "./platform/VoiceSessionSetup";
 
+const EMPTY_FREQUENCY_DATA = new Uint8Array(0) as Uint8Array<ArrayBuffer>;
+
 export class VoiceConversation extends BaseConversation {
   private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
     if ("wakeLock" in navigator) {
@@ -208,7 +210,7 @@ export class VoiceConversation extends BaseConversation {
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
     const analyser = this.input.getAnalyser();
     if (!analyser) {
-      throw new Error("Input analyser is not available");
+      return EMPTY_FREQUENCY_DATA;
     }
     this.inputFrequencyData ??= new Uint8Array(
       analyser.frequencyBinCount
@@ -230,7 +232,7 @@ export class VoiceConversation extends BaseConversation {
 
     const analyser = this.output.getAnalyser();
     if (!analyser) {
-      throw new Error("Output analyser is not available");
+      return EMPTY_FREQUENCY_DATA;
     }
 
     this.outputFrequencyData ??= new Uint8Array(

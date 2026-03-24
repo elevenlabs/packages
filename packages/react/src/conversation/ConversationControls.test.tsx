@@ -205,10 +205,22 @@ describe("useConversationControls", () => {
     expect(() => result.current.setVolume({ volume: 0.5 })).toThrow(
       "No active conversation"
     );
-    expect(() => result.current.getInputVolume()).toThrow(
-      "No active conversation"
-    );
     expect(() => result.current.getId()).toThrow("No active conversation");
+  });
+
+  it("returns default values for volume and frequency data without an active session", () => {
+    const { result } = renderHook(() => useConversationControls(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.getInputVolume()).toBe(0);
+    expect(result.current.getOutputVolume()).toBe(0);
+    expect(result.current.getInputByteFrequencyData()).toEqual(
+      new Uint8Array(0)
+    );
+    expect(result.current.getOutputByteFrequencyData()).toEqual(
+      new Uint8Array(0)
+    );
   });
 
   it("changeInputDevice throws for text-only conversations", async () => {

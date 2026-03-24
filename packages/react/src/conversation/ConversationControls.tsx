@@ -8,6 +8,8 @@ import {
 import type { HookOptions } from "./types";
 import { ConversationContext } from "./ConversationContext";
 
+const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
+
 export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
@@ -107,20 +109,20 @@ export function ConversationControlsProvider({
   );
 
   const getInputByteFrequencyData = useCallback(() => {
-    return getConversation().getInputByteFrequencyData();
-  }, [getConversation]);
+    return conversationRef.current?.getInputByteFrequencyData() ?? EMPTY_FREQUENCY_DATA;
+  }, [conversationRef]);
 
   const getOutputByteFrequencyData = useCallback(() => {
-    return getConversation().getOutputByteFrequencyData();
-  }, [getConversation]);
+    return conversationRef.current?.getOutputByteFrequencyData() ?? EMPTY_FREQUENCY_DATA;
+  }, [conversationRef]);
 
   const getInputVolume = useCallback(() => {
-    return getConversation().getInputVolume();
-  }, [getConversation]);
+    return conversationRef.current?.getInputVolume() ?? 0;
+  }, [conversationRef]);
 
   const getOutputVolume = useCallback(() => {
-    return getConversation().getOutputVolume();
-  }, [getConversation]);
+    return conversationRef.current?.getOutputVolume() ?? 0;
+  }, [conversationRef]);
 
   const getId = useCallback(() => {
     return getConversation().getId();
