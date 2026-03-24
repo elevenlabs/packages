@@ -1,5 +1,29 @@
 # @elevenlabs/client
 
+## 0.16.0
+
+### Minor Changes
+
+- 1b84231: Add `guardrail_triggered` server-to-client WebSocket event, emitted when a guardrail is triggered during the conversation.
+
+  **New callback:** `onGuardrailTriggered` on `Callbacks` — fires when the server detects a guardrail violation.
+
+  ```js
+  const conversation = await Conversation.startSession({
+    agentId: "your-agent-id",
+    onGuardrailTriggered: () => {
+      console.log("A guardrail was triggered");
+    },
+  });
+  ```
+
+- 2e37cd9: Add type discriminant property to `TextConversation` and `VoiceConversation`, enabling discriminated union narrowing. Add `startSession` overloads that narrow return type based on `textOnly` option.
+
+### Patch Changes
+
+- Updated dependencies [1b84231]
+  - @elevenlabs/types@0.7.0
+
 ## 0.15.2
 
 ### Patch Changes

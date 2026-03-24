@@ -1,5 +1,28 @@
 # @elevenlabs/react
 
+## 0.15.0
+
+### Minor Changes
+
+- 1b84231: Add `guardrail_triggered` server-to-client WebSocket event, emitted when a guardrail is triggered during the conversation.
+
+  **New callback:** `onGuardrailTriggered` on `Callbacks` — fires when the server detects a guardrail violation.
+
+  ```js
+  const conversation = await Conversation.startSession({
+    agentId: "your-agent-id",
+    onGuardrailTriggered: () => {
+      console.log("A guardrail was triggered");
+    },
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [1b84231]
+- Updated dependencies [2e37cd9]
+  - @elevenlabs/client@0.16.0
+
 ## 0.14.3
 
 ### Patch Changes
