@@ -31,6 +31,12 @@ const ULAW_BIAS = 132; // 0x84
 /** Maximum magnitude that can be encoded (values above this are clipped). */
 const ULAW_MAX_INPUT = 32635;
 
+/** 16-bit PCM bounds and normalization scales. */
+const PCM_INT16_MIN = -32768;
+const PCM_INT16_MAX = 32767;
+const PCM_INT16_NEGATIVE_SCALE = 32768;
+const PCM_INT16_POSITIVE_SCALE = 32767;
+
 /**
  * Encode a single 16-bit signed PCM sample (-32768..32767) to a mu-law byte.
  */
@@ -82,7 +88,7 @@ function ulawDecode(ulawByte: number): number {
   // Step 3: Reconstruct the magnitude.
   // Place the mantissa bits back in position, add bias, shift by exponent,
   // then remove the bias to get the original magnitude.
-  let magnitude = ((mantissa << 4) + ULAW_BIAS) << exponent;
+  let magnitude = ((mantissa << 3) + ULAW_BIAS) << exponent;
   magnitude -= ULAW_BIAS;
 
   return isNegative ? -magnitude : magnitude;
@@ -96,7 +102,11 @@ function clamp(value: number): number {
 /** Convert a float [-1, 1] to a 16-bit signed integer. */
 function floatToInt16(sample: number): number {
   const clamped = clamp(sample);
-  return Math.round(clamped < 0 ? clamped * 32768 : clamped * 32767);
+  return Math.round(
+    clamped < 0
+      ? clamped * PCM_INT16_NEGATIVE_SCALE
+      : clamped * PCM_INT16_POSITIVE_SCALE
+  );
 }
 
 /**
@@ -134,7 +144,10 @@ export function decodeAudio(
     const bytes = new Uint8Array(chunk);
     const floatData = new Float32Array(bytes.length);
     for (let i = 0; i < bytes.length; i++) {
-      floatData[i] = ulawDecode(bytes[i]) / 32768;
+      // Defensive clamp in case malformed/unknown input exceeds 16-bit range.
+      const pcm = ulawDecode(bytes[i]);
+      const clampedPcm = Math.max(PCM_INT16_MIN, Math.min(PCM_INT16_MAX, pcm));
+      floatData[i] = clampedPcm / PCM_INT16_NEGATIVE_SCALE;
     }
     return floatData;
   }
@@ -143,7 +156,7 @@ export function decodeAudio(
   const pcm = new Int16Array(chunk);
   const floatData = new Float32Array(pcm.length);
   for (let i = 0; i < pcm.length; i++) {
-    floatData[i] = pcm[i] / 32768;
+    floatData[i] = pcm[i] / PCM_INT16_NEGATIVE_SCALE;
   }
   return floatData;
 }
