@@ -1,5 +1,18 @@
 # @elevenlabs/react
 
+## 1.0.0-rc.2
+
+### Minor Changes
+
+- 364105b: Add controlled mute state support to `ConversationProvider`. Pass `isMuted` and `onMutedChange` props to own the microphone mute lifecycle externally (e.g. persist in localStorage across sessions). When omitted, mute state is managed internally as before.
+
+### Patch Changes
+
+- 8bf6652: Return 0 from `getInputVolume()`/`getOutputVolume()` and empty `Uint8Array` from `getInputByteFrequencyData()`/`getOutputByteFrequencyData()` instead of throwing when no active conversation or analyser is available. This avoids forcing consumers (e.g., animation loops) to wrap every call in try-catch.
+- Updated dependencies [8bf6652]
+- Updated dependencies [bb59062]
+  - @elevenlabs/client@1.0.0-rc.2
+
 ## 1.0.0-rc.1
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @elevenlabs/client
 
+## 1.0.0-rc.2
+
+### Major Changes
+
+- bb59062: **Breaking:** The default `connectionType` is now inferred from the conversation mode instead of always defaulting to `"websocket"`.
+  - **Voice conversations** (default) now use `"webrtc"` by default
+  - **Text-only conversations** (`textOnly: true`) use `"websocket"` by default
+
+  Users who previously relied on the implicit `"websocket"` default for voice conversations and need to keep using WebSocket must now explicitly set `connectionType: "websocket"`.
+
+  `connectionType` is now optional on `PublicSessionConfig` (when using `agentId`).
+
+### Patch Changes
+
+- 8bf6652: Return 0 from `getInputVolume()`/`getOutputVolume()` and empty `Uint8Array` from `getInputByteFrequencyData()`/`getOutputByteFrequencyData()` instead of throwing when no active conversation or analyser is available. This avoids forcing consumers (e.g., animation loops) to wrap every call in try-catch.
+
 ## 1.0.0-rc.1
 
 ### Patch Changes
