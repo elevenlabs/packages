@@ -50,20 +50,18 @@ class MyConversation extends Conversation {
 ```ts
 import { Conversation } from "@elevenlabs/client";
 
+// startSession call is unchanged
+const session: Conversation = await Conversation.startSession(options);
+
 // Narrow using duck-typing instead of instanceof
 if ("changeInputDevice" in session) {
   // session is VoiceConversation
 }
-
-// startSession call is unchanged
-const session: Conversation = await Conversation.startSession(options);
 ```
 
 ### Replace `Input` and `Output` usage with conversation methods
 
 The `Input` and `Output` classes are no longer exported because direct access to internal audio nodes created tight coupling to implementation details. The `input` and `output` fields on `VoiceConversation` are now private. All audio operations are methods on the conversation instance itself.
-
-Use `InputController` and `OutputController` interfaces if you need the types.
 
 **Before:**
 
@@ -84,8 +82,6 @@ const newInput: Input = await conversation.changeInputDevice(config);
 **After:**
 
 ```ts
-import type { InputController, OutputController } from "@elevenlabs/client";
-
 conversation.getInputByteFrequencyData(); // replaces input.analyser.getByteFrequencyData
 conversation.setMicMuted(true); // replaces input.setMuted
 conversation.setVolume({ volume: 0.5 }); // replaces output.gain.gain.value
@@ -342,7 +338,8 @@ import { useConversationClientTool } from "@elevenlabs/react";
 
 // Untyped — parameters are Record<string, unknown>
 useConversationClientTool("get_weather", params => {
-  return `Weather in ${params.city} is sunny.`;
+  const city = params["city"];
+  return `Weather in ${city} is sunny.`;
 });
 
 // Type-safe — tool names are constrained, params and return types are inferred
