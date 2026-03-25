@@ -17,6 +17,8 @@
   });
   ```
 
+  For the client to receive events, it must be enabled on the "Advanced" tab of the agent's settings.
+
 - 2e37cd9: Add type discriminant property to `TextConversation` and `VoiceConversation`, enabling discriminated union narrowing. Add `startSession` overloads that narrow return type based on `textOnly` option.
 
 ### Patch Changes
