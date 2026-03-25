@@ -30,6 +30,9 @@
       "esbuild",
       "msw"
     ],
+    "overrides": {
+      "@asyncapi/parser": "^3.6.0"
+    },
     "patchedDependencies": {
       "livekit-client@2.16.0": "patches/livekit-client@2.16.0.patch"
     }
