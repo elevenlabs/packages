@@ -51,6 +51,7 @@ export type BaseSessionConfig = {
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
+  pinnedDynamicVariables?: string[];
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;

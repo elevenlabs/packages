@@ -662,6 +662,11 @@ components:
         dynamic_variables:
           type: object
           description: Dynamic variables available in the conversation context
+        pinned_dynamic_variables:
+          type: array
+          items:
+            type: string
+          description: Variable names whose placeholder values should not be overwritten by tool assignments
         user_id:
           type: string
           nullable: true
