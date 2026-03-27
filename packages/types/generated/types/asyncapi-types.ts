@@ -54,6 +54,7 @@ export interface ConversationInitiation {
   dynamic_variables?: Record<string, any>;
   user_id?: string;
   source_info?: SourceInfo;
+  tool_mock_config?: ToolMockConfig;
 }
 
 export interface ConversationConfigOverride {
@@ -184,6 +185,16 @@ export interface SourceInfo {
   source?: string;
   version?: string;
 }
+
+export interface ToolMockConfig {
+  mocking_strategy?: ToolMockConfigMockingStrategy;
+  mocked_tool_names?: string[];
+  fallback_strategy?: ToolMockConfigFallbackStrategy;
+}
+
+export type ToolMockConfigMockingStrategy = "all" | "selected" | "none";
+
+export type ToolMockConfigFallbackStrategy = "call_real_tool" | "raise_error";
 
 export interface MultimodalMessage {
   type: "multimodal_message";
@@ -643,6 +654,7 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   dynamic_variables?: Record<string, any>;
   user_id?: string;
   source_info?: SourceInfo;
+  tool_mock_config?: ToolMockConfig;
 }
 
 export interface MultimodalMessageClientToOrchestratorEvent {

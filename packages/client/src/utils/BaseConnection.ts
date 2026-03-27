@@ -51,6 +51,11 @@ export type BaseSessionConfig = {
   };
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
+  toolMockConfig?: {
+    mockingStrategy?: "all" | "selected" | "none";
+    mockedToolNames?: string[];
+    fallbackStrategy?: "call_real_tool" | "raise_error";
+  };
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;

@@ -668,6 +668,28 @@ components:
           description: Unique identifier for the user
         source_info:
           $ref: "#/components/schemas/SourceInfo"
+        tool_mock_config:
+          $ref: "#/components/schemas/ToolMockConfig"
+
+    ToolMockConfig:
+      type: object
+      description: Configuration for mocking tool behavior during conversations
+      properties:
+        mocking_strategy:
+          type: string
+          enum: [all, selected, none]
+          default: none
+          description: "Which tools to mock: 'all' mocks every tool, 'selected' mocks only specified tools, 'none' disables mocking"
+        mocked_tool_names:
+          type: array
+          items:
+            type: string
+          description: Tool names to mock when mocking_strategy is 'selected'
+        fallback_strategy:
+          type: string
+          enum: [call_real_tool, raise_error]
+          default: call_real_tool
+          description: Behavior when a mocked tool is called but no mock response matches
 
     MultimodalMessageFileData:
       type: object

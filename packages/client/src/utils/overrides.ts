@@ -49,5 +49,13 @@ export function constructOverrides(
     };
   }
 
+  if (config.toolMockConfig) {
+    overridesEvent.tool_mock_config = {
+      mocking_strategy: config.toolMockConfig.mockingStrategy,
+      mocked_tool_names: config.toolMockConfig.mockedToolNames,
+      fallback_strategy: config.toolMockConfig.fallbackStrategy,
+    };
+  }
+
   return overridesEvent;
 }
