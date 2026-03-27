@@ -192,9 +192,9 @@ export interface ToolMockConfig {
   fallback_strategy?: ToolMockConfigFallbackStrategy;
 }
 
-export type ToolMockConfigMockingStrategy = "all" | "selected" | "none";
+export type ToolMockConfigMockingStrategy = "none" | "all" | "selected";
 
-export type ToolMockConfigFallbackStrategy = "call_real_tool" | "raise_error";
+export type ToolMockConfigFallbackStrategy = "raise_error" | "call_real_tool";
 
 export interface MultimodalMessage {
   type: "multimodal_message";

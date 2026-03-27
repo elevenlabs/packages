@@ -52,9 +52,12 @@ export type BaseSessionConfig = {
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   toolMockConfig?: {
-    mockingStrategy?: "all" | "selected" | "none";
+    /** Which tools to mock. Defaults to 'none'. */
+    mockingStrategy?: "none" | "all" | "selected";
+    /** Tool names to mock when mockingStrategy is 'selected'. */
     mockedToolNames?: string[];
-    fallbackStrategy?: "call_real_tool" | "raise_error";
+    /** Behavior when mocked tool has no mock response. Defaults to 'raise_error'. */
+    fallbackStrategy?: "raise_error" | "call_real_tool";
   };
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
