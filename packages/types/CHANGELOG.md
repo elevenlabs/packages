@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.9.0
+
+### Minor Changes
+
+- 0b24a1a: Add client support for mocking tool responses in agent conversations.
+
 ## 0.8.0
 
 ### Minor Changes
