@@ -1,5 +1,14 @@
 import { page, userEvent } from "@vitest/browser/context";
-import { describe, it, beforeAll, beforeEach, expect, afterAll } from "vitest";
+import {
+  describe,
+  it,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  expect,
+  afterAll,
+  vi,
+} from "vitest";
 import { Worker } from "./mocks/browser";
 import { setupWebComponent } from "./mocks/web-component";
 import { Variants } from "./types/config";
@@ -605,6 +614,43 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByRole("button", { name: "Open chat" }))
         .toBeVisible();
+    });
+  });
+
+  describe("language auto-select", () => {
+    afterEach(() => {
+      localStorage.removeItem("xi:convai-widget-last-used-language");
+      vi.restoreAllMocks();
+    });
+
+    it("should auto-select browser language on first visit", async () => {
+      vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-FR", "en"]);
+
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+      });
+
+      // French flag should be shown on the trigger (auto-selected)
+      const langButton = page.getByRole("combobox", {
+        name: "Change language",
+      });
+      await expect.element(langButton).toHaveTextContent("Français");
+    });
+
+    it("should auto-select last-used language over browser language", async () => {
+      vi.spyOn(navigator, "languages", "get").mockReturnValue(["fr-FR", "en"]);
+      localStorage.setItem("xi:convai-widget-last-used-language", "es");
+
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+      });
+
+      const langButton = page.getByRole("combobox", {
+        name: "Change language",
+      });
+      await expect.element(langButton).toHaveTextContent("Español");
     });
   });
 
