@@ -629,9 +629,11 @@ describe("elevenlabs-convai", () => {
       setupWebComponent({
         "agent-id": "localized",
         variant: "compact",
+        "text-input": "true",
+        "default-expanded": "true",
       });
 
-      // French flag should be shown on the trigger (auto-selected)
+      // Sheet header language trigger shows the language name
       const langButton = page.getByRole("combobox", {
         name: "Change language",
       });
@@ -645,6 +647,8 @@ describe("elevenlabs-convai", () => {
       setupWebComponent({
         "agent-id": "localized",
         variant: "compact",
+        "text-input": "true",
+        "default-expanded": "true",
       });
 
       const langButton = page.getByRole("combobox", {
