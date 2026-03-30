@@ -51,8 +51,8 @@ function maybeGetBrowserLanguage(
       const base = lower.split("-")[0] as Language;
       if (supported.includes(base)) return base;
     }
-  } catch {
-    // navigator.languages may be unavailable in restricted contexts
+  } catch (e) {
+    console.warn("[ConversationalAI] Could not read navigator.languages:", e);
   }
   return undefined;
 }
@@ -95,12 +95,14 @@ export function LanguageConfigProvider({
   );
 
   const attr = languageAttribute.peek();
+  const config = widgetConfig.peek();
+  const supportedLanguageOverrides = (
+    config.supported_language_overrides ?? []
+  ).filter(isValidLanguage);
   const initialLanguage = resolveInitialLanguage({
     languageAttribute: attr && isValidLanguage(attr) ? attr : undefined,
-    supported: (widgetConfig.peek().supported_language_overrides ?? []).filter(
-      isValidLanguage
-    ),
-    defaultLanguage: widgetConfig.peek().language,
+    supported: supportedLanguageOverrides,
+    defaultLanguage: config.language,
   });
 
   const languageCode = useSignal(initialLanguage);
