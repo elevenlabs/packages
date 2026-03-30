@@ -27,34 +27,30 @@ interface LanguageConfigProviderProps {
   children: ComponentChildren;
 }
 
-function maybeGetLastUsedLanguage(
-  supported: Language[]
-): Language | undefined {
+function maybeGetLastUsedLanguage(): Language | undefined {
   try {
     const stored = localStorage.getItem(LAST_USED_LANGUAGE_KEY);
-    if (stored && isValidLanguage(stored) && supported.includes(stored)) {
-      return stored;
-    }
+    if (stored && isValidLanguage(stored)) return stored;
   } catch {
     // localStorage may be unavailable
   }
   return undefined;
 }
 
-function maybeGetBrowserLanguage(
-  supported: Language[]
-): Language | undefined {
+function getBrowserLanguageCandidates(): Language[] {
   try {
+    const candidates: Language[] = [];
     for (const lang of navigator.languages) {
       const lower = lang.toLowerCase() as Language;
-      if (supported.includes(lower)) return lower;
+      candidates.push(lower);
       const base = lower.split("-")[0] as Language;
-      if (supported.includes(base)) return base;
+      if (base !== lower) candidates.push(base);
     }
+    return candidates;
   } catch (e) {
     console.warn("[ConversationalAI] Could not read navigator.languages:", e);
+    return [];
   }
-  return undefined;
 }
 
 function resolveInitialLanguage({
@@ -66,12 +62,18 @@ function resolveInitialLanguage({
   supported: Language[];
   defaultLanguage: Language;
 }): Language {
-  return (
-    languageAttribute ??
-    maybeGetLastUsedLanguage(supported) ??
-    maybeGetBrowserLanguage(supported) ??
-    defaultLanguage
-  );
+  const validSet = new Set<Language>([...supported, defaultLanguage]);
+  const preferences: (Language | undefined)[] = [
+    languageAttribute,
+    maybeGetLastUsedLanguage(),
+    ...getBrowserLanguageCandidates(),
+  ];
+
+  for (const lang of preferences) {
+    if (lang && validSet.has(lang)) return lang;
+  }
+
+  return defaultLanguage;
 }
 
 function writeLastUsedLanguage(language: Language): void {
