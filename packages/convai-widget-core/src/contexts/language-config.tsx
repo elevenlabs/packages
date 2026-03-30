@@ -27,32 +27,47 @@ interface LanguageConfigProviderProps {
   children: ComponentChildren;
 }
 
-function detectBrowserLanguage(
+function maybeGetLastUsedLanguage(
   supported: Language[]
 ): Language | undefined {
-  for (const lang of navigator.languages) {
-    const lower = lang.toLowerCase() as Language;
-    if (supported.includes(lower)) {
-      return lower;
-    }
-    const base = lower.split("-")[0] as Language;
-    if (supported.includes(base)) {
-      return base;
-    }
-  }
-  return undefined;
-}
-
-function readLastUsedLanguage(): Language | undefined {
   try {
     const stored = localStorage.getItem(LAST_USED_LANGUAGE_KEY);
-    if (stored && isValidLanguage(stored)) {
+    if (stored && isValidLanguage(stored) && supported.includes(stored)) {
       return stored;
     }
   } catch {
     // localStorage may be unavailable
   }
   return undefined;
+}
+
+function maybeGetBrowserLanguage(
+  supported: Language[]
+): Language | undefined {
+  for (const lang of navigator.languages) {
+    const lower = lang.toLowerCase() as Language;
+    if (supported.includes(lower)) return lower;
+    const base = lower.split("-")[0] as Language;
+    if (supported.includes(base)) return base;
+  }
+  return undefined;
+}
+
+function resolveInitialLanguage({
+  languageAttribute,
+  supported,
+  defaultLanguage,
+}: {
+  languageAttribute: Language | undefined;
+  supported: Language[];
+  defaultLanguage: Language;
+}): Language {
+  return (
+    languageAttribute ??
+    maybeGetLastUsedLanguage(supported) ??
+    maybeGetBrowserLanguage(supported) ??
+    defaultLanguage
+  );
 }
 
 function writeLastUsedLanguage(language: Language): void {
@@ -75,17 +90,14 @@ export function LanguageConfigProvider({
     )
   );
 
-  const initialLanguage = (() => {
-    if (languageAttribute.peek()) return languageAttribute.peek()!;
-    const supported = (
-      widgetConfig.peek().supported_language_overrides ?? []
-    ).filter(isValidLanguage);
-    const lastUsed = readLastUsedLanguage();
-    if (lastUsed && supported.includes(lastUsed)) return lastUsed;
-    const detected = detectBrowserLanguage(supported);
-    if (detected) return detected;
-    return widgetConfig.peek().language;
-  })();
+  const attr = languageAttribute.peek();
+  const initialLanguage = resolveInitialLanguage({
+    languageAttribute: attr && isValidLanguage(attr) ? attr : undefined,
+    supported: (widgetConfig.peek().supported_language_overrides ?? []).filter(
+      isValidLanguage
+    ),
+    defaultLanguage: widgetConfig.peek().language,
+  });
 
   const languageCode = useSignal(initialLanguage);
 
