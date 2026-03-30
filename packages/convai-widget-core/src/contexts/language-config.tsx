@@ -44,11 +44,15 @@ function maybeGetLastUsedLanguage(
 function maybeGetBrowserLanguage(
   supported: Language[]
 ): Language | undefined {
-  for (const lang of navigator.languages) {
-    const lower = lang.toLowerCase() as Language;
-    if (supported.includes(lower)) return lower;
-    const base = lower.split("-")[0] as Language;
-    if (supported.includes(base)) return base;
+  try {
+    for (const lang of navigator.languages) {
+      const lower = lang.toLowerCase() as Language;
+      if (supported.includes(lower)) return lower;
+      const base = lower.split("-")[0] as Language;
+      if (supported.includes(base)) return base;
+    }
+  } catch {
+    // navigator.languages may be unavailable in restricted contexts
   }
   return undefined;
 }
