@@ -288,6 +288,33 @@ export class WebRTCConnection extends BaseConnection {
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
+      // Wait for the server-side agent to join the room before sending
+      // initiation data. Without this, publishData can fire before the
+      // agent has connected and the SFU silently drops the message.
+      await new Promise<void>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          room.off(RoomEvent.ParticipantConnected, onParticipant);
+          reject(new Error("Timeout waiting for agent to join the room"));
+        }, 30_000);
+
+        for (const p of room.remoteParticipants.values()) {
+          if (p.identity.includes("agent")) {
+            clearTimeout(timeoutId);
+            resolve();
+            return;
+          }
+        }
+
+        const onParticipant = (participant: RemoteParticipant) => {
+          if (participant.identity.includes("agent")) {
+            clearTimeout(timeoutId);
+            room.off(RoomEvent.ParticipantConnected, onParticipant);
+            resolve();
+          }
+        };
+        room.on(RoomEvent.ParticipantConnected, onParticipant);
+      });
+
       const overridesEvent = constructOverrides(config);
 
       connection.debug({
