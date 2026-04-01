@@ -9,9 +9,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@elevenlabs/convai-widget-core",
-    "@elevenlabs/convai-widget-embed",
-    "elevenlabs-react-native-example"
-  ]
+  "ignore": []
 }
