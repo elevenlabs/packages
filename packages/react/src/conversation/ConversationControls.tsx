@@ -14,6 +14,7 @@ export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
   sendUserMessage: (text: string) => void;
+  sendMultimodalMessage: (options: { text?: string; fileId?: string }) => void;
   sendContextualUpdate: (text: string) => void;
   sendUserActivity: () => void;
   sendMCPToolApprovalResult: (
@@ -62,6 +63,13 @@ export function ConversationControlsProvider({
   const sendUserMessage = useCallback((text: string) => {
     getConversation().sendUserMessage(text);
   }, [getConversation]);
+
+  const sendMultimodalMessage = useCallback(
+    (options: { text?: string; fileId?: string }) => {
+      getConversation().sendMultimodalMessage(options);
+    },
+    [getConversation]
+  );
 
   const sendContextualUpdate = useCallback((text: string) => {
     getConversation().sendContextualUpdate(text);
@@ -133,6 +141,7 @@ export function ConversationControlsProvider({
       startSession: ctx.startSession,
       endSession: ctx.endSession,
       sendUserMessage,
+      sendMultimodalMessage,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,
@@ -149,6 +158,7 @@ export function ConversationControlsProvider({
       ctx.startSession,
       ctx.endSession,
       sendUserMessage,
+      sendMultimodalMessage,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,
