@@ -11,4 +11,4 @@ export type {
   UserAudio,
   UserFeedbackClientToOrchestratorEvent,
   UserMessageClientToOrchestratorEvent,
-} from "./asyncapi-types";
+} from "./asyncapi-types.js";

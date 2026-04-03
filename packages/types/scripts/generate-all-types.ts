@@ -201,7 +201,7 @@ async function main() {
     `export type {\n${[...names]
       .sort()
       .map(n => `  ${n},`)
-      .join("\n")}\n} from "./asyncapi-types";\n`;
+      .join("\n")}\n} from "./asyncapi-types.js";\n`;
 
   writeFileSync(outIncomingPath, toBarrel(incomingNames, "incoming"), "utf8");
   writeFileSync(outOutgoingPath, toBarrel(outgoingNames, "outgoing"), "utf8");

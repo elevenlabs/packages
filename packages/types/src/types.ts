@@ -1,4 +1,4 @@
-import type * as Generated from "../generated/types/asyncapi-types";
+import type * as Generated from "../generated/types/asyncapi-types.js";
 
 /**
  * Role in the conversation

@@ -37,4 +37,4 @@ export type {
   TurnProbabilityInternalClientEvent,
   UserTranscriptionClientEvent,
   VadScoreClientEvent,
-} from "./asyncapi-types";
+} from "./asyncapi-types.js";

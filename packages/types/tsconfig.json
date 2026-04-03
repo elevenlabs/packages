@@ -7,7 +7,9 @@
     "declarationMap": true,
     "composite": true,
     "incremental": true,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
   },
   "include": ["src/**/*.ts", "generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
