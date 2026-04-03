@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { Callbacks } from "@elevenlabs/client";
-import { useStableCallbacks } from "./useStableCallbacks";
+import { useStableCallbacks } from "./useStableCallbacks.js";
 
 type Props = { onConnect: Callbacks["onConnect"] };
 

@@ -10,7 +10,7 @@ import {
   useRawConversation,
   useRawConversationRef,
   useRegisterCallbacks,
-} from "./ConversationContext";
+} from "./ConversationContext.js";
 
 export type ConversationInputValue = {
   isMuted: boolean;

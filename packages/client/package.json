@@ -10,7 +10,10 @@
       "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
     },
-    "./internal": "./dist/internal.js"
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    }
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",

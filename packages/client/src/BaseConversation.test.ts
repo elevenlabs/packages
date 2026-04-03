@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { BaseConversation, Options, PartialOptions } from "./BaseConversation";
+import {
+  BaseConversation,
+  Options,
+  PartialOptions,
+} from "./BaseConversation.js";
 
 class TestConversation extends BaseConversation {
   public static getFullOptions(partialOptions: PartialOptions): Options {

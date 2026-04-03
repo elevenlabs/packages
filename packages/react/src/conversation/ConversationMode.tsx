@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { Mode } from "@elevenlabs/client";
-import { useRegisterCallbacks } from "./ConversationContext";
+import { useRegisterCallbacks } from "./ConversationContext.js";
 
 export type ConversationModeValue = {
   mode: "speaking" | "listening";

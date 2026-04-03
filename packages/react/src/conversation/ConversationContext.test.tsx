@@ -7,7 +7,7 @@ import {
   useRawConversationRef,
   useRegisterCallbacks,
   type ConversationContextValue,
-} from "./ConversationContext";
+} from "./ConversationContext.js";
 import type { Conversation } from "@elevenlabs/client";
 
 describe("useRawConversation", () => {

@@ -1,4 +1,4 @@
-import { ListenerSet } from "./ListenerSet";
+import { ListenerSet } from "./ListenerSet.js";
 
 function assertFunction(
   value: unknown,

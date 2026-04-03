@@ -1,6 +1,6 @@
-import { isTextOnly, type PartialOptions } from "./BaseConversation";
-import { TextConversation } from "./TextConversation";
-import { VoiceConversation } from "./VoiceConversation";
+import { isTextOnly, type PartialOptions } from "./BaseConversation.js";
+import { TextConversation } from "./TextConversation.js";
+import { VoiceConversation } from "./VoiceConversation.js";
 
 export type {
   Mode,
@@ -12,16 +12,19 @@ export type {
   Status,
   AudioWorkletConfig,
   MultimodalMessageInput,
-} from "./BaseConversation";
-export type { InputController, InputDeviceConfig } from "./InputController";
-export type { OutputController, OutputDeviceConfig } from "./OutputController";
-export type { InputConfig } from "./utils/input";
-export type { OutputConfig } from "./utils/output";
+} from "./BaseConversation.js";
+export type { InputController, InputDeviceConfig } from "./InputController.js";
+export type {
+  OutputController,
+  OutputDeviceConfig,
+} from "./OutputController.js";
+export type { InputConfig } from "./utils/input.js";
+export type { OutputConfig } from "./utils/output.js";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,
   AudioAlignmentEvent,
-} from "./utils/events";
+} from "./utils/events.js";
 export type {
   SessionConfig,
   BaseSessionConfig,
@@ -29,15 +32,15 @@ export type {
   Language,
   ConnectionType,
   FormatConfig,
-} from "./utils/BaseConnection";
-export { createConnection } from "./utils/ConnectionFactory";
-export { WebSocketConnection } from "./utils/WebSocketConnection";
-export { WebRTCConnection } from "./utils/WebRTCConnection";
-export { postOverallFeedback } from "./utils/postOverallFeedback";
-export { SessionConnectionError } from "./utils/errors";
-export type { Location } from "./utils/location";
-export { VoiceConversation } from "./VoiceConversation";
-export { TextConversation } from "./TextConversation";
+} from "./utils/BaseConnection.js";
+export { createConnection } from "./utils/ConnectionFactory.js";
+export { WebSocketConnection } from "./utils/WebSocketConnection.js";
+export { WebRTCConnection } from "./utils/WebRTCConnection.js";
+export { postOverallFeedback } from "./utils/postOverallFeedback.js";
+export { SessionConnectionError } from "./utils/errors.js";
+export type { Location } from "./utils/location.js";
+export { VoiceConversation } from "./VoiceConversation.js";
+export { TextConversation } from "./TextConversation.js";
 
 // Scribe exports
 export {
@@ -46,7 +49,7 @@ export {
   CommitStrategy,
   RealtimeEvents,
   RealtimeConnection,
-} from "./scribe";
+} from "./scribe/index.js";
 export type {
   AudioOptions,
   MicrophoneOptions,
@@ -67,7 +70,7 @@ export type {
   ScribeSessionTimeLimitExceededErrorMessage,
   ScribeChunkSizeExceededErrorMessage,
   ScribeInsufficientAudioActivityErrorMessage,
-} from "./scribe";
+} from "./scribe/index.js";
 
 export type Conversation = TextConversation | VoiceConversation;
 

@@ -1,21 +1,21 @@
-import type { InputConfig } from "./utils/input";
+import type { InputConfig } from "./utils/input.js";
 import type {
   OutputConfig,
   PlaybackEventTarget,
   PlaybackListener,
-} from "./utils/output";
-import type { BaseConnection, FormatConfig } from "./utils/BaseConnection";
-import { WebRTCConnection } from "./utils/WebRTCConnection";
-import type { AgentAudioEvent, InterruptionEvent } from "./utils/events";
-import { applyDelay } from "./utils/applyDelay";
+} from "./utils/output.js";
+import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
+import { WebRTCConnection } from "./utils/WebRTCConnection.js";
+import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
+import { applyDelay } from "./utils/applyDelay.js";
 import {
   BaseConversation,
   type Options,
   type PartialOptions,
-} from "./BaseConversation";
-import type { InputController } from "./InputController";
-import type { OutputController } from "./OutputController";
-import { setupStrategy } from "./platform/VoiceSessionSetup";
+} from "./BaseConversation.js";
+import type { InputController } from "./InputController.js";
+import type { OutputController } from "./OutputController.js";
+import { setupStrategy } from "./platform/VoiceSessionSetup.js";
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0) as Uint8Array<ArrayBuffer>;
 

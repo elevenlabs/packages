@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import type { Callbacks } from "@elevenlabs/client";
 import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
-import type { HookOptions } from "./types";
+import type { HookOptions } from "./types.js";
 
 /**
  * Wraps user-provided callback props in stable ref-backed functions,

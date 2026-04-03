@@ -15,25 +15,25 @@ import {
   getLivekitUrlForLocation,
 } from "@elevenlabs/client/internal";
 
-import { type HookOptions } from "./types";
+import { type HookOptions } from "./types.js";
 import {
   ConversationContext,
   type ConversationContextValue,
-} from "./ConversationContext";
-import { ConversationControlsProvider } from "./ConversationControls";
-import { ConversationStatusProvider } from "./ConversationStatus";
+} from "./ConversationContext.js";
+import { ConversationControlsProvider } from "./ConversationControls.js";
+import { ConversationStatusProvider } from "./ConversationStatus.js";
 import {
   ConversationInputProvider,
   type ConversationInputProviderProps,
-} from "./ConversationInput";
-import { ConversationModeProvider } from "./ConversationMode";
-import { ConversationFeedbackProvider } from "./ConversationFeedback";
+} from "./ConversationInput.js";
+import { ConversationModeProvider } from "./ConversationMode.js";
+import { ConversationFeedbackProvider } from "./ConversationFeedback.js";
 import {
   ConversationClientToolsProvider,
   buildClientTools,
-} from "./ConversationClientTools";
-import { ListenerMap } from "./ListenerMap";
-import { useStableCallbacks } from "./useStableCallbacks";
+} from "./ConversationClientTools.js";
+import { ListenerMap } from "./ListenerMap.js";
+import { useStableCallbacks } from "./useStableCallbacks.js";
 
 type ConversationInputControlProps = Pick<
   ConversationInputProviderProps,

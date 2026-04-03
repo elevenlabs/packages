@@ -1,9 +1,9 @@
-import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
-import type { FormatConfig } from "./connection";
-import { isIosDevice } from "./compatibility";
-import type { AudioWorkletConfig } from "../BaseConversation";
-import { addLibsamplerateModule } from "./addLibsamplerateModule";
-import type { InputController, InputDeviceConfig } from "../InputController";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
+import type { FormatConfig } from "./connection.js";
+import { isIosDevice } from "./compatibility.js";
+import type { AudioWorkletConfig } from "../BaseConversation.js";
+import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import type { InputController, InputDeviceConfig } from "../InputController.js";
 
 export type InputConfig = InputDeviceConfig & {
   onError?(message: string, context?: unknown): void;

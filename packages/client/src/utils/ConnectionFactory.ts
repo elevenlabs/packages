@@ -2,9 +2,9 @@ import type {
   BaseConnection,
   SessionConfig,
   ConnectionType,
-} from "./BaseConnection";
-import { WebSocketConnection } from "./WebSocketConnection";
-import { WebRTCConnection } from "./WebRTCConnection";
+} from "./BaseConnection.js";
+import { WebSocketConnection } from "./WebSocketConnection.js";
+import { WebRTCConnection } from "./WebRTCConnection.js";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
   const hasSignedUrl = "signedUrl" in config && config.signedUrl;

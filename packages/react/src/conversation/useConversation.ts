@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef } from "react";
 import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
 
-import { useConversationControls } from "./ConversationControls";
-import { useConversationStatus } from "./ConversationStatus";
-import { useConversationInput } from "./ConversationInput";
-import { useConversationMode } from "./ConversationMode";
-import { useConversationFeedback } from "./ConversationFeedback";
+import { useConversationControls } from "./ConversationControls.js";
+import { useConversationStatus } from "./ConversationStatus.js";
+import { useConversationInput } from "./ConversationInput.js";
+import { useConversationMode } from "./ConversationMode.js";
+import { useConversationFeedback } from "./ConversationFeedback.js";
 import {
   useRawConversation,
   useRegisterCallbacks,
-} from "./ConversationContext";
-import { useStableCallbacks } from "./useStableCallbacks";
-import type { HookOptions } from "./types";
+} from "./ConversationContext.js";
+import { useStableCallbacks } from "./useStableCallbacks.js";
+import type { HookOptions } from "./types.js";
 
 export type UseConversationOptions = HookOptions & {
   micMuted?: boolean;

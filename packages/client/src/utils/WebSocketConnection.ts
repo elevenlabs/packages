@@ -3,17 +3,17 @@ import {
   type SessionConfig,
   type FormatConfig,
   parseFormat,
-} from "./BaseConnection";
-import { sourceInfo } from "../sourceInfo";
+} from "./BaseConnection.js";
+import { sourceInfo } from "../sourceInfo.js";
 import {
   type ConfigEvent,
   isValidSocketEvent,
   type OutgoingSocketEvent,
   type IncomingSocketEvent,
-} from "./events";
-import { constructOverrides } from "./overrides";
-import { SessionConnectionError } from "./errors";
-import type { OutputEventTarget, OutputListener } from "./output";
+} from "./events.js";
+import { constructOverrides } from "./overrides.js";
+import { SessionConnectionError } from "./errors.js";
+import type { OutputEventTarget, OutputListener } from "./output.js";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";

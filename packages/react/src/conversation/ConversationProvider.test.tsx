@@ -3,12 +3,12 @@ import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
 import { Conversation, type Callbacks } from "@elevenlabs/client";
 import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
-import { ConversationProvider } from "./ConversationProvider";
+import { ConversationProvider } from "./ConversationProvider.js";
 import {
   ConversationContext,
   useRawConversation,
   type ConversationContextValue,
-} from "./ConversationContext";
+} from "./ConversationContext.js";
 
 /** Test helper — accesses the full context value (conversation + lifecycle methods). */
 function useTestContext(): ConversationContextValue {

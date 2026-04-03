@@ -1,16 +1,16 @@
 // Export the main Scribe class (renamed from ScribeRealtime)
-export { ScribeRealtime as Scribe } from "./scribe";
+export { ScribeRealtime as Scribe } from "./scribe.js";
 
 // Export connection class
-export { RealtimeConnection } from "./connection";
+export { RealtimeConnection } from "./connection.js";
 
 // Export enums
-export { AudioFormat, CommitStrategy } from "./scribe";
-export { RealtimeEvents } from "./connection";
-export type { RealtimeEventMap } from "./connection";
+export { AudioFormat, CommitStrategy } from "./scribe.js";
+export { RealtimeEvents } from "./connection.js";
+export type { RealtimeEventMap } from "./connection.js";
 
 // Export types
-export type { AudioOptions, MicrophoneOptions } from "./scribe";
+export type { AudioOptions, MicrophoneOptions } from "./scribe.js";
 export type {
   WebSocketMessage,
   SessionStartedMessage,
@@ -30,4 +30,4 @@ export type {
   ScribeSessionTimeLimitExceededErrorMessage,
   ScribeChunkSizeExceededErrorMessage,
   ScribeInsufficientAudioActivityErrorMessage,
-} from "./connection";
+} from "./connection.js";

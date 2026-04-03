@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef } from "react";
 import type { ClientToolsConfig } from "@elevenlabs/client";
-import { ConversationContext } from "./ConversationContext";
-import type { ClientTool, ClientTools } from "./types";
+import { ConversationContext } from "./ConversationContext.js";
+import type { ClientTool, ClientTools } from "./types.js";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 

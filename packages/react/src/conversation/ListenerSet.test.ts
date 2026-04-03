@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { ListenerSet } from "./ListenerSet";
+import { ListenerSet } from "./ListenerSet.js";
 
 describe("ListenerSet", () => {
   it("invokes a single listener", () => {

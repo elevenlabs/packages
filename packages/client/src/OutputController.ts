@@ -1,4 +1,4 @@
-import type { FormatConfig } from "./utils/BaseConnection";
+import type { FormatConfig } from "./utils/BaseConnection.js";
 
 export type OutputDeviceConfig = {
   outputDeviceId?: string;

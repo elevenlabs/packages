@@ -5,12 +5,12 @@ import type { ClientToolsConfig } from "@elevenlabs/client";
 import {
   ConversationContext,
   type ConversationContextValue,
-} from "./ConversationContext";
+} from "./ConversationContext.js";
 import {
   ConversationClientToolsProvider,
   useConversationClientTool,
   buildClientTools,
-} from "./ConversationClientTools";
+} from "./ConversationClientTools.js";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 

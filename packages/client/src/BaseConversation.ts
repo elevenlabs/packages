@@ -4,7 +4,7 @@ import type {
   DisconnectionDetails,
   SessionConfig,
   FormatConfig,
-} from "./utils/BaseConnection";
+} from "./utils/BaseConnection.js";
 import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
@@ -23,9 +23,9 @@ import type {
   ErrorMessageEvent,
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
-} from "./utils/events";
-import type { InputConfig } from "./utils/input";
-import type { OutputConfig } from "./utils/output";
+} from "./utils/events.js";
+import type { InputConfig } from "./utils/input.js";
+import type { OutputConfig } from "./utils/output.js";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 export { CALLBACK_KEYS } from "@elevenlabs/types";

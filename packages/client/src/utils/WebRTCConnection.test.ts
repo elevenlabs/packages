@@ -55,7 +55,7 @@ vi.mock("livekit-client", () => {
   };
 });
 
-import { WebRTCConnection } from "./WebRTCConnection";
+import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room } from "livekit-client";
 
 describe("WebRTCConnection", () => {

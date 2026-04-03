@@ -1,7 +1,7 @@
-import { createConnection } from "./utils/ConnectionFactory";
-import type { BaseConnection } from "./utils/BaseConnection";
-import { applyDelay } from "./utils/applyDelay";
-import { BaseConversation, type PartialOptions } from "./BaseConversation";
+import { createConnection } from "./utils/ConnectionFactory.js";
+import type { BaseConnection } from "./utils/BaseConnection.js";
+import { applyDelay } from "./utils/applyDelay.js";
+import { BaseConversation, type PartialOptions } from "./BaseConversation.js";
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 

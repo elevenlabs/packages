@@ -1,8 +1,11 @@
-import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated";
-import type { FormatConfig } from "./connection";
-import type { AudioWorkletConfig } from "../BaseConversation";
-import { addLibsamplerateModule } from "./addLibsamplerateModule";
-import type { OutputController, OutputDeviceConfig } from "../OutputController";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
+import type { FormatConfig } from "./connection.js";
+import type { AudioWorkletConfig } from "../BaseConversation.js";
+import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import type {
+  OutputController,
+  OutputDeviceConfig,
+} from "../OutputController.js";
 
 export type OutputConfig = OutputDeviceConfig;
 

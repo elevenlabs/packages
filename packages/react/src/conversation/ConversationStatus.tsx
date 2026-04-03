@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { useRegisterCallbacks } from "./ConversationContext";
+import { useRegisterCallbacks } from "./ConversationContext.js";
 
 export type ConversationStatus =
   | "disconnected"

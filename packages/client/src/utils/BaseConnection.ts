@@ -1,5 +1,5 @@
-import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events";
-import type { Mode } from "../BaseConversation";
+import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
+import type { Mode } from "../BaseConversation.js";
 import type {
   DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,

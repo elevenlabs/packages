@@ -1,6 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useRef, type MutableRefObject, type RefObject } from "react";
 import type { Callbacks, ClientToolsConfig, Conversation } from "@elevenlabs/client";
-import type { HookOptions } from "./types";
+import type { HookOptions } from "./types.js";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
 

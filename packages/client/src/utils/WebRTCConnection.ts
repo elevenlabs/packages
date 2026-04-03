@@ -3,9 +3,9 @@ import {
   type SessionConfig,
   type FormatConfig,
   parseFormat,
-} from "./BaseConnection";
-import { sourceInfo } from "../sourceInfo";
-import { isValidSocketEvent, type OutgoingSocketEvent } from "./events";
+} from "./BaseConnection.js";
+import { sourceInfo } from "../sourceInfo.js";
+import { isValidSocketEvent, type OutgoingSocketEvent } from "./events.js";
 import {
   Room,
   RoomEvent,
@@ -22,11 +22,14 @@ import type {
 import {
   constructOverrides,
   CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
-} from "./overrides";
-import { arrayBufferToBase64 } from "./audio";
-import { loadRawAudioProcessor } from "./rawAudioProcessor.generated";
-import type { InputController, InputDeviceConfig } from "../InputController";
-import type { OutputController, OutputDeviceConfig } from "../OutputController";
+} from "./overrides.js";
+import { arrayBufferToBase64 } from "./audio.js";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
+import type { InputController, InputDeviceConfig } from "../InputController.js";
+import type {
+  OutputController,
+  OutputDeviceConfig,
+} from "../OutputController.js";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";

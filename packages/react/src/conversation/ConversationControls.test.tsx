@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, renderHook, act } from "@testing-library/react";
 import { Conversation } from "@elevenlabs/client";
-import { ConversationProvider } from "./ConversationProvider";
-import { useConversationControls } from "./ConversationControls";
+import { ConversationProvider } from "./ConversationProvider.js";
+import { useConversationControls } from "./ConversationControls.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();

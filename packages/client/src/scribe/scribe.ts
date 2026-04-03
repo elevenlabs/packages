@@ -1,5 +1,5 @@
-import { RealtimeConnection } from "./connection";
-import { loadScribeAudioProcessor } from "../utils/scribeAudioProcessor.generated";
+import { RealtimeConnection } from "./connection.js";
+import { loadScribeAudioProcessor } from "../utils/scribeAudioProcessor.generated.js";
 
 export enum AudioFormat {
   PCM_8000 = "pcm_8000",

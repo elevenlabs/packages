@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { ListenerMap } from "./ListenerMap";
+import { ListenerMap } from "./ListenerMap.js";
 
 type TestCallbacks = {
   onConnect?: (props: { id: string }) => void;

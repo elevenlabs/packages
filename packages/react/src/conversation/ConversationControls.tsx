@@ -6,8 +6,8 @@ import {
   type OutputConfig,
   type MultimodalMessageInput,
 } from "@elevenlabs/client";
-import type { HookOptions } from "./types";
-import { ConversationContext } from "./ConversationContext";
+import type { HookOptions } from "./types.js";
+import { ConversationContext } from "./ConversationContext.js";
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 

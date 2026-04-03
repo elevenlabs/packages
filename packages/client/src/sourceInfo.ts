@@ -1,4 +1,4 @@
-import { PACKAGE_VERSION } from "./version";
+import { PACKAGE_VERSION } from "./version.js";
 
 export interface SourceInfo {
   name: string;

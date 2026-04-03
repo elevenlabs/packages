@@ -1,7 +1,12 @@
 import { it, expect, describe, vi } from "vitest";
 import { Server } from "mock-socket";
 import type { Client } from "mock-socket";
-import { Scribe, AudioFormat, CommitStrategy, RealtimeEvents } from "./index";
+import {
+  Scribe,
+  AudioFormat,
+  CommitStrategy,
+  RealtimeEvents,
+} from "./index.js";
 
 const TEST_TOKEN = "sutkn_123";
 const TEST_MODEL_ID = "scribe_v2_realtime";

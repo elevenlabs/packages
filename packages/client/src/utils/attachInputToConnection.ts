@@ -1,6 +1,6 @@
-import { arrayBufferToBase64 } from "./audio";
-import type { InputEventTarget, InputListener } from "./input";
-import type { UserAudioEvent } from "./events";
+import { arrayBufferToBase64 } from "./audio.js";
+import type { InputEventTarget, InputListener } from "./input.js";
+import type { UserAudioEvent } from "./events.js";
 
 export function attachInputToConnection(
   input: InputEventTarget,

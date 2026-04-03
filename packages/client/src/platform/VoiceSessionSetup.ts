@@ -1,14 +1,17 @@
-import type { Options } from "../BaseConversation";
-import type { BaseConnection } from "../utils/BaseConnection";
-import type { InputController } from "../InputController";
-import type { OutputController } from "../OutputController";
-import { MediaDeviceOutput, type PlaybackEventTarget } from "../utils/output";
-import { MediaDeviceInput } from "../utils/input";
-import { WebSocketConnection } from "../utils/WebSocketConnection";
-import { WebRTCConnection } from "../utils/WebRTCConnection";
-import { attachInputToConnection } from "../utils/attachInputToConnection";
-import { attachConnectionToOutput } from "../utils/attachConnectionToOutput";
-import { createConnection } from "../utils/ConnectionFactory";
+import type { Options } from "../BaseConversation.js";
+import type { BaseConnection } from "../utils/BaseConnection.js";
+import type { InputController } from "../InputController.js";
+import type { OutputController } from "../OutputController.js";
+import {
+  MediaDeviceOutput,
+  type PlaybackEventTarget,
+} from "../utils/output.js";
+import { MediaDeviceInput } from "../utils/input.js";
+import { WebSocketConnection } from "../utils/WebSocketConnection.js";
+import { WebRTCConnection } from "../utils/WebRTCConnection.js";
+import { attachInputToConnection } from "../utils/attachInputToConnection.js";
+import { attachConnectionToOutput } from "../utils/attachConnectionToOutput.js";
+import { createConnection } from "../utils/ConnectionFactory.js";
 
 export type VoiceSessionSetupResult = {
   connection: BaseConnection;

@@ -8,11 +8,11 @@ import {
   afterAll,
 } from "vitest";
 import { Client, Server } from "mock-socket";
-import chunk from "./__tests__/chunk";
-import { Mode, Status, Conversation } from "./index";
-import { createConnection } from "./utils/ConnectionFactory";
-import type { SessionConfig } from "./utils/BaseConnection";
-import { PACKAGE_VERSION } from "./version";
+import chunk from "./__tests__/chunk.js";
+import { Mode, Status, Conversation } from "./index.js";
+import { createConnection } from "./utils/ConnectionFactory.js";
+import type { SessionConfig } from "./utils/BaseConnection.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
 const OUTPUT_AUDIO_FORMAT = "pcm_16000";
@@ -934,7 +934,7 @@ describe("WebRTC Volume Control", () => {
     const mockElement2 = { volume: 1 };
 
     // Mock the WebRTCConnection class by importing and creating an instance
-    const { WebRTCConnection } = await import("./utils/WebRTCConnection");
+    const { WebRTCConnection } = await import("./utils/WebRTCConnection.js");
 
     // Create a minimal mock for testing just the volume functionality
     // We'll create the connection with a direct token to avoid fetch

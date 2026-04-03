@@ -1,5 +1,5 @@
-import type { OutputEventTarget, OutputListener } from "./output";
-import { base64ToArrayBuffer } from "./audio";
+import type { OutputEventTarget, OutputListener } from "./output.js";
+import { base64ToArrayBuffer } from "./audio.js";
 
 export function attachConnectionToOutput(
   connection: OutputEventTarget,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { mergeOptions } from "./mergeOptions";
+import { mergeOptions } from "./mergeOptions.js";
 
 type Config = {
   a?: string;

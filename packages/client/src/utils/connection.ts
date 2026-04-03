@@ -8,14 +8,14 @@ export {
   OnMessageCallback,
   SessionConfig,
   parseFormat,
-} from "./BaseConnection";
+} from "./BaseConnection.js";
 
-import { createConnection } from "./ConnectionFactory";
+import { createConnection } from "./ConnectionFactory.js";
 export { createConnection };
-export { WebSocketConnection } from "./WebSocketConnection";
-export { WebRTCConnection } from "./WebRTCConnection";
-export { BaseConnection } from "./BaseConnection";
-import type { SessionConfig } from "./BaseConnection";
+export { WebSocketConnection } from "./WebSocketConnection.js";
+export { WebRTCConnection } from "./WebRTCConnection.js";
+export { BaseConnection } from "./BaseConnection.js";
+import type { SessionConfig } from "./BaseConnection.js";
 
 // Legacy Connection class that uses the factory
 export class Connection {

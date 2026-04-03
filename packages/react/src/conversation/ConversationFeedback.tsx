@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRawConversationRef, useRegisterCallbacks } from "./ConversationContext";
+import { useRawConversationRef, useRegisterCallbacks } from "./ConversationContext.js";
 
 export type ConversationFeedbackValue = {
   canSendFeedback: boolean;

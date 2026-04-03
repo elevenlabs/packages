@@ -1,5 +1,5 @@
 import { setSourceInfo } from "@elevenlabs/client/internal";
-import { PACKAGE_VERSION } from "./version";
+import { PACKAGE_VERSION } from "./version.js";
 
 // Identify as react_native_sdk
 setSourceInfo({ name: "react_native_sdk", version: PACKAGE_VERSION });

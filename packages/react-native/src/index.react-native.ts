@@ -48,4 +48,4 @@ async function reactNativeSessionSetup(
 
 setSetupStrategy(reactNativeSessionSetup);
 
-export * from "./index";
+export * from "./index.js";
