@@ -54,6 +54,11 @@ export type PartialOptions = SessionConfig &
   Partial<FormatConfig> &
   Partial<AudioWorkletConfig>;
 
+export type MultimodalMessageInput = {
+  text?: string;
+  fileId?: string;
+};
+
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
@@ -547,7 +552,7 @@ export abstract class BaseConversation {
     });
   }
 
-  public sendMultimodalMessage(options: { text?: string; fileId?: string }) {
+  public sendMultimodalMessage(options: MultimodalMessageInput) {
     this.connection.sendMessage({
       type: "multimodal_message",
       text: options.text

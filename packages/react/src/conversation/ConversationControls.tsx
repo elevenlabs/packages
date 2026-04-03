@@ -4,21 +4,18 @@ import {
   type FormatConfig,
   type InputDeviceConfig,
   type OutputConfig,
+  type MultimodalMessageInput,
 } from "@elevenlabs/client";
 import type { HookOptions } from "./types";
 import { ConversationContext } from "./ConversationContext";
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
-type SendMultimodalMessageOptions = Parameters<
-  VoiceConversation["sendMultimodalMessage"]
->[0];
-
 export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
   sendUserMessage: (text: string) => void;
-  sendMultimodalMessage: (options: SendMultimodalMessageOptions) => void;
+  sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   sendContextualUpdate: (text: string) => void;
   sendUserActivity: () => void;
   sendMCPToolApprovalResult: (
@@ -69,7 +66,7 @@ export function ConversationControlsProvider({
   }, [getConversation]);
 
   const sendMultimodalMessage = useCallback(
-    (options: SendMultimodalMessageOptions) => {
+    (options: MultimodalMessageInput) => {
       getConversation().sendMultimodalMessage(options);
     },
     [getConversation]

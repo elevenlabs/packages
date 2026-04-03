@@ -11,6 +11,7 @@ export type {
   Callbacks,
   Status,
   AudioWorkletConfig,
+  MultimodalMessageInput,
 } from "./BaseConversation";
 export type { InputController, InputDeviceConfig } from "./InputController";
 export type { OutputController, OutputDeviceConfig } from "./OutputController";
