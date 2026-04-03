@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 1.0.2
+
+### Patch Changes
+
+- f29c44b: Expose `sendMultimodalMessage` in `useConversationControls` hook. Export `MultimodalMessageInput` type from `@elevenlabs/client`.
+- Updated dependencies [f29c44b]
+  - @elevenlabs/client@1.1.1
+
 ## 1.0.1
 
 ### Patch Changes

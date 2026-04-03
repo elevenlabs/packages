@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.1.1
+
+### Patch Changes
+
+- f29c44b: Expose `sendMultimodalMessage` in `useConversationControls` hook. Export `MultimodalMessageInput` type from `@elevenlabs/client`.
+
 ## 1.1.0
 
 ### Minor Changes

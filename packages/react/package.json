@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ElevenLabs React Library",
   "type": "module",
   "types": "./dist/index.d.ts",
