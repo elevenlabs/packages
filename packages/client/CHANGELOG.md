@@ -1,5 +1,16 @@
 # @elevenlabs/client
 
+## 1.1.2
+
+### Patch Changes
+
+- 50ea6ef: fix: use explicit .js extensions in ESM imports for Node.js compatibility
+
+  Switch `moduleResolution` from `bundler` to `nodenext` and add `.js` extensions to all relative imports. The published packages use `"type": "module"` but the compiled output had extensionless imports, which breaks Node.js ESM resolution. Also add `"type": "module"` to `@elevenlabs/types`.
+
+- Updated dependencies [50ea6ef]
+  - @elevenlabs/types@0.9.1
+
 ## 1.1.1
 
 ### Patch Changes
