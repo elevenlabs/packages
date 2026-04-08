@@ -118,6 +118,7 @@ class NativeVolumeProvider implements VolumeProvider {
     this.ensureMultibandProcessor(buffer.length);
     if (this.magnitudes.length === 0) {
       // No multiband data yet; fall back to uniform fill from RMS volume
+      this.ensureVolumeProcessor();
       buffer.fill(Math.round(this.volume * 255));
       return;
     }
