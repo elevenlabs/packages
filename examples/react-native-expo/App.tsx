@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -33,8 +33,22 @@ const ConversationScreen = () => {
     sendContextualUpdate,
     sendUserActivity,
     getId,
+    getInputVolume,
+    getOutputVolume,
   } = useConversationControls();
   const isStarting = status === "connecting";
+
+  const [inputVolume, setInputVolume] = useState(0);
+  const [outputVolume, setOutputVolume] = useState(0);
+
+  useEffect(() => {
+    if (status !== "connected") return;
+    const id = setInterval(() => {
+      setInputVolume(getInputVolume());
+      setOutputVolume(getOutputVolume());
+    }, 100);
+    return () => clearInterval(id);
+  }, [status, getInputVolume, getOutputVolume]);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -136,6 +150,34 @@ const ConversationScreen = () => {
             >
               {isSpeaking ? "AI Speaking" : "AI Listening"}
             </Text>
+          </View>
+        )}
+
+        {/* Volume Indicators */}
+        {status === "connected" && (
+          <View style={styles.volumeContainer}>
+            <Text style={styles.volumeText}>
+              Input: {(inputVolume * 100).toFixed(0)}%
+            </Text>
+            <View style={styles.volumeBarBackground}>
+              <View
+                style={[
+                  styles.volumeBarFill,
+                  { width: `${inputVolume * 100}%`, backgroundColor: "#3B82F6" },
+                ]}
+              />
+            </View>
+            <Text style={styles.volumeText}>
+              Output: {(outputVolume * 100).toFixed(0)}%
+            </Text>
+            <View style={styles.volumeBarBackground}>
+              <View
+                style={[
+                  styles.volumeBarFill,
+                  { width: `${outputVolume * 100}%`, backgroundColor: "#8B5CF6" },
+                ]}
+              />
+            </View>
           </View>
         )}
 
@@ -516,6 +558,26 @@ const styles = StyleSheet.create({
   contextButton: {
     backgroundColor: "#4F46E5",
     flex: 1,
+  },
+  volumeContainer: {
+    width: "100%",
+    marginBottom: 16,
+    gap: 4,
+  },
+  volumeText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#6B7280",
+  },
+  volumeBarBackground: {
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  volumeBarFill: {
+    height: "100%",
+    borderRadius: 4,
   },
   toggleControlContainer: {
     flexDirection: "row",

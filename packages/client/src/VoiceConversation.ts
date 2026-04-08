@@ -5,7 +5,6 @@ import type {
   PlaybackListener,
 } from "./utils/output.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
-import { WebRTCConnection } from "./utils/WebRTCConnection.js";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
 import { applyDelay } from "./utils/applyDelay.js";
 import {
@@ -16,8 +15,6 @@ import {
 import type { InputController } from "./InputController.js";
 import type { OutputController } from "./OutputController.js";
 import { setupStrategy } from "./platform/VoiceSessionSetup.js";
-
-const EMPTY_FREQUENCY_DATA = new Uint8Array(0) as Uint8Array<ArrayBuffer>;
 
 export class VoiceConversation extends BaseConversation {
   readonly type = "voice";
@@ -187,21 +184,7 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
-  private calculateVolume = (frequencyData: Uint8Array) => {
-    if (frequencyData.length === 0) {
-      return 0;
-    }
-
-    // TODO: Currently this averages all frequencies, but we should probably
-    // bias towards the frequencies that are more typical for human voice
-    let volume = 0;
-    for (let i = 0; i < frequencyData.length; i++) {
-      volume += frequencyData[i] / 255;
-    }
-    volume /= frequencyData.length;
-
-    return volume < 0 ? 0 : volume > 1 ? 1 : volume;
-  };
+  private static readonly FREQUENCY_BIN_COUNT = 1024;
 
   public setMicMuted(isMuted: boolean) {
     this.input.setMuted(isMuted).catch(error => {
@@ -210,46 +193,27 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public getInputByteFrequencyData(): Uint8Array<ArrayBuffer> {
-    const analyser = this.input.getAnalyser();
-    if (!analyser) {
-      return EMPTY_FREQUENCY_DATA;
-    }
     this.inputFrequencyData ??= new Uint8Array(
-      analyser.frequencyBinCount
+      VoiceConversation.FREQUENCY_BIN_COUNT
     ) as Uint8Array<ArrayBuffer>;
-    analyser.getByteFrequencyData(this.inputFrequencyData);
+    this.input.getByteFrequencyData(this.inputFrequencyData);
     return this.inputFrequencyData;
   }
 
   public getOutputByteFrequencyData(): Uint8Array<ArrayBuffer> {
-    // Use WebRTC analyser if available
-    if (this.connection instanceof WebRTCConnection) {
-      const webrtcData = this.connection.getOutputByteFrequencyData();
-      if (webrtcData) {
-        return webrtcData as Uint8Array<ArrayBuffer>;
-      }
-      // Fallback to empty array if WebRTC analyser not ready
-      return new Uint8Array(1024) as Uint8Array<ArrayBuffer>;
-    }
-
-    const analyser = this.output.getAnalyser();
-    if (!analyser) {
-      return EMPTY_FREQUENCY_DATA;
-    }
-
     this.outputFrequencyData ??= new Uint8Array(
-      analyser.frequencyBinCount
+      VoiceConversation.FREQUENCY_BIN_COUNT
     ) as Uint8Array<ArrayBuffer>;
-    analyser.getByteFrequencyData(this.outputFrequencyData);
+    this.output.getByteFrequencyData(this.outputFrequencyData);
     return this.outputFrequencyData;
   }
 
-  public getInputVolume() {
-    return this.calculateVolume(this.getInputByteFrequencyData());
+  public getInputVolume(): number {
+    return this.input.getVolume();
   }
 
-  public getOutputVolume() {
-    return this.calculateVolume(this.getOutputByteFrequencyData());
+  public getOutputVolume(): number {
+    return this.output.getVolume();
   }
 
   public async changeInputDevice({

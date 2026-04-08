@@ -6,6 +6,7 @@ import type {
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
+import { calculateVolume } from "./calculateVolume.js";
 
 export type OutputConfig = OutputDeviceConfig;
 
@@ -136,6 +137,20 @@ export class MediaDeviceOutput
 
   public getAnalyser(): AnalyserNode {
     return this.analyser;
+  }
+
+  private volumeData?: Uint8Array<ArrayBuffer>;
+
+  public getVolume(): number {
+    this.volumeData ??= new Uint8Array(
+      this.analyser.frequencyBinCount
+    ) as Uint8Array<ArrayBuffer>;
+    this.analyser.getByteFrequencyData(this.volumeData);
+    return calculateVolume(this.volumeData);
+  }
+
+  public getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
+    this.analyser.getByteFrequencyData(buffer);
   }
 
   public addListener(listener: PlaybackListener): void {

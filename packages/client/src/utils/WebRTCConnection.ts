@@ -30,6 +30,11 @@ import type {
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
+import {
+  type VolumeProvider,
+  NO_VOLUME,
+  createAnalyserVolumeProvider,
+} from "./volumeProvider.js";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -55,8 +60,12 @@ export class WebRTCConnection extends BaseConnection {
   private audioElements: HTMLAudioElement[] = [];
   private outputDeviceId: string | null = null;
 
+  private inputAnalyser: AnalyserNode | null = null;
+  private inputAudioContext: AudioContext | null = null;
+  private inputVolumeProvider: VolumeProvider = NO_VOLUME;
+
   private outputAnalyser: AnalyserNode | null = null;
-  private outputFrequencyData: Uint8Array<ArrayBuffer> | null = null;
+  private outputVolumeProvider: VolumeProvider = NO_VOLUME;
 
   // InputController state
   private _isMuted = false;
@@ -132,7 +141,11 @@ export class WebRTCConnection extends BaseConnection {
       this._isMuted = isMuted;
     },
     isMuted: () => this._isMuted,
-    getAnalyser: () => undefined, // WebRTC doesn't provide input analyser
+    getAnalyser: () => this.inputAnalyser ?? undefined,
+    getVolume: () => this.inputVolumeProvider.getVolume(),
+    getByteFrequencyData: (buffer: Uint8Array<ArrayBuffer>) => {
+      this.inputVolumeProvider.getByteFrequencyData(buffer);
+    },
   };
 
   // OutputController interface exposed as a property
@@ -166,6 +179,10 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
+    getVolume: () => this.outputVolumeProvider.getVolume(),
+    getByteFrequencyData: (buffer: Uint8Array<ArrayBuffer>) => {
+      this.outputVolumeProvider.getByteFrequencyData(buffer);
+    },
   };
 
   private constructor(
@@ -285,6 +302,29 @@ export class WebRTCConnection extends BaseConnection {
 
       // Ensure the microphone was successfully enabled
       await micEnabled;
+
+      // Set up input analyser from the local mic track for volume metering
+      const micTrack = room.localParticipant.getTrackPublication(
+        Track.Source.Microphone
+      )?.track;
+      if (micTrack) {
+        try {
+          const ctx = new AudioContext();
+          const analyser = ctx.createAnalyser();
+          const source = ctx.createMediaStreamSource(
+            new MediaStream([micTrack.mediaStreamTrack])
+          );
+          source.connect(analyser);
+          connection.inputAnalyser = analyser;
+          connection.inputAudioContext = ctx;
+          connection.setInputVolumeProvider(
+            createAnalyserVolumeProvider(analyser)
+          );
+        } catch {
+          // AudioContext unavailable (React Native) — volume provider stays
+          // as NO_VOLUME until the platform layer sets its own provider
+        }
+      }
 
       if (room.name) {
         connection.conversationId =
@@ -444,6 +484,15 @@ export class WebRTCConnection extends BaseConnection {
         console.warn("Error stopping local tracks:", error);
       }
 
+      // Clean up input audio context (non-blocking)
+      if (this.inputAudioContext) {
+        this.inputAudioContext.close().catch(error => {
+          console.warn("Error closing input audio context:", error);
+        });
+        this.inputAudioContext = null;
+        this.inputAnalyser = null;
+      }
+
       // Clean up audio capture context (non-blocking)
       if (this.audioCaptureContext) {
         this.audioCaptureContext.close().catch(error => {
@@ -500,6 +549,14 @@ export class WebRTCConnection extends BaseConnection {
     return this.room;
   }
 
+  public setInputVolumeProvider(provider: VolumeProvider) {
+    this.inputVolumeProvider = provider;
+  }
+
+  public setOutputVolumeProvider(provider: VolumeProvider) {
+    this.outputVolumeProvider = provider;
+  }
+
   private async setupAudioCapture(track: RemoteAudioTrack) {
     try {
       // Create audio context for processing
@@ -519,6 +576,9 @@ export class WebRTCConnection extends BaseConnection {
 
       // Connect source to analyser
       source.connect(this.outputAnalyser);
+      this.setOutputVolumeProvider(
+        createAnalyserVolumeProvider(this.outputAnalyser)
+      );
 
       await loadRawAudioProcessor(audioContext.audioWorklet);
       const worklet = new AudioWorkletNode(audioContext, "rawAudioProcessor");
@@ -644,15 +704,5 @@ export class WebRTCConnection extends BaseConnection {
 
       throw error;
     }
-  }
-
-  public getOutputByteFrequencyData(): Uint8Array<ArrayBuffer> | null {
-    if (!this.outputAnalyser) return null;
-
-    this.outputFrequencyData ??= new Uint8Array(
-      this.outputAnalyser.frequencyBinCount
-    ) as Uint8Array<ArrayBuffer>;
-    this.outputAnalyser.getByteFrequencyData(this.outputFrequencyData);
-    return this.outputFrequencyData;
   }
 }

@@ -36,6 +36,7 @@ export type {
 export { createConnection } from "./utils/ConnectionFactory.js";
 export { WebSocketConnection } from "./utils/WebSocketConnection.js";
 export { WebRTCConnection } from "./utils/WebRTCConnection.js";
+export type { VolumeProvider } from "./utils/volumeProvider.js";
 export { postOverallFeedback } from "./utils/postOverallFeedback.js";
 export { SessionConnectionError } from "./utils/errors.js";
 export type { Location } from "./utils/location.js";
