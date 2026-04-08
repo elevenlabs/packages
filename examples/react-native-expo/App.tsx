@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,9 @@ import {
 const ConversationScreen = () => {
   const [textInput, setTextInput] = useState("");
   const [isTextOnly, setIsTextOnly] = useState(false);
-  const [connectionType, setConnectionType] = useState<"webrtc" | "websocket">("webrtc");
+  const [connectionType, setConnectionType] = useState<"webrtc" | "websocket">(
+    "webrtc"
+  );
 
   const { status, message: statusMessage } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
@@ -35,20 +37,56 @@ const ConversationScreen = () => {
     getId,
     getInputVolume,
     getOutputVolume,
+    getInputByteFrequencyData,
+    getOutputByteFrequencyData,
   } = useConversationControls();
   const isStarting = status === "connecting";
 
   const [inputVolume, setInputVolume] = useState(0);
   const [outputVolume, setOutputVolume] = useState(0);
 
+  const BAND_COUNT = 32;
+  const [inputBands, setInputBands] = useState<number[]>(() =>
+    Array(BAND_COUNT).fill(0)
+  );
+  const [outputBands, setOutputBands] = useState<number[]>(() =>
+    Array(BAND_COUNT).fill(0)
+  );
+
+  const downsample = useCallback(
+    (data: Uint8Array, bands: number): number[] => {
+      if (data.length === 0) return Array(bands).fill(0);
+      const step = data.length / bands;
+      const result: number[] = [];
+      for (let i = 0; i < bands; i++) {
+        const start = Math.floor(i * step);
+        const end = Math.floor((i + 1) * step);
+        let sum = 0;
+        for (let j = start; j < end; j++) sum += data[j];
+        result.push(sum / (end - start) / 255);
+      }
+      return result;
+    },
+    []
+  );
+
   useEffect(() => {
     if (status !== "connected") return;
     const id = setInterval(() => {
       setInputVolume(getInputVolume());
       setOutputVolume(getOutputVolume());
+      setInputBands(downsample(getInputByteFrequencyData(), BAND_COUNT));
+      setOutputBands(downsample(getOutputByteFrequencyData(), BAND_COUNT));
     }, 100);
     return () => clearInterval(id);
-  }, [status, getInputVolume, getOutputVolume]);
+  }, [
+    status,
+    getInputVolume,
+    getOutputVolume,
+    getInputByteFrequencyData,
+    getOutputByteFrequencyData,
+    downsample,
+  ]);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -96,243 +134,266 @@ const ConversationScreen = () => {
     return s[0].toUpperCase() + s.slice(1);
   };
 
-  const canStart = (status === "disconnected" || status === "error") && !isStarting;
+  const canStart =
+    (status === "disconnected" || status === "error") && !isStarting;
   const canEnd = status === "connected";
 
   return (
     <View style={styles.container}>
-        <Text style={styles.title}>ElevenLabs React Native Example</Text>
-        <Text style={styles.subtitle}>
-          Remember to set the agentId in the code
-        </Text>
+      <Text style={styles.title}>ElevenLabs React Native Example</Text>
+      <Text style={styles.subtitle}>
+        Remember to set the agentId in the code
+      </Text>
 
-        <View style={styles.statusContainer}>
+      <View style={styles.statusContainer}>
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: getStatusColor(status) },
+          ]}
+        />
+        <Text style={styles.statusText}>{getStatusText(status)}</Text>
+      </View>
+
+      {/* Error Message */}
+      {status === "error" && statusMessage && (
+        <Text style={styles.errorText}>{statusMessage}</Text>
+      )}
+
+      {/* Conversation ID Display */}
+      {status === "connected" && (
+        <View style={styles.conversationIdContainer}>
+          <Text style={styles.conversationIdLabel}>Conversation ID:</Text>
+          <Text style={styles.conversationIdText}>{getId() || "N/A"}</Text>
+        </View>
+      )}
+
+      {/* Speaking Indicator */}
+      {status === "connected" && (
+        <View style={styles.speakingContainer}>
           <View
             style={[
-              styles.statusDot,
-              { backgroundColor: getStatusColor(status) },
+              styles.speakingDot,
+              {
+                backgroundColor: isSpeaking ? "#8B5CF6" : "#D1D5DB",
+              },
             ]}
           />
-          <Text style={styles.statusText}>{getStatusText(status)}</Text>
+          <Text
+            style={[
+              styles.speakingText,
+              { color: isSpeaking ? "#8B5CF6" : "#9CA3AF" },
+            ]}
+          >
+            {isSpeaking ? "AI Speaking" : "AI Listening"}
+          </Text>
         </View>
+      )}
 
-        {/* Error Message */}
-        {status === "error" && statusMessage && (
-          <Text style={styles.errorText}>{statusMessage}</Text>
-        )}
-
-        {/* Conversation ID Display */}
-        {status === "connected" && (
-          <View style={styles.conversationIdContainer}>
-            <Text style={styles.conversationIdLabel}>Conversation ID:</Text>
-            <Text style={styles.conversationIdText}>
-              {getId() || "N/A"}
-            </Text>
-          </View>
-        )}
-
-        {/* Speaking Indicator */}
-        {status === "connected" && (
-          <View style={styles.speakingContainer}>
+      {/* Volume & Frequency Indicators */}
+      {status === "connected" && (
+        <View style={styles.volumeContainer}>
+          <Text style={styles.volumeText}>
+            Input: {(inputVolume * 100).toFixed(0)}%
+          </Text>
+          <View style={styles.volumeBarBackground}>
             <View
               style={[
-                styles.speakingDot,
-                {
-                  backgroundColor: isSpeaking ? "#8B5CF6" : "#D1D5DB",
-                },
+                styles.volumeBarFill,
+                { width: `${inputVolume * 100}%`, backgroundColor: "#3B82F6" },
               ]}
             />
-            <Text
-              style={[
-                styles.speakingText,
-                { color: isSpeaking ? "#8B5CF6" : "#9CA3AF" },
-              ]}
-            >
-              {isSpeaking ? "AI Speaking" : "AI Listening"}
-            </Text>
           </View>
-        )}
-
-        {/* Volume Indicators */}
-        {status === "connected" && (
-          <View style={styles.volumeContainer}>
-            <Text style={styles.volumeText}>
-              Input: {(inputVolume * 100).toFixed(0)}%
-            </Text>
-            <View style={styles.volumeBarBackground}>
-              <View
-                style={[
-                  styles.volumeBarFill,
-                  { width: `${inputVolume * 100}%`, backgroundColor: "#3B82F6" },
-                ]}
-              />
-            </View>
-            <Text style={styles.volumeText}>
-              Output: {(outputVolume * 100).toFixed(0)}%
-            </Text>
-            <View style={styles.volumeBarBackground}>
-              <View
-                style={[
-                  styles.volumeBarFill,
-                  { width: `${outputVolume * 100}%`, backgroundColor: "#8B5CF6" },
-                ]}
-              />
-            </View>
+          <View style={styles.frequencyContainer}>
+            {inputBands.map((v, i) => (
+              <View key={i} style={styles.frequencyBarWrapper}>
+                <View
+                  style={[
+                    styles.frequencyBar,
+                    {
+                      height: `${Math.max(v * 100, 2)}%`,
+                      backgroundColor: "#3B82F6",
+                    },
+                  ]}
+                />
+              </View>
+            ))}
           </View>
-        )}
-
-        {/* Connection Type & Text Only Toggles */}
-        {status === "disconnected" && (
-          <View style={styles.toggleControlContainer}>
-            <TouchableOpacity
+          <Text style={styles.volumeText}>
+            Output: {(outputVolume * 100).toFixed(0)}%
+          </Text>
+          <View style={styles.volumeBarBackground}>
+            <View
               style={[
-                styles.button,
-                styles.toggleButton,
-                connectionType === "websocket"
-                  ? styles.toggleButtonActive
-                  : styles.toggleButtonPassive,
+                styles.volumeBarFill,
+                { width: `${outputVolume * 100}%`, backgroundColor: "#8B5CF6" },
               ]}
-              onPress={() =>
-                setConnectionType((v) =>
-                  v === "webrtc" ? "websocket" : "webrtc"
-                )
-              }
-            >
-              <Text style={styles.buttonText}>
-                {connectionType === "webrtc" ? "WebRTC" : "WebSocket"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.toggleButton,
-                isTextOnly
-                  ? styles.toggleButtonActive
-                  : styles.toggleButtonPassive,
-              ]}
-              onPress={() => setIsTextOnly((v) => !v)}
-            >
-              <Text style={styles.buttonText}>
-                {isTextOnly ? "Text only" : "Enable text only"}
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
-        )}
+          <View style={styles.frequencyContainer}>
+            {outputBands.map((v, i) => (
+              <View key={i} style={styles.frequencyBarWrapper}>
+                <View
+                  style={[
+                    styles.frequencyBar,
+                    {
+                      height: `${Math.max(v * 100, 2)}%`,
+                      backgroundColor: "#8B5CF6",
+                    },
+                  ]}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
-        <View style={styles.buttonContainer}>
+      {/* Connection Type & Text Only Toggles */}
+      {status === "disconnected" && (
+        <View style={styles.toggleControlContainer}>
           <TouchableOpacity
             style={[
               styles.button,
-              styles.startButton,
-              !canStart && styles.disabledButton,
+              styles.toggleButton,
+              connectionType === "websocket"
+                ? styles.toggleButtonActive
+                : styles.toggleButtonPassive,
             ]}
-            onPress={startConversation}
-            disabled={!canStart}
+            onPress={() =>
+              setConnectionType(v => (v === "webrtc" ? "websocket" : "webrtc"))
+            }
           >
             <Text style={styles.buttonText}>
-              {isStarting ? "Starting..." : "Start Conversation"}
+              {connectionType === "webrtc" ? "WebRTC" : "WebSocket"}
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               styles.button,
-              styles.endButton,
-              !canEnd && styles.disabledButton,
+              styles.toggleButton,
+              isTextOnly
+                ? styles.toggleButtonActive
+                : styles.toggleButtonPassive,
             ]}
-            onPress={endConversation}
-            disabled={!canEnd}
+            onPress={() => setIsTextOnly(v => !v)}
           >
-            <Text style={styles.buttonText}>End Conversation</Text>
+            <Text style={styles.buttonText}>
+              {isTextOnly ? "Text only" : "Enable text only"}
+            </Text>
           </TouchableOpacity>
         </View>
+      )}
 
-        {/* Microphone Controls */}
-        {status === "connected" && (
-          <View style={styles.toggleControlContainer}>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.startButton,
+            !canStart && styles.disabledButton,
+          ]}
+          onPress={startConversation}
+          disabled={!canStart}
+        >
+          <Text style={styles.buttonText}>
+            {isStarting ? "Starting..." : "Start Conversation"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.endButton,
+            !canEnd && styles.disabledButton,
+          ]}
+          onPress={endConversation}
+          disabled={!canEnd}
+        >
+          <Text style={styles.buttonText}>End Conversation</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Microphone Controls */}
+      {status === "connected" && (
+        <View style={styles.toggleControlContainer}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.toggleButton,
+              isMuted ? styles.toggleButtonActive : styles.toggleButtonPassive,
+            ]}
+            onPress={() => setMuted(!isMuted)}
+          >
+            <Text style={styles.buttonText}>{isMuted ? "Unmute" : "Mute"}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Feedback Buttons */}
+      {status === "connected" && canSendFeedback && (
+        <View style={styles.feedbackContainer}>
+          <Text style={styles.feedbackLabel}>How was that response?</Text>
+          <View style={styles.feedbackButtons}>
             <TouchableOpacity
-              style={[
-                styles.button,
-                styles.toggleButton,
-                isMuted
-                  ? styles.toggleButtonActive
-                  : styles.toggleButtonPassive,
-              ]}
-              onPress={() => setMuted(!isMuted)}
+              style={[styles.button, styles.likeButton]}
+              onPress={() => sendFeedback(true)}
             >
-              <Text style={styles.buttonText}>
-                {isMuted ? "Unmute" : "Mute"}
-              </Text>
+              <Text style={styles.buttonText}>Like</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.dislikeButton]}
+              onPress={() => sendFeedback(false)}
+            >
+              <Text style={styles.buttonText}>Dislike</Text>
             </TouchableOpacity>
           </View>
-        )}
+        </View>
+      )}
 
-        {/* Feedback Buttons */}
-        {status === "connected" && canSendFeedback && (
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>How was that response?</Text>
-            <View style={styles.feedbackButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.likeButton]}
-                onPress={() => sendFeedback(true)}
-              >
-                <Text style={styles.buttonText}>Like</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.dislikeButton]}
-                onPress={() => sendFeedback(false)}
-              >
-                <Text style={styles.buttonText}>Dislike</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Text Input and Messaging */}
-        {status === "connected" && (
-          <View style={styles.messagingContainer}>
-            <Text style={styles.messagingLabel}>Send Text Message</Text>
-            <TextInput
-              style={styles.textInput}
-              value={textInput}
-              onChangeText={(text) => {
-                setTextInput(text);
-                // Prevent agent from interrupting while user is typing
-                if (text.length > 0) {
-                  sendUserActivity();
+      {/* Text Input and Messaging */}
+      {status === "connected" && (
+        <View style={styles.messagingContainer}>
+          <Text style={styles.messagingLabel}>Send Text Message</Text>
+          <TextInput
+            style={styles.textInput}
+            value={textInput}
+            onChangeText={text => {
+              setTextInput(text);
+              // Prevent agent from interrupting while user is typing
+              if (text.length > 0) {
+                sendUserActivity();
+              }
+            }}
+            placeholder="Type your message or context... (Press Enter to send)"
+            multiline
+            onSubmitEditing={handleSubmitText}
+            returnKeyType="send"
+            blurOnSubmit={true}
+          />
+          <View style={styles.messageButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.messageButton]}
+              onPress={handleSubmitText}
+              disabled={!textInput.trim()}
+            >
+              <Text style={styles.buttonText}>Send Message</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.contextButton]}
+              onPress={() => {
+                if (textInput.trim()) {
+                  sendContextualUpdate(textInput.trim());
+                  setTextInput("");
+                  Keyboard.dismiss();
                 }
               }}
-              placeholder="Type your message or context... (Press Enter to send)"
-              multiline
-              onSubmitEditing={handleSubmitText}
-              returnKeyType="send"
-              blurOnSubmit={true}
-            />
-            <View style={styles.messageButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.messageButton]}
-                onPress={handleSubmitText}
-                disabled={!textInput.trim()}
-              >
-                <Text style={styles.buttonText}>Send Message</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.contextButton]}
-                onPress={() => {
-                  if (textInput.trim()) {
-                    sendContextualUpdate(textInput.trim());
-                    setTextInput("");
-                    Keyboard.dismiss();
-                  }
-                }}
-                disabled={!textInput.trim()}
-              >
-                <Text style={styles.buttonText}>Send Context</Text>
-              </TouchableOpacity>
-            </View>
+              disabled={!textInput.trim()}
+            >
+              <Text style={styles.buttonText}>Send Context</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -342,7 +403,7 @@ export default function App() {
       onConnect={({ conversationId }) => {
         console.log("Connected to conversation", conversationId);
       }}
-      onDisconnect={(details) => {
+      onDisconnect={details => {
         console.log("Disconnected from conversation", details);
       }}
       onError={(message, context) => {
@@ -364,35 +425,32 @@ export default function App() {
         // Commented out as it's quite noisy
         // console.log(`VAD Score: ${vadScore}`);
       }}
-      onInterruption={(event) => {
+      onInterruption={event => {
         console.log("Interruption detected:", event);
       }}
-      onMCPToolCall={(event) => {
+      onMCPToolCall={event => {
         console.log("MCP Tool Call:", event);
       }}
-      onMCPConnectionStatus={(event) => {
+      onMCPConnectionStatus={event => {
         console.log("MCP Connection Status:", event);
       }}
-      onAgentToolRequest={(event) => {
+      onAgentToolRequest={event => {
         console.log("Agent Tool Request:", event);
       }}
-      onAgentToolResponse={(event) => {
+      onAgentToolResponse={event => {
         console.log("Agent Tool Response:", event);
       }}
-      onAgentChatResponsePart={(part) => {
+      onAgentChatResponsePart={part => {
         console.log("Agent Response Part:", part);
       }}
-      onAudioAlignment={(alignment) => {
+      onAudioAlignment={alignment => {
         console.log("Audio Alignment:", {
           chars: alignment.chars.join(""),
           charCount: alignment.chars.length,
-          totalDuration: alignment.char_durations_ms.reduce(
-            (a, b) => a + b,
-            0
-          ),
+          totalDuration: alignment.char_durations_ms.reduce((a, b) => a + b, 0),
         });
       }}
-      onDebug={(data) => {
+      onDebug={data => {
         console.log("Debug:", data);
       }}
     >
@@ -578,6 +636,24 @@ const styles = StyleSheet.create({
   volumeBarFill: {
     height: "100%",
     borderRadius: 4,
+  },
+  frequencyContainer: {
+    flexDirection: "row",
+    height: 48,
+    gap: 2,
+    alignItems: "flex-end",
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  frequencyBarWrapper: {
+    flex: 1,
+    height: "100%",
+    justifyContent: "flex-end",
+  },
+  frequencyBar: {
+    width: "100%",
+    borderRadius: 2,
+    minHeight: 1,
   },
   toggleControlContainer: {
     flexDirection: "row",
