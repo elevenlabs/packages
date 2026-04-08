@@ -47,9 +47,21 @@ class NativeVolumeProvider implements VolumeProvider {
   private currentBands = 0;
 
   constructor(
-    private readonly pcId: number,
-    private readonly trackId: string
+    private pcId: number,
+    private trackId: string
   ) {}
+
+  /**
+   * Rebinds this provider to a new track, cleaning up any existing native
+   * processors so they are lazily recreated against the new track.
+   */
+  updateTrack(pcId: number, trackId: string) {
+    this.cleanupProcessors();
+    this.pcId = pcId;
+    this.trackId = trackId;
+    this.volume = 0;
+    this.magnitudes = [];
+  }
 
   private ensureVolumeProcessor() {
     if (this.volumeTag) return;
@@ -114,7 +126,7 @@ class NativeVolumeProvider implements VolumeProvider {
     }
   }
 
-  cleanup() {
+  private cleanupProcessors() {
     if (this.volumeTag) {
       LiveKitModule.deleteVolumeProcessor(
         this.volumeTag,
@@ -122,6 +134,8 @@ class NativeVolumeProvider implements VolumeProvider {
         this.trackId
       );
       this.volumeSub?.remove();
+      this.volumeTag = null;
+      this.volumeSub = null;
     }
     if (this.multibandTag) {
       LiveKitModule.deleteMultibandVolumeProcessor(
@@ -130,7 +144,14 @@ class NativeVolumeProvider implements VolumeProvider {
         this.trackId
       );
       this.multibandSub?.remove();
+      this.multibandTag = null;
+      this.multibandSub = null;
+      this.currentBands = 0;
     }
+  }
+
+  cleanup() {
+    this.cleanupProcessors();
   }
 }
 
@@ -144,16 +165,34 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
   const providers: NativeVolumeProvider[] = [];
 
   // --- Input (local mic track) ---
+  let inputProvider: NativeVolumeProvider | null = null;
+
+  function setupInputTrack(track: any) {
+    const mst = track.mediaStreamTrack as any;
+    const pcId: number = mst._peerConnectionId ?? -1;
+    if (inputProvider) {
+      inputProvider.updateTrack(pcId, mst.id);
+    } else {
+      inputProvider = new NativeVolumeProvider(pcId, mst.id);
+      providers.push(inputProvider);
+      connection.setInputVolumeProvider(inputProvider);
+    }
+  }
+
   const micPub = room.localParticipant.audioTrackPublications.values().next();
   const micTrack = micPub.done ? undefined : micPub.value?.track;
   if (micTrack) {
-    const mst = micTrack.mediaStreamTrack as any;
-    const pcId: number = mst._peerConnectionId ?? -1;
-
-    const input = new NativeVolumeProvider(pcId, mst.id);
-    providers.push(input);
-    connection.setInputVolumeProvider(input);
+    setupInputTrack(micTrack);
   }
+
+  // Re-bind the input provider when the local mic track is republished
+  // (e.g. after setAudioInputDevice)
+  const localTrackHandler = (publication: any) => {
+    if (publication.track?.kind === "audio") {
+      setupInputTrack(publication.track);
+    }
+  };
+  room.on("localTrackPublished", localTrackHandler);
 
   // --- Output (remote agent track) ---
   let outputSetUp = false;
@@ -190,6 +229,7 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
   room.on("trackSubscribed", trackHandler);
 
   return () => {
+    room.off("localTrackPublished", localTrackHandler);
     room.off("trackSubscribed", trackHandler);
     for (const provider of providers) {
       provider.cleanup();
