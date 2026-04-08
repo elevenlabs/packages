@@ -500,7 +500,15 @@ export abstract class BaseConversation {
 
   public abstract setVolume(options: { volume: number }): void;
   public abstract setMicMuted(isMuted: boolean): void;
+  /**
+   * Returns byte frequency data (0-255) for the input audio, focused on the
+   * human voice range (100-8000 Hz).
+   */
   public abstract getInputByteFrequencyData(): Uint8Array;
+  /**
+   * Returns byte frequency data (0-255) for the output audio, focused on the
+   * human voice range (100-8000 Hz).
+   */
   public abstract getOutputByteFrequencyData(): Uint8Array;
   public abstract getInputVolume(): number;
   public abstract getOutputVolume(): number;

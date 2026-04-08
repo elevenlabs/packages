@@ -29,7 +29,9 @@ export type ConversationControlsValue = {
   changeOutputDevice: (
     config: Partial<FormatConfig> & OutputConfig
   ) => Promise<void>;
+  /** Returns byte frequency data (0-255) for the input, focused on 100-8000 Hz. */
   getInputByteFrequencyData: () => Uint8Array;
+  /** Returns byte frequency data (0-255) for the output, focused on 100-8000 Hz. */
   getOutputByteFrequencyData: () => Uint8Array;
   getInputVolume: () => number;
   getOutputVolume: () => number;
