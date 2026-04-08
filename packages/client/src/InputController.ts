@@ -11,7 +11,11 @@ export interface InputController {
   setMuted(isMuted: boolean): Promise<void>;
   isMuted(): boolean;
 
-  /** @deprecated Use getVolume() or getByteFrequencyData() instead. */
+  /**
+   * @deprecated AnalyserNode is a web-only API and will not work on all
+   * platforms. Use {@link getVolume} for a scalar audio level (0-1) or
+   * {@link getByteFrequencyData} for frequency band data instead.
+   */
   getAnalyser(): AnalyserNode | undefined;
 
   /** Returns current audio level as a scalar 0–1. */
