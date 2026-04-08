@@ -338,6 +338,148 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBeNull();
   });
 
+  it("does not reconnect when textOnly prop changes while connecting", async () => {
+    const mockConversation = createMockConversation();
+    const { promise, resolve: resolveStartSession } =
+      Promise.withResolvers<typeof mockConversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+
+    let textOnly = false;
+    const { result, rerender } = renderHook(() => useTestContext(), {
+      wrapper: ({ children }: React.PropsWithChildren) => (
+        <ConversationProvider textOnly={textOnly}>
+          {children}
+        </ConversationProvider>
+      ),
+    });
+
+    // Start connecting
+    act(() => {
+      result.current.startSession();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    // Change textOnly while connection is pending
+    textOnly = true;
+    rerender();
+
+    // No new startSession call should have been made
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    // Cleanup
+    await act(async () => {
+      resolveStartSession(mockConversation);
+    });
+  });
+
+  it("does not reconnect when connectionType prop changes while connecting", async () => {
+    const mockConversation = createMockConversation();
+    const { promise, resolve: resolveStartSession } =
+      Promise.withResolvers<typeof mockConversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+
+    let connectionType: "webrtc" | "websocket" = "webrtc";
+    const { result, rerender } = renderHook(() => useTestContext(), {
+      wrapper: ({ children }: React.PropsWithChildren) => (
+        <ConversationProvider connectionType={connectionType}>
+          {children}
+        </ConversationProvider>
+      ),
+    });
+
+    // Start connecting
+    act(() => {
+      result.current.startSession();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    // Change connectionType while connection is pending
+    connectionType = "websocket";
+    rerender();
+
+    // No new startSession call should have been made
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    // Cleanup
+    await act(async () => {
+      resolveStartSession(mockConversation);
+    });
+  });
+
+  it("does not reconnect when textOnly prop changes while disconnecting", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    let textOnly = false;
+    const { result, rerender } = renderHook(() => useTestContext(), {
+      wrapper: ({ children }: React.PropsWithChildren) => (
+        <ConversationProvider textOnly={textOnly}>
+          {children}
+        </ConversationProvider>
+      ),
+    });
+
+    // Establish a session
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    expect(result.current.conversation).toBe(mockConversation);
+
+    // End session (initiates disconnecting)
+    act(() => {
+      result.current.endSession();
+    });
+
+    expect(result.current.conversation).toBeNull();
+
+    // Change textOnly while disconnecting
+    textOnly = true;
+    rerender();
+
+    // No new startSession call should have been made
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reconnect when connectionType prop changes while disconnecting", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    let connectionType: "webrtc" | "websocket" = "webrtc";
+    const { result, rerender } = renderHook(() => useTestContext(), {
+      wrapper: ({ children }: React.PropsWithChildren) => (
+        <ConversationProvider connectionType={connectionType}>
+          {children}
+        </ConversationProvider>
+      ),
+    });
+
+    // Establish a session
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    expect(result.current.conversation).toBe(mockConversation);
+
+    // End session (initiates disconnecting)
+    act(() => {
+      result.current.endSession();
+    });
+
+    expect(result.current.conversation).toBeNull();
+
+    // Change connectionType while disconnecting
+    connectionType = "websocket";
+    rerender();
+
+    // No new startSession call should have been made
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+  });
+
   it("passes stable callbacks that always call the latest prop value", async () => {
     const onConnect = vi.fn();
     const wrapper = ({ children }: React.PropsWithChildren) => (
