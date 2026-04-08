@@ -322,6 +322,7 @@ export class WebRTCConnection extends BaseConnection {
 
     this.room.on(RoomEvent.Disconnected, reason => {
       this.isConnected = false;
+      this.stopStatsPolling();
       this.disconnect({
         reason: "agent",
         context: new CloseEvent("close", { reason: reason?.toString() }),

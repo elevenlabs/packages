@@ -154,10 +154,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     return this.analyser;
   }
 
+  private _volumeBuffer?: Uint8Array<ArrayBuffer>;
+
   public getVolume(): number {
-    const data = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(data);
-    return calculateVolumeFromFrequencyData(data);
+    this._volumeBuffer ??= new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(this._volumeBuffer);
+    return calculateVolumeFromFrequencyData(this._volumeBuffer);
   }
 
   public isMuted(): boolean {
