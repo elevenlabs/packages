@@ -10,4 +10,5 @@ export interface OutputController {
   setVolume(volume: number): void;
   interrupt(resetDuration?: number): void;
   getAnalyser(): AnalyserNode | undefined;
+  getVolume(): number;
 }

@@ -58,6 +58,11 @@ export class WebRTCConnection extends BaseConnection {
   private outputAnalyser: AnalyserNode | null = null;
   private outputFrequencyData: Uint8Array<ArrayBuffer> | null = null;
 
+  // Cached audio levels updated by background stats polling
+  private _inputAudioLevel = 0;
+  private _outputAudioLevel = 0;
+  private _statsInterval: ReturnType<typeof setInterval> | null = null;
+
   // InputController state
   private _isMuted = false;
 
@@ -133,6 +138,7 @@ export class WebRTCConnection extends BaseConnection {
     },
     isMuted: () => this._isMuted,
     getAnalyser: () => undefined, // WebRTC doesn't provide input analyser
+    getVolume: () => this._inputAudioLevel,
   };
 
   // OutputController interface exposed as a property
@@ -166,6 +172,7 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
+    getVolume: () => this._outputAudioLevel,
   };
 
   private constructor(
@@ -310,6 +317,7 @@ export class WebRTCConnection extends BaseConnection {
   private setupRoomEventListeners() {
     this.room.on(RoomEvent.Connected, async () => {
       this.isConnected = true;
+      this.startStatsPolling();
     });
 
     this.room.on(RoomEvent.Disconnected, reason => {
@@ -429,8 +437,57 @@ export class WebRTCConnection extends BaseConnection {
     );
   }
 
+  private startStatsPolling() {
+    if (this._statsInterval) return;
+    this._statsInterval = setInterval(() => {
+      this.updateAudioLevels();
+    }, 100);
+  }
+
+  private stopStatsPolling() {
+    if (this._statsInterval) {
+      clearInterval(this._statsInterval);
+      this._statsInterval = null;
+    }
+  }
+
+  private updateAudioLevels() {
+    const engine = (this.room as any).engine;
+    const pcManager = engine?.pcManager;
+    if (!pcManager) return;
+
+    // Input: publisher media-source audioLevel
+    pcManager.publisher
+      ?.getStats?.()
+      .then((stats: Map<string, any>) => {
+        stats.forEach((report: any) => {
+          if (report.type === "media-source" && report.kind === "audio") {
+            this._inputAudioLevel = report.audioLevel ?? 0;
+          }
+        });
+      })
+      .catch((error: unknown) => {
+        console.warn("[ElevenLabs] Failed to get publisher stats:", error);
+      });
+
+    // Output: subscriber inbound-rtp audioLevel
+    pcManager.subscriber
+      ?.getStats?.()
+      .then((stats: Map<string, any>) => {
+        stats.forEach((report: any) => {
+          if (report.type === "inbound-rtp" && report.kind === "audio") {
+            this._outputAudioLevel = report.audioLevel ?? 0;
+          }
+        });
+      })
+      .catch((error: unknown) => {
+        console.warn("[ElevenLabs] Failed to get subscriber stats:", error);
+      });
+  }
+
   public close() {
     if (this.isConnected) {
+      this.stopStatsPolling();
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
         this.room.localParticipant.audioTrackPublications.forEach(

@@ -1,4 +1,5 @@
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
+import { calculateVolumeFromFrequencyData } from "./audio.js";
 import type { FormatConfig } from "./connection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
@@ -151,6 +152,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   public getAnalyser(): AnalyserNode {
     return this.analyser;
+  }
+
+  public getVolume(): number {
+    const data = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(data);
+    return calculateVolumeFromFrequencyData(data);
   }
 
   public isMuted(): boolean {

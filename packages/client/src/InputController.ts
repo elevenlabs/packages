@@ -11,4 +11,5 @@ export interface InputController {
   setMuted(isMuted: boolean): Promise<void>;
   isMuted(): boolean;
   getAnalyser(): AnalyserNode | undefined;
+  getVolume(): number;
 }

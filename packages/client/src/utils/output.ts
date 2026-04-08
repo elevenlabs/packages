@@ -1,4 +1,5 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
+import { calculateVolumeFromFrequencyData } from "./audio.js";
 import type { FormatConfig } from "./connection.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
@@ -136,6 +137,12 @@ export class MediaDeviceOutput
 
   public getAnalyser(): AnalyserNode {
     return this.analyser;
+  }
+
+  public getVolume(): number {
+    const data = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(data);
+    return calculateVolumeFromFrequencyData(data);
   }
 
   public addListener(listener: PlaybackListener): void {
