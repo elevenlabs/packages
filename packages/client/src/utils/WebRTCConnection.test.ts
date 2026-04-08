@@ -69,7 +69,7 @@ describe("WebRTCConnection", () => {
     };
   });
 
-  it("replaces the input volume provider when switching input device", async () => {
+  it("preserves external volume provider when AudioContext is unavailable", async () => {
     const mockRoom = new Room() as any;
 
     // Mock track returned by getTrackPublication (the "old" mic track)
@@ -110,20 +110,18 @@ describe("WebRTCConnection", () => {
       connectionType: "webrtc",
     });
 
-    // Simulate a working volume provider (as if set by the web analyser or RN layer)
+    // Simulate an external volume provider (e.g. React Native's native layer)
     connection.setInputVolumeProvider({
       getVolume: () => 0.42,
       getByteFrequencyData: () => {},
     });
     expect(connection.input.getVolume()).toBe(0.42);
 
-    // Switch input device
+    // Switch input device — AudioContext will fail with mock tracks (as on RN),
+    // so the external provider should be preserved rather than clobbered.
     await connection.setAudioInputDevice("new-device-id");
 
-    // After fix: the stale volume provider should have been replaced.
-    // In the test env AudioContext setup fails with mock tracks, so
-    // NO_VOLUME (0) is used — either way, 0.42 must not persist.
-    expect(connection.input.getVolume()).not.toBe(0.42);
+    expect(connection.input.getVolume()).toBe(0.42);
 
     connection.close();
   });

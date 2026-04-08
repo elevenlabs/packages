@@ -544,10 +544,9 @@ export class WebRTCConnection extends BaseConnection {
     // Clean up existing input audio context
     if (this.inputAudioContext) {
       this.inputAudioContext.close().catch(() => {});
+      this.inputAudioContext = null;
+      this.inputAnalyser = null;
     }
-    this.inputAudioContext = null;
-    this.inputAnalyser = null;
-    this.inputVolumeProvider = NO_VOLUME;
 
     try {
       const ctx = new AudioContext();
@@ -560,6 +559,8 @@ export class WebRTCConnection extends BaseConnection {
       this.inputAudioContext = ctx;
       this.inputVolumeProvider = createAnalyserVolumeProvider(analyser);
     } catch (error) {
+      // Don't reset inputVolumeProvider here — an external provider (e.g.
+      // React Native's native volume layer) may still be valid.
       console.warn(
         "[ConversationalAI] Failed to set up input volume analyser:",
         error
