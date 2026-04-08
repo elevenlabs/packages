@@ -24,9 +24,11 @@ export type ConversationControlsValue = {
   ) => void;
   setVolume: (options: { volume: number }) => void;
   changeInputDevice: (
-    config: FormatConfig & InputDeviceConfig
+    config: Partial<FormatConfig> & InputDeviceConfig
   ) => Promise<void>;
-  changeOutputDevice: (config: FormatConfig & OutputConfig) => Promise<void>;
+  changeOutputDevice: (
+    config: Partial<FormatConfig> & OutputConfig
+  ) => Promise<void>;
   getInputByteFrequencyData: () => Uint8Array;
   getOutputByteFrequencyData: () => Uint8Array;
   getInputVolume: () => number;
@@ -92,7 +94,7 @@ export function ConversationControlsProvider({
   }, [getConversation]);
 
   const changeInputDevice = useCallback(
-    async (config: FormatConfig & InputDeviceConfig) => {
+    async (config: Partial<FormatConfig> & InputDeviceConfig) => {
       const conversation = getConversation();
       if (conversation instanceof VoiceConversation) {
         return await conversation.changeInputDevice(config);
@@ -105,7 +107,7 @@ export function ConversationControlsProvider({
   );
 
   const changeOutputDevice = useCallback(
-    async (config: FormatConfig & OutputConfig) => {
+    async (config: Partial<FormatConfig> & OutputConfig) => {
       const conversation = getConversation();
       if (conversation instanceof VoiceConversation) {
         return await conversation.changeOutputDevice(config);

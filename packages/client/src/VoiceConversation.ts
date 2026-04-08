@@ -257,7 +257,7 @@ export class VoiceConversation extends BaseConversation {
     format,
     preferHeadphonesForIosDevices,
     inputDeviceId,
-  }: FormatConfig & InputConfig): Promise<void> {
+  }: Partial<FormatConfig> & InputConfig): Promise<void> {
     try {
       await this.input.setDevice({
         inputDeviceId,
@@ -275,7 +275,7 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     outputDeviceId,
-  }: FormatConfig & OutputConfig): Promise<void> {
+  }: Partial<FormatConfig> & OutputConfig): Promise<void> {
     try {
       await this.output.setDevice({
         outputDeviceId,
