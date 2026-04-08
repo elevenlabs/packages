@@ -3,7 +3,9 @@
  *
  * The value is the mean of all frequency bins normalised to [0, 1].
  */
-export function calculateVolume(frequencyData: Uint8Array): number {
+export function calculateVolume(
+  frequencyData: Uint8Array<ArrayBuffer>
+): number {
   if (frequencyData.length === 0) {
     return 0;
   }

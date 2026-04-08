@@ -195,17 +195,18 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
   room.on("localTrackPublished", localTrackHandler);
 
   // --- Output (remote agent track) ---
-  let outputSetUp = false;
+  let outputProvider: NativeVolumeProvider | null = null;
 
   function setupOutputTrack(track: any) {
-    if (outputSetUp) return;
-    outputSetUp = true;
     const mst = track.mediaStreamTrack as any;
     const pcId: number = mst._peerConnectionId ?? -1;
-
-    const output = new NativeVolumeProvider(pcId, mst.id);
-    providers.push(output);
-    connection.setOutputVolumeProvider(output);
+    if (outputProvider) {
+      outputProvider.updateTrack(pcId, mst.id);
+    } else {
+      outputProvider = new NativeVolumeProvider(pcId, mst.id);
+      providers.push(outputProvider);
+      connection.setOutputVolumeProvider(outputProvider);
+    }
   }
 
   // Check for an existing remote audio track from the agent
