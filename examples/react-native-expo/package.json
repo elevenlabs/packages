@@ -8,8 +8,8 @@
     "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && node --run dev",
     "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && node --run dev",
     "web": "expo start --web",
-    "build:android": "eas build -p android",
-    "build:ios": "eas build -p ios",
+    "build:android": "expo prebuild --platform android",
+    "build:ios": "expo prebuild --platform ios",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
