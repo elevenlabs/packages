@@ -486,8 +486,8 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   public close() {
+    this.stopStatsPolling();
     if (this.isConnected) {
-      this.stopStatsPolling();
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
         this.room.localParticipant.audioTrackPublications.forEach(
