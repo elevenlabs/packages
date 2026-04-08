@@ -557,7 +557,10 @@ export class WebRTCConnection extends BaseConnection {
       source.connect(analyser);
       this.inputAnalyser = analyser;
       this.inputAudioContext = ctx;
-      this.inputVolumeProvider = createAnalyserVolumeProvider(analyser);
+      this.inputVolumeProvider = createAnalyserVolumeProvider(
+        analyser,
+        ctx.sampleRate
+      );
     } catch (error) {
       // Don't reset inputVolumeProvider here — an external provider (e.g.
       // React Native's native volume layer) may still be valid.
@@ -596,7 +599,10 @@ export class WebRTCConnection extends BaseConnection {
       // Connect source to analyser
       source.connect(this.outputAnalyser);
       this.setOutputVolumeProvider(
-        createAnalyserVolumeProvider(this.outputAnalyser)
+        createAnalyserVolumeProvider(
+          this.outputAnalyser,
+          audioContext.sampleRate
+        )
       );
 
       await loadRawAudioProcessor(audioContext.audioWorklet);

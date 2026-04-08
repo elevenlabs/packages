@@ -7,6 +7,7 @@ import type {
   OutputDeviceConfig,
 } from "../OutputController.js";
 import { calculateVolume } from "./calculateVolume.js";
+import { resampleVoiceRange } from "./volumeProvider.js";
 
 export type OutputConfig = OutputDeviceConfig;
 
@@ -150,7 +151,11 @@ export class MediaDeviceOutput
   }
 
   public getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
-    this.analyser.getByteFrequencyData(buffer);
+    this.volumeData ??= new Uint8Array(
+      this.analyser.frequencyBinCount
+    ) as Uint8Array<ArrayBuffer>;
+    this.analyser.getByteFrequencyData(this.volumeData);
+    resampleVoiceRange(this.volumeData, buffer, this.context.sampleRate);
   }
 
   public addListener(listener: PlaybackListener): void {
