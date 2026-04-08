@@ -11,8 +11,8 @@ function getEmitter(): NativeEventEmitter {
 }
 
 interface VolumeEvent {
-  name: string;
-  data: { id: string; volume: number };
+  id: string;
+  volume: number;
 }
 
 function createNativeVolumeProvider(): {
@@ -55,9 +55,9 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
     connection.setInputVolumeProvider(input.provider);
 
     subscriptions.push(
-      getEmitter().addListener("event", (event: VolumeEvent) => {
-        if (event.name === "LK_VOLUME_PROCESSED" && event.data.id === tag) {
-          input.setVolume(event.data.volume);
+      getEmitter().addListener("LK_VOLUME_PROCESSED", (event: VolumeEvent) => {
+        if (event.id === tag) {
+          input.setVolume(event.volume);
         }
       })
     );
@@ -78,9 +78,9 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
     connection.setOutputVolumeProvider(output.provider);
 
     subscriptions.push(
-      getEmitter().addListener("event", (event: VolumeEvent) => {
-        if (event.name === "LK_VOLUME_PROCESSED" && event.data.id === tag) {
-          output.setVolume(event.data.volume);
+      getEmitter().addListener("LK_VOLUME_PROCESSED", (event: VolumeEvent) => {
+        if (event.id === tag) {
+          output.setVolume(event.volume);
         }
       })
     );
