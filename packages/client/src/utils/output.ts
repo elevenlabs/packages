@@ -6,8 +6,10 @@ import type {
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
-import { calculateVolume } from "./calculateVolume.js";
-import { resampleVoiceRange } from "./volumeProvider.js";
+import {
+  createAnalyserVolumeProvider,
+  type VolumeProvider,
+} from "./volumeProvider.js";
 
 export type OutputConfig = OutputDeviceConfig;
 
@@ -123,6 +125,7 @@ export class MediaDeviceOutput
   private volume = 1;
   private interrupted = false;
   private interruptTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly volumeProvider: VolumeProvider;
 
   private constructor(
     private readonly context: AudioContext,
@@ -134,28 +137,22 @@ export class MediaDeviceOutput
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
+    this.volumeProvider = createAnalyserVolumeProvider(
+      analyser,
+      context.sampleRate
+    );
   }
 
   public getAnalyser(): AnalyserNode {
     return this.analyser;
   }
 
-  private volumeData?: Uint8Array<ArrayBuffer>;
-
   public getVolume(): number {
-    this.volumeData ??= new Uint8Array(
-      this.analyser.frequencyBinCount
-    ) as Uint8Array<ArrayBuffer>;
-    this.analyser.getByteFrequencyData(this.volumeData);
-    return calculateVolume(this.volumeData);
+    return this.volumeProvider.getVolume();
   }
 
   public getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
-    this.volumeData ??= new Uint8Array(
-      this.analyser.frequencyBinCount
-    ) as Uint8Array<ArrayBuffer>;
-    this.analyser.getByteFrequencyData(this.volumeData);
-    resampleVoiceRange(this.volumeData, buffer, this.context.sampleRate);
+    this.volumeProvider.getByteFrequencyData(buffer);
   }
 
   public addListener(listener: PlaybackListener): void {

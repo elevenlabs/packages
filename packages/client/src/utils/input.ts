@@ -4,8 +4,10 @@ import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type { InputController, InputDeviceConfig } from "../InputController.js";
-import { calculateVolume } from "./calculateVolume.js";
-import { resampleVoiceRange } from "./volumeProvider.js";
+import {
+  createAnalyserVolumeProvider,
+  type VolumeProvider,
+} from "./volumeProvider.js";
 
 export type InputConfig = InputDeviceConfig & {
   onError?(message: string, context?: unknown): void;
@@ -132,6 +134,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
   }
 
   private muted = false;
+  private readonly volumeProvider: VolumeProvider;
 
   private constructor(
     private readonly context: AudioContext,
@@ -149,28 +152,22 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
+    this.volumeProvider = createAnalyserVolumeProvider(
+      analyser,
+      context.sampleRate
+    );
   }
 
   public getAnalyser(): AnalyserNode {
     return this.analyser;
   }
 
-  private volumeData?: Uint8Array<ArrayBuffer>;
-
   public getVolume(): number {
-    this.volumeData ??= new Uint8Array(
-      this.analyser.frequencyBinCount
-    ) as Uint8Array<ArrayBuffer>;
-    this.analyser.getByteFrequencyData(this.volumeData);
-    return calculateVolume(this.volumeData);
+    return this.volumeProvider.getVolume();
   }
 
   public getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
-    this.volumeData ??= new Uint8Array(
-      this.analyser.frequencyBinCount
-    ) as Uint8Array<ArrayBuffer>;
-    this.analyser.getByteFrequencyData(this.volumeData);
-    resampleVoiceRange(this.volumeData, buffer, this.context.sampleRate);
+    this.volumeProvider.getByteFrequencyData(buffer);
   }
 
   public isMuted(): boolean {
