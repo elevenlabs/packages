@@ -99,8 +99,8 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
   }
 
   // Listen for future track subscriptions
-  const trackHandler = (track: any) => {
-    if (track.kind === "audio") {
+  const trackHandler = (track: any, _publication: any, participant: any) => {
+    if (track.kind === "audio" && participant?.identity?.includes("agent")) {
       setupOutputTrack(track);
     }
   };

@@ -19,6 +19,9 @@ vi.mock("livekit-client", () => {
     }),
     publishData: vi.fn(() => Promise.resolve()),
     audioTrackPublications: new Map(),
+    getTrackPublication: vi.fn(),
+    unpublishTrack: vi.fn(() => Promise.resolve()),
+    publishTrack: vi.fn(() => Promise.resolve()),
   };
 
   const mockRoom = {
@@ -56,7 +59,7 @@ vi.mock("livekit-client", () => {
 });
 
 import { WebRTCConnection } from "./WebRTCConnection.js";
-import { Room } from "livekit-client";
+import { Room, createLocalAudioTrack } from "livekit-client";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -64,6 +67,65 @@ describe("WebRTCConnection", () => {
     (globalThis as Record<string, unknown>).__mockCalls__ = {
       setMicrophoneEnabled: [],
     };
+  });
+
+  it("replaces the input volume provider when switching input device", async () => {
+    const mockRoom = new Room() as any;
+
+    // Mock track returned by getTrackPublication (the "old" mic track)
+    const oldMockTrack = {
+      mediaStreamTrack: { id: "old-track", kind: "audio" },
+      stop: vi.fn(() => Promise.resolve()),
+    };
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValue({ track: oldMockTrack });
+
+    // Mock createLocalAudioTrack to return a "new" track after device switch
+    const newMockTrack = {
+      mediaStreamTrack: { id: "new-track", kind: "audio" },
+    };
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValue(
+      newMockTrack
+    );
+
+    // Set up room event mocks so create() resolves
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    // Simulate a working volume provider (as if set by the web analyser or RN layer)
+    connection.setInputVolumeProvider({
+      getVolume: () => 0.42,
+      getByteFrequencyData: () => {},
+    });
+    expect(connection.input.getVolume()).toBe(0.42);
+
+    // Switch input device
+    await connection.setAudioInputDevice("new-device-id");
+
+    // After fix: the stale volume provider should have been replaced.
+    // In the test env AudioContext setup fails with mock tracks, so
+    // NO_VOLUME (0) is used — either way, 0.42 must not persist.
+    expect(connection.input.getVolume()).not.toBe(0.42);
+
+    connection.close();
   });
 
   it.each([

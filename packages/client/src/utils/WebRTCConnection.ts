@@ -308,22 +308,7 @@ export class WebRTCConnection extends BaseConnection {
         Track.Source.Microphone
       )?.track;
       if (micTrack) {
-        try {
-          const ctx = new AudioContext();
-          const analyser = ctx.createAnalyser();
-          const source = ctx.createMediaStreamSource(
-            new MediaStream([micTrack.mediaStreamTrack])
-          );
-          source.connect(analyser);
-          connection.inputAnalyser = analyser;
-          connection.inputAudioContext = ctx;
-          connection.setInputVolumeProvider(
-            createAnalyserVolumeProvider(analyser)
-          );
-        } catch {
-          // AudioContext unavailable (React Native) — volume provider stays
-          // as NO_VOLUME until the platform layer sets its own provider
-        }
+        connection.setupInputAnalyser(micTrack.mediaStreamTrack);
       }
 
       if (room.name) {
@@ -549,6 +534,39 @@ export class WebRTCConnection extends BaseConnection {
     return this.room;
   }
 
+  /**
+   * (Re-)creates an AudioContext + AnalyserNode from the given track and
+   * installs the corresponding VolumeProvider. Called once during create()
+   * and again after an input device switch so the analyser follows the
+   * active mic track.
+   */
+  private setupInputAnalyser(mediaStreamTrack: MediaStreamTrack): void {
+    // Clean up existing input audio context
+    if (this.inputAudioContext) {
+      this.inputAudioContext.close().catch(() => {});
+    }
+    this.inputAudioContext = null;
+    this.inputAnalyser = null;
+    this.inputVolumeProvider = NO_VOLUME;
+
+    try {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      const source = ctx.createMediaStreamSource(
+        new MediaStream([mediaStreamTrack])
+      );
+      source.connect(analyser);
+      this.inputAnalyser = analyser;
+      this.inputAudioContext = ctx;
+      this.inputVolumeProvider = createAnalyserVolumeProvider(analyser);
+    } catch (error) {
+      console.warn(
+        "[ConversationalAI] Failed to set up input volume analyser:",
+        error
+      );
+    }
+  }
+
   public setInputVolumeProvider(provider: VolumeProvider) {
     this.inputVolumeProvider = provider;
   }
@@ -689,6 +707,9 @@ export class WebRTCConnection extends BaseConnection {
         name: "microphone",
         source: Track.Source.Microphone,
       });
+
+      // Reconnect the input analyser to the new track
+      this.setupInputAnalyser(audioTrack.mediaStreamTrack);
     } catch (error) {
       console.error("Failed to change input device:", error);
 
