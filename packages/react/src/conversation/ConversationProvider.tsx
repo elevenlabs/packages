@@ -160,6 +160,9 @@ export function ConversationProvider({
         },
         (error: unknown) => {
           lockRef.current = null;
+          if (shouldEndRef.current) {
+            return;
+          }
           // The client SDK calls onStatusChange("disconnected") before
           // rejecting, but never calls onError — surface the failure here
           // so listeners (e.g. ConversationStatusProvider) transition to
@@ -183,7 +186,7 @@ export function ConversationProvider({
     setConversation(null);
 
     if (pendingConnection) {
-      pendingConnection.then(c => c.endSession());
+      pendingConnection.then(c => c.endSession(), () => {});
     } else {
       conv?.endSession();
     }
@@ -194,7 +197,7 @@ export function ConversationProvider({
     return () => {
       shouldEndRef.current = true;
       if (lockRef.current) {
-        lockRef.current.then(conv => conv.endSession());
+        lockRef.current.then(conv => conv.endSession(), () => {});
       } else {
         conversationRef.current?.endSession();
       }

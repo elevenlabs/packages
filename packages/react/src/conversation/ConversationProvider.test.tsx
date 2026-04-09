@@ -527,6 +527,33 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBe(mockConversation);
   });
 
+  it("does not call onError when endSession is called before startSession rejects", async () => {
+    const onError = vi.fn();
+    const { promise, reject: rejectStartSession } =
+      Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+
+    act(() => {
+      result.current.startSession();
+    });
+
+    // User intentionally ends before the connection settles
+    act(() => {
+      result.current.endSession();
+    });
+
+    await act(async () => {
+      rejectStartSession(new Error("connection failed"));
+    });
+
+    // onError should NOT fire — the user intentionally disconnected
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("passes stable callbacks that always call the latest prop value", async () => {
     const onConnect = vi.fn();
     const wrapper = ({ children }: React.PropsWithChildren) => (
