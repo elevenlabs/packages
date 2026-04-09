@@ -15,3 +15,7 @@ export type {
   VoiceSessionSetupStrategy,
   VoiceSessionSetupResult,
 } from "./platform/VoiceSessionSetup.js";
+export {
+  MIN_VOICE_FREQUENCY,
+  MAX_VOICE_FREQUENCY,
+} from "./utils/volumeProvider.js";

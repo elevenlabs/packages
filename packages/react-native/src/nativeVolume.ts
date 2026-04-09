@@ -1,6 +1,10 @@
 import { NativeModules, NativeEventEmitter } from "react-native";
 import { WebRTCConnection, type VolumeProvider } from "@elevenlabs/client";
-import type { VoiceSessionSetupResult } from "@elevenlabs/client/internal";
+import {
+  MIN_VOICE_FREQUENCY,
+  MAX_VOICE_FREQUENCY,
+  type VoiceSessionSetupResult,
+} from "@elevenlabs/client/internal";
 
 const LiveKitModule = NativeModules.LivekitReactNativeModule;
 
@@ -21,8 +25,8 @@ interface MultibandEvent {
 }
 
 const MULTIBAND_FREQUENCY_OPTIONS = {
-  minFrequency: 100,
-  maxFrequency: 8000,
+  minFrequency: MIN_VOICE_FREQUENCY,
+  maxFrequency: MAX_VOICE_FREQUENCY,
   updateInterval: 40,
 };
 
