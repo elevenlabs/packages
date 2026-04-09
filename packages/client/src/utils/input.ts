@@ -163,10 +163,15 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
   }
 
   public getVolume(): number {
+    if (this.muted) return 0;
     return this.volumeProvider.getVolume();
   }
 
   public getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
+    if (this.muted) {
+      buffer.fill(0);
+      return;
+    }
     this.volumeProvider.getByteFrequencyData(buffer);
   }
 

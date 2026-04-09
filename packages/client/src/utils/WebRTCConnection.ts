@@ -142,8 +142,15 @@ export class WebRTCConnection extends BaseConnection {
     },
     isMuted: () => this._isMuted,
     getAnalyser: () => this.inputAnalyser ?? undefined,
-    getVolume: () => this.inputVolumeProvider.getVolume(),
+    getVolume: () => {
+      if (this._isMuted) return 0;
+      return this.inputVolumeProvider.getVolume();
+    },
     getByteFrequencyData: (buffer: Uint8Array<ArrayBuffer>) => {
+      if (this._isMuted) {
+        buffer.fill(0);
+        return;
+      }
       this.inputVolumeProvider.getByteFrequencyData(buffer);
     },
   };
