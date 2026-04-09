@@ -117,6 +117,10 @@ export class WebRTCConnection extends BaseConnection {
         return;
       }
 
+      // Set immediately so volume/frequency indicators reflect the muted
+      // state even if the underlying track operation fails (e.g. on RN).
+      this._isMuted = isMuted;
+
       // Get the microphone track publication
       const micTrackPublication =
         this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
@@ -137,8 +141,6 @@ export class WebRTCConnection extends BaseConnection {
         // No track found, use participant-level control directly
         await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
       }
-
-      this._isMuted = isMuted;
 
       // After unmuting, reconnect the input analyser because LiveKit may
       // have replaced the underlying MediaStreamTrack during mute/unmute.

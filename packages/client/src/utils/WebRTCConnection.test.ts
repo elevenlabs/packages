@@ -196,6 +196,62 @@ describe("WebRTCConnection", () => {
     connection.close();
   });
 
+  it("sets isMuted and zeros volume even when track.mute() throws", async () => {
+    const mockRoom = new Room() as any;
+
+    const mockTrack = {
+      mediaStreamTrack: { id: "mic-track", kind: "audio" },
+      mute: vi.fn(() => Promise.resolve()),
+      unmute: vi.fn(() => Promise.resolve()),
+    };
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValue({ track: mockTrack });
+
+    // Set up room event mocks so create() resolves
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    // Simulate a native volume provider (like React Native)
+    connection.setInputVolumeProvider({
+      getVolume: () => 0.75,
+      getByteFrequencyData: (buf: Uint8Array) => buf.fill(200),
+    });
+    expect(connection.input.getVolume()).toBe(0.75);
+
+    // Now make both track.mute() and setMicrophoneEnabled throw
+    // (simulates RN environment where these operations may not be supported)
+    mockTrack.mute.mockRejectedValueOnce(new Error("mute unsupported"));
+    (
+      mockRoom.localParticipant.setMicrophoneEnabled as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(new Error("setMicrophoneEnabled unsupported"));
+
+    // Mute — even though track.mute() and setMicrophoneEnabled both throw,
+    // isMuted should already be set and volume should return 0
+    await connection.input.setMuted(true).catch(() => {});
+    expect(connection.input.isMuted()).toBe(true);
+    expect(connection.input.getVolume()).toBe(0);
+
+    connection.close();
+  });
+
   it.each([
     { textOnly: true, shouldEnableMic: false },
     { textOnly: false, shouldEnableMic: true },
