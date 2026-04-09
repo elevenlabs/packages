@@ -158,8 +158,17 @@ export function ConversationProvider({
           setConversation(conv);
           lockRef.current = null;
         },
-        () => {
+        (error: unknown) => {
           lockRef.current = null;
+          // The client SDK calls onStatusChange("disconnected") before
+          // rejecting, but never calls onError — surface the failure here
+          // so listeners (e.g. ConversationStatusProvider) transition to
+          // the "error" state with a meaningful message.
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Session failed to start";
+          sessionOptions.onError?.(message, error);
         }
       );
     },

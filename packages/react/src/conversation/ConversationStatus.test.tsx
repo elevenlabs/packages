@@ -138,6 +138,23 @@ describe("ConversationStatus", () => {
     expect(result.current.status.message).toBeUndefined();
   });
 
+  it("transitions to error status when startSession rejects", async () => {
+    vi.mocked(Conversation.startSession).mockRejectedValue(
+      new Error("agent not found")
+    );
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(result.current.status.status).toBe("error");
+    expect(result.current.status.message).toBe("agent not found");
+  });
+
   it("ignores disconnecting status (transient)", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
