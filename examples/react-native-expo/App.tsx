@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
   Keyboard,
   TextInput,
@@ -91,7 +92,10 @@ const ConversationScreen = () => {
   const canEnd = status === "connected";
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>ElevenLabs React Native Example</Text>
       <Text style={styles.subtitle}>
         Remember to set the agentId in the code
@@ -297,7 +301,7 @@ const ConversationScreen = () => {
           </View>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
@@ -365,11 +369,12 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F3F4F6",
     padding: 20,
+    paddingVertical: 60,
   },
   title: {
     fontSize: 24,
