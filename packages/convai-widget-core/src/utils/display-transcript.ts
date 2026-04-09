@@ -132,6 +132,15 @@ export function buildDisplayTranscript(
     result.push(entry);
   }
 
+  // Sort by eventId to fix ordering when server sends agent_response
+  // before user_transcript in voice mode.
+  result.sort((a, b) => {
+    const aId = a.type === "message" ? a.eventId : undefined;
+    const bId = b.type === "message" ? b.eventId : undefined;
+    if (aId != null && bId != null) return aId - bId;
+    return 0;
+  });
+
   // Attach tool status to agent messages
   if (config.showAgentStatus) {
     for (let i = 0; i < result.length; i++) {
