@@ -64,6 +64,7 @@ import { Room, createLocalAudioTrack } from "livekit-client";
 describe("WebRTCConnection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     (globalThis as Record<string, unknown>).__mockCalls__ = {
       setMicrophoneEnabled: [],
     };
@@ -122,6 +123,75 @@ describe("WebRTCConnection", () => {
     await connection.setAudioInputDevice("new-device-id");
 
     expect(connection.input.getVolume()).toBe(0.42);
+
+    connection.close();
+  });
+
+  it("reconnects input analyser after unmuting", async () => {
+    const mockRoom = new Room() as any;
+
+    const mockMediaStreamTrack = { id: "mic-track", kind: "audio" };
+    const mockTrack = {
+      mediaStreamTrack: mockMediaStreamTrack,
+      mute: vi.fn(() => Promise.resolve()),
+      unmute: vi.fn(() => Promise.resolve()),
+    };
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValue({ track: mockTrack });
+
+    // Set up room event mocks so create() resolves
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    // Mock AudioContext so setupInputAnalyser succeeds
+    const mockAnalyser = {
+      frequencyBinCount: 128,
+      getByteFrequencyData: vi.fn(),
+      getFloatTimeDomainData: vi.fn(),
+    };
+    const mockSource = { connect: vi.fn() };
+    const MockAudioContext = vi.fn(() => ({
+      createAnalyser: vi.fn(() => mockAnalyser),
+      createMediaStreamSource: vi.fn(() => mockSource),
+      close: vi.fn(() => Promise.resolve()),
+      sampleRate: 44100,
+    }));
+    vi.stubGlobal("AudioContext", MockAudioContext);
+    vi.stubGlobal(
+      "MediaStream",
+      vi.fn((tracks: unknown[]) => ({ getTracks: () => tracks }))
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    // Initial setup during create() may call AudioContext
+    const callsBeforeMute = MockAudioContext.mock.calls.length;
+
+    // Mute — should NOT reconnect analyser
+    await connection.input.setMuted(true);
+    expect(MockAudioContext.mock.calls.length).toBe(callsBeforeMute);
+    expect(connection.input.isMuted()).toBe(true);
+
+    // Unmute — should reconnect analyser with the current track
+    await connection.input.setMuted(false);
+    expect(MockAudioContext.mock.calls.length).toBe(callsBeforeMute + 1);
+    expect(connection.input.isMuted()).toBe(false);
 
     connection.close();
   });

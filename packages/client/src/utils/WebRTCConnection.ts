@@ -139,6 +139,17 @@ export class WebRTCConnection extends BaseConnection {
       }
 
       this._isMuted = isMuted;
+
+      // After unmuting, reconnect the input analyser because LiveKit may
+      // have replaced the underlying MediaStreamTrack during mute/unmute.
+      if (!isMuted) {
+        const track = this.room.localParticipant.getTrackPublication(
+          Track.Source.Microphone
+        )?.track;
+        if (track) {
+          this.setupInputAnalyser(track.mediaStreamTrack);
+        }
+      }
     },
     isMuted: () => this._isMuted,
     getAnalyser: () => this.inputAnalyser ?? undefined,
