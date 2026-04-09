@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Keyboard,
   TextInput,
 } from "react-native";
+import { VolumeBar } from "./VolumeBar";
+import { FrequencyBands } from "./FrequencyBands";
 import {
   ConversationProvider,
   useConversationControls,
@@ -35,58 +37,8 @@ const ConversationScreen = () => {
     sendContextualUpdate,
     sendUserActivity,
     getId,
-    getInputVolume,
-    getOutputVolume,
-    getInputByteFrequencyData,
-    getOutputByteFrequencyData,
   } = useConversationControls();
   const isStarting = status === "connecting";
-
-  const [inputVolume, setInputVolume] = useState(0);
-  const [outputVolume, setOutputVolume] = useState(0);
-
-  const BAND_COUNT = 32;
-  const [inputBands, setInputBands] = useState<number[]>(() =>
-    Array(BAND_COUNT).fill(0)
-  );
-  const [outputBands, setOutputBands] = useState<number[]>(() =>
-    Array(BAND_COUNT).fill(0)
-  );
-
-  const downsample = useCallback(
-    (data: Uint8Array, bands: number): number[] => {
-      if (data.length === 0) return Array(bands).fill(0);
-      const step = data.length / bands;
-      const result: number[] = [];
-      for (let i = 0; i < bands; i++) {
-        const start = Math.floor(i * step);
-        const end = Math.floor((i + 1) * step);
-        let sum = 0;
-        for (let j = start; j < end; j++) sum += data[j];
-        result.push(sum / (end - start) / 255);
-      }
-      return result;
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (status !== "connected") return;
-    const id = setInterval(() => {
-      setInputVolume(getInputVolume());
-      setOutputVolume(getOutputVolume());
-      setInputBands(downsample(getInputByteFrequencyData(), BAND_COUNT));
-      setOutputBands(downsample(getOutputByteFrequencyData(), BAND_COUNT));
-    }, 100);
-    return () => clearInterval(id);
-  }, [
-    status,
-    getInputVolume,
-    getOutputVolume,
-    getInputByteFrequencyData,
-    getOutputByteFrequencyData,
-    downsample,
-  ]);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -193,58 +145,10 @@ const ConversationScreen = () => {
       {/* Volume & Frequency Indicators */}
       {status === "connected" && (
         <View style={styles.volumeContainer}>
-          <Text style={styles.volumeText}>
-            Input: {(inputVolume * 100).toFixed(0)}%
-          </Text>
-          <View style={styles.volumeBarBackground}>
-            <View
-              style={[
-                styles.volumeBarFill,
-                { width: `${inputVolume * 100}%`, backgroundColor: "#3B82F6" },
-              ]}
-            />
-          </View>
-          <View style={styles.frequencyContainer}>
-            {inputBands.map((v, i) => (
-              <View key={i} style={styles.frequencyBarWrapper}>
-                <View
-                  style={[
-                    styles.frequencyBar,
-                    {
-                      height: `${Math.max(v * 100, 2)}%`,
-                      backgroundColor: "#3B82F6",
-                    },
-                  ]}
-                />
-              </View>
-            ))}
-          </View>
-          <Text style={styles.volumeText}>
-            Output: {(outputVolume * 100).toFixed(0)}%
-          </Text>
-          <View style={styles.volumeBarBackground}>
-            <View
-              style={[
-                styles.volumeBarFill,
-                { width: `${outputVolume * 100}%`, backgroundColor: "#8B5CF6" },
-              ]}
-            />
-          </View>
-          <View style={styles.frequencyContainer}>
-            {outputBands.map((v, i) => (
-              <View key={i} style={styles.frequencyBarWrapper}>
-                <View
-                  style={[
-                    styles.frequencyBar,
-                    {
-                      height: `${Math.max(v * 100, 2)}%`,
-                      backgroundColor: "#8B5CF6",
-                    },
-                  ]}
-                />
-              </View>
-            ))}
-          </View>
+          <VolumeBar label="Input" color="#3B82F6" direction="input" />
+          <FrequencyBands color="#3B82F6" direction="input" />
+          <VolumeBar label="Output" color="#8B5CF6" direction="output" />
+          <FrequencyBands color="#8B5CF6" direction="output" />
         </View>
       )}
 
@@ -621,39 +525,6 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
     gap: 4,
-  },
-  volumeText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#6B7280",
-  },
-  volumeBarBackground: {
-    height: 8,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  volumeBarFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  frequencyContainer: {
-    flexDirection: "row",
-    height: 48,
-    gap: 2,
-    alignItems: "flex-end",
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  frequencyBarWrapper: {
-    flex: 1,
-    height: "100%",
-    justifyContent: "flex-end",
-  },
-  frequencyBar: {
-    width: "100%",
-    borderRadius: 2,
-    minHeight: 1,
   },
   toggleControlContainer: {
     flexDirection: "row",

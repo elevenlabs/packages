@@ -23,6 +23,7 @@ interface MultibandEvent {
 const MULTIBAND_FREQUENCY_OPTIONS = {
   minFrequency: 100,
   maxFrequency: 8000,
+  updateInterval: 40,
 };
 
 /**
