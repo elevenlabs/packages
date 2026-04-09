@@ -111,7 +111,7 @@ class NativeVolumeProvider implements VolumeProvider {
 
   getVolume(): number {
     this.ensureVolumeProcessor();
-    return this.volume;
+    return this.volume < 0 ? 0 : this.volume > 1 ? 1 : this.volume;
   }
 
   getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>): void {
@@ -119,11 +119,13 @@ class NativeVolumeProvider implements VolumeProvider {
     if (this.magnitudes.length === 0) {
       // No multiband data yet; fall back to uniform fill from RMS volume
       this.ensureVolumeProcessor();
-      buffer.fill(Math.round(this.volume * 255));
+      const clamped = this.volume < 0 ? 0 : this.volume > 1 ? 1 : this.volume;
+      buffer.fill(Math.round(clamped * 255));
       return;
     }
     for (let i = 0; i < buffer.length; i++) {
-      buffer[i] = Math.round((this.magnitudes[i] ?? 0) * 255);
+      const m = this.magnitudes[i] ?? 0;
+      buffer[i] = Math.round((m < 0 ? 0 : m > 1 ? 1 : m) * 255);
     }
   }
 
