@@ -23,6 +23,7 @@ export class WebSocketConnection
   extends BaseConnection
   implements OutputEventTarget
 {
+  public readonly type = "websocket" as const;
   public readonly conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;

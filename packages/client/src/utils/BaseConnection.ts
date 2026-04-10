@@ -93,6 +93,7 @@ export type SessionConfig =
   | PrivateWebRTCSessionConfig;
 
 export abstract class BaseConnection {
+  public abstract readonly type: ConnectionType;
   public abstract readonly conversationId: string;
   public abstract readonly inputFormat: FormatConfig;
   public abstract readonly outputFormat: FormatConfig;

@@ -1,5 +1,5 @@
 import { NativeModules, NativeEventEmitter } from "react-native";
-import { WebRTCConnection, type VolumeProvider } from "@elevenlabs/client";
+import type { WebRTCConnection, VolumeProvider } from "@elevenlabs/client";
 import {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
@@ -256,11 +256,13 @@ function setupNativeVolumeProcessors(connection: WebRTCConnection): () => void {
 export function attachNativeVolume(
   result: VoiceSessionSetupResult
 ): VoiceSessionSetupResult {
-  if (!(result.connection instanceof WebRTCConnection)) {
+  if (result.connection.type !== "webrtc") {
     return result;
   }
 
-  const cleanup = setupNativeVolumeProcessors(result.connection);
+  const cleanup = setupNativeVolumeProcessors(
+    result.connection as WebRTCConnection
+  );
 
   const originalDetach = result.detach;
   return {
