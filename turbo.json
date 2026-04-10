@@ -14,7 +14,7 @@
         "tsconfig.json",
         "tsconfig.build.json"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**", "*.tsbuildinfo"]
     },
     "test": {
       "dependsOn": ["^build"],
