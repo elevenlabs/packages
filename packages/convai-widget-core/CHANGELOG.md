@@ -1,5 +1,13 @@
 # @elevenlabs/convai-widget-core
 
+## 0.11.3
+
+### Patch Changes
+
+- 4bc8747: Fix transcript message ordering in voice mode where agent responses could appear before user messages.
+- Updated dependencies [0d5c368]
+  - @elevenlabs/client@1.2.0
+
 ## 0.11.2
 
 ### Patch Changes

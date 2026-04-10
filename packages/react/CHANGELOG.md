@@ -1,5 +1,19 @@
 # @elevenlabs/react
 
+## 1.1.0
+
+### Minor Changes
+
+- 0d5c368: Fix getInputVolume/getOutputVolume returning 0 in React Native by adding native volume providers using LiveKit's RMS and multiband FFT processors.
+
+  **Breaking:** `getByteFrequencyData()` now returns data focused on the human voice range (100-8000 Hz) instead of the full spectrum (0 to sampleRate/2). On web, `getVolume()` is also computed from this range. The deprecated `getAnalyser()` method still provides direct access to the raw `AnalyserNode` for consumers needing full-spectrum data.
+
+### Patch Changes
+
+- 806edd0: Fix `startSession` errors being swallowed instead of surfaced via `onError` in `ConversationProvider`. Previously, when `Conversation.startSession()` rejected (e.g. "agent not found"), the UI would get stuck in "connecting" with no error feedback.
+- Updated dependencies [0d5c368]
+  - @elevenlabs/client@1.2.0
+
 ## 1.0.3
 
 ### Patch Changes
