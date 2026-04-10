@@ -10,8 +10,6 @@ export function calculateVolume(
     return 0;
   }
 
-  // TODO: Currently this averages all frequencies, but we should probably
-  // bias towards the frequencies that are more typical for human voice
   let volume = 0;
   for (let i = 0; i < frequencyData.length; i++) {
     volume += frequencyData[i] / 255;
