@@ -52,12 +52,17 @@ export function createAnalyserVolumeProvider(
 ): VolumeProvider {
   const binCount = analyser.frequencyBinCount;
   let rawData: Uint8Array<ArrayBuffer> | undefined;
+  // Resampled buffer used by getVolume() so the scalar is computed from the
+  // voice-frequency range only, matching RN's RMS processor behaviour.
+  let voiceData: Uint8Array<ArrayBuffer> | undefined;
 
   return {
     getVolume() {
       rawData ??= new Uint8Array(binCount) as Uint8Array<ArrayBuffer>;
+      voiceData ??= new Uint8Array(binCount) as Uint8Array<ArrayBuffer>;
       analyser.getByteFrequencyData(rawData);
-      return calculateVolume(rawData);
+      resampleVoiceRange(rawData, voiceData, sampleRate);
+      return calculateVolume(voiceData);
     },
     getByteFrequencyData(buffer: Uint8Array<ArrayBuffer>) {
       rawData ??= new Uint8Array(binCount) as Uint8Array<ArrayBuffer>;
