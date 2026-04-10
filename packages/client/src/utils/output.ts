@@ -5,13 +5,14 @@ import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type {
   OutputController,
   OutputDeviceConfig,
+  OutputConfig,
 } from "../OutputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
 
-export type OutputConfig = OutputDeviceConfig;
+export type { OutputConfig };
 
 // Audio data events from connection to output device
 export type OutputAudioEvent = {
@@ -24,17 +25,13 @@ export type OutputEventTarget = {
   removeListener(listener: OutputListener): void;
 };
 
-// Playback state events from output worklet
-export type PlaybackStateEvent = MessageEvent<{
-  type: "process";
-  finished: boolean;
-}>;
-export type PlaybackListener = (event: PlaybackStateEvent) => void;
-
-export type PlaybackEventTarget = {
-  addListener(listener: PlaybackListener): void;
-  removeListener(listener: PlaybackListener): void;
-};
+// Import and re-export playback types from common strategy module
+import type {
+  PlaybackStateEvent,
+  PlaybackListener,
+  PlaybackEventTarget,
+} from "../platform/VoiceSessionStrategy.js";
+export type { PlaybackStateEvent, PlaybackListener, PlaybackEventTarget };
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget

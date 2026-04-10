@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": [
+    "src/TextConversation.ts",
+    "src/VoiceConversation.ts",
+    "src/index.ts",
+    "src/platform/webSessionSetup.ts",
+    "src/scribe/**/*.ts",
+    "src/utils/ConnectionFactory.ts",
+    "src/utils/WebRTCConnection.ts",
+    "src/utils/WebSocketConnection.ts",
+    "src/utils/addLibsamplerateModule.ts",
+    "src/utils/applyDelay.ts",
+    "src/utils/attachConnectionToOutput.ts",
+    "src/utils/attachInputToConnection.ts",
+    "src/utils/audio.ts",
+    "src/utils/audioConcatProcessor.generated.ts",
+    "src/utils/compatibility.ts",
+    "src/utils/connection.ts",
+    "src/utils/createWorkletModuleLoader.ts",
+    "src/utils/input.ts",
+    "src/utils/output.ts",
+    "src/utils/rawAudioProcessor.generated.ts",
+    "src/utils/scribeAudioProcessor.generated.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.common.json"
+    }
+  ]
+}

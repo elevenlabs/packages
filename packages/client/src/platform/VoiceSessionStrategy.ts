@@ -2,7 +2,17 @@ import type { Options } from "../BaseConversation.js";
 import type { BaseConnection } from "../utils/BaseConnection.js";
 import type { InputController } from "../InputController.js";
 import type { OutputController } from "../OutputController.js";
-import type { PlaybackEventTarget } from "../utils/output.js";
+
+export interface PlaybackStateEvent {
+  data: { type: "process"; finished: boolean };
+}
+
+export type PlaybackListener = (event: PlaybackStateEvent) => void;
+
+export type PlaybackEventTarget = {
+  addListener(listener: PlaybackListener): void;
+  removeListener(listener: PlaybackListener): void;
+};
 
 export type VoiceSessionSetupResult = {
   connection: BaseConnection;

@@ -4,6 +4,8 @@ export type OutputDeviceConfig = {
   outputDeviceId?: string;
 };
 
+export type OutputConfig = OutputDeviceConfig;
+
 export interface OutputController {
   close(): Promise<void>;
   setDevice(config?: Partial<FormatConfig> & OutputDeviceConfig): Promise<void>;

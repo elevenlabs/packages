@@ -1,14 +1,23 @@
 {
-  "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "composite": true,
-    "noEmit": true
+    "strict": true,
+    "noEmit": true,
+    "rootDir": "./src",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
+    "types": []
   },
   "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
-  "exclude": [],
   "references": [
     {
-      "path": "./tsconfig.build.json"
+      "path": "./tsconfig.common.json"
+    },
+    {
+      "path": "./tsconfig.web.json"
     }
   ]
 }

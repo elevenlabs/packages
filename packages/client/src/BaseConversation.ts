@@ -24,8 +24,8 @@ import type {
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
 } from "./utils/events.js";
-import type { InputConfig } from "./utils/input.js";
-import type { OutputConfig } from "./utils/output.js";
+import type { InputConfig } from "./InputController.js";
+import type { OutputConfig } from "./OutputController.js";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 export { CALLBACK_KEYS } from "@elevenlabs/types";

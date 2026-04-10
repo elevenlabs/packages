@@ -5,6 +5,10 @@ export type InputDeviceConfig = {
   preferHeadphonesForIosDevices?: boolean;
 };
 
+export type InputConfig = InputDeviceConfig & {
+  onError?(message: string, context?: unknown): void;
+};
+
 export interface InputController {
   close(): Promise<void>;
   setDevice(config?: Partial<FormatConfig> & InputDeviceConfig): Promise<void>;
