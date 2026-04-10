@@ -9,10 +9,9 @@
         "$TURBO_DEFAULT$",
         ".env*",
         "src/**",
-        "!src/**/*.test.*",
-        "!src/**/*.spec.*",
         "tsconfig.json",
-        "tsconfig.build.json"
+        "tsconfig.build.json",
+        "tsconfig.test.json"
       ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**", "*.tsbuildinfo"]
     },
