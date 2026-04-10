@@ -22,19 +22,35 @@ export type Status =
   | "disconnecting";
 
 /**
+ * Minimal event-like shape compatible with both browser Events and plain objects.
+ */
+export interface DisconnectionEvent {
+  type: string;
+}
+
+/**
+ * Minimal close-event-like shape, structurally compatible with the DOM CloseEvent.
+ */
+export interface DisconnectionCloseEvent extends DisconnectionEvent {
+  code?: number;
+  reason?: string;
+  wasClean?: boolean;
+}
+
+/**
  * Reason for the disconnection
  */
 export type DisconnectionDetails =
   | {
       reason: "error";
       message: string;
-      context: Event;
+      context: DisconnectionEvent;
       closeCode?: number;
       closeReason?: string;
     }
   | {
       reason: "agent";
-      context?: CloseEvent;
+      context?: DisconnectionCloseEvent;
       closeCode?: number;
       closeReason?: string;
     }
