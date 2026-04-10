@@ -320,7 +320,7 @@ export abstract class BaseConversation {
     if (event.agent_tool_response.tool_name === "end_call") {
       this.endSessionWithDetails({
         reason: "agent",
-        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+        context: { type: "end_call", reason: "Agent ended the call" },
       });
     }
 
@@ -364,7 +364,7 @@ export abstract class BaseConversation {
       this.endSessionWithDetails({
         reason: "error",
         message: message,
-        context: new Event("max_duration_exceeded"),
+        context: { type: "max_duration_exceeded" },
       });
       return;
     }
