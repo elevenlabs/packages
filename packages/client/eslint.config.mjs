@@ -13,7 +13,7 @@ const CORE_FILES = [
   "src/internal.ts",
   "src/sourceInfo.ts",
   "src/version.ts",
-  "src/platform/VoiceSessionSetup.ts",
+  "src/platform/VoiceSessionStrategy.ts",
   "src/utils/BaseConnection.ts",
   "src/utils/events.ts",
   "src/utils/overrides.ts",
