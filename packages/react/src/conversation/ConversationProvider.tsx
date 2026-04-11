@@ -145,7 +145,9 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
-      lockRef.current = Conversation.startSession(sessionOptions);
+      const { onConnect, ...sessionOptionsWithoutOnConnect } = sessionOptions;
+
+      lockRef.current = Conversation.startSession(sessionOptionsWithoutOnConnect);
 
       lockRef.current.then(
         conv => {
@@ -157,6 +159,7 @@ export function ConversationProvider({
           conversationRef.current = conv;
           setConversation(conv);
           lockRef.current = null;
+          onConnect?.({ conversationId: conv.getId() });
         },
         (error: unknown) => {
           lockRef.current = null;

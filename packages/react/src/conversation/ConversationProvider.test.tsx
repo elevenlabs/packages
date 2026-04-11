@@ -32,6 +32,7 @@ const createMockConversation = (id = "test-id") =>
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
+    sendUserMessage: vi.fn(),
   }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -241,10 +242,7 @@ describe("ConversationProvider", () => {
       });
     });
 
-    // Invoke the composed onConnect that was passed to startSession
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
-
+    // onConnect is fired by the provider after startSession resolves
     expect(propCalls).toEqual(["prop"]);
     expect(sessionCalls).toEqual(["session"]);
   });
@@ -265,9 +263,6 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
-
     expect(propCalls).toEqual(["prop"]);
   });
 
@@ -286,9 +281,6 @@ describe("ConversationProvider", () => {
         onConnect: () => sessionCalls.push("session"),
       });
     });
-
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
 
     expect(sessionCalls).toEqual(["session"]);
   });
@@ -562,8 +554,6 @@ describe("ConversationProvider", () => {
       </ConversationProvider>
     );
 
-    // We test the stable callback pattern by checking that
-    // Conversation.startSession is called with callbacks
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -575,14 +565,58 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    // Verify Conversation.startSession was called with the provided callback
     const startSessionCall = vi.mocked(Conversation.startSession).mock
       .calls[0][0];
-    expect(typeof startSessionCall.onConnect).toBe("function");
+    // onConnect is stripped from options and fired by the provider after
+    // startSession resolves, so it should NOT be on the options object
+    expect(startSessionCall.onConnect).toBeUndefined();
     // onDisconnect is registered internally by the provider
     expect(typeof startSessionCall.onDisconnect).toBe("function");
     // Unprovided callbacks are omitted so client feature guards work
     expect(startSessionCall.onUnhandledClientToolCall).toBeUndefined();
+    // onConnect should still have been called
+    expect(onConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
+  });
+
+  it("can send a message from onConnect without throwing", async () => {
+    const mockConversation = createMockConversation();
+
+    // Simulate real behavior: onConnect fires during startSession (inside
+    // the BaseConversation constructor) before the promise resolves.
+    vi.mocked(Conversation.startSession).mockImplementation(async opts => {
+      opts.onConnect?.({ conversationId: "test-id" });
+      return mockConversation;
+    });
+
+    const onConnectError = vi.fn();
+
+    function useTestHarness() {
+      const ctx = useContext(ConversationContext)!;
+      return {
+        startSession: () =>
+          ctx.startSession({
+            onConnect: () => {
+              try {
+                const conv = ctx.conversationRef.current;
+                conv!.sendUserMessage("hello");
+              } catch (e) {
+                onConnectError(e);
+              }
+            },
+          }),
+      };
+    }
+
+    const { result } = renderHook(() => useTestHarness(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(onConnectError).not.toHaveBeenCalled();
+    expect(mockConversation.sendUserMessage).toHaveBeenCalledWith("hello");
   });
 });
 

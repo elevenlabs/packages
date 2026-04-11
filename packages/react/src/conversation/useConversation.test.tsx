@@ -176,12 +176,12 @@ describe("useConversation", () => {
       result.current.startSession({ signedUrl: "wss://test.example.com" });
     });
 
-    // Invoke the callbacks that were passed to Conversation.startSession
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
-    opts.onError!("something went wrong", { type: "unknown" });
-
+    // onConnect is fired by the provider after startSession resolves
     expect(onConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
+
+    // onError is still passed through to the SDK — invoke it manually
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    opts.onError!("something went wrong", { type: "unknown" });
     expect(onError).toHaveBeenCalledWith("something went wrong", { type: "unknown" });
   });
 
@@ -200,9 +200,7 @@ describe("useConversation", () => {
       result.current.startSession({ signedUrl: "wss://test.example.com" });
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
-
+    // onConnect is fired by the provider after startSession resolves
     expect(providerOnConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
     expect(hookOnConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
   });
@@ -224,9 +222,7 @@ describe("useConversation", () => {
       });
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
-
+    // onConnect is fired by the provider after startSession resolves
     expect(calls).toContain("provider");
     expect(calls).toContain("hook");
     expect(calls).toContain("startSession");
@@ -235,7 +231,11 @@ describe("useConversation", () => {
   it("always invokes the latest hook callback (no stale closures)", async () => {
     const calls: string[] = [];
     const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    // Use a deferred promise so we can rerender before resolving
+    const { promise, resolve: resolveStartSession } =
+      Promise.withResolvers<typeof mockConversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
 
     const { result, rerender } = renderHook(
       ({ cb }: { cb: () => void }) => useConversation({ onConnect: cb }),
@@ -245,16 +245,18 @@ describe("useConversation", () => {
       },
     );
 
-    await act(async () => {
+    act(() => {
       result.current.startSession({ signedUrl: "wss://test.example.com" });
     });
 
-    // Update the callback after the session has started
+    // Update the callback before the session resolves
     rerender({ cb: () => calls.push("second") });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-    opts.onConnect!({ conversationId: "test-id" });
+    await act(async () => {
+      resolveStartSession(mockConversation);
+    });
 
+    // Should invoke the latest callback, not the stale one
     expect(calls).toEqual(["second"]);
   });
 
