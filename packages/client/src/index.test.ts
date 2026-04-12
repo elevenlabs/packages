@@ -355,6 +355,94 @@ describe("Conversation", () => {
       );
     }
   );
+
+  it.each(ConversationTypes)(
+    "marks the session connected before onConnect (%s)",
+    async conversationType => {
+      const server = new Server(
+        `wss://api.elevenlabs.io/${conversationType}/connected-before-onconnect`
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => {
+          resolve(socket);
+        });
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      let status: Status | null = null;
+      let statusAtOnConnect: Status | null = null;
+
+      const conversationPromise = Conversation.startSession({
+        signedUrl: `wss://api.elevenlabs.io/${conversationType}/connected-before-onconnect`,
+        onConnect: () => {
+          statusAtOnConnect = status;
+        },
+        onStatusChange: value => {
+          status = value.status;
+        },
+        connectionDelay: { default: 0 },
+        textOnly: conversationType === "text",
+      });
+
+      const client = await clientPromise;
+      client.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+          },
+        })
+      );
+
+      const conversation = await conversationPromise;
+      expect(statusAtOnConnect).toBe("connected");
+      expect(conversation.isOpen()).toBe(true);
+
+      await conversation.endSession();
+      server.close();
+    }
+  );
+
+  it("preserves the original startup error when cleanup throws", async () => {
+    const server = new Server("wss://api.elevenlabs.io/text/startup-error");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const originalError = new Error("onConnect failed");
+    const startSessionPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/startup-error",
+      connectionDelay: { default: 0 },
+      textOnly: true,
+      onConnect: () => {
+        throw originalError;
+      },
+      onDisconnect: () => {
+        throw new Error("cleanup failed");
+      },
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    await expect(startSessionPromise).rejects.toBe(originalError);
+
+    server.close();
+  });
 });
 
 describe("Connection Types", () => {

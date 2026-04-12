@@ -5,6 +5,7 @@ import type {
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
+import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
@@ -39,8 +40,15 @@ export type AudioWorkletConfig = {
   libsampleratePath?: string;
 };
 
+export type ConversationCreatedCallback = (conversation: Conversation) => void;
+
+export type ConversationLifecycleOptions = {
+  onConversationCreated?: ConversationCreatedCallback;
+};
+
 export type Options = SessionConfig &
   Callbacks &
+  ConversationLifecycleOptions &
   ClientToolsConfig &
   InputConfig &
   OutputConfig &
@@ -48,6 +56,7 @@ export type Options = SessionConfig &
 
 export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
+  ConversationLifecycleOptions &
   Partial<ClientToolsConfig> &
   Partial<InputConfig> &
   Partial<OutputConfig> &
@@ -127,12 +136,12 @@ export abstract class BaseConversation {
     protected readonly options: Options,
     protected readonly connection: BaseConnection
   ) {
-    if (this.options.onConnect) {
-      this.options.onConnect({ conversationId: connection.conversationId });
-    }
     this.connection.onMessage(this.onMessage);
     this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onModeChange(mode => this.updateMode(mode));
+  }
+
+  protected markConnected() {
     this.updateStatus("connected");
   }
 

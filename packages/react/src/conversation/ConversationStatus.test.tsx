@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
-import { Conversation } from "@elevenlabs/client";
+import {
+  Conversation,
+  type Callbacks,
+  type ConversationLifecycleOptions,
+} from "@elevenlabs/client";
 import { ConversationProvider } from "./ConversationProvider.js";
 import {
   ConversationContext,
@@ -37,6 +41,18 @@ function createWrapper(props: Record<string, unknown> = {}) {
       </ConversationProvider>
     );
   };
+}
+
+type MockStartSessionOptions = Partial<Callbacks & ConversationLifecycleOptions> &
+  Record<string, unknown>;
+
+function driveConnectedSessionLifecycle(
+  options: MockStartSessionOptions,
+  conversation: Conversation
+) {
+  options.onConversationCreated?.(conversation);
+  options.onStatusChange?.({ status: "connected" });
+  options.onConnect?.({ conversationId: conversation.getId() });
 }
 
 describe("ConversationStatus", () => {
@@ -153,6 +169,32 @@ describe("ConversationStatus", () => {
 
     expect(result.current.status.status).toBe("error");
     expect(result.current.status.message).toBe("agent not found");
+  });
+
+  it("transitions to error status when onConnect throws", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      driveConnectedSessionLifecycle(
+        options as MockStartSessionOptions,
+        mockConversation
+      );
+      return mockConversation;
+    });
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConnect: () => {
+          throw new Error("boom");
+        },
+      });
+    });
+
+    expect(result.current.status.status).toBe("error");
+    expect(result.current.status.message).toBe("boom");
   });
 
   it("ignores disconnecting status (transient)", async () => {

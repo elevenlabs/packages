@@ -44,6 +44,7 @@ export class VoiceConversation extends BaseConversation {
     }
 
     let preliminaryInputStream: MediaStream | null = null;
+    let conversation: VoiceConversation | null = null;
 
     const useWakeLock = options.useWakeLock ?? true;
     let wakeLock: WakeLockSentinel | null = null;
@@ -72,7 +73,7 @@ export class VoiceConversation extends BaseConversation {
       });
       preliminaryInputStream = null;
 
-      return new VoiceConversation(
+      conversation = new VoiceConversation(
         fullOptions,
         sessionSetup.connection,
         sessionSetup.input,
@@ -81,13 +82,21 @@ export class VoiceConversation extends BaseConversation {
         sessionSetup.detach,
         wakeLock
       );
+      fullOptions.onConversationCreated?.(conversation);
+      conversation.markConnected();
+      fullOptions.onConnect?.({
+        conversationId: sessionSetup.connection.conversationId,
+      });
+      return conversation;
     } catch (error) {
-      if (fullOptions.onStatusChange) {
-        fullOptions.onStatusChange({ status: "disconnected" });
-      }
       preliminaryInputStream?.getTracks().forEach(track => {
         track.stop();
       });
+      if (conversation) {
+        await conversation.endSession().catch(() => {});
+      } else {
+        fullOptions.onStatusChange?.({ status: "disconnected" });
+      }
       try {
         await wakeLock?.release();
         wakeLock = null;

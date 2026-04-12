@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
-import { Conversation, type Callbacks } from "@elevenlabs/client";
+import {
+  Conversation,
+  type Callbacks,
+  type ConversationLifecycleOptions,
+} from "@elevenlabs/client";
 import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
 import { ConversationProvider } from "./ConversationProvider.js";
 import {
@@ -43,6 +47,29 @@ function createWrapper(props: Record<string, unknown> = {}) {
       </ConversationProvider>
     );
   };
+}
+
+type MockStartSessionOptions = Partial<Callbacks & ConversationLifecycleOptions> &
+  Record<string, unknown>;
+
+function driveConnectedSessionLifecycle(
+  options: MockStartSessionOptions,
+  conversation: Conversation
+) {
+  options.onConversationCreated?.(conversation);
+  options.onStatusChange?.({ status: "connected" });
+  options.onConnect?.({ conversationId: conversation.getId() });
+}
+
+function mockStartSessionWithLifecycle(conversation = createMockConversation()) {
+  vi.mocked(Conversation.startSession).mockImplementation(async options => {
+    driveConnectedSessionLifecycle(
+      options as MockStartSessionOptions,
+      conversation
+    );
+    return conversation;
+  });
+  return conversation;
 }
 
 describe("ConversationProvider", () => {
@@ -227,8 +254,7 @@ describe("ConversationProvider", () => {
     const propCalls: string[] = [];
     const sessionCalls: string[] = [];
 
-    const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+    mockStartSessionWithLifecycle();
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper({
@@ -242,7 +268,7 @@ describe("ConversationProvider", () => {
       });
     });
 
-    // onConnect is fired by the provider after startSession resolves
+    // onConnect is forwarded through the provider-owned wrapper.
     expect(propCalls).toEqual(["prop"]);
     expect(sessionCalls).toEqual(["session"]);
   });
@@ -250,8 +276,7 @@ describe("ConversationProvider", () => {
   it("calls only the prop callback when startSession provides none", async () => {
     const propCalls: string[] = [];
 
-    const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+    mockStartSessionWithLifecycle();
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper({
@@ -269,8 +294,7 @@ describe("ConversationProvider", () => {
   it("calls only the startSession callback when no prop callback is set", async () => {
     const sessionCalls: string[] = [];
 
-    const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+    mockStartSessionWithLifecycle();
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper(),
@@ -554,8 +578,7 @@ describe("ConversationProvider", () => {
       </ConversationProvider>
     );
 
-    const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+    mockStartSessionWithLifecycle();
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper,
@@ -567,9 +590,11 @@ describe("ConversationProvider", () => {
 
     const startSessionCall = vi.mocked(Conversation.startSession).mock
       .calls[0][0];
-    // onConnect is stripped from options and fired by the provider after
-    // startSession resolves, so it should NOT be on the options object
-    expect(startSessionCall.onConnect).toBeUndefined();
+    // onConnect is wrapped by the provider and forwarded through the SDK.
+    expect(typeof startSessionCall.onConnect).toBe("function");
+    expect(
+      typeof (startSessionCall as MockStartSessionOptions).onConversationCreated
+    ).toBe("function");
     // onDisconnect is registered internally by the provider
     expect(typeof startSessionCall.onDisconnect).toBe("function");
     // Unprovided callbacks are omitted so client feature guards work
@@ -581,10 +606,11 @@ describe("ConversationProvider", () => {
   it("can send a message from onConnect without throwing", async () => {
     const mockConversation = createMockConversation();
 
-    // Simulate real behavior: onConnect fires during startSession (inside
-    // the BaseConversation constructor) before the promise resolves.
     vi.mocked(Conversation.startSession).mockImplementation(async opts => {
-      opts.onConnect?.({ conversationId: "test-id" });
+      driveConnectedSessionLifecycle(
+        opts as MockStartSessionOptions,
+        mockConversation
+      );
       return mockConversation;
     });
 
@@ -617,6 +643,34 @@ describe("ConversationProvider", () => {
 
     expect(onConnectError).not.toHaveBeenCalled();
     expect(mockConversation.sendUserMessage).toHaveBeenCalledWith("hello");
+  });
+
+  it("clears the active conversation when onConnect throws", async () => {
+    const mockConversation = createMockConversation();
+    const onError = vi.fn();
+
+    vi.mocked(Conversation.startSession).mockImplementation(async opts => {
+      driveConnectedSessionLifecycle(
+        opts as MockStartSessionOptions,
+        mockConversation
+      );
+      return mockConversation;
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConnect: () => {
+          throw new Error("boom");
+        },
+      });
+    });
+
+    expect(onError).toHaveBeenCalledWith("boom", expect.any(Error));
+    expect(result.current.conversation).toBeNull();
   });
 });
 

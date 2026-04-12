@@ -12,6 +12,8 @@ export type {
   Status,
   AudioWorkletConfig,
   MultimodalMessageInput,
+  ConversationCreatedCallback,
+  ConversationLifecycleOptions,
 } from "./BaseConversation.js";
 export type { InputController, InputDeviceConfig } from "./InputController.js";
 export type {

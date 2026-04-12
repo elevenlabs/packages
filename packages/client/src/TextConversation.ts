@@ -51,15 +51,22 @@ export class TextConversation extends BaseConversation {
     }
 
     let connection: BaseConnection | null = null;
+    let conversation: TextConversation | null = null;
     try {
       await applyDelay(fullOptions.connectionDelay);
       connection = await createConnection(fullOptions);
-      return new TextConversation(fullOptions, connection);
+      conversation = new TextConversation(fullOptions, connection);
+      fullOptions.onConversationCreated?.(conversation);
+      conversation.markConnected();
+      fullOptions.onConnect?.({ conversationId: connection.conversationId });
+      return conversation;
     } catch (error) {
-      if (fullOptions.onStatusChange) {
-        fullOptions.onStatusChange({ status: "disconnected" });
+      if (conversation) {
+        await conversation.endSession().catch(() => {});
+      } else {
+        fullOptions.onStatusChange?.({ status: "disconnected" });
+        connection?.close();
       }
-      connection?.close();
       throw error;
     }
   }

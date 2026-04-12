@@ -19,3 +19,7 @@ export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
 } from "./utils/volumeProvider.js";
+export type {
+  ConversationCreatedCallback,
+  ConversationLifecycleOptions,
+} from "./BaseConversation.js";

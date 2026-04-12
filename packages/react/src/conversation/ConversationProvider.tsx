@@ -6,7 +6,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { Conversation, type Options, type Callbacks } from "@elevenlabs/client";
+import {
+  Conversation,
+  type Options,
+  type Callbacks,
+  type ConversationLifecycleOptions,
+} from "@elevenlabs/client";
 import {
   CALLBACK_KEYS,
   mergeOptions,
@@ -145,9 +150,34 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
-      const { onConnect, ...sessionOptionsWithoutOnConnect } = sessionOptions;
+      const handleConversationCreated = (conv: Conversation) => {
+        if (shouldEndRef.current) {
+          return;
+        }
+        conversationRef.current = conv;
+        setConversation(conv);
+      };
 
-      lockRef.current = Conversation.startSession(sessionOptionsWithoutOnConnect);
+      const handleConnect: NonNullable<Callbacks["onConnect"]> = props => {
+        if (shouldEndRef.current) {
+          return;
+        }
+        lockRef.current = null;
+        sessionOptions.onConnect?.(props);
+      };
+
+      const providerLifecycleOptions: ConversationLifecycleOptions &
+        Pick<Callbacks, "onConnect"> = {
+        onConversationCreated: handleConversationCreated,
+        onConnect: handleConnect,
+      };
+
+      const startSessionOptions: Options = {
+        ...sessionOptions,
+        ...providerLifecycleOptions,
+      };
+
+      lockRef.current = Conversation.startSession(startSessionOptions);
 
       lockRef.current.then(
         conv => {
@@ -156,12 +186,15 @@ export function ConversationProvider({
             lockRef.current = null;
             return;
           }
-          conversationRef.current = conv;
-          setConversation(conv);
+          if (conversationRef.current !== conv) {
+            conversationRef.current = conv;
+            setConversation(conv);
+          }
           lockRef.current = null;
-          onConnect?.({ conversationId: conv.getId() });
         },
         (error: unknown) => {
+          conversationRef.current = null;
+          setConversation(null);
           lockRef.current = null;
           if (shouldEndRef.current) {
             return;
