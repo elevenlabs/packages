@@ -764,6 +764,59 @@ describe("ConversationProvider", () => {
 
     expect(result.current.conversation).toBe(secondConversation);
   });
+
+  it("ignores stale startSession rejection after restarting inside onConnect", async () => {
+    const onError = vi.fn();
+    const firstConversation = createMockConversation("first-id");
+    const secondConversation = createMockConversation("second-id");
+    const firstError = new Error("first failed");
+    const { promise: firstPromise, reject: rejectFirst } =
+      Promise.withResolvers<Conversation>();
+    const { promise: secondPromise, resolve: resolveSecond } =
+      Promise.withResolvers<Conversation>();
+    let firstOptions: MockStartSessionOptions | null = null;
+    let secondOptions: MockStartSessionOptions | null = null;
+
+    vi.mocked(Conversation.startSession).mockImplementation(options => {
+      if (!firstOptions) {
+        firstOptions = options as MockStartSessionOptions;
+        return firstPromise;
+      }
+      secondOptions = options as MockStartSessionOptions;
+      return secondPromise;
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+
+    act(() => {
+      result.current.startSession({
+        onConnect: () => {
+          result.current.endSession();
+          result.current.startSession();
+        },
+      });
+    });
+
+    act(() => {
+      driveConnectedSessionLifecycle(firstOptions!, firstConversation);
+      driveConnectedSessionLifecycle(secondOptions!, secondConversation);
+    });
+
+    expect(result.current.conversation).toBe(secondConversation);
+
+    await act(async () => {
+      rejectFirst(firstError);
+    });
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(secondConversation);
+
+    await act(async () => {
+      resolveSecond(secondConversation);
+    });
+  });
 });
 
 describe("CALLBACK_KEYS", () => {
