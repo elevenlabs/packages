@@ -6,6 +6,7 @@ import type {
   OutputConfig,
   FormatConfig,
   Callbacks,
+  ConversationLifecycleOptions,
   Location,
 } from "@elevenlabs/client";
 
@@ -46,6 +47,7 @@ export type HookCallbacks = Pick<
 export type HookOptions = Partial<
   SessionConfig &
     HookCallbacks &
+    ConversationLifecycleOptions &
     ClientToolsConfig &
     InputConfig &
     OutputConfig &

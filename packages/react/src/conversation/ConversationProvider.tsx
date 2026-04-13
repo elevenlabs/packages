@@ -150,12 +150,15 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
+      const userOnConversationCreated = sessionOptions.onConversationCreated;
+
       const handleConversationCreated = (conv: Conversation) => {
         if (shouldEndRef.current) {
           return;
         }
         conversationRef.current = conv;
         setConversation(conv);
+        userOnConversationCreated?.(conv);
       };
 
       const handleConnect: NonNullable<Callbacks["onConnect"]> = props => {

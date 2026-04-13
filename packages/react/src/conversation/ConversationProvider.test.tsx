@@ -672,6 +672,40 @@ describe("ConversationProvider", () => {
     expect(onError).toHaveBeenCalledWith("boom", expect.any(Error));
     expect(result.current.conversation).toBeNull();
   });
+
+  it("forwards user onConversationCreated after provider sets conversationRef", async () => {
+    const mockConversation = createMockConversation();
+    const userOnConversationCreated = vi.fn();
+
+    vi.mocked(Conversation.startSession).mockImplementation(async opts => {
+      driveConnectedSessionLifecycle(
+        opts as MockStartSessionOptions,
+        mockConversation
+      );
+      return mockConversation;
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConversationCreated(conv) {
+          userOnConversationCreated(
+            conv,
+            result.current.conversationRef.current
+          );
+        },
+      });
+    });
+
+    expect(userOnConversationCreated).toHaveBeenCalledTimes(1);
+    expect(userOnConversationCreated).toHaveBeenCalledWith(
+      mockConversation,
+      mockConversation
+    );
+  });
 });
 
 describe("CALLBACK_KEYS", () => {
