@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 1.1.1
+
+### Patch Changes
+
+- 4237f72: Fix conversation startup readiness so `onConnect` runs after the session is marked connected and React has synchronized `conversationRef`. Also expose and forward `onConversationCreated` for consumers that need the created `Conversation` instance before `onConnect`.
+- Updated dependencies [4237f72]
+  - @elevenlabs/client@1.2.1
+
 ## 1.1.0
 
 ### Minor Changes
