@@ -67,6 +67,8 @@ export function ConversationProvider({
   const conversationRef = useRef<Conversation | null>(null);
   /** In-flight startSession promise, used to prevent duplicate connections. */
   const lockRef = useRef<Promise<Conversation> | null>(null);
+  /** Monotonic id used to ignore stale async handlers from older starts. */
+  const startSessionIdRef = useRef(0);
   /** Signals that endSession was called while a connection was still pending. */
   const shouldEndRef = useRef(false);
   /** Registry of hook-registered client tools. Survives across sessions. */
@@ -117,6 +119,7 @@ export function ConversationProvider({
       }
 
       shouldEndRef.current = false;
+      const startSessionId = ++startSessionIdRef.current;
 
       const defaults = defaultOptionsRef.current;
       const resolvedServerLocation = parseLocation(
@@ -151,9 +154,11 @@ export function ConversationProvider({
       sessionOptions.clientTools = clientTools;
 
       const userOnConversationCreated = sessionOptions.onConversationCreated;
+      const isStaleStartSession = () =>
+        startSessionId !== startSessionIdRef.current;
 
       const handleConversationCreated = (conv: Conversation) => {
-        if (shouldEndRef.current) {
+        if (shouldEndRef.current || isStaleStartSession()) {
           return;
         }
         conversationRef.current = conv;
@@ -162,7 +167,7 @@ export function ConversationProvider({
       };
 
       const handleConnect: NonNullable<Callbacks["onConnect"]> = props => {
-        if (shouldEndRef.current) {
+        if (shouldEndRef.current || isStaleStartSession()) {
           return;
         }
         lockRef.current = null;
@@ -184,6 +189,9 @@ export function ConversationProvider({
 
       lockRef.current.then(
         conv => {
+          if (isStaleStartSession()) {
+            return;
+          }
           if (shouldEndRef.current) {
             conv.endSession();
             lockRef.current = null;
@@ -196,6 +204,9 @@ export function ConversationProvider({
           lockRef.current = null;
         },
         (error: unknown) => {
+          if (isStaleStartSession()) {
+            return;
+          }
           conversationRef.current = null;
           setConversation(null);
           lockRef.current = null;
