@@ -1,6 +1,13 @@
 import { isTextOnly, type PartialOptions } from "./BaseConversation.js";
 import { TextConversation } from "./TextConversation.js";
 import { VoiceConversation } from "./VoiceConversation.js";
+import { setSetupStrategy } from "./platform/VoiceSessionStrategy.js";
+import { webSessionSetup } from "./platform/webSessionSetup.js";
+
+// Register the web session setup as the default strategy.
+// Platform-specific entrypoints (e.g. @elevenlabs/react-native) override this
+// via setSetupStrategy() before any session is started.
+setSetupStrategy(webSessionSetup);
 
 export type {
   Mode,

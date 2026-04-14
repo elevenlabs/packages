@@ -49,6 +49,7 @@ export type ConnectionConfig = SessionConfig & {
 };
 
 export class WebRTCConnection extends BaseConnection {
+  public readonly type = "webrtc" as const;
   public conversationId: string;
   public readonly inputFormat: FormatConfig;
   public readonly outputFormat: FormatConfig;

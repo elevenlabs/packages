@@ -1,29 +1,13 @@
 import type { Options } from "../BaseConversation.js";
 import type { BaseConnection } from "../utils/BaseConnection.js";
-import type { InputController } from "../InputController.js";
-import type { OutputController } from "../OutputController.js";
-import {
-  MediaDeviceOutput,
-  type PlaybackEventTarget,
-} from "../utils/output.js";
+import { MediaDeviceOutput } from "../utils/output.js";
 import { MediaDeviceInput } from "../utils/input.js";
 import { WebSocketConnection } from "../utils/WebSocketConnection.js";
 import { WebRTCConnection } from "../utils/WebRTCConnection.js";
 import { attachInputToConnection } from "../utils/attachInputToConnection.js";
 import { attachConnectionToOutput } from "../utils/attachConnectionToOutput.js";
 import { createConnection } from "../utils/ConnectionFactory.js";
-
-export type VoiceSessionSetupResult = {
-  connection: BaseConnection;
-  input: InputController;
-  output: OutputController;
-  playbackEventTarget: PlaybackEventTarget | null;
-  detach: () => void;
-};
-
-export type VoiceSessionSetupStrategy = (
-  options: Options
-) => Promise<VoiceSessionSetupResult>;
+import type { VoiceSessionSetupResult } from "./VoiceSessionStrategy.js";
 
 /**
  * Sets up input and output controllers for an existing connection.
@@ -33,31 +17,33 @@ export async function setupInputOutput(
   options: Options,
   connection: BaseConnection
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
-  if (connection instanceof WebRTCConnection) {
+  if (connection.type === "webrtc") {
+    const rtcConnection = connection as WebRTCConnection;
     return {
-      input: connection.input,
-      output: connection.output,
+      input: rtcConnection.input,
+      output: rtcConnection.output,
       playbackEventTarget: null,
       detach: () => {},
     };
-  } else if (connection instanceof WebSocketConnection) {
+  } else if (connection.type === "websocket") {
+    const wsConnection = connection as WebSocketConnection;
     const [input, output] = await Promise.all([
       MediaDeviceInput.create({
-        ...connection.inputFormat,
+        ...wsConnection.inputFormat,
         preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
         inputDeviceId: options.inputDeviceId,
         workletPaths: options.workletPaths,
         libsampleratePath: options.libsampleratePath,
       }),
       MediaDeviceOutput.create({
-        ...connection.outputFormat,
+        ...wsConnection.outputFormat,
         outputDeviceId: options.outputDeviceId,
         workletPaths: options.workletPaths,
       }),
     ]);
 
-    const detachInput = attachInputToConnection(input, connection);
-    const detachOutput = attachConnectionToOutput(connection, output);
+    const detachInput = attachInputToConnection(input, wsConnection);
+    const detachOutput = attachConnectionToOutput(wsConnection, output);
 
     return {
       input,
@@ -85,19 +71,4 @@ export async function webSessionSetup(
   const connection = await createConnection(options);
   const io = await setupInputOutput(options, connection);
   return { connection, ...io };
-}
-
-/**
- * The active session setup strategy.
- * Defaults to web platform strategy.
- * Can be overridden by platform-specific entrypoints (e.g. React Native).
- */
-export let setupStrategy: VoiceSessionSetupStrategy = webSessionSetup;
-
-/**
- * Override the voice session setup strategy.
- * Called by platform-specific entrypoints to inject their own setup handling.
- */
-export function setSetupStrategy(strategy: VoiceSessionSetupStrategy) {
-  setupStrategy = strategy;
 }

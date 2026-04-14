@@ -10,17 +10,18 @@
       "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
     },
-    "./internal": "./dist/internal.js"
+    "./internal": "./dist/internal.js",
+    "./web": "./dist/platform/webSessionSetup.js"
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
-    "build:esm": "tsc --build tsconfig.build.json",
+    "build:esm": "tsc --build",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
     "build": "node --run build:esm && node --run build:iife",
-    "dev": "tsc --build tsconfig.build.json --watch",
-    "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
-    "check-types": "tsc --noEmit --project tsconfig.build.json && tsc --noEmit --project tsconfig.test.json",
+    "dev": "tsc --build --watch",
+    "clean": "tsc --build --clean && rm -rf ./dist",
+    "check-types": "tsc --build && tsc --noEmit --project tsconfig.test.json",
     "lint:es": "pnpm exec eslint .",
     "lint:prettier": "prettier 'src/**/*.ts' --check",
     "test": "vitest"

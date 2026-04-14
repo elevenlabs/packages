@@ -1,18 +1,16 @@
-import {
-  registerGlobals,
-  AudioSession,
-  AndroidAudioTypePresets,
-} from "@livekit/react-native";
+// Polyfill WebRTC globals needed by livekit-client in React Native.
+// This must be a side-effect import that runs BEFORE any module that
+// transitively loads livekit-client (e.g. @elevenlabs/client/web).
+import "./setup.js";
+
+import { AudioSession, AndroidAudioTypePresets } from "@livekit/react-native";
 import type { Options } from "@elevenlabs/client";
 import {
   setSetupStrategy,
-  webSessionSetup,
   type VoiceSessionSetupResult,
 } from "@elevenlabs/client/internal";
+import { webSessionSetup } from "@elevenlabs/client/web";
 import { attachNativeVolume } from "./nativeVolume.js";
-
-// Polyfill WebRTC globals needed by livekit-client in React Native
-registerGlobals();
 
 /**
  * React Native voice session setup strategy.

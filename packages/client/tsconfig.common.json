@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": [
+    "src/core-globals.d.ts",
+    "src/BaseConversation.ts",
+    "src/InputController.ts",
+    "src/OutputController.ts",
+    "src/internal.ts",
+    "src/sourceInfo.ts",
+    "src/version.ts",
+    "src/platform/VoiceSessionStrategy.ts",
+    "src/utils/BaseConnection.ts",
+    "src/utils/events.ts",
+    "src/utils/overrides.ts",
+    "src/utils/errors.ts",
+    "src/utils/location.ts",
+    "src/utils/mergeOptions.ts",
+    "src/utils/calculateVolume.ts",
+    "src/utils/volumeProvider.ts",
+    "src/utils/postOverallFeedback.ts"
+  ]
+}

@@ -25,8 +25,8 @@ import type {
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
 } from "./utils/events.js";
-import type { InputConfig } from "./utils/input.js";
-import type { OutputConfig } from "./utils/output.js";
+import type { InputConfig } from "./InputController.js";
+import type { OutputConfig } from "./OutputController.js";
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 export { CALLBACK_KEYS } from "@elevenlabs/types";
@@ -329,7 +329,7 @@ export abstract class BaseConversation {
     if (event.agent_tool_response.tool_name === "end_call") {
       this.endSessionWithDetails({
         reason: "agent",
-        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+        context: { type: "end_call", reason: "Agent ended the call" },
       });
     }
 
@@ -373,7 +373,7 @@ export abstract class BaseConversation {
       this.endSessionWithDetails({
         reason: "error",
         message: message,
-        context: new Event("max_duration_exceeded"),
+        context: { type: "max_duration_exceeded" },
       });
       return;
     }

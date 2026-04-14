@@ -14,7 +14,7 @@ import {
 } from "./BaseConversation.js";
 import type { InputController } from "./InputController.js";
 import type { OutputController } from "./OutputController.js";
-import { setupStrategy } from "./platform/VoiceSessionSetup.js";
+import { setupStrategy } from "./platform/VoiceSessionStrategy.js";
 
 export class VoiceConversation extends BaseConversation {
   readonly type = "voice";
