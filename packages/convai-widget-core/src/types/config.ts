@@ -79,6 +79,8 @@ export interface WidgetConfig {
   conversation_mode_toggle_enabled?: boolean;
   show_agent_status?: boolean;
   show_conversation_id?: boolean;
+  file_input_enabled?: boolean;
+  file_input_max_files_per_conversation?: number;
 }
 
 export type AvatarConfig =
@@ -144,6 +146,13 @@ export const DefaultTextContents = {
   agent_working: "Working...",
   agent_done: "Completed",
   agent_error: "Error occurred",
+  attach_file: "Attach file",
+  remove_file: "Remove file",
+  file_upload_error: "Failed to upload file. Please try again.",
+  file_type_unsupported:
+    "Unsupported file type. Accepted types: PNG, JPEG, GIF, WEBP, PDF.",
+  file_too_large: "File size exceeds the maximum limit.",
+  file_limit_reached: "Maximum number of files for this conversation reached.",
 };
 
 export const TextKeys = Object.keys(

@@ -1,6 +1,7 @@
 import {
   Conversation,
   Mode,
+  MultimodalMessageInput,
   Role,
   SessionConfig,
   Status,
@@ -27,6 +28,13 @@ interface ConversationProviderProps {
   children: ComponentChildren;
 }
 
+/** File metadata stored alongside a user message in the local transcript. */
+export type TranscriptFileInput = {
+  fileName: string;
+  mimeType: string;
+  previewUrl: string | null;
+};
+
 export type TranscriptEntry =
   | {
       type: "message";
@@ -35,6 +43,7 @@ export type TranscriptEntry =
       isText: boolean;
       conversationIndex: number;
       eventId?: number;
+      fileInput?: TranscriptFileInput | null;
     }
   | {
       type: "agent_tool_request";
@@ -411,6 +420,25 @@ function useConversationSetup() {
             message: text,
             isText: true,
             conversationIndex: conversationIndex.peek(),
+          },
+        ];
+      },
+      sendMultimodalMessage: (
+        options: MultimodalMessageInput,
+        fileInput: TranscriptFileInput
+      ) => {
+        const trimmed = options.text?.trim() ?? "";
+        if (!trimmed && !options.fileId) return;
+        conversationRef.current?.sendMultimodalMessage(options);
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "message",
+            role: "user",
+            message: trimmed,
+            isText: true,
+            conversationIndex: conversationIndex.peek(),
+            fileInput,
           },
         ];
       },
