@@ -113,6 +113,9 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Include timestamps
   includeTimestamps?: boolean;
+
+  // Logging
+  enableLogging?: boolean;
 }
 
 export interface UseScribeReturn {
@@ -186,6 +189,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
     // Timestamps
     includeTimestamps: defaultIncludeTimestamps,
+
+    // Logging
+    enableLogging: defaultEnableLogging,
   } = options;
 
   const connectionRef = useRef<RealtimeConnection | null>(null);
@@ -242,6 +248,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             onCommittedTranscriptWithTimestamps
           );
 
+        const enableLogging =
+          runtimeOptions.enableLogging ?? defaultEnableLogging;
+
         if (microphone) {
           // Microphone mode
           connection = Scribe.connect({
@@ -262,6 +271,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             microphone,
             includeTimestamps,
+            enableLogging,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -282,6 +292,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             includeTimestamps,
+            enableLogging,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -464,6 +475,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultAudioFormat,
       defaultSampleRate,
       defaultIncludeTimestamps,
+      defaultEnableLogging,
       onSessionStarted,
       onPartialTranscript,
       onCommittedTranscript,
