@@ -4,6 +4,7 @@ import { JSX } from "preact";
 const ICON_MAP = {
   phone: PhoneIcon,
   "phone-off": PhoneSlashIcon,
+  paperclip: PaperclipIcon,
   chat: ChatIcon,
   mic: MicIcon,
   "mic-off": MicOffIcon,
@@ -18,8 +19,8 @@ const ICON_MAP = {
   wrap: WrapTextIcon,
   maximize: MaximizeIcon,
   minimize: MinimizeIcon,
-  "loader": LoaderIcon,
-  "x": XIcon,
+  loader: LoaderIcon,
+  x: XIcon,
 };
 
 const SIZE_CLASSES = {
@@ -77,6 +78,26 @@ function PhoneSlashIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
     >
       <path d="M16.0303 3.53033C16.3232 3.23744 16.3232 2.76256 16.0303 2.46967C15.7374 2.17678 15.2626 2.17678 14.9697 2.46967L8.6271 8.81224C8.25925 8.3778 7.93185 7.90804 7.65074 7.40881L8.21246 6.84709C8.60266 6.45689 8.74711 5.88396 8.58854 5.35541L7.97761 3.31898C7.78727 2.6845 7.20329 2.25 6.54087 2.25H4.2489C3.43286 2.25 2.71942 2.92142 2.77338 3.7963C2.95462 6.73468 4.13069 9.40357 5.96899 11.4703L2.96967 14.4697C2.67678 14.7626 2.67678 15.2374 2.96967 15.5303C3.26256 15.8232 3.73744 15.8232 4.03033 15.5303L16.0303 3.53033Z" />
       <path d="M14.7026 15.7255C12.2994 15.5773 10.0765 14.7636 8.21584 13.4665L10.9278 10.7545C10.9815 10.7863 11.0356 10.8175 11.0901 10.8482L11.6518 10.2864C12.042 9.89623 12.6149 9.75179 13.1435 9.91035L15.1799 10.5213C15.8144 10.7116 16.2489 11.2956 16.2489 11.958V14.25C16.2489 15.066 15.5775 15.7795 14.7026 15.7255Z" />
+    </svg>
+  );
+}
+
+function PaperclipIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      height="1em"
+      width="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M13.234 20.252 21 12.3"></path>
+      <path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486"></path>
     </svg>
   );
 }
@@ -461,11 +482,39 @@ function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
 
 function LoaderIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }
 
 function XIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   return (
-<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> );
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      {...props}
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
 }
