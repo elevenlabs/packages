@@ -5,14 +5,12 @@ import { ACCEPTED_FILE_EXTENSIONS } from "./useFileUpload";
 
 interface UploadFileButtonProps extends BaseButtonProps {
   iconOnly?: boolean;
-  hasPendingFile?: boolean;
   disabled?: boolean;
   onFileSelect: (file: File) => void;
 }
 
 export function UploadFileButton({
   iconOnly,
-  hasPendingFile,
   disabled,
   onFileSelect,
   children,
@@ -44,7 +42,7 @@ export function UploadFileButton({
         variant="secondary"
         icon="paperclip"
         onClick={handleClick}
-        disabled={hasPendingFile || disabled}
+        disabled={disabled}
         aria-label={text.attach_file}
         {...props}
       >
