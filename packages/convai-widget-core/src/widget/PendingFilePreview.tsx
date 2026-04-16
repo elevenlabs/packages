@@ -38,18 +38,16 @@ export function PendingFilePreview({
         </div>
       )}
 
-      <span className="text-sm text-base-primary truncate max-w-[160px]">
-        {pendingFile.file.name}
-      </span>
-
-      {hasError && (
-        <span
-          className="text-xs text-base-error truncate max-w-[120px]"
-          title={pendingFile.error}
-        >
-          {pendingFile.error}
+      <div className="flex flex-col min-w-0 max-w-[220px]">
+        <span className="text-sm text-base-primary truncate">
+          {pendingFile.file.name}
         </span>
-      )}
+        {hasError && (
+          <span className="text-xs text-base-error break-words">
+            {pendingFile.error || text.file_upload_error.value}
+          </span>
+        )}
+      </div>
 
       {isUploading && (
         <Icon

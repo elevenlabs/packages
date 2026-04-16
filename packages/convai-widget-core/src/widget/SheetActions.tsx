@@ -3,12 +3,12 @@ import {
   Signal,
   useComputed,
   useSignal,
+  useSignalEffect,
 } from "@preact/signals";
 import {
   KeyboardEventHandler,
   TargetedEvent,
   useCallback,
-  useRef,
 } from "preact/compat";
 import { Button } from "../components/Button";
 import { SizeTransition } from "../components/SizeTransition";
@@ -51,9 +51,20 @@ export function SheetActions({
   } = useConversation();
 
   const fileError = useSignal<string | null>(null);
-  const fileErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Auto-dismiss the validation toast 4s after it's set; a new message resets
+  // the timer because useSignalEffect re-runs (and cleans up) on change.
+  useSignalEffect(() => {
+    if (!fileError.value) return;
+    const id = setTimeout(() => {
+      fileError.value = null;
+    }, 4000);
+    return () => clearTimeout(id);
+  });
 
-  const conversationId = isDisconnected.value ? null : lastId.value;
+  // Only expose the conversation id while fully connected — during the
+  // "connecting" phase of a reconnect, `lastId` still holds the previous
+  // conversation's id, which would cause uploads to target the wrong endpoint.
+  const conversationId = status.value === "connected" ? lastId.value : null;
   const {
     pendingFile,
     isUploading,
@@ -63,31 +74,20 @@ export function SheetActions({
     markFileAsSent,
   } = useFileUpload({ conversationId, maxFiles: maxFiles.value });
 
-  const showFileError = useCallback(
-    (message: string) => {
-      if (fileErrorTimer.current) clearTimeout(fileErrorTimer.current);
-      fileError.value = message;
-      fileErrorTimer.current = setTimeout(() => {
-        fileError.value = null;
-      }, 4000);
-    },
-    [fileError]
-  );
-
   const handleFileSelect = useCallback(
     (file: File) => {
       const error = addFile(file);
       if (error === "unsupported_type") {
-        showFileError(text.file_type_unsupported.peek());
+        fileError.value = text.file_type_unsupported.peek();
       } else if (error === "too_large") {
-        showFileError(text.file_too_large.peek());
+        fileError.value = text.file_too_large.peek();
       } else if (error === "limit_reached") {
-        showFileError(text.file_limit_reached.peek());
+        fileError.value = text.file_limit_reached.peek();
       } else if (error) {
-        showFileError(error);
+        fileError.value = error;
       }
     },
-    [addFile, text, showFileError]
+    [addFile, text, fileError]
   );
 
   const handleSendMessage = useCallback(
@@ -169,6 +169,7 @@ export function SheetActions({
             <SheetTextarea
               userMessage={userMessage}
               isFocused={isFocused}
+              canSend={canSend}
               onSendMessage={handleSendMessage}
             />
             <div className="absolute bottom-0 left-0 right-0 flex gap-1.5 items-center justify-end px-3 pb-3 pt-2 pointer-events-none">
@@ -178,7 +179,7 @@ export function SheetActions({
                   canSend={canSend}
                   onSendMessage={handleSendMessage}
                   showTranscript={showTranscript}
-                  fileInputEnabled={fileInputEnabled.value}
+                  fileInputEnabled={fileInputEnabled}
                   pendingFile={pendingFile}
                   hasReachedLimit={hasReachedLimit}
                   onFileSelect={handleFileSelect}
@@ -194,7 +195,7 @@ export function SheetActions({
               canSend={canSend}
               onSendMessage={handleSendMessage}
               showTranscript={showTranscript}
-              fileInputEnabled={fileInputEnabled.value}
+              fileInputEnabled={fileInputEnabled}
               pendingFile={pendingFile}
               hasReachedLimit={hasReachedLimit}
               onFileSelect={handleFileSelect}
@@ -209,10 +210,12 @@ export function SheetActions({
 function SheetTextarea({
   userMessage,
   isFocused,
+  canSend,
   onSendMessage,
 }: {
   userMessage: Signal<string>;
   isFocused: Signal<boolean>;
+  canSend: ReadonlySignal<boolean>;
   onSendMessage: (e: TargetedEvent<HTMLElement>) => Promise<void>;
 }) {
   const text = useTextContents();
@@ -230,10 +233,13 @@ function SheetTextarea({
   const handleKeyDown = useCallback<KeyboardEventHandler<HTMLTextAreaElement>>(
     async e => {
       if (e.key === "Enter" && !e.shiftKey) {
-        await onSendMessage(e);
+        e.preventDefault();
+        if (canSend.peek()) {
+          await onSendMessage(e);
+        }
       }
     },
-    [onSendMessage]
+    [onSendMessage, canSend]
   );
 
   const handleFocus = useCallback(() => {
@@ -279,7 +285,7 @@ function SheetButtons({
   canSend: ReadonlySignal<boolean>;
   onSendMessage: (e: TargetedEvent<HTMLElement>) => Promise<void>;
   showTranscript?: boolean;
-  fileInputEnabled: boolean;
+  fileInputEnabled: ReadonlySignal<boolean>;
   pendingFile: ReadonlySignal<PendingFile | null>;
   hasReachedLimit: ReadonlySignal<boolean>;
   onFileSelect: (file: File) => void;
@@ -300,7 +306,11 @@ function SheetButtons({
     return !textOnly.value && !isDisconnected.value && !isTextMode.value;
   });
   const showUploadButton = useComputed(() => {
-    return fileInputEnabled && !isDisconnected.value;
+    // File upload is only exposed alongside the text input — without a textarea
+    // there's nowhere to preview the attachment or send it.
+    return (
+      fileInputEnabled.value && textInputEnabled.value && !isDisconnected.value
+    );
   });
 
   return (
@@ -311,8 +321,11 @@ function SheetButtons({
       <SizeTransition visible={showUploadButton.value}>
         <UploadFileButton
           iconOnly
-          hasPendingFile={!!pendingFile.value}
-          disabled={hasReachedLimit.value}
+          disabled={
+            !!pendingFile.value ||
+            hasReachedLimit.value ||
+            status.value !== "connected"
+          }
           onFileSelect={onFileSelect}
           className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />

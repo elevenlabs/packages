@@ -148,7 +148,7 @@ export const DefaultTextContents = {
   agent_error: "Error occurred",
   attach_file: "Attach file",
   remove_file: "Remove file",
-  file_upload_error: "Failed to upload file. Please try again.",
+  file_upload_error: "Failed to upload file.",
   file_type_unsupported:
     "Unsupported file type. Accepted types: PNG, JPEG, GIF, WEBP, PDF.",
   file_too_large: "File size exceeds the maximum limit.",

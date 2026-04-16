@@ -60,17 +60,56 @@ export function useFileUpload({
   const lastConversationIdRef = useRef<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   // Preview URLs for sent files — kept alive so TranscriptMessage can still
-  // render the image thumbnail; revoked on unmount.
+  // render the image thumbnail. Revoked only when a new conversation starts
+  // (the previous transcript is cleared) or on unmount.
   const sentUrlsRef = useRef<string[]>([]);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
-  // Reset the per-conversation file counter when the conversation changes.
+  // Reset state when the conversation changes — the old fileId is no longer valid.
   if (conversationId !== lastConversationIdRef.current) {
+    const prev = pendingFile.value;
+    const prevConversationId = lastConversationIdRef.current;
     lastConversationIdRef.current = conversationId;
     sentFileCount.value = 0;
+    // Keep sent URLs alive while the previous transcript is still visible
+    // (i.e. we just disconnected). Only reclaim them when a new conversation
+    // starts and the transcript is about to be cleared.
+    if (conversationId !== null) {
+      sentUrlsRef.current.forEach(revokeUrl);
+      sentUrlsRef.current = [];
+    }
+    if (prev) {
+      if (prev.status === "uploading") {
+        // Abort best-effort. The .then handler will still fire a DELETE if
+        // the server accepted the upload before we aborted.
+        uploadAbortRef.current?.abort();
+      } else if (prev.status === "ready" && prevConversationId) {
+        fetch(
+          `${serverUrl.peek()}/v1/convai/conversations/${prevConversationId}/files/${prev.fileId}`,
+          { method: "DELETE" }
+        ).catch(() => {});
+      }
+      revokeUrl(previewUrlRef.current);
+      previewUrlRef.current = null;
+      pendingFile.value = null;
+    }
   }
 
   useEffect(() => {
     return () => {
+      const current = pendingFile.peek();
+      // Null out the pending file *before* aborting so the upload's .then
+      // handler sees the file is no longer ours and falls into the orphan
+      // DELETE branch if the server accepted the upload after the abort.
+      pendingFile.value = null;
+      uploadAbortRef.current?.abort();
+      // Clean up a ready-but-unsent file server-side.
+      if (current?.status === "ready" && lastConversationIdRef.current) {
+        fetch(
+          `${serverUrl.peek()}/v1/convai/conversations/${lastConversationIdRef.current}/files/${current.fileId}`,
+          { method: "DELETE" }
+        ).catch(() => {});
+      }
       revokeUrl(previewUrlRef.current);
       sentUrlsRef.current.forEach(revokeUrl);
     };
@@ -123,9 +162,20 @@ export function useFileUpload({
       const formData = new FormData();
       formData.append("file", file);
 
+      const controller = new AbortController();
+      uploadAbortRef.current = controller;
+      // Capture the conversation id at upload time so orphan cleanup targets
+      // the right conversation even if the user has since switched.
+      const uploadConversationId = conversationId;
+      const baseUrl = serverUrl.peek();
+
       fetch(
-        `${serverUrl.peek()}/v1/convai/conversations/${conversationId}/files`,
-        { method: "POST", body: formData }
+        `${baseUrl}/v1/convai/conversations/${uploadConversationId}/files`,
+        {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        }
       )
         .then(async res => {
           if (!res.ok) {
@@ -143,15 +193,30 @@ export function useFileUpload({
               status: "ready",
               fileId: data.file_id,
             } as PendingFile;
+          } else {
+            // The upload was discarded (cancelled or conversation changed)
+            // while the request was in flight but the server still accepted
+            // it — clean up the orphan.
+            fetch(
+              `${baseUrl}/v1/convai/conversations/${uploadConversationId}/files/${data.file_id}`,
+              { method: "DELETE" }
+            ).catch(() => {});
           }
         })
         .catch(err => {
+          if (err?.name === "AbortError") return;
+          console.warn("[convai] file upload failed:", err);
           if (pendingFile.peek()?.file === file) {
             pendingFile.value = {
               ...pendingFile.peek()!,
               status: "error",
               error: err?.message ?? "Upload failed",
             } as PendingFile;
+          }
+        })
+        .finally(() => {
+          if (uploadAbortRef.current === controller) {
+            uploadAbortRef.current = null;
           }
         });
 
@@ -160,12 +225,17 @@ export function useFileUpload({
     [conversationId, pendingFile, serverUrl, hasReachedLimit]
   );
 
-  /** Cancel/discard the pending file (deletes it server-side if already uploaded). */
+  /** Cancel/discard the pending file (aborts in-flight uploads and deletes
+   * the file server-side if it was already accepted). */
   const removeFile = useCallback(() => {
     const current = pendingFile.peek();
     if (!current) return;
 
-    if (current.status === "ready" && conversationId) {
+    if (current.status === "uploading") {
+      // Abort best-effort; if the server still accepts the upload the .then
+      // handler in addFile will fire a DELETE for the orphan.
+      uploadAbortRef.current?.abort();
+    } else if (current.status === "ready" && conversationId) {
       fetch(
         `${serverUrl.peek()}/v1/convai/conversations/${conversationId}/files/${current.fileId}`,
         { method: "DELETE" }
