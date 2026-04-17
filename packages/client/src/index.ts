@@ -12,6 +12,7 @@ export type {
   Status,
   AudioWorkletConfig,
   MultimodalMessageInput,
+  UploadConversationFileResult,
   ConversationCreatedCallback,
   ConversationLifecycleOptions,
 } from "./BaseConversation.js";

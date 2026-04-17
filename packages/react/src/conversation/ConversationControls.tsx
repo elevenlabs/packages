@@ -5,6 +5,7 @@ import {
   type InputDeviceConfig,
   type OutputConfig,
   type MultimodalMessageInput,
+  type UploadConversationFileResult,
 } from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 import { ConversationContext } from "./ConversationContext.js";
@@ -16,12 +17,10 @@ export type ConversationControlsValue = {
   endSession: () => void;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
+  uploadConversationFile: (file: Blob) => Promise<UploadConversationFileResult>;
   sendContextualUpdate: (text: string) => void;
   sendUserActivity: () => void;
-  sendMCPToolApprovalResult: (
-    toolCallId: string,
-    isApproved: boolean
-  ) => void;
+  sendMCPToolApprovalResult: (toolCallId: string, isApproved: boolean) => void;
   setVolume: (options: { volume: number }) => void;
   changeInputDevice: (
     config: Partial<FormatConfig> & InputDeviceConfig
@@ -65,9 +64,12 @@ export function ConversationControlsProvider({
     return conversation;
   }, [conversationRef]);
 
-  const sendUserMessage = useCallback((text: string) => {
-    getConversation().sendUserMessage(text);
-  }, [getConversation]);
+  const sendUserMessage = useCallback(
+    (text: string) => {
+      getConversation().sendUserMessage(text);
+    },
+    [getConversation]
+  );
 
   const sendMultimodalMessage = useCallback(
     (options: MultimodalMessageInput) => {
@@ -76,9 +78,19 @@ export function ConversationControlsProvider({
     [getConversation]
   );
 
-  const sendContextualUpdate = useCallback((text: string) => {
-    getConversation().sendContextualUpdate(text);
-  }, [getConversation]);
+  const uploadConversationFile = useCallback(
+    (file: Blob) => {
+      return getConversation().uploadConversationFile(file);
+    },
+    [getConversation]
+  );
+
+  const sendContextualUpdate = useCallback(
+    (text: string) => {
+      getConversation().sendContextualUpdate(text);
+    },
+    [getConversation]
+  );
 
   const sendUserActivity = useCallback(() => {
     getConversation().sendUserActivity();
@@ -91,9 +103,12 @@ export function ConversationControlsProvider({
     [getConversation]
   );
 
-  const setVolume = useCallback((options: { volume: number }) => {
-    getConversation().setVolume(options);
-  }, [getConversation]);
+  const setVolume = useCallback(
+    (options: { volume: number }) => {
+      getConversation().setVolume(options);
+    },
+    [getConversation]
+  );
 
   const changeInputDevice = useCallback(
     async (config: Partial<FormatConfig> & InputDeviceConfig) => {
@@ -122,11 +137,17 @@ export function ConversationControlsProvider({
   );
 
   const getInputByteFrequencyData = useCallback(() => {
-    return conversationRef.current?.getInputByteFrequencyData() ?? EMPTY_FREQUENCY_DATA;
+    return (
+      conversationRef.current?.getInputByteFrequencyData() ??
+      EMPTY_FREQUENCY_DATA
+    );
   }, [conversationRef]);
 
   const getOutputByteFrequencyData = useCallback(() => {
-    return conversationRef.current?.getOutputByteFrequencyData() ?? EMPTY_FREQUENCY_DATA;
+    return (
+      conversationRef.current?.getOutputByteFrequencyData() ??
+      EMPTY_FREQUENCY_DATA
+    );
   }, [conversationRef]);
 
   const getInputVolume = useCallback(() => {
@@ -147,6 +168,7 @@ export function ConversationControlsProvider({
       endSession: ctx.endSession,
       sendUserMessage,
       sendMultimodalMessage,
+      uploadConversationFile,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,
@@ -164,6 +186,7 @@ export function ConversationControlsProvider({
       ctx.endSession,
       sendUserMessage,
       sendMultimodalMessage,
+      uploadConversationFile,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,
