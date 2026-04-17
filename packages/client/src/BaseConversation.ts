@@ -595,8 +595,13 @@ export abstract class BaseConversation {
       "https://"
     );
 
+    const filename =
+      "name" in file && typeof file.name === "string"
+        ? file.name
+        : `upload.${(file.type || "image/png").split("/").pop()}`;
+
     const body = new FormData();
-    body.append("file", file);
+    body.append("file", file, filename);
 
     const response = await fetch(
       `${origin}/v1/convai/conversations/${this.connection.conversationId}/files`,
@@ -604,7 +609,8 @@ export abstract class BaseConversation {
     );
 
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
+      const text = await response.text().catch(() => "");
+      throw new Error(`Upload failed: ${response.status} ${text}`);
     }
 
     const { file_id } = await response.json();

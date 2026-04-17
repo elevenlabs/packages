@@ -7,7 +7,10 @@ import {
   TouchableOpacity,
   Keyboard,
   TextInput,
+  Image,
+  ActivityIndicator,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { VolumeBar } from "./VolumeBar";
 import { FrequencyBands } from "./FrequencyBands";
 import {
@@ -37,9 +40,13 @@ const ConversationScreen = () => {
     sendUserMessage,
     sendContextualUpdate,
     sendUserActivity,
+    sendMultimodalMessage,
+    uploadConversationFile,
     getId,
   } = useConversationControls();
   const isStarting = status === "connecting";
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleSubmitText = () => {
     if (textInput.trim()) {
@@ -65,6 +72,30 @@ const ConversationScreen = () => {
       endSession();
     } catch (error) {
       console.error("Failed to end conversation:", error);
+    }
+  };
+
+  const handlePickAndUploadImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    setSelectedImage(asset.uri);
+    setIsUploading(true);
+
+    try {
+      const blob = await fetch(asset.uri).then(r => r.blob());
+      const { fileId } = await uploadConversationFile(blob);
+      sendMultimodalMessage({ fileId, text: textInput.trim() || undefined });
+      setTextInput("");
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+    } finally {
+      setIsUploading(false);
+      setSelectedImage(null);
     }
   };
 
@@ -299,6 +330,32 @@ const ConversationScreen = () => {
               <Text style={styles.buttonText}>Send Context</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.uploadButton,
+              isUploading && styles.disabledButton,
+            ]}
+            onPress={handlePickAndUploadImage}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <View style={styles.uploadingRow}>
+                <ActivityIndicator color="white" size="small" />
+                <Text style={styles.buttonText}>Uploading...</Text>
+              </View>
+            ) : (
+              <Text style={styles.buttonText}>Upload Image</Text>
+            )}
+          </TouchableOpacity>
+
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.imagePreview}
+            />
+          )}
         </View>
       )}
     </ScrollView>
@@ -548,5 +605,20 @@ const styles = StyleSheet.create({
   },
   toggleButtonPassive: {
     borderColor: "transparent",
+  },
+  uploadButton: {
+    backgroundColor: "#8B5CF6",
+    marginTop: 12,
+  },
+  uploadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginTop: 12,
   },
 });
