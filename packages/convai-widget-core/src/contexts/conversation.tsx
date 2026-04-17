@@ -1,7 +1,6 @@
 import {
   Conversation,
   Mode,
-  MultimodalMessageInput,
   Role,
   SessionConfig,
   Status,
@@ -428,13 +427,16 @@ function useConversationSetup() {
           },
         ];
       },
-      sendMultimodalMessage: (
-        options: MultimodalMessageInput,
-        fileInput: TranscriptFileInput
-      ) => {
-        const trimmed = options.text?.trim() ?? "";
-        if (!trimmed && !options.fileId) return;
-        conversationRef.current?.sendMultimodalMessage(options);
+      sendMultimodalMessage: (input: {
+        text?: string;
+        file: TranscriptFileInput & { fileId: string };
+      }) => {
+        const trimmed = input.text?.trim() ?? "";
+        const { fileId, ...fileInput } = input.file;
+        conversationRef.current?.sendMultimodalMessage({
+          text: trimmed || undefined,
+          fileId,
+        });
         transcript.value = [
           ...transcript.value,
           {

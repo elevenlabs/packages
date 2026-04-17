@@ -1,15 +1,14 @@
 import { signal, ReadonlySignal, computed } from "@preact/signals";
-import { useCallback, useEffect, useRef } from "preact/compat";
-import { useMemo } from "preact/compat";
+import { useCallback, useEffect, useMemo, useRef } from "preact/compat";
 import { useServerLocation } from "../contexts/server-location";
 
-const ACCEPTED_MIME_TYPES = [
+const ACCEPTED_MIME_TYPES: readonly string[] = [
   "image/png",
   "image/jpeg",
   "image/gif",
   "image/webp",
   "application/pdf",
-] as const;
+];
 
 export const ACCEPTED_FILE_EXTENSIONS =
   ".png,.jpg,.jpeg,.gif,.webp,.pdf" as const;
@@ -17,12 +16,12 @@ export const ACCEPTED_FILE_EXTENSIONS =
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_PDF_SIZE_MB = 20;
 
-function isImageMimeType(mimeType: string): boolean {
+export function isImageMimeType(mimeType: string): boolean {
   return mimeType.startsWith("image/");
 }
 
 function isAcceptedMimeType(mimeType: string): boolean {
-  return (ACCEPTED_MIME_TYPES as readonly string[]).includes(mimeType);
+  return ACCEPTED_MIME_TYPES.includes(mimeType);
 }
 
 function getMaxSizeBytes(mimeType: string): number {
@@ -45,6 +44,28 @@ export type PendingFile =
       previewUrl: string | null;
     };
 
+export type AddFileError = "unsupported_type" | "too_large" | "limit_reached";
+
+interface UploadResponse {
+  file_id: string;
+}
+
+function filesEndpoint(baseUrl: string, conversationId: string): string {
+  return `${baseUrl}/v1/convai/conversations/${conversationId}/files`;
+}
+
+/** Fire-and-forget DELETE for a server-side file. Errors are swallowed
+ * because the pending slot has already been released locally. */
+function deleteUploadedFile(
+  baseUrl: string,
+  conversationId: string,
+  fileId: string
+): void {
+  fetch(`${filesEndpoint(baseUrl, conversationId)}/${fileId}`, {
+    method: "DELETE",
+  }).catch(() => {});
+}
+
 interface UseFileUploadOptions {
   conversationId: string | null;
   maxFiles: number | null;
@@ -59,58 +80,44 @@ export function useFileUpload({
   const sentFileCount = useMemo(() => signal(0), []);
   const lastConversationIdRef = useRef<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
-  // Preview URLs for sent files — kept alive so TranscriptMessage can still
-  // render the image thumbnail. Revoked only when a new conversation starts
-  // (the previous transcript is cleared) or on unmount.
+  // Preview URLs for already-sent files — kept alive for the transcript
+  // thumbnails, revoked on new conversation or unmount.
   const sentUrlsRef = useRef<string[]>([]);
   const uploadAbortRef = useRef<AbortController | null>(null);
 
-  // Reset state when the conversation changes — the old fileId is no longer valid.
+  /** Release the pending slot: abort an in-flight upload, delete a ready
+   * file server-side, revoke the preview URL. Clears the signal first so
+   * any in-flight upload resolution falls into the orphan-DELETE branch. */
+  const discardPending = (convId: string | null): void => {
+    const pendingFileToDiscard = pendingFile.peek();
+    if (!pendingFileToDiscard) return;
+    pendingFile.value = null;
+    if (pendingFileToDiscard.status === "uploading") {
+      uploadAbortRef.current?.abort();
+    } else if (pendingFileToDiscard.status === "ready" && convId) {
+      deleteUploadedFile(serverUrl.peek(), convId, pendingFileToDiscard.fileId);
+    }
+    revokeUrl(previewUrlRef.current);
+    previewUrlRef.current = null;
+  };
+
+  // Reset state on conversation change — the old fileId is no longer valid.
   if (conversationId !== lastConversationIdRef.current) {
-    const prev = pendingFile.value;
     const prevConversationId = lastConversationIdRef.current;
     lastConversationIdRef.current = conversationId;
     sentFileCount.value = 0;
-    // Keep sent URLs alive while the previous transcript is still visible
-    // (i.e. we just disconnected). Only reclaim them when a new conversation
-    // starts and the transcript is about to be cleared.
+    // Only reclaim sent-file blob URLs when a new conversation starts — while
+    // disconnected the previous transcript (and its <img> refs) is still shown.
     if (conversationId !== null) {
       sentUrlsRef.current.forEach(revokeUrl);
       sentUrlsRef.current = [];
     }
-    if (prev) {
-      if (prev.status === "uploading") {
-        // Abort best-effort. The .then handler will still fire a DELETE if
-        // the server accepted the upload before we aborted.
-        uploadAbortRef.current?.abort();
-      } else if (prev.status === "ready" && prevConversationId) {
-        fetch(
-          `${serverUrl.peek()}/v1/convai/conversations/${prevConversationId}/files/${prev.fileId}`,
-          { method: "DELETE" }
-        ).catch(() => {});
-      }
-      revokeUrl(previewUrlRef.current);
-      previewUrlRef.current = null;
-      pendingFile.value = null;
-    }
+    discardPending(prevConversationId);
   }
 
   useEffect(() => {
     return () => {
-      const current = pendingFile.peek();
-      // Null out the pending file *before* aborting so the upload's .then
-      // handler sees the file is no longer ours and falls into the orphan
-      // DELETE branch if the server accepted the upload after the abort.
-      pendingFile.value = null;
-      uploadAbortRef.current?.abort();
-      // Clean up a ready-but-unsent file server-side.
-      if (current?.status === "ready" && lastConversationIdRef.current) {
-        fetch(
-          `${serverUrl.peek()}/v1/convai/conversations/${lastConversationIdRef.current}/files/${current.fileId}`,
-          { method: "DELETE" }
-        ).catch(() => {});
-      }
-      revokeUrl(previewUrlRef.current);
+      discardPending(lastConversationIdRef.current);
       sentUrlsRef.current.forEach(revokeUrl);
     };
   }, []);
@@ -130,24 +137,16 @@ export function useFileUpload({
     [pendingFile]
   );
 
-  /** Validate and start uploading. Returns an error code on failure, null on success. */
+  /** Validate and start uploading the file. */
   const addFile = useCallback(
-    (file: File): string | null => {
-      if (!conversationId) {
-        return "Cannot upload files before the conversation is connected.";
-      }
+    (file: File): AddFileError | null => {
+      // Defensive: the upload button is disabled while disconnected, so this
+      // should be unreachable. Silently no-op if it isn't.
+      if (!conversationId) return null;
 
-      if (hasReachedLimit.peek()) {
-        return "limit_reached";
-      }
-
-      if (!isAcceptedMimeType(file.type)) {
-        return "unsupported_type";
-      }
-
-      if (file.size > getMaxSizeBytes(file.type)) {
-        return "too_large";
-      }
+      if (hasReachedLimit.peek()) return "limit_reached";
+      if (!isAcceptedMimeType(file.type)) return "unsupported_type";
+      if (file.size > getMaxSizeBytes(file.type)) return "too_large";
 
       revokeUrl(previewUrlRef.current);
       previewUrlRef.current = null;
@@ -169,15 +168,12 @@ export function useFileUpload({
       const uploadConversationId = conversationId;
       const baseUrl = serverUrl.peek();
 
-      fetch(
-        `${baseUrl}/v1/convai/conversations/${uploadConversationId}/files`,
-        {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-        }
-      )
-        .then(async res => {
+      fetch(filesEndpoint(baseUrl, uploadConversationId), {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      })
+        .then(async (res): Promise<UploadResponse> => {
           if (!res.ok) {
             const body = await res.json().catch(() => null);
             throw new Error(
@@ -187,31 +183,31 @@ export function useFileUpload({
           return res.json();
         })
         .then(data => {
-          if (pendingFile.peek()?.file === file) {
+          const currentPendingFile = pendingFile.peek();
+          if (currentPendingFile?.file === file) {
             pendingFile.value = {
-              ...pendingFile.peek()!,
               status: "ready",
+              file: currentPendingFile.file,
+              previewUrl: currentPendingFile.previewUrl,
               fileId: data.file_id,
-            } as PendingFile;
+            };
           } else {
-            // The upload was discarded (cancelled or conversation changed)
-            // while the request was in flight but the server still accepted
-            // it — clean up the orphan.
-            fetch(
-              `${baseUrl}/v1/convai/conversations/${uploadConversationId}/files/${data.file_id}`,
-              { method: "DELETE" }
-            ).catch(() => {});
+            // Pending slot was released mid-flight but the server still
+            // accepted the upload — clean up the orphan.
+            deleteUploadedFile(baseUrl, uploadConversationId, data.file_id);
           }
         })
         .catch(err => {
           if (err?.name === "AbortError") return;
           console.warn("[convai] file upload failed:", err);
-          if (pendingFile.peek()?.file === file) {
+          const currentPendingFile = pendingFile.peek();
+          if (currentPendingFile?.file === file) {
             pendingFile.value = {
-              ...pendingFile.peek()!,
               status: "error",
+              file: currentPendingFile.file,
+              previewUrl: currentPendingFile.previewUrl,
               error: err?.message ?? "Upload failed",
-            } as PendingFile;
+            };
           }
         })
         .finally(() => {
@@ -225,29 +221,12 @@ export function useFileUpload({
     [conversationId, pendingFile, serverUrl, hasReachedLimit]
   );
 
-  /** Cancel/discard the pending file (aborts in-flight uploads and deletes
-   * the file server-side if it was already accepted). */
   const removeFile = useCallback(() => {
-    const current = pendingFile.peek();
-    if (!current) return;
+    discardPending(conversationId);
+  }, [conversationId]);
 
-    if (current.status === "uploading") {
-      // Abort best-effort; if the server still accepts the upload the .then
-      // handler in addFile will fire a DELETE for the orphan.
-      uploadAbortRef.current?.abort();
-    } else if (current.status === "ready" && conversationId) {
-      fetch(
-        `${serverUrl.peek()}/v1/convai/conversations/${conversationId}/files/${current.fileId}`,
-        { method: "DELETE" }
-      ).catch(() => {});
-    }
-
-    revokeUrl(previewUrlRef.current);
-    previewUrlRef.current = null;
-    pendingFile.value = null;
-  }, [pendingFile, conversationId, serverUrl]);
-
-  /** Mark the pending file as sent — increments the per-conversation counter. */
+  /** Promote the pending file to "sent": retain its preview URL for the
+   * transcript image, free the pending slot, count it against the limit. */
   const markFileAsSent = useCallback(() => {
     if (previewUrlRef.current) {
       sentUrlsRef.current.push(previewUrlRef.current);
@@ -267,7 +246,6 @@ export function useFileUpload({
   };
 }
 
-/** Release a blob URL's underlying memory. No-op if null. */
 function revokeUrl(url: string | null) {
   if (url) URL.revokeObjectURL(url);
 }

@@ -1,7 +1,7 @@
 import { cn } from "../utils/cn";
 import { Icon } from "../components/Icon";
 import { useTextContents } from "../contexts/text-contents";
-import type { PendingFile } from "./useFileUpload";
+import { isImageMimeType, type PendingFile } from "./useFileUpload";
 
 interface PendingFilePreviewProps {
   pendingFile: PendingFile;
@@ -13,7 +13,7 @@ export function PendingFilePreview({
   onRemove,
 }: PendingFilePreviewProps) {
   const text = useTextContents();
-  const isImage = pendingFile.file.type.startsWith("image/");
+  const isImage = isImageMimeType(pendingFile.file.type);
   const isUploading = pendingFile.status === "uploading";
   const hasError = pendingFile.status === "error";
 
