@@ -20,6 +20,7 @@
     "@livekit/react-native-webrtc": "^137.0.2",
     "expo": "~54.0.31",
     "expo-dev-client": "~6.0.20",
+    "expo-image-picker": "~17.0.10",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
