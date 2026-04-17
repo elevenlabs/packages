@@ -17,6 +17,7 @@ import {
 } from "../contexts/widget-config";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
+import { isImageMimeType } from "./useFileUpload";
 
 interface TranscriptMessageProps {
   entry: DisplayTranscriptEntry;
@@ -111,7 +112,7 @@ function FileAttachment({
   mimeType: string;
   previewUrl: string | null;
 }) {
-  const isImage = mimeType.startsWith("image/");
+  const isImage = isImageMimeType(mimeType);
 
   if (isImage && previewUrl) {
     return (
