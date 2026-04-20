@@ -590,10 +590,9 @@ export abstract class BaseConversation {
   public async uploadConversationFile(
     file: Blob
   ): Promise<UploadConversationFileResult> {
-    const origin = (this.options.origin ?? HTTPS_API_ORIGIN).replace(
-      /^wss?:\/\//,
-      "https://"
-    );
+    const origin = (this.options.origin ?? HTTPS_API_ORIGIN)
+      .replace(/^wss:\/\//, "https://")
+      .replace(/^ws:\/\//, "http://");
 
     const filename =
       "name" in file && typeof file.name === "string"
