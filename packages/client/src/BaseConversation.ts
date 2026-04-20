@@ -591,14 +591,14 @@ export abstract class BaseConversation {
     file: Blob
   ): Promise<UploadConversationFileResult> {
     const origin = (this.options.origin ?? HTTPS_API_ORIGIN).replace(
-      /^wss:\/\//,
+      /^wss?:\/\//,
       "https://"
     );
 
     const filename =
       "name" in file && typeof file.name === "string"
         ? file.name
-        : `upload.${(file.type || "image/png").split("/").pop()}`;
+        : `upload.${(file.type || "image/png").split("/").pop()?.split("+")[0]}`;
 
     const body = new FormData();
     body.append("file", file, filename);
