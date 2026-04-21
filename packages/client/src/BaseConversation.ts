@@ -126,7 +126,6 @@ export abstract class BaseConversation {
       onStatusChange: () => {},
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
-      origin: HTTPS_API_ORIGIN,
       ...partialOptions,
       textOnly,
       overrides: {
@@ -589,8 +588,8 @@ export abstract class BaseConversation {
   }
 
   public async uploadFile(file: Blob): Promise<UploadFileResult> {
-    const origin = this.options
-      .origin!.replace(/^wss:\/\//, "https://")
+    const origin = (this.options.origin ?? HTTPS_API_ORIGIN)
+      .replace(/^wss:\/\//, "https://")
       .replace(/^ws:\/\//, "http://");
 
     const filename =
