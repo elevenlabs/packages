@@ -300,7 +300,6 @@ const ConversationScreen = () => {
               <Text style={styles.buttonText}>Send Context</Text>
             </TouchableOpacity>
           </View>
-
           <ImageUpload
             textInput={textInput}
             onSent={() => setTextInput("")}
