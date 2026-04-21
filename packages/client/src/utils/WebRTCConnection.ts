@@ -4,6 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection.js";
+import { extractApiErrorMessage } from "./errors.js";
 import { sourceInfo } from "../sourceInfo.js";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events.js";
 import {
@@ -243,8 +244,9 @@ export class WebRTCConnection extends BaseConnection {
         const response = await fetch(url);
 
         if (!response.ok) {
+          const message = await extractApiErrorMessage(response);
           throw new Error(
-            `ElevenLabs API returned ${response.status} ${response.statusText}`
+            `ElevenLabs API returned ${response.status} ${message}`
           );
         }
 

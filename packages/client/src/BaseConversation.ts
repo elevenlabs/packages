@@ -5,6 +5,7 @@ import type {
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
+import { extractApiErrorMessage } from "./utils/errors.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -606,17 +607,7 @@ export abstract class BaseConversation {
     );
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      let message = text;
-      try {
-        const body = JSON.parse(text);
-        const detail = body?.detail?.message ?? body?.detail;
-        if (typeof detail === "string") {
-          message = detail;
-        }
-      } catch (_) {
-        // Response isn't JSON, use raw text
-      }
+      const message = await extractApiErrorMessage(response);
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
