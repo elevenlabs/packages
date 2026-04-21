@@ -100,7 +100,7 @@ describe("BaseConversation", () => {
     );
   });
 
-  describe("uploadConversationFile", () => {
+  describe("uploadFile", () => {
     let fetchSpy: ReturnType<typeof vi.fn>;
 
     afterEach(() => {
@@ -126,7 +126,7 @@ describe("BaseConversation", () => {
         origin: "wss://api.elevenlabs.io",
       });
 
-      await conversation.uploadConversationFile(new Blob(["test"]));
+      await conversation.uploadFile(new Blob(["test"]));
 
       expect(fetchSpy).toHaveBeenCalledWith(
         expect.stringContaining("https://api.elevenlabs.io/"),
@@ -140,7 +140,7 @@ describe("BaseConversation", () => {
         origin: "ws://localhost:8080",
       });
 
-      await conversation.uploadConversationFile(new Blob(["test"]));
+      await conversation.uploadFile(new Blob(["test"]));
 
       expect(fetchSpy).toHaveBeenCalledWith(
         expect.stringContaining("http://localhost:8080/"),
@@ -152,7 +152,7 @@ describe("BaseConversation", () => {
       mockFetchSuccess();
       const conversation = TestConversation.create();
 
-      await conversation.uploadConversationFile(
+      await conversation.uploadFile(
         new Blob(["<svg/>"], { type: "image/svg+xml" })
       );
 

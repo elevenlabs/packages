@@ -5,7 +5,7 @@ import {
   type InputDeviceConfig,
   type OutputConfig,
   type MultimodalMessageInput,
-  type UploadConversationFileResult,
+  type UploadFileResult,
 } from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 import { ConversationContext } from "./ConversationContext.js";
@@ -17,7 +17,7 @@ export type ConversationControlsValue = {
   endSession: () => void;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
-  uploadConversationFile: (file: Blob) => Promise<UploadConversationFileResult>;
+  uploadFile: (file: Blob) => Promise<UploadFileResult>;
   sendContextualUpdate: (text: string) => void;
   sendUserActivity: () => void;
   sendMCPToolApprovalResult: (toolCallId: string, isApproved: boolean) => void;
@@ -78,9 +78,9 @@ export function ConversationControlsProvider({
     [getConversation]
   );
 
-  const uploadConversationFile = useCallback(
+  const uploadFile = useCallback(
     (file: Blob) => {
-      return getConversation().uploadConversationFile(file);
+      return getConversation().uploadFile(file);
     },
     [getConversation]
   );
@@ -168,7 +168,7 @@ export function ConversationControlsProvider({
       endSession: ctx.endSession,
       sendUserMessage,
       sendMultimodalMessage,
-      uploadConversationFile,
+      uploadFile,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,
@@ -186,7 +186,7 @@ export function ConversationControlsProvider({
       ctx.endSession,
       sendUserMessage,
       sendMultimodalMessage,
-      uploadConversationFile,
+      uploadFile,
       sendContextualUpdate,
       sendUserActivity,
       sendMCPToolApprovalResult,

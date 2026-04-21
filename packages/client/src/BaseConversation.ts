@@ -70,7 +70,7 @@ export type MultimodalMessageInput = {
   fileId?: string;
 };
 
-export type UploadConversationFileResult = {
+export type UploadFileResult = {
   fileId: string;
 };
 
@@ -126,6 +126,7 @@ export abstract class BaseConversation {
       onStatusChange: () => {},
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
+      origin: HTTPS_API_ORIGIN,
       ...partialOptions,
       textOnly,
       overrides: {
@@ -587,11 +588,9 @@ export abstract class BaseConversation {
     });
   }
 
-  public async uploadConversationFile(
-    file: Blob
-  ): Promise<UploadConversationFileResult> {
-    const origin = (this.options.origin ?? HTTPS_API_ORIGIN)
-      .replace(/^wss:\/\//, "https://")
+  public async uploadFile(file: Blob): Promise<UploadFileResult> {
+    const origin = this.options
+      .origin!.replace(/^wss:\/\//, "https://")
       .replace(/^ws:\/\//, "http://");
 
     const filename =
@@ -608,11 +607,16 @@ export abstract class BaseConversation {
     );
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      throw new Error(`Upload failed: ${response.status} ${text}`);
+      const body = await response.json().catch(() => null);
+      const message =
+        body?.detail?.message ?? body?.detail ?? JSON.stringify(body);
+      throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
     const { file_id } = await response.json();
+    if (typeof file_id !== "string" || !file_id) {
+      throw new Error("Upload response is missing a valid file_id");
+    }
     return { fileId: file_id };
   }
 }
