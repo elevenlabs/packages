@@ -607,8 +607,9 @@ export abstract class BaseConversation {
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
+      const detail = body?.detail?.message ?? body?.detail;
       const message =
-        body?.detail?.message ?? body?.detail ?? JSON.stringify(body);
+        typeof detail === "string" ? detail : JSON.stringify(body);
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
