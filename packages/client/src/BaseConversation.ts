@@ -606,10 +606,17 @@ export abstract class BaseConversation {
     );
 
     if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      const detail = body?.detail?.message ?? body?.detail;
-      const message =
-        typeof detail === "string" ? detail : JSON.stringify(body);
+      const text = await response.text().catch(() => "");
+      let message = text;
+      try {
+        const body = JSON.parse(text);
+        const detail = body?.detail?.message ?? body?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        }
+      } catch (_) {
+        // Response isn't JSON, use raw text
+      }
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
