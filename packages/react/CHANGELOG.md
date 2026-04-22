@@ -1,5 +1,16 @@
 # @elevenlabs/react
 
+## 1.2.0
+
+### Minor Changes
+
+- 606d018: Introduced support for the upload conversation file endpoint
+
+### Patch Changes
+
+- Updated dependencies [606d018]
+  - @elevenlabs/client@1.3.0
+
 ## 1.1.1
 
 ### Patch Changes

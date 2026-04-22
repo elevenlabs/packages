@@ -1,5 +1,15 @@
 # elevenlabs-react-native-example
 
+## 1.1.0
+
+### Minor Changes
+
+- 606d018: Introduced support for the upload conversation file endpoint
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.1.2
+
 ## 1.0.10
 
 ### Patch Changes

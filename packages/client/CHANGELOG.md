@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.3.0
+
+### Minor Changes
+
+- 606d018: Introduced support for the upload conversation file endpoint
+
 ## 1.2.1
 
 ### Patch Changes
