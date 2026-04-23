@@ -66,6 +66,11 @@ interface BaseOptions {
    * @default false
    */
   includeTimestamps?: boolean;
+  /**
+   * Whether to enable logging for this session.
+   * When set to false, logging will be disabled.
+   */
+  enableLogging?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -170,6 +175,12 @@ export class ScribeRealtime {
       params.append(
         "include_timestamps",
         options.includeTimestamps ? "true" : "false"
+      );
+    }
+    if (options.enableLogging !== undefined) {
+      params.append(
+        "enable_logging",
+        options.enableLogging ? "true" : "false"
       );
     }
 

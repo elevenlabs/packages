@@ -91,6 +91,62 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("builds URI with enableLogging set to false", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&enable_logging=false"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        enableLogging: false,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
+    it("builds URI with enableLogging set to true", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&enable_logging=true"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        enableLogging: true,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
+    it("omits enable_logging from URI when not specified", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
     it("throws error when modelId is missing", () => {
       expect(() => {
         Scribe.connect({
