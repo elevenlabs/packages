@@ -170,7 +170,13 @@ export class VoiceConversation extends BaseConversation {
   protected override handleInterruption(event: InterruptionEvent) {
     super.handleInterruption(event);
     this.updateMode("listening");
-    this.output.interrupt();
+
+    const interruptId = event.interruption_event?.event_id;
+    const skipOutputFlush =
+      interruptId !== undefined && interruptId < this.currentEventId;
+    if (!skipOutputFlush) {
+      this.output.interrupt();
+    }
   }
 
   protected override handleAudio(event: AgentAudioEvent) {
