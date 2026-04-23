@@ -10,8 +10,12 @@ import {
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk.js";
 import { Mode, Status, Conversation } from "./index.js";
+import type { Options, PartialOptions } from "./BaseConversation.js";
+import type { InputController } from "./InputController.js";
+import type { OutputController } from "./OutputController.js";
+import { VoiceConversation } from "./VoiceConversation.js";
 import { createConnection } from "./utils/ConnectionFactory.js";
-import type { SessionConfig } from "./utils/BaseConnection.js";
+import type { BaseConnection, SessionConfig } from "./utils/BaseConnection.js";
 import { PACKAGE_VERSION } from "./version.js";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
@@ -1690,6 +1694,58 @@ describe("Wake Lock", () => {
     expect(mockSentinel.release).toHaveBeenCalled();
 
     server.close();
+  });
+
+  it("skips output interrupt when interruption id is below currentEventId", () => {
+    const interrupt = vi.fn();
+    const conn = {
+      conversationId: "c",
+      onMessage: () => {},
+      onDisconnect: () => {},
+      onModeChange: () => {},
+      close: () => {},
+      sendMessage: () => {},
+    } as unknown as BaseConnection;
+    const input: InputController = {
+      close: vi.fn().mockResolvedValue(undefined),
+      setDevice: vi.fn().mockResolvedValue(undefined),
+      setMuted: vi.fn().mockResolvedValue(undefined),
+      isMuted: () => false,
+      getAnalyser: () => undefined,
+      getVolume: () => 0,
+      getByteFrequencyData: () => {},
+    };
+    const output = {
+      interrupt,
+      close: vi.fn().mockResolvedValue(undefined),
+      setDevice: vi.fn().mockResolvedValue(undefined),
+      setVolume: vi.fn(),
+      getAnalyser: () => undefined,
+      getVolume: () => 0,
+      getByteFrequencyData: () => {},
+    } as unknown as OutputController & { interrupt: typeof interrupt };
+
+    class V extends VoiceConversation {
+      static opts(): Options {
+        return super.getFullOptions({
+          signedUrl: "wss://api.elevenlabs.io/voice/interrupt-test/1",
+          connectionDelay: { default: 0 },
+        } as PartialOptions);
+      }
+      constructor() {
+        super(V.opts(), conn, input, output, null, () => {}, null);
+      }
+      run() {
+        this.updateMode("speaking");
+        this.currentEventId = 44;
+        this.handleInterruption({
+          type: "interruption",
+          interruption_event: { event_id: 43 },
+        });
+      }
+    }
+    new V().run();
+    expect(interrupt).not.toHaveBeenCalled();
   });
 });
 
