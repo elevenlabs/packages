@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.3.1
+
+### Patch Changes
+
+- 748cbe0: Fix tool call sound interrupting agent
+
 ## 1.3.0
 
 ### Minor Changes
