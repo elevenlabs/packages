@@ -350,6 +350,14 @@ components:
             disable_logging:
               type: boolean
               description: Whether to disable logging
+            keyterms:
+              type: array
+              items:
+                type: string
+              description: List of keyterms the model is biased towards.
+            no_verbatim:
+              type: boolean
+              description: Whether filler words and disfluencies are removed from the transcript.
 
     PartialTranscriptPayload:
       type: object
