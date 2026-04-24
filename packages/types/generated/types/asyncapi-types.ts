@@ -688,6 +688,8 @@ export interface Config {
   min_silence_duration_ms?: number;
   model_id?: string;
   disable_logging?: boolean;
+  keyterms?: string[];
+  no_verbatim?: boolean;
 }
 
 export type ConfigAudioFormat =

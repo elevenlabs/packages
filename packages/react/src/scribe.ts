@@ -113,6 +113,10 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Include timestamps
   includeTimestamps?: boolean;
+
+  // Keyterms and verbatim control
+  keyterms?: string[];
+  noVerbatim?: boolean;
 }
 
 export interface UseScribeReturn {
@@ -186,6 +190,10 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
     // Timestamps
     includeTimestamps: defaultIncludeTimestamps,
+
+    // Keyterms and verbatim control
+    keyterms: defaultKeyterms,
+    noVerbatim: defaultNoVerbatim,
   } = options;
 
   const connectionRef = useRef<RealtimeConnection | null>(null);
@@ -260,6 +268,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               runtimeOptions.minSilenceDurationMs ||
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
+            keyterms: runtimeOptions.keyterms || defaultKeyterms,
+            noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
             microphone,
             includeTimestamps,
           } as MicrophoneOptions);
@@ -281,6 +291,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               runtimeOptions.minSilenceDurationMs ||
               defaultMinSilenceDurationMs,
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
+            keyterms: runtimeOptions.keyterms || defaultKeyterms,
+            noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
             includeTimestamps,
             audioFormat,
             sampleRate,
@@ -464,6 +476,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultAudioFormat,
       defaultSampleRate,
       defaultIncludeTimestamps,
+      defaultKeyterms,
+      defaultNoVerbatim,
       onSessionStarted,
       onPartialTranscript,
       onCommittedTranscript,

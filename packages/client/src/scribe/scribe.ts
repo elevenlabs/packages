@@ -66,6 +66,16 @@ interface BaseOptions {
    * @default false
    */
   includeTimestamps?: boolean;
+  /**
+   * List of keyterms to bias the model towards.
+   * Maximum 50 keyterms, each up to 20 characters.
+   */
+  keyterms?: string[];
+  /**
+   * If true, removes filler words, false starts and disfluencies from the transcript.
+   * @default false
+   */
+  noVerbatim?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -171,6 +181,14 @@ export class ScribeRealtime {
         "include_timestamps",
         options.includeTimestamps ? "true" : "false"
       );
+    }
+    if (options.keyterms !== undefined) {
+      for (const term of options.keyterms) {
+        params.append("keyterms", term);
+      }
+    }
+    if (options.noVerbatim !== undefined) {
+      params.append("no_verbatim", options.noVerbatim ? "true" : "false");
     }
 
     const queryString = params.toString();

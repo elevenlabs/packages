@@ -194,6 +194,44 @@ describe("Scribe", () => {
       }).toThrow("minSilenceDurationMs must be between 50 and 2000");
     });
 
+    it("builds URI with keyterms as repeated query params", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&keyterms=ElevenLabs&keyterms=Scribe"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        keyterms: ["ElevenLabs", "Scribe"],
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
+    it("builds URI with noVerbatim", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&no_verbatim=true"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        noVerbatim: true,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
     it("accepts valid parameter values", () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&vad_silence_threshold_secs=1.5&vad_threshold=0.5&min_speech_duration_ms=100&min_silence_duration_ms=200"
