@@ -169,7 +169,13 @@ export class MediaDeviceOutput
   }
 
   public playAudio(chunk: ArrayBuffer): void {
-    if (this.interrupted) return;
+    this.gain.gain.cancelScheduledValues(this.context.currentTime);
+    this.gain.gain.value = this.volume;
+    if (this.interruptTimeout) {
+      clearTimeout(this.interruptTimeout);
+      this.interruptTimeout = null;
+    }
+    this.worklet.port.postMessage({ type: "clearInterrupted" });
     this.worklet.port.postMessage({ type: "buffer", buffer: chunk });
   }
 
