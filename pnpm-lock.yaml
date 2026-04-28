@@ -283,6 +283,9 @@ importers:
       '@elevenlabs/client':
         specifier: workspace:*
         version: link:../client
+      '@fingerprintjs/fingerprintjs':
+        specifier: ^5.1.0
+        version: 5.1.0
       '@lezer/common':
         specifier: ^1.3.0
         version: 1.4.0
@@ -2135,6 +2138,9 @@ packages:
   '@expo/xcpretty@4.3.2':
     resolution: {integrity: sha512-ReZxZ8pdnoI3tP/dNnJdnmAk7uLT4FjsKDGW7YeDdvdOMz2XCQSmSCM9IWlrXuWtMF9zeSB6WJtEhCQ41gQOfw==}
     hasBin: true
+
+  '@fingerprintjs/fingerprintjs@5.1.0':
+    resolution: {integrity: sha512-8h/CscV3xQ4KSLyXbSK8YFpZ5AaezzHfkl82mn8NJIEWNi1zLfbZSIu7MGGtx4pqa10oejhEk4u0MNutuE63Fw==}
 
   '@floating-ui/core@1.7.3':
     resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
@@ -15096,6 +15102,8 @@ snapshots:
       chalk: 4.1.2
       find-up: 5.0.0
       js-yaml: 4.1.1
+
+  '@fingerprintjs/fingerprintjs@5.1.0': {}
 
   '@floating-ui/core@1.7.3':
     dependencies:

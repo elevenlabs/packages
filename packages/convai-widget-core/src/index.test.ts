@@ -803,4 +803,128 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
     });
   });
+
+  describe("user-id", () => {
+    beforeEach(() => {
+      // Clear localStorage before each test to ensure clean slate
+      localStorage.clear();
+    });
+
+    beforeAll(() => {
+      // Mock FingerprintJS for tests
+      vi.mock("@fingerprintjs/fingerprintjs", () => ({
+        default: {
+          load: vi.fn().mockResolvedValue({
+            get: vi.fn().mockResolvedValue({
+              visitorId: "test-fingerprint-id-123",
+            }),
+          }),
+        },
+      }));
+    });
+
+    it.each(Variants)(
+      "$0 variant should create new user-id in local storage after accepting terms",
+      async variant => {
+        // Verify localStorage is empty at the beginning
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+        setupWebComponent({ "agent-id": "basic", variant });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify user-id has been set in localStorage
+        const userId = localStorage.getItem(STORAGE_KEY);
+        expect(userId).not.toBeNull();
+        expect(userId).toBeTruthy();
+      }
+    );
+
+    it.each(Variants)(
+      "$0 variant should NOT set localStorage when user-id attribute is provided",
+      async variant => {
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+        setupWebComponent({
+          "agent-id": "basic",
+          variant,
+          "user-id": "explicit-user-123",
+        });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify localStorage was NOT modified
+        expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+      }
+    );
+
+    it.each(Variants)(
+      "$0 variant should reuse existing user-id from localStorage",
+      async variant => {
+        const STORAGE_KEY = "elevenlabs_convai_user_id";
+        const existingUserId = "pre-existing-uuid-456";
+        localStorage.setItem(STORAGE_KEY, existingUserId);
+
+        setupWebComponent({ "agent-id": "basic", variant });
+
+        const startButton = page.getByRole("button", { name: "Start a call" });
+        await startButton.click();
+
+        await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+        const acceptButton = page.getByRole("button", { name: "Accept" });
+        await acceptButton.click();
+
+        // Verify the same user-id is still in localStorage (not replaced)
+        const userId = localStorage.getItem(STORAGE_KEY);
+        expect(userId).toBe(existingUserId);
+      }
+    );
+
+    it("should fallback to random UUID when FingerprintJS fails and conversation is still created", async () => {
+      const STORAGE_KEY = "elevenlabs_convai_user_id";
+
+      // Set up FingerprintJS to fail
+      const originalFingerprint = await import("@fingerprintjs/fingerprintjs");
+      const FingerprintJS = originalFingerprint.default;
+      const originalLoad = FingerprintJS.load;
+
+      // Override to throw error
+      FingerprintJS.load = async () => {
+        throw new Error("FingerprintJS intentionally failed for test");
+      };
+
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+      setupWebComponent({ "agent-id": "basic", variant: "compact" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const userId = localStorage.getItem(STORAGE_KEY);
+      expect(userId).not.toBeNull();
+      expect(userId).toBeTruthy();
+
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await expect.element(endButton).toBeInTheDocument();
+
+      // Restore original function
+      FingerprintJS.load = originalLoad;
+    });
+  });
 });
