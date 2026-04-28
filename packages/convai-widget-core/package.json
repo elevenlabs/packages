@@ -53,7 +53,7 @@
     "@lezer/python": "^1.1.18",
     "@lezer/xml": "^1.0.6",
     "@lezer/yaml": "^1.0.3",
-    "@preact/signals": "^2.0.4",
+    "@preact/signals": "^2.9.0",
     "clsx": "^2.1.1",
     "hast-util-from-lezer": "^0.5.4",
     "hast-util-to-jsx-runtime": "^2.3.6",
