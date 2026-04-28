@@ -31,7 +31,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node-wav": "^0.0.3",
     "@vitest/browser": "^3.0.5",
-    "eslint": "^9.8.0",
+    "eslint": "^10.2.1",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "rolldown": "^1.0.0-rc.9",
