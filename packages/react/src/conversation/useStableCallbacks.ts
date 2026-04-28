@@ -17,15 +17,12 @@ export function useStableCallbacks(props: HookOptions): Partial<Callbacks> {
   // Uses Record<string, unknown> to avoid TypeScript's union-to-intersection
   // issue when indexing Callbacks with a union of all its keys.
   const callbackRefs = useRef<Record<string, unknown>>({});
-  for (const key of CALLBACK_KEYS) {
-    callbackRefs.current[key] = props[key];
-  }
 
   // Compute a stable scalar from the set of provided keys so we can
   // memoize the result object.
   const activeKeys = CALLBACK_KEYS.filter(key => props[key] !== undefined);
-
-  return useMemo(
+  const activeKeySet = activeKeys.join("|");
+  const stableCallbacks = useMemo(
     () =>
       Object.fromEntries(
         activeKeys.map(key => [
@@ -38,7 +35,14 @@ export function useStableCallbacks(props: HookOptions): Partial<Callbacks> {
           },
         ])
       ) as Partial<Callbacks>,
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- joined string is a stable scalar derived from activeKeys
-    [activeKeys.join("|")]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeKeySet is a stable scalar derived from activeKeys
+    [activeKeySet]
   );
+
+  for (const key of CALLBACK_KEYS) {
+    // eslint-disable-next-line react-hooks/refs -- callback refs intentionally track latest props for stable event handlers
+    callbackRefs.current[key] = props[key];
+  }
+
+  return stableCallbacks;
 }

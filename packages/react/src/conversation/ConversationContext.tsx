@@ -1,5 +1,16 @@
-import { createContext, useContext, useLayoutEffect, useRef, type MutableRefObject, type RefObject } from "react";
-import type { Callbacks, ClientToolsConfig, Conversation } from "@elevenlabs/client";
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  type MutableRefObject,
+  type RefObject,
+} from "react";
+import type {
+  Callbacks,
+  ClientToolsConfig,
+  Conversation,
+} from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
@@ -70,14 +81,19 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
 
   const { registerCallbacks } = ctx;
   const callbacksRef = useRef(callbacks);
-  callbacksRef.current = callbacks;
 
   // Re-subscribe when the set of provided callback keys changes.
-  const activeKeys = Object.keys(callbacks)
+  const activeKeyToken = Object.keys(callbacks)
     .filter(key => callbacks[key as keyof Callbacks] !== undefined)
-    .sort();
+    .sort()
+    .join("|");
 
   useLayoutEffect(() => {
+    callbacksRef.current = callbacks;
+  });
+
+  useLayoutEffect(() => {
+    const activeKeys = activeKeyToken === "" ? [] : activeKeyToken.split("|");
     const stableCallbacks = Object.fromEntries(
       activeKeys.map((key: string) => [
         key,
@@ -90,6 +106,5 @@ export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
       ])
     ) as Partial<Callbacks>;
     return registerCallbacks(stableCallbacks);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeKeys.join() is a stable scalar derived from activeKeys; no split needed since the effect closes over activeKeys directly
-  }, [registerCallbacks, activeKeys.join("|")]);
+  }, [registerCallbacks, activeKeyToken]);
 }

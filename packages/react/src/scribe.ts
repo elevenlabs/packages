@@ -538,6 +538,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   // Auto-connect if enabled
   useEffect(() => {
     if (autoConnect) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- autoConnect intentionally starts the connection when the hook mounts
       connect();
     }
   }, [autoConnect, connect]);

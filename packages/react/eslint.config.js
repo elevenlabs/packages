@@ -2,7 +2,7 @@
 
 import eslint from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
-import importPlugin from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
@@ -12,15 +12,15 @@ export default defineConfig(
   tseslint.configs.recommended,
   reactHooks.configs.flat.recommended,
   {
-    plugins: { import: importPlugin },
+    plugins: { "import-x": importX },
     settings: {
-      "import/extensions": [".ts", ".tsx", ".js", ".jsx"],
-      "import/resolver": {
+      "import-x/extensions": [".ts", ".tsx", ".js", ".jsx"],
+      "import-x/resolver": {
         typescript: true,
       },
     },
     rules: {
-      "import/no-cycle": "error",
+      "import-x/no-cycle": "error",
     },
   }
 );

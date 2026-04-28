@@ -2,7 +2,7 @@
 
 import eslint from "@eslint/js";
 import { defineConfig, globalIgnores } from "eslint/config";
-import importPlugin from "eslint-plugin-import";
+import { importX } from "eslint-plugin-import-x";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
@@ -10,15 +10,15 @@ export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommended,
   {
-    plugins: { import: importPlugin },
+    plugins: { "import-x": importX },
     settings: {
-      "import/extensions": [".ts", ".tsx", ".js", ".jsx"],
-      "import/resolver": {
+      "import-x/extensions": [".ts", ".tsx", ".js", ".jsx"],
+      "import-x/resolver": {
         typescript: true,
       },
     },
     rules: {
-      "import/no-cycle": "error",
+      "import-x/no-cycle": "error",
       // Pre-existing issues — enable incrementally
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "off",
