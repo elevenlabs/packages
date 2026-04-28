@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: false
+  autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 overrides:
@@ -75,7 +75,7 @@ importers:
         version: 4.1.18(vite@7.3.1(@types/node@22.19.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.3))
       '@tanstack/react-devtools':
         specifier: ^0.7.0
-        version: 0.7.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 0.7.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)
       '@tanstack/react-router':
         specifier: ^1.132.0
         version: 1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -84,7 +84,7 @@ importers:
         version: 1.157.16(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-router-ssr-query':
         specifier: ^1.131.7
-        version: 1.157.16(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 1.157.16(@tanstack/query-core@5.100.5)(@tanstack/react-query@5.100.5(react@19.2.4))(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-start':
         specifier: ^1.132.0
         version: 1.157.16(crossws@0.4.5(srvx@0.11.15))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.3))
@@ -184,10 +184,10 @@ importers:
         version: 4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       '@livekit/react-native':
         specifier: ^2.9.6
-        version: 2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
+        version: 2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
       '@livekit/react-native-expo-plugin':
         specifier: ^1.0.1
-        version: 1.0.1(@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1))(expo@54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        version: 1.0.1(@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1))(expo@54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@livekit/react-native-webrtc':
         specifier: ^137.0.2
         version: 137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
@@ -233,7 +233,7 @@ importers:
         version: link:../types
       livekit-client:
         specifier: ^2.11.4
-        version: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)
+        version: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -483,6 +483,18 @@ importers:
       '@elevenlabs/react':
         specifier: workspace:*
         version: link:../react
+      '@livekit/react-native':
+        specifier: ^2.9.2
+        version: 2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.2.4(react@19.2.4))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)
+      '@livekit/react-native-webrtc':
+        specifier: ^137.0.2
+        version: 137.0.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))
+      react:
+        specifier: '>=17.0.0'
+        version: 19.2.4
+      react-native:
+        specifier: '>=0.70.0'
+        version: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)
     devDependencies:
       '@types/react':
         specifier: ^19.1.1
@@ -498,7 +510,7 @@ importers:
     devDependencies:
       '@asyncapi/cli':
         specifier: ^6.0.0
-        version: 6.0.0(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
+        version: 6.0.0(@babel/core@7.29.0)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
       '@asyncapi/modelina':
         specifier: ^5.10.1
         version: 5.10.1(encoding@0.1.13)
@@ -4660,6 +4672,8 @@ packages:
   '@tanstack/devtools-ui@0.4.4':
     resolution: {integrity: sha512-5xHXFyX3nom0UaNfiOM92o6ziaHjGo3mcSGe2HD5Xs8dWRZNpdZ0Smd0B9ddEhy0oB+gXyMzZgUJb9DmrZV0Mg==}
     engines: {node: '>=18'}
+    peerDependencies:
+      solid-js: '>=1.9.7'
 
   '@tanstack/devtools-vite@0.3.12':
     resolution: {integrity: sha512-fGJgu4xUhKmGk+a+/aHD8l5HKVk6+ObA+6D3YC3xCXbai/YmaGhztqcZf1tKUqjZyYyQLHsjqmKzvJgVpQP1jw==}
@@ -4670,10 +4684,15 @@ packages:
   '@tanstack/devtools@0.7.0':
     resolution: {integrity: sha512-AlAoCqJhWLg9GBEaoV1g/j+X/WA1aJSWOsekxeuZpYeS2hdVuKAjj04KQLUMJhtLfNl2s2E+TCj7ZRtWyY3U4w==}
     engines: {node: '>=18'}
+    peerDependencies:
+      solid-js: '>=1.9.7'
 
   '@tanstack/history@1.154.14':
     resolution: {integrity: sha512-xyIfof8eHBuub1CkBnbKNKQXeRZC4dClhmzePHVOEel4G7lk/dW+TQ16da7CFdeNLv6u6Owf5VoBQxoo6DFTSA==}
     engines: {node: '>=12'}
+
+  '@tanstack/query-core@5.100.5':
+    resolution: {integrity: sha512-t20KrhKkf0HXzqQkPbJ5erhFesup68BAbwFgYmTrS7bxMF7O5MdmL8jUkik4thsG7Hg00fblz30h6yF1d5TxGg==}
 
   '@tanstack/react-devtools@0.7.11':
     resolution: {integrity: sha512-a2Lmz8x+JoDrsU6f7uKRcyyY+k8mA/n5mb9h7XJ3Fz/y3+sPV9t7vAW1s5lyNkQyyDt6V1Oim99faLthoJSxMw==}
@@ -4683,6 +4702,11 @@ packages:
       '@types/react-dom': '>=16.8'
       react: '>=16.8'
       react-dom: '>=16.8'
+
+  '@tanstack/react-query@5.100.5':
+    resolution: {integrity: sha512-aNwj1mi2v2bQ9IxkyR1grLOUkv3BYWoykHy9KDyLNbjC3tsahbOHJibK+Wjtr1wRhG59/AvJhiJG5OlthaCgJA==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@tanstack/react-router-devtools@1.157.16':
     resolution: {integrity: sha512-g6ekyzumfLBX6T5e+Vu2r37Z2CFJKrWRFqIy3vZ6A3x7OcuPV8uXNjyrLSiT/IsGTiF8YzwI4nWJa4fyd7NlCw==}
@@ -5010,6 +5034,9 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
+  '@types/dom-mediacapture-record@1.0.22':
+    resolution: {integrity: sha512-mUMZLK3NvwRLcAAT9qmcK+9p7tpU2FHdDsntR3YI4+GY88XrgG4XiE7u1Q2LAN2/FZOz/tdMDC3GQCR4T8nFuw==}
+
   '@types/es-aggregate-error@1.0.6':
     resolution: {integrity: sha512-qJ7LIFp06h1QE1aVxbVd+zJP2wdaugYXYfd6JxsyRMrYHaxb6itXPogW2tz+ylUJ1n1b+JF1PHyYCfYHm0dvUg==}
 
@@ -5306,6 +5333,8 @@ packages:
 
   '@urql/exchange-retry@1.3.2':
     resolution: {integrity: sha512-TQMCz2pFJMfpNxmSfX1VSfTjwUIFx/mL+p1bnfM1xjjdla7Z+KnGMW/EhFbpckp3LyWAH4PgOsMwOMnIN+MBFg==}
+    peerDependencies:
+      '@urql/core': ^5.0.0
 
   '@vitejs/plugin-react@5.1.2':
     resolution: {integrity: sha512-EcA07pHJouywpzsoTUqNh5NwGayl2PPVEJKUSinGGSxFGYn+shYbqMGBg6FXDqgXum9Ou/ecb+411ssw8HImJQ==}
@@ -5435,6 +5464,11 @@ packages:
 
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependencies:
+      ajv: ^8.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv@5.5.2:
     resolution: {integrity: sha512-Ajr4IcMXq/2QmMkEmSvxqfLN5zGmJ92gHXAeOXq1OekoH2rfDNsgdDoL2f7QaRCy7G/E6TpxBVdRuNraMztGHw==}
@@ -11992,7 +12026,7 @@ snapshots:
       js-yaml: 4.1.1
       lodash: 4.17.23
 
-  '@asyncapi/cli@6.0.0(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
+  '@asyncapi/cli@6.0.0(@babel/core@7.29.0)(@types/babel__core@7.20.5)(@types/node@22.19.2)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
     dependencies:
       '@asyncapi/avro-schema-parser': 3.0.24(encoding@0.1.13)
       '@asyncapi/bundler': 0.6.4
@@ -12006,7 +12040,7 @@ snapshots:
       '@asyncapi/problem': 1.0.0
       '@asyncapi/protobuf-schema-parser': 3.6.0(encoding@0.1.13)
       '@asyncapi/raml-dt-schema-parser': 4.0.24(encoding@0.1.13)
-      '@asyncapi/studio': 1.2.0(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
+      '@asyncapi/studio': 1.2.0(@babel/core@7.29.0)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))
       '@changesets/changelog-git': 0.2.1
       '@clack/prompts': 0.11.0
       '@oclif/core': 4.10.2
@@ -12253,7 +12287,7 @@ snapshots:
       '@openapi-contrib/openapi-schema-to-json-schema': 3.2.0
       ajv: 8.20.0
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
     transitivePeerDependencies:
       - encoding
 
@@ -12287,7 +12321,7 @@ snapshots:
       '@types/urijs': 1.19.26
       ajv: 8.20.0
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       avsc: 5.7.9
       js-yaml: 4.1.1
       jsonpath-plus: 7.2.0
@@ -12307,7 +12341,7 @@ snapshots:
       '@types/urijs': 1.19.26
       ajv: 8.20.0
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       avsc: 5.7.9
       js-yaml: 4.1.1
       jsonpath-plus: 7.2.0
@@ -12333,7 +12367,7 @@ snapshots:
       '@types/urijs': 1.19.26
       ajv: 8.18.0
       ajv-errors: 3.0.0(ajv@8.18.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.18.0)
       avsc: 5.7.9
       js-yaml: 4.1.1
       jsonpath-plus: 10.4.0
@@ -12390,7 +12424,7 @@ snapshots:
     dependencies:
       '@types/json-schema': 7.0.15
 
-  '@asyncapi/studio@1.2.0(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
+  '@asyncapi/studio@1.2.0(@babel/core@7.29.0)(csstype@3.2.3)(encoding@0.1.13)(immer@9.0.21)(ts-node@10.9.2(@types/node@22.19.2)(typescript@5.9.3))':
     dependencies:
       '@asyncapi/avro-schema-parser': 3.0.24(encoding@0.1.13)
       '@asyncapi/converter': 2.0.1(encoding@0.1.13)
@@ -12419,7 +12453,7 @@ snapshots:
       js-yaml: 4.1.1
       monaco-editor: 0.34.1
       monaco-yaml: 4.0.2(monaco-editor@0.34.1)
-      next: 14.2.35(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      next: 14.2.35(@babel/core@7.29.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -13320,9 +13354,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.28.5)':
@@ -13330,9 +13374,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-decorators@7.27.1(@babel/core@7.28.5)':
@@ -13365,6 +13419,11 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-import-attributes@7.27.1(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-import-attributes@7.28.6(@babel/core@7.12.9)':
     dependencies:
       '@babel/core': 7.12.9
@@ -13375,9 +13434,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-jsx@7.27.1(@babel/core@7.12.9)':
@@ -13400,9 +13469,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.27.1
+
+  '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.27.1
 
   '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.28.5)':
@@ -13410,9 +13489,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.28.5)':
@@ -13420,9 +13509,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.27.1
+
+  '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.27.1
 
   '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.28.5)':
@@ -13430,9 +13529,19 @@ snapshots:
       '@babel/core': 7.28.5
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/helper-plugin-utils': 7.28.6
+
   '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.28.5)':
     dependencies:
       '@babel/core': 7.28.5
+      '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
   '@babel/plugin-syntax-typescript@7.27.1(@babel/core@7.28.5)':
@@ -14719,7 +14828,7 @@ snapshots:
       '@expo/xcpretty': 4.3.2
       '@react-native/dev-middleware': 0.81.5
       '@urql/core': 5.2.0(graphql@16.12.0)
-      '@urql/exchange-retry': 1.3.2(graphql@16.12.0)
+      '@urql/exchange-retry': 1.3.2(@urql/core@5.2.0(graphql@16.12.0))
       accepts: 1.3.8
       arg: 5.0.2
       better-opn: 3.0.2
@@ -15431,25 +15540,37 @@ snapshots:
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.5
 
-  '@livekit/components-core@0.12.12(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(tslib@2.8.1)':
+  '@livekit/components-core@0.12.12(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)':
     dependencies:
       '@floating-ui/dom': 1.7.4
-      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)
+      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
       loglevel: 1.9.1
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@livekit/components-react@2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
+  '@livekit/components-react@2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
     dependencies:
-      '@livekit/components-core': 0.12.12(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(tslib@2.8.1)
+      '@livekit/components-core': 0.12.12(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
       clsx: 2.1.1
       events: 3.3.0
       jose: 6.1.3
-      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)
+      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       tslib: 2.8.1
       usehooks-ts: 3.1.1(react@19.1.0)
+
+  '@livekit/components-react@2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tslib@2.8.1)':
+    dependencies:
+      '@livekit/components-core': 0.12.12(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
+      clsx: 2.1.1
+      events: 3.3.0
+      jose: 6.1.3
+      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      tslib: 2.8.1
+      usehooks-ts: 3.1.1(react@19.2.4)
 
   '@livekit/mutex@1.1.1': {}
 
@@ -15457,9 +15578,9 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/react-native-expo-plugin@1.0.1(@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1))(expo@54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
+  '@livekit/react-native-expo-plugin@1.0.1(@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1))(expo@54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@livekit/react-native': 2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
+      '@livekit/react-native': 2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
       expo: 54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
@@ -15473,21 +15594,53 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
+  '@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))':
     dependencies:
-      '@livekit/components-react': 2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
+      base64-js: 1.5.1
+      debug: 4.3.4
+      event-target-shim: 6.0.2
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tslib@2.8.1)':
+    dependencies:
+      '@livekit/components-react': 2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tslib@2.8.1)
       '@livekit/mutex': 1.1.1
       '@livekit/react-native-webrtc': 137.0.2(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       array.prototype.at: 1.1.3
       base64-js: 1.5.1
       event-target-shim: 6.0.2
       events: 3.3.0
-      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)
+      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
       loglevel: 1.9.2
       promise.allsettled: 1.0.7
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
       react-native-url-polyfill: 1.3.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
+      typed-emitter: 2.1.0
+      web-streams-polyfill: 4.2.0
+      well-known-symbols: 4.1.0
+    transitivePeerDependencies:
+      - '@livekit/krisp-noise-filter'
+      - react-dom
+      - tslib
+
+  '@livekit/react-native@2.9.6(@livekit/react-native-webrtc@137.0.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)))(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.2.4(react@19.2.4))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)(tslib@2.8.1)':
+    dependencies:
+      '@livekit/components-react': 2.9.17(livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tslib@2.8.1)
+      '@livekit/mutex': 1.1.1
+      '@livekit/react-native-webrtc': 137.0.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))
+      array.prototype.at: 1.1.3
+      base64-js: 1.5.1
+      event-target-shim: 6.0.2
+      events: 3.3.0
+      livekit-client: 2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22)
+      loglevel: 1.9.2
+      promise.allsettled: 1.0.7
+      react: 19.2.4
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)
+      react-native-url-polyfill: 1.3.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))
       typed-emitter: 2.1.0
       web-streams-polyfill: 4.2.0
       well-known-symbols: 4.1.0
@@ -17006,6 +17159,16 @@ snapshots:
       nullthrows: 1.1.1
       yargs: 17.7.2
 
+  '@react-native/codegen@0.81.5(@babel/core@7.29.0)':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/parser': 7.29.2
+      glob: 7.2.3
+      hermes-parser: 0.29.1
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      yargs: 17.7.2
+
   '@react-native/community-cli-plugin@0.81.5':
     dependencies:
       '@react-native/dev-middleware': 0.81.5
@@ -17054,6 +17217,15 @@ snapshots:
       nullthrows: 1.1.1
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
+    optionalDependencies:
+      '@types/react': 19.1.17
+
+  '@react-native/virtualized-lists@0.81.5(@types/react@19.1.17)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      invariant: 2.2.4
+      nullthrows: 1.1.1
+      react: 19.2.4
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)
     optionalDependencies:
       '@types/react': 19.1.17
 
@@ -17877,7 +18049,7 @@ snapshots:
       '@types/json-schema': 7.0.15
       ajv: 8.20.0
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       es-aggregate-error: 1.0.14
       jsonpath-plus: 10.4.0
       lodash: 4.17.23
@@ -17903,7 +18075,7 @@ snapshots:
       '@types/json-schema': 7.0.15
       ajv: 8.20.0
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       es-aggregate-error: 1.0.14
       expr-eval-fork: 3.0.3
       jsonpath-plus: 10.4.0
@@ -17953,7 +18125,7 @@ snapshots:
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       lodash: 4.17.23
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -17969,7 +18141,7 @@ snapshots:
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
       ajv-errors: 3.0.0(ajv@8.20.0)
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       lodash: 4.18.1
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -18044,7 +18216,7 @@ snapshots:
       '@stoplight/types': 13.20.0
       '@types/json-schema': 7.0.15
       ajv: 8.20.0
-      ajv-formats: 2.1.1
+      ajv-formats: 2.1.1(ajv@8.20.0)
       json-schema-traverse: 1.0.0
       leven: 3.1.0
       lodash: 4.17.23
@@ -18207,7 +18379,7 @@ snapshots:
 
   '@tanstack/devtools-event-client@0.4.0': {}
 
-  '@tanstack/devtools-ui@0.4.4(csstype@3.2.3)':
+  '@tanstack/devtools-ui@0.4.4(csstype@3.2.3)(solid-js@1.9.11)':
     dependencies:
       clsx: 2.1.1
       goober: 2.1.18(csstype@3.2.3)
@@ -18233,14 +18405,14 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@tanstack/devtools@0.7.0(csstype@3.2.3)':
+  '@tanstack/devtools@0.7.0(csstype@3.2.3)(solid-js@1.9.11)':
     dependencies:
       '@solid-primitives/event-listener': 2.4.3(solid-js@1.9.11)
       '@solid-primitives/keyboard': 1.3.3(solid-js@1.9.11)
       '@solid-primitives/resize-observer': 2.1.3(solid-js@1.9.11)
       '@tanstack/devtools-client': 0.0.3
       '@tanstack/devtools-event-bus': 0.3.3
-      '@tanstack/devtools-ui': 0.4.4(csstype@3.2.3)
+      '@tanstack/devtools-ui': 0.4.4(csstype@3.2.3)(solid-js@1.9.11)
       clsx: 2.1.1
       goober: 2.1.18(csstype@3.2.3)
       solid-js: 1.9.11
@@ -18251,9 +18423,11 @@ snapshots:
 
   '@tanstack/history@1.154.14': {}
 
-  '@tanstack/react-devtools@0.7.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@tanstack/query-core@5.100.5': {}
+
+  '@tanstack/react-devtools@0.7.11(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)':
     dependencies:
-      '@tanstack/devtools': 0.7.0(csstype@3.2.3)
+      '@tanstack/devtools': 0.7.0(csstype@3.2.3)(solid-js@1.9.11)
       '@types/react': 19.2.7
       '@types/react-dom': 19.2.3(@types/react@19.2.7)
       react: 19.2.4
@@ -18261,7 +18435,13 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - csstype
+      - solid-js
       - utf-8-validate
+
+  '@tanstack/react-query@5.100.5(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-core': 5.100.5
+      react: 19.2.4
 
   '@tanstack/react-router-devtools@1.157.16(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
@@ -18274,10 +18454,12 @@ snapshots:
     transitivePeerDependencies:
       - csstype
 
-  '@tanstack/react-router-ssr-query@1.157.16(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@tanstack/react-router-ssr-query@1.157.16(@tanstack/query-core@5.100.5)(@tanstack/react-query@5.100.5(react@19.2.4))(@tanstack/react-router@1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/router-core@1.157.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
+      '@tanstack/query-core': 5.100.5
+      '@tanstack/react-query': 5.100.5(react@19.2.4)
       '@tanstack/react-router': 1.157.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tanstack/router-ssr-query-core': 1.157.16(@tanstack/router-core@1.157.16)
+      '@tanstack/router-ssr-query-core': 1.157.16(@tanstack/query-core@5.100.5)(@tanstack/router-core@1.157.16)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
     transitivePeerDependencies:
@@ -18403,8 +18585,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tanstack/router-ssr-query-core@1.157.16(@tanstack/router-core@1.157.16)':
+  '@tanstack/router-ssr-query-core@1.157.16(@tanstack/query-core@5.100.5)(@tanstack/router-core@1.157.16)':
     dependencies:
+      '@tanstack/query-core': 5.100.5
       '@tanstack/router-core': 1.157.16
 
   '@tanstack/router-utils@1.154.7':
@@ -18705,6 +18888,8 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
+  '@types/dom-mediacapture-record@1.0.22': {}
+
   '@types/es-aggregate-error@1.0.6':
     dependencies:
       '@types/node': 22.19.2
@@ -19001,12 +19186,10 @@ snapshots:
     transitivePeerDependencies:
       - graphql
 
-  '@urql/exchange-retry@1.3.2(graphql@16.12.0)':
+  '@urql/exchange-retry@1.3.2(@urql/core@5.2.0(graphql@16.12.0))':
     dependencies:
       '@urql/core': 5.2.0(graphql@16.12.0)
       wonka: 6.3.5
-    transitivePeerDependencies:
-      - graphql
 
   '@vitejs/plugin-react@5.1.2(vite@7.3.1(@types/node@22.19.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
@@ -19145,9 +19328,13 @@ snapshots:
     dependencies:
       ajv: 8.20.0
 
-  ajv-formats@2.1.1:
-    dependencies:
+  ajv-formats@2.1.1(ajv@8.18.0):
+    optionalDependencies:
       ajv: 8.18.0
+
+  ajv-formats@2.1.1(ajv@8.20.0):
+    optionalDependencies:
+      ajv: 8.20.0
 
   ajv@5.5.2:
     dependencies:
@@ -19397,6 +19584,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  babel-jest@29.7.0(@babel/core@7.29.0):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@jest/transform': 29.7.0
+      '@types/babel__core': 7.20.5
+      babel-plugin-istanbul: 6.1.1
+      babel-preset-jest: 29.6.3(@babel/core@7.29.0)
+      chalk: 4.1.2
+      graceful-fs: 4.2.11
+      slash: 3.0.0
+    transitivePeerDependencies:
+      - supports-color
+
   babel-plugin-istanbul@6.1.1:
     dependencies:
       '@babel/helper-plugin-utils': 7.27.1
@@ -19507,6 +19707,25 @@ snapshots:
       '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.28.5)
       '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.28.5)
 
+  babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.0):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@babel/plugin-syntax-async-generators': 7.8.4(@babel/core@7.29.0)
+      '@babel/plugin-syntax-bigint': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-class-properties': 7.12.13(@babel/core@7.29.0)
+      '@babel/plugin-syntax-class-static-block': 7.14.5(@babel/core@7.29.0)
+      '@babel/plugin-syntax-import-attributes': 7.27.1(@babel/core@7.29.0)
+      '@babel/plugin-syntax-import-meta': 7.10.4(@babel/core@7.29.0)
+      '@babel/plugin-syntax-json-strings': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-logical-assignment-operators': 7.10.4(@babel/core@7.29.0)
+      '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-numeric-separator': 7.10.4(@babel/core@7.29.0)
+      '@babel/plugin-syntax-object-rest-spread': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-optional-catch-binding': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.29.0)
+      '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.0)
+      '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.0)
+
   babel-preset-expo@54.0.9(@babel/core@7.28.5)(@babel/runtime@7.28.4)(expo@54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@4.0.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)))(graphql@16.12.0)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-refresh@0.14.2):
     dependencies:
       '@babel/helper-module-imports': 7.28.6
@@ -19544,6 +19763,12 @@ snapshots:
       '@babel/core': 7.28.5
       babel-plugin-jest-hoist: 29.6.3
       babel-preset-current-node-syntax: 1.2.0(@babel/core@7.28.5)
+
+  babel-preset-jest@29.6.3(@babel/core@7.29.0):
+    dependencies:
+      '@babel/core': 7.29.0
+      babel-plugin-jest-hoist: 29.6.3
+      babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.0)
 
   bail@2.0.2: {}
 
@@ -22457,10 +22682,11 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e):
+  livekit-client@2.16.0(patch_hash=9017aa1cb7fee2ea056f4126969008ea86ed7876e3f35563fc967ff3adb4847e)(@types/dom-mediacapture-record@1.0.22):
     dependencies:
       '@livekit/mutex': 1.1.1
       '@livekit/protocol': 1.42.2
+      '@types/dom-mediacapture-record': 1.0.22
       events: 3.3.0
       jose: 6.1.3
       loglevel: 1.9.2
@@ -23421,7 +23647,7 @@ snapshots:
 
   nested-error-stacks@2.0.1: {}
 
-  next@14.2.35(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  next@14.2.35(@babel/core@7.29.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
     dependencies:
       '@next/env': 14.2.35
       '@swc/helpers': 0.5.5
@@ -23431,7 +23657,7 @@ snapshots:
       postcss: 8.4.31
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      styled-jsx: 5.1.1(react@18.2.0)
+      styled-jsx: 5.1.1(@babel/core@7.29.0)(react@18.2.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.33
       '@next/swc-darwin-x64': 14.2.33
@@ -24454,6 +24680,11 @@ snapshots:
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
       whatwg-url-without-unicode: 8.0.0-3
 
+  react-native-url-polyfill@1.3.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)):
+    dependencies:
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4)
+      whatwg-url-without-unicode: 8.0.0-3
+
   react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@babel/runtime': 7.29.2
@@ -24497,6 +24728,53 @@ snapshots:
       pretty-format: 29.7.0
       promise: 8.3.0
       react: 19.1.0
+      react-devtools-core: 6.1.5
+      react-refresh: 0.14.2
+      regenerator-runtime: 0.13.11
+      scheduler: 0.26.0
+      semver: 7.7.3
+      stacktrace-parser: 0.1.11
+      whatwg-fetch: 3.6.20
+      ws: 6.2.3
+      yargs: 17.7.2
+    optionalDependencies:
+      '@types/react': 19.1.17
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@react-native-community/cli'
+      - '@react-native/metro-config'
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4):
+    dependencies:
+      '@jest/create-cache-key-function': 29.7.0
+      '@react-native/assets-registry': 0.81.5
+      '@react-native/codegen': 0.81.5(@babel/core@7.29.0)
+      '@react-native/community-cli-plugin': 0.81.5
+      '@react-native/gradle-plugin': 0.81.5
+      '@react-native/js-polyfills': 0.81.5
+      '@react-native/normalize-colors': 0.81.5
+      '@react-native/virtualized-lists': 0.81.5(@types/react@19.1.17)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.2.4))(react@19.2.4)
+      abort-controller: 3.0.0
+      anser: 1.4.10
+      ansi-regex: 5.0.1
+      babel-jest: 29.7.0(@babel/core@7.29.0)
+      babel-plugin-syntax-hermes-parser: 0.29.1
+      base64-js: 1.5.1
+      commander: 12.1.0
+      flow-enums-runtime: 0.0.6
+      glob: 7.2.3
+      invariant: 2.2.4
+      jest-environment-node: 29.7.0
+      memoize-one: 5.2.1
+      metro-runtime: 0.83.3
+      metro-source-map: 0.83.3
+      nullthrows: 1.1.1
+      pretty-format: 29.7.0
+      promise: 8.3.0
+      react: 19.2.4
       react-devtools-core: 6.1.5
       react-refresh: 0.14.2
       regenerator-runtime: 0.13.11
@@ -25482,10 +25760,12 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  styled-jsx@5.1.1(react@18.2.0):
+  styled-jsx@5.1.1(@babel/core@7.29.0)(react@18.2.0):
     dependencies:
       client-only: 0.0.1
       react: 18.2.0
+    optionalDependencies:
+      '@babel/core': 7.29.0
 
   styleq@0.1.3: {}
 
@@ -26116,6 +26396,11 @@ snapshots:
     dependencies:
       lodash.debounce: 4.0.8
       react: 19.1.0
+
+  usehooks-ts@3.1.1(react@19.2.4):
+    dependencies:
+      lodash.debounce: 4.0.8
+      react: 19.2.4
 
   util-deprecate@1.0.2: {}
 
