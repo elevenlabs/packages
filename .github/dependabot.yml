@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: "weekly"
     groups:
+      eslint:
+        patterns:
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+          - "eslint"
+          - "eslint-*"
+          - "typescript-eslint"
       tanstack-start-router:
         patterns:
           - "@tanstack/react-router"
@@ -13,3 +20,10 @@ updates:
           - "@tanstack/react-start-*"
           - "@tanstack/router-*"
           - "@tanstack/start-*"
+      vite:
+        patterns:
+          - "@vitejs/*"
+          - "@vitest/*"
+          - "vite"
+          - "vite-*"
+          - "vitest"
