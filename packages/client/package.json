@@ -33,11 +33,11 @@
     "@vitest/browser": "^3.0.5",
     "eslint": "^10.2.1",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "rolldown": "^1.0.0-rc.9",
+    "eslint-plugin-import-x": "^4.16.2",
     "mock-socket": "^9.3.1",
     "node-wav": "^0.0.2",
     "playwright": "^1.54.1",
+    "rolldown": "^1.0.0-rc.9",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.59.1",
     "vitest": "^3.0.5"
