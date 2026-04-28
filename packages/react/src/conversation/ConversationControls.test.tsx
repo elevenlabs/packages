@@ -30,11 +30,7 @@ const createMockConversation = (id = "test-id") =>
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
-    return (
-      <ConversationProvider {...props}>
-        {children}
-      </ConversationProvider>
-    );
+    return <ConversationProvider {...props}>{children}</ConversationProvider>;
   };
 }
 
@@ -238,7 +234,9 @@ describe("useConversationControls", () => {
 
     await expect(
       result.current.changeInputDevice({ format: "pcm", sampleRate: 16000 })
-    ).rejects.toThrow("Device switching is only available for voice conversations");
+    ).rejects.toThrow(
+      "Device switching is only available for voice conversations"
+    );
   });
 
   it("changeOutputDevice throws for text-only conversations", async () => {
@@ -255,7 +253,9 @@ describe("useConversationControls", () => {
 
     await expect(
       result.current.changeOutputDevice({ format: "pcm", sampleRate: 16000 })
-    ).rejects.toThrow("Device switching is only available for voice conversations");
+    ).rejects.toThrow(
+      "Device switching is only available for voice conversations"
+    );
   });
 
   it("controls value is stable — does not change when conversation instance changes", async () => {
@@ -282,9 +282,7 @@ describe("useConversationControls", () => {
 
     function Root() {
       const controls = useConversationControls();
-      // eslint-disable-next-line react-hooks/globals -- test harness: capturing values for assertions
       if (!capturedStartSession) capturedStartSession = controls.startSession;
-      // eslint-disable-next-line react-hooks/globals -- test harness: capturing values for assertions
       capturedControls = controls;
       return null;
     }
