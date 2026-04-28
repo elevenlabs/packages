@@ -29,7 +29,7 @@
     "@types/hast": "^3.0.4",
     "@types/preact-custom-element": "^4.0.4",
     "@vitest/browser": "^3.1.2",
-    "eslint": "^9.8.0",
+    "eslint": "^10.2.1",
     "msw": "^2.7.5",
     "playwright": "^1.46.1",
     "@tailwindcss/vite": "^4.1.18",
