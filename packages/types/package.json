@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/types",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
   "type": "module",
   "types": "./dist/src/index.d.ts",
