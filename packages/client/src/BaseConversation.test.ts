@@ -101,22 +101,23 @@ describe("BaseConversation", () => {
   });
 
   describe("uploadFile", () => {
-    let fetchSpy: ReturnType<typeof vi.fn>;
+    let fetchSpy: ReturnType<typeof vi.fn<typeof fetch>>;
 
     afterEach(() => {
       vi.restoreAllMocks();
+      vi.unstubAllGlobals();
     });
 
     function mockFetchSuccess() {
-      fetchSpy = vi.fn().mockResolvedValue({
+      fetchSpy = vi.fn<typeof fetch>().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ file_id: "test-file-id" }),
-      });
-      globalThis.fetch = fetchSpy;
+      } as Response);
+      vi.stubGlobal("fetch", fetchSpy);
     }
 
     function getUploadedFilename(): string {
-      const formData = fetchSpy.mock.calls[0][1].body as FormData;
+      const formData = fetchSpy.mock.calls[0]![1]!.body as FormData;
       return (formData.get("file") as File).name;
     }
 

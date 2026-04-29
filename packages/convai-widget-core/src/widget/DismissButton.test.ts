@@ -1,4 +1,4 @@
-import { page } from "@vitest/browser/context";
+import { page } from "vitest/browser";
 import { describe, it, beforeAll, expect, afterAll } from "vitest";
 import { Worker } from "../mocks/browser";
 import { setupWebComponent } from "../mocks/web-component";
