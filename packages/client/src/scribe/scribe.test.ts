@@ -721,6 +721,71 @@ describe("Scribe", () => {
     });
   });
 
+  describe("Mute / Unmute", () => {
+    it("starts unmuted", () => {
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      expect(connection.isMuted).toBe(false);
+
+      connection.close();
+    });
+
+    it("mute() sets isMuted to true and unmute() resets it", () => {
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      connection.mute();
+      expect(connection.isMuted).toBe(true);
+
+      connection.unmute();
+      expect(connection.isMuted).toBe(false);
+
+      connection.close();
+    });
+
+    it("send() still forwards audio when muted (silence kept flowing to avoid server timeout)", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      const client = await clientPromise;
+      const onMessageSend = vi.fn();
+      client.on("message", onMessageSend);
+
+      await sleep(100);
+
+      connection.mute();
+      connection.send({ audioBase64: "dGVzdA==" });
+
+      await sleep(100);
+      expect(onMessageSend).toHaveBeenCalledTimes(1);
+
+      connection.close();
+      server.close();
+    });
+  });
+
   describe("Full Transcription Flow", () => {
     it("handles complete transcription flow with multiple events", async () => {
       const server = new Server(

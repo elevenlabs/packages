@@ -197,10 +197,57 @@ export class RealtimeConnection {
   private websocket: WebSocket | null = null;
   private eventEmitter: EventEmitter = new EventEmitter();
   private currentSampleRate: number = 16000;
+  private _muted: boolean = false;
   public _audioCleanup?: () => void;
+  /** @internal Set by ScribeRealtime in microphone mode to enable track-level muting. */
+  public _mediaStreamTrack?: MediaStreamTrack;
 
   constructor(sampleRate: number) {
     this.currentSampleRate = sampleRate;
+  }
+
+  /**
+   * Whether audio capture is currently muted.
+   *
+   * In microphone mode, the underlying `MediaStreamTrack` is disabled so the
+   * browser captures silence instead of real microphone input. Silence continues
+   * to be sent to the server to keep the connection alive.
+   *
+   * In manual mode, this flag is informational only and does not automatically
+   * block `send()`.
+   */
+  public get isMuted(): boolean {
+    return this._muted;
+  }
+
+  /**
+   * Mutes audio capture.
+   *
+   * In microphone mode, disables the underlying `MediaStreamTrack` so the browser
+   * replaces real microphone input with silence. The silence continues to flow to
+   * the server, keeping the connection alive without producing transcriptions.
+   *
+   * In manual mode, this sets `isMuted` for caller logic, but does not
+   * automatically block `send()`.
+   */
+  public mute(): void {
+    this._muted = true;
+    if (this._mediaStreamTrack) {
+      this._mediaStreamTrack.enabled = false;
+    }
+  }
+
+  /**
+   * Unmutes audio capture.
+   *
+   * Re-enables the `MediaStreamTrack` so real microphone audio flows again
+   * (microphone mode), or clears `isMuted` (manual mode).
+   */
+  public unmute(): void {
+    this._muted = false;
+    if (this._mediaStreamTrack) {
+      this._mediaStreamTrack.enabled = true;
+    }
   }
 
   /**
@@ -395,6 +442,11 @@ export class RealtimeConnection {
    * @param data.previousText - Send context to the model via base64 encoded audio or text from a previous transcription. Can only be sent alongside the first audio chunk. If sent in a subsequent chunk, an error will be returned.
    *
    * @throws {Error} If the WebSocket connection is not open
+   *
+   * @remarks
+   * `send()` always transmits when connected, even when `isMuted` is `true`.
+   * In microphone mode, mute is implemented by disabling the microphone track,
+   * which causes the browser to produce silence frames.
    *
    * @example
    * ```typescript

@@ -305,6 +305,14 @@ export class ScribeRealtime {
         });
       }
 
+      // Store the track so mute()/unmute() can toggle track.enabled.
+      // If mute() was called before mic setup finished, honour that state now.
+      const [audioTrack] = stream.getAudioTracks();
+      connection._mediaStreamTrack = audioTrack;
+      if (connection.isMuted && audioTrack) {
+        audioTrack.enabled = false;
+      }
+
       // Handle audio data from worklet
       scribeNode.port.onmessage = event => {
         const { audioData } = event.data;
