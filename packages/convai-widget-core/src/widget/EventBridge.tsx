@@ -14,11 +14,7 @@ export const EventBridge = memo(function EventBridge({ children }) {
   const allowEvents = useAllowEvents();
   
   useSignalEffect(() => {
-    function handleUserActivity(event: Event): void {
-      if (!isCustomEvent(event)) {
-        return;
-      }
-
+    function handleUserActivity(): void {
       sendUserActivity();
     }
 
