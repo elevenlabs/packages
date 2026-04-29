@@ -1,5 +1,19 @@
 # @elevenlabs/client
 
+## 1.4.0
+
+### Minor Changes
+
+- a8c2d5d: Add `keyterms` option (`string[]`) to the Scribe realtime API. Biases the model towards specific terms (max 50 keyterms, each up to 20 chars), passed as repeated query params on the WebSocket URL.
+- a8c2d5d: Add `noVerbatim` option (`boolean`) to the Scribe realtime API. When enabled, removes filler words, false starts, and disfluencies from transcripts.
+
+### Patch Changes
+
+- 3a9d14a: Fix interruptions cutting off some agent audio for audio that arrived in less than 2 seconds after an interruption
+- Updated dependencies [a8c2d5d]
+- Updated dependencies [a8c2d5d]
+  - @elevenlabs/types@0.10.0
+
 ## 1.3.1
 
 ### Patch Changes
