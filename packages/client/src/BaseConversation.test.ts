@@ -105,6 +105,7 @@ describe("BaseConversation", () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
+      vi.unstubAllGlobals();
     });
 
     function mockFetchSuccess() {
