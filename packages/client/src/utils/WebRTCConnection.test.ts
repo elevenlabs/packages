@@ -35,7 +35,9 @@ vi.mock("livekit-client", () => {
   };
 
   return {
-    Room: vi.fn(() => mockRoom),
+    Room: vi.fn(function Room() {
+      return mockRoom;
+    }),
     RoomEvent: {
       Connected: "connected",
       SignalConnected: "signalConnected",

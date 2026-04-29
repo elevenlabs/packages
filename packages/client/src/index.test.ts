@@ -731,38 +731,40 @@ describe("Connection Types", () => {
 describe("Volume Control", () => {
   // Mock AudioContext for testing
   beforeAll(() => {
-    globalThis.AudioContext = vi.fn().mockImplementation(() => ({
-      sampleRate: 16000,
-      currentTime: 0,
-      createAnalyser: vi.fn(() => ({
-        connect: vi.fn(),
-        frequencyBinCount: 1024,
-        getByteFrequencyData: vi.fn(),
-      })),
-      createGain: vi.fn(() => ({
-        connect: vi.fn(),
-        gain: {
-          value: 1,
-          cancelScheduledValues: vi.fn(),
+    globalThis.AudioContext = vi.fn(function MockAudioContext() {
+      return {
+        sampleRate: 16000,
+        currentTime: 0,
+        createAnalyser: vi.fn(() => ({
+          connect: vi.fn(),
+          frequencyBinCount: 1024,
+          getByteFrequencyData: vi.fn(),
+        })),
+        createGain: vi.fn(() => ({
+          connect: vi.fn(),
+          gain: {
+            value: 1,
+            cancelScheduledValues: vi.fn(),
+          },
+        })),
+        createMediaStreamSource: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        })),
+        createMediaStreamDestination: vi.fn(() => ({
+          stream: new MediaStream(),
+          connect: vi.fn(),
+        })),
+        destination: {},
+        audioWorklet: {
+          addModule: vi.fn(() => Promise.resolve()),
         },
-      })),
-      createMediaStreamSource: vi.fn(() => ({
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-      })),
-      createMediaStreamDestination: vi.fn(() => ({
-        stream: new MediaStream(),
-        connect: vi.fn(),
-      })),
-      destination: {},
-      audioWorklet: {
-        addModule: vi.fn(() => Promise.resolve()),
-      },
-      resume: vi.fn(() => Promise.resolve()),
-      close: vi.fn(() => Promise.resolve()),
-    }));
+        resume: vi.fn(() => Promise.resolve()),
+        close: vi.fn(() => Promise.resolve()),
+      };
+    }) as unknown as typeof AudioContext;
 
-    globalThis.AudioWorkletNode = vi.fn().mockImplementation(() => {
+    globalThis.AudioWorkletNode = vi.fn(function MockAudioWorkletNode() {
       return {
         connect: vi.fn(),
         port: {
@@ -772,7 +774,7 @@ describe("Volume Control", () => {
           start: vi.fn(),
         },
       };
-    });
+    }) as unknown as typeof AudioWorkletNode;
 
     // Mock getUserMedia by mocking the mediaDevices property
     const mockMediaStream = {
@@ -824,30 +826,32 @@ describe("Volume Control", () => {
     const createGainSpy = vi.fn(() => mockGainNode);
 
     // Override the AudioContext mock for this test
-    globalThis.AudioContext = vi.fn().mockImplementation(() => ({
-      sampleRate: 16000,
-      currentTime: 0,
-      createAnalyser: vi.fn(() => ({
-        connect: vi.fn(),
-        frequencyBinCount: 1024,
-        getByteFrequencyData: vi.fn(),
-      })),
-      createGain: createGainSpy,
-      createMediaStreamSource: vi.fn(() => ({
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-      })),
-      createMediaStreamDestination: vi.fn(() => ({
-        stream: new MediaStream(),
-        connect: vi.fn(),
-      })),
-      destination: {},
-      audioWorklet: {
-        addModule: vi.fn(() => Promise.resolve()),
-      },
-      resume: vi.fn(() => Promise.resolve()),
-      close: vi.fn(() => Promise.resolve()),
-    }));
+    globalThis.AudioContext = vi.fn(function MockAudioContext() {
+      return {
+        sampleRate: 16000,
+        currentTime: 0,
+        createAnalyser: vi.fn(() => ({
+          connect: vi.fn(),
+          frequencyBinCount: 1024,
+          getByteFrequencyData: vi.fn(),
+        })),
+        createGain: createGainSpy,
+        createMediaStreamSource: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        })),
+        createMediaStreamDestination: vi.fn(() => ({
+          stream: new MediaStream(),
+          connect: vi.fn(),
+        })),
+        destination: {},
+        audioWorklet: {
+          addModule: vi.fn(() => Promise.resolve()),
+        },
+        resume: vi.fn(() => Promise.resolve()),
+        close: vi.fn(() => Promise.resolve()),
+      };
+    }) as unknown as typeof AudioContext;
 
     const conversationPromise = Conversation.startSession({
       signedUrl: "wss://api.elevenlabs.io/voice/volume-test",
@@ -944,30 +948,32 @@ describe("Volume Control", () => {
     const createGainSpy = vi.fn(() => mockGainNode);
 
     // Override the AudioContext mock for this test
-    globalThis.AudioContext = vi.fn().mockImplementation(() => ({
-      sampleRate: 16000,
-      currentTime: 0,
-      createAnalyser: vi.fn(() => ({
-        connect: vi.fn(),
-        frequencyBinCount: 1024,
-        getByteFrequencyData: vi.fn(),
-      })),
-      createGain: createGainSpy,
-      createMediaStreamSource: vi.fn(() => ({
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-      })),
-      createMediaStreamDestination: vi.fn(() => ({
-        stream: new MediaStream(),
-        connect: vi.fn(),
-      })),
-      destination: {},
-      audioWorklet: {
-        addModule: vi.fn(() => Promise.resolve()),
-      },
-      resume: vi.fn(() => Promise.resolve()),
-      close: vi.fn(() => Promise.resolve()),
-    }));
+    globalThis.AudioContext = vi.fn(function MockAudioContext() {
+      return {
+        sampleRate: 16000,
+        currentTime: 0,
+        createAnalyser: vi.fn(() => ({
+          connect: vi.fn(),
+          frequencyBinCount: 1024,
+          getByteFrequencyData: vi.fn(),
+        })),
+        createGain: createGainSpy,
+        createMediaStreamSource: vi.fn(() => ({
+          connect: vi.fn(),
+          disconnect: vi.fn(),
+        })),
+        createMediaStreamDestination: vi.fn(() => ({
+          stream: new MediaStream(),
+          connect: vi.fn(),
+        })),
+        destination: {},
+        audioWorklet: {
+          addModule: vi.fn(() => Promise.resolve()),
+        },
+        resume: vi.fn(() => Promise.resolve()),
+        close: vi.fn(() => Promise.resolve()),
+      };
+    }) as unknown as typeof AudioContext;
 
     const conversationPromise = Conversation.startSession({
       signedUrl: "wss://api.elevenlabs.io/voice/volume-audio-test",
