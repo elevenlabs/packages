@@ -37,6 +37,7 @@ function Playground() {
           mic-muting={JSON.stringify(state.micMuting)}
           override-text-only={JSON.stringify(state.textOnly)}
           always-expanded={JSON.stringify(state.alwaysExpanded)}
+          allow-events={JSON.stringify(state.allowEvents)}
           dismissible={JSON.stringify(state.dismissible)}
           show-agent-status={JSON.stringify(state.showAgentStatus)}
           dynamic-variables={JSON.stringify(state.dynamicVariables)}

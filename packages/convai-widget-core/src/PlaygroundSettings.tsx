@@ -23,6 +23,7 @@ export function usePlaygroundSettings() {
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [allowEvents, setAllowEvents] = useState(false);
   const [overrideFirstMessage, setOverrideFirstMessage] = useState(false);
   const [firstMessage, setFirstMessage] = useState(
     "Hi, how can I help you today?"
@@ -60,6 +61,8 @@ export function usePlaygroundSettings() {
     setTextOnly,
     alwaysExpanded,
     setAlwaysExpanded,
+    allowEvents,
+    setAllowEvents,
     dismissible,
     setDismissible,
     showAgentStatus,
@@ -162,6 +165,14 @@ export function PlaygroundSettingsPanel({
           onChange={(e) => state.setDismissible(e.currentTarget.checked)}
         />{" "}
         Dismissible
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.allowEvents}
+          onChange={(e) => state.setAllowEvents(e.currentTarget.checked)}
+        />{" "}
+        Allow events
       </label>
       <label>
         <input
