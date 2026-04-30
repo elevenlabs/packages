@@ -17,6 +17,7 @@ import {
 } from "../contexts/widget-config";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
+import { isImageMimeType } from "./useFileUpload";
 
 interface TranscriptMessageProps {
   entry: DisplayTranscriptEntry;
@@ -58,6 +59,7 @@ function UserMessageBubble({
   entry: Extract<DisplayTranscriptEntry, { type: "message" }>;
 }) {
   const { previewUrl } = useAvatarConfig();
+  const fileInput = entry.fileInput;
 
   return (
     <div
@@ -75,18 +77,80 @@ function UserMessageBubble({
           className="bg-base-border shrink-0 w-5 h-5 rounded-full"
         />
       )}
-      <div
-        dir="auto"
-        className={clsx(
-          "px-3 py-2.5 rounded-bubble text-sm min-w-0 wrap-break-word whitespace-pre-wrap",
-          entry.role === "user"
-            ? "bg-accent text-accent-primary"
-            : "bg-base-active text-base-primary"
+      <div className="flex flex-col items-end gap-1.5 min-w-0">
+        {fileInput && (
+          <FileAttachment
+            fileName={fileInput.fileName}
+            mimeType={fileInput.mimeType}
+            previewUrl={fileInput.previewUrl}
+          />
         )}
-      >
-        {entry.message}
+        {entry.message && (
+          <div
+            dir="auto"
+            className={clsx(
+              "px-3 py-2.5 rounded-bubble text-sm min-w-0 wrap-break-word whitespace-pre-wrap",
+              entry.role === "user"
+                ? "bg-accent text-accent-primary"
+                : "bg-base-active text-base-primary"
+            )}
+          >
+            {entry.message}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function FileAttachment({
+  fileName,
+  mimeType,
+  previewUrl,
+}: {
+  fileName: string;
+  mimeType: string;
+  previewUrl: string | null;
+}) {
+  const isImage = isImageMimeType(mimeType);
+
+  if (isImage && previewUrl) {
+    return (
+      <div className="rounded-bubble border border-base-border shadow-sm p-1">
+        <img
+          src={previewUrl}
+          alt={fileName}
+          className="max-w-[180px] rounded-input object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-bubble bg-accent text-accent-primary">
+      <FileDocIcon />
+      <span className="truncate text-sm">{fileName}</span>
+    </div>
+  );
+}
+
+function FileDocIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      className="shrink-0 opacity-70"
+    >
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+    </svg>
   );
 }
 

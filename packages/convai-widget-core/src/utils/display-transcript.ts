@@ -1,5 +1,8 @@
 import type { Role } from "@elevenlabs/client";
-import type { TranscriptEntry } from "../contexts/conversation";
+import type {
+  TranscriptEntry,
+  TranscriptFileInput,
+} from "../contexts/conversation";
 import type { ConversationMode } from "../contexts/conversation-mode";
 
 export const ToolCallStatus = {
@@ -20,6 +23,7 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
       eventId?: number;
       toolStatus?: ToolCallStatusType;
+      fileInput?: TranscriptFileInput | null;
     }
   | {
       type: "disconnection";
