@@ -48,6 +48,12 @@ class TestConversation extends BaseConversation {
   public getOutputVolume(): number {
     return 0;
   }
+
+  public receiveMessage(
+    event: Parameters<Parameters<BaseConnection["onMessage"]>[0]>[0]
+  ) {
+    return this["onMessage"](event);
+  }
 }
 
 describe("BaseConversation", () => {
@@ -158,6 +164,33 @@ describe("BaseConversation", () => {
       );
 
       expect(getUploadedFilename()).toBe("upload.svg");
+    });
+  });
+
+  describe("agent_response_correction events", () => {
+    it("calls onAgentResponseCorrection with the correction payload", async () => {
+      const onAgentResponseCorrection = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentResponseCorrection,
+        onDebug,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_response_correction",
+        agent_response_correction_event: {
+          original_agent_response: "The weather is sunny and warm.",
+          corrected_agent_response: "The weather is sunny",
+          event_id: 42,
+        },
+      });
+
+      expect(onAgentResponseCorrection).toHaveBeenCalledWith({
+        original_agent_response: "The weather is sunny and warm.",
+        corrected_agent_response: "The weather is sunny",
+        event_id: 42,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
     });
   });
 });
