@@ -1,3 +1,4 @@
+---
 "@elevenlabs/client": patch
 "@elevenlabs/react": patch
 "@elevenlabs/types": patch
