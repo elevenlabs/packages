@@ -146,6 +146,7 @@ export type ConversationConfigOverrideAgentLanguage =
 
 export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
+  llm?: string;
 }
 
 export interface ConversationConfigOverrideTts {

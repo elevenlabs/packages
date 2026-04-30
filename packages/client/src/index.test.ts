@@ -25,6 +25,7 @@ const CLIENT_TOOL_HANDLER = "CLIENT_TOOL_HANDLER";
 const CLIENT_TOOL_CALL_ID = "CLIENT_TOOL_CALL_ID";
 const CLIENT_TOOL_PARAMETERS = { some: "param" };
 const CUSTOM_PROMPT = "CUSTOM_PROMPT";
+const CUSTOM_LLM = "gpt-4o-mini";
 const CUSTOM_LLM_EXTRA_BODY = "CUSTOM_LLM_EXTRA_BODY";
 const TEST_USER_ID = "test-user-123";
 const AGENT_CHAT_RESPONSE_CHUNK_1 = "Hello";
@@ -64,6 +65,7 @@ describe("Conversation", () => {
           agent: {
             prompt: {
               prompt: CUSTOM_PROMPT,
+              llm: CUSTOM_LLM,
             },
           },
         },
@@ -153,7 +155,7 @@ describe("Conversation", () => {
         JSON.stringify({
           type: "conversation_initiation_client_data",
           conversation_config_override: {
-            agent: { prompt: { prompt: "CUSTOM_PROMPT" } },
+            agent: { prompt: { prompt: CUSTOM_PROMPT, llm: CUSTOM_LLM } },
             tts: {},
             conversation: {
               text_only: conversationType === "text",

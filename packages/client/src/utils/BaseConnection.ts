@@ -1,11 +1,13 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
 import type { Mode } from "../BaseConversation.js";
 import type {
+  ConversationConfigOverrideAgentPrompt,
   DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
 
 export type {
+  ConversationConfigOverrideAgentPrompt,
   DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
@@ -30,9 +32,7 @@ export type BaseSessionConfig = {
   livekitUrl?: string;
   overrides?: {
     agent?: {
-      prompt?: {
-        prompt?: string;
-      };
+      prompt?: ConversationConfigOverrideAgentPrompt;
       firstMessage?: string;
       language?: Language;
     };

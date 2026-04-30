@@ -1201,6 +1201,10 @@ components:
           type: string
           nullable: true
           description: The system prompt that defines the agent's behavior
+        llm:
+          type: string
+          nullable: true
+          description: The LLM model to use for the conversation
 
     TTSConversationalConfigOverride:
       type: object
