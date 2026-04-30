@@ -198,14 +198,14 @@ export class VoiceConversation extends BaseConversation {
   protected override async handlePause(): Promise<void> {
     this.pausedMicMuted = this.input.isMuted();
     this.pausedVolume = this.volume;
-    this.output.setPaused(true);
+    this.output.setPlaybackEnabled(false);
     try {
       this.output.interrupt(0);
       this.setVolume({ volume: 0 });
       await this.input.setMuted(true);
       this.updateMode("listening");
     } catch (error) {
-      this.output.setPaused(false);
+      this.output.setPlaybackEnabled(true);
       throw error;
     }
   }
@@ -219,7 +219,7 @@ export class VoiceConversation extends BaseConversation {
       this.pausedVolume = null;
       this.pausedMicMuted = null;
     } finally {
-      this.output.setPaused(false);
+      this.output.setPlaybackEnabled(true);
     }
   }
 
