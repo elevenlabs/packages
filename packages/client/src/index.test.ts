@@ -1012,6 +1012,7 @@ describe("Volume Control", () => {
     conversation.setVolume({ volume: 0.4 });
 
     await conversation.pause();
+    await sleep(100);
 
     expect(mockGainNode.gain.value).toBe(0);
     expect(workletPort.postMessage).toHaveBeenCalledWith({ type: "interrupt" });

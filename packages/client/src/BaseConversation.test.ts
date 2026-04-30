@@ -129,7 +129,10 @@ describe("BaseConversation", () => {
     it("sends user activity while paused and stops after resume", async () => {
       vi.useFakeTimers();
       const sendMessage = vi.fn();
-      const conversation = TestConversation.create({}, createConnection({ sendMessage }));
+      const conversation = TestConversation.create(
+        {},
+        createConnection({ sendMessage })
+      );
 
       await conversation.pause();
 
@@ -167,7 +170,10 @@ describe("BaseConversation", () => {
     it("clears paused activity when the session ends", async () => {
       vi.useFakeTimers();
       const sendMessage = vi.fn();
-      const conversation = TestConversation.create({}, createConnection({ sendMessage }));
+      const conversation = TestConversation.create(
+        {},
+        createConnection({ sendMessage })
+      );
 
       await conversation.pause();
       await conversation.endSession();
