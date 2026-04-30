@@ -21,12 +21,14 @@ class TestConversation extends BaseConversation {
     return super.getFullOptions(partialOptions);
   }
 
-  public static create(options: { origin?: string } = {}): TestConversation {
+  public static create(
+    options: Partial<Options> & { origin?: string } = {}
+  ): TestConversation {
     const fullOptions = TestConversation.getFullOptions({
       agentId: "test-agent-id",
       connectionType: "webrtc",
       ...options,
-    });
+    } as PartialOptions);
     return new TestConversation(fullOptions, noopConnection);
   }
 
