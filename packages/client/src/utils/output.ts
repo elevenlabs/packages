@@ -168,7 +168,18 @@ export class MediaDeviceOutput
     this.gain.gain.value = volume;
   }
 
+  public setPaused(isPaused: boolean): void {
+    this.interrupted = isPaused;
+    if (!isPaused) {
+      this.worklet.port.postMessage({ type: "clearInterrupted" });
+    }
+  }
+
   public playAudio(chunk: ArrayBuffer): void {
+    if (this.interrupted) {
+      return;
+    }
+
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
     if (this.interruptTimeout) {
@@ -190,6 +201,12 @@ export class MediaDeviceOutput
 
     // Send interrupt message to worklet to flush queued buffers
     this.worklet.port.postMessage({ type: "interrupt" });
+
+    if (resetDuration <= 0) {
+      this.gain.gain.cancelScheduledValues(this.context.currentTime);
+      this.gain.gain.value = 0;
+      return;
+    }
 
     // Fade out audio gain
     this.gain.gain.exponentialRampToValueAtTime(

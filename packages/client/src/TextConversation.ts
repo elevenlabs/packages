@@ -8,6 +8,14 @@ const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 export class TextConversation extends BaseConversation {
   readonly type = "text";
 
+  protected override async handlePause(): Promise<void> {
+    throw new Error("pause is not supported in text conversations");
+  }
+
+  protected override async handleResume(): Promise<void> {
+    throw new Error("resume is not supported in text conversations");
+  }
+
   public setVolume(): void {
     throw new Error("setVolume is not supported in text conversations");
   }

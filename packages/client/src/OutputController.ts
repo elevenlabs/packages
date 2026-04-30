@@ -9,6 +9,7 @@ export interface OutputController {
   setDevice(config?: Partial<FormatConfig> & OutputDeviceConfig): Promise<void>;
   setVolume(volume: number): void;
   interrupt(resetDuration?: number): void;
+  setPaused(isPaused: boolean): void;
 
   /**
    * @deprecated AnalyserNode is a web-only API and will not work on all

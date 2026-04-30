@@ -30,6 +30,7 @@ import type { InputConfig } from "./utils/input.js";
 import type { OutputConfig } from "./utils/output.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const PAUSED_ACTIVITY_INTERVAL_MS = 1000;
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 export { CALLBACK_KEYS } from "@elevenlabs/types";
@@ -112,6 +113,8 @@ export abstract class BaseConversation {
   protected currentEventId = 1;
   protected lastFeedbackEventId = 0;
   protected canSendFeedback = false;
+  protected paused = false;
+  private pausedActivityInterval: ReturnType<typeof setInterval> | null = null;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
@@ -159,6 +162,7 @@ export abstract class BaseConversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
+    this.stopPausedActivityInterval();
     await this.handleEndSession();
     this.updateStatus("disconnected");
     if (this.options.onDisconnect) {
@@ -168,6 +172,52 @@ export abstract class BaseConversation {
 
   protected async handleEndSession() {
     this.connection.close();
+  }
+
+  protected async handlePause(): Promise<void> {}
+
+  protected async handleResume(): Promise<void> {}
+
+  protected handlePauseFailed(): void {}
+
+  private startPausedActivityInterval() {
+    this.sendUserActivity();
+    this.pausedActivityInterval = setInterval(() => {
+      this.sendUserActivity();
+    }, PAUSED_ACTIVITY_INTERVAL_MS);
+  }
+
+  private stopPausedActivityInterval() {
+    if (this.pausedActivityInterval) {
+      clearInterval(this.pausedActivityInterval);
+      this.pausedActivityInterval = null;
+    }
+  }
+
+  public async pause(): Promise<void> {
+    if (this.paused) return;
+
+    this.paused = true;
+    try {
+      await this.handlePause();
+      this.startPausedActivityInterval();
+    } catch (error) {
+      this.paused = false;
+      throw error;
+    }
+  }
+
+  public async resume(): Promise<void> {
+    if (!this.paused) return;
+
+    this.stopPausedActivityInterval();
+    try {
+      await this.handleResume();
+      this.paused = false;
+    } catch (error) {
+      this.startPausedActivityInterval();
+      throw error;
+    }
   }
 
   protected updateMode(mode: Mode) {
@@ -314,6 +364,10 @@ export abstract class BaseConversation {
 
   protected handleAudio(event: AgentAudioEvent) {}
 
+  protected shouldHandleAudio(_event: AgentAudioEvent): boolean {
+    return true;
+  }
+
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {
       this.options.onMCPToolCall(event.mcp_tool_call);
@@ -426,6 +480,9 @@ export abstract class BaseConversation {
         return;
       }
       case "audio": {
+        if (!this.shouldHandleAudio(parsedEvent)) {
+          return;
+        }
         this.handleAudio(parsedEvent);
         return;
       }

@@ -108,6 +108,8 @@ export class VoiceConversation extends BaseConversation {
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
   private visibilityChangeHandler: (() => void) | null = null;
+  private pausedMicMuted: boolean | null = null;
+  private pausedVolume: number | null = null;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     if (event.data.type === "process") {
@@ -191,6 +193,38 @@ export class VoiceConversation extends BaseConversation {
       this.updateCanSendFeedback();
       this.updateMode("speaking");
     }
+  }
+
+  protected override async handlePause(): Promise<void> {
+    this.pausedMicMuted = this.input.isMuted();
+    this.pausedVolume = this.volume;
+    this.output.setPaused(true);
+    try {
+      this.output.interrupt(0);
+      this.setVolume({ volume: 0 });
+      await this.input.setMuted(true);
+      this.updateMode("listening");
+    } catch (error) {
+      this.output.setPaused(false);
+      throw error;
+    }
+  }
+
+  protected override async handleResume(): Promise<void> {
+    const volume = this.pausedVolume ?? this.volume;
+    const isMuted = this.pausedMicMuted ?? false;
+    try {
+      this.setVolume({ volume });
+      await this.input.setMuted(isMuted);
+      this.pausedVolume = null;
+      this.pausedMicMuted = null;
+    } finally {
+      this.output.setPaused(false);
+    }
+  }
+
+  protected override shouldHandleAudio(_event: AgentAudioEvent): boolean {
+    return !this.paused;
   }
 
   private static readonly FREQUENCY_BIN_COUNT = 1024;

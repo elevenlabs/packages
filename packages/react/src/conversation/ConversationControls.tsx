@@ -15,6 +15,8 @@ const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   uploadFile: (file: Blob) => Promise<UploadFileResult>;
@@ -70,6 +72,14 @@ export function ConversationControlsProvider({
     },
     [getConversation]
   );
+
+  const pause = useCallback(() => {
+    return getConversation().pause();
+  }, [getConversation]);
+
+  const resume = useCallback(() => {
+    return getConversation().resume();
+  }, [getConversation]);
 
   const sendMultimodalMessage = useCallback(
     (options: MultimodalMessageInput) => {
@@ -166,6 +176,8 @@ export function ConversationControlsProvider({
     () => ({
       startSession: ctx.startSession,
       endSession: ctx.endSession,
+      pause,
+      resume,
       sendUserMessage,
       sendMultimodalMessage,
       uploadFile,
@@ -184,6 +196,8 @@ export function ConversationControlsProvider({
     [
       ctx.startSession,
       ctx.endSession,
+      pause,
+      resume,
       sendUserMessage,
       sendMultimodalMessage,
       uploadFile,

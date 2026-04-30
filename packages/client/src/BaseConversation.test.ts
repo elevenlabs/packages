@@ -16,22 +16,43 @@ const noopConnection = {
   sendMessage: () => {},
 } as unknown as BaseConnection;
 
+function createConnection(overrides: Partial<BaseConnection> = {}) {
+  return {
+    ...noopConnection,
+    ...overrides,
+  } as unknown as BaseConnection;
+}
+
 class TestConversation extends BaseConversation {
+  public pauseCount = 0;
+  public resumeCount = 0;
+
   public static getFullOptions(partialOptions: PartialOptions): Options {
     return super.getFullOptions(partialOptions);
   }
 
-  public static create(options: { origin?: string } = {}): TestConversation {
+  public static create(
+    options: { origin?: string } = {},
+    connection = noopConnection
+  ): TestConversation {
     const fullOptions = TestConversation.getFullOptions({
       agentId: "test-agent-id",
       connectionType: "webrtc",
       ...options,
     });
-    return new TestConversation(fullOptions, noopConnection);
+    return new TestConversation(fullOptions, connection);
   }
 
   constructor(options: Options, connection: BaseConnection) {
     super(options, connection);
+  }
+
+  protected override async handlePause(): Promise<void> {
+    this.pauseCount++;
+  }
+
+  protected override async handleResume(): Promise<void> {
+    this.resumeCount++;
   }
 
   public setVolume(): void {}
@@ -98,6 +119,62 @@ describe("BaseConversation", () => {
         );
       }
     );
+  });
+
+  describe("pause and resume", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("sends user activity while paused and stops after resume", async () => {
+      vi.useFakeTimers();
+      const sendMessage = vi.fn();
+      const conversation = TestConversation.create({}, createConnection({ sendMessage }));
+
+      await conversation.pause();
+
+      expect(conversation.pauseCount).toBe(1);
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenLastCalledWith({ type: "user_activity" });
+
+      vi.advanceTimersByTime(1000);
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+      expect(sendMessage).toHaveBeenLastCalledWith({ type: "user_activity" });
+
+      await conversation.resume();
+      expect(conversation.resumeCount).toBe(1);
+
+      vi.advanceTimersByTime(1000);
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+    });
+
+    it("is idempotent", async () => {
+      vi.useFakeTimers();
+      const conversation = TestConversation.create(
+        {},
+        createConnection({ sendMessage: vi.fn() })
+      );
+
+      await conversation.pause();
+      await conversation.pause();
+      await conversation.resume();
+      await conversation.resume();
+
+      expect(conversation.pauseCount).toBe(1);
+      expect(conversation.resumeCount).toBe(1);
+    });
+
+    it("clears paused activity when the session ends", async () => {
+      vi.useFakeTimers();
+      const sendMessage = vi.fn();
+      const conversation = TestConversation.create({}, createConnection({ sendMessage }));
+
+      await conversation.pause();
+      await conversation.endSession();
+
+      vi.advanceTimersByTime(1000);
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("uploadFile", () => {

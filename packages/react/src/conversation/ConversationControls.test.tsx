@@ -17,6 +17,8 @@ const createMockConversation = (id = "test-id") =>
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
+    pause: vi.fn().mockResolvedValue(undefined),
+    resume: vi.fn().mockResolvedValue(undefined),
     sendUserMessage: vi.fn(),
     sendContextualUpdate: vi.fn(),
     sendUserActivity: vi.fn(),
@@ -147,6 +149,27 @@ describe("useConversationControls", () => {
     expect(mockConversation.setVolume).toHaveBeenCalledWith({ volume: 0.5 });
   });
 
+  it("forwards pause and resume to the conversation", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useConversationControls(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    await act(async () => {
+      await result.current.pause();
+      await result.current.resume();
+    });
+
+    expect(mockConversation.pause).toHaveBeenCalled();
+    expect(mockConversation.resume).toHaveBeenCalled();
+  });
+
   it("returns frequency data and volume from the conversation", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
@@ -198,6 +221,8 @@ describe("useConversationControls", () => {
     expect(() => result.current.sendUserActivity()).toThrow(
       "No active conversation"
     );
+    expect(() => result.current.pause()).toThrow("No active conversation");
+    expect(() => result.current.resume()).toThrow("No active conversation");
     expect(() => result.current.setVolume({ volume: 0.5 })).toThrow(
       "No active conversation"
     );

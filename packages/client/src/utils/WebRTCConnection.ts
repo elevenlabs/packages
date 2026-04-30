@@ -199,6 +199,20 @@ export class WebRTCConnection extends BaseConnection {
       // No-op for WebRTC - LiveKit handles audio playback and interruption
       // Audio interruption is managed by the server/agent
     },
+    setPaused: (isPaused: boolean) => {
+      this.audioElements.forEach(element => {
+        if (isPaused) {
+          element.pause();
+        } else {
+          element.play().catch(error => {
+            this.debug({
+              type: "audio_element_resume_error",
+              error,
+            });
+          });
+        }
+      });
+    },
     getAnalyser: () => this.outputAnalyser ?? undefined,
     getVolume: () => this.outputVolumeProvider.getVolume(),
     getByteFrequencyData: (buffer: Uint8Array<ArrayBuffer>) => {
