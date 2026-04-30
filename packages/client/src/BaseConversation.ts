@@ -364,9 +364,7 @@ export abstract class BaseConversation {
 
   protected handleAudio(event: AgentAudioEvent) {}
 
-  protected shouldHandleAudio(_event: AgentAudioEvent): boolean {
-    return true;
-  }
+  protected abstract shouldHandleAudio(event: AgentAudioEvent): boolean;
 
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {

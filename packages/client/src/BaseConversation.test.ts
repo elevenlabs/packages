@@ -55,6 +55,10 @@ class TestConversation extends BaseConversation {
     this.resumeCount++;
   }
 
+  protected override shouldHandleAudio(): boolean {
+    return true;
+  }
+
   public setVolume(): void {}
   public setMicMuted(): void {}
   public getInputByteFrequencyData(): Uint8Array {

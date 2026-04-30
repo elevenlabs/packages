@@ -16,6 +16,10 @@ export class TextConversation extends BaseConversation {
     throw new Error("resume is not supported in text conversations");
   }
 
+  protected override shouldHandleAudio(): boolean {
+    return false;
+  }
+
   public setVolume(): void {
     throw new Error("setVolume is not supported in text conversations");
   }
