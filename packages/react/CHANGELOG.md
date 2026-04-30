@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 1.3.1
+
+### Patch Changes
+
+- 1153428: Add `llm` to the typed agent prompt override for conversation sessions.
+- Updated dependencies [1153428]
+  - @elevenlabs/client@1.4.1
+
 ## 1.3.0
 
 ### Minor Changes
