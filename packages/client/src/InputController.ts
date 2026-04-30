@@ -12,9 +12,9 @@ export interface InputController {
   setMuted(isMuted: boolean): Promise<void>;
   isMuted(): boolean;
   /** Returns the user input audio stream, if one is available. */
-  getInputAudioStream(): MediaStream | null;
-  addInputAudioStreamListener(listener: AudioStreamListener): void;
-  removeInputAudioStreamListener(listener: AudioStreamListener): void;
+  getAudioStream(): MediaStream | null;
+  addAudioStreamListener(listener: AudioStreamListener): void;
+  removeAudioStreamListener(listener: AudioStreamListener): void;
 
   /**
    * @deprecated AnalyserNode is a web-only API and will not work on all

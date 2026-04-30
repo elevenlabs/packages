@@ -177,16 +177,16 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.volumeProvider.getByteFrequencyData(buffer);
   }
 
-  public getInputAudioStream(): MediaStream {
+  public getAudioStream(): MediaStream {
     return this.inputStream;
   }
 
-  public addInputAudioStreamListener(listener: AudioStreamListener): void {
+  public addAudioStreamListener(listener: AudioStreamListener): void {
     this.inputAudioStreamListeners.add(listener);
     listener(this.inputStream);
   }
 
-  public removeInputAudioStreamListener(listener: AudioStreamListener): void {
+  public removeAudioStreamListener(listener: AudioStreamListener): void {
     this.inputAudioStreamListeners.delete(listener);
   }
 

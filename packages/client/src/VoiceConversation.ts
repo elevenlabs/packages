@@ -137,8 +137,8 @@ export class VoiceConversation extends BaseConversation {
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
-    input.addInputAudioStreamListener(this.handleInputAudioStream);
-    output.addOutputAudioStreamListener(this.handleOutputAudioStream);
+    input.addAudioStreamListener(this.handleInputAudioStream);
+    output.addAudioStreamListener(this.handleOutputAudioStream);
 
     if (wakeLock) {
       // Wake locks are automatically released when a page is hidden like when switching tabs
@@ -161,8 +161,8 @@ export class VoiceConversation extends BaseConversation {
     this.cleanUp();
     this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
     this.playbackEventTarget = null;
-    this.input.removeInputAudioStreamListener(this.handleInputAudioStream);
-    this.output.removeOutputAudioStreamListener(this.handleOutputAudioStream);
+    this.input.removeAudioStreamListener(this.handleInputAudioStream);
+    this.output.removeAudioStreamListener(this.handleOutputAudioStream);
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
@@ -240,11 +240,11 @@ export class VoiceConversation extends BaseConversation {
   }
 
   public getInputAudioStream(): MediaStream | null {
-    return this.input.getInputAudioStream();
+    return this.input.getAudioStream();
   }
 
   public getOutputAudioStream(): MediaStream | null {
-    return this.output.getOutputAudioStream();
+    return this.output.getAudioStream();
   }
 
   public async changeInputDevice({

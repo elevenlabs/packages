@@ -324,12 +324,12 @@ describe("WebRTCConnection", () => {
     });
     const listener = vi.fn();
 
-    connection.output.addOutputAudioStreamListener(listener);
+    connection.output.addAudioStreamListener(listener);
     expect(listener).toHaveBeenCalledWith(null);
 
     const stream = { getTracks: () => [] } as unknown as MediaStream;
     connection["setOutputAudioStream"](stream);
-    expect(connection.output.getOutputAudioStream()).toBe(stream);
+    expect(connection.output.getAudioStream()).toBe(stream);
     expect(listener).toHaveBeenLastCalledWith(stream);
 
     connection.close();
@@ -359,12 +359,12 @@ describe("WebRTCConnection", () => {
     });
     const listener = vi.fn();
 
-    connection.input.addInputAudioStreamListener(listener);
+    connection.input.addAudioStreamListener(listener);
     expect(listener).toHaveBeenCalledWith(null);
 
     const stream = { getTracks: () => [] } as unknown as MediaStream;
     connection["setInputAudioStream"](stream);
-    expect(connection.input.getInputAudioStream()).toBe(stream);
+    expect(connection.input.getAudioStream()).toBe(stream);
     expect(listener).toHaveBeenLastCalledWith(stream);
 
     connection.close();

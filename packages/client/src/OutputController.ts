@@ -11,9 +11,9 @@ export interface OutputController {
   setVolume(volume: number): void;
   interrupt(resetDuration?: number): void;
   /** Returns the assistant output audio stream, if one is available. */
-  getOutputAudioStream(): MediaStream | null;
-  addOutputAudioStreamListener(listener: AudioStreamListener): void;
-  removeOutputAudioStreamListener(listener: AudioStreamListener): void;
+  getAudioStream(): MediaStream | null;
+  addAudioStreamListener(listener: AudioStreamListener): void;
+  removeAudioStreamListener(listener: AudioStreamListener): void;
 
   /**
    * @deprecated AnalyserNode is a web-only API and will not work on all

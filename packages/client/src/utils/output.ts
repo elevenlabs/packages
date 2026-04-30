@@ -159,16 +159,16 @@ export class MediaDeviceOutput
     this.volumeProvider.getByteFrequencyData(buffer);
   }
 
-  public getOutputAudioStream(): MediaStream {
+  public getAudioStream(): MediaStream {
     return this.audioStream;
   }
 
-  public addOutputAudioStreamListener(listener: AudioStreamListener): void {
+  public addAudioStreamListener(listener: AudioStreamListener): void {
     this.outputAudioStreamListeners.add(listener);
     listener(this.audioStream);
   }
 
-  public removeOutputAudioStreamListener(listener: AudioStreamListener): void {
+  public removeAudioStreamListener(listener: AudioStreamListener): void {
     this.outputAudioStreamListeners.delete(listener);
   }
 

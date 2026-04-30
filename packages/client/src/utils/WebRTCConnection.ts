@@ -160,12 +160,12 @@ export class WebRTCConnection extends BaseConnection {
       }
     },
     isMuted: () => this._isMuted,
-    getInputAudioStream: () => this.inputAudioStream,
-    addInputAudioStreamListener: (listener: AudioStreamListener) => {
+    getAudioStream: () => this.inputAudioStream,
+    addAudioStreamListener: (listener: AudioStreamListener) => {
       this.inputAudioStreamListeners.add(listener);
       listener(this.inputAudioStream);
     },
-    removeInputAudioStreamListener: (listener: AudioStreamListener) => {
+    removeAudioStreamListener: (listener: AudioStreamListener) => {
       this.inputAudioStreamListeners.delete(listener);
     },
     getAnalyser: () => this.inputAnalyser ?? undefined,
@@ -213,12 +213,12 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
-    getOutputAudioStream: () => this.outputAudioStream,
-    addOutputAudioStreamListener: (listener: AudioStreamListener) => {
+    getAudioStream: () => this.outputAudioStream,
+    addAudioStreamListener: (listener: AudioStreamListener) => {
       this.outputAudioStreamListeners.add(listener);
       listener(this.outputAudioStream);
     },
-    removeOutputAudioStreamListener: (listener: AudioStreamListener) => {
+    removeAudioStreamListener: (listener: AudioStreamListener) => {
       this.outputAudioStreamListeners.delete(listener);
     },
     getVolume: () => this.outputVolumeProvider.getVolume(),
