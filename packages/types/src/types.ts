@@ -61,6 +61,7 @@ export type Callbacks = {
   onError?: (message: string, context?: any) => void;
   onMessage?: (props: MessagePayload) => void;
   onAudio?: (base64Audio: string) => void;
+  onAudioStream?: (stream: MediaStream | null) => void;
   onModeChange?: (prop: { mode: Mode }) => void;
   onStatusChange?: (prop: { status: Status }) => void;
   onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
@@ -110,6 +111,7 @@ export const CALLBACK_KEYS = [
   "onError",
   "onMessage",
   "onAudio",
+  "onAudioStream",
   "onModeChange",
   "onStatusChange",
   "onCanSendFeedbackChange",

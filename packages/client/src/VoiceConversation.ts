@@ -13,7 +13,10 @@ import {
   type PartialOptions,
 } from "./BaseConversation.js";
 import type { InputController } from "./InputController.js";
-import type { OutputController } from "./OutputController.js";
+import type {
+  AudioStreamListener,
+  OutputController,
+} from "./OutputController.js";
 import { setupStrategy } from "./platform/VoiceSessionSetup.js";
 
 export class VoiceConversation extends BaseConversation {
@@ -115,6 +118,10 @@ export class VoiceConversation extends BaseConversation {
     }
   };
 
+  private handleAudioStream: AudioStreamListener = stream => {
+    this.options.onAudioStream?.(stream);
+  };
+
   protected constructor(
     options: Options,
     connection: BaseConnection,
@@ -127,6 +134,8 @@ export class VoiceConversation extends BaseConversation {
     super(options, connection);
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
+
+    output.addAudioStreamListener(this.handleAudioStream);
 
     if (wakeLock) {
       // Wake locks are automatically released when a page is hidden like when switching tabs
@@ -149,6 +158,7 @@ export class VoiceConversation extends BaseConversation {
     this.cleanUp();
     this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
     this.playbackEventTarget = null;
+    this.output.removeAudioStreamListener(this.handleAudioStream);
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
@@ -223,6 +233,10 @@ export class VoiceConversation extends BaseConversation {
 
   public getOutputVolume(): number {
     return this.output.getVolume();
+  }
+
+  public getAudioStream(): MediaStream | null {
+    return this.output.getAudioStream();
   }
 
   public async changeInputDevice({

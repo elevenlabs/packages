@@ -298,4 +298,39 @@ describe("WebRTCConnection", () => {
       }
     }
   );
+
+  it("notifies audio stream listeners when the stream changes", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+    const listener = vi.fn();
+
+    connection.output.addAudioStreamListener(listener);
+    expect(listener).toHaveBeenCalledWith(null);
+
+    const stream = { getTracks: () => [] } as unknown as MediaStream;
+    connection["setOutputAudioStream"](stream);
+    expect(connection.output.getAudioStream()).toBe(stream);
+    expect(listener).toHaveBeenLastCalledWith(stream);
+
+    connection.close();
+    expect(listener).toHaveBeenLastCalledWith(null);
+  });
 });

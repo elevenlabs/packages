@@ -28,6 +28,7 @@ import { arrayBufferToBase64 } from "./audio.js";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import type { InputController, InputDeviceConfig } from "../InputController.js";
 import type {
+  AudioStreamListener,
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
@@ -60,6 +61,8 @@ export class WebRTCConnection extends BaseConnection {
   private audioCaptureContext: AudioContext | null = null;
   private audioElements: HTMLAudioElement[] = [];
   private outputDeviceId: string | null = null;
+  private outputAudioStream: MediaStream | null = null;
+  private outputAudioStreamListeners = new Set<AudioStreamListener>();
 
   private inputAnalyser: AnalyserNode | null = null;
   private inputAudioContext: AudioContext | null = null;
@@ -200,6 +203,14 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
+    getAudioStream: () => this.outputAudioStream,
+    addAudioStreamListener: (listener: AudioStreamListener) => {
+      this.outputAudioStreamListeners.add(listener);
+      listener(this.outputAudioStream);
+    },
+    removeAudioStreamListener: (listener: AudioStreamListener) => {
+      this.outputAudioStreamListeners.delete(listener);
+    },
     getVolume: () => this.outputVolumeProvider.getVolume(),
     getByteFrequencyData: (buffer: Uint8Array<ArrayBuffer>) => {
       this.outputVolumeProvider.getByteFrequencyData(buffer);
@@ -438,6 +449,12 @@ export class WebRTCConnection extends BaseConnection {
           // Store reference for volume control
           this.audioElements.push(audioElement);
 
+          // Expose the agent's remote track immediately; audio capture below is
+          // best-effort and may fail in non-browser environments.
+          this.setOutputAudioStream(
+            new MediaStream([remoteAudioTrack.mediaStreamTrack])
+          );
+
           // Apply current volume if it exists (for when volume was set before audio track arrived)
           if (this.audioElements.length === 1) {
             // First audio element - trigger a callback to sync with current volume
@@ -507,6 +524,7 @@ export class WebRTCConnection extends BaseConnection {
         });
         this.audioCaptureContext = null;
       }
+      this.setOutputAudioStream(null);
 
       // Clean up audio elements
       this.audioElements.forEach(element => {
@@ -599,6 +617,14 @@ export class WebRTCConnection extends BaseConnection {
 
   public setOutputVolumeProvider(provider: VolumeProvider) {
     this.outputVolumeProvider = provider;
+  }
+
+  private setOutputAudioStream(stream: MediaStream | null): void {
+    if (this.outputAudioStream === stream) {
+      return;
+    }
+    this.outputAudioStream = stream;
+    this.outputAudioStreamListeners.forEach(listener => listener(stream));
   }
 
   private async setupAudioCapture(track: RemoteAudioTrack) {

@@ -6,6 +6,7 @@ import { useConversationStatus } from "./ConversationStatus.js";
 import { useConversationInput } from "./ConversationInput.js";
 import { useConversationMode } from "./ConversationMode.js";
 import { useConversationFeedback } from "./ConversationFeedback.js";
+import { useConversationAudioStream } from "./ConversationAudioStream.js";
 import {
   useRawConversation,
   useRegisterCallbacks,
@@ -45,6 +46,7 @@ export function useConversation(props: UseConversationOptions = {}) {
   const { isMuted, setMuted } = useConversationInput();
   const { mode, isSpeaking, isListening } = useConversationMode();
   const { canSendFeedback, sendFeedback } = useConversationFeedback();
+  const { audioStream } = useConversationAudioStream();
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -64,7 +66,7 @@ export function useConversation(props: UseConversationOptions = {}) {
         ...options,
       } as HookOptions);
     },
-    [controls, hookOptionsRef]
+    [controls]
   );
 
   const conversation = useRawConversation();
@@ -91,6 +93,7 @@ export function useConversation(props: UseConversationOptions = {}) {
     mode,
     isSpeaking,
     isListening,
+    audioStream,
     canSendFeedback,
     sendFeedback,
   };
