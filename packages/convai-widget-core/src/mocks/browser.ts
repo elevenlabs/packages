@@ -169,8 +169,10 @@ const codeBlock = true;
     text_only: true,
     transcript_enabled: true,
     text_input_enabled: true,
-    file_input_enabled: true,
-    file_input_max_files_per_conversation: 2,
+    file_input_config: {
+      enabled: true,
+      max_files_per_conversation: 2,
+    },
     terms_html: undefined,
     default_expanded: true,
     first_message: "",
@@ -180,7 +182,9 @@ const codeBlock = true;
     text_only: true,
     transcript_enabled: true,
     text_input_enabled: true,
-    file_input_enabled: false,
+    file_input_config: {
+      enabled: false,
+    },
     terms_html: undefined,
     default_expanded: true,
     first_message: "",

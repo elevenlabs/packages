@@ -225,13 +225,13 @@ export function useTextInputEnabled() {
 
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.file_input_enabled ?? false);
+  return useComputed(() => config.value.file_input_config?.enabled ?? false);
 }
 
 export function useFileInputMaxFiles() {
   const config = useWidgetConfig();
   return useComputed(
-    () => config.value.file_input_max_files_per_conversation ?? null
+    () => config.value.file_input_config?.max_files_per_conversation ?? null
   );
 }
 

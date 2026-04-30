@@ -79,8 +79,10 @@ export interface WidgetConfig {
   conversation_mode_toggle_enabled?: boolean;
   show_agent_status?: boolean;
   show_conversation_id?: boolean;
-  file_input_enabled?: boolean;
-  file_input_max_files_per_conversation?: number;
+  file_input_config?: {
+    enabled?: boolean;
+    max_files_per_conversation?: number;
+  };
 }
 
 export type AvatarConfig =

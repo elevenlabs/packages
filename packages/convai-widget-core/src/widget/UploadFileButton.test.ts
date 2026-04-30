@@ -26,7 +26,7 @@ describe("Upload File Button", () => {
     return input;
   }
 
-  it("does not render the attach button when file_input_enabled is false", async () => {
+  it("does not render the attach button when file_input_config.enabled is false", async () => {
     setupWebComponent({ "agent-id": "no_file_upload" });
     await connect();
 
