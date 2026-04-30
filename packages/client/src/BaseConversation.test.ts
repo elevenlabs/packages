@@ -130,6 +130,22 @@ describe("BaseConversation", () => {
       vi.useRealTimers();
     });
 
+    it("reports pause state", async () => {
+      vi.useFakeTimers();
+      const conversation = TestConversation.create(
+        {},
+        createConnection({ sendMessage: vi.fn() })
+      );
+
+      expect(conversation.isPaused()).toBe(false);
+
+      await conversation.pause();
+      expect(conversation.isPaused()).toBe(true);
+
+      await conversation.resume();
+      expect(conversation.isPaused()).toBe(false);
+    });
+
     it("sends user activity while paused and stops after resume", async () => {
       vi.useFakeTimers();
       const sendMessage = vi.fn();

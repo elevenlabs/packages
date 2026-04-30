@@ -73,14 +73,6 @@ export function ConversationControlsProvider({
     [getConversation]
   );
 
-  const pause = useCallback(() => {
-    return getConversation().pause();
-  }, [getConversation]);
-
-  const resume = useCallback(() => {
-    return getConversation().resume();
-  }, [getConversation]);
-
   const sendMultimodalMessage = useCallback(
     (options: MultimodalMessageInput) => {
       getConversation().sendMultimodalMessage(options);
@@ -176,8 +168,8 @@ export function ConversationControlsProvider({
     () => ({
       startSession: ctx.startSession,
       endSession: ctx.endSession,
-      pause,
-      resume,
+      pause: ctx.pause,
+      resume: ctx.resume,
       sendUserMessage,
       sendMultimodalMessage,
       uploadFile,
@@ -196,8 +188,8 @@ export function ConversationControlsProvider({
     [
       ctx.startSession,
       ctx.endSession,
-      pause,
-      resume,
+      ctx.pause,
+      ctx.resume,
       sendUserMessage,
       sendMultimodalMessage,
       uploadFile,

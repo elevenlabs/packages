@@ -20,8 +20,11 @@ function createContextValue(
   return {
     conversation: null,
     conversationRef: { current: null },
+    isPaused: false,
     startSession: vi.fn(),
     endSession: vi.fn(),
+    pause: vi.fn(),
+    resume: vi.fn(),
     registerCallbacks: vi.fn(),
     clientToolsRegistry: new Map(),
     clientToolsRef: { current: {} },
@@ -46,7 +49,9 @@ describe("useConversationClientTool", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(() =>
       renderHook(() => useConversationClientTool("test", () => "ok"))
-    ).toThrow("useConversationClientTool must be used within a ConversationProvider");
+    ).toThrow(
+      "useConversationClientTool must be used within a ConversationProvider"
+    );
     consoleSpy.mockRestore();
   });
 
@@ -142,10 +147,9 @@ describe("useConversationClientTool", () => {
     });
     const wrapper = createWrapper(value);
 
-    renderHook(
-      () => useConversationClientTool("shared_tool", () => "first"),
-      { wrapper }
-    );
+    renderHook(() => useConversationClientTool("shared_tool", () => "first"), {
+      wrapper,
+    });
 
     expect(() =>
       renderHook(
@@ -167,7 +171,8 @@ describe("useConversationClientTool", () => {
     });
 
     const { rerender } = renderHook(
-      ({ name }) => useConversationClientTool(name, vi.fn().mockReturnValue("ok")),
+      ({ name }) =>
+        useConversationClientTool(name, vi.fn().mockReturnValue("ok")),
       {
         wrapper: createWrapper(value),
         initialProps: { name: "tool_a" },
@@ -205,9 +210,7 @@ describe("buildClientTools", () => {
 
   it("throws when a hook tool conflicts with an option-provided tool", () => {
     const handler = vi.fn();
-    const registry = new Map<string, ClientToolEntry>([
-      ["duplicate", handler],
-    ]);
+    const registry = new Map<string, ClientToolEntry>([["duplicate", handler]]);
 
     expect(() => buildClientTools({ duplicate: vi.fn() }, registry)).toThrow(
       'Client tool "duplicate" is already provided via props/options.'
@@ -216,9 +219,7 @@ describe("buildClientTools", () => {
 
   it("handles undefined optionTools", () => {
     const handler = vi.fn();
-    const registry = new Map<string, ClientToolEntry>([
-      ["my_tool", handler],
-    ]);
+    const registry = new Map<string, ClientToolEntry>([["my_tool", handler]]);
 
     const result = buildClientTools(undefined, registry);
 

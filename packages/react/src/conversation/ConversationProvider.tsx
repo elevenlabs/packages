@@ -33,6 +33,7 @@ import {
 } from "./ConversationInput.js";
 import { ConversationModeProvider } from "./ConversationMode.js";
 import { ConversationFeedbackProvider } from "./ConversationFeedback.js";
+import { ConversationPauseProvider } from "./ConversationPause.js";
 import {
   ConversationClientToolsProvider,
   buildClientTools,
@@ -45,13 +46,15 @@ type ConversationInputControlProps = Pick<
   "isMuted" | "onMutedChange"
 >;
 
-const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[] = [
-  ConversationControlsProvider,
-  ConversationStatusProvider,
-  ConversationModeProvider,
-  ConversationFeedbackProvider,
-  ConversationClientToolsProvider,
-];
+const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[] =
+  [
+    ConversationControlsProvider,
+    ConversationStatusProvider,
+    ConversationModeProvider,
+    ConversationFeedbackProvider,
+    ConversationPauseProvider,
+    ConversationClientToolsProvider,
+  ];
 
 export type ConversationProviderProps = React.PropsWithChildren<
   HookOptions & ConversationInputControlProps
@@ -76,7 +79,9 @@ export function ConversationProvider({
     () => new Map<string, NonNullable<Options["clientTools"]>[string]>()
   );
   /** Ref to the live clientTools object currently held by BaseConversation. */
-  const clientToolsRef = useRef<Record<string, NonNullable<Options["clientTools"]>[string]>>({});
+  const clientToolsRef = useRef<
+    Record<string, NonNullable<Options["clientTools"]>[string]>
+  >({});
   /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
@@ -89,6 +94,7 @@ export function ConversationProvider({
 
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   const stableCallbacks = useStableCallbacks(defaultOptions);
 
@@ -105,6 +111,7 @@ export function ConversationProvider({
       onDisconnect: () => {
         conversationRef.current = null;
         setConversation(null);
+        setIsPaused(false);
       },
     });
   }, [listenerMap]);
@@ -195,12 +202,14 @@ export function ConversationProvider({
           if (shouldEndRef.current) {
             conv.endSession();
             lockRef.current = null;
+            setIsPaused(false);
             return;
           }
           if (conversationRef.current !== conv) {
             conversationRef.current = conv;
             setConversation(conv);
           }
+          setIsPaused(false);
           lockRef.current = null;
         },
         (error: unknown) => {
@@ -209,6 +218,7 @@ export function ConversationProvider({
           }
           conversationRef.current = null;
           setConversation(null);
+          setIsPaused(false);
           lockRef.current = null;
           if (shouldEndRef.current) {
             return;
@@ -218,9 +228,7 @@ export function ConversationProvider({
           // so listeners (e.g. ConversationStatusProvider) transition to
           // the "error" state with a meaningful message.
           const message =
-            error instanceof Error
-              ? error.message
-              : "Session failed to start";
+            error instanceof Error ? error.message : "Session failed to start";
           sessionOptions.onError?.(message, error);
         }
       );
@@ -234,12 +242,36 @@ export function ConversationProvider({
     const conv = conversationRef.current;
     conversationRef.current = null;
     setConversation(null);
+    setIsPaused(false);
 
     if (pendingConnection) {
-      pendingConnection.then(c => c.endSession(), () => {});
+      pendingConnection.then(
+        c => c.endSession(),
+        () => {}
+      );
     } else {
       conv?.endSession();
     }
+  }, []);
+
+  const pause = useCallback(() => {
+    const conversation = conversationRef.current;
+    if (!conversation) {
+      throw new Error("No active conversation. Call startSession() first.");
+    }
+    return conversation.pause().then(() => {
+      setIsPaused(conversation.isPaused());
+    });
+  }, []);
+
+  const resume = useCallback(() => {
+    const conversation = conversationRef.current;
+    if (!conversation) {
+      throw new Error("No active conversation. Call startSession() first.");
+    }
+    return conversation.resume().then(() => {
+      setIsPaused(conversation.isPaused());
+    });
   }, []);
 
   // Cleanup on unmount
@@ -247,7 +279,10 @@ export function ConversationProvider({
     return () => {
       shouldEndRef.current = true;
       if (lockRef.current) {
-        lockRef.current.then(conv => conv.endSession(), () => {});
+        lockRef.current.then(
+          conv => conv.endSession(),
+          () => {}
+        );
       } else {
         conversationRef.current?.endSession();
       }
@@ -258,24 +293,39 @@ export function ConversationProvider({
     () => ({
       conversation,
       conversationRef,
+      isPaused,
       startSession,
       endSession,
+      pause,
+      resume,
       registerCallbacks,
       clientToolsRegistry,
       clientToolsRef,
     }),
-    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
+    [
+      conversation,
+      conversationRef,
+      isPaused,
+      startSession,
+      endSession,
+      pause,
+      resume,
+      registerCallbacks,
+      clientToolsRegistry,
+      clientToolsRef,
+    ]
   );
 
-  const wrappedChildren = SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
-    (nested, Provider) => <Provider>{nested}</Provider>,
-    <ConversationInputProvider
-      isMuted={isMuted}
-      onMutedChange={onMutedChange}
-    >
-      {children}
-    </ConversationInputProvider>
-  );
+  const wrappedChildren =
+    SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
+      (nested, Provider) => <Provider>{nested}</Provider>,
+      <ConversationInputProvider
+        isMuted={isMuted}
+        onMutedChange={onMutedChange}
+      >
+        {children}
+      </ConversationInputProvider>
+    );
 
   return (
     <ConversationContext.Provider value={contextValue}>

@@ -17,6 +17,7 @@ const createMockConversation = (id = "test-id") =>
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
+    isPaused: vi.fn().mockReturnValue(false),
     pause: vi.fn().mockResolvedValue(undefined),
     resume: vi.fn().mockResolvedValue(undefined),
     sendUserMessage: vi.fn(),

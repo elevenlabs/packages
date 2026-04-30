@@ -21,6 +21,9 @@ const createMockConversation = (id = "test-id") =>
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
+    isPaused: vi.fn().mockReturnValue(false),
+    pause: vi.fn().mockResolvedValue(undefined),
+    resume: vi.fn().mockResolvedValue(undefined),
     sendFeedback: vi.fn(),
     sendUserMessage: vi.fn(),
     sendContextualUpdate: vi.fn(),
@@ -34,13 +37,13 @@ const createMockConversation = (id = "test-id") =>
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
-    return (
-      <ConversationProvider {...props}>{children}</ConversationProvider>
-    );
+    return <ConversationProvider {...props}>{children}</ConversationProvider>;
   };
 }
 
-type MockStartSessionOptions = Partial<Callbacks & ConversationLifecycleOptions> &
+type MockStartSessionOptions = Partial<
+  Callbacks & ConversationLifecycleOptions
+> &
   Record<string, unknown>;
 
 function driveConnectedSessionLifecycle(
@@ -52,7 +55,9 @@ function driveConnectedSessionLifecycle(
   options.onConnect?.({ conversationId: conversation.getId() });
 }
 
-function mockStartSessionWithLifecycle(conversation = createMockConversation()) {
+function mockStartSessionWithLifecycle(
+  conversation = createMockConversation()
+) {
   vi.mocked(Conversation.startSession).mockImplementation(async options => {
     driveConnectedSessionLifecycle(
       options as MockStartSessionOptions,
@@ -83,9 +88,39 @@ describe("useConversation", () => {
     expect(result.current.isMuted).toBe(false);
     expect(result.current.isSpeaking).toBe(false);
     expect(result.current.isListening).toBe(true);
+    expect(result.current.isPaused).toBe(false);
     expect(result.current.canSendFeedback).toBe(false);
     expect(typeof result.current.startSession).toBe("function");
     expect(typeof result.current.endSession).toBe("function");
+  });
+
+  it("returns pause state", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useConversation(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({ signedUrl: "wss://test.example.com" });
+    });
+
+    vi.mocked(mockConversation.isPaused).mockReturnValue(true);
+
+    await act(async () => {
+      await result.current.pause();
+    });
+
+    expect(result.current.isPaused).toBe(true);
+
+    vi.mocked(mockConversation.isPaused).mockReturnValue(false);
+
+    await act(async () => {
+      await result.current.resume();
+    });
+
+    expect(result.current.isPaused).toBe(false);
   });
 
   it("cancels session when endSession is called during connection", async () => {
@@ -153,9 +188,8 @@ describe("useConversation", () => {
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
     const { result, rerender } = renderHook(
-      ({ micMuted }: { micMuted?: boolean }) =>
-        useConversation({ micMuted }),
-      { wrapper: createWrapper(), initialProps: {} },
+      ({ micMuted }: { micMuted?: boolean }) => useConversation({ micMuted }),
+      { wrapper: createWrapper(), initialProps: {} }
     );
 
     await act(async () => {
@@ -173,10 +207,9 @@ describe("useConversation", () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
-    const { result } = renderHook(
-      () => useConversation({ micMuted: true }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useConversation({ micMuted: true }), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.isMuted).toBe(true);
 
@@ -195,7 +228,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ onConnect, onError }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper() }
     );
 
     await act(async () => {
@@ -208,7 +241,9 @@ describe("useConversation", () => {
     // onError is still passed through to the SDK — invoke it manually
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     opts.onError!("something went wrong", { type: "unknown" });
-    expect(onError).toHaveBeenCalledWith("something went wrong", { type: "unknown" });
+    expect(onError).toHaveBeenCalledWith("something went wrong", {
+      type: "unknown",
+    });
   });
 
   it("composes hook callbacks with provider callbacks", async () => {
@@ -218,7 +253,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ onConnect: hookOnConnect }),
-      { wrapper: createWrapper({ onConnect: providerOnConnect }) },
+      { wrapper: createWrapper({ onConnect: providerOnConnect }) }
     );
 
     await act(async () => {
@@ -226,7 +261,9 @@ describe("useConversation", () => {
     });
 
     // onConnect is forwarded through the provider-owned wrapper.
-    expect(providerOnConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
+    expect(providerOnConnect).toHaveBeenCalledWith({
+      conversationId: "test-id",
+    });
     expect(hookOnConnect).toHaveBeenCalledWith({ conversationId: "test-id" });
   });
 
@@ -236,7 +273,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ onConnect: () => calls.push("hook") }),
-      { wrapper: createWrapper({ onConnect: () => calls.push("provider") }) },
+      { wrapper: createWrapper({ onConnect: () => calls.push("provider") }) }
     );
 
     await act(async () => {
@@ -266,7 +303,7 @@ describe("useConversation", () => {
       {
         wrapper: createWrapper(),
         initialProps: { cb: () => calls.push("first") },
-      },
+      }
     );
 
     act(() => {
@@ -298,7 +335,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ agentId: "hook-agent-id" }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper() }
     );
 
     await act(async () => {
@@ -315,7 +352,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ agentId: "hook-agent-id" }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper() }
     );
 
     await act(async () => {
@@ -333,7 +370,7 @@ describe("useConversation", () => {
 
     const { result } = renderHook(
       () => useConversation({ agentId: "hook-agent-id", onConnect }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper() }
     );
 
     await act(async () => {
@@ -346,8 +383,8 @@ describe("useConversation", () => {
     expect(opts.agentId).toBe("hook-agent-id");
     expect(typeof opts.onConnect).toBe("function");
     expect(opts.onConnect).not.toBe(onConnect);
-    expect(
-      typeof (opts as MockStartSessionOptions).onConversationCreated
-    ).toBe("function");
+    expect(typeof (opts as MockStartSessionOptions).onConversationCreated).toBe(
+      "function"
+    );
   });
 });

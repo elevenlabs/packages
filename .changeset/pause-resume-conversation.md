@@ -3,4 +3,4 @@
 "@elevenlabs/react": patch
 ---
 
-Add pause and resume controls for active voice conversations.
+Add pause and resume controls with paused state for active voice conversations.

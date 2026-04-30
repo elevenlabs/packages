@@ -569,6 +569,10 @@ export abstract class BaseConversation {
     return this.status === "connected";
   }
 
+  public isPaused() {
+    return this.paused;
+  }
+
   public abstract setVolume(options: { volume: number }): void;
   public abstract setMicMuted(isMuted: boolean): void;
   /**
