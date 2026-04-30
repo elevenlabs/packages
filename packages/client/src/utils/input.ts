@@ -4,6 +4,7 @@ import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type { InputController, InputDeviceConfig } from "../InputController.js";
+import type { AudioStreamListener } from "../AudioStream.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
@@ -135,6 +136,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   private muted = false;
   private readonly volumeProvider: VolumeProvider;
+  private readonly inputAudioStreamListeners = new Set<AudioStreamListener>();
 
   private constructor(
     private readonly context: AudioContext,
@@ -175,6 +177,19 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.volumeProvider.getByteFrequencyData(buffer);
   }
 
+  public getInputAudioStream(): MediaStream {
+    return this.inputStream;
+  }
+
+  public addInputAudioStreamListener(listener: AudioStreamListener): void {
+    this.inputAudioStreamListeners.add(listener);
+    listener(this.inputStream);
+  }
+
+  public removeInputAudioStreamListener(listener: AudioStreamListener): void {
+    this.inputAudioStreamListeners.delete(listener);
+  }
+
   public isMuted(): boolean {
     return this.muted;
   }
@@ -200,6 +215,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       "change",
       this.handlePermissionsChange
     );
+    this.inputAudioStreamListeners.forEach(listener => listener(null));
+    this.inputAudioStreamListeners.clear();
     await this.context.close();
   }
 
@@ -250,6 +267,9 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       this.inputStream = newInputStream;
       this.mediaStreamSource =
         this.context.createMediaStreamSource(newInputStream);
+      this.inputAudioStreamListeners.forEach(listener =>
+        listener(newInputStream)
+      );
 
       // Reconnect the audio graph
       this.mediaStreamSource.connect(this.analyser);

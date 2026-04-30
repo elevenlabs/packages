@@ -2,35 +2,44 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { useRegisterCallbacks } from "./ConversationContext.js";
 
 export type ConversationAudioStreamValue = {
-  audioStream: MediaStream | null;
+  inputAudioStream: MediaStream | null;
+  outputAudioStream: MediaStream | null;
 };
 
 const ConversationAudioStreamContext =
   createContext<ConversationAudioStreamValue | null>(null);
 
 /**
- * Tracks the assistant output audio stream exposed by the active conversation.
+ * Tracks input and output audio streams exposed by the active conversation.
  * Must be rendered inside a `ConversationProvider`.
  */
 export function ConversationAudioStreamProvider({
   children,
 }: React.PropsWithChildren) {
-  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [inputAudioStream, setInputAudioStream] =
+    useState<MediaStream | null>(null);
+  const [outputAudioStream, setOutputAudioStream] =
+    useState<MediaStream | null>(null);
 
   useRegisterCallbacks({
-    onAudioStream(stream) {
-      setAudioStream(stream);
+    onInputAudioStream(stream) {
+      setInputAudioStream(stream);
+    },
+    onOutputAudioStream(stream) {
+      setOutputAudioStream(stream);
     },
     onDisconnect() {
-      setAudioStream(null);
+      setInputAudioStream(null);
+      setOutputAudioStream(null);
     },
   });
 
   const value = useMemo<ConversationAudioStreamValue>(
     () => ({
-      audioStream,
+      inputAudioStream,
+      outputAudioStream,
     }),
-    [audioStream]
+    [inputAudioStream, outputAudioStream]
   );
 
   return (
@@ -41,8 +50,8 @@ export function ConversationAudioStreamProvider({
 }
 
 /**
- * Returns the assistant output audio stream, or `null` before a stream is
- * available. Re-renders when the stream changes.
+ * Returns the user input and assistant output audio streams, or `null` before
+ * each stream is available. Re-renders when either stream changes.
  *
  * Must be used within a `ConversationProvider`.
  */

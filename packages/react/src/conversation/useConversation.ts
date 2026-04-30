@@ -46,7 +46,7 @@ export function useConversation(props: UseConversationOptions = {}) {
   const { isMuted, setMuted } = useConversationInput();
   const { mode, isSpeaking, isListening } = useConversationMode();
   const { canSendFeedback, sendFeedback } = useConversationFeedback();
-  const { audioStream } = useConversationAudioStream();
+  const { inputAudioStream, outputAudioStream } = useConversationAudioStream();
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -93,7 +93,8 @@ export function useConversation(props: UseConversationOptions = {}) {
     mode,
     isSpeaking,
     isListening,
-    audioStream,
+    inputAudioStream,
+    outputAudioStream,
     canSendFeedback,
     sendFeedback,
   };

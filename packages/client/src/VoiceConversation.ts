@@ -13,10 +13,8 @@ import {
   type PartialOptions,
 } from "./BaseConversation.js";
 import type { InputController } from "./InputController.js";
-import type {
-  AudioStreamListener,
-  OutputController,
-} from "./OutputController.js";
+import type { AudioStreamListener } from "./AudioStream.js";
+import type { OutputController } from "./OutputController.js";
 import { setupStrategy } from "./platform/VoiceSessionSetup.js";
 
 export class VoiceConversation extends BaseConversation {
@@ -118,8 +116,12 @@ export class VoiceConversation extends BaseConversation {
     }
   };
 
-  private handleAudioStream: AudioStreamListener = stream => {
-    this.options.onAudioStream?.(stream);
+  private handleInputAudioStream: AudioStreamListener = stream => {
+    this.options.onInputAudioStream?.(stream);
+  };
+
+  private handleOutputAudioStream: AudioStreamListener = stream => {
+    this.options.onOutputAudioStream?.(stream);
   };
 
   protected constructor(
@@ -135,7 +137,8 @@ export class VoiceConversation extends BaseConversation {
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
 
-    output.addAudioStreamListener(this.handleAudioStream);
+    input.addInputAudioStreamListener(this.handleInputAudioStream);
+    output.addOutputAudioStreamListener(this.handleOutputAudioStream);
 
     if (wakeLock) {
       // Wake locks are automatically released when a page is hidden like when switching tabs
@@ -158,7 +161,8 @@ export class VoiceConversation extends BaseConversation {
     this.cleanUp();
     this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
     this.playbackEventTarget = null;
-    this.output.removeAudioStreamListener(this.handleAudioStream);
+    this.input.removeInputAudioStreamListener(this.handleInputAudioStream);
+    this.output.removeOutputAudioStreamListener(this.handleOutputAudioStream);
     await super.handleEndSession();
 
     if (this.visibilityChangeHandler) {
@@ -235,8 +239,12 @@ export class VoiceConversation extends BaseConversation {
     return this.output.getVolume();
   }
 
-  public getAudioStream(): MediaStream | null {
-    return this.output.getAudioStream();
+  public getInputAudioStream(): MediaStream | null {
+    return this.input.getInputAudioStream();
+  }
+
+  public getOutputAudioStream(): MediaStream | null {
+    return this.output.getOutputAudioStream();
   }
 
   public async changeInputDevice({

@@ -21,6 +21,7 @@ export type {
   OutputController,
   OutputDeviceConfig,
 } from "./OutputController.js";
+export type { AudioStreamListener } from "./AudioStream.js";
 export type { InputConfig } from "./utils/input.js";
 export type { OutputConfig } from "./utils/output.js";
 export type {

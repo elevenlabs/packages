@@ -2,8 +2,8 @@ import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
 import type { FormatConfig } from "./connection.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import type { AudioStreamListener } from "../AudioStream.js";
 import type {
-  AudioStreamListener,
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
@@ -128,7 +128,7 @@ export class MediaDeviceOutput
   private interrupted = false;
   private interruptTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly volumeProvider: VolumeProvider;
-  private readonly audioStreamListeners = new Set<AudioStreamListener>();
+  private readonly outputAudioStreamListeners = new Set<AudioStreamListener>();
 
   private constructor(
     private readonly context: AudioContext,
@@ -159,17 +159,17 @@ export class MediaDeviceOutput
     this.volumeProvider.getByteFrequencyData(buffer);
   }
 
-  public getAudioStream(): MediaStream {
+  public getOutputAudioStream(): MediaStream {
     return this.audioStream;
   }
 
-  public addAudioStreamListener(listener: AudioStreamListener): void {
-    this.audioStreamListeners.add(listener);
+  public addOutputAudioStreamListener(listener: AudioStreamListener): void {
+    this.outputAudioStreamListeners.add(listener);
     listener(this.audioStream);
   }
 
-  public removeAudioStreamListener(listener: AudioStreamListener): void {
-    this.audioStreamListeners.delete(listener);
+  public removeOutputAudioStreamListener(listener: AudioStreamListener): void {
+    this.outputAudioStreamListeners.delete(listener);
   }
 
   public addListener(listener: PlaybackListener): void {
@@ -252,8 +252,8 @@ export class MediaDeviceOutput
     if (this.audioElement.parentNode) {
       this.audioElement.parentNode.removeChild(this.audioElement);
     }
-    this.audioStreamListeners.forEach(listener => listener(null));
-    this.audioStreamListeners.clear();
+    this.outputAudioStreamListeners.forEach(listener => listener(null));
+    this.outputAudioStreamListeners.clear();
     this.audioElement.pause();
     await this.context.close();
   }

@@ -2,4 +2,4 @@
 "@elevenlabs/react": patch
 "@elevenlabs/types": patch
 
-Expose the assistant output audio stream on conversations and React hooks.
+Expose input and output audio streams on conversations and React hooks.

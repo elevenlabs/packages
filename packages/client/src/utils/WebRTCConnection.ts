@@ -27,8 +27,8 @@ import {
 import { arrayBufferToBase64 } from "./audio.js";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import type { InputController, InputDeviceConfig } from "../InputController.js";
+import type { AudioStreamListener } from "../AudioStream.js";
 import type {
-  AudioStreamListener,
   OutputController,
   OutputDeviceConfig,
 } from "../OutputController.js";
@@ -61,6 +61,8 @@ export class WebRTCConnection extends BaseConnection {
   private audioCaptureContext: AudioContext | null = null;
   private audioElements: HTMLAudioElement[] = [];
   private outputDeviceId: string | null = null;
+  private inputAudioStream: MediaStream | null = null;
+  private inputAudioStreamListeners = new Set<AudioStreamListener>();
   private outputAudioStream: MediaStream | null = null;
   private outputAudioStreamListeners = new Set<AudioStreamListener>();
 
@@ -158,6 +160,14 @@ export class WebRTCConnection extends BaseConnection {
       }
     },
     isMuted: () => this._isMuted,
+    getInputAudioStream: () => this.inputAudioStream,
+    addInputAudioStreamListener: (listener: AudioStreamListener) => {
+      this.inputAudioStreamListeners.add(listener);
+      listener(this.inputAudioStream);
+    },
+    removeInputAudioStreamListener: (listener: AudioStreamListener) => {
+      this.inputAudioStreamListeners.delete(listener);
+    },
     getAnalyser: () => this.inputAnalyser ?? undefined,
     getVolume: () => {
       if (this._isMuted) return 0;
@@ -203,12 +213,12 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
-    getAudioStream: () => this.outputAudioStream,
-    addAudioStreamListener: (listener: AudioStreamListener) => {
+    getOutputAudioStream: () => this.outputAudioStream,
+    addOutputAudioStreamListener: (listener: AudioStreamListener) => {
       this.outputAudioStreamListeners.add(listener);
       listener(this.outputAudioStream);
     },
-    removeAudioStreamListener: (listener: AudioStreamListener) => {
+    removeOutputAudioStreamListener: (listener: AudioStreamListener) => {
       this.outputAudioStreamListeners.delete(listener);
     },
     getVolume: () => this.outputVolumeProvider.getVolume(),
@@ -341,6 +351,7 @@ export class WebRTCConnection extends BaseConnection {
         Track.Source.Microphone
       )?.track;
       if (micTrack) {
+        connection.setInputAudioStreamFromTrack(micTrack.mediaStreamTrack);
         connection.setupInputAnalyser(micTrack.mediaStreamTrack);
       }
 
@@ -451,9 +462,7 @@ export class WebRTCConnection extends BaseConnection {
 
           // Expose the agent's remote track immediately; audio capture below is
           // best-effort and may fail in non-browser environments.
-          this.setOutputAudioStream(
-            new MediaStream([remoteAudioTrack.mediaStreamTrack])
-          );
+          this.setOutputAudioStreamFromTrack(remoteAudioTrack.mediaStreamTrack);
 
           // Apply current volume if it exists (for when volume was set before audio track arrived)
           if (this.audioElements.length === 1) {
@@ -516,6 +525,7 @@ export class WebRTCConnection extends BaseConnection {
         this.inputAudioContext = null;
         this.inputAnalyser = null;
       }
+      this.setInputAudioStream(null);
 
       // Clean up audio capture context (non-blocking)
       if (this.audioCaptureContext) {
@@ -617,6 +627,35 @@ export class WebRTCConnection extends BaseConnection {
 
   public setOutputVolumeProvider(provider: VolumeProvider) {
     this.outputVolumeProvider = provider;
+  }
+
+  private createMediaStream(
+    mediaStreamTrack: MediaStreamTrack
+  ): MediaStream | null {
+    if (typeof MediaStream === "undefined") {
+      return null;
+    }
+    return new MediaStream([mediaStreamTrack]);
+  }
+
+  private setInputAudioStreamFromTrack(
+    mediaStreamTrack: MediaStreamTrack
+  ): void {
+    this.setInputAudioStream(this.createMediaStream(mediaStreamTrack));
+  }
+
+  private setOutputAudioStreamFromTrack(
+    mediaStreamTrack: MediaStreamTrack
+  ): void {
+    this.setOutputAudioStream(this.createMediaStream(mediaStreamTrack));
+  }
+
+  private setInputAudioStream(stream: MediaStream | null): void {
+    if (this.inputAudioStream === stream) {
+      return;
+    }
+    this.inputAudioStream = stream;
+    this.inputAudioStreamListeners.forEach(listener => listener(stream));
   }
 
   private setOutputAudioStream(stream: MediaStream | null): void {
@@ -764,6 +803,7 @@ export class WebRTCConnection extends BaseConnection {
       });
 
       // Reconnect the input analyser to the new track
+      this.setInputAudioStreamFromTrack(audioTrack.mediaStreamTrack);
       this.setupInputAnalyser(audioTrack.mediaStreamTrack);
     } catch (error) {
       console.error("Failed to change input device:", error);

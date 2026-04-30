@@ -19,19 +19,23 @@ vi.mock("@elevenlabs/client", async importOriginal => {
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
 
-const createMockConversation = (audioStream: MediaStream | null = null) =>
+const createMockConversation = (
+  inputAudioStream: MediaStream | null = null,
+  outputAudioStream: MediaStream | null = null
+) =>
   ({
     getId: vi.fn().mockReturnValue("test-id"),
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
-    getAudioStream: vi.fn().mockReturnValue(audioStream),
+    getInputAudioStream: vi.fn().mockReturnValue(inputAudioStream),
+    getOutputAudioStream: vi.fn().mockReturnValue(outputAudioStream),
   }) as unknown as Conversation;
 
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
-  const audioStream = useConversationAudioStream();
-  return { startSession: ctx.startSession, audioStream };
+  const streams = useConversationAudioStream();
+  return { startSession: ctx.startSession, streams };
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -59,10 +63,11 @@ describe("useConversationAudioStream", () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.audioStream).toBeNull();
+    expect(result.current.inputAudioStream).toBeNull();
+    expect(result.current.outputAudioStream).toBeNull();
   });
 
-  it("updates when onAudioStream fires", async () => {
+  it("updates when input and output audio stream callbacks fire", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -76,18 +81,22 @@ describe("useConversationAudioStream", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock
       .calls as unknown as [[MockStartSessionOptions]];
-    const stream = {} as MediaStream;
+    const inputStream = {} as MediaStream;
+    const outputStream = {} as MediaStream;
 
     act(() => {
-      opts.onAudioStream?.(stream);
+      opts.onInputAudioStream?.(inputStream);
+      opts.onOutputAudioStream?.(outputStream);
     });
 
-    expect(result.current.audioStream.audioStream).toBe(stream);
+    expect(result.current.streams.inputAudioStream).toBe(inputStream);
+    expect(result.current.streams.outputAudioStream).toBe(outputStream);
   });
 
-  it("clears the stream when the session disconnects", async () => {
-    const stream = {} as MediaStream;
-    const mockConversation = createMockConversation(stream);
+  it("clears streams when the session disconnects", async () => {
+    const inputStream = {} as MediaStream;
+    const outputStream = {} as MediaStream;
+    const mockConversation = createMockConversation(inputStream, outputStream);
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
     const { result } = renderHook(() => useTestHook(), {
@@ -102,14 +111,17 @@ describe("useConversationAudioStream", () => {
       .calls as unknown as [[MockStartSessionOptions]];
 
     act(() => {
-      opts.onAudioStream?.(stream);
+      opts.onInputAudioStream?.(inputStream);
+      opts.onOutputAudioStream?.(outputStream);
     });
-    expect(result.current.audioStream.audioStream).toBe(stream);
+    expect(result.current.streams.inputAudioStream).toBe(inputStream);
+    expect(result.current.streams.outputAudioStream).toBe(outputStream);
 
     act(() => {
       opts.onDisconnect?.({ reason: "user" });
     });
-    expect(result.current.audioStream.audioStream).toBeNull();
+    expect(result.current.streams.inputAudioStream).toBeNull();
+    expect(result.current.streams.outputAudioStream).toBeNull();
   });
 
   it("is included in useConversation", async () => {
@@ -126,12 +138,15 @@ describe("useConversationAudioStream", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock
       .calls as unknown as [[MockStartSessionOptions]];
-    const stream = {} as MediaStream;
+    const inputStream = {} as MediaStream;
+    const outputStream = {} as MediaStream;
 
     act(() => {
-      opts.onAudioStream?.(stream);
+      opts.onInputAudioStream?.(inputStream);
+      opts.onOutputAudioStream?.(outputStream);
     });
 
-    expect(result.current.audioStream).toBe(stream);
+    expect(result.current.inputAudioStream).toBe(inputStream);
+    expect(result.current.outputAudioStream).toBe(outputStream);
   });
 });

@@ -24,7 +24,11 @@ export class TextConversation extends BaseConversation {
     return EMPTY_FREQUENCY_DATA;
   }
 
-  public getAudioStream(): MediaStream | null {
+  public getInputAudioStream(): MediaStream | null {
+    return null;
+  }
+
+  public getOutputAudioStream(): MediaStream | null {
     return null;
   }
 
