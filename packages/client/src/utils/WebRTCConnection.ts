@@ -59,6 +59,8 @@ export class WebRTCConnection extends BaseConnection {
   private audioEventId = 1;
   private audioCaptureContext: AudioContext | null = null;
   private audioElements: HTMLAudioElement[] = [];
+  private remoteAudioTracks = new Set<RemoteAudioTrack>();
+  private isPlaybackEnabled = true;
   private outputDeviceId: string | null = null;
 
   private inputAnalyser: AnalyserNode | null = null;
@@ -200,17 +202,9 @@ export class WebRTCConnection extends BaseConnection {
       // Audio interruption is managed by the server/agent
     },
     setPlaybackEnabled: (isPlaybackEnabled: boolean) => {
-      this.audioElements.forEach(element => {
-        if (isPlaybackEnabled) {
-          element.play().catch(error => {
-            this.debug({
-              type: "audio_element_resume_error",
-              error,
-            });
-          });
-        } else {
-          element.pause();
-        }
+      this.isPlaybackEnabled = isPlaybackEnabled;
+      this.remoteAudioTracks.forEach(track => {
+        track.setMuted(!isPlaybackEnabled);
       });
     },
     getAnalyser: () => this.outputAnalyser ?? undefined,
@@ -429,6 +423,8 @@ export class WebRTCConnection extends BaseConnection {
         ) {
           // Play the audio track
           const remoteAudioTrack = track as RemoteAudioTrack;
+          this.remoteAudioTracks.add(remoteAudioTrack);
+          remoteAudioTrack.setMuted(!this.isPlaybackEnabled);
           const audioElement = remoteAudioTrack.attach();
           audioElement.autoplay = true;
           audioElement.controls = false;
@@ -460,6 +456,22 @@ export class WebRTCConnection extends BaseConnection {
 
           // Set up audio capture for onAudio callback
           await this.setupAudioCapture(remoteAudioTrack);
+        }
+      }
+    );
+
+    this.room.on(
+      RoomEvent.TrackUnsubscribed,
+      (
+        track: Track,
+        _publication: TrackPublication,
+        participant: Participant
+      ) => {
+        if (
+          track.kind === Track.Kind.Audio &&
+          participant.identity.includes("agent")
+        ) {
+          this.remoteAudioTracks.delete(track as RemoteAudioTrack);
         }
       }
     );
@@ -529,6 +541,7 @@ export class WebRTCConnection extends BaseConnection {
         }
       });
       this.audioElements = [];
+      this.remoteAudioTracks.clear();
 
       this.room.disconnect();
     }
@@ -687,6 +700,9 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   public setAudioVolume(volume: number) {
+    this.remoteAudioTracks.forEach(track => {
+      track.setVolume(volume);
+    });
     this.audioElements.forEach(element => {
       element.volume = volume;
     });

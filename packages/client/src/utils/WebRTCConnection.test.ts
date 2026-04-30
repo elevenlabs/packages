@@ -298,4 +298,71 @@ describe("WebRTCConnection", () => {
       }
     }
   );
+
+  it("toggles LiveKit remote audio tracks for playback control", async () => {
+    const mockRoom = new Room() as any;
+    let trackSubscribed: (
+      track: unknown,
+      publication: unknown,
+      participant: { identity: string }
+    ) => void = (
+      _track: unknown,
+      _publication: unknown,
+      _participant: { identity: string }
+    ) => {
+      throw new Error("trackSubscribed handler was not registered");
+    };
+
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: (...args: any[]) => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+        if (event === "trackSubscribed") {
+          trackSubscribed = callback;
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    vi.stubGlobal("document", {
+      body: {
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+      },
+    });
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    const remoteAudioTrack = {
+      kind: "audio",
+      setMuted: vi.fn(),
+      setVolume: vi.fn(),
+      attach: vi.fn(() => ({
+        autoplay: false,
+        controls: true,
+        style: {},
+      })),
+      mediaStreamTrack: { id: "agent-track", kind: "audio" },
+    };
+
+    trackSubscribed?.(remoteAudioTrack, {}, { identity: "agent" });
+
+    connection.output.setPlaybackEnabled(false);
+    expect(remoteAudioTrack.setMuted).toHaveBeenLastCalledWith(true);
+
+    connection.output.setPlaybackEnabled(true);
+    expect(remoteAudioTrack.setMuted).toHaveBeenLastCalledWith(false);
+
+    connection.close();
+  });
 });
