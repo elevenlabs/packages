@@ -75,7 +75,7 @@ describe("useConversationAudioStream", () => {
     });
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock
-      .calls as [[MockStartSessionOptions]];
+      .calls as unknown as [[MockStartSessionOptions]];
     const stream = {} as MediaStream;
 
     act(() => {
@@ -99,7 +99,7 @@ describe("useConversationAudioStream", () => {
     });
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock
-      .calls as [[MockStartSessionOptions]];
+      .calls as unknown as [[MockStartSessionOptions]];
 
     act(() => {
       opts.onAudioStream?.(stream);
@@ -125,7 +125,7 @@ describe("useConversationAudioStream", () => {
     });
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock
-      .calls as [[MockStartSessionOptions]];
+      .calls as unknown as [[MockStartSessionOptions]];
     const stream = {} as MediaStream;
 
     act(() => {
