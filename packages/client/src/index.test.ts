@@ -954,39 +954,45 @@ describe("Volume Control", () => {
       start: vi.fn(),
     };
 
-    globalThis.AudioContext = vi.fn(function MockAudioContext() {
-      return {
-        sampleRate: 16000,
-        currentTime: 0,
-        createAnalyser: vi.fn(() => ({
-          connect: vi.fn(),
-          frequencyBinCount: 1024,
-          getByteFrequencyData: vi.fn(),
-        })),
-        createGain: vi.fn(() => mockGainNode),
-        createMediaStreamSource: vi.fn(() => ({
-          connect: vi.fn(),
-          disconnect: vi.fn(),
-        })),
-        createMediaStreamDestination: vi.fn(() => ({
-          stream: new MediaStream(),
-          connect: vi.fn(),
-        })),
-        destination: {},
-        audioWorklet: {
-          addModule: vi.fn(() => Promise.resolve()),
-        },
-        resume: vi.fn(() => Promise.resolve()),
-        close: vi.fn(() => Promise.resolve()),
-      };
-    }) as unknown as typeof AudioContext;
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function MockAudioContext() {
+        return {
+          sampleRate: 16000,
+          currentTime: 0,
+          createAnalyser: vi.fn(() => ({
+            connect: vi.fn(),
+            frequencyBinCount: 1024,
+            getByteFrequencyData: vi.fn(),
+          })),
+          createGain: vi.fn(() => mockGainNode),
+          createMediaStreamSource: vi.fn(() => ({
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+          })),
+          createMediaStreamDestination: vi.fn(() => ({
+            stream: new MediaStream(),
+            connect: vi.fn(),
+          })),
+          destination: {},
+          audioWorklet: {
+            addModule: vi.fn(() => Promise.resolve()),
+          },
+          resume: vi.fn(() => Promise.resolve()),
+          close: vi.fn(() => Promise.resolve()),
+        };
+      }) as unknown as typeof AudioContext
+    );
 
-    globalThis.AudioWorkletNode = vi.fn(function MockAudioWorkletNode() {
-      return {
-        connect: vi.fn(),
-        port: workletPort,
-      };
-    }) as unknown as typeof AudioWorkletNode;
+    vi.stubGlobal(
+      "AudioWorkletNode",
+      vi.fn(function MockAudioWorkletNode() {
+        return {
+          connect: vi.fn(),
+          port: workletPort,
+        };
+      }) as unknown as typeof AudioWorkletNode
+    );
 
     const conversationPromise = Conversation.startSession({
       signedUrl: "wss://api.elevenlabs.io/voice/pause-test",
