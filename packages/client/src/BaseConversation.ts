@@ -85,6 +85,8 @@ export type ClientToolsConfig = {
   >;
 };
 
+type ResumeAfterPauseHandler = () => void | Promise<void>;
+
 export function isTextOnly(options: PartialOptions): boolean | undefined {
   const { textOnly: textOnlyOverride } = options.overrides?.conversation ?? {};
   const { textOnly } = options;
@@ -115,6 +117,7 @@ export abstract class BaseConversation {
   protected canSendFeedback = false;
   protected paused = false;
   private pausedActivityInterval: ReturnType<typeof setInterval> | null = null;
+  private resumeAfterPause: ResumeAfterPauseHandler | null = null;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
@@ -163,6 +166,8 @@ export abstract class BaseConversation {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
     this.stopPausedActivityInterval();
+    this.resumeAfterPause = null;
+    this.paused = false;
     await this.handleEndSession();
     this.updateStatus("disconnected");
     if (this.options.onDisconnect) {
@@ -174,11 +179,7 @@ export abstract class BaseConversation {
     this.connection.close();
   }
 
-  protected async handlePause(): Promise<void> {}
-
-  protected async handleResume(): Promise<void> {}
-
-  protected handlePauseFailed(): void {}
+  protected abstract handlePause(): Promise<ResumeAfterPauseHandler>;
 
   private startPausedActivityInterval() {
     this.sendUserActivity();
@@ -199,9 +200,10 @@ export abstract class BaseConversation {
 
     this.paused = true;
     try {
-      await this.handlePause();
+      this.resumeAfterPause = await this.handlePause();
       this.startPausedActivityInterval();
     } catch (error) {
+      this.resumeAfterPause = null;
       this.paused = false;
       throw error;
     }
@@ -212,7 +214,8 @@ export abstract class BaseConversation {
 
     this.stopPausedActivityInterval();
     try {
-      await this.handleResume();
+      await this.resumeAfterPause?.();
+      this.resumeAfterPause = null;
       this.paused = false;
     } catch (error) {
       this.startPausedActivityInterval();

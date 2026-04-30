@@ -47,12 +47,11 @@ class TestConversation extends BaseConversation {
     super(options, connection);
   }
 
-  protected override async handlePause(): Promise<void> {
+  protected override async handlePause(): Promise<() => Promise<void>> {
     this.pauseCount++;
-  }
-
-  protected override async handleResume(): Promise<void> {
-    this.resumeCount++;
+    return async () => {
+      this.resumeCount++;
+    };
   }
 
   protected override shouldHandleAudio(): boolean {
