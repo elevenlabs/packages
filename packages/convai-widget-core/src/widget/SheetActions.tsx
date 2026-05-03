@@ -26,7 +26,7 @@ import { TriggerMuteButton } from "./TriggerMuteButton";
 import { useConversationMode } from "../contexts/conversation-mode";
 import { UploadFileButton } from "./UploadFileButton";
 import { PendingFilePreview } from "./PendingFilePreview";
-import { useFileUpload } from "./useFileUpload";
+import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "./useFileUpload";
 
 export function SheetActions({
   showTranscript,
@@ -91,8 +91,12 @@ export function SheetActions({
     (file: File) => {
       const error = addFile(file);
       if (!error) return;
+      if (error === "unsupported_type") {
+        fileError.value =
+          `${text.file_type_unsupported.peek()} ${ACCEPTED_FILE_EXTENSIONS.join(", ")}.`;
+        return;
+      }
       const messageByCode = {
-        unsupported_type: text.file_type_unsupported,
         too_large: text.file_too_large,
         limit_reached: text.file_limit_reached,
       };

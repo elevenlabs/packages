@@ -10,8 +10,14 @@ const ACCEPTED_MIME_TYPES: readonly string[] = [
   "application/pdf",
 ];
 
-export const ACCEPTED_FILE_EXTENSIONS =
-  ".png,.jpg,.jpeg,.gif,.webp,.pdf" as const;
+export const ACCEPTED_FILE_EXTENSIONS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".pdf",
+] as const;
 
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_PDF_SIZE_MB = 20;

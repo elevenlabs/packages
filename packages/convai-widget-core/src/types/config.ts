@@ -151,8 +151,7 @@ export const DefaultTextContents = {
   attach_file: "Attach file",
   remove_file: "Remove file",
   file_upload_error: "Failed to upload file.",
-  file_type_unsupported:
-    "Unsupported file type. Accepted types: PNG, JPEG, GIF, WEBP, PDF.",
+  file_type_unsupported: "Unsupported file type. Accepted types:",
   file_too_large: "File size exceeds the maximum limit.",
   file_limit_reached: "Maximum number of files for this conversation reached.",
 };

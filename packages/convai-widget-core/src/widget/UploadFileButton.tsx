@@ -51,7 +51,7 @@ export function UploadFileButton({
       <input
         ref={fileInputRef}
         type="file"
-        accept={ACCEPTED_FILE_EXTENSIONS}
+        accept={ACCEPTED_FILE_EXTENSIONS.join(",")}
         className="hidden"
         onChange={handleFileChange}
       />
