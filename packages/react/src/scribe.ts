@@ -96,13 +96,7 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   languageCode?: string;
 
   // Microphone options (for automatic microphone mode)
-  microphone?: {
-    deviceId?: string;
-    echoCancellation?: boolean;
-    noiseSuppression?: boolean;
-    autoGainControl?: boolean;
-    channelCount?: number;
-  };
+  microphone?: MicrophoneOptions["microphone"];
 
   // Manual audio options
   audioFormat?: AudioFormat;
