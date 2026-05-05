@@ -49,6 +49,10 @@ export type ConversationLifecycleOptions = {
   onConversationCreated?: ConversationCreatedCallback;
 };
 
+export type ContextualUpdateOptions = {
+  contextId?: string;
+};
+
 export type Options = SessionConfig &
   Callbacks &
   ConversationLifecycleOptions &
@@ -548,10 +552,11 @@ export abstract class BaseConversation {
     this.updateCanSendFeedback();
   }
 
-  public sendContextualUpdate(text: string) {
+  public sendContextualUpdate(text: string, options?: ContextualUpdateOptions) {
     this.connection.sendMessage({
       type: "contextual_update",
       text,
+      ...(options?.contextId ? { context_id: options.contextId } : {}),
     });
   }
 

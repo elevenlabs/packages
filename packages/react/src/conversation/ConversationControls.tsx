@@ -6,6 +6,7 @@ import {
   type OutputConfig,
   type MultimodalMessageInput,
   type UploadFileResult,
+  type ContextualUpdateOptions,
 } from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 import { ConversationContext } from "./ConversationContext.js";
@@ -18,7 +19,10 @@ export type ConversationControlsValue = {
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   uploadFile: (file: Blob) => Promise<UploadFileResult>;
-  sendContextualUpdate: (text: string) => void;
+  sendContextualUpdate: (
+    text: string,
+    options?: ContextualUpdateOptions
+  ) => void;
   sendUserActivity: () => void;
   sendMCPToolApprovalResult: (toolCallId: string, isApproved: boolean) => void;
   setVolume: (options: { volume: number }) => void;
@@ -86,8 +90,8 @@ export function ConversationControlsProvider({
   );
 
   const sendContextualUpdate = useCallback(
-    (text: string) => {
-      getConversation().sendContextualUpdate(text);
+    (text: string, options?: ContextualUpdateOptions) => {
+      getConversation().sendContextualUpdate(text, options);
     },
     [getConversation]
   );

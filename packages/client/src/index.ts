@@ -15,6 +15,7 @@ export type {
   UploadFileResult,
   ConversationCreatedCallback,
   ConversationLifecycleOptions,
+  ContextualUpdateOptions,
 } from "./BaseConversation.js";
 export type { InputController, InputDeviceConfig } from "./InputController.js";
 export type {
