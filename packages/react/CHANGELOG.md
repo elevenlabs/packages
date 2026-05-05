@@ -1,5 +1,19 @@
 # @elevenlabs/react
 
+## 1.4.0
+
+### Minor Changes
+
+- 8c6213f: Add optional `contextId` to `sendContextualUpdate` for deduplicating contextual updates
+
+### Patch Changes
+
+- 1153428: Add `llm` to the typed agent prompt override for conversation sessions.
+- 33c38e4: Allow `useScribe` microphone `deviceId` to use full `ConstrainDOMString` constraints.
+- Updated dependencies [8c6213f]
+- Updated dependencies [1153428]
+  - @elevenlabs/client@1.5.0
+
 ## 1.3.0
 
 ### Minor Changes
