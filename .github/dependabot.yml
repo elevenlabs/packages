@@ -11,11 +11,6 @@ updates:
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
-          - "expo"
-          - "expo-*"
-          - "@expo/*"
-          - "react-native"
-          - "react-native-*"
       eslint:
         patterns:
           - "@eslint/*"
