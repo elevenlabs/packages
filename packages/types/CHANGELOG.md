@@ -1,5 +1,15 @@
 # @elevenlabs/types
 
+## 0.11.0
+
+### Minor Changes
+
+- 8c6213f: Add optional `contextId` to `sendContextualUpdate` for deduplicating contextual updates
+
+### Patch Changes
+
+- 1153428: Add `llm` to the typed agent prompt override for conversation sessions.
+
 ## 0.10.0
 
 ### Minor Changes

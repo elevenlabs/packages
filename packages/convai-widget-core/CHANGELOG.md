@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.12.0
+
+### Minor Changes
+
+- 8fe2d6a: Add file upload support to the embedded ConvAI widget
+
+### Patch Changes
+
+- Updated dependencies [8c6213f]
+- Updated dependencies [1153428]
+  - @elevenlabs/client@1.5.0
+
 ## 0.11.7
 
 ### Patch Changes
