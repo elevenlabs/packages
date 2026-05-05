@@ -223,6 +223,18 @@ export function useTextInputEnabled() {
   return useComputed(() => config.value.text_input_enabled ?? false);
 }
 
+export function useFileInputEnabled() {
+  const config = useWidgetConfig();
+  return useComputed(() => config.value.file_input_config?.enabled ?? false);
+}
+
+export function useFileInputMaxFiles() {
+  const config = useWidgetConfig();
+  return useComputed(
+    () => config.value.file_input_config?.max_files_per_conversation ?? null
+  );
+}
+
 export function useLocalizedTerms() {
   const config = useWidgetConfig();
   const { language } = useLanguageConfig();

@@ -164,6 +164,31 @@ const codeBlock = true;
     strip_audio_tags: false,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  file_upload: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    file_input_config: {
+      enabled: true,
+      max_files_per_conversation: 2,
+    },
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  no_file_upload: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    file_input_config: {
+      enabled: false,
+    },
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -183,6 +208,21 @@ export const Worker = setupWorker(
 
       return HttpResponse.error();
     }
+  ),
+  http.post(
+    `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/conversations/:conversationId/files`,
+    async ({ request }) => {
+      const form = await request.formData();
+      const file = form.get("file");
+      if (!(file instanceof File)) {
+        return HttpResponse.json({ detail: "no file" }, { status: 400 });
+      }
+      return HttpResponse.json({ file_id: `file_${file.name}` });
+    }
+  ),
+  http.delete(
+    `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/conversations/:conversationId/files/:fileId`,
+    () => new HttpResponse(null, { status: 204 })
   ),
   ws
     .link(`${import.meta.env.VITE_WEBSOCKET_URL_US}/v1/convai/conversation`)
@@ -215,7 +255,9 @@ export const Worker = setupWorker(
       if (
         config.text_only &&
         agentId !== "end_call_test" &&
-        agentId !== "tool_call"
+        agentId !== "tool_call" &&
+        agentId !== "file_upload" &&
+        agentId !== "no_file_upload"
       ) {
         client.send(
           JSON.stringify({

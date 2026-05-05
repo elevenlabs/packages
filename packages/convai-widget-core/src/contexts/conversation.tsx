@@ -28,6 +28,13 @@ interface ConversationProviderProps {
   children: ComponentChildren;
 }
 
+/** File metadata stored alongside a user message in the local transcript. */
+export type TranscriptFileInput = {
+  fileName: string;
+  mimeType: string;
+  previewUrl: string | null;
+};
+
 export type TranscriptEntry =
   | {
       type: "message";
@@ -36,6 +43,7 @@ export type TranscriptEntry =
       isText: boolean;
       conversationIndex: number;
       eventId?: number;
+      fileInput?: TranscriptFileInput | null;
     }
   | {
       type: "agent_tool_request";
@@ -416,6 +424,28 @@ function useConversationSetup() {
             message: text,
             isText: true,
             conversationIndex: conversationIndex.peek(),
+          },
+        ];
+      },
+      sendMultimodalMessage: (input: {
+        text?: string;
+        file: TranscriptFileInput & { fileId: string };
+      }) => {
+        const trimmed = input.text?.trim() ?? "";
+        const { fileId, ...fileInput } = input.file;
+        conversationRef.current?.sendMultimodalMessage({
+          text: trimmed || undefined,
+          fileId,
+        });
+        transcript.value = [
+          ...transcript.value,
+          {
+            type: "message",
+            role: "user",
+            message: trimmed,
+            isText: true,
+            conversationIndex: conversationIndex.peek(),
+            fileInput,
           },
         ];
       },
