@@ -45,6 +45,7 @@ export interface McpToolApprovalResult {
 export interface ContextualUpdate {
   type: "contextual_update";
   text: string;
+  context_id?: string;
 }
 
 export interface ConversationInitiation {
@@ -646,6 +647,7 @@ export interface McpToolApprovalResultClientToOrchestratorEvent {
 export interface ContextualUpdateClientToOrchestratorEvent {
   type: "contextual_update";
   text: string;
+  context_id?: string;
 }
 
 export interface ConversationInitiationClientToOrchestratorEvent {

@@ -18,7 +18,10 @@ export type ConversationControlsValue = {
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   uploadFile: (file: Blob) => Promise<UploadFileResult>;
-  sendContextualUpdate: (text: string) => void;
+  sendContextualUpdate: (
+    text: string,
+    options?: { contextId?: string }
+  ) => void;
   sendUserActivity: () => void;
   sendMCPToolApprovalResult: (toolCallId: string, isApproved: boolean) => void;
   setVolume: (options: { volume: number }) => void;
@@ -86,8 +89,8 @@ export function ConversationControlsProvider({
   );
 
   const sendContextualUpdate = useCallback(
-    (text: string) => {
-      getConversation().sendContextualUpdate(text);
+    (text: string, options?: { contextId?: string }) => {
+      getConversation().sendContextualUpdate(text, options);
     },
     [getConversation]
   );

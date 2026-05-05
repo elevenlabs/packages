@@ -548,10 +548,14 @@ export abstract class BaseConversation {
     this.updateCanSendFeedback();
   }
 
-  public sendContextualUpdate(text: string) {
+  public sendContextualUpdate(
+    text: string,
+    options?: { contextId?: string }
+  ) {
     this.connection.sendMessage({
       type: "contextual_update",
       text,
+      ...(options?.contextId ? { context_id: options.contextId } : {}),
     });
   }
 

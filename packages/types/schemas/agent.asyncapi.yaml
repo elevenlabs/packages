@@ -646,6 +646,9 @@ components:
           const: contextual_update
         text:
           type: string
+        context_id:
+          type: string
+          description: Optional identifier for deduplicating contextual updates. When set, only the most recent update with a given context_id is kept in the LLM context.
 
     ConversationInitiationPayload:
       type: object
