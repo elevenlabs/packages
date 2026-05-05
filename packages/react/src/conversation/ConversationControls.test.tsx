@@ -83,7 +83,8 @@ describe("useConversationControls", () => {
     });
 
     expect(mockConversation.sendContextualUpdate).toHaveBeenCalledWith(
-      "context info"
+      "context info",
+      undefined
     );
   });
 
