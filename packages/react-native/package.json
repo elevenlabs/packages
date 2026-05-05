@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.1.1",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "typescript": "^5.5.4"
   },
   "repository": {
