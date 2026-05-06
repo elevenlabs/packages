@@ -89,6 +89,9 @@ export type Callbacks = {
   onInterruption?: (
     props: Generated.Interruption["interruption_event"]
   ) => void;
+  onAgentResponseCorrection?: (
+    props: Generated.AgentResponseCorrection["agent_response_correction_event"]
+  ) => void;
   onAgentChatResponsePart?: (
     props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
@@ -122,6 +125,7 @@ export const CALLBACK_KEYS = [
   "onConversationMetadata",
   "onAsrInitiationMetadata",
   "onInterruption",
+  "onAgentResponseCorrection",
   "onAgentChatResponsePart",
   "onAudioAlignment",
   "onGuardrailTriggered",

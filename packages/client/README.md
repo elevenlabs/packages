@@ -32,6 +32,9 @@ const conversation = await Conversation.startSession({
   onMessage: (message) => {
     console.log("Message:", message);
   },
+  onAgentResponseCorrection: ({ original_agent_response, corrected_agent_response }) => {
+    console.log("Agent response corrected:", original_agent_response, "->", corrected_agent_response);
+  },
   onError: (message) => {
     console.error("Error:", message);
   },

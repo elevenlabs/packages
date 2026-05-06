@@ -11,6 +11,7 @@ import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
   AgentResponseEvent,
+  AgentResponseCorrectionEvent,
   ClientToolCallEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
@@ -131,6 +132,7 @@ export abstract class BaseConversation {
       onStatusChange: () => {},
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
+      onAgentResponseCorrection: () => {},
       ...partialOptions,
       textOnly,
       overrides: {
@@ -222,6 +224,14 @@ export abstract class BaseConversation {
         message: event.agent_response_event.agent_response,
         event_id: event.agent_response_event.event_id,
       });
+    }
+  }
+
+  protected handleAgentResponseCorrection(event: AgentResponseCorrectionEvent) {
+    if (this.options.onAgentResponseCorrection) {
+      this.options.onAgentResponseCorrection(
+        event.agent_response_correction_event
+      );
     }
   }
 
@@ -405,6 +415,10 @@ export abstract class BaseConversation {
       }
       case "agent_response": {
         this.handleAgentResponse(parsedEvent);
+        return;
+      }
+      case "agent_response_correction": {
+        this.handleAgentResponseCorrection(parsedEvent);
         return;
       }
       case "user_transcript": {
