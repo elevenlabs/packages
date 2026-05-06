@@ -6,6 +6,7 @@ import {
   AudioFormat,
   CommitStrategy,
   RealtimeEvents,
+  RealtimeConnection,
 } from "./index.js";
 
 const TEST_TOKEN = "sutkn_123";
@@ -723,6 +724,15 @@ describe("Scribe", () => {
 
   describe("Mute / Unmute", () => {
     it("starts unmuted", () => {
+      const connection = new RealtimeConnection(16000);
+
+      expect(connection.isMuted).toBe(false);
+    });
+
+    it("mute() and unmute() throw for manual audio connections", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
       const connection = Scribe.connect({
         token: TEST_TOKEN,
         modelId: TEST_MODEL_ID,
@@ -730,29 +740,35 @@ describe("Scribe", () => {
         sampleRate: 16000,
       });
 
+      expect(() => connection.mute()).toThrow(
+        "Cannot mute audio without an active microphone MediaStreamTrack"
+      );
+      expect(connection.isMuted).toBe(false);
+
+      expect(() => connection.unmute()).toThrow(
+        "Cannot unmute audio without an active microphone MediaStreamTrack"
+      );
       expect(connection.isMuted).toBe(false);
 
       connection.close();
+      server.close();
     });
 
-    it("mute() sets isMuted to true and unmute() resets it", () => {
-      const connection = Scribe.connect({
-        token: TEST_TOKEN,
-        modelId: TEST_MODEL_ID,
-        audioFormat: AudioFormat.PCM_16000,
-        sampleRate: 16000,
-      });
+    it("mute() disables and unmute() re-enables the microphone track", () => {
+      const connection = new RealtimeConnection(16000);
+      const mediaStreamTrack = { enabled: true } as MediaStreamTrack;
+      connection._mediaStreamTrack = mediaStreamTrack;
 
       connection.mute();
       expect(connection.isMuted).toBe(true);
+      expect(mediaStreamTrack.enabled).toBe(false);
 
       connection.unmute();
       expect(connection.isMuted).toBe(false);
-
-      connection.close();
+      expect(mediaStreamTrack.enabled).toBe(true);
     });
 
-    it("send() still forwards audio when muted (silence kept flowing to avoid server timeout)", async () => {
+    it("send() forwards manual audio after an unsupported mute attempt fails", async () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
       );
@@ -775,7 +791,9 @@ describe("Scribe", () => {
 
       await sleep(100);
 
-      connection.mute();
+      expect(() => connection.mute()).toThrow(
+        "Cannot mute audio without an active microphone MediaStreamTrack"
+      );
       connection.send({ audioBase64: "dGVzdA==" });
 
       await sleep(100);
