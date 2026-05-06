@@ -213,11 +213,25 @@ export class RealtimeConnection {
    * browser captures silence instead of real microphone input. Silence continues
    * to be sent to the server to keep the connection alive.
    *
-   * In manual mode, this flag is informational only and does not automatically
-   * block `send()`.
+   * Muting is only supported when this connection was created with microphone
+   * options. Manual audio connections cannot be muted because `send()` forwards
+   * caller-provided audio directly.
    */
   public get isMuted(): boolean {
     return this._muted;
+  }
+
+  private getMediaStreamTrackForMute(
+    action: "mute" | "unmute"
+  ): MediaStreamTrack {
+    if (!this._mediaStreamTrack) {
+      throw new Error(
+        `Cannot ${action} audio without an active microphone MediaStreamTrack. ` +
+          "mute() and unmute() are only supported for microphone connections."
+      );
+    }
+
+    return this._mediaStreamTrack;
   }
 
   /**
@@ -227,27 +241,29 @@ export class RealtimeConnection {
    * replaces real microphone input with silence. The silence continues to flow to
    * the server, keeping the connection alive without producing transcriptions.
    *
-   * In manual mode, this sets `isMuted` for caller logic, but does not
-   * automatically block `send()`.
+   * @throws {Error} If this connection was not created with microphone options
+   * or no microphone `MediaStreamTrack` is available.
    */
   public mute(): void {
+    const mediaStreamTrack = this.getMediaStreamTrackForMute("mute");
+
     this._muted = true;
-    if (this._mediaStreamTrack) {
-      this._mediaStreamTrack.enabled = false;
-    }
+    mediaStreamTrack.enabled = false;
   }
 
   /**
    * Unmutes audio capture.
    *
-   * Re-enables the `MediaStreamTrack` so real microphone audio flows again
-   * (microphone mode), or clears `isMuted` (manual mode).
+   * Re-enables the `MediaStreamTrack` so real microphone audio flows again.
+   *
+   * @throws {Error} If this connection was not created with microphone options
+   * or no microphone `MediaStreamTrack` is available.
    */
   public unmute(): void {
+    const mediaStreamTrack = this.getMediaStreamTrackForMute("unmute");
+
     this._muted = false;
-    if (this._mediaStreamTrack) {
-      this._mediaStreamTrack.enabled = true;
-    }
+    mediaStreamTrack.enabled = true;
   }
 
   /**
@@ -444,9 +460,9 @@ export class RealtimeConnection {
    * @throws {Error} If the WebSocket connection is not open
    *
    * @remarks
-   * `send()` always transmits when connected, even when `isMuted` is `true`.
-   * In microphone mode, mute is implemented by disabling the microphone track,
-   * which causes the browser to produce silence frames.
+   * Manual audio sent with `send()` is transmitted directly. Use `mute()` only
+   * for microphone connections, where it disables the microphone track and the
+   * browser produces silence frames.
    *
    * @example
    * ```typescript
