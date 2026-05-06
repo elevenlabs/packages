@@ -23,7 +23,7 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1",
+    "@preact/preset-vite": "^2.10.5",
     "@radix-ui/react-select": "^2.2.2",
     "@radix-ui/react-slot": "^1.2.0",
     "@tailwindcss/vite": "^4.1.18",
