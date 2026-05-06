@@ -193,6 +193,34 @@ export class VoiceConversation extends BaseConversation {
     }
   }
 
+  protected override async handlePause(): Promise<() => Promise<void>> {
+    const pausedMicMuted = this.input.isMuted();
+    const pausedVolume = this.volume;
+    this.output.setPlaybackEnabled(false);
+    try {
+      this.output.interrupt(0);
+      this.setVolume({ volume: 0 });
+      await this.input.setMuted(true);
+      this.updateMode("listening");
+    } catch (error) {
+      this.output.setPlaybackEnabled(true);
+      throw error;
+    }
+
+    return async () => {
+      try {
+        this.setVolume({ volume: pausedVolume });
+        await this.input.setMuted(pausedMicMuted);
+      } finally {
+        this.output.setPlaybackEnabled(true);
+      }
+    };
+  }
+
+  protected override shouldHandleAudio(_event: AgentAudioEvent): boolean {
+    return !this.paused;
+  }
+
   private static readonly FREQUENCY_BIN_COUNT = 1024;
 
   public setMicMuted(isMuted: boolean) {

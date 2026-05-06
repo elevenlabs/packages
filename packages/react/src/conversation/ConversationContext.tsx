@@ -19,8 +19,11 @@ export type ConversationContextValue = {
   conversation: Conversation | null;
   /** Stable ref to the active conversation — use in callbacks to avoid re-renders. */
   conversationRef: RefObject<Conversation | null>;
+  isPaused: boolean;
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
   /**
    * For sub-providers — register callback handlers to be composed into the
    * next `Conversation.startSession()` call. Returns an unsubscribe function.

@@ -28,6 +28,7 @@ export { useConversationControls } from "./conversation/ConversationControls.js"
 export { useConversationStatus } from "./conversation/ConversationStatus.js";
 export { useConversationInput } from "./conversation/ConversationInput.js";
 export { useConversationMode } from "./conversation/ConversationMode.js";
+export { useConversationPause } from "./conversation/ConversationPause.js";
 export { useConversationFeedback } from "./conversation/ConversationFeedback.js";
 export { useRawConversation } from "./conversation/ConversationContext.js";
 export { useConversation } from "./conversation/useConversation.js";
@@ -40,6 +41,7 @@ export type {
   ConversationStatusValue,
 } from "./conversation/ConversationStatus.js";
 export type { ConversationModeValue } from "./conversation/ConversationMode.js";
+export type { ConversationPauseValue } from "./conversation/ConversationPause.js";
 export type { ConversationFeedbackValue } from "./conversation/ConversationFeedback.js";
 export type { ConversationProviderProps } from "./conversation/ConversationProvider.js";
 export type {

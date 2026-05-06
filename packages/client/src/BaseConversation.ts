@@ -30,6 +30,7 @@ import type { InputConfig } from "./utils/input.js";
 import type { OutputConfig } from "./utils/output.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const PAUSED_ACTIVITY_INTERVAL_MS = 1000;
 
 export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
 export { CALLBACK_KEYS } from "@elevenlabs/types";
@@ -88,6 +89,8 @@ export type ClientToolsConfig = {
   >;
 };
 
+type ResumeAfterPauseHandler = () => void | Promise<void>;
+
 export function isTextOnly(options: PartialOptions): boolean | undefined {
   const { textOnly: textOnlyOverride } = options.overrides?.conversation ?? {};
   const { textOnly } = options;
@@ -116,6 +119,9 @@ export abstract class BaseConversation {
   protected currentEventId = 1;
   protected lastFeedbackEventId = 0;
   protected canSendFeedback = false;
+  protected paused = false;
+  private pausedActivityInterval: ReturnType<typeof setInterval> | null = null;
+  private resumeAfterPause: ResumeAfterPauseHandler | null = null;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
@@ -163,6 +169,9 @@ export abstract class BaseConversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
+    this.stopPausedActivityInterval();
+    this.resumeAfterPause = null;
+    this.paused = false;
     await this.handleEndSession();
     this.updateStatus("disconnected");
     if (this.options.onDisconnect) {
@@ -172,6 +181,50 @@ export abstract class BaseConversation {
 
   protected async handleEndSession() {
     this.connection.close();
+  }
+
+  protected abstract handlePause(): Promise<ResumeAfterPauseHandler>;
+
+  private startPausedActivityInterval() {
+    this.sendUserActivity();
+    this.pausedActivityInterval = setInterval(() => {
+      this.sendUserActivity();
+    }, PAUSED_ACTIVITY_INTERVAL_MS);
+  }
+
+  private stopPausedActivityInterval() {
+    if (this.pausedActivityInterval) {
+      clearInterval(this.pausedActivityInterval);
+      this.pausedActivityInterval = null;
+    }
+  }
+
+  public async pause(): Promise<void> {
+    if (this.paused) return;
+
+    this.paused = true;
+    try {
+      this.resumeAfterPause = await this.handlePause();
+      this.startPausedActivityInterval();
+    } catch (error) {
+      this.resumeAfterPause = null;
+      this.paused = false;
+      throw error;
+    }
+  }
+
+  public async resume(): Promise<void> {
+    if (!this.paused) return;
+
+    this.stopPausedActivityInterval();
+    try {
+      await this.resumeAfterPause?.();
+      this.resumeAfterPause = null;
+      this.paused = false;
+    } catch (error) {
+      this.startPausedActivityInterval();
+      throw error;
+    }
   }
 
   protected updateMode(mode: Mode) {
@@ -318,6 +371,8 @@ export abstract class BaseConversation {
 
   protected handleAudio(event: AgentAudioEvent) {}
 
+  protected abstract shouldHandleAudio(event: AgentAudioEvent): boolean;
+
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
     if (this.options.onMCPToolCall) {
       this.options.onMCPToolCall(event.mcp_tool_call);
@@ -430,6 +485,9 @@ export abstract class BaseConversation {
         return;
       }
       case "audio": {
+        if (!this.shouldHandleAudio(parsedEvent)) {
+          return;
+        }
         this.handleAudio(parsedEvent);
         return;
       }
@@ -516,6 +574,10 @@ export abstract class BaseConversation {
 
   public isOpen() {
     return this.status === "connected";
+  }
+
+  public isPaused() {
+    return this.paused;
   }
 
   public abstract setVolume(options: { volume: number }): void;

@@ -747,6 +747,7 @@ describe("Volume Control", () => {
           gain: {
             value: 1,
             cancelScheduledValues: vi.fn(),
+            exponentialRampToValueAtTime: vi.fn(),
           },
         })),
         createMediaStreamSource: vi.fn(() => ({
@@ -822,6 +823,7 @@ describe("Volume Control", () => {
       gain: {
         value: 1,
         cancelScheduledValues: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
       },
       connect: vi.fn(),
     };
@@ -929,6 +931,151 @@ describe("Volume Control", () => {
     server.close();
   });
 
+  it("pauses and resumes WebSocket voice conversations", async () => {
+    const server = new Server("wss://api.elevenlabs.io/voice/pause-test");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const mockGainNode = {
+      gain: {
+        value: 1,
+        cancelScheduledValues: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+      },
+      connect: vi.fn(),
+    };
+    const workletPort = {
+      postMessage: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      start: vi.fn(),
+    };
+
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function MockAudioContext() {
+        return {
+          sampleRate: 16000,
+          currentTime: 0,
+          createAnalyser: vi.fn(() => ({
+            connect: vi.fn(),
+            frequencyBinCount: 1024,
+            getByteFrequencyData: vi.fn(),
+          })),
+          createGain: vi.fn(() => mockGainNode),
+          createMediaStreamSource: vi.fn(() => ({
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+          })),
+          createMediaStreamDestination: vi.fn(() => ({
+            stream: new MediaStream(),
+            connect: vi.fn(),
+          })),
+          destination: {},
+          audioWorklet: {
+            addModule: vi.fn(() => Promise.resolve()),
+          },
+          resume: vi.fn(() => Promise.resolve()),
+          close: vi.fn(() => Promise.resolve()),
+        };
+      }) as unknown as typeof AudioContext
+    );
+
+    vi.stubGlobal(
+      "AudioWorkletNode",
+      vi.fn(function MockAudioWorkletNode() {
+        return {
+          connect: vi.fn(),
+          port: workletPort,
+        };
+      }) as unknown as typeof AudioWorkletNode
+    );
+
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/pause-test",
+      connectionDelay: { default: 0 },
+      textOnly: false,
+    });
+
+    const client = await clientPromise;
+    const onMessageSend = vi.fn();
+    client.on("message", onMessageSend);
+
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    conversation.setVolume({ volume: 0.4 });
+
+    await conversation.pause();
+    await sleep(100);
+
+    expect(mockGainNode.gain.value).toBe(0);
+    expect(workletPort.postMessage).toHaveBeenCalledWith({ type: "interrupt" });
+    expect(onMessageSend).toHaveBeenCalledWith(
+      JSON.stringify({ type: "user_activity" })
+    );
+    onMessageSend.mockClear();
+
+    client.send(
+      JSON.stringify({
+        type: "audio",
+        audio_event: {
+          audio_base_64: chunk,
+          event_id: Date.now(),
+        },
+      })
+    );
+    await sleep(100);
+
+    expect(workletPort.postMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "buffer" })
+    );
+
+    onMessageSend.mockClear();
+    await conversation.resume();
+
+    expect(mockGainNode.gain.value).toBe(0.4);
+    expect(workletPort.postMessage).toHaveBeenCalledWith({
+      type: "clearInterrupted",
+    });
+    await sleep(1100);
+    expect(onMessageSend).not.toHaveBeenCalledWith(
+      JSON.stringify({ type: "user_activity" })
+    );
+
+    client.send(
+      JSON.stringify({
+        type: "audio",
+        audio_event: {
+          audio_base_64: chunk,
+          event_id: Date.now() + 1,
+        },
+      })
+    );
+    await sleep(100);
+
+    expect(workletPort.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "buffer" })
+    );
+    expect(onMessageSend).not.toHaveBeenCalledWith(
+      JSON.stringify({ type: "user_activity" })
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
   it("applies volume to new audio chunks in WebSocket connection", async () => {
     const server = new Server(
       "wss://api.elevenlabs.io/voice/volume-audio-test"
@@ -944,6 +1091,7 @@ describe("Volume Control", () => {
       gain: {
         value: 1,
         cancelScheduledValues: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
       },
       connect: vi.fn(),
     };

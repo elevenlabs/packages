@@ -21,6 +21,7 @@ const createMockConversation = (id = "test-id") =>
     endSession: vi.fn().mockResolvedValue(undefined),
     setMicMuted: vi.fn(),
     setVolume: vi.fn(),
+    isPaused: vi.fn().mockReturnValue(false),
   }) as unknown as Conversation;
 
 function useTestHook() {
@@ -31,11 +32,7 @@ function useTestHook() {
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
-    return (
-      <ConversationProvider {...props}>
-        {children}
-      </ConversationProvider>
-    );
+    return <ConversationProvider {...props}>{children}</ConversationProvider>;
   };
 }
 
@@ -146,7 +143,8 @@ describe("ConversationInput", () => {
     expect(result.current.input.isMuted).toBe(true);
 
     // Simulate the onDisconnect callback that the conversation instance fires
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const startSessionCall = vi.mocked(Conversation.startSession).mock
+      .calls[0][0];
     act(() => {
       startSessionCall?.onDisconnect?.({ reason: "agent" });
     });
@@ -201,7 +199,11 @@ describe("ConversationInput", () => {
       React.useEffect(() => {
         setControlledMuted = setIsMuted;
       }, [setIsMuted]);
-      return <ConversationProvider isMuted={isMuted}>{children}</ConversationProvider>;
+      return (
+        <ConversationProvider isMuted={isMuted}>
+          {children}
+        </ConversationProvider>
+      );
     };
 
     const { result } = renderHook(() => useTestHook(), { wrapper: Wrapper });
@@ -261,7 +263,10 @@ describe("ConversationInput", () => {
       }, []);
 
       return (
-        <ConversationProvider isMuted={isMuted} onMutedChange={handleMutedChange}>
+        <ConversationProvider
+          isMuted={isMuted}
+          onMutedChange={handleMutedChange}
+        >
           {children}
         </ConversationProvider>
       );
@@ -302,7 +307,8 @@ describe("ConversationInput", () => {
       result.current.startSession();
     });
 
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
+    const startSessionCall = vi.mocked(Conversation.startSession).mock
+      .calls[0][0];
     act(() => {
       startSessionCall?.onDisconnect?.({ reason: "agent" });
     });

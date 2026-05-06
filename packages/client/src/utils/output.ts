@@ -123,6 +123,7 @@ export class MediaDeviceOutput
   }
 
   private volume = 1;
+  private playbackEnabled = true;
   private interrupted = false;
   private interruptTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly volumeProvider: VolumeProvider;
@@ -168,7 +169,19 @@ export class MediaDeviceOutput
     this.gain.gain.value = volume;
   }
 
+  public setPlaybackEnabled(enabled: boolean): void {
+    this.playbackEnabled = enabled;
+    if (enabled) {
+      this.interrupted = false;
+      this.worklet.port.postMessage({ type: "clearInterrupted" });
+    }
+  }
+
   public playAudio(chunk: ArrayBuffer): void {
+    if (!this.playbackEnabled || this.interrupted) {
+      return;
+    }
+
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
     if (this.interruptTimeout) {
@@ -190,6 +203,16 @@ export class MediaDeviceOutput
 
     // Send interrupt message to worklet to flush queued buffers
     this.worklet.port.postMessage({ type: "interrupt" });
+
+    if (resetDuration <= 0) {
+      this.gain.gain.cancelScheduledValues(this.context.currentTime);
+      this.gain.gain.value = 0;
+      if (this.playbackEnabled) {
+        this.interrupted = false;
+        this.worklet.port.postMessage({ type: "clearInterrupted" });
+      }
+      return;
+    }
 
     // Fade out audio gain
     this.gain.gain.exponentialRampToValueAtTime(
