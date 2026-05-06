@@ -23,6 +23,10 @@ updates:
           - "eslint"
           - "eslint-*"
           - "typescript-eslint"
+      tailwindcss:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
       tanstack-start-router:
         patterns:
           - "@tanstack/react-router"
