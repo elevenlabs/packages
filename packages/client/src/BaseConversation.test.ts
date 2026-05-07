@@ -54,7 +54,7 @@ class TestConversation extends BaseConversation {
   public receiveMessage(
     event: Parameters<Parameters<BaseConnection["onMessage"]>[0]>[0]
   ) {
-    return this["onMessage"](event);
+    return this["onMessageHandler"](event);
   }
 }
 

@@ -1,4 +1,5 @@
-import type { Callbacks } from "./events.js";
+import type { Callbacks, ConversationEventMap } from "./events.js";
+import { CALLBACK_KEY_TO_EVENT_NAME } from "./events.js";
 import type { Mode, Status, DisconnectionDetails } from "./types.js";
 import type {
   BaseConnection,
@@ -125,6 +126,7 @@ export abstract class BaseConversation {
   protected currentEventId = 1;
   protected lastFeedbackEventId = 0;
   protected canSendFeedback = false;
+  private listeners = new Map<string, Set<(...args: unknown[]) => void>>();
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
@@ -157,9 +159,63 @@ export abstract class BaseConversation {
     protected readonly options: Options,
     protected readonly connection: BaseConnection
   ) {
-    this.connection.onMessage(this.onMessage);
+    this.connection.onMessage(this.onMessageHandler);
     this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onModeChange(mode => this.updateMode(mode));
+
+    // Register constructor-provided callbacks as listeners
+    for (const [callbackKey, eventName] of Object.entries(
+      CALLBACK_KEY_TO_EVENT_NAME
+    )) {
+      const fn = options[callbackKey as keyof Callbacks];
+      if (fn) {
+        this.on(
+          eventName as keyof ConversationEventMap,
+          fn as ConversationEventMap[keyof ConversationEventMap]
+        );
+      }
+    }
+  }
+
+  public on<K extends keyof ConversationEventMap>(
+    event: K,
+    listener: ConversationEventMap[K]
+  ): () => void {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+    set.add(listener as (...args: unknown[]) => void);
+    return () => {
+      set.delete(listener as (...args: unknown[]) => void);
+    };
+  }
+
+  public off<K extends keyof ConversationEventMap>(
+    event: K,
+    listener: ConversationEventMap[K]
+  ): void {
+    this.listeners.get(event)?.delete(listener as (...args: unknown[]) => void);
+  }
+
+  protected emit<K extends keyof ConversationEventMap>(
+    event: K,
+    ...args: Parameters<ConversationEventMap[K]>
+  ): void {
+    const set = this.listeners.get(event);
+    if (set) {
+      for (const listener of set) {
+        try {
+          listener(...args);
+        } catch (error) {
+          // Avoid infinite recursion if an "error" listener itself throws
+          if (event !== "error") {
+            this.emit("error", String(error));
+          }
+        }
+      }
+    }
   }
 
   protected markConnected() {
@@ -175,9 +231,7 @@ export abstract class BaseConversation {
     this.updateStatus("disconnecting");
     await this.handleEndSession();
     this.updateStatus("disconnected");
-    if (this.options.onDisconnect) {
-      this.options.onDisconnect(details);
-    }
+    this.emit("disconnect", details);
   };
 
   protected async handleEndSession() {
@@ -187,18 +241,14 @@ export abstract class BaseConversation {
   protected updateMode(mode: Mode) {
     if (mode !== this.mode) {
       this.mode = mode;
-      if (this.options.onModeChange) {
-        this.options.onModeChange({ mode });
-      }
+      this.emit("mode-change", { mode });
     }
   }
 
   protected updateStatus(status: Status) {
     if (status !== this.status) {
       this.status = status;
-      if (this.options.onStatusChange) {
-        this.options.onStatusChange({ status });
-      }
+      this.emit("status-change", { status });
     }
   }
 
@@ -206,73 +256,58 @@ export abstract class BaseConversation {
     const canSendFeedback = this.currentEventId !== this.lastFeedbackEventId;
     if (this.canSendFeedback !== canSendFeedback) {
       this.canSendFeedback = canSendFeedback;
-      if (this.options.onCanSendFeedbackChange) {
-        this.options.onCanSendFeedbackChange({ canSendFeedback });
-      }
+      this.emit("can-send-feedback-change", { canSendFeedback });
     }
   }
 
   protected handleInterruption(event: InterruptionEvent) {
     if (event.interruption_event) {
       this.lastInterruptTimestamp = event.interruption_event.event_id;
-
-      if (this.options.onInterruption) {
-        this.options.onInterruption({
-          event_id: event.interruption_event.event_id,
-        });
-      }
+      this.emit("interruption", {
+        event_id: event.interruption_event.event_id,
+      });
     }
   }
 
   protected handleAgentResponse(event: AgentResponseEvent) {
-    if (this.options.onMessage) {
-      this.options.onMessage({
-        source: "ai",
-        role: "agent",
-        message: event.agent_response_event.agent_response,
-        event_id: event.agent_response_event.event_id,
-      });
-    }
+    this.emit("message", {
+      source: "ai",
+      role: "agent",
+      message: event.agent_response_event.agent_response,
+      event_id: event.agent_response_event.event_id,
+    });
   }
 
   protected handleAgentResponseCorrection(event: AgentResponseCorrectionEvent) {
-    if (this.options.onAgentResponseCorrection) {
-      this.options.onAgentResponseCorrection(
-        event.agent_response_correction_event
-      );
-    }
+    this.emit(
+      "agent-response-correction",
+      event.agent_response_correction_event
+    );
   }
 
   protected handleUserTranscript(event: UserTranscriptionEvent) {
-    if (this.options.onMessage) {
-      this.options.onMessage({
-        source: "user",
-        role: "user",
-        message: event.user_transcription_event.user_transcript,
-        event_id: event.user_transcription_event.event_id,
-      });
-    }
+    this.emit("message", {
+      source: "user",
+      role: "user",
+      message: event.user_transcription_event.user_transcript,
+      event_id: event.user_transcription_event.event_id,
+    });
   }
 
   protected handleTentativeAgentResponse(
     event: InternalTentativeAgentResponseEvent
   ) {
-    if (this.options.onDebug) {
-      this.options.onDebug({
-        type: "tentative_agent_response",
-        response:
-          event.tentative_agent_response_internal_event
-            .tentative_agent_response,
-      });
-    }
+    this.emit("debug", {
+      type: "tentative_agent_response",
+      response:
+        event.tentative_agent_response_internal_event.tentative_agent_response,
+    });
   }
 
   protected handleVadScore(event: VadScoreEvent) {
-    if (this.options.onVadScore) {
-      this.options.onVadScore({
-        vadScore: event.vad_score_event.vad_score,
-      });
-    }
+    this.emit("vad-score", {
+      vadScore: event.vad_score_event.vad_score,
+    });
   }
 
   protected async handleClientToolCall(event: ClientToolCallEvent) {
@@ -313,9 +348,8 @@ export abstract class BaseConversation {
         });
       }
     } else {
-      if (this.options.onUnhandledClientToolCall) {
-        this.options.onUnhandledClientToolCall(event.client_tool_call);
-
+      if (this.listeners.get("unhandled-client-tool-call")?.size) {
+        this.emit("unhandled-client-tool-call", event.client_tool_call);
         return;
       }
 
@@ -337,21 +371,15 @@ export abstract class BaseConversation {
   protected handleAudio(event: AgentAudioEvent) {}
 
   protected handleMCPToolCall(event: MCPToolCallClientEvent) {
-    if (this.options.onMCPToolCall) {
-      this.options.onMCPToolCall(event.mcp_tool_call);
-    }
+    this.emit("mcp-tool-call", event.mcp_tool_call);
   }
 
   protected handleMCPConnectionStatus(event: MCPConnectionStatusEvent) {
-    if (this.options.onMCPConnectionStatus) {
-      this.options.onMCPConnectionStatus(event.mcp_connection_status);
-    }
+    this.emit("mcp-connection-status", event.mcp_connection_status);
   }
 
   protected handleAgentToolRequest(event: AgentToolRequestEvent) {
-    if (this.options.onAgentToolRequest) {
-      this.options.onAgentToolRequest(event.agent_tool_request);
-    }
+    this.emit("agent-tool-request", event.agent_tool_request);
   }
 
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
@@ -361,36 +389,26 @@ export abstract class BaseConversation {
         context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
       });
     }
-
-    if (this.options.onAgentToolResponse) {
-      this.options.onAgentToolResponse(event.agent_tool_response);
-    }
+    this.emit("agent-tool-response", event.agent_tool_response);
   }
 
   protected handleConversationMetadata(event: ConversationMetadataEvent) {
-    if (this.options.onConversationMetadata) {
-      this.options.onConversationMetadata(
-        event.conversation_initiation_metadata_event
-      );
-    }
+    this.emit(
+      "conversation-initiation-metadata",
+      event.conversation_initiation_metadata_event
+    );
   }
 
   protected handleAsrInitiationMetadata(event: AsrInitiationMetadataEvent) {
-    if (this.options.onAsrInitiationMetadata) {
-      this.options.onAsrInitiationMetadata(event.asr_initiation_metadata_event);
-    }
+    this.emit("asr-initiation-metadata", event.asr_initiation_metadata_event);
   }
 
   protected handleAgentChatResponsePart(event: AgentChatResponsePartEvent) {
-    if (this.options.onAgentChatResponsePart) {
-      this.options.onAgentChatResponsePart(event.text_response_part);
-    }
+    this.emit("agent-chat-response-part", event.text_response_part);
   }
 
   protected handleGuardrailTriggered(_event: GuardrailTriggeredEvent) {
-    if (this.options.onGuardrailTriggered) {
-      this.options.onGuardrailTriggered();
-    }
+    this.emit("guardrail-triggered");
   }
 
   protected handleErrorEvent(event: ErrorMessageEvent) {
@@ -415,7 +433,7 @@ export abstract class BaseConversation {
     });
   }
 
-  private onMessage = async (parsedEvent: IncomingSocketEvent) => {
+  private onMessageHandler = async (parsedEvent: IncomingSocketEvent) => {
     switch (parsedEvent.type) {
       case "interruption": {
         this.handleInterruption(parsedEvent);
@@ -517,19 +535,15 @@ export abstract class BaseConversation {
       }
 
       default: {
-        if (this.options.onDebug) {
-          this.options.onDebug(parsedEvent);
-        }
+        this.emit("debug", parsedEvent);
         return;
       }
     }
   };
 
-  private onError(message: string, context?: any) {
+  private onError(message: string, context?: unknown) {
     console.error(message, context);
-    if (this.options.onError) {
-      this.options.onError(message, context);
-    }
+    this.emit("error", message, context);
   }
 
   public getId() {
