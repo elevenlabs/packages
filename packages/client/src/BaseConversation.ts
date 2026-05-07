@@ -1,4 +1,5 @@
-import type { Callbacks, Mode, Status, DisconnectionDetails } from "./types.js";
+import type { Callbacks } from "./events.js";
+import type { Mode, Status, DisconnectionDetails } from "./types.js";
 import type {
   BaseConnection,
   SessionConfig,
@@ -35,12 +36,12 @@ export type {
   Role,
   Mode,
   Status,
-  Callbacks,
   DisconnectionDetails,
   MessagePayload,
   AudioAlignmentEvent,
 } from "./types.js";
-export { CALLBACK_KEYS } from "./types.js";
+export type { Callbacks, ConversationEventMap } from "./events.js";
+export { CALLBACK_KEYS } from "./events.js";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
