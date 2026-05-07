@@ -27,6 +27,9 @@ updates:
         patterns:
           - "tailwindcss"
           - "@tailwindcss/*"
+      lezer:
+        patterns:
+          - "@lezer/*"
       tanstack-start-router:
         patterns:
           - "@tanstack/react-router"
