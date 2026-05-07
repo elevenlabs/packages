@@ -102,6 +102,49 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  it("should not submit text input while IME composition is active", async () => {
+    const widget = setupWebComponent({
+      "agent-id": "tool_call",
+      variant: "compact",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Composing message");
+
+    const textInputElement = widget.shadowRoot?.querySelector("textarea");
+    if (!textInputElement) {
+      throw new Error("Expected widget textarea to be rendered");
+    }
+
+    textInputElement.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        isComposing: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    await expect
+      .element(page.getByText("Composing message"))
+      .not.toBeInTheDocument();
+    await expect.element(textInput).toHaveValue("Composing message");
+
+    textInputElement.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    await expect
+      .element(page.getByText("Composing message"))
+      .toBeInTheDocument();
+  });
+
   it.each(Variants)(
     "$0 expandable variant should go through a happy path (text-only)",
     async variant => {
