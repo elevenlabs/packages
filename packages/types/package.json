@@ -9,7 +9,7 @@
     "generated"
   ],
   "scripts": {
-    "generate-types": "tsx ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
+    "generate-types": "node ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist generated/types",
@@ -25,7 +25,6 @@
     "eslint": "^10.3.0",
     "glob": "^11.0.3",
     "prettier": "^3.0.0",
-    "tsx": "^4.0.0",
     "typescript": "^5.9.2"
   },
   "exports": {
