@@ -1,11 +1,23 @@
-import type * as Generated from "../generated/types/asyncapi-types.js";
+import type {
+  AgentChatResponsePartClientEvent,
+  AgentResponseCorrection,
+  AgentToolRequestClientEvent,
+  AgentToolResponseClientEvent,
+  AsrInitiationMetadataEvent as AsrInitiationMetadataWireEvent,
+  AudioEventAlignment,
+  ClientToolCallClientEvent,
+  ConversationMetadata,
+  Interruption,
+  McpConnectionStatusClientEvent,
+  McpToolCallClientEvent,
+} from "@elevenlabs/types";
 
 /**
  * Role in the conversation
  */
 export type Role = "user" | "agent";
 
-export type AudioAlignmentEvent = Generated.AudioEventAlignment;
+export type AudioAlignmentEvent = AudioEventAlignment;
 
 /**
  * Current mode of the conversation
@@ -58,54 +70,47 @@ export interface MessagePayload {
 export type Callbacks = {
   onConnect?: (props: { conversationId: string }) => void;
   onDisconnect?: (details: DisconnectionDetails) => void;
-  onError?: (message: string, context?: any) => void;
+  onError?: (message: string, context?: unknown) => void;
   onMessage?: (props: MessagePayload) => void;
   onAudio?: (base64Audio: string) => void;
   onModeChange?: (prop: { mode: Mode }) => void;
   onStatusChange?: (prop: { status: Status }) => void;
   onCanSendFeedbackChange?: (prop: { canSendFeedback: boolean }) => void;
   onUnhandledClientToolCall?: (
-    params: Generated.ClientToolCallClientEvent["client_tool_call"]
+    params: ClientToolCallClientEvent["client_tool_call"]
   ) => void;
   onVadScore?: (props: { vadScore: number }) => void;
-  onMCPToolCall?: (
-    props: Generated.McpToolCallClientEvent["mcp_tool_call"]
-  ) => void;
+  onMCPToolCall?: (props: McpToolCallClientEvent["mcp_tool_call"]) => void;
   onMCPConnectionStatus?: (
-    props: Generated.McpConnectionStatusClientEvent["mcp_connection_status"]
+    props: McpConnectionStatusClientEvent["mcp_connection_status"]
   ) => void;
   onAgentToolRequest?: (
-    props: Generated.AgentToolRequestClientEvent["agent_tool_request"]
+    props: AgentToolRequestClientEvent["agent_tool_request"]
   ) => void;
   onAgentToolResponse?: (
-    props: Generated.AgentToolResponseClientEvent["agent_tool_response"]
+    props: AgentToolResponseClientEvent["agent_tool_response"]
   ) => void;
   onConversationMetadata?: (
-    props: Generated.ConversationMetadata["conversation_initiation_metadata_event"]
+    props: ConversationMetadata["conversation_initiation_metadata_event"]
   ) => void;
   onAsrInitiationMetadata?: (
-    props: Generated.AsrInitiationMetadataEvent["asr_initiation_metadata_event"]
+    props: AsrInitiationMetadataWireEvent["asr_initiation_metadata_event"]
   ) => void;
-  onInterruption?: (
-    props: Generated.Interruption["interruption_event"]
-  ) => void;
+  onInterruption?: (props: Interruption["interruption_event"]) => void;
   onAgentResponseCorrection?: (
-    props: Generated.AgentResponseCorrection["agent_response_correction_event"]
+    props: AgentResponseCorrection["agent_response_correction_event"]
   ) => void;
   onAgentChatResponsePart?: (
-    props: Generated.AgentChatResponsePartClientEvent["text_response_part"]
+    props: AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
   onGuardrailTriggered?: () => void;
-  onAudioAlignment?: (
-    props: AudioAlignmentEvent
-  ) => void;
+  onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   // internal debug events, not to be used
-  onDebug?: (props: any) => void;
+  onDebug?: (props: unknown) => void;
 };
 
 /**
  * Runtime array of all keys in `Callbacks`, kept in sync with the type above.
- * Used by the React SDK to pre-initialize listener maps for callback composition.
  */
 export const CALLBACK_KEYS = [
   "onConnect",
