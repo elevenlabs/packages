@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.12.0
+
+### Minor Changes
+
+- 3b40bda: Add an `onAgentResponseCorrection` callback for agent response correction events.
+
 ## 0.11.0
 
 ### Minor Changes

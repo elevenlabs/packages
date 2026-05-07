@@ -1,5 +1,14 @@
 # @elevenlabs/convai-widget-core
 
+## 0.12.1
+
+### Patch Changes
+
+- 6f13d2f: Fix text input submission for IME users by ignoring Enter keydowns while composition is active.
+- Updated dependencies [84ec003]
+- Updated dependencies [3b40bda]
+  - @elevenlabs/client@1.6.0
+
 ## 0.12.0
 
 ### Minor Changes
