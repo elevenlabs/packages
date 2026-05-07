@@ -9,6 +9,7 @@ export type {
   PartialOptions,
   ClientToolsConfig,
   Callbacks,
+  ConversationEventMap,
   Status,
   AudioWorkletConfig,
   MultimodalMessageInput,
