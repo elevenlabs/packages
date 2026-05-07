@@ -8,29 +8,12 @@ import {
 } from "@elevenlabs/client";
 import { useConversation } from "./useConversation.js";
 import { ConversationProvider } from "./ConversationProvider.js";
+import { createMockConversation } from "./test-utils.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-    sendFeedback: vi.fn(),
-    sendUserMessage: vi.fn(),
-    sendContextualUpdate: vi.fn(),
-    sendUserActivity: vi.fn(),
-    sendMCPToolApprovalResult: vi.fn(),
-    getInputByteFrequencyData: vi.fn(),
-    getOutputByteFrequencyData: vi.fn(),
-    getInputVolume: vi.fn().mockReturnValue(0),
-    getOutputVolume: vi.fn().mockReturnValue(0),
-  }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
@@ -341,7 +324,7 @@ describe("useConversation", () => {
     });
 
     // agentId should be forwarded, and the provider should wrap onConnect while
-    // still registering the hook callback via useRegisterCallbacks.
+    // still composing the hook callback via mergeOptions.
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     expect(opts.agentId).toBe("hook-agent-id");
     expect(typeof opts.onConnect).toBe("function");

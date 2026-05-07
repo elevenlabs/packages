@@ -5,10 +5,26 @@ import {
   ConversationContext,
   useRawConversation,
   useRawConversationRef,
-  useRegisterCallbacks,
+  useSessionLifecycle,
   type ConversationContextValue,
 } from "./ConversationContext.js";
 import type { Conversation } from "@elevenlabs/client";
+
+function createMockContextValue(
+  overrides: Partial<ConversationContextValue> = {}
+): ConversationContextValue {
+  return {
+    conversation: null,
+    conversationRef: { current: null },
+    startSession: vi.fn(),
+    endSession: vi.fn(),
+    isStarting: false,
+    startupError: null,
+    clientToolsRegistry: new Map(),
+    clientToolsRef: { current: {} },
+    ...overrides,
+  };
+}
 
 describe("useRawConversation", () => {
   it("returns null when used outside a ConversationProvider", () => {
@@ -18,15 +34,10 @@ describe("useRawConversation", () => {
 
   it("returns the conversation instance from the context", () => {
     const mockConversation = { getId: vi.fn() } as unknown as Conversation;
-    const value: ConversationContextValue = {
+    const value = createMockContextValue({
       conversation: mockConversation,
       conversationRef: { current: mockConversation },
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      registerCallbacks: vi.fn(),
-      clientToolsRegistry: new Map(),
-      clientToolsRef: { current: {} },
-    };
+    });
 
     const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
@@ -39,15 +50,7 @@ describe("useRawConversation", () => {
   });
 
   it("returns null when conversation is null in context", () => {
-    const value: ConversationContextValue = {
-      conversation: null,
-      conversationRef: { current: null },
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      registerCallbacks: vi.fn(),
-      clientToolsRegistry: new Map(),
-      clientToolsRef: { current: {} },
-    };
+    const value = createMockContextValue();
 
     const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
@@ -70,17 +73,12 @@ describe("useRawConversationRef", () => {
   it("returns the conversationRef from the context", () => {
     const mockConversation = { getId: vi.fn() } as unknown as Conversation;
     const conversationRef = { current: mockConversation };
-    const value: ConversationContextValue = {
+    const value = createMockContextValue({
       conversation: mockConversation,
       conversationRef,
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      registerCallbacks: vi.fn(),
-      clientToolsRegistry: new Map(),
-      clientToolsRef: { current: {} },
-    };
+    });
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
+    const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
         {children}
       </ConversationContext.Provider>
@@ -91,85 +89,27 @@ describe("useRawConversationRef", () => {
   });
 });
 
-describe("useRegisterCallbacks", () => {
+describe("useSessionLifecycle", () => {
   it("throws when used outside a ConversationProvider", () => {
-    expect(() =>
-      renderHook(() => useRegisterCallbacks({ onConnect: vi.fn() }))
-    ).toThrow("useRegisterCallbacks must be used within a ConversationProvider");
+    expect(() => renderHook(() => useSessionLifecycle())).toThrow(
+      "useSessionLifecycle must be used within a ConversationProvider"
+    );
   });
 
-  it("calls registerCallbacks with stable wrappers and cleans up on unmount", () => {
-    const unsubscribe = vi.fn();
-    const registerCallbacks = vi.fn().mockReturnValue(unsubscribe);
-    const value: ConversationContextValue = {
-      conversation: null,
-      conversationRef: { current: null },
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      registerCallbacks,
-      clientToolsRegistry: new Map(),
-      clientToolsRef: { current: {} },
-    };
+  it("returns isStarting and startupError from context", () => {
+    const value = createMockContextValue({
+      isStarting: true,
+      startupError: "test error",
+    });
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
+    const wrapper = ({ children }: React.PropsWithChildren) => (
       <ConversationContext.Provider value={value}>
         {children}
       </ConversationContext.Provider>
     );
 
-    const onConnect = vi.fn();
-    const { unmount } = renderHook(
-      () => useRegisterCallbacks({ onConnect }),
-      { wrapper }
-    );
-
-    expect(registerCallbacks).toHaveBeenCalledTimes(1);
-    // The registered callback should delegate to the original
-    const registered = registerCallbacks.mock.calls[0][0];
-    registered.onConnect({ conversationId: "test" });
-    expect(onConnect).toHaveBeenCalledWith({ conversationId: "test" });
-
-    unmount();
-    expect(unsubscribe).toHaveBeenCalled();
-  });
-
-  it("delegates to the latest callback without re-subscribing", () => {
-    const unsubscribe = vi.fn();
-    const registerCallbacks = vi.fn().mockReturnValue(unsubscribe);
-    const value: ConversationContextValue = {
-      conversation: null,
-      conversationRef: { current: null },
-      startSession: vi.fn(),
-      endSession: vi.fn(),
-      registerCallbacks,
-      clientToolsRegistry: new Map(),
-      clientToolsRef: { current: {} },
-    };
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <ConversationContext.Provider value={value}>
-        {children}
-      </ConversationContext.Provider>
-    );
-
-    const firstCallback = vi.fn();
-    const secondCallback = vi.fn();
-
-    const { rerender } = renderHook(
-      ({ cb }) => useRegisterCallbacks({ onConnect: cb }),
-      { wrapper, initialProps: { cb: firstCallback } }
-    );
-
-    // Re-render with a new callback
-    rerender({ cb: secondCallback });
-
-    // Should not have re-subscribed
-    expect(registerCallbacks).toHaveBeenCalledTimes(1);
-
-    // The stable wrapper should delegate to the latest callback
-    const registered = registerCallbacks.mock.calls[0][0];
-    registered.onConnect({ conversationId: "test" });
-    expect(firstCallback).not.toHaveBeenCalled();
-    expect(secondCallback).toHaveBeenCalledWith({ conversationId: "test" });
+    const { result } = renderHook(() => useSessionLifecycle(), { wrapper });
+    expect(result.current.isStarting).toBe(true);
+    expect(result.current.startupError).toBe("test error");
   });
 });

@@ -4,29 +4,12 @@ import { render, renderHook, act } from "@testing-library/react";
 import { Conversation } from "@elevenlabs/client";
 import { ConversationProvider } from "./ConversationProvider.js";
 import { useConversationControls } from "./ConversationControls.js";
+import { createMockConversation } from "./test-utils.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-    sendUserMessage: vi.fn(),
-    sendContextualUpdate: vi.fn(),
-    sendUserActivity: vi.fn(),
-    sendMCPToolApprovalResult: vi.fn(),
-    sendFeedback: vi.fn(),
-    getInputByteFrequencyData: vi.fn().mockReturnValue(new Uint8Array(4)),
-    getOutputByteFrequencyData: vi.fn().mockReturnValue(new Uint8Array(4)),
-    getInputVolume: vi.fn().mockReturnValue(0.5),
-    getOutputVolume: vi.fn().mockReturnValue(0.8),
-  }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
@@ -150,6 +133,14 @@ describe("useConversationControls", () => {
 
   it("returns frequency data and volume from the conversation", async () => {
     const mockConversation = createMockConversation();
+    vi.mocked(mockConversation.getInputVolume).mockReturnValue(0.5);
+    vi.mocked(mockConversation.getOutputVolume).mockReturnValue(0.8);
+    vi.mocked(mockConversation.getInputByteFrequencyData).mockReturnValue(
+      new Uint8Array(4)
+    );
+    vi.mocked(mockConversation.getOutputByteFrequencyData).mockReturnValue(
+      new Uint8Array(4)
+    );
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
     const { result } = renderHook(() => useConversationControls(), {

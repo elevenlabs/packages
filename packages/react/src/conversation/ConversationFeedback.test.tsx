@@ -8,21 +8,12 @@ import {
   type ConversationContextValue,
 } from "./ConversationContext.js";
 import { useConversationFeedback } from "./ConversationFeedback.js";
+import { createMockConversation } from "./test-utils.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-    sendFeedback: vi.fn(),
-  }) as unknown as Conversation;
 
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
@@ -60,7 +51,7 @@ describe("ConversationFeedback", () => {
     expect(typeof result.current.sendFeedback).toBe("function");
   });
 
-  it("reflects canSendFeedback changes from onCanSendFeedbackChange callback", async () => {
+  it("reflects canSendFeedback changes from can-send-feedback-change event", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -72,15 +63,13 @@ describe("ConversationFeedback", () => {
       result.current.startSession();
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-
     act(() => {
-      opts.onCanSendFeedbackChange!({ canSendFeedback: true });
+      mockConversation.__emit("can-send-feedback-change", { canSendFeedback: true });
     });
     expect(result.current.feedback.canSendFeedback).toBe(true);
 
     act(() => {
-      opts.onCanSendFeedbackChange!({ canSendFeedback: false });
+      mockConversation.__emit("can-send-feedback-change", { canSendFeedback: false });
     });
     expect(result.current.feedback.canSendFeedback).toBe(false);
   });
@@ -125,12 +114,20 @@ describe("ConversationFeedback", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
 
+    // The user's onCanSendFeedbackChange is passed through as a session option callback
+    expect(opts.onCanSendFeedbackChange).toBeDefined();
+
+    // Fire via opts to trigger the user callback (stableCallbacks pass-through)
     act(() => {
       opts.onCanSendFeedbackChange!({ canSendFeedback: true });
     });
-
     expect(userOnCanSendFeedbackChange).toHaveBeenCalledWith({
       canSendFeedback: true,
+    });
+
+    // Fire via event to trigger the feedback sub-provider
+    act(() => {
+      mockConversation.__emit("can-send-feedback-change", { canSendFeedback: true });
     });
     expect(result.current.feedback.canSendFeedback).toBe(true);
   });
@@ -147,15 +144,15 @@ describe("ConversationFeedback", () => {
       result.current.startSession();
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-
     act(() => {
-      opts.onCanSendFeedbackChange!({ canSendFeedback: true });
+      mockConversation.__emit("can-send-feedback-change", { canSendFeedback: true });
     });
     expect(result.current.feedback.canSendFeedback).toBe(true);
 
+    // Disconnect event causes ConversationProvider to clear conversation to null,
+    // which triggers ConversationFeedbackProvider's effect to reset canSendFeedback
     act(() => {
-      opts.onDisconnect!({ reason: "agent" });
+      mockConversation.__emit("disconnect", { reason: "agent" });
     });
     expect(result.current.feedback.canSendFeedback).toBe(false);
   });

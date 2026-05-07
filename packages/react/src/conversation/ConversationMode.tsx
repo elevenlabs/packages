@@ -1,6 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Mode } from "@elevenlabs/client";
-import { useRegisterCallbacks } from "./ConversationContext.js";
+import { useRawConversation } from "./ConversationContext.js";
 
 export type ConversationModeValue = {
   mode: "speaking" | "listening";
@@ -13,23 +13,26 @@ const ConversationModeContext = createContext<ConversationModeValue | null>(
 );
 
 /**
- * Reads from `ConversationContext` and registers an `onModeChange` callback.
- * Manages its own `mode` state and provides it through
- * `ConversationModeContext`. Must be rendered inside a `ConversationProvider`.
+ * Subscribes to mode-change events on the active conversation and provides
+ * the current mode through `ConversationModeContext`.
+ * Must be rendered inside a `ConversationProvider`.
  */
 export function ConversationModeProvider({
   children,
 }: React.PropsWithChildren) {
+  const conversation = useRawConversation();
   const [mode, setMode] = useState<Mode>("listening");
 
-  useRegisterCallbacks({
-    onModeChange({ mode: newMode }) {
-      setMode(newMode);
-    },
-    onDisconnect() {
+  useEffect(() => {
+    if (!conversation) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when conversation disconnects
       setMode("listening");
-    },
-  });
+      return;
+    }
+    return conversation.on("mode-change", ({ mode: newMode }) => {
+      setMode(newMode);
+    });
+  }, [conversation]);
 
   const value = useMemo<ConversationModeValue>(
     () => ({

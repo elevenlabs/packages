@@ -176,13 +176,13 @@ export class VoiceConversation extends BaseConversation {
   protected override handleAudio(event: AgentAudioEvent) {
     super.handleAudio(event);
 
-    if (event.audio_event.alignment && this.options.onAudioAlignment) {
-      this.options.onAudioAlignment(event.audio_event.alignment);
+    if (event.audio_event.alignment) {
+      this.emit("audio-alignment", event.audio_event.alignment);
     }
 
     if (this.lastInterruptTimestamp <= event.audio_event.event_id) {
       if (event.audio_event.audio_base_64) {
-        this.options.onAudio?.(event.audio_event.audio_base_64);
+        this.emit("audio", event.audio_event.audio_base_64);
         // Audio routing is handled by attachConnectionToOutput for WebSocket
         // WebRTC handles audio playback directly through LiveKit tracks
       }
@@ -197,7 +197,7 @@ export class VoiceConversation extends BaseConversation {
 
   public setMicMuted(isMuted: boolean) {
     this.input.setMuted(isMuted).catch(error => {
-      this.options.onError?.("Failed to set input muted state", error);
+      this.emit("error", "Failed to set input muted state", error);
     });
   }
 

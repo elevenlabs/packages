@@ -13,6 +13,7 @@ import {
   useRawConversation,
   type ConversationContextValue,
 } from "./ConversationContext.js";
+import { createMockConversation, type MockConversation } from "./test-utils.js";
 
 /** Test helper — accesses the full context value (conversation + lifecycle methods). */
 function useTestContext(): ConversationContextValue {
@@ -28,16 +29,6 @@ vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-    sendUserMessage: vi.fn(),
-  }) as unknown as Conversation;
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
@@ -324,9 +315,10 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBe(mockConversation);
 
     // Simulate an external disconnect (agent hangs up, raw endSession(), etc.)
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     act(() => {
-      opts.onDisconnect!({ reason: "agent" });
+      (mockConversation as MockConversation).__emit("disconnect", {
+        reason: "agent",
+      });
     });
 
     expect(result.current.conversation).toBeNull();
@@ -347,7 +339,11 @@ describe("ConversationProvider", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     act(() => {
+      // Simulate SDK emitting disconnect: fires both on() listeners and options callback
       opts.onDisconnect!({ reason: "agent" });
+      (mockConversation as MockConversation).__emit("disconnect", {
+        reason: "agent",
+      });
     });
 
     expect(userOnDisconnect).toHaveBeenCalledWith({ reason: "agent" });
@@ -595,8 +591,9 @@ describe("ConversationProvider", () => {
     expect(
       typeof (startSessionCall as MockStartSessionOptions).onConversationCreated
     ).toBe("function");
-    // onDisconnect is registered internally by the provider
-    expect(typeof startSessionCall.onDisconnect).toBe("function");
+    // onDisconnect is handled via conversation.on(), not session options,
+    // so it should be undefined when the user doesn't provide one.
+    expect(startSessionCall.onDisconnect).toBeUndefined();
     // Unprovided callbacks are omitted so client feature guards work
     expect(startSessionCall.onUnhandledClientToolCall).toBeUndefined();
     // onConnect should still have been called

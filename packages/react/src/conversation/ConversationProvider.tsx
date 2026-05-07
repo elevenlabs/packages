@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -37,7 +36,6 @@ import {
   ConversationClientToolsProvider,
   buildClientTools,
 } from "./ConversationClientTools.js";
-import { ListenerMap } from "./ListenerMap.js";
 import { useStableCallbacks } from "./useStableCallbacks.js";
 
 type ConversationInputControlProps = Pick<
@@ -82,32 +80,24 @@ export function ConversationProvider({
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
   defaultOptionsRef.current = defaultOptions;
 
-  /** Callback registry for sub-providers (status, mode, feedback, etc.). */
-  const [listenerMap] = useState(
-    () => new ListenerMap<Callbacks>(CALLBACK_KEYS)
-  );
-
   /** Reactive mirror of conversationRef, triggers re-renders for context consumers. */
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  /** True while a `startSession` call is in progress. */
+  const [isStarting, setIsStarting] = useState(false);
+  /** Error message from a failed `startSession` call. Cleared on next attempt. */
+  const [startupError, setStartupError] = useState<string | null>(null);
 
   const stableCallbacks = useStableCallbacks(defaultOptions);
 
-  const registerCallbacks = useCallback(
-    (callbacks: Partial<Callbacks>) => listenerMap.register(callbacks),
-    [listenerMap]
-  );
-
   // Sync provider state when session ends externally (agent disconnect,
-  // raw instance endSession(), etc.). Uses the listener map so it composes
-  // with user-provided onDisconnect callbacks.
-  useLayoutEffect(() => {
-    return listenerMap.register({
-      onDisconnect: () => {
-        conversationRef.current = null;
-        setConversation(null);
-      },
+  // raw instance endSession(), etc.).
+  useEffect(() => {
+    if (!conversation) return;
+    return conversation.on("disconnect", () => {
+      conversationRef.current = null;
+      setConversation(null);
     });
-  }, [listenerMap]);
+  }, [conversation]);
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -119,6 +109,8 @@ export function ConversationProvider({
       }
 
       shouldEndRef.current = false;
+      setIsStarting(true);
+      setStartupError(null);
       const startSessionId = ++startSessionIdRef.current;
 
       const defaults = defaultOptionsRef.current;
@@ -141,7 +133,6 @@ export function ConversationProvider({
         { livekitUrl: calculatedLivekitUrl },
         defaultConfig,
         stableCallbacks,
-        listenerMap.compose(),
         options ?? {},
         { origin }
       );
@@ -192,6 +183,7 @@ export function ConversationProvider({
           if (isStaleStartSession()) {
             return;
           }
+          setIsStarting(false);
           if (shouldEndRef.current) {
             conv.endSession();
             lockRef.current = null;
@@ -207,25 +199,23 @@ export function ConversationProvider({
           if (isStaleStartSession()) {
             return;
           }
+          setIsStarting(false);
           conversationRef.current = null;
           setConversation(null);
           lockRef.current = null;
           if (shouldEndRef.current) {
             return;
           }
-          // The client SDK calls onStatusChange("disconnected") before
-          // rejecting, but never calls onError — surface the failure here
-          // so listeners (e.g. ConversationStatusProvider) transition to
-          // the "error" state with a meaningful message.
           const message =
             error instanceof Error
               ? error.message
               : "Session failed to start";
+          setStartupError(message);
           sessionOptions.onError?.(message, error);
         }
       );
     },
-    [stableCallbacks, listenerMap, clientToolsRegistry, clientToolsRef]
+    [stableCallbacks, clientToolsRegistry, clientToolsRef]
   );
 
   const endSession = useCallback(() => {
@@ -260,11 +250,12 @@ export function ConversationProvider({
       conversationRef,
       startSession,
       endSession,
-      registerCallbacks,
+      isStarting,
+      startupError,
       clientToolsRegistry,
       clientToolsRef,
     }),
-    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
+    [conversation, conversationRef, startSession, endSession, isStarting, startupError, clientToolsRegistry, clientToolsRef]
   );
 
   const wrappedChildren = SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
