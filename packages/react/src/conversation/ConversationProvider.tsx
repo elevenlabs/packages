@@ -33,6 +33,7 @@ import {
 } from "./ConversationInput.js";
 import { ConversationModeProvider } from "./ConversationMode.js";
 import { ConversationFeedbackProvider } from "./ConversationFeedback.js";
+import { ConversationAudioStreamProvider } from "./ConversationAudioStream.js";
 import {
   ConversationClientToolsProvider,
   buildClientTools,
@@ -50,6 +51,7 @@ const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[
   ConversationStatusProvider,
   ConversationModeProvider,
   ConversationFeedbackProvider,
+  ConversationAudioStreamProvider,
   ConversationClientToolsProvider,
 ];
 

@@ -162,6 +162,10 @@ export abstract class BaseConversation {
     return this.endSessionWithDetails({ reason: "user" });
   }
 
+  public abstract getInputAudioStream(): MediaStream | null;
+
+  public abstract getOutputAudioStream(): MediaStream | null;
+
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");

@@ -44,6 +44,12 @@ class TestConversation extends BaseConversation {
   public getOutputByteFrequencyData(): Uint8Array {
     return new Uint8Array(0);
   }
+  public getInputAudioStream(): MediaStream | null {
+    return null;
+  }
+  public getOutputAudioStream(): MediaStream | null {
+    return null;
+  }
   public getInputVolume(): number {
     return 0;
   }
