@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: "weekly"
     groups:
+      remark-cjk-friendly:
+        patterns:
+          - "remark-cjk-friendly"
+          - "remark-cjk-friendly-gfm-strikethrough"
       react:
         patterns:
           - "react"
