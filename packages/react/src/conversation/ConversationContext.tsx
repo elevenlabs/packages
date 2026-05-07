@@ -1,16 +1,10 @@
 import {
   createContext,
   useContext,
-  useLayoutEffect,
-  useRef,
   type MutableRefObject,
   type RefObject,
 } from "react";
-import type {
-  Callbacks,
-  ClientToolsConfig,
-  Conversation,
-} from "@elevenlabs/client";
+import type { ClientToolsConfig, Conversation } from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 
 type ClientToolEntry = ClientToolsConfig["clientTools"][string];
@@ -21,11 +15,10 @@ export type ConversationContextValue = {
   conversationRef: RefObject<Conversation | null>;
   startSession: (options?: HookOptions) => void;
   endSession: () => void;
-  /**
-   * For sub-providers — register callback handlers to be composed into the
-   * next `Conversation.startSession()` call. Returns an unsubscribe function.
-   */
-  registerCallbacks: (callbacks: Partial<Callbacks>) => () => void;
+  /** True while a `startSession` call is in progress. */
+  isStarting: boolean;
+  /** Error message from a failed `startSession` call. Cleared on next attempt. */
+  startupError: string | null;
   /** Registry of hook-registered client tools. Survives across sessions. */
   clientToolsRegistry: Map<string, ClientToolEntry>;
   /** Ref to the live clientTools object currently held by BaseConversation. */
@@ -65,46 +58,21 @@ export function useRawConversationRef(): RefObject<Conversation | null> {
 }
 
 /**
- * Registers callback handlers with the nearest `ConversationProvider`.
- * Uses a ref internally so the latest callback values are always invoked
- * without re-subscribing on every render.
+ * Returns the `isStarting` and `startupError` state from the nearest
+ * `ConversationProvider`. Useful for sub-providers that need to know about
+ * session lifecycle phases (e.g., showing "connecting" status).
  *
  * Must be used within a `ConversationProvider`.
  */
-export function useRegisterCallbacks(callbacks: Partial<Callbacks>): void {
+export function useSessionLifecycle(): {
+  isStarting: boolean;
+  startupError: string | null;
+} {
   const ctx = useContext(ConversationContext);
   if (!ctx) {
     throw new Error(
-      "useRegisterCallbacks must be used within a ConversationProvider"
+      "useSessionLifecycle must be used within a ConversationProvider"
     );
   }
-
-  const { registerCallbacks } = ctx;
-  const callbacksRef = useRef(callbacks);
-
-  // Re-subscribe when the set of provided callback keys changes.
-  const activeKeyToken = Object.keys(callbacks)
-    .filter(key => callbacks[key as keyof Callbacks] !== undefined)
-    .sort()
-    .join("|");
-
-  useLayoutEffect(() => {
-    callbacksRef.current = callbacks;
-  });
-
-  useLayoutEffect(() => {
-    const activeKeys = activeKeyToken === "" ? [] : activeKeyToken.split("|");
-    const stableCallbacks = Object.fromEntries(
-      activeKeys.map((key: string) => [
-        key,
-        (...args: never[]) => {
-          const fn = callbacksRef.current[key as keyof Callbacks];
-          if (typeof fn === "function") {
-            (fn as (...a: never[]) => void)(...args);
-          }
-        },
-      ])
-    ) as Partial<Callbacks>;
-    return registerCallbacks(stableCallbacks);
-  }, [registerCallbacks, activeKeyToken]);
+  return { isStarting: ctx.isStarting, startupError: ctx.startupError };
 }

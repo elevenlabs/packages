@@ -8,20 +8,12 @@ import {
   type ConversationContextValue,
 } from "./ConversationContext.js";
 import { useConversationInput } from "./ConversationInput.js";
+import { createMockConversation } from "./test-utils.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-  }) as unknown as Conversation;
 
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
@@ -145,10 +137,9 @@ describe("ConversationInput", () => {
 
     expect(result.current.input.isMuted).toBe(true);
 
-    // Simulate the onDisconnect callback that the conversation instance fires
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
-    act(() => {
-      startSessionCall?.onDisconnect?.({ reason: "agent" });
+    // endSession sets conversation to null, which triggers the useEffect reset
+    await act(async () => {
+      result.current.endSession();
     });
 
     expect(result.current.input.isMuted).toBe(false);
@@ -302,9 +293,9 @@ describe("ConversationInput", () => {
       result.current.startSession();
     });
 
-    const startSessionCall = vi.mocked(Conversation.startSession).mock.calls[0][0];
-    act(() => {
-      startSessionCall?.onDisconnect?.({ reason: "agent" });
+    // endSession sets conversation to null, but controlled mode preserves isMuted
+    await act(async () => {
+      result.current.endSession();
     });
 
     expect(result.current.input.isMuted).toBe(true);

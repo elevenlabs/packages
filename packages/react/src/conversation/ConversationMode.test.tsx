@@ -8,20 +8,12 @@ import {
   type ConversationContextValue,
 } from "./ConversationContext.js";
 import { useConversationMode } from "./ConversationMode.js";
+import { createMockConversation } from "./test-utils.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
   return { ...actual, Conversation: { startSession: vi.fn() } };
 });
-
-const createMockConversation = (id = "test-id") =>
-  ({
-    getId: vi.fn().mockReturnValue(id),
-    isOpen: vi.fn().mockReturnValue(true),
-    endSession: vi.fn().mockResolvedValue(undefined),
-    setMicMuted: vi.fn(),
-    setVolume: vi.fn(),
-  }) as unknown as Conversation;
 
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
@@ -60,7 +52,7 @@ describe("ConversationMode", () => {
     expect(result.current.isSpeaking).toBe(false);
   });
 
-  it("reflects mode changes from onModeChange callback", async () => {
+  it("reflects mode changes from mode-change event", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -72,17 +64,15 @@ describe("ConversationMode", () => {
       result.current.startSession();
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-
     act(() => {
-      opts.onModeChange!({ mode: "speaking" });
+      mockConversation.__emit("mode-change", { mode: "speaking" });
     });
     expect(result.current.mode.mode).toBe("speaking");
     expect(result.current.mode.isSpeaking).toBe(true);
     expect(result.current.mode.isListening).toBe(false);
 
     act(() => {
-      opts.onModeChange!({ mode: "listening" });
+      mockConversation.__emit("mode-change", { mode: "listening" });
     });
     expect(result.current.mode.mode).toBe("listening");
     expect(result.current.mode.isListening).toBe(true);
@@ -104,11 +94,19 @@ describe("ConversationMode", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
 
+    // The user's onModeChange is passed through as a session option callback
+    expect(opts.onModeChange).toBeDefined();
+
+    // Fire via opts to trigger the user callback (stableCallbacks pass-through)
     act(() => {
       opts.onModeChange!({ mode: "speaking" });
     });
-
     expect(userOnModeChange).toHaveBeenCalledWith({ mode: "speaking" });
+
+    // Fire via event to trigger the mode sub-provider
+    act(() => {
+      mockConversation.__emit("mode-change", { mode: "speaking" });
+    });
     expect(result.current.mode.mode).toBe("speaking");
   });
 
@@ -124,15 +122,15 @@ describe("ConversationMode", () => {
       result.current.startSession();
     });
 
-    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
-
     act(() => {
-      opts.onModeChange!({ mode: "speaking" });
+      mockConversation.__emit("mode-change", { mode: "speaking" });
     });
     expect(result.current.mode.mode).toBe("speaking");
 
+    // Disconnect event causes ConversationProvider to clear conversation to null,
+    // which triggers ConversationModeProvider's effect to reset mode to "listening"
     act(() => {
-      opts.onDisconnect!({ reason: "agent" });
+      mockConversation.__emit("disconnect", { reason: "agent" });
     });
     expect(result.current.mode.mode).toBe("listening");
     expect(result.current.mode.isListening).toBe(true);

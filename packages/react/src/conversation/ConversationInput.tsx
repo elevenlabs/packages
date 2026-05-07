@@ -9,7 +9,6 @@ import {
 import {
   useRawConversation,
   useRawConversationRef,
-  useRegisterCallbacks,
 } from "./ConversationContext.js";
 
 export type ConversationInputValue = {
@@ -44,13 +43,16 @@ export function ConversationInputProvider({
   const [uncontrolledIsMuted, setUncontrolledIsMuted] = useState(false);
   const isMuted = isControlled ? controlledIsMuted : uncontrolledIsMuted;
 
-  useRegisterCallbacks({
-    onDisconnect() {
+  // Reset uncontrolled mute state when conversation disconnects
+  useEffect(() => {
+    if (!conversation) {
       if (!isControlled) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when conversation disconnects
         setUncontrolledIsMuted(false);
       }
-    },
-  });
+      return;
+    }
+  }, [conversation, isControlled]);
 
   useEffect(() => {
     if (isControlled && conversation) {

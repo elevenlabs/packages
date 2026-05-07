@@ -1,5 +1,8 @@
-import { createContext, useContext, useMemo, useState } from "react";
-import { useRegisterCallbacks } from "./ConversationContext.js";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  useRawConversation,
+  useSessionLifecycle,
+} from "./ConversationContext.js";
 
 export type ConversationStatus =
   | "disconnected"
@@ -17,32 +20,46 @@ const ConversationStatusContext = createContext<ConversationStatusValue | null>(
 );
 
 /**
- * Reads from `ConversationContext` and registers `onStatusChange` + `onError`
- * callbacks. Manages its own `status`/`message` state and provides it through
- * `ConversationStatusContext`. Must be rendered inside a `ConversationProvider`.
+ * Derives conversation status from the session lifecycle and subscribes to
+ * error events on the active conversation. Must be rendered inside a
+ * `ConversationProvider`.
  */
 export function ConversationStatusProvider({
   children,
 }: React.PropsWithChildren) {
-  const [status, setStatus] =
-    useState<ConversationStatusValue["status"]>("disconnected");
-  const [message, setMessage] = useState<string | undefined>(undefined);
+  const conversation = useRawConversation();
+  const { isStarting, startupError } = useSessionLifecycle();
+  const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
-  useRegisterCallbacks({
-    onStatusChange({ status: newStatus }) {
-      if (newStatus === "disconnecting") {
-        // Transient state — keep current status
-        return;
-      }
-      setStatus(newStatus);
-      // Clear error message when transitioning to a non-error state
-      setMessage(undefined);
-    },
-    onError(errorMessage) {
-      setStatus("error");
-      setMessage(errorMessage);
-    },
-  });
+  // Subscribe to error events on the conversation
+  useEffect(() => {
+    if (!conversation) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when conversation reconnects
+    setErrorMessage(undefined);
+    return conversation.on("error", msg => {
+      setErrorMessage(msg);
+    });
+  }, [conversation]);
+
+  // Clear error when starting a new session
+  useEffect(() => {
+    if (isStarting) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when new session starts
+      setErrorMessage(undefined);
+    }
+  }, [isStarting]);
+
+  const status: ConversationStatus = startupError
+    ? "error"
+    : errorMessage !== undefined
+      ? "error"
+      : isStarting
+        ? "connecting"
+        : conversation
+          ? "connected"
+          : "disconnected";
+
+  const message = startupError ?? errorMessage;
 
   const value = useMemo<ConversationStatusValue>(
     () => ({ status, message }),
