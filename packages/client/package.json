@@ -14,6 +14,7 @@
   },
   "scripts": {
     "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "generate-events": "node scripts/generate-events.ts && prettier --write src/generated/**/*.ts",
     "generate-worklets": "node scripts/generateWorklets.js",
     "build:esm": "tsc --build",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
@@ -38,10 +39,12 @@
     "mock-socket": "^9.3.1",
     "node-wav": "^0.0.2",
     "playwright": "^1.54.1",
+    "prettier": "^3.8.3",
     "rolldown": "^1.0.0-rc.9",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.59.2",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "yaml": "^2.8.4"
   },
   "repository": {
     "type": "git",
