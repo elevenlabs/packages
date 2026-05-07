@@ -110,6 +110,10 @@ function SheetTextarea({
 
   const handleKeyDown = useCallback<KeyboardEventHandler<HTMLTextAreaElement>>(
     async e => {
+      if (e.isComposing) {
+        return;
+      }
+
       if (e.key === "Enter" && !e.shiftKey) {
         await onSendMessage(e);
       }
