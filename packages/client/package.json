@@ -29,6 +29,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/dom-mediacapture-record": "^1.0.22",
     "@types/node-wav": "^0.0.3",
     "@vitest/browser": "^4.1.5",
     "@vitest/browser-playwright": "^4.1.5",
