@@ -132,17 +132,6 @@ export abstract class BaseConversation {
     const textOnly = isTextOnly(partialOptions);
     return {
       clientTools: {},
-      onConnect: () => {},
-      onDebug: () => {},
-      onDisconnect: () => {},
-      onError: () => {},
-      onMessage: () => {},
-      onAudio: () => {},
-      onModeChange: () => {},
-      onStatusChange: () => {},
-      onCanSendFeedbackChange: () => {},
-      onInterruption: () => {},
-      onAgentResponseCorrection: () => {},
       ...partialOptions,
       textOnly,
       overrides: {
