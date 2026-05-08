@@ -20,6 +20,7 @@ import type {
   VadScoreEvent,
   MCPToolCallClientEvent,
   AgentToolResponseEvent,
+  AgentToolResponseFullPayloadEvent,
   ConversationMetadataEvent,
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
@@ -359,6 +360,26 @@ export abstract class BaseConversation {
     }
   }
 
+  // Mirrors `handleAgentToolResponse` so that an `end_call` tool terminates
+  // the session even when the agent is configured to emit only the
+  // `agent_tool_response_full_payload` variant. If both events are enabled,
+  // the duplicate `endSessionWithDetails` call is a no-op (status guard) and
+  // `onAgentToolResponse` will fire twice — once per server event — by design.
+  protected handleAgentToolResponseFullPayload(
+    event: AgentToolResponseFullPayloadEvent
+  ) {
+    if (event.agent_tool_response_full_payload.tool_name === "end_call") {
+      this.endSessionWithDetails({
+        reason: "agent",
+        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+      });
+    }
+
+    if (this.options.onAgentToolResponse) {
+      this.options.onAgentToolResponse(event.agent_tool_response_full_payload);
+    }
+  }
+
   protected handleConversationMetadata(event: ConversationMetadataEvent) {
     if (this.options.onConversationMetadata) {
       this.options.onConversationMetadata(
@@ -484,11 +505,7 @@ export abstract class BaseConversation {
       }
 
       case "agent_tool_response_full_payload": {
-        if (this.options.onAgentToolResponse) {
-          this.options.onAgentToolResponse(
-            parsedEvent.agent_tool_response_full_payload
-          );
-        }
+        this.handleAgentToolResponseFullPayload(parsedEvent);
         return;
       }
 

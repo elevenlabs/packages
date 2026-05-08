@@ -272,5 +272,68 @@ describe("BaseConversation", () => {
       expect(received.full_tool_result).toBe(truncatedBody);
       expect(received.full_tool_result.length).toBeGreaterThan(64_000);
     });
+
+    it("terminates the session when an end_call tool arrives via full_payload", async () => {
+      const onAgentToolResponse = vi.fn();
+      const onDisconnect = vi.fn();
+      const onStatusChange = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentToolResponse,
+        onDisconnect,
+        onStatusChange,
+      });
+      conversation["updateStatus"]("connected");
+      onStatusChange.mockClear();
+
+      const endCallPayload = {
+        ...basePayload,
+        tool_name: "end_call",
+      };
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: endCallPayload,
+      });
+
+      expect(onAgentToolResponse).toHaveBeenCalledWith(endCallPayload);
+      expect(onDisconnect).toHaveBeenCalledTimes(1);
+      expect(onDisconnect.mock.calls[0]![0]).toMatchObject({ reason: "agent" });
+      expect(onStatusChange).toHaveBeenCalledWith({ status: "disconnecting" });
+      expect(onStatusChange).toHaveBeenCalledWith({ status: "disconnected" });
+    });
+
+    it("only ends the session once when end_call arrives via both events", async () => {
+      const onAgentToolResponse = vi.fn();
+      const onDisconnect = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentToolResponse,
+        onDisconnect,
+      });
+      conversation["updateStatus"]("connected");
+
+      const summary = {
+        tool_name: "end_call",
+        tool_call_id: "call_end",
+        tool_type: "system",
+        is_error: false,
+        is_called: true,
+        event_id: 11,
+      };
+      const full = { ...basePayload, tool_name: "end_call" };
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response",
+        agent_tool_response: summary,
+      });
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: full,
+      });
+
+      // Callback fires once per server event (no dedup), but the disconnect
+      // path only runs once because endSessionWithDetails is status-guarded.
+      expect(onAgentToolResponse).toHaveBeenCalledTimes(2);
+      expect(onDisconnect).toHaveBeenCalledTimes(1);
+    });
   });
 });
