@@ -2,6 +2,9 @@
   "name": "packages",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "create": "node scripts/create",
     "lint": "turbo lint",
