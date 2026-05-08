@@ -1,14 +1,13 @@
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
-import type { Mode } from "../BaseConversation.js";
+import type { DisconnectionDetails, Mode } from "../types.js";
 import type {
   ConversationConfigOverrideAgentPrompt,
-  DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
 
+export type { DisconnectionDetails } from "../types.js";
 export type {
   ConversationConfigOverrideAgentPrompt,
-  DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
 

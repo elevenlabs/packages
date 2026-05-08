@@ -5,7 +5,6 @@ import type {
   AgentToolResponseClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
-  AudioAlignmentEvent,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
@@ -20,6 +19,7 @@ import type {
   UserTranscript,
   VadScore,
 } from "@elevenlabs/types";
+import type { AudioAlignmentEvent } from "../types.js";
 
 // Compatibility layer - incoming events
 export type UserTranscriptionEvent = UserTranscript;
