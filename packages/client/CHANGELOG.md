@@ -1,5 +1,17 @@
 # @elevenlabs/client
 
+## 1.6.0
+
+### Minor Changes
+
+- 84ec003: Add native mute/unmute support to Scribe realtime STT integration. `RealtimeConnection` now exposes `mute()`, `unmute()`, and `isMuted`. The `useScribe` React hook surfaces these as `isMuted` state with `mute()` and `unmute()` callbacks.
+- 3b40bda: Add an `onAgentResponseCorrection` callback for agent response correction events.
+
+### Patch Changes
+
+- Updated dependencies [3b40bda]
+  - @elevenlabs/types@0.12.0
+
 ## 1.5.0
 
 ### Minor Changes
