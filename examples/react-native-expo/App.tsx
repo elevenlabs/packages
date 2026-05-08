@@ -353,9 +353,6 @@ export default function App() {
       onAgentToolResponse={event => {
         console.log("Agent Tool Response:", event);
       }}
-      onAgentToolResponseFullPayload={event => {
-        console.log("Agent Tool Response Full Payload:", event);
-      }}
       onAgentChatResponsePart={part => {
         console.log("Agent Response Part:", part);
       }}
