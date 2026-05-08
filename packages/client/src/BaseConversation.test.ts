@@ -209,11 +209,11 @@ describe("BaseConversation", () => {
       truncated: false,
     };
 
-    it("forwards the full JSON tool_result to onAgentToolResponseFullPayload", async () => {
-      const onAgentToolResponseFullPayload = vi.fn();
+    it("forwards the full JSON tool_result to onAgentToolResponse", async () => {
+      const onAgentToolResponse = vi.fn();
       const onDebug = vi.fn();
       const conversation = TestConversation.create({
-        onAgentToolResponseFullPayload,
+        onAgentToolResponse,
         onDebug,
       });
 
@@ -222,14 +222,14 @@ describe("BaseConversation", () => {
         agent_tool_response_full_payload: basePayload,
       });
 
-      expect(onAgentToolResponseFullPayload).toHaveBeenCalledWith(basePayload);
+      expect(onAgentToolResponse).toHaveBeenCalledWith(basePayload);
       expect(onDebug).not.toHaveBeenCalled();
     });
 
     it("forwards non-JSON full_tool_result strings verbatim", async () => {
-      const onAgentToolResponseFullPayload = vi.fn();
+      const onAgentToolResponse = vi.fn();
       const conversation = TestConversation.create({
-        onAgentToolResponseFullPayload,
+        onAgentToolResponse,
       });
 
       const nonJson = {
@@ -243,13 +243,13 @@ describe("BaseConversation", () => {
         agent_tool_response_full_payload: nonJson,
       });
 
-      expect(onAgentToolResponseFullPayload).toHaveBeenCalledWith(nonJson);
+      expect(onAgentToolResponse).toHaveBeenCalledWith(nonJson);
     });
 
     it("forwards truncated payloads with the truncated flag set", async () => {
-      const onAgentToolResponseFullPayload = vi.fn();
+      const onAgentToolResponse = vi.fn();
       const conversation = TestConversation.create({
-        onAgentToolResponseFullPayload,
+        onAgentToolResponse,
       });
 
       // The server caps at 64 KB and tags `truncated: true`. The SDK forwards
@@ -267,7 +267,7 @@ describe("BaseConversation", () => {
         agent_tool_response_full_payload: truncated,
       });
 
-      const received = onAgentToolResponseFullPayload.mock.calls[0]![0];
+      const received = onAgentToolResponse.mock.calls[0]![0];
       expect(received.truncated).toBe(true);
       expect(received.full_tool_result).toBe(truncatedBody);
       expect(received.full_tool_result.length).toBeGreaterThan(64_000);

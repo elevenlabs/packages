@@ -34,7 +34,6 @@ export type HookCallbacks = Pick<
   | "onVadScore"
   | "onInterruption"
   | "onAgentToolResponse"
-  | "onAgentToolResponseFullPayload"
   | "onAgentToolRequest"
   | "onConversationMetadata"
   | "onMCPToolCall"
