@@ -78,7 +78,9 @@ export type Callbacks = {
     props: Generated.AgentToolRequestClientEvent["agent_tool_request"]
   ) => void;
   onAgentToolResponse?: (
-    props: Generated.AgentToolResponseClientEvent["agent_tool_response"]
+    props:
+      | Generated.AgentToolResponseClientEvent["agent_tool_response"]
+      | Generated.AgentToolResponseFullPayloadClientEvent["agent_tool_response_full_payload"]
   ) => void;
   onConversationMetadata?: (
     props: Generated.ConversationMetadata["conversation_initiation_metadata_event"]

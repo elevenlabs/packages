@@ -174,6 +174,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "client_tool_call"
   | "agent_tool_request"
   | "agent_tool_response"
+  | "agent_tool_response_full_payload"
   | "mcp_tool_call"
   | "mcp_connection_status"
   | "vad_score"
@@ -359,6 +360,23 @@ export interface AgentToolResponse {
   is_error: boolean;
   is_called: boolean;
   event_id: number;
+}
+
+export interface AgentToolResponseFullPayloadMessage {
+  type: "agent_tool_response_full_payload";
+  agent_tool_response_full_payload: AgentToolResponseFullPayload;
+}
+
+export interface AgentToolResponseFullPayload {
+  tool_name: string;
+  tool_call_id: string;
+  tool_type: string;
+  is_error: boolean;
+  is_blocked?: boolean;
+  is_called: boolean;
+  event_id: number;
+  full_tool_result: string;
+  truncated?: boolean;
 }
 
 export interface McpToolCall {
@@ -566,6 +584,11 @@ export interface AgentToolRequestClientEvent {
 export interface AgentToolResponseClientEvent {
   type: "agent_tool_response";
   agent_tool_response: AgentToolResponse;
+}
+
+export interface AgentToolResponseFullPayloadClientEvent {
+  type: "agent_tool_response_full_payload";
+  agent_tool_response_full_payload: AgentToolResponseFullPayload;
 }
 
 export interface McpToolCallClientEvent {

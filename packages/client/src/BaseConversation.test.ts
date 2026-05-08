@@ -195,4 +195,82 @@ describe("BaseConversation", () => {
       expect(onDebug).not.toHaveBeenCalled();
     });
   });
+
+  describe("agent_tool_response_full_payload events", () => {
+    const basePayload = {
+      tool_name: "lookup_kb",
+      tool_call_id: "call_1",
+      tool_type: "webhook",
+      is_error: false,
+      is_blocked: false,
+      is_called: true,
+      event_id: 7,
+      full_tool_result: '{"sources":[{"url":"https://example.com/a"}]}',
+      truncated: false,
+    };
+
+    it("forwards the full JSON tool_result to onAgentToolResponse", async () => {
+      const onAgentToolResponse = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentToolResponse,
+        onDebug,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: basePayload,
+      });
+
+      expect(onAgentToolResponse).toHaveBeenCalledWith(basePayload);
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("forwards non-JSON full_tool_result strings verbatim", async () => {
+      const onAgentToolResponse = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentToolResponse,
+      });
+
+      const nonJson = {
+        ...basePayload,
+        is_error: true,
+        full_tool_result: "internal server error 500",
+      };
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: nonJson,
+      });
+
+      expect(onAgentToolResponse).toHaveBeenCalledWith(nonJson);
+    });
+
+    it("forwards truncated payloads with the truncated flag set", async () => {
+      const onAgentToolResponse = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentToolResponse,
+      });
+
+      // The server caps at 64 KB and tags `truncated: true`. The SDK forwards
+      // the already-truncated string verbatim — it does not re-truncate.
+      const truncatedBody =
+        '{"sources":[' + "a".repeat(64_000) + "[truncated +500 characters]";
+      const truncated = {
+        ...basePayload,
+        full_tool_result: truncatedBody,
+        truncated: true,
+      };
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: truncated,
+      });
+
+      const received = onAgentToolResponse.mock.calls[0]![0];
+      expect(received.truncated).toBe(true);
+      expect(received.full_tool_result).toBe(truncatedBody);
+      expect(received.full_tool_result.length).toBeGreaterThan(64_000);
+    });
+  });
 });

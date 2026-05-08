@@ -5,6 +5,7 @@ export type {
   AgentResponseCorrectionClientEvent,
   AgentToolRequestClientEvent,
   AgentToolResponseClientEvent,
+  AgentToolResponseFullPayloadClientEvent,
   AsrInitiationMetadataEvent,
   AudioClientEvent,
   ClientToolCallClientEvent,

@@ -483,6 +483,15 @@ export abstract class BaseConversation {
         return;
       }
 
+      case "agent_tool_response_full_payload": {
+        if (this.options.onAgentToolResponse) {
+          this.options.onAgentToolResponse(
+            parsedEvent.agent_tool_response_full_payload
+          );
+        }
+        return;
+      }
+
       case "conversation_initiation_metadata": {
         this.handleConversationMetadata(parsedEvent);
         return;
