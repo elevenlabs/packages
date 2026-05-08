@@ -5,13 +5,11 @@
 "@elevenlabs/react-native": minor
 ---
 
-Merge `onAgentToolResponseFullPayload` into `onAgentToolResponse`.
+Add full tool result payload support to `onAgentToolResponse`.
 
-The `onAgentToolResponse` callback now accepts a union of the summary (`agent_tool_response`) and full payload (`agent_tool_response_full_payload`) event types. Both server events are dispatched through the single `onAgentToolResponse` callback. Consumers can distinguish between the two by checking for the presence of `full_tool_result` on the payload.
+The `onAgentToolResponse` callback now also receives `agent_tool_response_full_payload` server events, delivering the raw `full_tool_result` string (capped at 64 KB) alongside the existing summary events. Consumers can distinguish between the two by checking for the presence of `full_tool_result` on the payload. To receive full payloads, enable the `agent_tool_response_full_payload` client event in the agent's configuration UI.
 
 ```tsx
-import { ConversationProvider } from "@elevenlabs/react-native";
-
 <ConversationProvider
   agentId="…"
   onAgentToolResponse={payload => {
