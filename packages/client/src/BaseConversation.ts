@@ -20,6 +20,7 @@ import type {
   VadScoreEvent,
   MCPToolCallClientEvent,
   AgentToolResponseEvent,
+  AgentToolResponseFullPayloadEvent,
   ConversationMetadataEvent,
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
@@ -359,6 +360,16 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleAgentToolResponseFullPayload(
+    event: AgentToolResponseFullPayloadEvent
+  ) {
+    if (this.options.onAgentToolResponseFullPayload) {
+      this.options.onAgentToolResponseFullPayload(
+        event.agent_tool_response_full_payload
+      );
+    }
+  }
+
   protected handleConversationMetadata(event: ConversationMetadataEvent) {
     if (this.options.onConversationMetadata) {
       this.options.onConversationMetadata(
@@ -480,6 +491,11 @@ export abstract class BaseConversation {
 
       case "agent_tool_response": {
         this.handleAgentToolResponse(parsedEvent);
+        return;
+      }
+
+      case "agent_tool_response_full_payload": {
+        this.handleAgentToolResponseFullPayload(parsedEvent);
         return;
       }
 

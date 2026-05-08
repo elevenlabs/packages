@@ -57,6 +57,7 @@ channels:
           - $ref: "#/components/messages/ClientToolCallMessage"
           - $ref: "#/components/messages/AgentToolRequestMessage"
           - $ref: "#/components/messages/AgentToolResponseMessage"
+          - $ref: "#/components/messages/AgentToolResponseFullPayloadMessage"
           - $ref: "#/components/messages/MCPToolCall"
           - $ref: "#/components/messages/MCPConnectionStatusMessage"
           - $ref: "#/components/messages/VADScore"
@@ -255,6 +256,14 @@ components:
       payload:
         $ref: "#/components/schemas/AgentToolResponsePayload"
 
+    AgentToolResponseFullPayloadMessage:
+      name: AgentToolResponseFullPayloadClientEvent
+      title: Agent Tool Response Full Payload
+      summary: Tool response including the tool's full result payload as a string
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentToolResponseFullPayloadPayload"
+
     MCPToolCall:
       name: MCPToolCallClientEvent
       title: MCP Tool Call
@@ -344,6 +353,7 @@ components:
         - client_tool_call
         - agent_tool_request
         - agent_tool_response
+        - agent_tool_response_full_payload
         - mcp_tool_call
         - mcp_connection_status
         - vad_score
@@ -836,6 +846,16 @@ components:
         agent_tool_response:
           $ref: "#/components/schemas/AgentToolResponseData"
 
+    AgentToolResponseFullPayloadPayload:
+      type: object
+      required: [agent_tool_response_full_payload, type]
+      properties:
+        type:
+          type: string
+          const: agent_tool_response_full_payload
+        agent_tool_response_full_payload:
+          $ref: "#/components/schemas/AgentToolResponseFullPayloadData"
+
     MCPToolCallPayload:
       type: object
       required: [mcp_tool_call, type]
@@ -1026,6 +1046,48 @@ components:
           description: Whether the tool has been called and execution started
         event_id:
           type: integer
+
+    AgentToolResponseFullPayloadData:
+      type: object
+      required:
+        [
+          tool_name,
+          tool_call_id,
+          tool_type,
+          is_error,
+          is_called,
+          event_id,
+          full_tool_result,
+        ]
+      properties:
+        tool_name:
+          type: string
+          description: Name of the tool that was executed
+        tool_call_id:
+          type: string
+          description: Unique identifier for the tool call
+        tool_type:
+          type: string
+          description: Type of tool (client, system, or mcp)
+        is_error:
+          type: boolean
+          description: Whether the tool execution resulted in an error
+        is_blocked:
+          type: boolean
+          default: false
+          description: Whether the tool call was blocked
+        is_called:
+          type: boolean
+          description: Whether the tool has been called and execution started
+        event_id:
+          type: integer
+        full_tool_result:
+          type: string
+          description: The tool's full result, forwarded verbatim as an opaque string
+        truncated:
+          type: boolean
+          default: false
+          description: Whether the full_tool_result was truncated to fit the size cap
 
     MCPConnectionStatusData:
       type: object

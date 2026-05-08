@@ -80,6 +80,9 @@ export type Callbacks = {
   onAgentToolResponse?: (
     props: Generated.AgentToolResponseClientEvent["agent_tool_response"]
   ) => void;
+  onAgentToolResponseFullPayload?: (
+    props: Generated.AgentToolResponseFullPayloadClientEvent["agent_tool_response_full_payload"]
+  ) => void;
   onConversationMetadata?: (
     props: Generated.ConversationMetadata["conversation_initiation_metadata_event"]
   ) => void;
@@ -122,6 +125,7 @@ export const CALLBACK_KEYS = [
   "onMCPConnectionStatus",
   "onAgentToolRequest",
   "onAgentToolResponse",
+  "onAgentToolResponseFullPayload",
   "onConversationMetadata",
   "onAsrInitiationMetadata",
   "onInterruption",

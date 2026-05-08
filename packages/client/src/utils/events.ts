@@ -3,6 +3,7 @@ import type {
   AgentResponse,
   AgentResponseCorrection,
   AgentToolResponseClientEvent,
+  AgentToolResponseFullPayloadClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
   AudioAlignmentEvent,
@@ -36,6 +37,8 @@ export type MCPToolCallClientEvent = McpToolCall;
 export type AgentResponseCorrectionEvent = AgentResponseCorrection;
 export type AgentToolRequestEvent = AgentToolRequestClientEvent;
 export type AgentToolResponseEvent = AgentToolResponseClientEvent;
+export type AgentToolResponseFullPayloadEvent =
+  AgentToolResponseFullPayloadClientEvent;
 export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
@@ -58,6 +61,7 @@ export type IncomingSocketEvent =
   | MCPToolCallClientEvent
   | AgentToolRequestEvent
   | AgentToolResponseEvent
+  | AgentToolResponseFullPayloadEvent
   | ConversationMetadataEvent
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
