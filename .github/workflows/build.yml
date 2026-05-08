@@ -29,5 +29,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check Expo dependency alignment
+        run: pnpm --dir examples/react-native-expo exec expo install --check
+
       - name: Run build
         run: pnpm run build
