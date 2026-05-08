@@ -234,7 +234,11 @@ export class ScribeRealtime {
       "microphone" in options && options.microphone
         ? 16000
         : (options as AudioOptions).sampleRate;
-    const connection = new RealtimeConnection(sampleRate);
+    const usesMicrophone =
+      "microphone" in options && Boolean(options.microphone);
+    const connection = new RealtimeConnection(sampleRate, {
+      supportsMicrophoneMute: usesMicrophone,
+    });
 
     // Build WebSocket URI with query parameters
     const uri = ScribeRealtime.buildWebSocketUri(options);
@@ -306,8 +310,11 @@ export class ScribeRealtime {
       }
 
       // Store the track so mute()/unmute() can toggle track.enabled.
+      // If mute() was called before mic setup finished, honour that state now.
       const [audioTrack] = stream.getAudioTracks();
-      connection._mediaStreamTrack = audioTrack;
+      if (audioTrack) {
+        connection._setMediaStreamTrack(audioTrack);
+      }
 
       // Handle audio data from worklet
       scribeNode.port.onmessage = event => {

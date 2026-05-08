@@ -198,12 +198,17 @@ export class RealtimeConnection {
   private eventEmitter: EventEmitter = new EventEmitter();
   private currentSampleRate: number = 16000;
   private _muted: boolean = false;
+  private readonly supportsMicrophoneMute: boolean;
   public _audioCleanup?: () => void;
   /** @internal Set by ScribeRealtime in microphone mode to enable track-level muting. */
   public _mediaStreamTrack?: MediaStreamTrack;
 
-  constructor(sampleRate: number) {
+  constructor(
+    sampleRate: number,
+    options: { supportsMicrophoneMute?: boolean } = {}
+  ) {
     this.currentSampleRate = sampleRate;
+    this.supportsMicrophoneMute = options.supportsMicrophoneMute ?? false;
   }
 
   /**
@@ -213,6 +218,9 @@ export class RealtimeConnection {
    * browser captures silence instead of real microphone input. Silence continues
    * to be sent to the server to keep the connection alive.
    *
+   * Before microphone setup finishes, `mute()` can queue this state so the track
+   * is disabled as soon as it becomes available.
+   *
    * Muting is only supported when this connection was created with microphone
    * options. Manual audio connections cannot be muted because `send()` forwards
    * caller-provided audio directly.
@@ -221,17 +229,24 @@ export class RealtimeConnection {
     return this._muted;
   }
 
-  private getMediaStreamTrackForMute(
-    action: "mute" | "unmute"
-  ): MediaStreamTrack {
-    if (!this._mediaStreamTrack) {
+  /**
+   * @internal
+   * Attaches the microphone track once asynchronous microphone setup completes.
+   */
+  public _setMediaStreamTrack(mediaStreamTrack: MediaStreamTrack): void {
+    this._mediaStreamTrack = mediaStreamTrack;
+    if (this._muted) {
+      mediaStreamTrack.enabled = false;
+    }
+  }
+
+  private assertMuteSupported(action: "mute" | "unmute"): void {
+    if (!this.supportsMicrophoneMute && !this._mediaStreamTrack) {
       throw new Error(
-        `Cannot ${action} audio without an active microphone MediaStreamTrack. ` +
+        `Cannot ${action} audio for a manual audio connection. ` +
           "mute() and unmute() are only supported for microphone connections."
       );
     }
-
-    return this._mediaStreamTrack;
   }
 
   /**
@@ -240,30 +255,36 @@ export class RealtimeConnection {
    * In microphone mode, disables the underlying `MediaStreamTrack` so the browser
    * replaces real microphone input with silence. The silence continues to flow to
    * the server, keeping the connection alive without producing transcriptions.
+   * If microphone setup is still pending, the muted state is applied once the
+   * track is attached.
    *
-   * @throws {Error} If this connection was not created with microphone options
-   * or no microphone `MediaStreamTrack` is available.
+   * @throws {Error} If this connection was not created with microphone options.
    */
   public mute(): void {
-    const mediaStreamTrack = this.getMediaStreamTrackForMute("mute");
+    this.assertMuteSupported("mute");
 
     this._muted = true;
-    mediaStreamTrack.enabled = false;
+    if (this._mediaStreamTrack) {
+      this._mediaStreamTrack.enabled = false;
+    }
   }
 
   /**
    * Unmutes audio capture.
    *
-   * Re-enables the `MediaStreamTrack` so real microphone audio flows again.
+   * Re-enables the `MediaStreamTrack` so real microphone audio flows again. If
+   * microphone setup is still pending, clears any queued muted state before the
+   * track is attached.
    *
-   * @throws {Error} If this connection was not created with microphone options
-   * or no microphone `MediaStreamTrack` is available.
+   * @throws {Error} If this connection was not created with microphone options.
    */
   public unmute(): void {
-    const mediaStreamTrack = this.getMediaStreamTrackForMute("unmute");
+    this.assertMuteSupported("unmute");
 
     this._muted = false;
-    mediaStreamTrack.enabled = true;
+    if (this._mediaStreamTrack) {
+      this._mediaStreamTrack.enabled = true;
+    }
   }
 
   /**

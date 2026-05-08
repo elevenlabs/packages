@@ -741,12 +741,12 @@ describe("Scribe", () => {
       });
 
       expect(() => connection.mute()).toThrow(
-        "Cannot mute audio without an active microphone MediaStreamTrack"
+        "Cannot mute audio for a manual audio connection"
       );
       expect(connection.isMuted).toBe(false);
 
       expect(() => connection.unmute()).toThrow(
-        "Cannot unmute audio without an active microphone MediaStreamTrack"
+        "Cannot unmute audio for a manual audio connection"
       );
       expect(connection.isMuted).toBe(false);
 
@@ -757,10 +757,27 @@ describe("Scribe", () => {
     it("mute() disables and unmute() re-enables the microphone track", () => {
       const connection = new RealtimeConnection(16000);
       const mediaStreamTrack = { enabled: true } as MediaStreamTrack;
-      connection._mediaStreamTrack = mediaStreamTrack;
+      connection._setMediaStreamTrack(mediaStreamTrack);
 
       connection.mute();
       expect(connection.isMuted).toBe(true);
+      expect(mediaStreamTrack.enabled).toBe(false);
+
+      connection.unmute();
+      expect(connection.isMuted).toBe(false);
+      expect(mediaStreamTrack.enabled).toBe(true);
+    });
+
+    it("mute() queues the muted state while microphone setup is pending", () => {
+      const connection = new RealtimeConnection(16000, {
+        supportsMicrophoneMute: true,
+      });
+
+      connection.mute();
+      expect(connection.isMuted).toBe(true);
+
+      const mediaStreamTrack = { enabled: true } as MediaStreamTrack;
+      connection._setMediaStreamTrack(mediaStreamTrack);
       expect(mediaStreamTrack.enabled).toBe(false);
 
       connection.unmute();
@@ -792,7 +809,7 @@ describe("Scribe", () => {
       await sleep(100);
 
       expect(() => connection.mute()).toThrow(
-        "Cannot mute audio without an active microphone MediaStreamTrack"
+        "Cannot mute audio for a manual audio connection"
       );
       connection.send({ audioBase64: "dGVzdA==" });
 
