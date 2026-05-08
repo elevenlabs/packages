@@ -52,7 +52,11 @@
       "dependsOn": ["generate", "^build"]
     },
     "generate": {
-      "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
+      "dependsOn": ["generate-types", "generate-version", "generate-worklets", "generate-events"]
+    },
+    "generate-events": {
+      "inputs": ["schemas/**/*.yaml", "scripts/generate-events.ts"],
+      "outputs": ["src/generated/**"]
     },
     "generate-types": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
