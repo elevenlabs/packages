@@ -1,5 +1,5 @@
 import { writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { dirname } from 'path';
 
 const version = process.env.npm_package_version;
 const outputPath = process.argv[2] || 'src/version.ts';
