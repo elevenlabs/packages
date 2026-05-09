@@ -15,15 +15,15 @@
     "dist"
   ],
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "prebuild": "npm run generate-version",
-    "build:esm": "tsc --build",
+    "generate-version": "node ../../scripts/generate-version.mjs",
+    "prebuild": "node --run generate-version",
+    "build:esm": "tsc --build tsconfig.build.json",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsReact -o dist/lib.iife.js --sourcemap --external react --external react-dom --external @elevenlabs/client --external @elevenlabs/client/internal",
-    "build": "node --run build:esm && node --run build:iife",
+    "build": "node --run generate-version && node --run build:esm && node --run build:iife",
     "clean": "tsc --build --clean && rm -rf ./dist",
     "dev": "tsc --build --watch",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier \"src/**/*.ts\" --check",
     "test": "vitest"
   },
   "keywords": [],

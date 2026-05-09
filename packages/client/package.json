@@ -13,15 +13,15 @@
     "./internal": "./dist/internal.js"
   },
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "generate-worklets": "node scripts/generateWorklets.js",
-    "build:esm": "tsc --build",
+    "generate-version": "node ../../scripts/generate-version.mjs",
+    "generate-worklets": "node scripts/generateWorklets.js && prettier src/utils/*.generated.ts --write",
+    "build:esm": "tsc --build tsconfig.build.json",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
-    "build": "node --run build:esm && node --run build:iife",
+    "build": "node --run generate-version && node --run build:esm && node --run build:iife",
     "dev": "tsc --build --watch",
     "clean": "tsc --build --clean && rm -rf ./dist",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier \"src/**/*.ts\" --check",
     "test": "vitest"
   },
   "keywords": [],
