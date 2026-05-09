@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "generate-types": "node ./scripts/generate-all-types.ts && prettier --write \"./generated/types/**/*.ts\"",
+    "generate": "node --run generate-types",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist generated/types",
