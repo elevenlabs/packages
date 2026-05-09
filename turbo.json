@@ -78,11 +78,7 @@
       ]
     },
     "generate": {
-      "dependsOn": [
-        "generate-types",
-        "generate-version",
-        "generate-worklets"
-      ]
+      "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
     },
     "generate-types": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
