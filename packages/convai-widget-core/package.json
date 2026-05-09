@@ -8,7 +8,6 @@
   "type": "module",
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
-    "generate": "node --run generate-version",
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
     "build:analyze": "ANALYZE=true vite build",
     "dev": "vite",

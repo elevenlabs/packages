@@ -16,7 +16,6 @@
   ],
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
-    "generate": "node --run generate-version",
     "build:esm": "tsc --build tsconfig.build.json",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsReact -o dist/lib.iife.js --sourcemap --external react --external react-dom --external @elevenlabs/client --external @elevenlabs/client/internal",
     "build": "node --run build:esm && node --run build:iife",

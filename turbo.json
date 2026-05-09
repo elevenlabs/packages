@@ -4,7 +4,12 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": ["generate", "^build"],
+      "dependsOn": [
+        "generate-version",
+        "generate-worklets",
+        "generate-types",
+        "^build"
+      ],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
@@ -13,7 +18,13 @@
         "tsconfig.build.json",
         "tsconfig.test.json"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**", "*.tsbuildinfo"]
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**",
+        "generated/**",
+        "*.tsbuildinfo"
+      ]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -32,16 +43,26 @@
       "dependsOn": ["^build", "lint:es", "lint:prettier", "check-types"]
     },
     "lint:es": {
-      "dependsOn": ["generate"],
+      "dependsOn": ["generate-version", "generate-worklets", "generate-types"],
       "inputs": ["src/**", ".eslintrc*", "eslint.config.*"]
     },
     "lint:prettier": {
-      "dependsOn": ["generate"],
+      "dependsOn": ["generate-version", "generate-worklets", "generate-types"],
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
-      "dependsOn": ["^build", "generate"],
-      "inputs": ["src/**", "tsconfig.json", "tsconfig.build.json", "tsconfig.test.json"]
+      "dependsOn": [
+        "^build",
+        "generate-version",
+        "generate-worklets",
+        "generate-types"
+      ],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.build.json",
+        "tsconfig.test.json"
+      ]
     },
     "clean": {
       "cache": false
@@ -49,10 +70,19 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["generate", "^build"]
+      "dependsOn": [
+        "generate-version",
+        "generate-worklets",
+        "generate-types",
+        "^build"
+      ]
     },
     "generate": {
-      "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
+      "dependsOn": [
+        "generate-types",
+        "generate-version",
+        "generate-worklets"
+      ]
     },
     "generate-types": {
       "inputs": ["schemas/**/*.yaml", "schemas/**/*.yml"],
