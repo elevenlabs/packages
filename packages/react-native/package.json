@@ -12,7 +12,7 @@
   },
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
-    "build": "node --run generate-version && tsc --build tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "dev": "tsc --build tsconfig.build.json --watch",
     "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
     "check-types": "tsc --noEmit --skipLibCheck",

@@ -17,7 +17,7 @@
     "generate-worklets": "node scripts/generateWorklets.js && prettier src/utils/*.generated.ts --write",
     "build:esm": "tsc --build tsconfig.build.json",
     "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
-    "build": "node --run generate-version && node --run build:esm && node --run build:iife",
+    "build": "node --run build:esm && node --run build:iife",
     "dev": "tsc --build --watch",
     "clean": "tsc --build --clean && rm -rf ./dist",
     "lint:es": "pnpm exec eslint .",
