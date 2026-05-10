@@ -51,6 +51,33 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
 }
 
+type SortableDisplayMessage = {
+  entry: Extract<DisplayTranscriptEntry, { type: "message" }>;
+  originalIndex: number;
+};
+
+function compareSortableDisplayMessages(
+  a: SortableDisplayMessage,
+  b: SortableDisplayMessage
+): number {
+  const ea = a.entry;
+  const eb = b.entry;
+  if (ea.conversationIndex !== eb.conversationIndex) {
+    return ea.conversationIndex - eb.conversationIndex;
+  }
+  const aEventId = ea.eventId!;
+  const bEventId = eb.eventId!;
+  if (aEventId !== bEventId) {
+    return aEventId - bEventId;
+  }
+  const roleRank = (role: Role) => (role === "user" ? 0 : 1);
+  const roleDelta = roleRank(ea.role) - roleRank(eb.role);
+  if (roleDelta !== 0) {
+    return roleDelta;
+  }
+  return a.originalIndex - b.originalIndex;
+}
+
 export function buildDisplayTranscript(
   entries: TranscriptEntry[],
   config: DisplayTranscriptConfig
@@ -136,28 +163,27 @@ export function buildDisplayTranscript(
     result.push(entry);
   }
 
-  // Sort message entries by eventId to fix ordering when server sends
-  // agent_response before user_transcript in voice mode.
-  // Only reorder entries that have an eventId; leave others in place.
-  const sortableIndices: number[] = [];
-  const sortableEntries: DisplayTranscriptEntry[] = [];
+  // Reorder only message rows that carry a server eventId: scope by
+  // conversationIndex, sort by turn id (eventId), then user before agent when
+  // both share the same turn. Rows without eventId keep their slots; non-message
+  // rows stay fixed (mitigates live user_transcript vs agent_response races).
+  const sortable: SortableDisplayMessage[] = [];
   for (let i = 0; i < result.length; i++) {
     const entry = result[i];
     if (entry.type === "message" && entry.eventId != null) {
-      sortableIndices.push(i);
-      sortableEntries.push(entry);
+      sortable.push({
+        entry: entry as Extract<DisplayTranscriptEntry, { type: "message" }>,
+        originalIndex: i,
+      });
     }
   }
-  sortableEntries.sort((a, b) => {
-    const aId = (a as Extract<DisplayTranscriptEntry, { type: "message" }>)
-      .eventId!;
-    const bId = (b as Extract<DisplayTranscriptEntry, { type: "message" }>)
-      .eventId!;
-    return aId - bId;
-  });
+  const sortableIndices = sortable
+    .map(row => row.originalIndex)
+    .sort((a, b) => a - b);
+  sortable.sort(compareSortableDisplayMessages);
   const sorted = [...result];
-  for (let i = 0; i < sortableIndices.length; i++) {
-    sorted[sortableIndices[i]] = sortableEntries[i];
+  for (let i = 0; i < sortable.length; i++) {
+    sorted[sortableIndices[i]] = sortable[i].entry;
   }
 
   // Attach tool status to agent messages

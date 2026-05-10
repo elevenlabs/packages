@@ -294,6 +294,74 @@ describe("buildDisplayTranscript", () => {
   });
 
   describe("eventId sorting", () => {
+    it("same eventId: user before agent when agent_response arrives first (shared turn id)", () => {
+      const input = [
+        msg("agent", "Hello!", { eventId: 1, isText: false }),
+        msg("user", "Hi", { eventId: 1, isText: false }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ role: "user", message: "Hi" });
+      expect(result[1]).toMatchObject({ role: "agent", message: "Hello!" });
+    });
+
+    it("same eventId: agent-only turn stays agent without invented user", () => {
+      const input = [msg("agent", "Prologue", { eventId: 1, isText: true })];
+      const result = build(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        role: "agent",
+        message: "Prologue",
+      });
+    });
+
+    it("second conversation stays after first when event ids reset", () => {
+      const input: TranscriptEntry[] = [
+        msg("user", "c0 user", { eventId: 1, conversationIndex: 0 }),
+        msg("agent", "c0 agent", { eventId: 2, conversationIndex: 0 }),
+        { type: "disconnection", role: "user", conversationIndex: 0 },
+        msg("agent", "c1 first", { eventId: 1, conversationIndex: 1 }),
+        msg("user", "c1 second", { eventId: 1, conversationIndex: 1 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(5);
+      expect(result[0]).toMatchObject({
+        role: "user",
+        message: "c0 user",
+        conversationIndex: 0,
+      });
+      expect(result[1]).toMatchObject({
+        role: "agent",
+        message: "c0 agent",
+        conversationIndex: 0,
+      });
+      expect(result[2]).toMatchObject({ type: "disconnection" });
+      expect(result[3]).toMatchObject({
+        role: "user",
+        message: "c1 second",
+        conversationIndex: 1,
+      });
+      expect(result[4]).toMatchObject({
+        role: "agent",
+        message: "c1 first",
+        conversationIndex: 1,
+      });
+    });
+
+    it("local user without eventId stays before server message in same layout", () => {
+      const input = [
+        msg("user", "typed locally", { isText: true }),
+        msg("agent", "server", { eventId: 5, isText: true }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        role: "user",
+        message: "typed locally",
+      });
+      expect(result[1]).toMatchObject({ role: "agent", message: "server" });
+    });
+
     it("reorders agent before user when agent_response arrives first in voice mode", () => {
       const input = [
         msg("agent", "Hello!", { eventId: 2, isText: false }),
