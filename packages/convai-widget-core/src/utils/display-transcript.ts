@@ -60,18 +60,13 @@ function compareSortableDisplayMessages(
   a: SortableDisplayMessage,
   b: SortableDisplayMessage
 ): number {
-  const ea = a.entry;
-  const eb = b.entry;
-  if (ea.conversationIndex !== eb.conversationIndex) {
-    return ea.conversationIndex - eb.conversationIndex;
-  }
-  const aEventId = ea.eventId!;
-  const bEventId = eb.eventId!;
+  const aEventId = a.entry.eventId!;
+  const bEventId = b.entry.eventId!;
   if (aEventId !== bEventId) {
     return aEventId - bEventId;
   }
   const roleRank = (role: Role) => (role === "user" ? 0 : 1);
-  const roleDelta = roleRank(ea.role) - roleRank(eb.role);
+  const roleDelta = roleRank(a.entry.role) - roleRank(b.entry.role);
   if (roleDelta !== 0) {
     return roleDelta;
   }
@@ -163,10 +158,11 @@ export function buildDisplayTranscript(
     result.push(entry);
   }
 
-  // Reorder only message rows that carry a server eventId: scope by
-  // conversationIndex, sort by turn id (eventId), then user before agent when
-  // both share the same turn. Rows without eventId keep their slots; non-message
-  // rows stay fixed (mitigates live user_transcript vs agent_response races).
+  // Reorder only message rows that carry a server eventId: sort by turn id,
+  // then user-before-agent when both events of a turn share the same eventId
+  // (the backend ships user_transcript via create_task and agent_response via
+  // await, so within a turn either can win the wire). Rows without eventId
+  // keep their slots; non-message rows stay fixed.
   const sortable: SortableDisplayMessage[] = [];
   for (let i = 0; i < result.length; i++) {
     const entry = result[i];

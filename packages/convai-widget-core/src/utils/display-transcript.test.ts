@@ -315,39 +315,6 @@ describe("buildDisplayTranscript", () => {
       });
     });
 
-    it("second conversation stays after first when event ids reset", () => {
-      const input: TranscriptEntry[] = [
-        msg("user", "c0 user", { eventId: 1, conversationIndex: 0 }),
-        msg("agent", "c0 agent", { eventId: 2, conversationIndex: 0 }),
-        { type: "disconnection", role: "user", conversationIndex: 0 },
-        msg("agent", "c1 first", { eventId: 1, conversationIndex: 1 }),
-        msg("user", "c1 second", { eventId: 1, conversationIndex: 1 }),
-      ];
-      const result = build(input);
-      expect(result).toHaveLength(5);
-      expect(result[0]).toMatchObject({
-        role: "user",
-        message: "c0 user",
-        conversationIndex: 0,
-      });
-      expect(result[1]).toMatchObject({
-        role: "agent",
-        message: "c0 agent",
-        conversationIndex: 0,
-      });
-      expect(result[2]).toMatchObject({ type: "disconnection" });
-      expect(result[3]).toMatchObject({
-        role: "user",
-        message: "c1 second",
-        conversationIndex: 1,
-      });
-      expect(result[4]).toMatchObject({
-        role: "agent",
-        message: "c1 first",
-        conversationIndex: 1,
-      });
-    });
-
     it("local user without eventId stays before server message in same layout", () => {
       const input = [
         msg("user", "typed locally", { isText: true }),
