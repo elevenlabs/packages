@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.12.4
+
+### Patch Changes
+
+- 2cb042f: Fix voice widget transcripts so streamed agent response parts are ignored for voice sessions and late user transcripts are inserted before their matching agent response.
+
 ## 0.12.3
 
 ### Patch Changes
