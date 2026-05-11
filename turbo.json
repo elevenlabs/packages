@@ -5,9 +5,7 @@
   "tasks": {
     "build": {
       "dependsOn": [
-        "generate-version",
-        "generate-worklets",
-        "generate-types",
+        "generate",
         "^build"
       ],
       "inputs": [
@@ -43,19 +41,17 @@
       "dependsOn": ["^build", "lint:es", "lint:prettier", "check-types"]
     },
     "lint:es": {
-      "dependsOn": ["generate-version", "generate-worklets", "generate-types"],
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".eslintrc*", "eslint.config.*"]
     },
     "lint:prettier": {
-      "dependsOn": ["generate-version", "generate-worklets", "generate-types"],
+      "dependsOn": ["generate"],
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
       "dependsOn": [
         "^build",
-        "generate-version",
-        "generate-worklets",
-        "generate-types"
+        "generate"
       ],
       "inputs": [
         "src/**",
@@ -71,9 +67,7 @@
       "cache": false,
       "persistent": true,
       "dependsOn": [
-        "generate-version",
-        "generate-worklets",
-        "generate-types",
+        "generate",
         "^build"
       ]
     },
