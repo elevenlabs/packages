@@ -293,16 +293,16 @@ describe("buildDisplayTranscript", () => {
     });
   });
 
-  describe("eventId sorting", () => {
-    it("same eventId: user before agent when agent_response arrives first (shared turn id)", () => {
+  describe("message ordering", () => {
+    it("preserves source order for same eventId messages", () => {
       const input = [
         msg("agent", "Hello!", { eventId: 1, isText: false }),
         msg("user", "Hi", { eventId: 1, isText: false }),
       ];
       const result = build(input);
       expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({ role: "user", message: "Hi" });
-      expect(result[1]).toMatchObject({ role: "agent", message: "Hello!" });
+      expect(result[0]).toMatchObject({ role: "agent", message: "Hello!" });
+      expect(result[1]).toMatchObject({ role: "user", message: "Hi" });
     });
 
     it("same eventId: agent-only turn stays agent without invented user", () => {
@@ -329,15 +329,15 @@ describe("buildDisplayTranscript", () => {
       expect(result[1]).toMatchObject({ role: "agent", message: "server" });
     });
 
-    it("reorders agent before user when agent_response arrives first in voice mode", () => {
+    it("preserves source order across different eventIds", () => {
       const input = [
         msg("agent", "Hello!", { eventId: 2, isText: false }),
         msg("user", "Hi", { eventId: 1, isText: false }),
       ];
       const result = build(input);
       expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({ role: "user", message: "Hi" });
-      expect(result[1]).toMatchObject({ role: "agent", message: "Hello!" });
+      expect(result[0]).toMatchObject({ role: "agent", message: "Hello!" });
+      expect(result[1]).toMatchObject({ role: "user", message: "Hi" });
     });
 
     it("preserves order when eventIds are already sequential", () => {
@@ -351,7 +351,7 @@ describe("buildDisplayTranscript", () => {
       expect(result[1]).toMatchObject({ role: "agent", message: "Hello!" });
     });
 
-    it("sorts correctly when non-message entries sit between misordered messages", () => {
+    it("preserves non-message entries between messages", () => {
       const input: TranscriptEntry[] = [
         msg("agent", "Hello!", { eventId: 2, isText: false }),
         { type: "mode_toggle", mode: "text", conversationIndex: 0 },
@@ -359,10 +359,9 @@ describe("buildDisplayTranscript", () => {
       ];
       const result = build(input);
       expect(result).toHaveLength(3);
-      // Messages with eventId are reordered; mode_toggle stays in place
-      expect(result[0]).toMatchObject({ role: "user", message: "Hi" });
+      expect(result[0]).toMatchObject({ role: "agent", message: "Hello!" });
       expect(result[1]).toMatchObject({ type: "mode_toggle" });
-      expect(result[2]).toMatchObject({ role: "agent", message: "Hello!" });
+      expect(result[2]).toMatchObject({ role: "user", message: "Hi" });
     });
 
     it("keeps entries without eventId in their original position", () => {
