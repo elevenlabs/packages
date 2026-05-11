@@ -18,6 +18,7 @@ updates:
           - "expo"
           - "expo-*"
           - "@expo/*"
+          - "@config-plugins/*"
           - "react-native"
           - "react-native-*"
       eslint:
