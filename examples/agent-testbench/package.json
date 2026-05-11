@@ -53,7 +53,7 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "web-vitals": "^5.1.0",
+    "web-vitals": "^5.2.0",
     "zod": "^4.3.5"
   }
 }
