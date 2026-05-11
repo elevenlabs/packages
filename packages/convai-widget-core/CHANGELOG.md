@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.12.3
+
+### Patch Changes
+
+- 0b36f6b: Break ties on shared `eventId` with user-before-agent in transcript ordering. Fixes voice/DTMF turns where the agent message could render before the user transcript when both events of the turn carry the same `event_id`.
+
 ## 0.12.2
 
 ### Patch Changes
