@@ -51,28 +51,6 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
 }
 
-type SortableDisplayMessage = {
-  entry: Extract<DisplayTranscriptEntry, { type: "message" }>;
-  originalIndex: number;
-};
-
-function compareSortableDisplayMessages(
-  a: SortableDisplayMessage,
-  b: SortableDisplayMessage
-): number {
-  const aEventId = a.entry.eventId!;
-  const bEventId = b.entry.eventId!;
-  if (aEventId !== bEventId) {
-    return aEventId - bEventId;
-  }
-  const roleRank = (role: Role) => (role === "user" ? 0 : 1);
-  const roleDelta = roleRank(a.entry.role) - roleRank(b.entry.role);
-  if (roleDelta !== 0) {
-    return roleDelta;
-  }
-  return a.originalIndex - b.originalIndex;
-}
-
 export function buildDisplayTranscript(
   entries: TranscriptEntry[],
   config: DisplayTranscriptConfig
@@ -158,34 +136,10 @@ export function buildDisplayTranscript(
     result.push(entry);
   }
 
-  // Reorder only message rows that carry a server eventId: sort by turn id,
-  // then user-before-agent when both events of a turn share the same eventId
-  // (the backend ships user_transcript via create_task and agent_response via
-  // await, so within a turn either can win the wire). Rows without eventId
-  // keep their slots; non-message rows stay fixed.
-  const sortable: SortableDisplayMessage[] = [];
-  for (let i = 0; i < result.length; i++) {
-    const entry = result[i];
-    if (entry.type === "message" && entry.eventId != null) {
-      sortable.push({
-        entry: entry as Extract<DisplayTranscriptEntry, { type: "message" }>,
-        originalIndex: i,
-      });
-    }
-  }
-  const sortableIndices = sortable
-    .map(row => row.originalIndex)
-    .sort((a, b) => a - b);
-  sortable.sort(compareSortableDisplayMessages);
-  const sorted = [...result];
-  for (let i = 0; i < sortable.length; i++) {
-    sorted[sortableIndices[i]] = sortable[i].entry;
-  }
-
   // Attach tool status to agent messages
   if (config.showAgentStatus) {
-    for (let i = 0; i < sorted.length; i++) {
-      const entry = sorted[i];
+    for (let i = 0; i < result.length; i++) {
+      const entry = result[i];
       if (
         entry.type !== "message" ||
         entry.role !== "agent" ||
@@ -201,9 +155,9 @@ export function buildDisplayTranscript(
           : status.error > 0
             ? ToolCallStatus.ERROR
             : ToolCallStatus.SUCCESS;
-      sorted[i] = { ...entry, toolStatus };
+      result[i] = { ...entry, toolStatus };
     }
   }
 
-  return sorted;
+  return result;
 }
