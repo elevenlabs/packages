@@ -2,3 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
   - "examples/*"
+
+# Don't resolve package versions published less than 7 days ago.
+# This mitigates supply chain attacks where malicious versions are typically
+# detected and removed within hours. See https://pnpm.io/supply-chain-security
+minimumReleaseAge: 10080 # 7 days
