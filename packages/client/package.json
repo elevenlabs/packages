@@ -8,6 +8,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "unpkg": "./dist/lib.iife.js",
+      "browser": "./dist/platform/web/index.js",
       "default": "./dist/index.js"
     },
     "./internal": "./dist/internal.js"
