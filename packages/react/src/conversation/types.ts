@@ -26,6 +26,8 @@ export type HookCallbacks = Pick<
   | "onError"
   | "onMessage"
   | "onAudio"
+  | "onInputAudioStream"
+  | "onOutputAudioStream"
   | "onModeChange"
   | "onStatusChange"
   | "onCanSendFeedbackChange"

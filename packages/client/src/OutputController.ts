@@ -1,4 +1,5 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
+import type { AudioStreamListener } from "./AudioStream.js";
 
 export type OutputDeviceConfig = {
   outputDeviceId?: string;
@@ -9,6 +10,10 @@ export interface OutputController {
   setDevice(config?: Partial<FormatConfig> & OutputDeviceConfig): Promise<void>;
   setVolume(volume: number): void;
   interrupt(resetDuration?: number): void;
+  /** Returns the assistant output audio stream, if one is available. */
+  getAudioStream(): MediaStream | null;
+  addAudioStreamListener(listener: AudioStreamListener): void;
+  removeAudioStreamListener(listener: AudioStreamListener): void;
 
   /**
    * @deprecated AnalyserNode is a web-only API and will not work on all
