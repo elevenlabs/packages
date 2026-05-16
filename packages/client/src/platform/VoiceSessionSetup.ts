@@ -3,6 +3,7 @@ import type { BaseConnection } from "../utils/BaseConnection.js";
 import type { InputController } from "../InputController.js";
 import type { OutputController } from "../OutputController.js";
 import type { PlaybackEventTarget } from "../OutputController.js";
+import { WebRTCConnection } from "../utils/WebRTCConnection.js";
 
 export type VoiceSessionSetupResult = {
   connection: BaseConnection;
@@ -29,4 +30,27 @@ export let setupStrategy: VoiceSessionSetupStrategy | undefined;
  */
 export function setSetupStrategy(strategy: VoiceSessionSetupStrategy) {
   setupStrategy = strategy;
+}
+
+/**
+ * Sets up a voice session for a WebRTC connection.
+ * Platform-agnostic: extracts the input/output controllers that
+ * WebRTCConnection already provides via LiveKit.
+ */
+export function setupWebRTCSession(
+  connection: BaseConnection
+): VoiceSessionSetupResult {
+  if (!(connection instanceof WebRTCConnection)) {
+    throw new Error(
+      "setupWebRTCSession requires a WebRTCConnection. " +
+        `Received: ${connection.constructor.name}`
+    );
+  }
+  return {
+    connection,
+    input: connection.input,
+    output: connection.output,
+    playbackEventTarget: null,
+    detach: () => {},
+  };
 }

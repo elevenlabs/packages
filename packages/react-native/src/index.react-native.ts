@@ -6,7 +6,8 @@ import {
 import type { Options } from "@elevenlabs/client";
 import {
   setSetupStrategy,
-  webSessionSetup,
+  createConnection,
+  setupWebRTCSession,
   type VoiceSessionSetupResult,
 } from "@elevenlabs/client/internal";
 import { attachNativeVolume } from "./nativeVolume.js";
@@ -36,7 +37,8 @@ async function reactNativeSessionSetup(
   });
   await AudioSession.startAudioSession();
 
-  const result = attachNativeVolume(await webSessionSetup(options));
+  const connection = await createConnection(options);
+  const result = attachNativeVolume(setupWebRTCSession(connection));
 
   const originalDetach = result.detach;
   return {

@@ -2,6 +2,7 @@ import type { Options } from "../../BaseConversation.js";
 import type { BaseConnection } from "../../utils/BaseConnection.js";
 import {
   setSetupStrategy,
+  setupWebRTCSession,
   type VoiceSessionSetupResult,
 } from "../VoiceSessionSetup.js";
 import { MediaDeviceOutput } from "./output.js";
@@ -13,53 +14,40 @@ import { attachConnectionToOutput } from "../../utils/attachConnectionToOutput.j
 import { createConnection } from "../../utils/ConnectionFactory.js";
 
 /**
- * Sets up input and output controllers for an existing connection.
- * Shared helper used by platform-specific setup strategies.
+ * Sets up WebSocket-specific input and output controllers using
+ * web MediaDevice APIs (AudioContext, AudioWorklet, etc.).
  */
-export async function setupInputOutput(
+async function setupWebSocketIO(
   options: Options,
-  connection: BaseConnection
+  connection: WebSocketConnection
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
-  if (connection instanceof WebRTCConnection) {
-    return {
-      input: connection.input,
-      output: connection.output,
-      playbackEventTarget: null,
-      detach: () => {},
-    };
-  } else if (connection instanceof WebSocketConnection) {
-    const [input, output] = await Promise.all([
-      MediaDeviceInput.create({
-        ...connection.inputFormat,
-        preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
-        inputDeviceId: options.inputDeviceId,
-        workletPaths: options.workletPaths,
-        libsampleratePath: options.libsampleratePath,
-      }),
-      MediaDeviceOutput.create({
-        ...connection.outputFormat,
-        outputDeviceId: options.outputDeviceId,
-        workletPaths: options.workletPaths,
-      }),
-    ]);
+  const [input, output] = await Promise.all([
+    MediaDeviceInput.create({
+      ...connection.inputFormat,
+      preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+      inputDeviceId: options.inputDeviceId,
+      workletPaths: options.workletPaths,
+      libsampleratePath: options.libsampleratePath,
+    }),
+    MediaDeviceOutput.create({
+      ...connection.outputFormat,
+      outputDeviceId: options.outputDeviceId,
+      workletPaths: options.workletPaths,
+    }),
+  ]);
 
-    const detachInput = attachInputToConnection(input, connection);
-    const detachOutput = attachConnectionToOutput(connection, output);
+  const detachInput = attachInputToConnection(input, connection);
+  const detachOutput = attachConnectionToOutput(connection, output);
 
-    return {
-      input,
-      output,
-      playbackEventTarget: output,
-      detach: () => {
-        detachInput();
-        detachOutput();
-      },
-    };
-  } else {
-    throw new Error(
-      `Unsupported connection type: ${connection.constructor.name}`
-    );
-  }
+  return {
+    input,
+    output,
+    playbackEventTarget: output,
+    detach: () => {
+      detachInput();
+      detachOutput();
+    },
+  };
 }
 
 /**
@@ -70,8 +58,14 @@ export async function webSessionSetup(
   options: Options
 ): Promise<VoiceSessionSetupResult> {
   const connection = await createConnection(options);
-  const io = await setupInputOutput(options, connection);
-  return { connection, ...io };
+
+  if (connection instanceof WebSocketConnection) {
+    const io = await setupWebSocketIO(options, connection);
+    return { connection, ...io };
+  }
+
+  // WebRTC — platform-agnostic setup
+  return setupWebRTCSession(connection);
 }
 
 // Register the web strategy as the default
