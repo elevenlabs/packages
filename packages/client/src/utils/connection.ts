@@ -3,6 +3,7 @@ export {
   Language,
   DelayConfig,
   FormatConfig,
+  DisconnectionContext,
   DisconnectionDetails,
   OnDisconnectCallback,
   OnMessageCallback,

@@ -368,7 +368,7 @@ export class WebRTCConnection extends BaseConnection {
       this.isConnected = false;
       this.disconnect({
         reason: "agent",
-        context: new CloseEvent("close", { reason: reason?.toString() }),
+        context: { type: "close", reason: reason?.toString() },
       });
     });
 
@@ -378,7 +378,7 @@ export class WebRTCConnection extends BaseConnection {
         this.disconnect({
           reason: "error",
           message: `LiveKit connection state changed to ${state}`,
-          context: new Event("connection_state_changed"),
+          context: { type: "connection_state_changed" },
         });
       }
     });
@@ -474,7 +474,7 @@ export class WebRTCConnection extends BaseConnection {
         if (participant.identity?.startsWith("agent")) {
           this.disconnect({
             reason: "agent",
-            context: new CloseEvent("close", { reason: "agent disconnected" }),
+            context: { type: "close", reason: "agent disconnected" },
           });
         }
       }

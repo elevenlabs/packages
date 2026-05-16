@@ -33,6 +33,7 @@ export type {
 export type {
   SessionConfig,
   BaseSessionConfig,
+  DisconnectionContext,
   DisconnectionDetails,
   Language,
   ConnectionType,
