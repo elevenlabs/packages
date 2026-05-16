@@ -1,8 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import {
-  MediaDeviceInput,
-  type InputMessageEvent,
-} from "../platform/web/input.js";
+import { MediaDeviceInput } from "../platform/web/input.js";
+import type { InputMessageEvent } from "../InputController.js";
 
 describe("MediaDeviceInput", () => {
   let input: MediaDeviceInput | null = null;

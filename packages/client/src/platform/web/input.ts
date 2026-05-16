@@ -7,16 +7,13 @@ import type {
   InputController,
   InputDeviceConfig,
   InputConfig,
-  InputMessageEvent,
-  InputListener,
   InputEventTarget,
+  InputListener,
 } from "../../InputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "../../utils/volumeProvider.js";
-
-export type { InputConfig, InputMessageEvent, InputListener, InputEventTarget };
 
 const defaultConstraints = {
   echoCancellation: true,

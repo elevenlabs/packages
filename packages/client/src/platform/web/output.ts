@@ -6,25 +6,13 @@ import type {
   OutputController,
   OutputDeviceConfig,
   OutputConfig,
-  OutputEventTarget,
-  OutputListener,
   PlaybackEventTarget,
   PlaybackListener,
-  PlaybackStateEvent,
 } from "../../OutputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "../../utils/volumeProvider.js";
-
-export type {
-  OutputConfig,
-  OutputEventTarget,
-  OutputListener,
-  PlaybackEventTarget,
-  PlaybackListener,
-  PlaybackStateEvent,
-};
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget
