@@ -385,8 +385,20 @@ export class WebRTCConnection extends BaseConnection {
         try {
           const message = JSON.parse(new TextDecoder().decode(payload));
 
-          // Filter out audio messages for WebRTC - they're handled via audio tracks
+          // Audio bytes flow over LiveKit audio tracks, NOT the data channel —
+          // but the same JSON message carries the alignment metadata
+          // (chars + char_start_times_ms + char_durations_ms). Dropping
+          // the whole message drops alignment along with it, which
+          // prevents onAudioAlignment from firing on the WebRTC transport
+          // even though the WebSocket transport surfaces it correctly.
+          // Route audio messages through handleMessage so
+          // VoiceConversation.handleAudio can fire onAudioAlignment, then
+          // return without re-playing audio_base_64 (LiveKit already
+          // plays it via the audio track).
           if (message.type === "audio") {
+            if (isValidSocketEvent(message)) {
+              this.handleMessage(message);
+            }
             return;
           }
 
