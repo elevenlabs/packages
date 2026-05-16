@@ -22,8 +22,8 @@ export type {
   OutputController,
   OutputDeviceConfig,
 } from "./OutputController.js";
-export type { InputConfig } from "./utils/input.js";
-export type { OutputConfig } from "./utils/output.js";
+export type { InputConfig } from "./InputController.js";
+export type { OutputConfig } from "./OutputController.js";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,

@@ -28,8 +28,8 @@ import type {
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
 } from "./utils/events.js";
-import type { InputConfig } from "./utils/input.js";
-import type { OutputConfig } from "./utils/output.js";
+import type { InputConfig } from "./InputController.js";
+import type { OutputConfig } from "./OutputController.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 

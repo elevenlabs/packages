@@ -13,7 +13,7 @@ import {
 } from "./events.js";
 import { constructOverrides } from "./overrides.js";
 import { SessionConnectionError } from "./errors.js";
-import type { OutputEventTarget, OutputListener } from "./output.js";
+import type { OutputEventTarget, OutputListener } from "../OutputController.js";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";

@@ -7,10 +7,8 @@ export {
 } from "./utils/location.js";
 export { sourceInfo, setSourceInfo } from "./sourceInfo.js";
 export type { SourceInfo } from "./sourceInfo.js";
-export {
-  setSetupStrategy,
-  webSessionSetup,
-} from "./platform/VoiceSessionSetup.js";
+export { setSetupStrategy } from "./platform/VoiceSessionSetup.js";
+export { webSessionSetup } from "./platform/web/VoiceSessionSetup.js";
 export type {
   VoiceSessionSetupStrategy,
   VoiceSessionSetupResult,
