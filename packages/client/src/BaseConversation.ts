@@ -1,4 +1,4 @@
-import { Callbacks, Mode, Status } from "@elevenlabs/types";
+import { Callbacks, Mode, Status } from "./types.js";
 import type {
   BaseConnection,
   DisconnectionDetails,
@@ -33,8 +33,8 @@ import type { OutputConfig } from "./utils/output.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
-export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
-export { CALLBACK_KEYS } from "@elevenlabs/types";
+export type { Role, Mode, Status, Callbacks } from "./types.js";
+export { CALLBACK_KEYS } from "./types.js";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
