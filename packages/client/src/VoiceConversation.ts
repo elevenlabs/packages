@@ -59,6 +59,10 @@ export class VoiceConversation extends BaseConversation {
         audio: true,
       });
 
+      // TODO: resolveDelay is called without a platform argument, so the
+      // previous default Android delay (3s for AudioManager mode switch) is
+      // lost. Move delay application into the platform-specific setup strategy,
+      // which can detect the platform and apply the correct delay.
       await applyDelay(resolveDelay(fullOptions.connectionDelay));
 
       // Platform-specific strategy creates the connection and sets up input/output
