@@ -1,4 +1,5 @@
 import { isTextOnly, type PartialOptions } from "./BaseConversation.js";
+import { assertRuntimeCompatibility } from "./runtime.js";
 import { TextConversation } from "./TextConversation.js";
 import { VoiceConversation } from "./VoiceConversation.js";
 
@@ -91,6 +92,7 @@ interface ConversationNamespace {
 
 export const Conversation: ConversationNamespace = {
   startSession(options: PartialOptions) {
+    assertRuntimeCompatibility();
     return isTextOnly(options)
       ? TextConversation.startSession(options)
       : VoiceConversation.startSession(options);
