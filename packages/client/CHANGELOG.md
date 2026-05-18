@@ -1,5 +1,13 @@
 # @elevenlabs/client
 
+## 1.7.1
+
+### Patch Changes
+
+- ae50508: Pin livekit-client to 2.16.1 and force dual peer connection (v0) path to fix WebRTC connection failures with newer livekit-client versions whose join protocol is incompatible with the ElevenLabs LiveKit server.
+- Updated dependencies [fa64593]
+  - @elevenlabs/types@0.14.0
+
 ## 1.7.0
 
 ### Minor Changes
