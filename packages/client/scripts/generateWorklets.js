@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const workletDir = path.join(__dirname, '../worklets');
-const utilsDir = path.join(__dirname, '../src/utils');
 const webDir = path.join(__dirname, '../src/platform/web');
 
 /** Creates ts versions of needed js scripts to code so that they can be exported and used during runtime. Automatically run during build */
@@ -20,7 +19,7 @@ const worklets = [
     exportName: 'loadRawAudioProcessor',
     processorName: 'rawAudioProcessor',
     outputDir: webDir,
-    importPath: '../../utils/createWorkletModuleLoader.js',
+    importPath: './createWorkletModuleLoader.js',
   },
   {
     jsFile: 'audioConcatProcessor.js',
@@ -28,14 +27,14 @@ const worklets = [
     exportName: 'loadAudioConcatProcessor',
     processorName: 'audioConcatProcessor',
     outputDir: webDir,
-    importPath: '../../utils/createWorkletModuleLoader.js',
+    importPath: './createWorkletModuleLoader.js',
   },
   {
     jsFile: 'scribeAudioProcessor.js',
     tsFile: 'scribeAudioProcessor.generated.ts',
     exportName: 'loadScribeAudioProcessor',
     processorName: 'scribeAudioProcessor',
-    outputDir: utilsDir,
+    outputDir: webDir,
     importPath: './createWorkletModuleLoader.js',
   }
 ];

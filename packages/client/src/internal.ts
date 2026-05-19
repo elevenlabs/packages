@@ -26,6 +26,12 @@ export type {
   InputAnalysisResult,
   OutputAnalysisResult,
 } from "./WebRTCAudioAdapter.js";
+export { setScribeMicrophoneSetup } from "./scribe/microphone.js";
+export type {
+  ScribeMicrophoneSetup,
+  ScribeMicrophoneConfig,
+  ScribeMicrophoneResult,
+} from "./scribe/microphone.js";
 export type {
   ConversationCreatedCallback,
   ConversationLifecycleOptions,
