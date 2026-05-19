@@ -35,14 +35,17 @@ export default {
       shown: 'shown="true"',
       hidden: 'shown="false"',
     },
-    colors: Object.fromEntries(
-      colors.flatMap(color =>
-        shades.map(shade => {
-          const key = shade ? `${color}-${shade}` : color;
-          return [key, `var(--el-${key})`];
-        })
-      )
-    ),
+    colors: {
+      ...Object.fromEntries(
+        colors.flatMap(color =>
+          shades.map(shade => {
+            const key = shade ? `${color}-${shade}` : color;
+            return [key, `var(--el-${key})`];
+          })
+        )
+      ),
+      "audio-tag": "hsl(var(--el-audio-tag) / <alpha-value>)",
+    },
     spacing: {
       ...Object.fromEntries(spacing.map(i => [i, `${i * 4}px`])),
       px: "1px",

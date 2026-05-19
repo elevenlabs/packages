@@ -545,6 +545,41 @@ describe("elevenlabs-convai", () => {
       // Tags should be visible when stripping is disabled
       await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
     });
+
+    it("should strip audio tags from voice transcripts when strip_audio_tags is true", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_voice_strip",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      await page.getByRole("button", { name: "Accept" }).click();
+
+      await expect
+        .element(page.getByText("Hello there! How can I help you today?"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText(/\[happy\]/)).not.toBeInTheDocument();
+    });
+
+    it("should style audio tags in voice transcripts when strip_audio_tags is false", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_voice_style",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      await page.getByRole("button", { name: "Accept" }).click();
+
+      const happyTag = page.getByText("[happy]");
+      await expect.element(happyTag).toBeInTheDocument();
+      await expect
+        .element(happyTag.element().closest("[data-audio-tag]") as HTMLElement)
+        .toBeInTheDocument();
+    });
   });
 
   describe("dismissable behavior", () => {
