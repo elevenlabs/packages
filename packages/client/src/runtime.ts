@@ -214,8 +214,18 @@ declare global {
     getConstraints(): MediaTrackConstraints;
   }
 
+  interface MediaDeviceConstraintParameters {
+    exact?: string | string[];
+    ideal?: string | string[];
+  }
+
+  type MediaDeviceConstraint =
+    | string
+    | string[]
+    | MediaDeviceConstraintParameters;
+
   interface MediaTrackConstraints {
-    deviceId?: string | { exact?: string; ideal?: string };
+    deviceId?: MediaDeviceConstraint;
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;

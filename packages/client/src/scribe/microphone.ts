@@ -7,7 +7,7 @@
  */
 
 export interface ScribeMicrophoneConfig {
-  deviceId?: string;
+  deviceId?: MediaDeviceConstraint;
   echoCancellation?: boolean;
   noiseSuppression?: boolean;
   autoGainControl?: boolean;
