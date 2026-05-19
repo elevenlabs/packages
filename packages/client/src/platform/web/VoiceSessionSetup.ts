@@ -99,10 +99,15 @@ export async function webSessionSetup(
     const connection = await createConnection(options);
 
     let io: Omit<VoiceSessionSetupResult, "connection">;
-    if (connection instanceof WebSocketConnection) {
-      io = await setupWebSocketIO(options, connection);
-    } else {
-      io = setupWebRTCSession(connection);
+    try {
+      if (connection instanceof WebSocketConnection) {
+        io = await setupWebSocketIO(options, connection);
+      } else {
+        io = setupWebRTCSession(connection);
+      }
+    } catch (ioError) {
+      connection.close();
+      throw ioError;
     }
 
     // Stop the preliminary stream after setting up the session.

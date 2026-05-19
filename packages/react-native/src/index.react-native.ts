@@ -56,8 +56,11 @@ async function reactNativeSessionSetup(
   return {
     ...result,
     detach: async () => {
-      await originalDetach();
-      AudioSession.stopAudioSession();
+      try {
+        await originalDetach();
+      } finally {
+        await AudioSession.stopAudioSession();
+      }
     },
   };
 }
