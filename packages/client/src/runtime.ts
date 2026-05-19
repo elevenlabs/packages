@@ -202,6 +202,35 @@ declare global {
   }
 
   // -------------------------------------------------------------------------
+  // Media (polyfilled on React Native via @livekit/react-native)
+  // -------------------------------------------------------------------------
+
+  interface MediaStreamTrack {
+    readonly kind: string;
+    readonly id: string;
+    enabled: boolean;
+    stop(): void;
+    clone(): MediaStreamTrack;
+    getConstraints(): MediaTrackConstraints;
+  }
+
+  interface MediaTrackConstraints {
+    deviceId?: string | { exact?: string; ideal?: string };
+    echoCancellation?: boolean;
+    noiseSuppression?: boolean;
+    autoGainControl?: boolean;
+    channelCount?: number | { exact?: number; ideal?: number };
+    sampleRate?: number | { exact?: number; ideal?: number };
+  }
+
+  class MediaStream {
+    constructor(tracks?: MediaStreamTrack[]);
+    getTracks(): MediaStreamTrack[];
+    getAudioTracks(): MediaStreamTrack[];
+    addTrack(track: MediaStreamTrack): void;
+  }
+
+  // -------------------------------------------------------------------------
   // Events (minimal interfaces for WebSocket event handler type annotations)
   // -------------------------------------------------------------------------
 

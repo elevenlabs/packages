@@ -62,6 +62,8 @@ vi.mock("livekit-client", () => {
 
 import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack } from "livekit-client";
+import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
+import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -158,7 +160,7 @@ describe("WebRTCConnection", () => {
       }
     );
 
-    // Mock AudioContext so setupInputAnalyser succeeds
+    // Mock AudioContext so setupInputAnalyser succeeds via the web adapter
     const mockAnalyser = {
       frequencyBinCount: 128,
       getByteFrequencyData: vi.fn(),
@@ -176,6 +178,9 @@ describe("WebRTCConnection", () => {
       "MediaStream",
       vi.fn((tracks: unknown[]) => ({ getTracks: () => tracks }))
     );
+
+    // Register the web audio adapter so WebRTCConnection delegates to it
+    setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
 
     const connection = await WebRTCConnection.create({
       conversationToken: "test-token",

@@ -20,6 +20,12 @@ export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
 } from "./utils/volumeProvider.js";
+export { setWebRTCAudioAdapterFactory } from "./WebRTCAudioAdapter.js";
+export type {
+  WebRTCAudioAdapter,
+  InputAnalysisResult,
+  OutputAnalysisResult,
+} from "./WebRTCAudioAdapter.js";
 export type {
   ConversationCreatedCallback,
   ConversationLifecycleOptions,
