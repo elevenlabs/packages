@@ -10,7 +10,7 @@ export type VoiceSessionSetupResult = {
   input: InputController;
   output: OutputController;
   playbackEventTarget: PlaybackEventTarget | null;
-  detach: () => void;
+  detach: () => Promise<void>;
 };
 
 export type VoiceSessionSetupStrategy = (
@@ -51,6 +51,6 @@ export function setupWebRTCSession(
     input: connection.input,
     output: connection.output,
     playbackEventTarget: null,
-    detach: () => {},
+    detach: async () => {},
   };
 }

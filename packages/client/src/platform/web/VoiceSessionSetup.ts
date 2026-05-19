@@ -12,6 +12,26 @@ import { WebRTCConnection } from "../../utils/WebRTCConnection.js";
 import { attachInputToConnection } from "../../utils/attachInputToConnection.js";
 import { attachConnectionToOutput } from "../../utils/attachConnectionToOutput.js";
 import { createConnection } from "../../utils/ConnectionFactory.js";
+import { applyDelay, resolveDelay } from "../../utils/applyDelay.js";
+import { isAndroidDevice, isIosDevice } from "./compatibility.js";
+
+function detectPlatform(): "android" | "ios" | "default" {
+  if (isAndroidDevice()) return "android";
+  if (isIosDevice()) return "ios";
+  return "default";
+}
+
+async function requestWakeLock(): Promise<WakeLockSentinel | null> {
+  if ("wakeLock" in navigator) {
+    // unavailable without HTTPS, including localhost in dev
+    try {
+      return await navigator.wakeLock.request("screen");
+    } catch (_e) {
+      // Wake Lock is not required for the conversation to work
+    }
+  }
+  return null;
+}
 
 /**
  * Sets up WebSocket-specific input and output controllers using
@@ -43,7 +63,7 @@ async function setupWebSocketIO(
     input,
     output,
     playbackEventTarget: output,
-    detach: () => {
+    detach: async () => {
       detachInput();
       detachOutput();
     },
@@ -52,20 +72,97 @@ async function setupWebSocketIO(
 
 /**
  * Web platform session setup strategy.
- * Creates a connection and sets up input/output based on the connection type.
+ * Handles wake lock, preliminary mic permission, platform-specific delay,
+ * connection creation, and input/output setup.
  */
 export async function webSessionSetup(
   options: Options
 ): Promise<VoiceSessionSetupResult> {
-  const connection = await createConnection(options);
+  const useWakeLock = options.useWakeLock ?? true;
+  let wakeLock: WakeLockSentinel | null = null;
+  let preliminaryInputStream: MediaStream | null = null;
 
-  if (connection instanceof WebSocketConnection) {
-    const io = await setupWebSocketIO(options, connection);
-    return { connection, ...io };
+  try {
+    if (useWakeLock) {
+      wakeLock = await requestWakeLock();
+    }
+
+    // Some browsers won't allow calling getSupportedConstraints or
+    // enumerateDevices before getting approval for microphone access.
+    preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+
+    const platform = detectPlatform();
+    await applyDelay(resolveDelay(options.connectionDelay, platform));
+
+    const connection = await createConnection(options);
+
+    let io: Omit<VoiceSessionSetupResult, "connection">;
+    try {
+      if (connection instanceof WebSocketConnection) {
+        io = await setupWebSocketIO(options, connection);
+      } else {
+        io = setupWebRTCSession(connection);
+      }
+    } catch (ioError) {
+      connection.close();
+      throw ioError;
+    }
+
+    // Stop the preliminary stream after setting up the session.
+    // Its only purpose was triggering the browser's microphone permission
+    // prompt; it must remain alive until the strategy finishes because
+    // MediaDeviceInput.create (WebSocket path) needs mic access granted.
+    preliminaryInputStream?.getTracks().forEach(track => {
+      track.stop();
+    });
+    preliminaryInputStream = null;
+
+    // Set up visibility change handler for wake lock re-acquisition.
+    // Wake locks are automatically released when a page is hidden (e.g.
+    // switching tabs), so attempt to re-acquire when visible again.
+    let visibilityChangeHandler: (() => void) | null = null;
+    if (wakeLock) {
+      visibilityChangeHandler = () => {
+        if (document.visibilityState === "visible" && wakeLock?.released) {
+          requestWakeLock().then(lock => {
+            wakeLock = lock;
+          });
+        }
+      };
+      document.addEventListener("visibilitychange", visibilityChangeHandler);
+    }
+
+    const originalDetach = io.detach;
+    return {
+      connection,
+      ...io,
+      detach: async () => {
+        await originalDetach();
+        if (visibilityChangeHandler) {
+          document.removeEventListener(
+            "visibilitychange",
+            visibilityChangeHandler
+          );
+        }
+        try {
+          await wakeLock?.release();
+          wakeLock = null;
+        } catch (_e) {}
+      },
+    };
+  } catch (error) {
+    // Clean up on setup failure
+    preliminaryInputStream?.getTracks().forEach(track => {
+      track.stop();
+    });
+    try {
+      await wakeLock?.release();
+      wakeLock = null;
+    } catch (_e) {}
+    throw error;
   }
-
-  // WebRTC — platform-agnostic setup
-  return setupWebRTCSession(connection);
 }
 
 // Register the web strategy as the default

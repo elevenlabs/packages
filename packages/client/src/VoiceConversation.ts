@@ -6,7 +6,6 @@ import type {
 } from "./OutputController.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
-import { applyDelay, resolveDelay } from "./utils/applyDelay.js";
 import {
   BaseConversation,
   type Options,
@@ -15,21 +14,10 @@ import {
 import type { InputController } from "./InputController.js";
 import type { OutputController } from "./OutputController.js";
 import { setupStrategy } from "./platform/VoiceSessionSetup.js";
+import type { VoiceSessionSetupResult } from "./platform/VoiceSessionSetup.js";
 
 export class VoiceConversation extends BaseConversation {
   readonly type = "voice";
-
-  private static async requestWakeLock(): Promise<WakeLockSentinel | null> {
-    if ("wakeLock" in navigator) {
-      // unavailable without HTTPS, including localhost in dev
-      try {
-        return await navigator.wakeLock.request("screen");
-      } catch (_e) {
-        // Wake Lock is not required for the conversation to work
-      }
-    }
-    return null;
-  }
 
   public static async startSession(
     options: PartialOptions
@@ -43,45 +31,19 @@ export class VoiceConversation extends BaseConversation {
       fullOptions.onCanSendFeedbackChange({ canSendFeedback: false });
     }
 
-    let preliminaryInputStream: MediaStream | null = null;
     let conversation: VoiceConversation | null = null;
-
-    const useWakeLock = options.useWakeLock ?? true;
-    let wakeLock: WakeLockSentinel | null = null;
-    if (useWakeLock) {
-      wakeLock = await VoiceConversation.requestWakeLock();
-    }
+    let sessionSetup: VoiceSessionSetupResult | null = null;
 
     try {
-      // some browsers won't allow calling getSupportedConstraints or enumerateDevices
-      // before getting approval for microphone access
-      preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
-      // TODO: resolveDelay is called without a platform argument, so the
-      // previous default Android delay (3s for AudioManager mode switch) is
-      // lost. Move delay application into the platform-specific setup strategy,
-      // which can detect the platform and apply the correct delay.
-      await applyDelay(resolveDelay(fullOptions.connectionDelay));
-
-      // Platform-specific strategy creates the connection and sets up input/output
+      // Platform-specific strategy handles wake lock, mic permission,
+      // delay, connection creation, and input/output setup.
       if (!setupStrategy) {
         throw new Error(
           "No voice session setup strategy registered. " +
             'Import the platform-specific entry point (e.g. @elevenlabs/client via the "browser" export).'
         );
       }
-      const sessionSetup = await setupStrategy(fullOptions);
-
-      // Stop the preliminary stream after setting up the session.
-      // Its only purpose was triggering the browser's microphone permission
-      // prompt; it must remain alive until the strategy finishes because
-      // MediaDeviceInput.create (WebSocket path) needs mic access granted.
-      preliminaryInputStream?.getTracks().forEach(track => {
-        track.stop();
-      });
-      preliminaryInputStream = null;
+      sessionSetup = await setupStrategy(fullOptions);
 
       conversation = new VoiceConversation(
         fullOptions,
@@ -89,8 +51,7 @@ export class VoiceConversation extends BaseConversation {
         sessionSetup.input,
         sessionSetup.output,
         sessionSetup.playbackEventTarget,
-        sessionSetup.detach,
-        wakeLock
+        sessionSetup.detach
       );
       fullOptions.onConversationCreated?.(conversation);
       conversation.markConnected();
@@ -99,25 +60,21 @@ export class VoiceConversation extends BaseConversation {
       });
       return conversation;
     } catch (error) {
-      preliminaryInputStream?.getTracks().forEach(track => {
-        track.stop();
-      });
       if (conversation) {
         await conversation.endSession().catch(() => {});
       } else {
+        // Strategy returned but conversation wasn't created — clean up
+        if (sessionSetup) {
+          await sessionSetup.detach().catch(() => {});
+        }
         fullOptions.onStatusChange?.({ status: "disconnected" });
       }
-      try {
-        await wakeLock?.release();
-        wakeLock = null;
-      } catch (_e) {}
       throw error;
     }
   }
 
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
-  private visibilityChangeHandler: (() => void) | null = null;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     if (event.data.type === "process") {
@@ -131,50 +88,20 @@ export class VoiceConversation extends BaseConversation {
     private input: InputController,
     private output: OutputController,
     private playbackEventTarget: PlaybackEventTarget | null,
-    private cleanUp: () => void,
-    private wakeLock: WakeLockSentinel | null
+    private cleanUp: () => Promise<void>
   ) {
     super(options, connection);
 
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
-
-    if (wakeLock) {
-      // Wake locks are automatically released when a page is hidden like when switching tabs
-      // so attempt to re-acquire lock when page becomes visible again
-      this.visibilityChangeHandler = () => {
-        if (document.visibilityState === "visible" && this.wakeLock?.released) {
-          VoiceConversation.requestWakeLock().then(lock => {
-            this.wakeLock = lock;
-          });
-        }
-      };
-      document.addEventListener(
-        "visibilitychange",
-        this.visibilityChangeHandler
-      );
-    }
   }
 
   protected override async handleEndSession() {
-    this.cleanUp();
     this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
     this.playbackEventTarget = null;
-    await super.handleEndSession();
-
-    if (this.visibilityChangeHandler) {
-      document.removeEventListener(
-        "visibilitychange",
-        this.visibilityChangeHandler
-      );
-    }
-
-    try {
-      await this.wakeLock?.release();
-      this.wakeLock = null;
-    } catch (_e) {}
-
+    await this.cleanUp();
     await this.input.close();
     await this.output.close();
+    await super.handleEndSession();
   }
 
   protected override handleInterruption(event: InterruptionEvent) {
