@@ -7,12 +7,15 @@ export {
 } from "./utils/location.js";
 export { sourceInfo, setSourceInfo } from "./sourceInfo.js";
 export type { SourceInfo } from "./sourceInfo.js";
-export { setSetupStrategy } from "./platform/VoiceSessionSetup.js";
-export { webSessionSetup } from "./platform/web/VoiceSessionSetup.js";
+export {
+  setSetupStrategy,
+  setupWebRTCSession,
+} from "./platform/VoiceSessionSetup.js";
 export type {
   VoiceSessionSetupStrategy,
   VoiceSessionSetupResult,
 } from "./platform/VoiceSessionSetup.js";
+export { createConnection } from "./utils/ConnectionFactory.js";
 export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
