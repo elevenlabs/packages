@@ -4,6 +4,31 @@ export type OutputDeviceConfig = {
   outputDeviceId?: string;
 };
 
+export type OutputConfig = OutputDeviceConfig;
+
+// Audio data events from connection to output device
+export type OutputAudioEvent = {
+  audio_base_64: string;
+};
+export type OutputListener = (event: OutputAudioEvent) => void;
+
+export type OutputEventTarget = {
+  addListener(listener: OutputListener): void;
+  removeListener(listener: OutputListener): void;
+};
+
+// Playback state events from output worklet
+export type PlaybackStateEvent = MessageEvent<{
+  type: "process";
+  finished: boolean;
+}>;
+export type PlaybackListener = (event: PlaybackStateEvent) => void;
+
+export type PlaybackEventTarget = {
+  addListener(listener: PlaybackListener): void;
+  removeListener(listener: PlaybackListener): void;
+};
+
 export interface OutputController {
   close(): Promise<void>;
   setDevice(config?: Partial<FormatConfig> & OutputDeviceConfig): Promise<void>;

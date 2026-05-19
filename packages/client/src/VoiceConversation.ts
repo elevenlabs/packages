@@ -1,12 +1,12 @@
-import type { InputConfig } from "./utils/input.js";
+import type { InputConfig } from "./InputController.js";
 import type {
   OutputConfig,
   PlaybackEventTarget,
   PlaybackListener,
-} from "./utils/output.js";
+} from "./OutputController.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
-import { applyDelay } from "./utils/applyDelay.js";
+import { applyDelay, resolveDelay } from "./utils/applyDelay.js";
 import {
   BaseConversation,
   type Options,
@@ -59,9 +59,19 @@ export class VoiceConversation extends BaseConversation {
         audio: true,
       });
 
-      await applyDelay(fullOptions.connectionDelay);
+      // TODO: resolveDelay is called without a platform argument, so the
+      // previous default Android delay (3s for AudioManager mode switch) is
+      // lost. Move delay application into the platform-specific setup strategy,
+      // which can detect the platform and apply the correct delay.
+      await applyDelay(resolveDelay(fullOptions.connectionDelay));
 
       // Platform-specific strategy creates the connection and sets up input/output
+      if (!setupStrategy) {
+        throw new Error(
+          "No voice session setup strategy registered. " +
+            'Import the platform-specific entry point (e.g. @elevenlabs/client via the "browser" export).'
+        );
+      }
       const sessionSetup = await setupStrategy(fullOptions);
 
       // Stop the preliminary stream after setting up the session.

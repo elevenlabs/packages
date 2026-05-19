@@ -1,17 +1,19 @@
-import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
-import type { FormatConfig } from "./connection.js";
+import { loadRawAudioProcessor } from "../../utils/rawAudioProcessor.generated.js";
+import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
-import type { AudioWorkletConfig } from "../BaseConversation.js";
+import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
-import type { InputController, InputDeviceConfig } from "../InputController.js";
+import type {
+  InputController,
+  InputDeviceConfig,
+  InputConfig,
+  InputEventTarget,
+  InputListener,
+} from "../../InputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
-} from "./volumeProvider.js";
-
-export type InputConfig = InputDeviceConfig & {
-  onError?(message: string, context?: unknown): void;
-};
+} from "../../utils/volumeProvider.js";
 
 const defaultConstraints = {
   echoCancellation: true,
@@ -20,14 +22,6 @@ const defaultConstraints = {
   autoGainControl: true,
   // Mono audio for better echo cancellation
   channelCount: { ideal: 1 },
-};
-
-export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
-export type InputListener = (event: InputMessageEvent) => void;
-
-export type InputEventTarget = {
-  addListener(listener: InputListener): void;
-  removeListener(listener: InputListener): void;
 };
 
 export class MediaDeviceInput implements InputController, InputEventTarget {

@@ -1,21 +1,22 @@
-import { isAndroidDevice, isIosDevice } from "./compatibility.js";
-import type { DelayConfig } from "./connection.js";
+import type { DelayConfig } from "./BaseConnection.js";
 
-export async function applyDelay(
-  delayConfig: DelayConfig = {
-    default: 0,
-    // Give the Android AudioManager enough time to switch to the correct audio mode
-    android: 3_000,
-  }
-) {
-  let delay = delayConfig.default;
-  if (isAndroidDevice()) {
-    delay = delayConfig.android ?? delay;
-  } else if (isIosDevice()) {
-    delay = delayConfig.ios ?? delay;
-  }
+/**
+ * Resolves a platform-specific delay from a DelayConfig.
+ * The `platform` parameter is determined by the caller (e.g. via
+ * `compatibility.ts` on the web, or from the React Native runtime).
+ */
+export function resolveDelay(
+  delayConfig: DelayConfig | undefined,
+  platform: "android" | "ios" | "default" = "default"
+): number {
+  if (!delayConfig) return 0;
+  if (platform === "android") return delayConfig.android ?? delayConfig.default;
+  if (platform === "ios") return delayConfig.ios ?? delayConfig.default;
+  return delayConfig.default;
+}
 
-  if (delay > 0) {
-    await new Promise(resolve => setTimeout(resolve, delay));
+export async function applyDelay(delayMs: number) {
+  if (delayMs > 0) {
+    await new Promise(resolve => setTimeout(resolve, delayMs));
   }
 }

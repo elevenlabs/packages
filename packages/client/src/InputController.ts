@@ -5,6 +5,18 @@ export type InputDeviceConfig = {
   preferHeadphonesForIosDevices?: boolean;
 };
 
+export type InputConfig = InputDeviceConfig & {
+  onError?(message: string, context?: unknown): void;
+};
+
+export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputListener = (event: InputMessageEvent) => void;
+
+export type InputEventTarget = {
+  addListener(listener: InputListener): void;
+  removeListener(listener: InputListener): void;
+};
+
 export interface InputController {
   close(): Promise<void>;
   setDevice(config?: Partial<FormatConfig> & InputDeviceConfig): Promise<void>;
