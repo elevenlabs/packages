@@ -57,4 +57,16 @@ describe("setupWebRTCSession", () => {
       "setupWebRTCSession requires a WebRTCConnection"
     );
   });
+
+  it("throws with a descriptive message when given null", () => {
+    expect(() => setupWebRTCSession(null as any)).toThrow(
+      "Received: object"
+    );
+  });
+
+  it("throws with a descriptive message when given undefined", () => {
+    expect(() => setupWebRTCSession(undefined as any)).toThrow(
+      "Received: undefined"
+    );
+  });
 });

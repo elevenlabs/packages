@@ -43,7 +43,7 @@ export function setupWebRTCSession(
   if (!(connection instanceof WebRTCConnection)) {
     throw new Error(
       "setupWebRTCSession requires a WebRTCConnection. " +
-        `Received: ${connection.constructor.name}`
+        `Received: ${connection?.constructor?.name ?? typeof connection}`
     );
   }
   return {
