@@ -1,4 +1,4 @@
-import { loadAudioConcatProcessor } from "../../utils/audioConcatProcessor.generated.js";
+import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
@@ -12,7 +12,7 @@ import type {
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
-} from "../../utils/volumeProvider.js";
+} from "./volumeProvider.js";
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget

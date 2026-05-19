@@ -1,4 +1,4 @@
-import { loadRawAudioProcessor } from "../../utils/rawAudioProcessor.generated.js";
+import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
@@ -13,7 +13,7 @@ import type {
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
-} from "../../utils/volumeProvider.js";
+} from "./volumeProvider.js";
 
 const defaultConstraints = {
   echoCancellation: true,
