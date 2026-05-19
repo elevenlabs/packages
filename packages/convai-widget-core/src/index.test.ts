@@ -555,7 +555,6 @@ describe("elevenlabs-convai", () => {
 
       const startButton = page.getByRole("button", { name: "Start a call" });
       await startButton.click();
-      await page.getByRole("button", { name: "Accept" }).click();
 
       await expect
         .element(page.getByText("Hello there! How can I help you today?"))
@@ -572,7 +571,6 @@ describe("elevenlabs-convai", () => {
 
       const startButton = page.getByRole("button", { name: "Start a call" });
       await startButton.click();
-      await page.getByRole("button", { name: "Accept" }).click();
 
       const happyTag = page.getByText("[happy]");
       await expect.element(happyTag).toBeInTheDocument();
