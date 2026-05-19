@@ -18,7 +18,6 @@ import { createAnalyserVolumeProvider } from "./volumeProvider.js";
  */
 export class WebAudioAdapter implements WebRTCAudioAdapter {
   private audioElements: HTMLAudioElement[] = [];
-  private outputDeviceId: string | null = null;
 
   private inputAudioContext: AudioContext | null = null;
   private inputAnalyser: AnalyserNode | null = null;
@@ -52,7 +51,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
 
     // Store reference for volume control and cleanup
     this.audioElements.push(audioElement);
-    this.outputDeviceId = outputDeviceId;
   }
 
   setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): InputAnalysisResult {
@@ -154,8 +152,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
         }
       })
     );
-
-    this.outputDeviceId = deviceId;
   }
 
   cleanup(): void {

@@ -430,9 +430,9 @@ export class WebRTCConnection extends BaseConnection {
 
             // Set up output volume analysis and audio capture
             await this.setupAudioCapture(remoteAudioTrack);
-          }
 
-          this.onDebug?.({ type: "audio_element_ready" });
+            this.onDebug?.({ type: "audio_element_ready" });
+          }
         }
       }
     );
@@ -480,6 +480,10 @@ export class WebRTCConnection extends BaseConnection {
 
       // Delegate all audio cleanup to the adapter
       this.audioAdapter?.cleanup();
+      this.inputAnalyser = undefined;
+      this.outputAnalyser = undefined;
+      this.inputVolumeProvider = NO_VOLUME;
+      this.outputVolumeProvider = NO_VOLUME;
 
       this.room.disconnect();
     }
