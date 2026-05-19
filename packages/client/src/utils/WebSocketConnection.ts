@@ -49,18 +49,23 @@ export class WebSocketConnection
           this.disconnect({
             reason: "error",
             message: "The connection was closed due to a socket error.",
-            context: event,
+            context: { type: event.type },
           }),
         0
       );
     });
 
     this.socket.addEventListener("close", event => {
+      const context = {
+        type: event.type,
+        code: event.code,
+        reason: event.reason || undefined,
+      };
       this.disconnect(
         event.code === 1000
           ? {
               reason: "agent",
-              context: event,
+              context,
               closeCode: event.code,
               closeReason: event.reason || undefined,
             }
@@ -68,7 +73,7 @@ export class WebSocketConnection
               reason: "error",
               message:
                 event.reason || "The connection was closed by the server.",
-              context: event,
+              context,
               closeCode: event.code,
               closeReason: event.reason || undefined,
             }
