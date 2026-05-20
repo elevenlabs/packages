@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.8.0
+
+### Minor Changes
+
+- 796ade1: Replace DOM `Event`/`CloseEvent` constructors in `DisconnectionDetails` with a platform-agnostic `DisconnectionContext` type. The `context` property on disconnection details is now `{ type: string; reason?: string; code?: number }` instead of a DOM event object. This fixes runtime failures on React Native where `Event` and `CloseEvent` constructors are not available.
+
 ## 1.7.1
 
 ### Patch Changes
