@@ -3,18 +3,9 @@ import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { VolumeProvider } from "./utils/volumeProvider.js";
 
 /**
- * Result of setting up input (microphone) volume analysis.
+ * Result of setting up volume analysis (input or output).
  */
-export type InputAnalysisResult = {
-  volumeProvider: VolumeProvider;
-  /** AnalyserNode on web; undefined on other platforms. */
-  analyser?: unknown;
-};
-
-/**
- * Result of setting up output (agent audio) analysis and capture.
- */
-export type OutputAnalysisResult = {
+export type AnalysisResult = {
   volumeProvider: VolumeProvider;
   /** AnalyserNode on web; undefined on other platforms. */
   analyser?: unknown;
@@ -43,7 +34,7 @@ export interface WebRTCAudioAdapter {
    * Called once after mic is enabled and again after input device switches.
    * Implementations must clean up previous resources on re-call.
    */
-  setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): InputAnalysisResult;
+  setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): AnalysisResult;
 
   /**
    * Set up output volume analysis and raw audio capture from a remote track.
@@ -53,7 +44,7 @@ export interface WebRTCAudioAdapter {
     track: RemoteAudioTrack,
     format: FormatConfig,
     onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void
-  ): Promise<OutputAnalysisResult>;
+  ): Promise<AnalysisResult>;
 
   /** Set playback volume (0-1) for all managed audio elements. */
   setVolume(volume: number): void;

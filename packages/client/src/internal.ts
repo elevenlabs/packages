@@ -23,8 +23,7 @@ export {
 export { setWebRTCAudioAdapterFactory } from "./WebRTCAudioAdapter.js";
 export type {
   WebRTCAudioAdapter,
-  InputAnalysisResult,
-  OutputAnalysisResult,
+  AnalysisResult,
 } from "./WebRTCAudioAdapter.js";
 export { setScribeMicrophoneSetup } from "./scribe/microphone.js";
 export type {

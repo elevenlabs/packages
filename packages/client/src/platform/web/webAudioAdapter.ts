@@ -2,8 +2,7 @@ import type { RemoteAudioTrack } from "livekit-client";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type {
   WebRTCAudioAdapter,
-  InputAnalysisResult,
-  OutputAnalysisResult,
+  AnalysisResult,
 } from "../../WebRTCAudioAdapter.js";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import { createAnalyserVolumeProvider } from "./volumeProvider.js";
@@ -50,7 +49,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     this.audioElements.push(audioElement);
   }
 
-  setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): InputAnalysisResult {
+  setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): AnalysisResult {
     // Clean up previous input audio context
     if (this.inputAudioContext) {
       this.inputAudioContext.close().catch(() => {});
@@ -76,7 +75,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     track: RemoteAudioTrack,
     format: FormatConfig,
     onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void
-  ): Promise<OutputAnalysisResult> {
+  ): Promise<AnalysisResult> {
     // Create audio context for processing
     const audioContext = new AudioContext();
     this.audioCaptureContext = audioContext;
