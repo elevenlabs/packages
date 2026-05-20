@@ -98,12 +98,15 @@ export async function webSessionSetup(
 
     const connection = await createConnection(options);
 
-    let io: Omit<VoiceSessionSetupResult, "connection">;
+    let result: VoiceSessionSetupResult;
     try {
       if (connection instanceof WebSocketConnection) {
-        io = await setupWebSocketIO(options, connection);
+        result = {
+          connection,
+          ...(await setupWebSocketIO(options, connection)),
+        };
       } else {
-        io = setupWebRTCSession(connection);
+        result = setupWebRTCSession(connection);
       }
     } catch (ioError) {
       connection.close();
@@ -134,10 +137,9 @@ export async function webSessionSetup(
       document.addEventListener("visibilitychange", visibilityChangeHandler);
     }
 
-    const originalDetach = io.detach;
+    const originalDetach = result.detach;
     return {
-      connection,
-      ...io,
+      ...result,
       detach: async () => {
         await originalDetach();
         if (visibilityChangeHandler) {

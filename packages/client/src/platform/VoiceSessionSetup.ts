@@ -19,8 +19,7 @@ export type VoiceSessionSetupStrategy = (
 
 /**
  * The active session setup strategy.
- * Defaults to undefined — set by platform-specific entrypoints.
- * The web entrypoint sets this to `webSessionSetup` on import.
+ * Defaults to undefined — set by platform-specific entrypoints on import.
  */
 export let setupStrategy: VoiceSessionSetupStrategy | undefined;
 
