@@ -18,13 +18,16 @@ export type {
   ConversationLifecycleOptions,
   ContextualUpdateOptions,
 } from "./BaseConversation.js";
-export type { InputController, InputDeviceConfig } from "./InputController.js";
+export type {
+  InputController,
+  InputDeviceConfig,
+  InputConfig,
+} from "./InputController.js";
 export type {
   OutputController,
   OutputDeviceConfig,
+  OutputConfig,
 } from "./OutputController.js";
-export type { InputConfig } from "./InputController.js";
-export type { OutputConfig } from "./OutputController.js";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,
