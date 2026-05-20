@@ -262,18 +262,9 @@ export class ScribeRealtime {
   ): Promise<void> {
     try {
       const setup = getScribeMicrophoneSetup();
-      const result = await setup(
-        {
-          deviceId: options.microphone?.deviceId,
-          echoCancellation: options.microphone?.echoCancellation,
-          noiseSuppression: options.microphone?.noiseSuppression,
-          autoGainControl: options.microphone?.autoGainControl,
-          channelCount: options.microphone?.channelCount,
-        },
-        base64Audio => {
-          connection.send({ audioBase64: base64Audio });
-        }
-      );
+      const result = await setup(options.microphone ?? {}, base64Audio => {
+        connection.send({ audioBase64: base64Audio });
+      });
 
       connection._mediaStreamTrack = result.mediaStreamTrack;
       connection._audioCleanup = result.cleanup;
