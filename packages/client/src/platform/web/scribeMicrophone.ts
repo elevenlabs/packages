@@ -81,7 +81,7 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
       }
       source.disconnect();
       scribeNode.disconnect();
-      audioContext.close();
+      void audioContext.close();
     },
   };
 };
