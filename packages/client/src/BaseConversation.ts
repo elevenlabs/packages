@@ -5,7 +5,7 @@ import type {
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
-import { extractApiErrorMessage } from "./utils/errors.js";
+import { extractApiErrorMessage, isJsonObject } from "./utils/errors.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -651,7 +651,11 @@ export abstract class BaseConversation {
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
-    const { file_id } = (await response.json()) as Record<string, unknown>;
+    const result: unknown = await response.json();
+    if (!isJsonObject(result)) {
+      throw new Error("Upload response is not a JSON object");
+    }
+    const { file_id } = result;
     if (typeof file_id !== "string" || !file_id) {
       throw new Error("Upload response is missing a valid file_id");
     }

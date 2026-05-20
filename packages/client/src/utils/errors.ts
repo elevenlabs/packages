@@ -1,13 +1,15 @@
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
 export async function extractApiErrorMessage(
   response: Response
 ): Promise<string> {
   try {
-    const body = (await response.json()) as Record<string, unknown> | null;
-    const rawDetail = body?.detail;
-    const detail =
-      rawDetail != null && typeof rawDetail === "object"
-        ? (rawDetail as Record<string, unknown>).message
-        : rawDetail;
+    const body: unknown = await response.json();
+    if (!isJsonObject(body)) return response.statusText || "Unknown error";
+    const rawDetail = body.detail;
+    const detail = isJsonObject(rawDetail) ? rawDetail.message : rawDetail;
     if (typeof detail === "string") {
       return detail;
     }
