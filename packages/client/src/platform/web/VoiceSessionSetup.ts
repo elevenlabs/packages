@@ -117,10 +117,12 @@ export async function webSessionSetup(
     // Its only purpose was triggering the browser's microphone permission
     // prompt; it must remain alive until the strategy finishes because
     // MediaDeviceInput.create (WebSocket path) needs mic access granted.
-    preliminaryInputStream?.getTracks().forEach(track => {
-      track.stop();
-    });
-    preliminaryInputStream = null;
+    if (preliminaryInputStream) {
+      for (const track of preliminaryInputStream.getTracks()) {
+        track.stop();
+      }
+      preliminaryInputStream = null;
+    }
 
     // Set up visibility change handler for wake lock re-acquisition.
     // Wake locks are automatically released when a page is hidden (e.g.
@@ -156,9 +158,11 @@ export async function webSessionSetup(
     };
   } catch (error) {
     // Clean up on setup failure
-    preliminaryInputStream?.getTracks().forEach(track => {
-      track.stop();
-    });
+    if (preliminaryInputStream) {
+      for (const track of preliminaryInputStream.getTracks()) {
+        track.stop();
+      }
+    }
     try {
       await wakeLock?.release();
       wakeLock = null;
