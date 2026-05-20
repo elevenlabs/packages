@@ -39,6 +39,7 @@ import {
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const AUDIO_VOLUME_THRESHOLD = 0.01;
 
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
@@ -565,9 +566,7 @@ export class WebRTCConnection extends BaseConnection {
     try {
       const onAudioData = (audioData: ArrayBuffer, maxVolume: number) => {
         // Only send audio if there's significant volume (not just silence)
-        const volumeThreshold = 0.01;
-
-        if (maxVolume > volumeThreshold) {
+        if (maxVolume > AUDIO_VOLUME_THRESHOLD) {
           // Convert to base64
           const base64Audio = arrayBufferToBase64(audioData);
 
