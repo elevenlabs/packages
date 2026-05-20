@@ -3,6 +3,7 @@ import type {
   ScribeMicrophoneResult,
   ScribeMicrophoneSetup,
 } from "../../scribe/microphone.js";
+import { arrayBufferToBase64 } from "../../utils/audio.js";
 import { loadScribeAudioProcessor } from "./scribeAudioProcessor.generated.js";
 
 const TARGET_SAMPLE_RATE = 16000;
@@ -59,14 +60,7 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
 
   // Handle audio data from worklet
   scribeNode.port.onmessage = event => {
-    const { audioData } = event.data;
-    // Convert ArrayBuffer to base64
-    const bytes = new Uint8Array(audioData);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    onAudioData(btoa(binary));
+    onAudioData(arrayBufferToBase64(event.data.audioData));
   };
 
   // Connect audio pipeline
