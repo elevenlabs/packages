@@ -651,7 +651,7 @@ export abstract class BaseConversation {
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
-    const { file_id } = await response.json();
+    const { file_id } = (await response.json()) as Record<string, unknown>;
     if (typeof file_id !== "string" || !file_id) {
       throw new Error("Upload response is missing a valid file_id");
     }

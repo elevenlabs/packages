@@ -2,8 +2,12 @@ export async function extractApiErrorMessage(
   response: Response
 ): Promise<string> {
   try {
-    const body = await response.json();
-    const detail = body?.detail?.message ?? body?.detail;
+    const body = (await response.json()) as Record<string, unknown> | null;
+    const rawDetail = body?.detail;
+    const detail =
+      rawDetail != null && typeof rawDetail === "object"
+        ? (rawDetail as Record<string, unknown>).message
+        : rawDetail;
     if (typeof detail === "string") {
       return detail;
     }

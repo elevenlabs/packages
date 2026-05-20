@@ -17,6 +17,6 @@ export function resolveDelay(
 
 export async function applyDelay(delayMs: number) {
   if (delayMs > 0) {
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await new Promise<void>(resolve => setTimeout(resolve, delayMs));
   }
 }

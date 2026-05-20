@@ -241,6 +241,23 @@ declare global {
   }
 
   // -------------------------------------------------------------------------
+  // Web Audio (minimal — only for deprecated getAnalyser() return type)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Minimal AnalyserNode declaration for the deprecated
+   * `InputController.getAnalyser()` / `OutputController.getAnalyser()`
+   * return types. On web this resolves to the full DOM AnalyserNode; on
+   * other platforms the methods return `undefined`.
+   */
+  interface AnalyserNode {
+    readonly frequencyBinCount: number;
+    getByteFrequencyData(array: Uint8Array): void;
+    getByteTimeDomainData(array: Uint8Array): void;
+    getFloatFrequencyData(array: Float32Array): void;
+  }
+
+  // -------------------------------------------------------------------------
   // Events (minimal interfaces for WebSocket event handler type annotations)
   // -------------------------------------------------------------------------
 
