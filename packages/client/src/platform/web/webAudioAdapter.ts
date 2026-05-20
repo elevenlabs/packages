@@ -76,6 +76,12 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     format: FormatConfig,
     onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void
   ): Promise<AnalysisResult> {
+    // Clean up previous audio capture context
+    if (this.audioCaptureContext) {
+      this.audioCaptureContext.close().catch(() => {});
+      this.audioCaptureContext = null;
+    }
+
     // Create audio context for processing
     const audioContext = new AudioContext();
     this.audioCaptureContext = audioContext;

@@ -95,7 +95,7 @@ interface ConversationNamespace {
 }
 
 export const Conversation: ConversationNamespace = {
-  startSession(options: PartialOptions) {
+  async startSession(options: PartialOptions) {
     assertRuntimeCompatibility();
     return isTextOnly(options)
       ? TextConversation.startSession(options)
