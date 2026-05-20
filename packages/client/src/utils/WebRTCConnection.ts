@@ -4,7 +4,8 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection.js";
-import { extractApiErrorMessage, isJsonObject } from "./errors.js";
+import { isJsonObject } from "./assert.js";
+import { extractApiErrorMessage } from "./errors.js";
 import { sourceInfo } from "../sourceInfo.js";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events.js";
 import {

@@ -1,6 +1,4 @@
-export function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === "object" && !Array.isArray(value);
-}
+import { isJsonObject } from "./assert.js";
 
 export async function extractApiErrorMessage(
   response: Response
