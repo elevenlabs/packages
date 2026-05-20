@@ -99,9 +99,9 @@ export class VoiceConversation extends BaseConversation {
     this.playbackEventTarget?.removeListener(this.handlePlaybackEvent);
     this.playbackEventTarget = null;
     await this.cleanUp();
+    await super.handleEndSession();
     await this.input.close();
     await this.output.close();
-    await super.handleEndSession();
   }
 
   protected override handleInterruption(event: InterruptionEvent) {
