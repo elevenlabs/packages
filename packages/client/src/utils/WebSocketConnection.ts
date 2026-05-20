@@ -56,26 +56,23 @@ export class WebSocketConnection
     });
 
     this.socket.addEventListener("close", event => {
+      const closeCode = event.code;
+      const closeReason = event.reason || undefined;
       const context = {
         type: event.type,
-        code: event.code,
-        reason: event.reason || undefined,
+        code: closeCode,
+        reason: closeReason,
       };
       this.disconnect(
-        event.code === 1000
-          ? {
-              reason: "agent",
-              context,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
-            }
+        closeCode === 1000
+          ? { reason: "agent", context, closeCode, closeReason }
           : {
               reason: "error",
               message:
-                event.reason || "The connection was closed by the server.",
+                closeReason || "The connection was closed by the server.",
               context,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
+              closeCode,
+              closeReason,
             }
       );
     });
