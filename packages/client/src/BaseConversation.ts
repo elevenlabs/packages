@@ -33,6 +33,10 @@ import type { InputConfig } from "./InputController.js";
 import type { OutputConfig } from "./OutputController.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const END_CALL_DETAILS: DisconnectionDetails = {
+  reason: "agent",
+  context: { type: "end_call", reason: "Agent ended the call" },
+};
 
 export type { Role, Mode, Status, Callbacks } from "./types.js";
 export { CALLBACK_KEYS } from "./types.js";
@@ -350,30 +354,24 @@ export abstract class BaseConversation {
 
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
     if (event.agent_tool_response.tool_name === "end_call") {
-      this.endSessionWithDetails({
-        reason: "agent",
-        context: { type: "end_call", reason: "Agent ended the call" },
+      void this.endSessionWithDetails(END_CALL_DETAILS).catch(error => {
+        this.onError("Failed to end session after agent end_call", error);
       });
     }
 
-    if (this.options.onAgentToolResponse) {
-      this.options.onAgentToolResponse(event.agent_tool_response);
-    }
+    this.options.onAgentToolResponse?.(event.agent_tool_response);
   }
 
   protected handleAgentToolResponseFullPayload(
     event: AgentToolResponseFullPayloadEvent
   ) {
     if (event.agent_tool_response_full_payload.tool_name === "end_call") {
-      this.endSessionWithDetails({
-        reason: "agent",
-        context: { type: "end_call", reason: "Agent ended the call" },
+      void this.endSessionWithDetails(END_CALL_DETAILS).catch(error => {
+        this.onError("Failed to end session after agent end_call", error);
       });
     }
 
-    if (this.options.onAgentToolResponse) {
-      this.options.onAgentToolResponse(event.agent_tool_response_full_payload);
-    }
+    this.options.onAgentToolResponse?.(event.agent_tool_response_full_payload);
   }
 
   protected handleConversationMetadata(event: ConversationMetadataEvent) {
@@ -408,10 +406,15 @@ export abstract class BaseConversation {
       event.error_event.message || event.error_event.reason || "Unknown error";
 
     if (errorType === "max_duration_exceeded") {
-      this.endSessionWithDetails({
+      void this.endSessionWithDetails({
         reason: "error",
         message: message,
         context: { type: "max_duration_exceeded" },
+      }).catch(error => {
+        this.onError(
+          "Failed to end session after max_duration_exceeded",
+          error
+        );
       });
       return;
     }
