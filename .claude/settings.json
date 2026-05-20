@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | xargs -r -I {} pnpm exec prettier --write \"{}\""
+            "command": "FILE=$(jq -r '.tool_input.file_path // empty') && [ -n \"$FILE\" ] && pnpm exec prettier --write \"$FILE\""
           }
         ]
       }
