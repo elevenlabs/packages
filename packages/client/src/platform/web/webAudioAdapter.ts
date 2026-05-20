@@ -20,10 +20,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
   private audioElements: HTMLAudioElement[] = [];
 
   private inputAudioContext: AudioContext | null = null;
-  private inputAnalyser: AnalyserNode | null = null;
-
   private audioCaptureContext: AudioContext | null = null;
-  private outputAnalyser: AnalyserNode | null = null;
 
   async attachRemoteTrack(
     track: RemoteAudioTrack,
@@ -58,7 +55,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     if (this.inputAudioContext) {
       this.inputAudioContext.close().catch(() => {});
       this.inputAudioContext = null;
-      this.inputAnalyser = null;
     }
 
     const ctx = new AudioContext();
@@ -69,7 +65,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     source.connect(analyser);
 
     this.inputAudioContext = ctx;
-    this.inputAnalyser = analyser;
 
     return {
       volumeProvider: createAnalyserVolumeProvider(analyser, ctx.sampleRate),
@@ -90,8 +85,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     analyser.smoothingTimeConstant = 0.8;
-    this.outputAnalyser = analyser;
-
     // Create MediaStream from the track
     const mediaStream = new MediaStream([track.mediaStreamTrack]);
 
@@ -155,7 +148,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
         console.warn("Error closing input audio context:", error);
       });
       this.inputAudioContext = null;
-      this.inputAnalyser = null;
     }
 
     // Clean up audio capture context
@@ -164,7 +156,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
         console.warn("Error closing audio capture context:", error);
       });
       this.audioCaptureContext = null;
-      this.outputAnalyser = null;
     }
 
     // Clean up audio elements
