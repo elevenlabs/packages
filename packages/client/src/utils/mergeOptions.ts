@@ -1,6 +1,4 @@
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+import { isJsonObject as isPlainObject } from "./assert.js";
 
 function deepMerge<T extends Record<string, unknown>>(
   ...objects: Partial<T>[]

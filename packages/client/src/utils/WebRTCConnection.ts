@@ -4,6 +4,7 @@ import {
   type FormatConfig,
   parseFormat,
 } from "./BaseConnection.js";
+import { isJsonObject } from "./assert.js";
 import { extractApiErrorMessage } from "./errors.js";
 import { sourceInfo } from "../sourceInfo.js";
 import { isValidSocketEvent, type OutgoingSocketEvent } from "./events.js";
@@ -251,7 +252,10 @@ export class WebRTCConnection extends BaseConnection {
           );
         }
 
-        const data = (await response.json()) as { token: string };
+        const data: unknown = await response.json();
+        if (!isJsonObject(data) || typeof data.token !== "string") {
+          throw new Error("No conversation token received from API");
+        }
         conversationToken = data.token;
 
         if (!conversationToken) {

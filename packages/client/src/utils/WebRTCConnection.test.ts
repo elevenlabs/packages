@@ -262,10 +262,10 @@ describe("WebRTCConnection", () => {
   describe("disconnection context", () => {
     async function createWithHandlers() {
       const mockRoom = new Room() as any;
-      const eventHandlers = new Map<string, Function>();
+      const eventHandlers = new Map<string, (...args: unknown[]) => void>();
 
       (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
-        (event: string, callback: Function) => {
+        (event: string, callback: (...args: unknown[]) => void) => {
           eventHandlers.set(event, callback);
           if (event === "connected") {
             queueMicrotask(() => callback());
@@ -273,7 +273,7 @@ describe("WebRTCConnection", () => {
         }
       );
       (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
-        (event: string, callback: Function) => {
+        (event: string, callback: (...args: unknown[]) => void) => {
           if (event === "signalConnected") {
             queueMicrotask(() => callback());
           }

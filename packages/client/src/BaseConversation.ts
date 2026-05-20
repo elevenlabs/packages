@@ -5,6 +5,7 @@ import type {
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
+import { assertJsonObject } from "./utils/assert.js";
 import { extractApiErrorMessage } from "./utils/errors.js";
 import type { Conversation } from "./index.js";
 import type {
@@ -651,7 +652,9 @@ export abstract class BaseConversation {
       throw new Error(`Upload failed: ${response.status} ${message}`);
     }
 
-    const { file_id } = await response.json();
+    const result: unknown = await response.json();
+    assertJsonObject(result, "Upload response is not a JSON object");
+    const { file_id } = result;
     if (typeof file_id !== "string" || !file_id) {
       throw new Error("Upload response is missing a valid file_id");
     }
