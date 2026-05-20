@@ -160,9 +160,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
 
     // Clean up audio elements
     for (const element of this.audioElements) {
-      if (element.parentNode) {
-        element.parentNode.removeChild(element);
-      }
+      element.remove();
     }
     this.audioElements = [];
   }
