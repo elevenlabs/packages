@@ -365,7 +365,7 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   private setupRoomEventListeners() {
-    this.room.on(RoomEvent.Connected, async () => {
+    this.room.on(RoomEvent.Connected, () => {
       this.isConnected = true;
     });
 
