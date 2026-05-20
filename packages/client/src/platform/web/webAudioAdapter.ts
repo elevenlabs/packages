@@ -98,9 +98,6 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     // Create audio source from the stream
     const source = audioContext.createMediaStreamSource(mediaStream);
 
-    // Connect source to analyser
-    source.connect(analyser);
-
     const volumeProvider = createAnalyserVolumeProvider(
       analyser,
       audioContext.sampleRate
@@ -109,24 +106,21 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     await loadRawAudioProcessor(audioContext.audioWorklet);
     const worklet = new AudioWorkletNode(audioContext, "rawAudioProcessor");
 
-    // Connect analyser to worklet for processing
-    analyser.connect(worklet);
-
-    // Configure the processor for the output format
+    // Configure the processor and set up the message listener
+    // before connecting the graph, so no early messages are missed.
     worklet.port.postMessage({
       type: "setFormat",
       format: format.format,
       sampleRate: format.sampleRate,
     });
-
-    // Handle processed audio data
     worklet.port.onmessage = (event: MessageEvent) => {
       const [audioData, maxVolume] = event.data;
       onAudioData(audioData.buffer, maxVolume);
     };
 
-    // Connect the audio processing chain
-    source.connect(worklet);
+    // Connect the audio graph: source → analyser → worklet
+    source.connect(analyser);
+    analyser.connect(worklet);
 
     return { volumeProvider, analyser };
   }
