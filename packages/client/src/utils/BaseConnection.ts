@@ -10,7 +10,7 @@ export type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
-export type { DisconnectionDetails } from "../types.js";
+export type { DisconnectionContext, DisconnectionDetails } from "../types.js";
 
 export type DelayConfig = {
   default: number;

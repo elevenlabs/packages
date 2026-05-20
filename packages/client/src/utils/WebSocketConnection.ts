@@ -13,7 +13,7 @@ import {
 } from "./events.js";
 import { constructOverrides } from "./overrides.js";
 import { SessionConnectionError } from "./errors.js";
-import type { OutputEventTarget, OutputListener } from "./output.js";
+import type { OutputEventTarget, OutputListener } from "../OutputController.js";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
@@ -49,28 +49,30 @@ export class WebSocketConnection
           this.disconnect({
             reason: "error",
             message: "The connection was closed due to a socket error.",
-            context: event,
+            context: { type: event.type },
           }),
         0
       );
     });
 
     this.socket.addEventListener("close", event => {
+      const closeCode = event.code;
+      const closeReason = event.reason || undefined;
+      const context = {
+        type: event.type,
+        code: closeCode,
+        reason: closeReason,
+      };
       this.disconnect(
-        event.code === 1000
-          ? {
-              reason: "agent",
-              context: event,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
-            }
+        closeCode === 1000
+          ? { reason: "agent", context, closeCode, closeReason }
           : {
               reason: "error",
               message:
-                event.reason || "The connection was closed by the server.",
-              context: event,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
+                closeReason || "The connection was closed by the server.",
+              context,
+              closeCode,
+              closeReason,
             }
       );
     });

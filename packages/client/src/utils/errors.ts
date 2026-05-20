@@ -1,9 +1,13 @@
+import { isJsonObject } from "./assert.js";
+
 export async function extractApiErrorMessage(
   response: Response
 ): Promise<string> {
   try {
-    const body = await response.json();
-    const detail = body?.detail?.message ?? body?.detail;
+    const body: unknown = await response.json();
+    if (!isJsonObject(body)) return response.statusText || "Unknown error";
+    const rawDetail = body.detail;
+    const detail = isJsonObject(rawDetail) ? rawDetail.message : rawDetail;
     if (typeof detail === "string") {
       return detail;
     }

@@ -1,40 +1,18 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
-import type { FormatConfig } from "./connection.js";
-import type { AudioWorkletConfig } from "../BaseConversation.js";
+import type { FormatConfig } from "../../utils/BaseConnection.js";
+import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type {
   OutputController,
   OutputDeviceConfig,
-} from "../OutputController.js";
+  OutputConfig,
+  PlaybackEventTarget,
+  PlaybackListener,
+} from "../../OutputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
-
-export type OutputConfig = OutputDeviceConfig;
-
-// Audio data events from connection to output device
-export type OutputAudioEvent = {
-  audio_base_64: string;
-};
-export type OutputListener = (event: OutputAudioEvent) => void;
-
-export type OutputEventTarget = {
-  addListener(listener: OutputListener): void;
-  removeListener(listener: OutputListener): void;
-};
-
-// Playback state events from output worklet
-export type PlaybackStateEvent = MessageEvent<{
-  type: "process";
-  finished: boolean;
-}>;
-export type PlaybackListener = (event: PlaybackStateEvent) => void;
-
-export type PlaybackEventTarget = {
-  addListener(listener: PlaybackListener): void;
-  removeListener(listener: PlaybackListener): void;
-};
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget

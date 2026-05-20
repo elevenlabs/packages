@@ -273,4 +273,85 @@ describe("BaseConversation", () => {
       expect(received.full_tool_result.length).toBeGreaterThan(64_000);
     });
   });
+
+  describe("disconnection context", () => {
+    // endSessionWithDetails is async and fire-and-forget, so we need to flush
+    // microtasks after receiving the message.
+    const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("disconnects with end_call context on agent_tool_response", async () => {
+      const onDisconnect = vi.fn();
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response",
+        agent_tool_response: {
+          tool_name: "end_call",
+          tool_call_id: "call_end",
+          tool_type: "system",
+          is_error: false,
+          is_called: true,
+          event_id: 1,
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "end_call", reason: "Agent ended the call" },
+      });
+    });
+
+    it("disconnects with end_call context on agent_tool_response_full_payload", async () => {
+      const onDisconnect = vi.fn();
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: {
+          tool_name: "end_call",
+          tool_call_id: "call_end",
+          tool_type: "system",
+          is_error: false,
+          is_blocked: false,
+          is_called: true,
+          event_id: 1,
+          full_tool_result: "",
+          truncated: false,
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "end_call", reason: "Agent ended the call" },
+      });
+    });
+
+    it("disconnects with max_duration_exceeded context on error event", async () => {
+      const onDisconnect = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "error",
+        error_event: {
+          code: 1000 as const,
+          error_type: "max_duration_exceeded",
+          message: "Maximum duration exceeded",
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "error",
+        message: "Maximum duration exceeded",
+        context: { type: "max_duration_exceeded" },
+      });
+    });
+  });
 });

@@ -35,19 +35,30 @@ export type Status =
   | "disconnecting";
 
 /**
+ * Platform-agnostic representation of the event that triggered a disconnection.
+ * Replaces the former `Event` / `CloseEvent` DOM constructors which are
+ * not available on React Native.
+ */
+export type DisconnectionContext = {
+  type: string;
+  reason?: string;
+  code?: number;
+};
+
+/**
  * Reason for the disconnection
  */
 export type DisconnectionDetails =
   | {
       reason: "error";
       message: string;
-      context: Event;
+      context: DisconnectionContext;
       closeCode?: number;
       closeReason?: string;
     }
   | {
       reason: "agent";
-      context?: CloseEvent;
+      context?: DisconnectionContext;
       closeCode?: number;
       closeReason?: string;
     }

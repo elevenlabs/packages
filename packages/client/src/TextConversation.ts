@@ -1,6 +1,6 @@
 import { createConnection } from "./utils/ConnectionFactory.js";
 import type { BaseConnection } from "./utils/BaseConnection.js";
-import { applyDelay } from "./utils/applyDelay.js";
+import { applyDelay, resolveDelay } from "./utils/applyDelay.js";
 import { BaseConversation, type PartialOptions } from "./BaseConversation.js";
 
 const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
@@ -53,7 +53,7 @@ export class TextConversation extends BaseConversation {
     let connection: BaseConnection | null = null;
     let conversation: TextConversation | null = null;
     try {
-      await applyDelay(fullOptions.connectionDelay);
+      await applyDelay(resolveDelay(fullOptions.connectionDelay));
       connection = await createConnection(fullOptions);
       conversation = new TextConversation(fullOptions, connection);
       fullOptions.onConversationCreated?.(conversation);

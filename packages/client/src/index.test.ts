@@ -9,7 +9,7 @@ import {
 } from "vitest";
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk.js";
-import { Mode, Status, Conversation } from "./index.js";
+import { Mode, Status, Conversation } from "./platform/web/index.js";
 import { createConnection } from "./utils/ConnectionFactory.js";
 import type { SessionConfig } from "./utils/BaseConnection.js";
 import { PACKAGE_VERSION } from "./version.js";
@@ -1020,93 +1020,6 @@ describe("Volume Control", () => {
 
     await conversation.endSession();
     server.close();
-  });
-});
-
-describe("WebRTC Volume Control", () => {
-  it("tests WebRTCConnection setAudioVolume method directly", async () => {
-    // Create mock audio elements
-    const mockElement1 = { volume: 1 };
-    const mockElement2 = { volume: 1 };
-
-    // Mock the WebRTCConnection class by importing and creating an instance
-    const { WebRTCConnection } = await import("./utils/WebRTCConnection.js");
-
-    // Create a minimal mock for testing just the volume functionality
-    // We'll create the connection with a direct token to avoid fetch
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          conversation_token: "test-token",
-        }),
-    });
-    globalThis.fetch = mockFetch;
-
-    // Mock LiveKit Room constructor and methods
-    const mockRoom = {
-      connect: vi.fn(() => Promise.resolve()),
-      disconnect: vi.fn(),
-      on: vi.fn(),
-      localParticipant: { audioTrackPublications: [] },
-    };
-
-    // Mock the Room class
-    vi.doMock("livekit-client", () => ({
-      Room: vi.fn(() => mockRoom),
-      RoomEvent: { TrackSubscribed: "trackSubscribed" },
-      Track: { Kind: { Audio: "audio" } },
-      ConnectionState: { Connected: "connected" },
-    }));
-
-    try {
-      const connection = await WebRTCConnection.create({
-        conversationToken: "test-token-direct",
-        connectionType: "webrtc",
-      });
-
-      // Directly test the setAudioVolume method by adding mock elements
-      // Access the private audioElements array through type assertion
-      (connection as any).audioElements = [mockElement1, mockElement2];
-
-      // Test volume control
-      connection.setAudioVolume(0.5);
-      expect(mockElement1.volume).toBe(0.5);
-      expect(mockElement2.volume).toBe(0.5);
-
-      connection.setAudioVolume(0.8);
-      expect(mockElement1.volume).toBe(0.8);
-      expect(mockElement2.volume).toBe(0.8);
-
-      connection.close();
-    } catch (error) {
-      // If WebRTC creation fails (which is expected in test env),
-      // we can still test the volume logic separately
-      console.log("WebRTC creation failed as expected in test environment");
-    }
-  });
-
-  it("tests audio element cleanup functionality", () => {
-    // Test the cleanup logic in isolation
-    const mockElement = {
-      volume: 1,
-      parentNode: {
-        removeChild: vi.fn(),
-      },
-    };
-
-    const audioElements = [mockElement];
-
-    // Simulate the cleanup logic from WebRTCConnection.close()
-    audioElements.forEach(element => {
-      if (element.parentNode) {
-        element.parentNode.removeChild(element);
-      }
-    });
-
-    expect(mockElement.parentNode.removeChild).toHaveBeenCalledWith(
-      mockElement
-    );
   });
 });
 
