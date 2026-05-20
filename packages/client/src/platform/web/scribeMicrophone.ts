@@ -32,8 +32,8 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
   });
 
   // Get the actual sample rate from the stream — the ideal may not have been honored
-  const trackSettings = stream.getAudioTracks()[0]?.getSettings();
-  const streamSampleRate = trackSettings?.sampleRate;
+  const [audioTrack] = stream.getAudioTracks();
+  const streamSampleRate = audioTrack?.getSettings().sampleRate;
 
   // Create audio context matching the stream's sample rate to avoid Firefox errors.
   // Firefox requires the AudioContext to match the microphone's native sample rate.
@@ -70,8 +70,6 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
   if (audioContext.state === "suspended") {
     await audioContext.resume();
   }
-
-  const [audioTrack] = stream.getAudioTracks();
 
   return {
     mediaStreamTrack: audioTrack,
