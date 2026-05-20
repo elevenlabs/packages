@@ -9,7 +9,7 @@ import {
 } from "vitest";
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk.js";
-import { Mode, Status, Conversation } from "./index.js";
+import { Mode, Status, Conversation } from "./platform/web/index.js";
 import { createConnection } from "./utils/ConnectionFactory.js";
 import type { SessionConfig } from "./utils/BaseConnection.js";
 import { PACKAGE_VERSION } from "./version.js";
