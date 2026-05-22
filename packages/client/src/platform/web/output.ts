@@ -13,6 +13,38 @@ import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
+import { isIosDevice } from "./compatibility.js";
+
+function maybePrimeIosPlayback({
+  sampleRate,
+  format,
+  worklet,
+  audioElement,
+}: {
+  sampleRate: number;
+  format: FormatConfig["format"];
+  worklet: AudioWorkletNode;
+  audioElement: HTMLAudioElement;
+}): void {
+  if (!isIosDevice()) {
+    return;
+  }
+
+  // ~100ms of silence is enough to flush the worklet → MediaStream → audio
+  // element pipeline so iOS treats the element as "playing media" and won't
+  // stall the first real audio chunk.
+  const PRIME_DURATION_MS = 100;
+  const primeFrameCount = Math.floor((sampleRate * PRIME_DURATION_MS) / 1000);
+  const silentBuffer =
+    format === "ulaw"
+      ? new Uint8Array(primeFrameCount)
+      : new Int16Array(primeFrameCount);
+  worklet.port.postMessage({
+    type: "buffer",
+    buffer: silentBuffer.buffer,
+  });
+  void audioElement.play().catch(() => {});
+}
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget
@@ -23,17 +55,22 @@ export class MediaDeviceOutput
     outputDeviceId,
     workletPaths,
     libsampleratePath,
+    audioContext,
   }: FormatConfig &
     OutputConfig &
-    AudioWorkletConfig): Promise<MediaDeviceOutput> {
-    let context: AudioContext | null = null;
+    AudioWorkletConfig & {
+      audioContext?: AudioContext;
+    }): Promise<MediaDeviceOutput> {
+    let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {
       const supportsSampleRateConstraint =
         navigator.mediaDevices.getSupportedConstraints().sampleRate;
-      context = new AudioContext(
-        supportsSampleRateConstraint ? { sampleRate } : {}
-      );
+      if (!context) {
+        context = new AudioContext(
+          supportsSampleRateConstraint ? { sampleRate } : {}
+        );
+      }
 
       const analyser = context.createAnalyser();
       const gain = context.createGain();
@@ -71,6 +108,8 @@ export class MediaDeviceOutput
       worklet.connect(gain);
 
       await context.resume();
+
+      maybePrimeIosPlayback({ sampleRate, format, worklet, audioElement });
 
       // Set initial output device if provided
       if (outputDeviceId && audioElement.setSinkId) {

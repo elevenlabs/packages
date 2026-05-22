@@ -14,6 +14,10 @@ import { attachConnectionToOutput } from "../../utils/attachConnectionToOutput.j
 import { createConnection } from "../../utils/ConnectionFactory.js";
 import { applyDelay, resolveDelay } from "../../utils/applyDelay.js";
 import { isAndroidDevice, isIosDevice } from "./compatibility.js";
+import {
+  discardStashedAudioContext,
+  takeUnlockedAudioContext,
+} from "./audioUnlock.js";
 
 function detectPlatform(): "android" | "ios" | "default" {
   if (isAndroidDevice()) return "android";
@@ -39,7 +43,8 @@ async function requestWakeLock(): Promise<WakeLockSentinel | null> {
  */
 async function setupWebSocketIO(
   options: Options,
-  connection: WebSocketConnection
+  connection: WebSocketConnection,
+  audioContext: AudioContext | null
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
   const [input, output] = await Promise.all([
     MediaDeviceInput.create({
@@ -53,6 +58,7 @@ async function setupWebSocketIO(
       ...connection.outputFormat,
       outputDeviceId: options.outputDeviceId,
       workletPaths: options.workletPaths,
+      audioContext: audioContext ?? undefined,
     }),
   ]);
 
@@ -81,6 +87,7 @@ export async function webSessionSetup(
   const useWakeLock = options.useWakeLock ?? true;
   let wakeLock: WakeLockSentinel | null = null;
   let preliminaryInputStream: MediaStream | null = null;
+  let unlockedAudioContext: AudioContext | null = null;
 
   try {
     if (useWakeLock) {
@@ -101,14 +108,23 @@ export async function webSessionSetup(
     let result: VoiceSessionSetupResult;
     try {
       if (connection instanceof WebSocketConnection) {
+        unlockedAudioContext = takeUnlockedAudioContext();
         result = {
           connection,
-          ...(await setupWebSocketIO(options, connection)),
+          ...(await setupWebSocketIO(
+            options,
+            connection,
+            unlockedAudioContext
+          )),
         };
+        // Ownership transferred to MediaDeviceOutput.
+        unlockedAudioContext = null;
       } else {
         result = setupWebRTCSession(connection);
       }
     } catch (ioError) {
+      await unlockedAudioContext?.close().catch(() => {});
+      unlockedAudioContext = null;
       connection.close();
       throw ioError;
     }
@@ -167,6 +183,7 @@ export async function webSessionSetup(
       await wakeLock?.release();
       wakeLock = null;
     } catch (_e) {}
+    discardStashedAudioContext();
     throw error;
   }
 }

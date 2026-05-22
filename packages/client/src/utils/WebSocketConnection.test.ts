@@ -125,4 +125,47 @@ describe("WebSocketConnection", () => {
       vi.useRealTimers();
     });
   });
+
+  it("buffers audio events until a listener is attached", async () => {
+    const connection = await createConnection();
+    const listener = vi.fn();
+
+    emit("message", {
+      data: JSON.stringify({
+        type: "audio",
+        audio_event: {
+          audio_base_64: "dGVzdA==",
+          event_id: 1,
+        },
+      }),
+    });
+
+    expect(listener).not.toHaveBeenCalled();
+
+    connection.addListener(listener);
+
+    expect(listener).toHaveBeenCalledWith({
+      audio_base_64: "dGVzdA==",
+    });
+  });
+
+  it("clears buffered audio when the connection closes", async () => {
+    const connection = await createConnection();
+    const listener = vi.fn();
+
+    emit("message", {
+      data: JSON.stringify({
+        type: "audio",
+        audio_event: {
+          audio_base_64: "dGVzdA==",
+          event_id: 1,
+        },
+      }),
+    });
+
+    connection.close();
+    connection.addListener(listener);
+
+    expect(listener).not.toHaveBeenCalled();
+  });
 });

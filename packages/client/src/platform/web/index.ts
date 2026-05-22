@@ -1,6 +1,13 @@
 // Side-effect: registers the web voice session setup strategy
 import "./VoiceSessionSetup.js";
 
+// Side-effect: arms iOS audio unlock on first user gesture (no-op on other
+// platforms). Needed because the convai widget awaits other promises (terms
+// modal etc.) between the user's tap and Conversation.startSession, by which
+// point the gesture has been consumed.
+import { installIosAudioUnlockListener } from "./audioUnlock.js";
+installIosAudioUnlockListener();
+
 // Side-effect: registers the web audio adapter for WebRTC connections
 import { setWebRTCAudioAdapterFactory } from "../../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "./webAudioAdapter.js";
