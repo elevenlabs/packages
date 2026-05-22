@@ -970,4 +970,27 @@ describe("elevenlabs-convai", () => {
       FingerprintJS.load = originalLoad;
     });
   });
+
+  describe("terms kill switch", () => {
+    it("should not show terms modal when top-level terms are null even if language presets are set", async () => {
+      setupWebComponent({
+        "agent-id": "terms_disabled_with_stale_presets",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      await expect
+        .element(page.getByText("Stale preset terms"))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Accept" }))
+        .not.toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("Agent response"))
+        .toBeInTheDocument();
+    });
+  });
 });

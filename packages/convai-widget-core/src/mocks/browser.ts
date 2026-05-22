@@ -75,6 +75,20 @@ export const AGENTS = {
       },
     },
   },
+  terms_disabled_with_stale_presets: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    terms_text: undefined,
+    supported_language_overrides: ["en"],
+    language_presets: {
+      en: {
+        terms_html: "<p>Stale preset terms</p>",
+        terms_text: "Stale preset terms",
+      },
+    },
+  },
   markdown: {
     ...BASIC_CONFIG,
     text_only: true,
