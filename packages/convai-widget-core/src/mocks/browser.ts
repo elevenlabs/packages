@@ -79,8 +79,11 @@ export const AGENTS = {
     ...BASIC_CONFIG,
     text_only: true,
     default_expanded: true,
-    terms_html: undefined,
-    terms_text: undefined,
+    // Production serialises the kill switch as `null`, not `undefined`.
+    // HttpResponse.json -> JSON.stringify strips `undefined`, so using
+    // `null` keeps the mock faithful to the wire payload.
+    terms_html: null,
+    terms_text: null,
     supported_language_overrides: ["en"],
     language_presets: {
       en: {
