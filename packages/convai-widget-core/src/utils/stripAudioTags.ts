@@ -1,6 +1,4 @@
-// Matches [word] or [word word] but NOT markdown links like [text](url)
-// Uses negative lookahead (?!\() to avoid matching when followed by (
-const AUDIO_TAG_PATTERN = /\[[\w\s]+\](?!\()\s*/g;
+import { AUDIO_TAG_PATTERN } from "./audioTags";
 
 /**
  * Strips TTS emotional tags from text.
@@ -8,5 +6,7 @@ const AUDIO_TAG_PATTERN = /\[[\w\s]+\](?!\()\s*/g;
  * Does NOT strip markdown links like [text](url)
  */
 export function stripAudioTags(text: string): string {
-  return text.replace(AUDIO_TAG_PATTERN, "").trim();
+  return text
+    .replace(new RegExp(`${AUDIO_TAG_PATTERN.source}\\s*`, "g"), "")
+    .trim();
 }
