@@ -978,9 +978,10 @@ describe("elevenlabs-convai", () => {
         variant: "compact",
       });
 
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await startButton.click();
-
+      // The mocked agent has `default_expanded: true`, so the widget opens
+      // the chat directly without a "Start a call" button. If the kill
+      // switch works, no terms modal blocks the conversation and the
+      // agent's first message renders.
       await expect
         .element(page.getByText("Stale preset terms"))
         .not.toBeInTheDocument();
