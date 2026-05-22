@@ -35,9 +35,13 @@ function maybePrimeIosPlayback({
   // stall the first real audio chunk.
   const PRIME_DURATION_MS = 100;
   const primeFrameCount = Math.floor((sampleRate * PRIME_DURATION_MS) / 1000);
+  // μ-law silence is 0xFF, not 0x00. The worklet decodes 0x00 to ~-32124
+  // (near full-scale negative DC), which would emit a loud pop instead of
+  // priming with silence. PCM silence is plain zero, so the zero-filled
+  // Int16Array is correct as-is.
   const silentBuffer =
     format === "ulaw"
-      ? new Uint8Array(primeFrameCount)
+      ? new Uint8Array(primeFrameCount).fill(0xff)
       : new Int16Array(primeFrameCount);
   worklet.port.postMessage({
     type: "buffer",

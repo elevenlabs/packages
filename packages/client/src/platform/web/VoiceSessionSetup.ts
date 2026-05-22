@@ -120,6 +120,9 @@ export async function webSessionSetup(
         // Ownership transferred to MediaDeviceOutput.
         unlockedAudioContext = null;
       } else {
+        // WebRTC doesn't use the unlocked context — discard the stash so it
+        // doesn't sit until the TTL fires.
+        discardStashedAudioContext();
         result = setupWebRTCSession(connection);
       }
     } catch (ioError) {
