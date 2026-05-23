@@ -1,5 +1,26 @@
 # @elevenlabs/convai-widget-core
 
+## 0.12.8
+
+### Patch Changes
+
+- 0f7e2e5: Style emotion/audio tags in voice transcripts when `strip_audio_tags` is off. Voice agent messages render plain text with tag pills instead of markdown; text chat still uses markdown.
+- cf75e07: Treat null top-level `terms_html`/`terms_text` as a kill switch for the T&C modal. Previously, agents with the dashboard "Enable terms & conditions" toggle off but stale per-language preset terms would still show the modal because the widget always preferred `language_presets[lang].terms_html`. Per-language presets are now only consulted as overrides when the feature is enabled at top level.
+
+## 0.12.7
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+
+## 0.12.6
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+
 ## 0.12.5
 
 ### Patch Changes

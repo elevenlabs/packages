@@ -240,6 +240,10 @@ export function useLocalizedTerms() {
   const { language } = useLanguageConfig();
 
   return useComputed(() => {
+    if (config.value.terms_html == null && config.value.terms_text == null) {
+      return { terms_html: undefined, terms_text: undefined, terms_key: undefined };
+    }
+
     const languagePreset = config.value.language_presets?.[language.value.languageCode];
 
     return {

@@ -1,5 +1,19 @@
 # @elevenlabs/react
 
+## 1.6.3
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+
+## 1.6.2
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+
 ## 1.6.1
 
 ### Patch Changes

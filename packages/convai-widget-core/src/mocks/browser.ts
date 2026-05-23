@@ -75,6 +75,23 @@ export const AGENTS = {
       },
     },
   },
+  terms_disabled_with_stale_presets: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    // Production serialises the kill switch as `null`, not `undefined`.
+    // HttpResponse.json -> JSON.stringify strips `undefined`, so using
+    // `null` keeps the mock faithful to the wire payload.
+    terms_html: null,
+    terms_text: null,
+    supported_language_overrides: ["en"],
+    language_presets: {
+      en: {
+        terms_html: "<p>Stale preset terms</p>",
+        terms_text: "Stale preset terms",
+      },
+    },
+  },
   markdown: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -159,6 +176,24 @@ const codeBlock = true;
   audio_tags_no_strip: {
     ...BASIC_CONFIG,
     text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_voice_strip: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_voice_style: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
     default_expanded: true,
     terms_html: undefined,
     strip_audio_tags: false,

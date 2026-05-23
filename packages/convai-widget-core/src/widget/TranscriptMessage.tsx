@@ -15,6 +15,7 @@ import {
   useEndFeedbackType,
   useWidgetConfig,
 } from "../contexts/widget-config";
+import { TextWithAudioTags } from "../components/TextWithAudioTags";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
 import { isImageMimeType } from "./useFileUpload";
@@ -32,18 +33,31 @@ function AgentMessageBubble({
   const linkConfig = useMarkdownLinkConfig();
   const config = useWidgetConfig();
 
-  const displayMessage =
-    config.value.strip_audio_tags && !entry.isText
-      ? stripAudioTags(entry.message)
-      : entry.message;
+  const isVoiceMessage = !entry.isText;
+  const shouldStripAudioTags =
+    config.value.strip_audio_tags && isVoiceMessage;
+  const shouldStyleAudioTags = isVoiceMessage && !shouldStripAudioTags;
+
+  const displayMessage = shouldStripAudioTags
+    ? stripAudioTags(entry.message)
+    : entry.message;
 
   return (
     <div className="pr-8">
-      {displayMessage && (
-        <WidgetStreamdown linkConfig={linkConfig.value}>
-          {displayMessage}
-        </WidgetStreamdown>
-      )}
+      {displayMessage &&
+        (isVoiceMessage ? (
+          <div dir="auto" className="text-sm whitespace-pre-wrap wrap-break-word">
+            {shouldStyleAudioTags ? (
+              <TextWithAudioTags text={displayMessage} />
+            ) : (
+              displayMessage
+            )}
+          </div>
+        ) : (
+          <WidgetStreamdown linkConfig={linkConfig.value}>
+            {displayMessage}
+          </WidgetStreamdown>
+        ))}
       {entry.toolStatus && (
         <div className={displayMessage ? "mt-2" : undefined}>
           <ToolCallMessage status={entry.toolStatus} />

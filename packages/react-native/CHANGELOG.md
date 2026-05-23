@@ -1,5 +1,22 @@
 # @elevenlabs/react-native
 
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+  - @elevenlabs/react@1.6.3
+
+## 1.2.2
+
+### Patch Changes
+
+- 796ade1: Fix React Native SDK imports so native builds no longer pull in DOM/Web-only APIs from the client package.
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+  - @elevenlabs/react@1.6.2
+
 ## 1.2.1
 
 ### Patch Changes

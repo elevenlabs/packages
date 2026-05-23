@@ -45,8 +45,8 @@ export interface WidgetConfig {
   } | null;
   language: Language;
   supported_language_overrides?: Language[];
-  terms_html?: string;
-  terms_text?: string;
+  terms_html?: string | null;
+  terms_text?: string | null;
   terms_key?: string;
   mic_muting_enabled: boolean;
   transcript_enabled: boolean;
@@ -63,8 +63,8 @@ export interface WidgetConfig {
       {
         text_contents?: Partial<TextContents>;
         first_message?: string;
-        terms_html?: string;
-        terms_text?: string;
+        terms_html?: string | null;
+        terms_text?: string | null;
         terms_key?: string;
       }
     >
