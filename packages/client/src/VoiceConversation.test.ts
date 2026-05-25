@@ -135,7 +135,7 @@ describe("VoiceConversation", () => {
   });
 });
 
-describe("VoiceConversation transport integration", () => {
+describe("VoiceConversation WebSocket integration", () => {
   const alignment = {
     chars: ["A", "B"],
     char_start_times_ms: [0, 100],
@@ -170,12 +170,6 @@ describe("VoiceConversation transport integration", () => {
     vi.unstubAllGlobals();
   });
 
-  function emitMessage(data: unknown) {
-    for (const handler of listeners.get("message") ?? []) {
-      handler({ data: JSON.stringify(data) });
-    }
-  }
-
   it("delivers onAudioAlignment over WebSocket", async () => {
     const { WebSocketConnection } =
       await import("./utils/WebSocketConnection.js");
@@ -189,26 +183,34 @@ describe("VoiceConversation transport integration", () => {
     for (const handler of listeners.get("open") ?? []) {
       handler({ data: "" });
     }
-    emitMessage({
-      type: "conversation_initiation_metadata",
-      conversation_initiation_metadata_event: {
-        conversation_id: "test-conv-id",
-        agent_output_audio_format: "pcm_16000",
-        user_input_audio_format: "pcm_16000",
-      },
-    });
+    for (const handler of listeners.get("message") ?? []) {
+      handler({
+        data: JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: "test-conv-id",
+            agent_output_audio_format: "pcm_16000",
+            user_input_audio_format: "pcm_16000",
+          },
+        }),
+      });
+    }
 
     const connection = await promise;
     TestVoiceConversation.create({ onAudioAlignment }, connection);
 
-    emitMessage({
-      type: "audio",
-      audio_event: {
-        audio_base_64: "dGVzdA==",
-        event_id: 12,
-        alignment,
-      },
-    });
+    for (const handler of listeners.get("message") ?? []) {
+      handler({
+        data: JSON.stringify({
+          type: "audio",
+          audio_event: {
+            audio_base_64: "dGVzdA==",
+            event_id: 12,
+            alignment,
+          },
+        }),
+      });
+    }
 
     expect(onAudioAlignment).toHaveBeenCalledWith(alignment);
     connection.close();

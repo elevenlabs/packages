@@ -169,7 +169,7 @@ describe("WebSocketConnection", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it("forwards alignment-bearing audio on the WebSocket without filtering", async () => {
+  it("forwards alignment-bearing audio on the WebSocket", async () => {
     const connection = await createConnection();
     const onMessage = vi.fn();
     const alignment = {
