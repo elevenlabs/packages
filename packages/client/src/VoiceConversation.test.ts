@@ -133,6 +133,27 @@ describe("VoiceConversation", () => {
     expect(onAudioAlignment).toHaveBeenCalledWith(alignment);
     expect(onAudio).not.toHaveBeenCalled();
   });
+
+  it("does not update mode or feedback for alignment-only events", () => {
+    const onModeChange = vi.fn();
+    const onCanSendFeedbackChange = vi.fn();
+    const conversation = TestVoiceConversation.create({
+      onModeChange,
+      onCanSendFeedbackChange,
+    });
+
+    conversation.handleAudioEvent({
+      type: "audio",
+      audio_event: {
+        audio_base_64: "",
+        event_id: 11,
+        alignment,
+      },
+    });
+
+    expect(onModeChange).not.toHaveBeenCalled();
+    expect(onCanSendFeedbackChange).not.toHaveBeenCalled();
+  });
 });
 
 describe("VoiceConversation WebSocket integration", () => {

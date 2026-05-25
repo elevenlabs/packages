@@ -122,11 +122,10 @@ export class VoiceConversation extends BaseConversation {
         this.options.onAudio?.(event.audio_event.audio_base_64);
         // Audio routing is handled by attachConnectionToOutput for WebSocket
         // WebRTC handles audio playback directly through LiveKit tracks
+        this.currentEventId = event.audio_event.event_id;
+        this.updateCanSendFeedback();
+        this.updateMode("speaking");
       }
-
-      this.currentEventId = event.audio_event.event_id;
-      this.updateCanSendFeedback();
-      this.updateMode("speaking");
     }
   }
 
