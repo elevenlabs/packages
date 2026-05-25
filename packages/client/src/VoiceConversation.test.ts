@@ -148,10 +148,12 @@ describe("VoiceConversation transport integration", () => {
   beforeEach(() => {
     listeners = new Map();
     mockSocket = {
-      addEventListener: vi.fn((type: string, handler: (event: { data: string }) => void) => {
-        if (!listeners.has(type)) listeners.set(type, []);
-        listeners.get(type)!.push(handler);
-      }),
+      addEventListener: vi.fn(
+        (type: string, handler: (event: { data: string }) => void) => {
+          if (!listeners.has(type)) listeners.set(type, []);
+          listeners.get(type)!.push(handler);
+        }
+      ),
       removeEventListener: vi.fn(),
       send: vi.fn(),
       close: vi.fn(),
@@ -175,7 +177,8 @@ describe("VoiceConversation transport integration", () => {
   }
 
   it("delivers onAudioAlignment over WebSocket", async () => {
-    const { WebSocketConnection } = await import("./utils/WebSocketConnection.js");
+    const { WebSocketConnection } =
+      await import("./utils/WebSocketConnection.js");
     const onAudioAlignment = vi.fn();
 
     const promise = WebSocketConnection.create({

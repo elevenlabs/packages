@@ -335,7 +335,6 @@ describe("WebRTCConnection", () => {
         context: { type: "close", reason: "agent disconnected" },
       });
     });
-
   });
 
   it("forwards alignment on LiveKit RoomEvent.DataReceived without playback audio", async () => {

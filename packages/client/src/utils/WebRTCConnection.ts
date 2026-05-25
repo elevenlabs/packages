@@ -455,7 +455,11 @@ export class WebRTCConnection extends BaseConnection {
 
     this.room.on(
       RoomEvent.TrackUnsubscribed,
-      (track: Track, _publication: TrackPublication, participant: Participant) => {
+      (
+        track: Track,
+        _publication: TrackPublication,
+        participant: Participant
+      ) => {
         if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
