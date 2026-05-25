@@ -399,8 +399,8 @@ export class WebRTCConnection extends BaseConnection {
           const message = JSON.parse(new TextDecoder().decode(payload));
 
           // Filter out audio messages for WebRTC - they're handled via audio tracks
-          if (message.type === "audio") {
-            if (message.audio_event?.alignment && isValidSocketEvent(message)) {
+          if (isValidSocketEvent(message) && message.type === "audio") {
+            if (message.audio_event.alignment) {
               const { audio_base_64: _audioBase64, ...audioEvent } =
                 message.audio_event;
               this.handleMessage({
