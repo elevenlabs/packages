@@ -62,6 +62,8 @@ export class WebRTCConnection extends BaseConnection {
 
   private audioAdapter: WebRTCAudioAdapter | null;
 
+  private remoteAudioTracks: RemoteAudioTrack[] = [];
+
   private inputAnalyser: unknown = undefined;
   private inputVolumeProvider: VolumeProvider = NO_VOLUME;
 
@@ -397,7 +399,15 @@ export class WebRTCConnection extends BaseConnection {
           const message = JSON.parse(new TextDecoder().decode(payload));
 
           // Filter out audio messages for WebRTC - they're handled via audio tracks
-          if (message.type === "audio") {
+          if (isValidSocketEvent(message) && message.type === "audio") {
+            if (message.audio_event.alignment) {
+              const { audio_base_64: _audioBase64, ...audioEvent } =
+                message.audio_event;
+              this.handleMessage({
+                type: "audio",
+                audio_event: { ...audioEvent, audio_base_64: "" },
+              });
+            }
             return;
           }
 
@@ -425,6 +435,7 @@ export class WebRTCConnection extends BaseConnection {
           participant.identity.includes("agent")
         ) {
           const remoteAudioTrack = track as RemoteAudioTrack;
+          this.remoteAudioTracks.push(remoteAudioTrack);
 
           if (this.audioAdapter) {
             // Delegate playback to the platform-specific adapter
@@ -438,6 +449,20 @@ export class WebRTCConnection extends BaseConnection {
 
             this.onDebug?.({ type: "audio_element_ready" });
           }
+        }
+      }
+    );
+
+    this.room.on(
+      RoomEvent.TrackUnsubscribed,
+      (track: Track, _publication: TrackPublication, participant: Participant) => {
+        if (
+          track.kind === Track.Kind.Audio &&
+          participant.identity.includes("agent")
+        ) {
+          this.remoteAudioTracks = this.remoteAudioTracks.filter(
+            remoteTrack => remoteTrack !== track
+          );
         }
       }
     );
@@ -485,6 +510,7 @@ export class WebRTCConnection extends BaseConnection {
 
       // Delegate all audio cleanup to the adapter
       this.audioAdapter?.cleanup();
+      this.remoteAudioTracks = [];
       this.inputAnalyser = undefined;
       this.outputAnalyser = undefined;
       this.inputVolumeProvider = NO_VOLUME;
@@ -598,7 +624,14 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   public setAudioVolume(volume: number) {
-    this.audioAdapter?.setVolume(volume);
+    if (this.audioAdapter) {
+      this.audioAdapter.setVolume(volume);
+      return;
+    }
+
+    for (const track of this.remoteAudioTracks) {
+      track.setVolume?.(volume);
+    }
   }
 
   public async setAudioOutputDevice(deviceId: string): Promise<void> {
