@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 
 // Track mock calls using a global object that can be accessed after mocking
 const mockCalls = {
@@ -332,13 +332,11 @@ describe("WebRTCConnection", () => {
   });
 
   describe("serverUrl resolution", () => {
-    function setupRoomEvents(mockRoom: ReturnType<typeof Room>) {
-      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
-        (event: string, callback: () => void) => {
-          if (event === "connected") queueMicrotask(callback);
-        }
-      );
-      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+    function setupRoomEvents(mockRoom: { on: Mock; once: Mock }) {
+      mockRoom.on.mockImplementation((event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      });
+      mockRoom.once.mockImplementation(
         (event: string, callback: () => void) => {
           if (event === "signalConnected") queueMicrotask(callback);
         }
