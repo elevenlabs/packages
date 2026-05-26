@@ -30,6 +30,15 @@ export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
   livekitUrl?: string;
+  /**
+   * Convenience URL for self-hosted / in-VPC WebRTC deployments. Derives both
+   * the token endpoint origin and the LiveKit WebSocket URL from a single base
+   * URL (e.g. `https://bridge.vpc.example.com` or `http://localhost:7880` for
+   * local dev). Explicit `origin` or `livekitUrl` values always take
+   * precedence. Only honoured by WebRTC connections; has no effect on WebSocket
+   * sessions.
+   */
+  serverUrl?: string;
   overrides?: {
     agent?: {
       prompt?: ConversationConfigOverrideAgentPrompt;
