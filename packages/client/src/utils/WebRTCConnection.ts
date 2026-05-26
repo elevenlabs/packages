@@ -41,11 +41,6 @@ const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const AUDIO_VOLUME_THRESHOLD = 0.01;
 
-// Convert WSS origin to HTTPS for API calls
-function convertWssToHttps(origin: string): string {
-  return origin.replace(/^wss:\/\//, "https://");
-}
-
 // Convert HTTP(S) URL to WS(S) for LiveKit connections
 function convertToWss(url: string): string {
   return url.replace(/^https:\/\//, "wss://").replace(/^http:\/\//, "ws://");
