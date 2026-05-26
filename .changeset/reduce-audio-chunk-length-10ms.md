@@ -1,6 +1,6 @@
 ---
-"@elevenlabs/client": patch
+"@elevenlabs/client": minor
 "@elevenlabs/react": patch
 ---
 
-Reduce audio input chunk length from 100ms to 10ms for lower latency.
+Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).

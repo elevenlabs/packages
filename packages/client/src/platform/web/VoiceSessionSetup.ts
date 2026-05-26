@@ -51,6 +51,7 @@ async function setupWebSocketIO(
       ...connection.inputFormat,
       preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
       inputDeviceId: options.inputDeviceId,
+      inputChunkDurationMs: options.inputChunkDurationMs,
       workletPaths: options.workletPaths,
       libsampleratePath: options.libsampleratePath,
     }),
