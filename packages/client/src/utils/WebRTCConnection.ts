@@ -51,6 +51,11 @@ function convertToWss(url: string): string {
   return url.replace(/^https:\/\//, "wss://").replace(/^http:\/\//, "ws://");
 }
 
+// Convert any WS(S) or HTTP(S) URL to HTTP(S) for API calls
+function convertToHttps(url: string): string {
+  return url.replace(/^wss:\/\//, "https://").replace(/^ws:\/\//, "http://");
+}
+
 export type ConnectionConfig = SessionConfig & {
   onDebug?: (info: unknown) => void;
 };
@@ -239,9 +244,7 @@ export class WebRTCConnection extends BaseConnection {
     // URL from one base URL. Explicit origin/livekitUrl always take precedence.
     const resolvedOrigin =
       config.origin ??
-      (config.serverUrl != null
-        ? convertWssToHttps(config.serverUrl)
-        : undefined);
+      (config.serverUrl != null ? convertToHttps(config.serverUrl) : undefined);
     const resolvedLivekitUrl =
       config.livekitUrl ??
       (config.serverUrl != null ? convertToWss(config.serverUrl) : undefined);
@@ -316,7 +319,7 @@ export class WebRTCConnection extends BaseConnection {
       );
 
       // Use configurable LiveKit URL or default if not provided
-      const livekitUrl = resolvedLivekitUrl ?? DEFAULT_LIVEKIT_WS_URL;
+      const livekitUrl = resolvedLivekitUrl || DEFAULT_LIVEKIT_WS_URL;
 
       // Enable microphone on SignalConnected (before room.connect resolves).
       // The server may wait for the client to publish audio before fully

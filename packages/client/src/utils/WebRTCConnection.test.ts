@@ -394,6 +394,27 @@ describe("WebRTCConnection", () => {
       );
     });
 
+    it("converts ws:// serverUrl to http:// for token and keeps ws:// for LiveKit", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      const fetchMock = mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "ws://localhost:7880",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "http://localhost:7880/v1/convai/conversation/token"
+        )
+      );
+      expect(mockRoom.connect).toHaveBeenCalledWith(
+        "ws://localhost:7880",
+        "mock-livekit-token"
+      );
+    });
+
     it("explicit origin takes precedence over serverUrl for token fetch", async () => {
       const mockRoom = new Room() as any;
       setupRoomEvents(mockRoom);
