@@ -331,6 +331,110 @@ describe("WebRTCConnection", () => {
     });
   });
 
+  describe("serverUrl resolution", () => {
+    function setupRoomEvents(mockRoom: ReturnType<typeof Room>) {
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") queueMicrotask(callback);
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") queueMicrotask(callback);
+        }
+      );
+    }
+
+    function mockTokenFetch() {
+      const fetchMock = vi.fn<typeof fetch>().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ token: "mock-livekit-token" }),
+      } as Response);
+      vi.stubGlobal("fetch", fetchMock);
+      return fetchMock;
+    }
+
+    it("fetches token from serverUrl origin and connects LiveKit to wss equivalent", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      const fetchMock = mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "https://bridge.vpc.example.com",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "https://bridge.vpc.example.com/v1/convai/conversation/token"
+        )
+      );
+      expect(mockRoom.connect).toHaveBeenCalledWith(
+        "wss://bridge.vpc.example.com",
+        "mock-livekit-token"
+      );
+    });
+
+    it("converts http:// serverUrl to ws:// for LiveKit and keeps http:// for token", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      const fetchMock = mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "http://localhost:7880",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "http://localhost:7880/v1/convai/conversation/token"
+        )
+      );
+      expect(mockRoom.connect).toHaveBeenCalledWith(
+        "ws://localhost:7880",
+        "mock-livekit-token"
+      );
+    });
+
+    it("explicit origin takes precedence over serverUrl for token fetch", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      const fetchMock = mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "https://bridge.vpc.example.com",
+        origin: "https://custom-origin.example.com",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "https://custom-origin.example.com/v1/convai/conversation/token"
+        )
+      );
+      expect(fetchMock).not.toHaveBeenCalledWith(
+        expect.stringContaining("bridge.vpc.example.com")
+      );
+    });
+
+    it("explicit livekitUrl takes precedence over serverUrl for LiveKit connection", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "https://bridge.vpc.example.com",
+        livekitUrl: "wss://custom-livekit.example.com",
+      });
+
+      expect(mockRoom.connect).toHaveBeenCalledWith(
+        "wss://custom-livekit.example.com",
+        "mock-livekit-token"
+      );
+    });
+  });
+
   it.each([
     { textOnly: true, shouldEnableMic: false },
     { textOnly: false, shouldEnableMic: true },
