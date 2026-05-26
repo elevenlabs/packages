@@ -244,10 +244,10 @@ export class WebRTCConnection extends BaseConnection {
     // URL from one base URL. Explicit origin/livekitUrl always take precedence.
     const resolvedOrigin =
       config.origin ??
-      (config.serverUrl != null ? convertToHttps(config.serverUrl) : undefined);
+      (config.serverUrl ? convertToHttps(config.serverUrl) : undefined);
     const resolvedLivekitUrl =
       config.livekitUrl ??
-      (config.serverUrl != null ? convertToWss(config.serverUrl) : undefined);
+      (config.serverUrl ? convertToWss(config.serverUrl) : undefined);
 
     // Handle different authentication scenarios
     if ("conversationToken" in config && config.conversationToken) {
