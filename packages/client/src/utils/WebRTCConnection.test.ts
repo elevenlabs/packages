@@ -415,6 +415,27 @@ describe("WebRTCConnection", () => {
       );
     });
 
+    it("converts wss:// serverUrl to https:// for token and keeps wss:// for LiveKit", async () => {
+      const mockRoom = new Room() as any;
+      setupRoomEvents(mockRoom);
+      const fetchMock = mockTokenFetch();
+
+      await WebRTCConnection.create({
+        agentId: "test-agent",
+        serverUrl: "wss://bridge.vpc.example.com",
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "https://bridge.vpc.example.com/v1/convai/conversation/token"
+        )
+      );
+      expect(mockRoom.connect).toHaveBeenCalledWith(
+        "wss://bridge.vpc.example.com",
+        "mock-livekit-token"
+      );
+    });
+
     it("explicit origin takes precedence over serverUrl for token fetch", async () => {
       const mockRoom = new Room() as any;
       setupRoomEvents(mockRoom);

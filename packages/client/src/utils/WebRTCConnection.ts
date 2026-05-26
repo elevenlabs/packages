@@ -258,7 +258,7 @@ export class WebRTCConnection extends BaseConnection {
       try {
         const { name: source, version } = sourceInfo;
         const configOrigin = resolvedOrigin ?? HTTPS_API_ORIGIN;
-        const origin = convertWssToHttps(configOrigin); //origin is wss, not https
+        const origin = convertToHttps(configOrigin); // normalize ws(s):// and http(s):// to http(s):// for token fetch
         let url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
         if (config.environment) {
           url += `&environment=${encodeURIComponent(config.environment)}`;
