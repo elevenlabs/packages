@@ -3,12 +3,13 @@ import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
-import type {
-  InputController,
-  InputDeviceConfig,
-  InputConfig,
-  InputEventTarget,
-  InputListener,
+import {
+  DEFAULT_INPUT_CHUNK_DURATION_MS,
+  type InputController,
+  type InputDeviceConfig,
+  type InputConfig,
+  type InputEventTarget,
+  type InputListener,
 } from "../../InputController.js";
 import {
   createAnalyserVolumeProvider,
@@ -33,6 +34,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     workletPaths,
     libsampleratePath,
     onError,
+    inputChunkDurationMs = DEFAULT_INPUT_CHUNK_DURATION_MS,
   }: FormatConfig &
     InputConfig &
     AudioWorkletConfig): Promise<MediaDeviceInput> {
@@ -89,7 +91,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "rawAudioProcessor");
-      worklet.port.postMessage({ type: "setFormat", format, sampleRate });
+      worklet.port.postMessage({
+        type: "setFormat",
+        format,
+        sampleRate,
+        chunkDurationMs: inputChunkDurationMs,
+      });
 
       source.connect(analyser);
       analyser.connect(worklet);
@@ -215,9 +222,10 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Extract inputDeviceId from config
       const inputDeviceId = config?.inputDeviceId;
 
-      // Note: sampleRate, format, and preferHeadphonesForIosDevices cannot be
-      // changed on an existing input (would require recreating the AudioContext).
-      // These options are only used during initial MediaDeviceInput.create()
+      // Note: sampleRate, format, inputChunkDurationMs, and
+      // preferHeadphonesForIosDevices cannot be changed on an existing input
+      // (would require recreating the AudioContext). These options are only used
+      // during initial MediaDeviceInput.create()
 
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
