@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.9.0
+
+### Minor Changes
+
+- d1cadcd: Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).
+
 ## 1.8.1
 
 ### Patch Changes
