@@ -4,10 +4,7 @@
   "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "generate",
-        "^build"
-      ],
+      "dependsOn": ["generate", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env*",
@@ -49,10 +46,7 @@
       "inputs": ["src/**", ".prettierrc*", "prettier.config.*"]
     },
     "check-types": {
-      "dependsOn": [
-        "^build",
-        "generate"
-      ],
+      "dependsOn": ["^build", "generate"],
       "inputs": [
         "src/**",
         "tsconfig.json",
@@ -66,10 +60,7 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": [
-        "generate",
-        "^build"
-      ]
+      "dependsOn": ["generate", "^build"]
     },
     "generate": {
       "dependsOn": ["generate-types", "generate-version", "generate-worklets"]
