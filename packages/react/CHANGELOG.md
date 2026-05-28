@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 1.6.4
+
+### Patch Changes
+
+- d1cadcd: Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).
+- Updated dependencies [d1cadcd]
+  - @elevenlabs/client@1.9.0
+
 ## 1.6.3
 
 ### Patch Changes
