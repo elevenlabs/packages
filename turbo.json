@@ -13,13 +13,7 @@
         "tsconfig.build.json",
         "tsconfig.test.json"
       ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**",
-        "generated/**",
-        "*.tsbuildinfo"
-      ]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "generated/**", "*.tsbuildinfo"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -47,12 +41,7 @@
     },
     "check-types": {
       "dependsOn": ["^build", "generate"],
-      "inputs": [
-        "src/**",
-        "tsconfig.json",
-        "tsconfig.build.json",
-        "tsconfig.test.json"
-      ]
+      "inputs": ["src/**", "tsconfig.json", "tsconfig.build.json", "tsconfig.test.json"]
     },
     "clean": {
       "cache": false
