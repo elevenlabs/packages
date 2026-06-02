@@ -57,8 +57,6 @@ describe("elevenlabs-convai", () => {
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
 
-      await startButton.click();
-
       // Status badge
       await expect.element(page.getByText("Connecting")).toBeInTheDocument();
       await expect.element(page.getByText("Listening")).toBeInTheDocument();
@@ -153,8 +151,8 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await startButton.click();
+      const messageButton = page.getByRole("button", { name: "Message" });
+      await messageButton.click();
 
       await expect.element(page.getByText("Test terms")).toBeInTheDocument();
       const acceptButton = page.getByRole("button", { name: "Accept" });
@@ -202,8 +200,8 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await startButton.click();
+      const messageButton = page.getByRole("button", { name: "Message" });
+      await messageButton.click();
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
@@ -256,8 +254,6 @@ describe("elevenlabs-convai", () => {
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
-
-      await startButton.click();
 
       // Received transcript
       await expect
@@ -646,8 +642,6 @@ describe("elevenlabs-convai", () => {
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
 
-      await startButton.click();
-
       // Dismiss button should be hidden during active call
       await expect.element(dismissButton).not.toBeInTheDocument();
 
@@ -744,10 +738,10 @@ describe("elevenlabs-convai", () => {
           "show-conversation-id": "false",
         });
 
-        const startButton = page.getByRole("button", {
-          name: "Start a call",
+        const messageButton = page.getByRole("button", {
+          name: "Message",
         });
-        await startButton.click();
+        await messageButton.click();
 
         await expect.element(page.getByText("Test terms")).toBeInTheDocument();
         const acceptButton = page.getByRole("button", { name: "Accept" });
@@ -784,8 +778,6 @@ describe("elevenlabs-convai", () => {
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
-
-      await startButton.click();
 
       const textInput = page.getByRole("textbox", {
         name: "Text message input",
