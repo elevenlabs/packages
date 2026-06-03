@@ -39,7 +39,10 @@ export function FullExpandableTrigger({
           <div className="text-sm max-w-64">{text.main_label}</div>
         </div>
       </SizeTransition>
-      <div className="flex items-center">
+      {/* min-h-11 (one control row) keeps the action area from collapsing while
+          the entry-point and chevron slots cross-fade, which would bounce the
+          trigger height. */}
+      <div className="flex items-center min-h-11">
         <ExpandableTriggerActions expanded={expanded} onDismiss={onDismiss} />
       </div>
     </div>

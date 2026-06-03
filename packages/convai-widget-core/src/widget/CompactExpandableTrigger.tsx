@@ -22,7 +22,12 @@ export function CompactExpandableTrigger({
       <SizeTransition visible={!expanded.value} className="p-1">
         <Avatar />
       </SizeTransition>
-      <ExpandableTriggerActions expanded={expanded} onDismiss={onDismiss} />
+      {/* min-h-11 (one control row) keeps the action area from collapsing while
+          the entry-point and chevron slots cross-fade, which would bounce the
+          trigger height. */}
+      <div className="flex items-center min-h-11">
+        <ExpandableTriggerActions expanded={expanded} onDismiss={onDismiss} />
+      </div>
     </div>
   );
 }

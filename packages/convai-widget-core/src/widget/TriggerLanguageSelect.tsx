@@ -29,6 +29,9 @@ export function TriggerLanguageSelect({ visible, className, ...rest }: Props) {
           )}
           aria-label={text.change_language}
           {...rest}
+          // The collapsed trigger expands on container click; keep a pill click
+          // to just opening the language dropdown.
+          onClick={e => e.stopPropagation()}
         >
           <Flag flagCode={language.value.flagCode} />
           <Select.Icon className="px-1 text-base-subtle" asChild>

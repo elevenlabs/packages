@@ -9,10 +9,14 @@ import {
   KeyboardEventHandler,
   TargetedEvent,
   useCallback,
+  useRef,
 } from "preact/compat";
 import { Button } from "../components/Button";
 import { SizeTransition } from "../components/SizeTransition";
-import { useConversation } from "../contexts/conversation";
+import {
+  useCallButtonDisabled,
+  useConversation,
+} from "../contexts/conversation";
 import { useTextContents } from "../contexts/text-contents";
 import {
   useFileInputEnabled,
@@ -24,6 +28,7 @@ import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
 import { TriggerMuteButton } from "./TriggerMuteButton";
 import { useConversationMode } from "../contexts/conversation-mode";
+import { useSheetContent } from "../contexts/sheet-content";
 import { UploadFileButton } from "./UploadFileButton";
 import { PendingFilePreview } from "./PendingFilePreview";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "./useFileUpload";
@@ -92,8 +97,7 @@ export function SheetActions({
       const error = addFile(file);
       if (!error) return;
       if (error === "unsupported_type") {
-        fileError.value =
-          `${text.file_type_unsupported.peek()} ${ACCEPTED_FILE_EXTENSIONS.join(", ")}.`;
+        fileError.value = `${text.file_type_unsupported.peek()} ${ACCEPTED_FILE_EXTENSIONS.join(", ")}.`;
         return;
       }
       const messageByCode = {
@@ -238,6 +242,17 @@ function SheetTextarea({
   const textOnly = useIsConversationTextOnly();
   const { isDisconnected, conversationIndex, sendUserActivity } =
     useConversation();
+  const { pendingInputFocus } = useSheetContent();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // The message entry point opens the sheet and requests focus here; consume
+  // the request once so later opens (e.g. via the call button) don't steal it.
+  useSignalEffect(() => {
+    if (pendingInputFocus.value) {
+      inputRef.current?.focus();
+      pendingInputFocus.value = false;
+    }
+  });
 
   const handleChange = useCallback(
     (e: TargetedEvent<HTMLTextAreaElement>) => {
@@ -272,6 +287,7 @@ function SheetTextarea({
 
   return (
     <textarea
+      ref={inputRef}
       aria-label={text.input_label}
       value={userMessage.value}
       onInput={sendUserActivity}
@@ -286,7 +302,7 @@ function SheetTextarea({
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
       }
-      className="w-full h-full resize-none bg-base leading-5 outline-hidden text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] min-h-18 max-h-full field-sizing-content"
+      className="w-full h-full resize-none bg-base leading-5 outline-hidden text-sm text-base-primary placeholder:text-base-subtle p-3 pb-[60px] max-h-full field-sizing-content"
     />
   );
 }
@@ -309,7 +325,8 @@ function SheetButtons({
   const text = useTextContents();
   const textOnly = useIsConversationTextOnly();
   const textInputEnabled = useTextInputEnabled();
-  const { isDisconnected, status } = useConversation();
+  const { isDisconnected } = useConversation();
+  const callDisabled = useCallButtonDisabled();
   const { isTextMode } = useConversationMode();
 
   const showCallButton = useComputed(() => {
@@ -336,9 +353,7 @@ function SheetButtons({
         <CallButton
           iconOnly
           isDisconnected={isDisconnected.value}
-          disabled={
-            status.value === "disconnecting" || status.value === "connecting"
-          }
+          disabled={callDisabled.value}
           className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />
       </SizeTransition>
