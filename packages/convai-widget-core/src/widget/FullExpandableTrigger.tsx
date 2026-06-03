@@ -32,9 +32,9 @@ export function FullExpandableTrigger({
     >
       <SizeTransition
         visible={!expanded.value && isDisconnected.value}
-        className="p-1 !min-w-60"
+        className="p-1 w-full"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-60">
           <Avatar />
           <div className="text-sm max-w-64">{text.main_label}</div>
         </div>
