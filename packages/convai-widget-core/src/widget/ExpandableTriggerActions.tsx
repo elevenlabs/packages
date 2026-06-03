@@ -124,10 +124,10 @@ export function ExpandableTriggerActions({
           className="w-full"
           variant={showCall.value ? "secondary" : "primary"}
           icon="chat"
-          aria-label={text.start_message}
+          aria-label={text.start_chat}
           onClick={handleMessage}
         >
-          {!isTiny && !showCall.value ? text.start_message : undefined}
+          {!isTiny && !showCall.value ? text.start_chat : undefined}
         </Button>
       </SizeTransition>
       <TriggerLanguageSelect visible={collapsedDisconnected} />
