@@ -7,32 +7,40 @@ import { useTextContents } from "../contexts/text-contents";
 import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useConversationMode } from "../contexts/conversation-mode";
 
+
+function userCurrentLabel() {
+  const { status, isSpeaking, isExternalAgentMode } = useConversation();
+  const textOnly = useIsConversationTextOnly();
+  const { isTextMode } = useConversationMode();
+  const text = useTextContents();
+
+  const compute = () => {
+    if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true};
+
+    if (isExternalAgentMode.value) return {label: text.connecting_status.value, updateImmediately: true};
+
+    if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value};
+
+    if (isSpeaking.value) return {label: text.speaking_status.value, updateImmediately: isSpeaking.value};
+
+    return {label: text.listening_status.value, updateImmediately: isSpeaking.value};
+  }
+  return useComputed(compute)
+}
+
 export function StatusLabel({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  const { status, isSpeaking } = useConversation();
-  const textOnly = useIsConversationTextOnly();
-  const { isTextMode } = useConversationMode();
-  const text = useTextContents();
-  const currentLabel = useComputed(() =>
-    status.value !== "connected"
-      ? text.connecting_status.value
-      : textOnly.value || isTextMode.value
-        ? text.chatting_status.value
-        : isSpeaking.value
-          ? text.speaking_status.value
-          : text.listening_status.value
-  );
-
-  const [label, setLabel] = useState(currentLabel.peek());
+  const currentLabel = userCurrentLabel();
+  const [label, setLabel] = useState(currentLabel.peek().label);
   useSignalEffect(() => {
     const label = currentLabel.value;
-    if (status.value === "connected" && isSpeaking.value) {
-      setLabel(label);
+    if (label.updateImmediately) {
+      setLabel(label.label);
     } else {
       const timeout = setTimeout(() => {
-        setLabel(label);
+        setLabel(label.label);
       }, 500);
       return () => clearTimeout(timeout);
     }
