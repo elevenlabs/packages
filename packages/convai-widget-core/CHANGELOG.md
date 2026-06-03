@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.13.1
+
+### Patch Changes
+
+- 75f6be3: Fix compact and full trigger control alignment.
+
 ## 0.13.0
 
 ### Minor Changes
