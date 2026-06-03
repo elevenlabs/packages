@@ -55,7 +55,7 @@ export function Sheet({ open }: SheetProps) {
 
   const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
-    const baseTranscript = buildDisplayTranscript(transcript.value, {
+    return buildDisplayTranscript(transcript.value, {
       showAgentStatus: config.value.show_agent_status ?? false,
       transcriptEnabled:
         isTextOnly || (config.value.transcript_enabled ?? false),
@@ -66,19 +66,8 @@ export function Sheet({ open }: SheetProps) {
           ? firstMessage.value
           : undefined,
       firstMessageConversationIndex: conversationIndex.peek(),
+      showTypingIndicator: isExternalAgentMode.value && isAgentTyping.value,
     });
-
-    if (isExternalAgentMode.value && isAgentTyping.value) {
-      return [
-        ...baseTranscript,
-        {
-          type: "typing_indicator" as const,
-          conversationIndex: conversationIndex.value,
-        },
-      ];
-    }
-
-    return baseTranscript;
   });
   const showTranscript = useComputed(
     () =>
