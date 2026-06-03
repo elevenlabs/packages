@@ -9,15 +9,13 @@ import { useConversationMode } from "../contexts/conversation-mode";
 
 
 function userCurrentLabel() {
-  const { status, isSpeaking, isExternalAgentMode } = useConversation();
+  const { status, isSpeaking } = useConversation();
   const textOnly = useIsConversationTextOnly();
   const { isTextMode } = useConversationMode();
   const text = useTextContents();
 
   const compute = () => {
     if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true};
-
-    if (isExternalAgentMode.value) return {label: text.connecting_status.value, updateImmediately: true};
 
     if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value};
 

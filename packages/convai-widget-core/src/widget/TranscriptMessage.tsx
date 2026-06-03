@@ -34,8 +34,7 @@ function AgentMessageBubble({
   const config = useWidgetConfig();
 
   const isVoiceMessage = !entry.isText;
-  const shouldStripAudioTags =
-    config.value.strip_audio_tags && isVoiceMessage;
+  const shouldStripAudioTags = config.value.strip_audio_tags && isVoiceMessage;
   const shouldStyleAudioTags = isVoiceMessage && !shouldStripAudioTags;
 
   const displayMessage = shouldStripAudioTags
@@ -46,7 +45,10 @@ function AgentMessageBubble({
     <div className="pr-8">
       {displayMessage &&
         (isVoiceMessage ? (
-          <div dir="auto" className="text-sm whitespace-pre-wrap wrap-break-word">
+          <div
+            dir="auto"
+            className="text-sm whitespace-pre-wrap wrap-break-word"
+          >
             {shouldStyleAudioTags ? (
               <TextWithAudioTags text={displayMessage} />
             ) : (
@@ -272,6 +274,16 @@ function ToolCallMessage({ status }: { status: ToolCallStatusType }) {
   );
 }
 
+function TypingIndicatorMessage() {
+  return (
+    <div className="pr-8 flex items-center gap-1">
+      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
+      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
+      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
+    </div>
+  );
+}
+
 function getMessageComponent(entry: DisplayTranscriptEntry) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
@@ -281,6 +293,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
+  }
+  if (entry.type === "typing_indicator") {
+    return <TypingIndicatorMessage />;
   }
   if (entry.role === "agent") {
     return <AgentMessageBubble entry={entry} />;

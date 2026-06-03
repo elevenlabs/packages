@@ -40,6 +40,10 @@ export type DisplayTranscriptEntry =
       type: "mode_toggle";
       mode: ConversationMode;
       conversationIndex: number;
+    }
+  | {
+      type: "typing_indicator";
+      conversationIndex: number;
     };
 
 export interface DisplayTranscriptConfig {
