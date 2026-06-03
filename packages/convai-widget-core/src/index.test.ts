@@ -151,7 +151,7 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const messageButton = page.getByRole("button", { name: "Start a chat" });
+      const messageButton = page.getByRole("button", { name: "Message" });
       await messageButton.click();
 
       await expect.element(page.getByText("Test terms")).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const messageButton = page.getByRole("button", { name: "Start a chat" });
+      const messageButton = page.getByRole("button", { name: "Message" });
       await messageButton.click();
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
@@ -739,7 +739,7 @@ describe("elevenlabs-convai", () => {
         });
 
         const messageButton = page.getByRole("button", {
-          name: "Start a chat",
+          name: "Message",
         });
         await messageButton.click();
 

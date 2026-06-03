@@ -22,7 +22,7 @@ describe("Trigger entry points", () => {
           .element(page.getByRole("button", { name: "Start a call" }))
           .toBeVisible();
         await expect
-          .element(page.getByRole("button", { name: "Start a chat" }))
+          .element(page.getByRole("button", { name: "Message" }))
           .toBeVisible();
       }
     );
@@ -38,7 +38,7 @@ describe("Trigger entry points", () => {
         .element(page.getByRole("button", { name: "Start a call" }))
         .toBeVisible();
       await expect
-        .element(page.getByRole("button", { name: "Start a chat" }))
+        .element(page.getByRole("button", { name: "Message" }))
         .not.toBeInTheDocument();
     });
 
@@ -52,7 +52,7 @@ describe("Trigger entry points", () => {
         });
 
         await expect
-          .element(page.getByRole("button", { name: "Start a chat" }))
+          .element(page.getByRole("button", { name: "Message" }))
           .toBeVisible();
         await expect
           .element(page.getByRole("button", { name: "Start a call" }))
@@ -69,7 +69,7 @@ describe("Trigger entry points", () => {
         "text-input": "true",
       });
 
-      await page.getByRole("button", { name: "Start a chat" }).click();
+      await page.getByRole("button", { name: "Message" }).click();
       await page.getByRole("button", { name: "Accept" }).click();
 
       const input = page.getByRole("textbox", { name: "Text message input" });
