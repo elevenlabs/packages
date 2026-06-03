@@ -7,13 +7,13 @@
   "source": "./src/index.ts",
   "type": "module",
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "generate-version": "node ../../scripts/generate-version.mjs",
     "build": "vite build && tsc --declaration --emitDeclarationOnly",
     "build:analyze": "ANALYZE=true vite build",
     "dev": "vite",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier \"src/**/*.ts\" --check",
     "test": "vitest"
   },
   "files": [

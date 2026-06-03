@@ -11,13 +11,13 @@
     }
   },
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
+    "generate-version": "node ../../scripts/generate-version.mjs",
     "build": "tsc --build tsconfig.build.json",
     "dev": "tsc --build tsconfig.build.json --watch",
     "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check"
+    "lint:prettier": "prettier \"src/**/*.ts\" --check"
   },
   "keywords": [
     "elevenlabs",
