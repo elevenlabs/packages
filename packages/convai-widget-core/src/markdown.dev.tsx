@@ -252,6 +252,8 @@ function MockConversationProvider({
       conversationIndex: signal(0),
       conversationTextOnly: signal<boolean | null>(null),
       transcript: mockTranscript,
+      isAgentTyping: signal(false),
+      isExternalAgentMode: signal(false),
       startSession: async () => "",
       endSession: async () => {},
       getInputVolume: () => 0,

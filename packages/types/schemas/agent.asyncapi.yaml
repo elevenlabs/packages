@@ -66,6 +66,8 @@ channels:
           - $ref: "#/components/messages/GuardrailTriggered"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
+          - $ref: "#/components/messages/AgentTyping"
+          - $ref: "#/components/messages/ExternalAgentConnected"
           - $ref: "#/components/messages/ErrorMessage"
     subscribe:
       summary: Messages received from client to server
@@ -328,6 +330,22 @@ components:
       payload:
         $ref: "#/components/schemas/InternalTentativeAgentResponsePayload"
 
+    AgentTyping:
+      name: AgentTypingClientEvent
+      title: Agent Typing Indicator
+      summary: Indicates when an external agent is typing
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentTypingPayload"
+
+    ExternalAgentConnected:
+      name: ExternalAgentConnectedClientEvent
+      title: External Agent Connected
+      summary: Indicates that an external agent (e.g., Genesys) has connected
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ExternalAgentConnectedPayload"
+
     # ===== ERROR MESSAGES =====
 
     ErrorMessage:
@@ -362,6 +380,8 @@ components:
         - guardrail_triggered
         - internal_turn_probability
         - internal_tentative_agent_response
+        - agent_typing
+        - external_agent_connected
       description: Types of events that can be sent from server to client
 
     Language:
@@ -1212,6 +1232,39 @@ components:
         tentative_agent_response:
           type: string
           description: Tentative response from the agent (internal use)
+
+    AgentTypingPayload:
+      type: object
+      required: [agent_typing_event, type]
+      properties:
+        type:
+          type: string
+          const: agent_typing
+        agent_typing_event:
+          $ref: "#/components/schemas/AgentTypingData"
+
+    AgentTypingData:
+      type: object
+      required: [is_typing]
+      properties:
+        is_typing:
+          type: boolean
+          description: Whether the agent is currently typing
+        duration_ms:
+          type: integer
+          nullable: true
+          description: Optional duration in milliseconds to automatically clear typing state
+
+    ExternalAgentConnectedPayload:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: external_agent_connected
+        external_agent_connected_event:
+          type: object
+          description: Empty event indicating external agent connection
 
     SourceInfo:
       type: object

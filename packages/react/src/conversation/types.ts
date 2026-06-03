@@ -43,6 +43,8 @@ export type HookCallbacks = Pick<
   | "onAgentResponseCorrection"
   | "onAudioAlignment"
   | "onGuardrailTriggered"
+  | "onAgentTyping"
+  | "onExternalAgentConnected"
 >;
 
 export type HookOptions = Partial<

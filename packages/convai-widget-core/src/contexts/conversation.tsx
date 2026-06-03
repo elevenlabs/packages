@@ -141,6 +141,7 @@ function useConversationSetup() {
   const receivedFirstMessageRef = useRef(false);
   const streamingMessageIndexRef = useRef<number | null>(null);
   const isReceivingStreamRef = useRef(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shadowHost = useShadowHost();
 
   const widgetConfig = useWidgetConfig();
@@ -148,11 +149,20 @@ function useConversationSetup() {
   const terms = useTerms();
   const config = useSessionConfig();
 
+  // Helper function to clear typing timer
+  const clearTypingTimer = () => {
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+  };
+
   // Stop the conversation when the component unmounts.
   // This can happen when the widget is used inside another framework.
   useEffect(() => {
     return () => {
       conversationRef.current?.endSession();
+      clearTypingTimer();
     };
   }, []);
 
@@ -169,6 +179,19 @@ function useConversationSetup() {
     const transcript = signal<TranscriptEntry[]>([]);
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
+    const isAgentTyping = signal(false);
+    const isExternalAgentMode = signal(false);
+
+    const setAgentTyping = (typing: boolean, durationMs?: number | null) => {
+      clearTypingTimer();
+      isAgentTyping.value = typing;
+
+      if (typing && durationMs) {
+        typingTimerRef.current = setTimeout(() => {
+          isAgentTyping.value = false;
+        }, durationMs);
+      }
+    };
 
     return {
       status,
@@ -181,6 +204,8 @@ function useConversationSetup() {
       conversationIndex,
       conversationTextOnly,
       transcript,
+      isAgentTyping,
+      isExternalAgentMode,
       startSession: async (element: HTMLElement, initialMessage?: string) => {
         await terms.requestTerms();
 
@@ -260,6 +285,7 @@ function useConversationSetup() {
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
+                setAgentTyping(false);
               }
 
               if (role === "agent" && isReceivingStreamRef.current) {
@@ -295,15 +321,13 @@ function useConversationSetup() {
                 return;
               }
 
-              if (
-                firstMessage.peek() &&
-                !receivedFirstMessageRef.current
-              ) {
+              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
                 return;
               }
+              setAgentTyping(false);
 
               if (type === "start") {
                 isReceivingStreamRef.current = true;
@@ -362,11 +386,20 @@ function useConversationSetup() {
                 },
               ];
             },
+            onAgentTyping: ({ is_typing, duration_ms }) => {
+              setAgentTyping(is_typing, duration_ms);
+            },
+            onExternalAgentConnected: () => {
+              isExternalAgentMode.value = true;
+            },
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               streamingMessageIndexRef.current = null;
               isReceivingStreamRef.current = false;
+              clearTypingTimer();
+              isAgentTyping.value = false;
+              isExternalAgentMode.value = false;
               transcript.value = [
                 ...transcript.peek(),
                 details.reason === "error"
@@ -482,7 +515,7 @@ function useConversationSetup() {
         conversationRef.current?.sendUserActivity();
       },
       sendContextualUpdate: (text: string) => {
-        conversationRef.current?.sendContextualUpdate(text)
+        conversationRef.current?.sendContextualUpdate(text);
       },
       addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active
