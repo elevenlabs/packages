@@ -5,7 +5,12 @@ import {
   SessionConfig,
   Status,
 } from "@elevenlabs/client";
-import { computed, signal, useSignalEffect } from "@preact/signals";
+import {
+  computed,
+  signal,
+  useComputed,
+  useSignalEffect,
+} from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { useEffect, useRef } from "react";
@@ -133,6 +138,13 @@ export function ConversationProvider({ children }: ConversationProviderProps) {
 
 export function useConversation() {
   return useContextSafely(ConversationContext);
+}
+
+export function useCallButtonDisabled() {
+  const { status } = useConversation();
+  return useComputed(
+    () => status.value === "disconnecting" || status.value === "connecting"
+  );
 }
 
 function useConversationSetup() {
@@ -295,10 +307,7 @@ function useConversationSetup() {
                 return;
               }
 
-              if (
-                firstMessage.peek() &&
-                !receivedFirstMessageRef.current
-              ) {
+              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
@@ -482,7 +491,7 @@ function useConversationSetup() {
         conversationRef.current?.sendUserActivity();
       },
       sendContextualUpdate: (text: string) => {
-        conversationRef.current?.sendContextualUpdate(text)
+        conversationRef.current?.sendContextualUpdate(text);
       },
       addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active

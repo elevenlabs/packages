@@ -1,5 +1,20 @@
 # @elevenlabs/convai-widget-core
 
+## 0.13.1
+
+### Patch Changes
+
+- 75f6be3: Fix compact and full trigger control alignment.
+
+## 0.13.0
+
+### Minor Changes
+
+- 6458543: Add call and message entry points to the widget launcher.
+  - Multimodal agents show both; voice-only shows call; text-only shows message.
+  - Call connects directly on click; message opens the chat focused on the input.
+  - The message entry point uses the existing `start_chat` text key.
+
 ## 0.12.9
 
 ### Patch Changes

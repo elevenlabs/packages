@@ -27,6 +27,10 @@
     sans-serif;
 
   scrollbar-color: #e5e7eb transparent;
+
+  button {
+    margin: 0;
+  }
 }
 
 @layer utilities {

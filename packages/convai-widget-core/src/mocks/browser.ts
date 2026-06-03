@@ -21,9 +21,7 @@ const BASIC_CONFIG: WidgetConfig = {
   default_expanded: false,
   always_expanded: false,
   dismissible: false,
-  text_contents: {
-    start_chat: "Start a call",
-  },
+  text_contents: {},
   terms_html: "Test terms",
   language_presets: {},
   disable_banner: false,

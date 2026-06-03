@@ -103,7 +103,7 @@ export type AvatarConfig =
 export const DefaultTextContents = {
   main_label: "Need help?",
   start_call: "Start a call",
-  start_chat: "Start a chat",
+  start_chat: "Message",
   send_message: "Send",
   new_call: "New call",
   end_call: "End",
