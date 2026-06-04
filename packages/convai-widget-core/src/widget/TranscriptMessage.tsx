@@ -279,7 +279,7 @@ function TypingIndicatorMessage() {
   const text = useTextContents();
 
   return (
-    <div className="pr-8 pl-4">
+    <div className="pr-8">
       <ShimmeringText text={text.typing_indicator.value} className="text-sm" />
     </div>
   );
