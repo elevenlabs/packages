@@ -19,6 +19,7 @@ import { TextWithAudioTags } from "../components/TextWithAudioTags";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
 import { isImageMimeType } from "./useFileUpload";
+import { ShimmeringText } from "../components/ShimmeringText";
 
 interface TranscriptMessageProps {
   entry: DisplayTranscriptEntry;
@@ -275,11 +276,11 @@ function ToolCallMessage({ status }: { status: ToolCallStatusType }) {
 }
 
 function TypingIndicatorMessage() {
+  const text = useTextContents();
+
   return (
-    <div className="pr-8 flex items-center gap-1">
-      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
-      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
-      <span className="typing-dot w-1 h-1 rounded-full bg-base-primary"></span>
+    <div className="pr-8 pl-4">
+      <ShimmeringText text={text.typing_indicator.value} className="text-sm" />
     </div>
   );
 }
