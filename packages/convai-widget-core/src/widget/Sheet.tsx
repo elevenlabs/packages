@@ -6,7 +6,10 @@ import {
   useWidgetConfig,
 } from "../contexts/widget-config";
 import { useConversation } from "../contexts/conversation";
-import { buildDisplayTranscript, type DisplayTranscriptEntry } from "../utils/display-transcript";
+import {
+  buildDisplayTranscript,
+  type DisplayTranscriptEntry,
+} from "../utils/display-transcript";
 import { InOutTransition } from "../components/InOutTransition";
 import { cn } from "../utils/cn";
 import { Placement } from "../types/config";
@@ -38,8 +41,14 @@ export function Sheet({ open }: SheetProps) {
   const isConversationTextOnly = useIsConversationTextOnly();
   const config = useWidgetConfig();
   const placement = config.value.placement;
-  const { isDisconnected, startSession, transcript, conversationIndex } =
-    useConversation();
+  const {
+    isDisconnected,
+    startSession,
+    transcript,
+    conversationIndex,
+    isAgentTyping,
+    isExternalAgentMode,
+  } = useConversation();
   const firstMessage = useFirstMessage();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
@@ -48,7 +57,8 @@ export function Sheet({ open }: SheetProps) {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
     return buildDisplayTranscript(transcript.value, {
       showAgentStatus: config.value.show_agent_status ?? false,
-      transcriptEnabled: isTextOnly || (config.value.transcript_enabled ?? false),
+      transcriptEnabled:
+        isTextOnly || (config.value.transcript_enabled ?? false),
       // Prepend first message only when the widget is text-only
       // (not when it switched to text-only due to user input)
       firstMessage:
@@ -56,6 +66,7 @@ export function Sheet({ open }: SheetProps) {
           ? firstMessage.value
           : undefined,
       firstMessageConversationIndex: conversationIndex.peek(),
+      showTypingIndicator: isExternalAgentMode.value && isAgentTyping.value,
     });
   });
   const showTranscript = useComputed(

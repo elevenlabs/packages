@@ -13,7 +13,9 @@ import type {
   AgentChatResponsePartEvent,
   AgentResponseEvent,
   AgentResponseCorrectionEvent,
+  AgentTypingEvent,
   ClientToolCallEvent,
+  ExternalAgentConnectedEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
@@ -139,6 +141,8 @@ export abstract class BaseConversation {
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
       onAgentResponseCorrection: () => {},
+      onAgentTyping: () => {},
+      onExternalAgentConnected: () => {},
       ...partialOptions,
       textOnly,
       overrides: {
@@ -400,6 +404,18 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleAgentTyping(event: AgentTypingEvent) {
+    if (this.options.onAgentTyping) {
+      this.options.onAgentTyping(event.agent_typing_event);
+    }
+  }
+
+  protected handleExternalAgentConnected(_event: ExternalAgentConnectedEvent) {
+    if (this.options.onExternalAgentConnected) {
+      this.options.onExternalAgentConnected();
+    }
+  }
+
   protected handleErrorEvent(event: ErrorMessageEvent) {
     const errorType = event.error_event.error_type;
     const message =
@@ -530,6 +546,16 @@ export abstract class BaseConversation {
 
       case "error": {
         this.handleErrorEvent(parsedEvent);
+        return;
+      }
+
+      case "agent_typing": {
+        this.handleAgentTyping(parsedEvent);
+        return;
+      }
+
+      case "external_agent_connected": {
+        this.handleExternalAgentConnected(parsedEvent);
         return;
       }
 

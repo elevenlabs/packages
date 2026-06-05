@@ -19,6 +19,7 @@ import { TextWithAudioTags } from "../components/TextWithAudioTags";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
 import { isImageMimeType } from "./useFileUpload";
+import { ShimmeringText } from "../components/ShimmeringText";
 
 interface TranscriptMessageProps {
   entry: DisplayTranscriptEntry;
@@ -34,8 +35,7 @@ function AgentMessageBubble({
   const config = useWidgetConfig();
 
   const isVoiceMessage = !entry.isText;
-  const shouldStripAudioTags =
-    config.value.strip_audio_tags && isVoiceMessage;
+  const shouldStripAudioTags = config.value.strip_audio_tags && isVoiceMessage;
   const shouldStyleAudioTags = isVoiceMessage && !shouldStripAudioTags;
 
   const displayMessage = shouldStripAudioTags
@@ -46,7 +46,10 @@ function AgentMessageBubble({
     <div className="pr-8">
       {displayMessage &&
         (isVoiceMessage ? (
-          <div dir="auto" className="text-sm whitespace-pre-wrap wrap-break-word">
+          <div
+            dir="auto"
+            className="text-sm whitespace-pre-wrap wrap-break-word"
+          >
             {shouldStyleAudioTags ? (
               <TextWithAudioTags text={displayMessage} />
             ) : (
@@ -272,6 +275,16 @@ function ToolCallMessage({ status }: { status: ToolCallStatusType }) {
   );
 }
 
+function TypingIndicatorMessage() {
+  const text = useTextContents();
+
+  return (
+    <div className="pr-8">
+      <ShimmeringText text={text.typing_indicator.value} className="text-sm" />
+    </div>
+  );
+}
+
 function getMessageComponent(entry: DisplayTranscriptEntry) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
@@ -281,6 +294,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
+  }
+  if (entry.type === "typing_indicator") {
+    return <TypingIndicatorMessage />;
   }
   if (entry.role === "agent") {
     return <AgentMessageBubble entry={entry} />;

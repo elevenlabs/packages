@@ -1,6 +1,8 @@
 import type {
+  AgentTypingClientEvent,
   AudioEventAlignment,
   ClientToolCallClientEvent,
+  ExternalAgentConnectedClientEvent,
   McpToolCallClientEvent,
   McpConnectionStatusClientEvent,
   AgentToolRequestClientEvent,
@@ -119,6 +121,8 @@ export type Callbacks = {
   ) => void;
   onGuardrailTriggered?: () => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
+  onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
+  onExternalAgentConnected?: () => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
@@ -149,5 +153,7 @@ export const CALLBACK_KEYS = [
   "onAgentChatResponsePart",
   "onAudioAlignment",
   "onGuardrailTriggered",
+  "onAgentTyping",
+  "onExternalAgentConnected",
   "onDebug",
 ] as const satisfies readonly (keyof Callbacks)[];

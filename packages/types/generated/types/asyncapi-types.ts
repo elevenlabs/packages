@@ -182,7 +182,9 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "asr_initiation_metadata"
   | "guardrail_triggered"
   | "internal_turn_probability"
-  | "internal_tentative_agent_response";
+  | "internal_tentative_agent_response"
+  | "agent_typing"
+  | "external_agent_connected";
 
 export interface SourceInfo {
   source?: string;
@@ -497,6 +499,21 @@ export interface TentativeAgentResponseInternalEvent {
   tentative_agent_response: string;
 }
 
+export interface AgentTyping {
+  type: "agent_typing";
+  agent_typing_event: AgentTypingEvent;
+}
+
+export interface AgentTypingEvent {
+  is_typing: boolean;
+  duration_ms?: number;
+}
+
+export interface ExternalAgentConnected {
+  type: "external_agent_connected";
+  external_agent_connected_event?: Record<string, any>;
+}
+
 export interface ErrorMessage {
   type: "error";
   error_event: ErrorEvent;
@@ -627,6 +644,16 @@ export interface TurnProbabilityInternalClientEvent {
 export interface TentativeAgentResponseInternalClientEvent {
   type: "internal_tentative_agent_response";
   tentative_agent_response_internal_event: TentativeAgentResponseInternalEvent;
+}
+
+export interface AgentTypingClientEvent {
+  type: "agent_typing";
+  agent_typing_event: AgentTypingEvent;
+}
+
+export interface ExternalAgentConnectedClientEvent {
+  type: "external_agent_connected";
+  external_agent_connected_event?: Record<string, any>;
 }
 
 export interface ErrorClientEvent {

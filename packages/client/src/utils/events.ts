@@ -4,12 +4,14 @@ import type {
   AgentResponseCorrection,
   AgentToolResponseClientEvent,
   AgentToolResponseFullPayloadClientEvent,
+  AgentTypingClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
   ErrorMessage,
+  ExternalAgentConnectedClientEvent,
   GuardrailTriggered,
   Interruption,
   McpConnectionStatusClientEvent,
@@ -45,6 +47,8 @@ export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type GuardrailTriggeredEvent = GuardrailTriggered;
+export type AgentTypingEvent = AgentTypingClientEvent;
+export type ExternalAgentConnectedEvent = ExternalAgentConnectedClientEvent;
 export type { AudioAlignmentEvent };
 
 export type IncomingSocketEvent =
@@ -67,7 +71,9 @@ export type IncomingSocketEvent =
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
   | ErrorMessageEvent
-  | GuardrailTriggeredEvent;
+  | GuardrailTriggeredEvent
+  | AgentTypingEvent
+  | ExternalAgentConnectedEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;

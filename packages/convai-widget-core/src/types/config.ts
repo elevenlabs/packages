@@ -154,6 +154,7 @@ export const DefaultTextContents = {
   file_type_unsupported: "Unsupported file type. Accepted types:",
   file_too_large: "File size exceeds the maximum limit.",
   file_limit_reached: "Maximum number of files for this conversation reached.",
+  typing_indicator: "Agent is typing ...",
 };
 
 export const TextKeys = Object.keys(
