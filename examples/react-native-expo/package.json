@@ -22,7 +22,7 @@
     "expo-dev-client": "~55.0.32",
     "expo-image-picker": "~55.0.20",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react-dom": "19.2.7",
     "react-native": "0.83.6",
     "react-native-web": "~0.21.2",
     "@expo/metro-runtime": "~55.0.11"
