@@ -33,17 +33,6 @@
  * collects exactly the symbols the Unity bridge needs behind one stable import,
  * without pulling any unrelated SDK code into a size-sensitive WebGL bundle.
  *
- * ## How to evolve it
- *
- * - **Additions** — safe; add them here and mirror in `elevenlabs/unity`.
- * - **Removals / renames** — require a coordinated change with
- *   `elevenlabs/unity` (see the cleanup checklist in Plan B).
- * - **Sibling consumers** — add a parallel sub-path
- *   (`./internal/react-native`, `./internal/godot`, etc.) following the same
- *   pattern.
- *
- * Plan B (the Unity SDK plan this entrypoint serves):
- * https://github.com/elevenlabs/unity/blob/main/Docs~/plans/plan-b.md
  */
 
 // ── Runtime values ────────────────────────────────────────────────────────────
