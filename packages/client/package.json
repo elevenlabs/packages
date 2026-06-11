@@ -11,7 +11,8 @@
       "browser": "./dist/platform/web/index.js",
       "default": "./dist/index.js"
     },
-    "./internal": "./dist/internal.js"
+    "./internal": "./dist/internal.js",
+    "./internal/unity": "./dist/internal/unity.js"
   },
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",

@@ -46,9 +46,12 @@ function convertWssToHttps(origin: string): string {
   return origin.replace(/^wss:\/\//, "https://");
 }
 
-export type ConnectionConfig = SessionConfig & {
+export type WebRTCConnectionConfig = SessionConfig & {
   onDebug?: (info: unknown) => void;
 };
+
+/** @deprecated Use {@link WebRTCConnectionConfig} instead. */
+export type ConnectionConfig = WebRTCConnectionConfig;
 
 export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
@@ -226,7 +229,7 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   public static async create(
-    config: ConnectionConfig
+    config: WebRTCConnectionConfig
   ): Promise<WebRTCConnection> {
     let conversationToken: string;
 
