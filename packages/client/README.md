@@ -58,15 +58,11 @@ For the full API reference including connection types, client tools, conversatio
 
 ## Entrypoints
 
-| Path                                | Stability             | Audience                                                                       |
-| ----------------------------------- | --------------------- | ------------------------------------------------------------------------------ |
-| `@elevenlabs/client`                | Public, semver-stable | All users                                                                      |
-| `@elevenlabs/client/internal`       | No semver guarantees  | SDK internals + advanced consumers                                             |
-| `@elevenlabs/client/internal/unity` | No semver guarantees  | The [ElevenLabs Unity SDK](https://github.com/elevenlabs/unity)'s WebGL bridge |
-
-### `@elevenlabs/client/internal/unity`
-
-Low-level primitives used by the [ElevenLabs Unity SDK](https://github.com/elevenlabs/unity)'s WebGL bridge. **Not intended for general use.**
+| Path                                | Stability             |
+| ----------------------------------- | --------------------- |
+| `@elevenlabs/client`                | Public, semver-stable |
+| `@elevenlabs/client/internal`       | No semver guarantees  |
+| `@elevenlabs/client/internal/unity` | No semver guarantees  |
 
 ## Development
 
