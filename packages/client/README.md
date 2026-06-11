@@ -48,6 +48,29 @@ await conversation.endSession();
 
 For the full API reference including connection types, client tools, conversation overrides, and more, see the [JavaScript SDK documentation](https://elevenlabs.io/docs/eleven-agents/libraries/java-script).
 
+## Entrypoints
+
+| Path | Stability | Audience |
+|---|---|---|
+| `@elevenlabs/client` | Public, semver-stable | All users |
+| `@elevenlabs/client/internal` | No semver guarantees | SDK internals + advanced consumers |
+| `@elevenlabs/client/internal/unity` | No semver guarantees | The [ElevenLabs Unity SDK](https://github.com/elevenlabs/unity)'s WebGL bridge |
+
+### `@elevenlabs/client/internal/unity`
+
+This sub-path exports a curated set of low-level primitives consumed by the
+Unity SDK's WebGL bridge.  It is **not intended for general use** — the surface
+may change in any release without a major-version bump.
+
+The Unity bridge bypasses `Conversation` / `VoiceConversation` entirely and
+drives three smaller objects directly (`WebSocketConnection` /
+`WebRTCConnection`, `MediaDeviceInput`, `MediaDeviceOutput`).  This entrypoint
+exposes exactly what the bridge needs without pulling unrelated SDK code into a
+size-sensitive WebGL bundle.
+
+See [Plan B](https://github.com/elevenlabs/unity/blob/main/Docs~/plans/plan-b.md)
+for the full rationale and the corresponding Unity-side cleanup steps.
+
 ## Development
 
 Please refer to the README.md file in the root of this repository.
