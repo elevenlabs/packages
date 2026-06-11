@@ -58,11 +58,11 @@ For the full API reference including connection types, client tools, conversatio
 
 ## Entrypoints
 
-| Path                                | Stability             |
-| ----------------------------------- | --------------------- |
-| `@elevenlabs/client`                | Public, semver-stable |
-| `@elevenlabs/client/internal`       | No semver guarantees  |
-| `@elevenlabs/client/internal/unity` | No semver guarantees  |
+| Path                                | Stability                      |
+| ----------------------------------- | ------------------------------ |
+| `@elevenlabs/client`                | Public, semver-stable          |
+| `@elevenlabs/client/internal`       | Internal, no semver guarantees |
+| `@elevenlabs/client/internal/unity` | Internal, no semver guarantees |
 
 ## Development
 
