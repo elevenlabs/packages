@@ -50,6 +50,12 @@ function maybePrimeIosPlayback({
   void audioElement.play().catch(() => {});
 }
 
+export type MediaDeviceOutputConfig = FormatConfig &
+  OutputConfig &
+  AudioWorkletConfig & {
+    audioContext?: AudioContext;
+  };
+
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget
 {
@@ -60,11 +66,7 @@ export class MediaDeviceOutput
     workletPaths,
     libsampleratePath,
     audioContext,
-  }: FormatConfig &
-    OutputConfig &
-    AudioWorkletConfig & {
-      audioContext?: AudioContext;
-    }): Promise<MediaDeviceOutput> {
+  }: MediaDeviceOutputConfig): Promise<MediaDeviceOutput> {
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {

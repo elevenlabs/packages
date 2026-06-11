@@ -25,6 +25,10 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
+export type MediaDeviceInputConfig = FormatConfig &
+  InputConfig &
+  AudioWorkletConfig;
+
 export class MediaDeviceInput implements InputController, InputEventTarget {
   public static async create({
     sampleRate,
@@ -35,9 +39,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     libsampleratePath,
     onError,
     inputChunkDurationMs = DEFAULT_INPUT_CHUNK_DURATION_MS,
-  }: FormatConfig &
-    InputConfig &
-    AudioWorkletConfig): Promise<MediaDeviceInput> {
+  }: MediaDeviceInputConfig): Promise<MediaDeviceInput> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
