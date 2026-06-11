@@ -20,6 +20,7 @@ export type {
   McpConnectionStatusClientEvent,
   McpToolCallClientEvent,
   PartialTranscriptMessage,
+  Ping,
   PingEvent,
   ScribeAuthErrorMessage,
   ScribeChunkSizeExceededErrorMessage,

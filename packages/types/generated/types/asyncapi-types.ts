@@ -469,7 +469,7 @@ export interface Ping {
 
 export interface PingEvent {
   event_id: number;
-  ping_ms?: number;
+  ping_ms?: number | null;
 }
 
 export interface AsrInitiationMetadata {
