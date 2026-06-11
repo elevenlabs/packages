@@ -12,10 +12,7 @@
       "default": "./dist/index.js"
     },
     "./internal": "./dist/internal.js",
-    "./internal/unity": {
-      "types": "./dist/internal/unity.d.ts",
-      "default": "./dist/internal/unity.js"
-    }
+    "./internal/unity": "./dist/internal/unity.js"
   },
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
