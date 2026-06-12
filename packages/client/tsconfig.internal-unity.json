@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "strict": true,
+    "outDir": "./dist/internal",
+    "rootDir": "./src/internal",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["src/internal/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.common.json" },
+    { "path": "./tsconfig.web.json" }
+  ]
+}

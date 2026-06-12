@@ -5,6 +5,7 @@
 
 .dev-host,
 :host {
+  --el-audio-tag: 293 53% 52%;
   pointer-events: none;
   position: fixed;
   inset: 0;
@@ -26,6 +27,10 @@
     sans-serif;
 
   scrollbar-color: #e5e7eb transparent;
+
+  button {
+    margin: 0;
+  }
 }
 
 @layer utilities {

@@ -1,6 +1,7 @@
 {
-  "extends": "./tsconfig.build.json",
+  "extends": "./tsconfig.web.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "composite": true,
     "noEmit": true
   },
@@ -8,7 +9,10 @@
   "exclude": [],
   "references": [
     {
-      "path": "./tsconfig.build.json"
+      "path": "./tsconfig.common.json"
+    },
+    {
+      "path": "./tsconfig.web.json"
     }
   ]
 }

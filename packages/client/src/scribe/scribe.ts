@@ -1,5 +1,5 @@
 import { RealtimeConnection } from "./connection.js";
-import { loadScribeAudioProcessor } from "../utils/scribeAudioProcessor.generated.js";
+import { getScribeMicrophoneSetup } from "./microphone.js";
 
 export enum AudioFormat {
   PCM_8000 = "pcm_8000",
@@ -89,7 +89,7 @@ export interface AudioOptions extends BaseOptions {
  */
 export interface MicrophoneOptions extends BaseOptions {
   microphone?: {
-    deviceId?: ConstrainDOMString;
+    deviceId?: MediaDeviceConstraint;
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;
@@ -260,86 +260,14 @@ export class ScribeRealtime {
     options: MicrophoneOptions,
     connection: RealtimeConnection
   ): Promise<void> {
-    const TARGET_SAMPLE_RATE = 16000;
-
     try {
-      // Get microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: options.microphone?.deviceId,
-          echoCancellation: options.microphone?.echoCancellation ?? true,
-          noiseSuppression: options.microphone?.noiseSuppression ?? true,
-          autoGainControl: options.microphone?.autoGainControl ?? true,
-          channelCount: options.microphone?.channelCount ?? 1,
-          sampleRate: { ideal: TARGET_SAMPLE_RATE },
-        },
+      const setup = getScribeMicrophoneSetup();
+      const result = await setup(options.microphone ?? {}, base64Audio => {
+        connection.send({ audioBase64: base64Audio });
       });
 
-      // Get the actual sample rate from the stream - the ideal may not have been honored
-      const trackSettings = stream.getAudioTracks()[0]?.getSettings();
-      const streamSampleRate = trackSettings?.sampleRate;
-
-      // Create audio context matching the stream's sample rate to avoid Firefox errors
-      // Firefox requires the AudioContext to match the microphone's native sample rate
-      const audioContext = new AudioContext(
-        streamSampleRate ? { sampleRate: streamSampleRate } : {}
-      );
-
-      // Load scribe worklet
-      await loadScribeAudioProcessor(audioContext.audioWorklet);
-
-      // Set up audio pipeline
-      const source = audioContext.createMediaStreamSource(stream);
-      const scribeNode = new AudioWorkletNode(
-        audioContext,
-        "scribeAudioProcessor"
-      );
-
-      // Configure the worklet with sample rate info for resampling
-      // (only needed when AudioContext sample rate differs from target)
-      if (audioContext.sampleRate !== TARGET_SAMPLE_RATE) {
-        scribeNode.port.postMessage({
-          type: "configure",
-          inputSampleRate: audioContext.sampleRate,
-          outputSampleRate: TARGET_SAMPLE_RATE,
-        });
-      }
-
-      // Store the track so mute()/unmute() can toggle track.enabled.
-      const [audioTrack] = stream.getAudioTracks();
-      connection._mediaStreamTrack = audioTrack;
-
-      // Handle audio data from worklet
-      scribeNode.port.onmessage = event => {
-        const { audioData } = event.data;
-        // Convert ArrayBuffer to base64
-        const bytes = new Uint8Array(audioData);
-        let binary = "";
-        for (let i = 0; i < bytes.length; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        const base64Audio = btoa(binary);
-
-        connection.send({ audioBase64: base64Audio });
-      };
-
-      // Connect audio pipeline
-      source.connect(scribeNode);
-
-      // Resume audio context if needed
-      if (audioContext.state === "suspended") {
-        await audioContext.resume();
-      }
-
-      // Store cleanup function
-      connection._audioCleanup = () => {
-        stream.getTracks().forEach(track => {
-          track.stop();
-        });
-        source.disconnect();
-        scribeNode.disconnect();
-        audioContext.close();
-      };
+      connection._mediaStreamTrack = result.mediaStreamTrack;
+      connection._audioCleanup = result.cleanup;
     } catch (error) {
       console.error("Failed to start microphone streaming:", error);
       throw error;

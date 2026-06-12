@@ -417,4 +417,71 @@ describe("buildDisplayTranscript", () => {
       });
     });
   });
+
+  describe("typing indicator", () => {
+    it("appends typing indicator when showTypingIndicator is true", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result).toHaveLength(3);
+      expect(result[2]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 0,
+      });
+    });
+
+    it("does not append typing indicator when showTypingIndicator is false", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input, { showTypingIndicator: false });
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type !== "typing_indicator")).toBe(true);
+    });
+
+    it("does not append typing indicator when showTypingIndicator is undefined", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type !== "typing_indicator")).toBe(true);
+    });
+
+    it("uses conversationIndex from last entry", () => {
+      const input = [
+        msg("user", "hi", { conversationIndex: 5 }),
+        msg("agent", "hello", { eventId: 1, conversationIndex: 5 }),
+      ];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result[2]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 5,
+      });
+    });
+
+    it("uses firstMessageConversationIndex when entries are empty", () => {
+      const input: TranscriptEntry[] = [];
+      const result = build(input, {
+        showTypingIndicator: true,
+        firstMessageConversationIndex: 42,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 42,
+      });
+    });
+
+    it("defaults conversationIndex to 0 when no entries and no firstMessageConversationIndex", () => {
+      const input: TranscriptEntry[] = [];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 0,
+      });
+    });
+  });
 });

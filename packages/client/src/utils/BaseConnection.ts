@@ -2,15 +2,15 @@ import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
 import type { Mode } from "../BaseConversation.js";
 import type {
   ConversationConfigOverrideAgentPrompt,
-  DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
+import type { DisconnectionDetails } from "../types.js";
 
 export type {
   ConversationConfigOverrideAgentPrompt,
-  DisconnectionDetails,
   ConversationConfigOverrideAgentLanguage as Language,
 } from "@elevenlabs/types";
+export type { DisconnectionContext, DisconnectionDetails } from "../types.js";
 
 export type DelayConfig = {
   default: number;

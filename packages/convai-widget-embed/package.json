@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/convai-widget-embed",
-  "version": "0.12.4",
+  "version": "0.14.2",
   "description": "The Conversational AI Widget bundled with all dependencies for easy embedding.",
   "main": "./dist/index.js",
   "unpkg": "./dist/index.js",
@@ -11,7 +11,7 @@
     "build:analyze": "ANALYZE=true vite build",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts'"
+    "lint:prettier": "prettier \"src/**/*.ts\" --check"
   },
   "keywords": [],
   "author": "ElevenLabs",

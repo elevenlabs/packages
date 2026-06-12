@@ -223,6 +223,14 @@ export function useTextInputEnabled() {
   return useComputed(() => config.value.text_input_enabled ?? false);
 }
 
+export function useTriggerEntryPoints() {
+  const textOnly = useTextOnly();
+  return {
+    showCall: useComputed(() => !textOnly.value),
+    showMessage: useTextInputEnabled(),
+  };
+}
+
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.file_input_config?.enabled ?? false);
@@ -240,7 +248,16 @@ export function useLocalizedTerms() {
   const { language } = useLanguageConfig();
 
   return useComputed(() => {
-    const languagePreset = config.value.language_presets?.[language.value.languageCode];
+    if (config.value.terms_html == null && config.value.terms_text == null) {
+      return {
+        terms_html: undefined,
+        terms_text: undefined,
+        terms_key: undefined,
+      };
+    }
+
+    const languagePreset =
+      config.value.language_presets?.[language.value.languageCode];
 
     return {
       terms_html: languagePreset?.terms_html ?? config.value.terms_html,
@@ -331,8 +348,8 @@ export function useSyntaxTheme() {
 export function useAllowEvents() {
   const allowEvents = useAttribute("allow-events");
   return useComputed(() => {
-    return parseBoolAttribute(allowEvents.value) ?? false
-  })
+    return parseBoolAttribute(allowEvents.value) ?? false;
+  });
 }
 
 async function fetchConfig(

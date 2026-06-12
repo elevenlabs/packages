@@ -1,4 +1,4 @@
-import { it, expect, describe, vi } from "vitest";
+import { it, expect, describe, vi, beforeEach } from "vitest";
 import { Server } from "mock-socket";
 import type { Client } from "mock-socket";
 import {
@@ -8,6 +8,10 @@ import {
   RealtimeEvents,
   RealtimeConnection,
 } from "./index.js";
+import {
+  setScribeMicrophoneSetup,
+  getScribeMicrophoneSetup,
+} from "./microphone.js";
 
 const TEST_TOKEN = "sutkn_123";
 const TEST_MODEL_ID = "scribe_v2_realtime";
@@ -800,6 +804,97 @@ describe("Scribe", () => {
       expect(onMessageSend).toHaveBeenCalledTimes(1);
 
       connection.close();
+      server.close();
+    });
+  });
+
+  describe("Microphone Setup Injection", () => {
+    beforeEach(() => {
+      // Reset the injectable factory between tests
+      setScribeMicrophoneSetup(null as never);
+    });
+
+    it("getScribeMicrophoneSetup() throws when no implementation is registered", () => {
+      expect(() => getScribeMicrophoneSetup()).toThrow(
+        "No Scribe microphone implementation registered"
+      );
+    });
+
+    it("setScribeMicrophoneSetup() registers a custom implementation", () => {
+      const mockSetup = vi.fn();
+      setScribeMicrophoneSetup(mockSetup);
+      expect(getScribeMicrophoneSetup()).toBe(mockSetup);
+    });
+
+    it("microphone mode calls the registered setup and wires audio data to connection.send()", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+      let capturedOnAudioData: ((base64: string) => void) | null = null;
+
+      const mockSetup = vi.fn((_config, onAudioData) => {
+        capturedOnAudioData = onAudioData;
+        return Promise.resolve({
+          mediaStreamTrack: mockTrack,
+          cleanup,
+        });
+      });
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: false,
+        },
+      });
+
+      const client = await clientPromise;
+      const onMessage = vi.fn();
+      client.on("message", onMessage);
+
+      // Wait for the microphone setup to be called (happens on WebSocket open)
+      await sleep(100);
+
+      expect(mockSetup).toHaveBeenCalledTimes(1);
+      expect(mockSetup).toHaveBeenCalledWith(
+        {
+          deviceId: undefined,
+          echoCancellation: true,
+          noiseSuppression: false,
+          autoGainControl: undefined,
+          channelCount: undefined,
+        },
+        expect.any(Function)
+      );
+
+      // Simulate audio data from the microphone setup
+      expect(capturedOnAudioData).not.toBeNull();
+      capturedOnAudioData!("dGVzdA==");
+      await sleep(50);
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      const sentMessage = JSON.parse(onMessage.mock.calls[0][0] as string);
+      expect(sentMessage.audio_base_64).toBe("dGVzdA==");
+
+      // Verify mute/unmute work via the injected track
+      connection.mute();
+      expect(mockTrack.enabled).toBe(false);
+      connection.unmute();
+      expect(mockTrack.enabled).toBe(true);
+
+      connection.close();
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
       server.close();
     });
   });

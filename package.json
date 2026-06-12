@@ -12,6 +12,7 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "ci": "turbo check-types lint test build",
+    "generate": "turbo run generate",
     "generate:types": "turbo run generate --filter=@elevenlabs/types",
     "prepare": "husky install",
     "dev": "turbo dev",
@@ -35,9 +36,6 @@
     ],
     "overrides": {
       "@asyncapi/parser": "^3.6.0"
-    },
-    "patchedDependencies": {
-      "livekit-client@2.18.9": "patches/livekit-client@2.18.9.patch"
     }
   },
   "packageManager": "pnpm@10.28.1"

@@ -1,5 +1,67 @@
 # @elevenlabs/client
 
+## 1.11.1
+
+### Patch Changes
+
+- Updated dependencies [2cc82d2]
+  - @elevenlabs/types@0.14.1
+
+## 1.11.0
+
+### Minor Changes
+
+- 062d715: Add `@elevenlabs/client/internal/unity` sub-path export for the Unity SDK's WebGL bridge.
+  - New `./internal/unity` entrypoint exposing `MediaDeviceInput`, `MediaDeviceOutput`, `attachInputToConnection`, `attachConnectionToOutput`, and `setWebRTCAudioAdapterFactory` as runtime values, plus `WebRTCAudioAdapter`, `AnalysisResult`, `MediaDeviceInputConfig`, `MediaDeviceOutputConfig`, and `WebRTCConnectionConfig` as type-only exports.
+  - New named type aliases `MediaDeviceInputConfig`, `MediaDeviceOutputConfig`, and `WebRTCConnectionConfig` (the last replaces the previous `ConnectionConfig`, which is kept as a deprecated alias).
+
+## 1.10.0
+
+### Minor Changes
+
+- fdad576: Add support for external_agent_joined and agent_typing events.
+
+  These events are send when an external agent takes over from the ai agent,
+  and when an agent is currently typing, respectively.
+
+  Show an "Agent is typing ..." indicator when the external agent is typing.
+
+## 1.9.0
+
+### Minor Changes
+
+- d1cadcd: Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).
+
+## 1.8.1
+
+### Patch Changes
+
+- a9dcb56: Fix iOS Safari dropping the first message's audio on WebSocket voice sessions.
+
+  iOS Safari blocks `HTMLAudioElement` autoplay (including elements fed by `MediaStreamDestination`) when the underlying `AudioContext` wasn't started synchronously inside a user gesture, and additionally needs the audio element to have an explicit `play()` call against a non-empty playback graph. The web setup chain awaits `getUserMedia`, the connection handshake, and the audio worklet load before `MediaDeviceOutput` would have created its `AudioContext`, so by then the gesture is already consumed. The first agent message would arrive into a suspended context and never play; subsequent messages worked because the mic capture had reactivated iOS's audio session by then.
+
+  The fix has two parts:
+  - On import, the web entry point installs capture-phase `touchstart`/`touchend`/`click` listeners on `document`. The first user interaction creates and unlocks an `AudioContext` (silent `BufferSource.start(0)` + `resume()`) and stashes it for the next session. The stash auto-discards after 30s if no session starts. Capture-phase is needed because the convai widget awaits a terms-modal promise between the user's tap and `Conversation.startSession`, which would otherwise consume the gesture before any session code runs.
+  - After the worklet is wired up, `MediaDeviceOutput` on iOS posts ~100ms of silence to the worklet and explicitly calls `audioElement.play()` to prime the MediaStream → HTMLAudioElement pipeline.
+
+  Non-iOS is unchanged: it still lazily creates the context with the requested sample-rate constraint and does not register the document listeners.
+
+  WebRTC voice sessions are unaffected by this change.
+
+## 1.8.0
+
+### Minor Changes
+
+- 796ade1: Replace DOM `Event`/`CloseEvent` constructors in `DisconnectionDetails` with a platform-agnostic `DisconnectionContext` type. The `context` property on disconnection details is now `{ type: string; reason?: string; code?: number }` instead of a DOM event object. This fixes runtime failures on React Native where `Event` and `CloseEvent` constructors are not available.
+
+## 1.7.1
+
+### Patch Changes
+
+- ae50508: Pin livekit-client to 2.16.1 and force dual peer connection (v0) path to fix WebRTC connection failures with newer livekit-client versions whose join protocol is incompatible with the ElevenLabs LiveKit server.
+- Updated dependencies [fa64593]
+  - @elevenlabs/types@0.14.0
+
 ## 1.7.0
 
 ### Minor Changes

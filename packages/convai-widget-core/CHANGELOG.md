@@ -1,5 +1,84 @@
 # @elevenlabs/convai-widget-core
 
+## 0.14.2
+
+### Patch Changes
+
+- @elevenlabs/client@1.11.1
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [062d715]
+  - @elevenlabs/client@1.11.0
+
+## 0.14.0
+
+### Minor Changes
+
+- fdad576: Add support for external_agent_joined and agent_typing events.
+
+  These events are send when an external agent takes over from the ai agent,
+  and when an agent is currently typing, respectively.
+
+  Show an "Agent is typing ..." indicator when the external agent is typing.
+
+### Patch Changes
+
+- Updated dependencies [fdad576]
+  - @elevenlabs/client@1.10.0
+
+## 0.13.1
+
+### Patch Changes
+
+- 75f6be3: Fix compact and full trigger control alignment.
+
+## 0.13.0
+
+### Minor Changes
+
+- 6458543: Add call and message entry points to the widget launcher.
+  - Multimodal agents show both; voice-only shows call; text-only shows message.
+  - Call connects directly on click; message opens the chat focused on the input.
+  - The message entry point uses the existing `start_chat` text key.
+
+## 0.12.9
+
+### Patch Changes
+
+- Updated dependencies [d1cadcd]
+  - @elevenlabs/client@1.9.0
+
+## 0.12.8
+
+### Patch Changes
+
+- 0f7e2e5: Style emotion/audio tags in voice transcripts when `strip_audio_tags` is off. Voice agent messages render plain text with tag pills instead of markdown; text chat still uses markdown.
+- cf75e07: Treat null top-level `terms_html`/`terms_text` as a kill switch for the T&C modal. Previously, agents with the dashboard "Enable terms & conditions" toggle off but stale per-language preset terms would still show the modal because the widget always preferred `language_presets[lang].terms_html`. Per-language presets are now only consulted as overrides when the feature is enabled at top level.
+
+## 0.12.7
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+
+## 0.12.6
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+
+## 0.12.5
+
+### Patch Changes
+
+- Updated dependencies [ae50508]
+  - @elevenlabs/client@1.7.1
+
 ## 0.12.4
 
 ### Patch Changes

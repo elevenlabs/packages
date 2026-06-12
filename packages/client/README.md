@@ -29,13 +29,21 @@ const conversation = await Conversation.startSession({
   onDisconnect: () => {
     console.log("Disconnected");
   },
-  onMessage: (message) => {
+  onMessage: message => {
     console.log("Message:", message);
   },
-  onAgentResponseCorrection: ({ original_agent_response, corrected_agent_response }) => {
-    console.log("Agent response corrected:", original_agent_response, "->", corrected_agent_response);
+  onAgentResponseCorrection: ({
+    original_agent_response,
+    corrected_agent_response,
+  }) => {
+    console.log(
+      "Agent response corrected:",
+      original_agent_response,
+      "->",
+      corrected_agent_response
+    );
   },
-  onError: (message) => {
+  onError: message => {
     console.error("Error:", message);
   },
 });
@@ -47,6 +55,14 @@ await conversation.endSession();
 ## Documentation
 
 For the full API reference including connection types, client tools, conversation overrides, and more, see the [JavaScript SDK documentation](https://elevenlabs.io/docs/eleven-agents/libraries/java-script).
+
+## Entrypoints
+
+| Path                                | Stability                      |
+| ----------------------------------- | ------------------------------ |
+| `@elevenlabs/client`                | Public, semver-stable          |
+| `@elevenlabs/client/internal`       | Internal, no semver guarantees |
+| `@elevenlabs/client/internal/unity` | Internal, no semver guarantees |
 
 ## Development
 

@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/client",
-  "version": "1.7.0",
+  "version": "1.11.1",
   "description": "ElevenLabs JavaScript Client Library",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -8,20 +8,22 @@
     ".": {
       "types": "./dist/index.d.ts",
       "unpkg": "./dist/lib.iife.js",
+      "browser": "./dist/platform/web/index.js",
       "default": "./dist/index.js"
     },
-    "./internal": "./dist/internal.js"
+    "./internal": "./dist/internal.js",
+    "./internal/unity": "./dist/internal/unity.js"
   },
   "scripts": {
-    "generate-version": "printf \"// This file is auto-generated during build\\nexport const PACKAGE_VERSION = \\\"%s\\\";\\n\" \"$npm_package_version\" > src/version.ts",
-    "generate-worklets": "node scripts/generateWorklets.js",
+    "generate-version": "node ../../scripts/generate-version.mjs",
+    "generate-worklets": "node scripts/generateWorklets.js && prettier \"src/platform/web/*.generated.ts\" --write",
     "build:esm": "tsc --build",
-    "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
+    "build:iife": "rolldown src/platform/web/index.ts -f iife --name ElevenLabsClient -o dist/lib.iife.js --sourcemap --external react --external react-dom",
     "build": "node --run build:esm && node --run build:iife",
     "dev": "tsc --build --watch",
     "clean": "tsc --build --clean && rm -rf ./dist",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier 'src/**/*.ts' --check",
+    "lint:prettier": "prettier \"src/**/*.ts\" --check",
     "test": "vitest"
   },
   "keywords": [],
@@ -57,6 +59,6 @@
   },
   "dependencies": {
     "@elevenlabs/types": "workspace:*",
-    "livekit-client": "^2.18.9"
+    "livekit-client": "^2.19.1"
   }
 }

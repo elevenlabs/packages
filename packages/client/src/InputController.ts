@@ -1,8 +1,28 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
 
+/** Default microphone audio chunk duration sent to the agent (WebSocket path). */
+export const DEFAULT_INPUT_CHUNK_DURATION_MS = 25;
+
 export type InputDeviceConfig = {
   inputDeviceId?: string;
   preferHeadphonesForIosDevices?: boolean;
+};
+
+export type InputConfig = InputDeviceConfig & {
+  onError?(message: string, context?: unknown): void;
+  /**
+   * Duration of each microphone audio chunk sent to the agent, in milliseconds.
+   * Only applies to the WebSocket input path (AudioWorklet). Default: 25.
+   */
+  inputChunkDurationMs?: number;
+};
+
+export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputListener = (event: InputMessageEvent) => void;
+
+export type InputEventTarget = {
+  addListener(listener: InputListener): void;
+  removeListener(listener: InputListener): void;
 };
 
 export interface InputController {

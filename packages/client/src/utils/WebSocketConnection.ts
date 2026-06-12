@@ -13,7 +13,11 @@ import {
 } from "./events.js";
 import { constructOverrides } from "./overrides.js";
 import { SessionConnectionError } from "./errors.js";
-import type { OutputEventTarget, OutputListener } from "./output.js";
+import type {
+  OutputEventTarget,
+  OutputListener,
+  OutputAudioEvent,
+} from "../OutputController.js";
 
 const MAIN_PROTOCOL = "convai";
 const WSS_API_ORIGIN = "wss://api.elevenlabs.io";
@@ -28,6 +32,7 @@ export class WebSocketConnection
   public readonly outputFormat: FormatConfig;
 
   private outputListeners: Set<OutputListener> = new Set();
+  private pendingAudioEvents: OutputAudioEvent[] = [];
 
   private constructor(
     private readonly socket: WebSocket,
@@ -49,28 +54,30 @@ export class WebSocketConnection
           this.disconnect({
             reason: "error",
             message: "The connection was closed due to a socket error.",
-            context: event,
+            context: { type: event.type },
           }),
         0
       );
     });
 
     this.socket.addEventListener("close", event => {
+      const closeCode = event.code;
+      const closeReason = event.reason || undefined;
+      const context = {
+        type: event.type,
+        code: closeCode,
+        reason: closeReason,
+      };
       this.disconnect(
-        event.code === 1000
-          ? {
-              reason: "agent",
-              context: event,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
-            }
+        closeCode === 1000
+          ? { reason: "agent", context, closeCode, closeReason }
           : {
               reason: "error",
               message:
-                event.reason || "The connection was closed by the server.",
-              context: event,
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
+                closeReason || "The connection was closed by the server.",
+              context,
+              closeCode,
+              closeReason,
             }
       );
     });
@@ -211,6 +218,7 @@ export class WebSocketConnection
   }
 
   public close() {
+    this.pendingAudioEvents = [];
     this.socket.close(1000, "User ended conversation");
   }
 
@@ -219,7 +227,16 @@ export class WebSocketConnection
   }
 
   public addListener(listener: OutputListener): void {
+    const hadListeners = this.outputListeners.size > 0;
     this.outputListeners.add(listener);
+    if (hadListeners || this.pendingAudioEvents.length === 0) {
+      return;
+    }
+    const pending = this.pendingAudioEvents;
+    this.pendingAudioEvents = [];
+    for (const event of pending) {
+      listener(event);
+    }
   }
 
   public removeListener(listener: OutputListener): void {
@@ -234,6 +251,10 @@ export class WebSocketConnection
       const audioEvent = {
         audio_base_64: parsedEvent.audio_event.audio_base_64,
       };
+      if (this.outputListeners.size === 0) {
+        this.pendingAudioEvents.push(audioEvent);
+        return;
+      }
       this.outputListeners.forEach(listener => listener(audioEvent));
     }
   }

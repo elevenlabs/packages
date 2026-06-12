@@ -1,4 +1,5 @@
 import { isTextOnly, type PartialOptions } from "./BaseConversation.js";
+import { assertRuntimeCompatibility } from "./runtime.js";
 import { TextConversation } from "./TextConversation.js";
 import { VoiceConversation } from "./VoiceConversation.js";
 
@@ -17,13 +18,17 @@ export type {
   ConversationLifecycleOptions,
   ContextualUpdateOptions,
 } from "./BaseConversation.js";
-export type { InputController, InputDeviceConfig } from "./InputController.js";
+export type {
+  InputController,
+  InputDeviceConfig,
+  InputConfig,
+} from "./InputController.js";
+export { DEFAULT_INPUT_CHUNK_DURATION_MS } from "./InputController.js";
 export type {
   OutputController,
   OutputDeviceConfig,
+  OutputConfig,
 } from "./OutputController.js";
-export type { InputConfig } from "./utils/input.js";
-export type { OutputConfig } from "./utils/output.js";
 export type {
   IncomingSocketEvent,
   VadScoreEvent,
@@ -32,6 +37,7 @@ export type {
 export type {
   SessionConfig,
   BaseSessionConfig,
+  DisconnectionContext,
   DisconnectionDetails,
   Language,
   ConnectionType,
@@ -90,7 +96,8 @@ interface ConversationNamespace {
 }
 
 export const Conversation: ConversationNamespace = {
-  startSession(options: PartialOptions) {
+  async startSession(options: PartialOptions) {
+    assertRuntimeCompatibility();
     return isTextOnly(options)
       ? TextConversation.startSession(options)
       : VoiceConversation.startSession(options);

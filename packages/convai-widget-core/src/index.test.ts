@@ -57,8 +57,6 @@ describe("elevenlabs-convai", () => {
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
 
-      await startButton.click();
-
       // Status badge
       await expect.element(page.getByText("Connecting")).toBeInTheDocument();
       await expect.element(page.getByText("Listening")).toBeInTheDocument();
@@ -153,8 +151,8 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await startButton.click();
+      const messageButton = page.getByRole("button", { name: "Message" });
+      await messageButton.click();
 
       await expect.element(page.getByText("Test terms")).toBeInTheDocument();
       const acceptButton = page.getByRole("button", { name: "Accept" });
@@ -202,8 +200,8 @@ describe("elevenlabs-convai", () => {
         variant,
       });
 
-      const startButton = page.getByRole("button", { name: "Start a call" });
-      await startButton.click();
+      const messageButton = page.getByRole("button", { name: "Message" });
+      await messageButton.click();
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
@@ -256,8 +254,6 @@ describe("elevenlabs-convai", () => {
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
-
-      await startButton.click();
 
       // Received transcript
       await expect
@@ -545,6 +541,39 @@ describe("elevenlabs-convai", () => {
       // Tags should be visible when stripping is disabled
       await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
     });
+
+    it("should strip audio tags from voice transcripts when strip_audio_tags is true", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_voice_strip",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      await expect
+        .element(page.getByText("Hello there! How can I help you today?"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText(/\[happy\]/)).not.toBeInTheDocument();
+    });
+
+    it("should style audio tags in voice transcripts when strip_audio_tags is false", async () => {
+      setupWebComponent({
+        "agent-id": "audio_tags_voice_style",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const happyTag = page.getByText("[happy]");
+      await expect.element(happyTag).toBeInTheDocument();
+      await expect
+        .element(happyTag.element().closest("[data-audio-tag]") as HTMLElement)
+        .toBeInTheDocument();
+    });
   });
 
   describe("dismissable behavior", () => {
@@ -612,8 +641,6 @@ describe("elevenlabs-convai", () => {
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
-
-      await startButton.click();
 
       // Dismiss button should be hidden during active call
       await expect.element(dismissButton).not.toBeInTheDocument();
@@ -711,10 +738,10 @@ describe("elevenlabs-convai", () => {
           "show-conversation-id": "false",
         });
 
-        const startButton = page.getByRole("button", {
-          name: "Start a call",
+        const messageButton = page.getByRole("button", {
+          name: "Message",
         });
-        await startButton.click();
+        await messageButton.click();
 
         await expect.element(page.getByText("Test terms")).toBeInTheDocument();
         const acceptButton = page.getByRole("button", { name: "Accept" });
@@ -751,8 +778,6 @@ describe("elevenlabs-convai", () => {
 
       const acceptButton = page.getByRole("button", { name: "Accept" });
       await acceptButton.click();
-
-      await startButton.click();
 
       const textInput = page.getByRole("textbox", {
         name: "Text message input",
@@ -968,6 +993,30 @@ describe("elevenlabs-convai", () => {
 
       // Restore original function
       FingerprintJS.load = originalLoad;
+    });
+  });
+
+  describe("terms kill switch", () => {
+    it("should not show terms modal when top-level terms are null even if language presets are set", async () => {
+      setupWebComponent({
+        "agent-id": "terms_disabled_with_stale_presets",
+        variant: "compact",
+      });
+
+      // The mocked agent has `default_expanded: true`, so the widget opens
+      // the chat directly without a "Start a call" button. If the kill
+      // switch works, no terms modal blocks the conversation and the
+      // agent's first message renders.
+      await expect
+        .element(page.getByText("Stale preset terms"))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Accept" }))
+        .not.toBeInTheDocument();
+
+      await expect
+        .element(page.getByText("Agent response"))
+        .toBeInTheDocument();
     });
   });
 });

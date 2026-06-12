@@ -40,6 +40,10 @@ export type DisplayTranscriptEntry =
       type: "mode_toggle";
       mode: ConversationMode;
       conversationIndex: number;
+    }
+  | {
+      type: "typing_indicator";
+      conversationIndex: number;
     };
 
 export interface DisplayTranscriptConfig {
@@ -49,6 +53,8 @@ export interface DisplayTranscriptConfig {
   firstMessage?: string;
   /** The conversationIndex to use for the prepended first message. */
   firstMessageConversationIndex?: number;
+  /** If true, append a typing indicator entry at the end. */
+  showTypingIndicator?: boolean;
 }
 
 export function buildDisplayTranscript(
@@ -157,6 +163,17 @@ export function buildDisplayTranscript(
             : ToolCallStatus.SUCCESS;
       result[i] = { ...entry, toolStatus };
     }
+  }
+
+  // Append typing indicator if configured
+  if (config.showTypingIndicator) {
+    result.push({
+      type: "typing_indicator",
+      conversationIndex:
+        entries[entries.length - 1]?.conversationIndex ??
+        config.firstMessageConversationIndex ??
+        0,
+    });
   }
 
   return result;

@@ -35,6 +35,10 @@ updates:
       lezer:
         patterns:
           - "@lezer/*"
+      livekit:
+        patterns:
+          - "@livekit/*"
+          - "livekit-client"
       tanstack-start-router:
         patterns:
           - "@tanstack/react-router"

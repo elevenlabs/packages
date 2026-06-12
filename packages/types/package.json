@@ -1,7 +1,8 @@
 {
   "name": "@elevenlabs/types",
-  "version": "0.13.0",
+  "version": "0.14.1",
   "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
+  "license": "MIT",
   "type": "module",
   "types": "./dist/src/index.d.ts",
   "files": [
@@ -9,7 +10,7 @@
     "generated"
   ],
   "scripts": {
-    "generate-types": "node ./scripts/generate-all-types.ts && prettier --write ./generated/types/**/*.ts",
+    "generate-types": "node ./scripts/generate-all-types.ts && prettier --write \"./generated/types/**/*.ts\"",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist generated/types",
