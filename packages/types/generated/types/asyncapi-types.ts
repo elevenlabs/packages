@@ -24,10 +24,10 @@ export interface UserActivity {
 export interface UserFeedback {
   type: "feedback";
   event_id: number;
-  score: Score;
+  score: ScoreOneOf_0 | null;
 }
 
-export type Score = "like" | "dislike";
+export type ScoreOneOf_0 = "like" | "dislike";
 
 export interface ClientToolResult {
   type: "client_tool_result";
@@ -60,6 +60,7 @@ export interface ConversationInitiation {
 
 export interface ConversationConfigOverride {
   agent?: ConversationConfigOverrideAgent;
+  asr?: ConversationConfigOverrideAsr;
   tts?: ConversationConfigOverrideTts;
   conversation?: ConversationConfigOverrideConversation;
 }
@@ -150,6 +151,10 @@ export interface ConversationConfigOverrideAgentPrompt {
   llm?: string;
 }
 
+export interface ConversationConfigOverrideAsr {
+  keywords?: string[];
+}
+
 export interface ConversationConfigOverrideTts {
   voice_id?: string;
   stability?: number;
@@ -167,6 +172,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "agent_response"
   | "agent_response_correction"
   | "agent_chat_response_part"
+  | "agent_reasoning_response_part"
   | "interruption"
   | "user_transcript"
   | "tentative_user_transcript"
@@ -182,7 +188,9 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "asr_initiation_metadata"
   | "guardrail_triggered"
   | "internal_turn_probability"
-  | "internal_tentative_agent_response";
+  | "internal_tentative_agent_response"
+  | "agent_typing"
+  | "external_agent_connected";
 
 export interface SourceInfo {
   source?: string;
@@ -285,6 +293,28 @@ export interface TextResponsePart {
 }
 
 export type TextResponsePartType = "start" | "delta" | "stop";
+
+/**
+ * @experimental
+ */
+export interface AgentReasoningResponsePart {
+  type: "agent_reasoning_response_part";
+  reasoning_response_part: ReasoningResponsePart;
+}
+
+/**
+ * @experimental
+ */
+export interface ReasoningResponsePart {
+  text: string;
+  type: ReasoningResponsePartType;
+  event_id: string;
+}
+
+/**
+ * @experimental
+ */
+export type ReasoningResponsePartType = "start" | "delta" | "stop";
 
 export interface Interruption {
   type: "interruption";
@@ -467,7 +497,7 @@ export interface Ping {
 
 export interface PingEvent {
   event_id: number;
-  ping_ms?: number;
+  ping_ms?: number | null;
 }
 
 export interface AsrInitiationMetadata {
@@ -495,6 +525,21 @@ export interface InternalTentativeAgentResponse {
 
 export interface TentativeAgentResponseInternalEvent {
   tentative_agent_response: string;
+}
+
+export interface AgentTyping {
+  type: "agent_typing";
+  agent_typing_event: AgentTypingEvent;
+}
+
+export interface AgentTypingEvent {
+  is_typing: boolean;
+  duration_ms?: number;
+}
+
+export interface ExternalAgentConnected {
+  type: "external_agent_connected";
+  external_agent_connected_event?: Record<string, any>;
 }
 
 export interface ErrorMessage {
@@ -571,6 +616,14 @@ export interface AgentChatResponsePartClientEvent {
   text_response_part: TextResponsePart;
 }
 
+/**
+ * @experimental
+ */
+export interface AgentReasoningResponsePartClientEvent {
+  type: "agent_reasoning_response_part";
+  reasoning_response_part: ReasoningResponsePart;
+}
+
 export interface ClientToolCallClientEvent {
   type: "client_tool_call";
   client_tool_call: ClientToolCall;
@@ -629,6 +682,16 @@ export interface TentativeAgentResponseInternalClientEvent {
   tentative_agent_response_internal_event: TentativeAgentResponseInternalEvent;
 }
 
+export interface AgentTypingClientEvent {
+  type: "agent_typing";
+  agent_typing_event: AgentTypingEvent;
+}
+
+export interface ExternalAgentConnectedClientEvent {
+  type: "external_agent_connected";
+  external_agent_connected_event?: Record<string, any>;
+}
+
 export interface ErrorClientEvent {
   type: "error";
   error_event: ErrorEvent;
@@ -651,7 +714,7 @@ export interface UserActivityClientToOrchestratorEvent {
 export interface UserFeedbackClientToOrchestratorEvent {
   type: "feedback";
   event_id: number;
-  score: Score;
+  score: ScoreOneOf_0 | null;
 }
 
 export interface ClientToolResultClientToOrchestratorEvent {
@@ -713,7 +776,7 @@ export interface Config {
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
   model_id?: string;
-  disable_logging?: boolean;
+  enable_logging?: boolean;
   keyterms?: string[];
   no_verbatim?: boolean;
 }

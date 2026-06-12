@@ -56,7 +56,11 @@ class RawAudioProcessor extends AudioWorkletProcessor {
         case "setFormat":
           this.isMuted = false;
           this.buffer = []; // Initialize an empty buffer
-          this.bufferSize = data.sampleRate / 10;
+          const chunkDurationMs = data.chunkDurationMs ?? 25;
+          this.bufferSize = Math.max(
+            1,
+            Math.round((data.sampleRate * chunkDurationMs) / 1000)
+          );
           this.format = data.format;
 
           if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {

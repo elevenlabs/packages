@@ -59,7 +59,7 @@
       "outputs": ["generated/**"]
     },
     "generate-version": {
-      "inputs": ["package.json"],
+      "inputs": ["package.json", "$TURBO_ROOT$/scripts/generate-version.mjs"],
       "outputs": ["src/version.ts"]
     },
     "generate-worklets": {

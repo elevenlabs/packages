@@ -25,6 +25,9 @@ export function constructOverrides(
         stability: config.overrides.tts?.stability,
         similarity_boost: config.overrides.tts?.similarityBoost,
       },
+      ...(config.overrides.asr?.keywords !== undefined
+        ? { asr: { keywords: config.overrides.asr.keywords } }
+        : {}),
       conversation: {
         text_only: config.overrides.conversation?.textOnly,
       },

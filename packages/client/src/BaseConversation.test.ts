@@ -22,14 +22,15 @@ class TestConversation extends BaseConversation {
   }
 
   public static create(
-    options: Partial<Options> & { origin?: string } = {}
+    options: Partial<Options> & { origin?: string } = {},
+    connection: BaseConnection = noopConnection
   ): TestConversation {
     const fullOptions = TestConversation.getFullOptions({
       agentId: "test-agent-id",
       connectionType: "webrtc",
       ...options,
     } as PartialOptions);
-    return new TestConversation(fullOptions, noopConnection);
+    return new TestConversation(fullOptions, connection);
   }
 
   constructor(options: Options, connection: BaseConnection) {
@@ -55,6 +56,19 @@ class TestConversation extends BaseConversation {
     event: Parameters<Parameters<BaseConnection["onMessage"]>[0]>[0]
   ) {
     return this["onMessage"](event);
+  }
+
+  public connect(currentEventId = 1) {
+    this.currentEventId = currentEventId;
+    this.markConnected();
+  }
+
+  public setStatus(status: Parameters<TestConversation["updateStatus"]>[0]) {
+    this.updateStatus(status);
+  }
+
+  public getCanSendFeedback() {
+    return this.canSendFeedback;
   }
 }
 
@@ -196,6 +210,154 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("agent_reasoning_response_part events", () => {
+    it("calls onAgentReasoningResponsePart with the reasoning payload", async () => {
+      const onAgentReasoningResponsePart = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentReasoningResponsePart,
+        onDebug,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "Let me think about this...",
+          type: "delta",
+          event_id: "123",
+        },
+      });
+
+      expect(onAgentReasoningResponsePart).toHaveBeenCalledWith({
+        text: "Let me think about this...",
+        type: "delta",
+        event_id: "123",
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("handles start, delta, and stop types", async () => {
+      const onAgentReasoningResponsePart = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentReasoningResponsePart,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "",
+          type: "start",
+          event_id: "1",
+        },
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "Analyzing the request...",
+          type: "delta",
+          event_id: "1",
+        },
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "",
+          type: "stop",
+          event_id: "1",
+        },
+      });
+
+      expect(onAgentReasoningResponsePart).toHaveBeenCalledTimes(3);
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(1, {
+        text: "",
+        type: "start",
+        event_id: "1",
+      });
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(2, {
+        text: "Analyzing the request...",
+        type: "delta",
+        event_id: "1",
+      });
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(3, {
+        text: "",
+        type: "stop",
+        event_id: "1",
+      });
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage({
+          type: "agent_reasoning_response_part",
+          reasoning_response_part: {
+            text: "Thinking...",
+            type: "delta",
+            event_id: "42",
+          },
+        })
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe("ping events", () => {
+    it("replies with a pong and forwards the payload to onPing", async () => {
+      const onPing = vi.fn();
+      const onDebug = vi.fn();
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onPing, onDebug },
+        connection
+      );
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 99,
+          ping_ms: 42,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 99,
+      });
+      expect(onPing).toHaveBeenCalledWith({
+        event_id: 99,
+        ping_ms: 42,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("still replies with a pong when no onPing callback is provided", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create({}, connection);
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 7,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 7,
+      });
+    });
+  });
+
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",
@@ -271,6 +433,285 @@ describe("BaseConversation", () => {
       expect(received.truncated).toBe(true);
       expect(received.full_tool_result).toBe(truncatedBody);
       expect(received.full_tool_result.length).toBeGreaterThan(64_000);
+    });
+  });
+
+  describe("disconnection context", () => {
+    // endSessionWithDetails is async and fire-and-forget, so we need to flush
+    // microtasks after receiving the message.
+    const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("disconnects with end_call context on agent_tool_response", async () => {
+      const onDisconnect = vi.fn();
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response",
+        agent_tool_response: {
+          tool_name: "end_call",
+          tool_call_id: "call_end",
+          tool_type: "system",
+          is_error: false,
+          is_called: true,
+          event_id: 1,
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "end_call", reason: "Agent ended the call" },
+      });
+    });
+
+    it("disconnects with end_call context on agent_tool_response_full_payload", async () => {
+      const onDisconnect = vi.fn();
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "agent_tool_response_full_payload",
+        agent_tool_response_full_payload: {
+          tool_name: "end_call",
+          tool_call_id: "call_end",
+          tool_type: "system",
+          is_error: false,
+          is_blocked: false,
+          is_called: true,
+          event_id: 1,
+          full_tool_result: "",
+          truncated: false,
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "end_call", reason: "Agent ended the call" },
+      });
+    });
+
+    it("disconnects with max_duration_exceeded context on error event", async () => {
+      const onDisconnect = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onDisconnect });
+
+      await conversation.receiveMessage({
+        type: "error",
+        error_event: {
+          code: 1000 as const,
+          error_type: "max_duration_exceeded",
+          message: "Maximum duration exceeded",
+        },
+      });
+      await flush();
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "error",
+        message: "Maximum duration exceeded",
+        context: { type: "max_duration_exceeded" },
+      });
+    });
+
+    it("still reaches disconnected and fires onDisconnect if teardown throws", async () => {
+      const onDisconnect = vi.fn();
+      const onStatusChange = vi.fn();
+      const throwingConnection = {
+        ...noopConnection,
+        close: () => {
+          throw new Error("teardown boom");
+        },
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onDisconnect, onStatusChange },
+        throwingConnection
+      );
+      conversation.connect();
+
+      await expect(conversation.endSession()).rejects.toThrow("teardown boom");
+
+      expect(onStatusChange).toHaveBeenCalledWith({ status: "disconnected" });
+      expect(onDisconnect).toHaveBeenCalledWith({ reason: "user" });
+    });
+  });
+
+  describe("error events", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("surfaces a non-terminal server error via onError", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onError });
+
+      await conversation.receiveMessage({
+        type: "error",
+        error_event: {
+          code: 1008 as const,
+          error_type: "override_error",
+          message: "Override not allowed",
+        },
+      });
+
+      expect(onError).toHaveBeenCalledWith(
+        "Server error: Override not allowed",
+        {
+          errorType: "override_error",
+          code: 1008,
+          debugMessage: undefined,
+          details: undefined,
+        }
+      );
+    });
+
+    it("does not throw when the error message has no error_event payload", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onError });
+
+      // The orchestrator can emit an `error` message without a populated
+      // `error_event`. This must surface via onError, not throw a TypeError
+      // ("Cannot read properties of undefined (reading 'error_type')") that
+      // escapes the message dispatcher and crashes the consumer.
+      const malformedError = { type: "error" } as unknown as Parameters<
+        typeof conversation.receiveMessage
+      >[0];
+
+      await expect(
+        conversation.receiveMessage(malformedError)
+      ).resolves.toBeUndefined();
+
+      expect(onError).toHaveBeenCalledWith("Server error: Unknown error", {
+        errorType: undefined,
+        code: undefined,
+        debugMessage: undefined,
+        details: undefined,
+      });
+    });
+  });
+
+  describe("sendFeedback", () => {
+    function createWithSpy() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create({}, connection);
+      return { conversation, sendMessage };
+    }
+
+    it("warns and does not send when not connected", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      expect(conversation.getCanSendFeedback()).toBe(false);
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+    });
+
+    it("targets the current turn when eventId is omitted", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "like",
+        event_id: 5,
+      });
+    });
+
+    it("advances the default target as agent responses arrive", async () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect();
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Hello there",
+          event_id: 7,
+        },
+      });
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "like",
+        event_id: 7,
+      });
+    });
+
+    it("targets an explicit past message", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(false, 2);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "dislike",
+        event_id: 2,
+      });
+    });
+
+    it("clears feedback when null is passed", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(null, 2);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: null,
+        event_id: 2,
+      });
+    });
+
+    it("clears feedback for the current turn when eventId is omitted", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(null);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: null,
+        event_id: 5,
+      });
+    });
+
+    it("can send repeatedly while connected", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(true, 2);
+      conversation.sendFeedback(true, 5);
+
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+      expect(conversation.getCanSendFeedback()).toBe(true);
+    });
+
+    it("notifies onCanSendFeedbackChange on connect and disconnect", () => {
+      const onCanSendFeedbackChange = vi.fn();
+      const conversation = TestConversation.create({ onCanSendFeedbackChange });
+
+      conversation.connect(1);
+      expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
+        canSendFeedback: true,
+      });
+
+      conversation.setStatus("disconnected");
+      expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
+        canSendFeedback: false,
+      });
     });
   });
 });

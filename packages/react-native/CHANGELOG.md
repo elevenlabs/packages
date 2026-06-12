@@ -1,5 +1,152 @@
 # @elevenlabs/react-native
 
+## 1.2.18
+
+### Patch Changes
+
+- Updated dependencies [a96f220]
+  - @elevenlabs/client@1.17.0
+  - @elevenlabs/react@1.12.0
+
+## 1.2.17
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/client@1.16.0
+  - @elevenlabs/react@1.11.0
+
+## 1.2.16
+
+### Patch Changes
+
+- Updated dependencies [6b1f43d]
+  - @elevenlabs/client@1.15.2
+  - @elevenlabs/react@1.10.2
+
+## 1.2.15
+
+### Patch Changes
+
+- Updated dependencies [df7f31a]
+- Updated dependencies [bb001b1]
+- Updated dependencies [d8892fd]
+- Updated dependencies [0f12b01]
+  - @elevenlabs/client@1.15.1
+  - @elevenlabs/react@1.10.1
+
+## 1.2.14
+
+### Patch Changes
+
+- Updated dependencies [f149d9d]
+  - @elevenlabs/client@1.15.0
+  - @elevenlabs/react@1.10.0
+
+## 1.2.13
+
+### Patch Changes
+
+- @elevenlabs/client@1.14.1
+- @elevenlabs/react@1.9.1
+
+## 1.2.12
+
+### Patch Changes
+
+- Updated dependencies [2277139]
+  - @elevenlabs/client@1.14.0
+  - @elevenlabs/react@1.9.0
+
+## 1.2.11
+
+### Patch Changes
+
+- Updated dependencies [44336a2]
+  - @elevenlabs/client@1.13.0
+  - @elevenlabs/react@1.8.0
+
+## 1.2.10
+
+### Patch Changes
+
+- Updated dependencies [71bc3d5]
+  - @elevenlabs/client@1.12.1
+  - @elevenlabs/react@1.7.1
+
+## 1.2.9
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+- Updated dependencies [bce3fac]
+  - @elevenlabs/client@1.12.0
+  - @elevenlabs/react@1.7.0
+
+## 1.2.8
+
+### Patch Changes
+
+- Updated dependencies [8b362c9]
+  - @elevenlabs/client@1.11.2
+  - @elevenlabs/react@1.6.8
+
+## 1.2.7
+
+### Patch Changes
+
+- @elevenlabs/client@1.11.1
+- @elevenlabs/react@1.6.7
+
+## 1.2.6
+
+### Patch Changes
+
+- Updated dependencies [062d715]
+  - @elevenlabs/client@1.11.0
+  - @elevenlabs/react@1.6.6
+
+## 1.2.5
+
+### Patch Changes
+
+- Updated dependencies [fdad576]
+  - @elevenlabs/client@1.10.0
+  - @elevenlabs/react@1.6.5
+
+## 1.2.4
+
+### Patch Changes
+
+- Updated dependencies [d1cadcd]
+  - @elevenlabs/client@1.9.0
+  - @elevenlabs/react@1.6.4
+
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+  - @elevenlabs/react@1.6.3
+
+## 1.2.2
+
+### Patch Changes
+
+- 796ade1: Fix React Native SDK imports so native builds no longer pull in DOM/Web-only APIs from the client package.
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+  - @elevenlabs/react@1.6.2
+
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies [ae50508]
+  - @elevenlabs/client@1.7.1
+  - @elevenlabs/react@1.6.1
+
 ## 1.2.0
 
 ### Minor Changes

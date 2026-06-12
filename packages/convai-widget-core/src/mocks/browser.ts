@@ -21,9 +21,7 @@ const BASIC_CONFIG: WidgetConfig = {
   default_expanded: false,
   always_expanded: false,
   dismissible: false,
-  text_contents: {
-    start_chat: "Start a call",
-  },
+  text_contents: {},
   terms_html: "Test terms",
   language_presets: {},
   disable_banner: false,
@@ -72,6 +70,23 @@ export const AGENTS = {
         first_message: "Bonjour! Comment puis-je vous aider?",
         terms_html: "<p>Termes en Français</p>",
         terms_key: "terms_fr",
+      },
+    },
+  },
+  terms_disabled_with_stale_presets: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    default_expanded: true,
+    // Production serialises the kill switch as `null`, not `undefined`.
+    // HttpResponse.json -> JSON.stringify strips `undefined`, so using
+    // `null` keeps the mock faithful to the wire payload.
+    terms_html: null,
+    terms_text: null,
+    supported_language_overrides: ["en"],
+    language_presets: {
+      en: {
+        terms_html: "<p>Stale preset terms</p>",
+        terms_text: "Stale preset terms",
       },
     },
   },
@@ -138,12 +153,31 @@ const codeBlock = true;
     default_expanded: true,
     first_message: `[Relative link](/relative)`,
   },
+  markdown_agent_response: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
+    first_message: "Agent response",
+  },
   tool_call: {
     ...BASIC_CONFIG,
     text_only: true,
     transcript_enabled: true,
     text_input_enabled: true,
     show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  stream_consolidation: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
     terms_html: undefined,
     default_expanded: true,
     first_message: "",
@@ -159,6 +193,24 @@ const codeBlock = true;
   audio_tags_no_strip: {
     ...BASIC_CONFIG,
     text_only: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_voice_strip: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
+  audio_tags_voice_style: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
     default_expanded: true,
     terms_html: undefined,
     strip_audio_tags: false,
@@ -256,14 +308,19 @@ export const Worker = setupWorker(
         config.text_only &&
         agentId !== "end_call_test" &&
         agentId !== "tool_call" &&
+        agentId !== "stream_consolidation" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload"
       ) {
+        const agentResponse =
+          agentId === "markdown_agent_response"
+            ? "Read the [setup guide](https://example.com/setup)."
+            : "Another agent response";
         client.send(
           JSON.stringify({
             type: "agent_response",
             agent_response_event: {
-              agent_response: "Another agent response",
+              agent_response: agentResponse,
               event_id: 2,
             },
           })
@@ -402,6 +459,48 @@ export const Worker = setupWorker(
                 agent_response: "Tool completed successfully",
                 event_id: 2,
               },
+            })
+          );
+        });
+      }
+      if (agentId === "stream_consolidation") {
+        let hasStreamed = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasStreamed) return;
+          hasStreamed = true;
+          // Stream a partial, then deliver the final text as an agent_response
+          // for the same event_id (before stop) so it overwrites in place.
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "partial",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: { agent_response: "full", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
             })
           );
         });

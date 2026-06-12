@@ -62,6 +62,8 @@ vi.mock("livekit-client", () => {
 
 import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack } from "livekit-client";
+import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
+import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -158,7 +160,7 @@ describe("WebRTCConnection", () => {
       }
     );
 
-    // Mock AudioContext so setupInputAnalyser succeeds
+    // Mock AudioContext so setupInputAnalyser succeeds via the web adapter
     const mockAnalyser = {
       frequencyBinCount: 128,
       getByteFrequencyData: vi.fn(),
@@ -176,6 +178,9 @@ describe("WebRTCConnection", () => {
       "MediaStream",
       vi.fn((tracks: unknown[]) => ({ getTracks: () => tracks }))
     );
+
+    // Register the web audio adapter so WebRTCConnection delegates to it
+    setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
 
     const connection = await WebRTCConnection.create({
       conversationToken: "test-token",
@@ -252,6 +257,78 @@ describe("WebRTCConnection", () => {
     expect(connection.input.getVolume()).toBe(0);
 
     connection.close();
+  });
+
+  describe("disconnection context", () => {
+    async function createWithHandlers() {
+      const mockRoom = new Room() as any;
+      const eventHandlers = new Map<string, (...args: unknown[]) => void>();
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          eventHandlers.set(event, callback);
+          if (event === "connected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      return { connection, eventHandlers, mockRoom };
+    }
+
+    it("emits agent disconnect with context on RoomEvent.Disconnected", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("disconnected")?.("client_initiated");
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "close", reason: "client_initiated" },
+      });
+    });
+
+    it("emits error disconnect with context on ConnectionStateChanged to Disconnected", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("connectionStateChanged")?.("disconnected");
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "error",
+        message: "LiveKit connection state changed to disconnected",
+        context: { type: "connection_state_changed" },
+      });
+    });
+
+    it("emits agent disconnect with context on agent ParticipantDisconnected", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("participantDisconnected")?.({
+        identity: "agent_123",
+      });
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "agent",
+        context: { type: "close", reason: "agent disconnected" },
+      });
+    });
   });
 
   it.each([

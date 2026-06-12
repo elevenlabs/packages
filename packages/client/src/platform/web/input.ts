@@ -1,17 +1,20 @@
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
-import type { FormatConfig } from "./connection.js";
+import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
-import type { AudioWorkletConfig } from "../BaseConversation.js";
+import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
-import type { InputController, InputDeviceConfig } from "../InputController.js";
+import {
+  DEFAULT_INPUT_CHUNK_DURATION_MS,
+  type InputController,
+  type InputDeviceConfig,
+  type InputConfig,
+  type InputEventTarget,
+  type InputListener,
+} from "../../InputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
-
-export type InputConfig = InputDeviceConfig & {
-  onError?(message: string, context?: unknown): void;
-};
 
 const defaultConstraints = {
   echoCancellation: true,
@@ -22,13 +25,9 @@ const defaultConstraints = {
   channelCount: { ideal: 1 },
 };
 
-export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
-export type InputListener = (event: InputMessageEvent) => void;
-
-export type InputEventTarget = {
-  addListener(listener: InputListener): void;
-  removeListener(listener: InputListener): void;
-};
+export type MediaDeviceInputConfig = FormatConfig &
+  InputConfig &
+  AudioWorkletConfig;
 
 export class MediaDeviceInput implements InputController, InputEventTarget {
   public static async create({
@@ -39,9 +38,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     workletPaths,
     libsampleratePath,
     onError,
-  }: FormatConfig &
-    InputConfig &
-    AudioWorkletConfig): Promise<MediaDeviceInput> {
+    inputChunkDurationMs = DEFAULT_INPUT_CHUNK_DURATION_MS,
+  }: MediaDeviceInputConfig): Promise<MediaDeviceInput> {
     let context: AudioContext | null = null;
     let inputStream: MediaStream | null = null;
 
@@ -95,7 +93,12 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
       const source = context.createMediaStreamSource(inputStream);
       const worklet = new AudioWorkletNode(context, "rawAudioProcessor");
-      worklet.port.postMessage({ type: "setFormat", format, sampleRate });
+      worklet.port.postMessage({
+        type: "setFormat",
+        format,
+        sampleRate,
+        chunkDurationMs: inputChunkDurationMs,
+      });
 
       source.connect(analyser);
       analyser.connect(worklet);
@@ -221,9 +224,10 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       // Extract inputDeviceId from config
       const inputDeviceId = config?.inputDeviceId;
 
-      // Note: sampleRate, format, and preferHeadphonesForIosDevices cannot be
-      // changed on an existing input (would require recreating the AudioContext).
-      // These options are only used during initial MediaDeviceInput.create()
+      // Note: sampleRate, format, inputChunkDurationMs, and
+      // preferHeadphonesForIosDevices cannot be changed on an existing input
+      // (would require recreating the AudioContext). These options are only used
+      // during initial MediaDeviceInput.create()
 
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {

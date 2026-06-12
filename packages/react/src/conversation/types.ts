@@ -40,9 +40,13 @@ export type HookCallbacks = Pick<
   | "onMCPConnectionStatus"
   | "onAsrInitiationMetadata"
   | "onAgentChatResponsePart"
+  | "onAgentReasoningResponsePart"
   | "onAgentResponseCorrection"
   | "onAudioAlignment"
   | "onGuardrailTriggered"
+  | "onAgentTyping"
+  | "onExternalAgentConnected"
+  | "onPing"
 >;
 
 export type HookOptions = Partial<

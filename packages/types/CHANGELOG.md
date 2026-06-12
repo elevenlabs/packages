@@ -1,5 +1,55 @@
 # @elevenlabs/types
 
+## 0.19.0
+
+### Minor Changes
+
+- a96f220: Rename `disable_logging` to `enable_logging` in the Scribe `session_started` config to match the field the server actually reports. `disable_logging` was never sent on the wire.
+
+## 0.18.0
+
+### Minor Changes
+
+- 139ed79: Add `onAgentReasoningResponsePart` callback to receive streaming reasoning response
+  events from the agent. The callback receives `{ text, type, event_id }` where type
+  is one of "start", "delta", or "stop".
+
+## 0.17.1
+
+### Patch Changes
+
+- f149d9d: Add a dedicated `onPing` callback that surfaces `ping` events (including the estimated `ping_ms`) to consumers. The SDK still replies to pings with a `pong` automatically; the callback is informational, useful for e.g. reporting connection latency. Also clarifies the documentation for `ping_ms`: "Estimated ping in milliseconds, based on previous ping/pong timing."
+
+## 0.17.0
+
+### Minor Changes
+
+- d52d5f6: Allow null values for PingEvent
+
+## 0.16.0
+
+### Minor Changes
+
+- 2277139: Allow `sendFeedback` to clear feedback by passing `null`. `sendFeedback(like, eventId?)` now accepts `null` as the first parameter; when passed it sends `score: null` to clear the feedback on that event, allowing users to remove their like/dislike rating.
+
+## 0.15.0
+
+### Minor Changes
+
+- c086dad: Add `overrides.asr.keywords` support to the browser client so per-conversation ASR keyword biasing can be sent via `conversation_initiation_client_data`.
+
+## 0.14.1
+
+### Patch Changes
+
+- 2cc82d2: Add `"license": "MIT"` field to package.json so license-checker tools no longer see an undefined license (#838).
+
+## 0.14.0
+
+### Minor Changes
+
+- fa64593: Remove manually maintained types (`Role`, `Mode`, `Status`, `Callbacks`, `CALLBACK_KEYS`, `DisconnectionDetails`, `MessagePayload`, `AudioAlignmentEvent`) from `@elevenlabs/types`. These types now live in `@elevenlabs/client` — import them from there instead. The types package now contains only generated code.
+
 ## 0.13.0
 
 ### Minor Changes

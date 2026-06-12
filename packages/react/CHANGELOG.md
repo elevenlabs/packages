@@ -1,5 +1,162 @@
 # @elevenlabs/react
 
+## 1.12.0
+
+### Minor Changes
+
+- a96f220: Add `enableLogging` option (`boolean`) to the Scribe realtime API, available on `Scribe.connect` and the `useScribe` hook. Setting it to `false` sends `enable_logging=false` on the WebSocket URL, which runs the session in zero retention mode so history features are unavailable for it. Zero retention mode may only be used by enterprise customers.
+
+### Patch Changes
+
+- Updated dependencies [a96f220]
+  - @elevenlabs/client@1.17.0
+
+## 1.11.0
+
+### Minor Changes
+
+- 139ed79: Add `onAgentReasoningResponsePart` callback to receive streaming reasoning response
+  events from the agent. The callback receives `{ text, type, event_id }` where type
+  is one of "start", "delta", or "stop".
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/client@1.16.0
+
+## 1.10.2
+
+### Patch Changes
+
+- Updated dependencies [6b1f43d]
+  - @elevenlabs/client@1.15.2
+
+## 1.10.1
+
+### Patch Changes
+
+- Updated dependencies [df7f31a]
+- Updated dependencies [bb001b1]
+- Updated dependencies [d8892fd]
+- Updated dependencies [0f12b01]
+  - @elevenlabs/client@1.15.1
+
+## 1.10.0
+
+### Minor Changes
+
+- f149d9d: Add a dedicated `onPing` callback that surfaces `ping` events (including the estimated `ping_ms`) to consumers. The SDK still replies to pings with a `pong` automatically; the callback is informational, useful for e.g. reporting connection latency. Also clarifies the documentation for `ping_ms`: "Estimated ping in milliseconds, based on previous ping/pong timing."
+
+### Patch Changes
+
+- Updated dependencies [f149d9d]
+  - @elevenlabs/client@1.15.0
+
+## 1.9.1
+
+### Patch Changes
+
+- @elevenlabs/client@1.14.1
+
+## 1.9.0
+
+### Minor Changes
+
+- 2277139: Allow `sendFeedback` to clear feedback by passing `null`. `sendFeedback(like, eventId?)` now accepts `null` as the first parameter; when passed it sends `score: null` to clear the feedback on that event, allowing users to remove their like/dislike rating.
+
+### Patch Changes
+
+- Updated dependencies [2277139]
+  - @elevenlabs/client@1.14.0
+
+## 1.8.0
+
+### Minor Changes
+
+- 44336a2: Allow `sendFeedback` to target a past message by `event_id`. `sendFeedback(like, eventId?)` now accepts an optional event id; when provided it rates that specific message, and when omitted it rates the latest agent turn.
+
+  `canSendFeedback` now reflects whether the conversation is connected rather than whether the latest turn is unrated, so feedback can be sent for any message (including re-rating) while the session is live.
+
+### Patch Changes
+
+- Updated dependencies [44336a2]
+  - @elevenlabs/client@1.13.0
+
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [71bc3d5]
+  - @elevenlabs/client@1.12.1
+
+## 1.7.0
+
+### Minor Changes
+
+- bce3fac: Expose includeLanguageDetection for realtime Scribe sessions, including React useScribe support for requesting and reading detected language metadata.
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+- Updated dependencies [bce3fac]
+  - @elevenlabs/client@1.12.0
+
+## 1.6.8
+
+### Patch Changes
+
+- Updated dependencies [8b362c9]
+  - @elevenlabs/client@1.11.2
+
+## 1.6.7
+
+### Patch Changes
+
+- @elevenlabs/client@1.11.1
+
+## 1.6.6
+
+### Patch Changes
+
+- Updated dependencies [062d715]
+  - @elevenlabs/client@1.11.0
+
+## 1.6.5
+
+### Patch Changes
+
+- Updated dependencies [fdad576]
+  - @elevenlabs/client@1.10.0
+
+## 1.6.4
+
+### Patch Changes
+
+- d1cadcd: Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).
+- Updated dependencies [d1cadcd]
+  - @elevenlabs/client@1.9.0
+
+## 1.6.3
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+
+## 1.6.2
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+
+## 1.6.1
+
+### Patch Changes
+
+- Updated dependencies [ae50508]
+  - @elevenlabs/client@1.7.1
+
 ## 1.6.0
 
 ### Minor Changes

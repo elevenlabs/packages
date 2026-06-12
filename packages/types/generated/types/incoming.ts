@@ -1,11 +1,13 @@
 // Auto-generated barrel for incoming payloads
 export type {
   AgentChatResponsePartClientEvent,
+  AgentReasoningResponsePartClientEvent,
   AgentResponseClientEvent,
   AgentResponseCorrectionClientEvent,
   AgentToolRequestClientEvent,
   AgentToolResponseClientEvent,
   AgentToolResponseFullPayloadClientEvent,
+  AgentTypingClientEvent,
   AsrInitiationMetadataEvent,
   AudioClientEvent,
   ClientToolCallClientEvent,
@@ -13,6 +15,7 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   ConversationInitiationMetadataEvent,
   ErrorClientEvent,
+  ExternalAgentConnectedClientEvent,
   GuardrailTriggeredClientEvent,
   InterruptionEvent,
   McpConnectionStatusClientEvent,

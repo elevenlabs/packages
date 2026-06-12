@@ -1,16 +1,18 @@
 import type {
   AgentChatResponsePartClientEvent,
+  AgentReasoningResponsePartClientEvent,
   AgentResponse,
   AgentResponseCorrection,
   AgentToolResponseClientEvent,
   AgentToolResponseFullPayloadClientEvent,
+  AgentTypingClientEvent,
   AsrInitiationMetadataEvent as AsrMetadataEvent,
   Audio,
-  AudioAlignmentEvent,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ConversationMetadata,
   ErrorMessage,
+  ExternalAgentConnectedClientEvent,
   GuardrailTriggered,
   Interruption,
   McpConnectionStatusClientEvent,
@@ -21,6 +23,7 @@ import type {
   UserTranscript,
   VadScore,
 } from "@elevenlabs/types";
+import type { AudioAlignmentEvent } from "../types.js";
 
 // Compatibility layer - incoming events
 export type UserTranscriptionEvent = UserTranscript;
@@ -43,8 +46,12 @@ export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
+export type AgentReasoningResponsePartEvent =
+  AgentReasoningResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type GuardrailTriggeredEvent = GuardrailTriggered;
+export type AgentTypingEvent = AgentTypingClientEvent;
+export type ExternalAgentConnectedEvent = ExternalAgentConnectedClientEvent;
 export type { AudioAlignmentEvent };
 
 export type IncomingSocketEvent =
@@ -66,8 +73,11 @@ export type IncomingSocketEvent =
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
+  | AgentReasoningResponsePartEvent
   | ErrorMessageEvent
-  | GuardrailTriggeredEvent;
+  | GuardrailTriggeredEvent
+  | AgentTypingEvent
+  | ExternalAgentConnectedEvent;
 
 // Compatibility layer - outgoing events
 export type PongEvent = Outgoing.PongClientToOrchestratorEvent;

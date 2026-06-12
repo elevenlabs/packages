@@ -30,20 +30,18 @@ const createMockConversation = (id = "test-id") =>
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
   const status = useConversationStatus();
-  return { startSession: ctx.startSession, status };
+  return { startSession: ctx.startSession, endSession: ctx.endSession, status };
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
-    return (
-      <ConversationProvider {...props}>
-        {children}
-      </ConversationProvider>
-    );
+    return <ConversationProvider {...props}>{children}</ConversationProvider>;
   };
 }
 
-type MockStartSessionOptions = Partial<Callbacks & ConversationLifecycleOptions> &
+type MockStartSessionOptions = Partial<
+  Callbacks & ConversationLifecycleOptions
+> &
   Record<string, unknown>;
 
 function driveConnectedSessionLifecycle(
@@ -197,7 +195,7 @@ describe("ConversationStatus", () => {
     expect(result.current.status.message).toBe("boom");
   });
 
-  it("ignores disconnecting status (transient)", async () => {
+  it("reports disconnecting as disconnected (conversation is already released)", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -216,10 +214,90 @@ describe("ConversationStatus", () => {
     });
     expect(result.current.status.status).toBe("connected");
 
+    // endSession() releases the conversation optimistically the moment
+    // "disconnecting" fires — status must never read "connected" while the
+    // conversation is gone (consumers guard conversation access on it).
     act(() => {
       opts.onStatusChange!({ status: "disconnecting" });
     });
+    expect(result.current.status.status).toBe("disconnected");
+  });
+
+  it("ignores status events from a superseded session", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    act(() => {
+      result.current.endSession();
+    });
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[optsA], [optsB]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      optsB.onStatusChange!({ status: "connected" });
+    });
     expect(result.current.status.status).toBe("connected");
+
+    // Session A's teardown completes late and fires its final
+    // "disconnected" — it must not clobber session B's live status.
+    act(() => {
+      optsA.onStatusChange!({ status: "disconnected" });
+    });
+    expect(result.current.status.status).toBe("connected");
+  });
+
+  it("never renders status connected while the conversation is released", async () => {
+    const observed: Array<{ status: string; hasConversation: boolean }> = [];
+
+    function useObserver() {
+      const ctx = useContext(ConversationContext) as ConversationContextValue;
+      const { status } = useConversationStatus();
+      observed.push({ status, hasConversation: ctx.conversation !== null });
+      return ctx;
+    }
+
+    const mockConversation = createMockConversation();
+    let opts: MockStartSessionOptions | null = null;
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      opts = options as MockStartSessionOptions;
+      driveConnectedSessionLifecycle(opts, mockConversation);
+      return mockConversation;
+    });
+    // Mirror the real SDK: endSession() synchronously fires "disconnecting"
+    // before its async teardown completes.
+    vi.mocked(mockConversation.endSession).mockImplementation(async () => {
+      opts?.onStatusChange?.({ status: "disconnecting" });
+    });
+
+    const { result } = renderHook(() => useObserver(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.endSession();
+    });
+
+    // Consumers guard conversation access with status === "connected"
+    // (e.g. calling getId() during render) — no render may observe that
+    // status while the conversation has already been released.
+    const broken = observed.filter(
+      o => o.status === "connected" && !o.hasConversation
+    );
+    expect(broken).toEqual([]);
+    expect(result.current.conversation).toBeNull();
   });
 
   it("composes with user-provided onStatusChange callback", async () => {

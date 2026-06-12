@@ -265,9 +265,9 @@ export function attachNativeVolume(
   const originalDetach = result.detach;
   return {
     ...result,
-    detach: () => {
+    detach: async () => {
       cleanup();
-      originalDetach();
+      await originalDetach();
     },
   };
 }

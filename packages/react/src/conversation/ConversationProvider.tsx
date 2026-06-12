@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   type Options,
@@ -45,13 +38,14 @@ type ConversationInputControlProps = Pick<
   "isMuted" | "onMutedChange"
 >;
 
-const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[] = [
-  ConversationControlsProvider,
-  ConversationStatusProvider,
-  ConversationModeProvider,
-  ConversationFeedbackProvider,
-  ConversationClientToolsProvider,
-];
+const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[] =
+  [
+    ConversationControlsProvider,
+    ConversationStatusProvider,
+    ConversationModeProvider,
+    ConversationFeedbackProvider,
+    ConversationClientToolsProvider,
+  ];
 
 export type ConversationProviderProps = React.PropsWithChildren<
   HookOptions & ConversationInputControlProps
@@ -76,7 +70,9 @@ export function ConversationProvider({
     () => new Map<string, NonNullable<Options["clientTools"]>[string]>()
   );
   /** Ref to the live clientTools object currently held by BaseConversation. */
-  const clientToolsRef = useRef<Record<string, NonNullable<Options["clientTools"]>[string]>>({});
+  const clientToolsRef = useRef<
+    Record<string, NonNullable<Options["clientTools"]>[string]>
+  >({});
   /** Always holds the latest provider props, avoiding stale closures in callbacks. */
   const defaultOptionsRef = useRef(defaultOptions);
   // eslint-disable-next-line react-hooks/refs -- intentional sync during render for latest-ref pattern
@@ -96,18 +92,6 @@ export function ConversationProvider({
     (callbacks: Partial<Callbacks>) => listenerMap.register(callbacks),
     [listenerMap]
   );
-
-  // Sync provider state when session ends externally (agent disconnect,
-  // raw instance endSession(), etc.). Uses the listener map so it composes
-  // with user-provided onDisconnect callbacks.
-  useLayoutEffect(() => {
-    return listenerMap.register({
-      onDisconnect: () => {
-        conversationRef.current = null;
-        setConversation(null);
-      },
-    });
-  }, [listenerMap]);
 
   const startSession = useCallback(
     (options?: HookOptions) => {
@@ -153,11 +137,40 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
-      const userOnConversationCreated = sessionOptions.onConversationCreated;
       const isStaleStartSession = () =>
         startSessionId !== startSessionIdRef.current;
 
+      // A superseded session can outlive its replacement's start: its async
+      // teardown keeps emitting events (final "disconnected", teardown
+      // onDisconnect, errors) that would otherwise reach the listener map
+      // and clobber sub-provider state now reflecting the newer session
+      // (e.g. ConversationModeProvider resets mode on onDisconnect). Drop
+      // every callback once this start is stale.
+      for (const key of CALLBACK_KEYS) {
+        const callback = sessionOptions[key];
+        if (typeof callback === "function") {
+          (sessionOptions as Record<string, unknown>)[key] = (
+            ...args: never[]
+          ) => {
+            if (!isStaleStartSession()) {
+              (callback as (...a: never[]) => void)(...args);
+            }
+          };
+        }
+      }
+
+      const userOnConversationCreated = sessionOptions.onConversationCreated;
+      const userOnDisconnect = sessionOptions.onDisconnect;
+
+      // Set once this session's conversation is known. endSession() clears
+      // conversationRef optimistically (so restart-from-callback patterns
+      // keep working), which means a session's own onDisconnect can still
+      // arrive after a *newer* session has taken the ref — this check stops
+      // that late arrival from clearing state that isn't its own.
+      let thisSessionConv: Conversation | null = null;
+
       const handleConversationCreated = (conv: Conversation) => {
+        thisSessionConv = conv;
         if (shouldEndRef.current || isStaleStartSession()) {
           return;
         }
@@ -174,10 +187,52 @@ export function ConversationProvider({
         sessionOptions.onConnect?.(props);
       };
 
+      // "disconnecting" marks the moment the session stops being usable, on
+      // every path (agent hangup, raw endSession(), provider endSession()) —
+      // release the conversation here so it clears in the same React batch
+      // as the status transition, and consumers never observe a live status
+      // with a released conversation (or vice versa). Stale sessions are
+      // dropped entirely so a late "disconnected" can't clobber the status
+      // of a session that replaced this one.
+      const handleStatusChange: NonNullable<
+        Callbacks["onStatusChange"]
+      > = props => {
+        if (isStaleStartSession()) {
+          return;
+        }
+        if (
+          props.status === "disconnecting" &&
+          thisSessionConv !== null &&
+          conversationRef.current === thisSessionConv
+        ) {
+          conversationRef.current = null;
+          setConversation(null);
+        }
+        sessionOptions.onStatusChange?.(props);
+      };
+
+      // Syncs provider state when this session ends, whether externally
+      // (agent disconnect) or via endSession(). Only clears conversationRef
+      // if it still points at this session's conversation.
+      const handleDisconnect: NonNullable<
+        Callbacks["onDisconnect"]
+      > = details => {
+        if (isStaleStartSession()) {
+          return;
+        }
+        if (conversationRef.current === thisSessionConv) {
+          conversationRef.current = null;
+          setConversation(null);
+        }
+        userOnDisconnect?.(details);
+      };
+
       const providerLifecycleOptions: ConversationLifecycleOptions &
-        Pick<Callbacks, "onConnect"> = {
+        Pick<Callbacks, "onConnect" | "onDisconnect" | "onStatusChange"> = {
         onConversationCreated: handleConversationCreated,
         onConnect: handleConnect,
+        onDisconnect: handleDisconnect,
+        onStatusChange: handleStatusChange,
       };
 
       const startSessionOptions: Options = {
@@ -193,11 +248,14 @@ export function ConversationProvider({
             return;
           }
           if (shouldEndRef.current) {
-            conv.endSession();
+            conv
+              .endSession()
+              .catch(error => console.warn("Error ending session:", error));
             lockRef.current = null;
             return;
           }
           if (conversationRef.current !== conv) {
+            thisSessionConv = conv;
             conversationRef.current = conv;
             setConversation(conv);
           }
@@ -218,9 +276,7 @@ export function ConversationProvider({
           // so listeners (e.g. ConversationStatusProvider) transition to
           // the "error" state with a meaningful message.
           const message =
-            error instanceof Error
-              ? error.message
-              : "Session failed to start";
+            error instanceof Error ? error.message : "Session failed to start";
           sessionOptions.onError?.(message, error);
         }
       );
@@ -236,9 +292,17 @@ export function ConversationProvider({
     setConversation(null);
 
     if (pendingConnection) {
-      pendingConnection.then(c => c.endSession(), () => {});
+      pendingConnection.then(
+        c =>
+          c
+            .endSession()
+            .catch(error => console.warn("Error ending session:", error)),
+        () => {}
+      );
     } else {
-      conv?.endSession();
+      conv
+        ?.endSession()
+        .catch(error => console.warn("Error ending session:", error));
     }
   }, []);
 
@@ -247,9 +311,12 @@ export function ConversationProvider({
     return () => {
       shouldEndRef.current = true;
       if (lockRef.current) {
-        lockRef.current.then(conv => conv.endSession(), () => {});
+        lockRef.current.then(
+          conv => conv.endSession().catch(() => {}),
+          () => {}
+        );
       } else {
-        conversationRef.current?.endSession();
+        conversationRef.current?.endSession().catch(() => {});
       }
     };
   }, []);
@@ -264,18 +331,27 @@ export function ConversationProvider({
       clientToolsRegistry,
       clientToolsRef,
     }),
-    [conversation, conversationRef, startSession, endSession, registerCallbacks, clientToolsRegistry, clientToolsRef]
+    [
+      conversation,
+      conversationRef,
+      startSession,
+      endSession,
+      registerCallbacks,
+      clientToolsRegistry,
+      clientToolsRef,
+    ]
   );
 
-  const wrappedChildren = SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
-    (nested, Provider) => <Provider>{nested}</Provider>,
-    <ConversationInputProvider
-      isMuted={isMuted}
-      onMutedChange={onMutedChange}
-    >
-      {children}
-    </ConversationInputProvider>
-  );
+  const wrappedChildren =
+    SUB_PROVIDERS_WITHOUT_PROPS.reduceRight<React.ReactNode>(
+      (nested, Provider) => <Provider>{nested}</Provider>,
+      <ConversationInputProvider
+        isMuted={isMuted}
+        onMutedChange={onMutedChange}
+      >
+        {children}
+      </ConversationInputProvider>
+    );
 
   return (
     <ConversationContext.Provider value={contextValue}>

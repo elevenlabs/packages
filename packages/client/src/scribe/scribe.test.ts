@@ -1,4 +1,4 @@
-import { it, expect, describe, vi } from "vitest";
+import { it, expect, describe, vi, beforeEach, onTestFinished } from "vitest";
 import { Server } from "mock-socket";
 import type { Client } from "mock-socket";
 import {
@@ -8,12 +8,41 @@ import {
   RealtimeEvents,
   RealtimeConnection,
 } from "./index.js";
+import {
+  setScribeMicrophoneSetup,
+  getScribeMicrophoneSetup,
+} from "./microphone.js";
 
 const TEST_TOKEN = "sutkn_123";
 const TEST_MODEL_ID = "scribe_v2_realtime";
 const TEST_SESSION_ID = "test-session-id";
 const PARTIAL_TRANSCRIPT_TEXT = "Hello, this is a partial";
 const COMMITTED_TRANSCRIPT_TEXT = "Hello, this is a committed transcript.";
+const SCRIBE_WS_URL = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
+
+/**
+ * Starts a mock Scribe server and resolves with the query params the client
+ * connected with. The mock server matches on the URL without its query part, so
+ * inspecting the client URI is the only way to assert on the URI that was built.
+ * Call before connecting so the connection listener is already attached.
+ */
+function connectionQuery(): Promise<URLSearchParams> {
+  const server = new Server(SCRIBE_WS_URL);
+  onTestFinished(() => server.close());
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error("timed out waiting for connection")),
+      5000
+    );
+    onTestFinished(() => clearTimeout(timeout));
+
+    server.on("connection", socket =>
+      resolve(new URL(socket.url).searchParams)
+    );
+    server.on("error", reject);
+  });
+}
 
 describe("Scribe", () => {
   describe("WebSocket URI Building", () => {
@@ -233,6 +262,60 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("builds URI with includeLanguageDetection", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&include_language_detection=true"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        includeLanguageDetection: true,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
+    it.each([
+      { enableLogging: false, expected: "false" },
+      { enableLogging: true, expected: "true" },
+    ])(
+      "builds URI with enable_logging=$expected when enableLogging is $enableLogging",
+      async ({ enableLogging, expected }) => {
+        const query = connectionQuery();
+
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+          enableLogging,
+        });
+        onTestFinished(() => connection.close());
+
+        expect((await query).get("enable_logging")).toBe(expected);
+      }
+    );
+
+    it("omits enable_logging when enableLogging is not set", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).has("enable_logging")).toBe(false);
+    });
+
     it("accepts valid parameter values", () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&vad_silence_threshold_secs=1.5&vad_threshold=0.5&min_speech_duration_ms=100&min_silence_duration_ms=200"
@@ -419,7 +502,7 @@ describe("Scribe", () => {
       client.send(
         JSON.stringify({
           message_type: "error",
-          message: "Test error message",
+          error: "Test error message",
         })
       );
 
@@ -427,10 +510,110 @@ describe("Scribe", () => {
       expect(onError).toHaveBeenCalledTimes(1);
       expect(onError).toHaveBeenCalledWith({
         message_type: "error",
-        message: "Test error message",
+        error: "Test error message",
       });
 
       connection.close();
+      server.close();
+    });
+
+    it("normalizes malformed WebSocket messages as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.send("not valid JSON");
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message_type: "error",
+          error: expect.stringContaining("Failed to parse message:"),
+        })
+      );
+
+      connection.close();
+      server.close();
+    });
+
+    it("normalizes WebSocket error events as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.target.dispatchEvent(new Event("error"));
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith({
+        message_type: "error",
+        error: "WebSocket error",
+      });
+
+      connection.close();
+      server.close();
+    });
+
+    it("normalizes unexpected WebSocket closes as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.close({ code: 1011, reason: "server failed", wasClean: false });
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith({
+        message_type: "error",
+        error: "WebSocket closed unexpectedly: 1011 - server failed",
+      });
+
       server.close();
     });
 
@@ -798,6 +981,262 @@ describe("Scribe", () => {
 
       await sleep(100);
       expect(onMessageSend).toHaveBeenCalledTimes(1);
+
+      connection.close();
+      server.close();
+    });
+  });
+
+  describe("Microphone Setup Injection", () => {
+    beforeEach(() => {
+      // Reset the injectable factory between tests
+      setScribeMicrophoneSetup(null as never);
+    });
+
+    it("getScribeMicrophoneSetup() throws when no implementation is registered", () => {
+      expect(() => getScribeMicrophoneSetup()).toThrow(
+        "No Scribe microphone implementation registered"
+      );
+    });
+
+    it("setScribeMicrophoneSetup() registers a custom implementation", () => {
+      const mockSetup = vi.fn();
+      setScribeMicrophoneSetup(mockSetup);
+      expect(getScribeMicrophoneSetup()).toBe(mockSetup);
+    });
+
+    it("microphone mode calls the registered setup and wires audio data to connection.send()", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+      let capturedOnAudioData: ((base64: string) => void) | null = null;
+
+      const mockSetup = vi.fn((_config, onAudioData) => {
+        capturedOnAudioData = onAudioData;
+        return Promise.resolve({
+          mediaStreamTrack: mockTrack,
+          cleanup,
+        });
+      });
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: false,
+        },
+      });
+
+      const client = await clientPromise;
+      const onMessage = vi.fn();
+      client.on("message", onMessage);
+
+      // Wait for the microphone setup to be called (happens on WebSocket open)
+      await sleep(100);
+
+      expect(mockSetup).toHaveBeenCalledTimes(1);
+      expect(mockSetup).toHaveBeenCalledWith(
+        {
+          deviceId: undefined,
+          echoCancellation: true,
+          noiseSuppression: false,
+          autoGainControl: undefined,
+          channelCount: undefined,
+        },
+        expect.any(Function)
+      );
+
+      // Simulate audio data from the microphone setup
+      expect(capturedOnAudioData).not.toBeNull();
+      capturedOnAudioData!("dGVzdA==");
+      await sleep(50);
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      const sentMessage = JSON.parse(onMessage.mock.calls[0][0] as string);
+      expect(sentMessage.audio_base_64).toBe("dGVzdA==");
+
+      // Verify mute/unmute work via the injected track
+      connection.mute();
+      expect(mockTrack.enabled).toBe(false);
+      connection.unmute();
+      expect(mockTrack.enabled).toBe(true);
+
+      connection.close();
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      server.close();
+    });
+
+    it("releases the microphone when close() races the async mic setup", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+      let capturedOnAudioData: ((base64: string) => void) | null = null;
+      let resolveSetup: (() => void) | null = null;
+
+      const mockSetup = vi.fn((_config, onAudioData) => {
+        capturedOnAudioData = onAudioData;
+        return new Promise<{
+          mediaStreamTrack: MediaStreamTrack;
+          cleanup: () => void;
+        }>(resolve => {
+          resolveSetup = () =>
+            resolve({ mediaStreamTrack: mockTrack, cleanup });
+        });
+      });
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: { echoCancellation: true },
+      });
+
+      const client = await clientPromise;
+      const onMessage = vi.fn();
+      client.on("message", onMessage);
+
+      // Mic setup has started (on socket open) but has not resolved yet.
+      await sleep(100);
+      expect(mockSetup).toHaveBeenCalledTimes(1);
+      expect(resolveSetup).not.toBeNull();
+
+      // User releases before the mic pipeline is wired up.
+      connection.close();
+
+      // The pipeline finishes resolving afterwards.
+      resolveSetup!();
+      await sleep(50);
+
+      // Cleanup runs immediately even though close() ran before it was assigned.
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      // A late audio frame is dropped rather than sent on the closed socket,
+      // and does not throw "WebSocket is not connected".
+      expect(capturedOnAudioData).not.toBeNull();
+      expect(() => capturedOnAudioData!("dGVzdA==")).not.toThrow();
+      await sleep(50);
+      expect(onMessage).not.toHaveBeenCalled();
+
+      server.close();
+    });
+
+    it("releases the microphone when the server closes the socket", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+
+      const mockSetup = vi.fn((_config, _onAudioData) =>
+        Promise.resolve({ mediaStreamTrack: mockTrack, cleanup })
+      );
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: { echoCancellation: true },
+      });
+
+      const client = await clientPromise;
+      const onClose = vi.fn();
+      connection.on(RealtimeEvents.CLOSE, onClose);
+
+      await sleep(100);
+      expect(cleanup).not.toHaveBeenCalled();
+
+      // Server drops the connection; the consumer never calls close().
+      client.close();
+      await sleep(100);
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      server.close();
+    });
+
+    it("does not emit an error when close() aborts a still-connecting socket", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      const onError = vi.fn();
+      const onClose = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+      connection.on(RealtimeEvents.CLOSE, onClose);
+
+      // Release immediately, before the handshake completes.
+      connection.close();
+      await sleep(100);
+
+      expect(onError).not.toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      server.close();
+    });
+
+    it("emits an error instead of rejecting when microphone setup fails", async () => {
+      const setupError = new Error("microphone permission denied");
+      setScribeMicrophoneSetup(() => Promise.reject(setupError));
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: { echoCancellation: true },
+      });
+
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      await clientPromise;
+      await sleep(100);
+
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith({
+        message_type: "error",
+        error: setupError.message,
+      });
 
       connection.close();
       server.close();

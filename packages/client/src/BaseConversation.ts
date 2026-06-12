@@ -1,21 +1,25 @@
-import { Callbacks, Mode, Status } from "@elevenlabs/types";
+import { Callbacks, Mode, Status } from "./types.js";
 import type {
   BaseConnection,
   DisconnectionDetails,
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
-import { extractApiErrorMessage } from "./utils/errors.js";
+import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
+  AgentReasoningResponsePartEvent,
   AgentResponseEvent,
   AgentResponseCorrectionEvent,
+  AgentTypingEvent,
   ClientToolCallEvent,
+  ExternalAgentConnectedEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
+  PingEvent,
   UserTranscriptionEvent,
   VadScoreEvent,
   MCPToolCallClientEvent,
@@ -28,13 +32,17 @@ import type {
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
 } from "./utils/events.js";
-import type { InputConfig } from "./utils/input.js";
-import type { OutputConfig } from "./utils/output.js";
+import type { InputConfig } from "./InputController.js";
+import type { OutputConfig } from "./OutputController.js";
 
-const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
+const END_CALL_DETAILS: DisconnectionDetails = {
+  reason: "agent",
+  context: { type: "end_call", reason: "Agent ended the call" },
+};
 
-export type { Role, Mode, Status, Callbacks } from "@elevenlabs/types";
-export { CALLBACK_KEYS } from "@elevenlabs/types";
+export type { Role, Mode, Status, Callbacks } from "./types.js";
+export { CALLBACK_KEYS } from "./types.js";
+export type { UploadFileResult } from "./utils/uploadFile.js";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
@@ -77,10 +85,6 @@ export type MultimodalMessageInput = {
   fileId?: string;
 };
 
-export type UploadFileResult = {
-  fileId: string;
-};
-
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
@@ -116,7 +120,6 @@ export abstract class BaseConversation {
   protected status: Status = "connecting";
   protected volume = 1;
   protected currentEventId = 1;
-  protected lastFeedbackEventId = 0;
   protected canSendFeedback = false;
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
@@ -134,6 +137,9 @@ export abstract class BaseConversation {
       onCanSendFeedbackChange: () => {},
       onInterruption: () => {},
       onAgentResponseCorrection: () => {},
+      onAgentTyping: () => {},
+      onExternalAgentConnected: () => {},
+      onPing: () => {},
       ...partialOptions,
       textOnly,
       overrides: {
@@ -166,10 +172,16 @@ export abstract class BaseConversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
-    await this.handleEndSession();
-    this.updateStatus("disconnected");
-    if (this.options.onDisconnect) {
-      this.options.onDisconnect(details);
+    try {
+      await this.handleEndSession();
+    } finally {
+      // Always reach "disconnected" and notify onDisconnect, even if
+      // teardown throws — otherwise callers relying on onDisconnect to
+      // release their reference to this conversation get stuck forever.
+      this.updateStatus("disconnected");
+      if (this.options.onDisconnect) {
+        this.options.onDisconnect(details);
+      }
     }
   };
 
@@ -192,11 +204,12 @@ export abstract class BaseConversation {
       if (this.options.onStatusChange) {
         this.options.onStatusChange({ status });
       }
+      this.updateCanSendFeedback();
     }
   }
 
   protected updateCanSendFeedback() {
-    const canSendFeedback = this.currentEventId !== this.lastFeedbackEventId;
+    const canSendFeedback = this.status === "connected";
     if (this.canSendFeedback !== canSendFeedback) {
       this.canSendFeedback = canSendFeedback;
       if (this.options.onCanSendFeedbackChange) {
@@ -218,6 +231,7 @@ export abstract class BaseConversation {
   }
 
   protected handleAgentResponse(event: AgentResponseEvent) {
+    this.currentEventId = event.agent_response_event.event_id;
     if (this.options.onMessage) {
       this.options.onMessage({
         source: "ai",
@@ -265,6 +279,12 @@ export abstract class BaseConversation {
       this.options.onVadScore({
         vadScore: event.vad_score_event.vad_score,
       });
+    }
+  }
+
+  protected handlePing(event: PingEvent) {
+    if (this.options.onPing) {
+      this.options.onPing(event.ping_event);
     }
   }
 
@@ -349,30 +369,24 @@ export abstract class BaseConversation {
 
   protected handleAgentToolResponse(event: AgentToolResponseEvent) {
     if (event.agent_tool_response.tool_name === "end_call") {
-      this.endSessionWithDetails({
-        reason: "agent",
-        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+      void this.endSessionWithDetails(END_CALL_DETAILS).catch(error => {
+        this.onError("Failed to end session after agent end_call", error);
       });
     }
 
-    if (this.options.onAgentToolResponse) {
-      this.options.onAgentToolResponse(event.agent_tool_response);
-    }
+    this.options.onAgentToolResponse?.(event.agent_tool_response);
   }
 
   protected handleAgentToolResponseFullPayload(
     event: AgentToolResponseFullPayloadEvent
   ) {
     if (event.agent_tool_response_full_payload.tool_name === "end_call") {
-      this.endSessionWithDetails({
-        reason: "agent",
-        context: new CloseEvent("end_call", { reason: "Agent ended the call" }),
+      void this.endSessionWithDetails(END_CALL_DETAILS).catch(error => {
+        this.onError("Failed to end session after agent end_call", error);
       });
     }
 
-    if (this.options.onAgentToolResponse) {
-      this.options.onAgentToolResponse(event.agent_tool_response_full_payload);
-    }
+    this.options.onAgentToolResponse?.(event.agent_tool_response_full_payload);
   }
 
   protected handleConversationMetadata(event: ConversationMetadataEvent) {
@@ -395,31 +409,57 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleAgentReasoningResponsePart(
+    event: AgentReasoningResponsePartEvent
+  ) {
+    if (this.options.onAgentReasoningResponsePart) {
+      this.options.onAgentReasoningResponsePart(event.reasoning_response_part);
+    }
+  }
+
   protected handleGuardrailTriggered(_event: GuardrailTriggeredEvent) {
     if (this.options.onGuardrailTriggered) {
       this.options.onGuardrailTriggered();
     }
   }
 
+  protected handleAgentTyping(event: AgentTypingEvent) {
+    if (this.options.onAgentTyping) {
+      this.options.onAgentTyping(event.agent_typing_event);
+    }
+  }
+
+  protected handleExternalAgentConnected(_event: ExternalAgentConnectedEvent) {
+    if (this.options.onExternalAgentConnected) {
+      this.options.onExternalAgentConnected();
+    }
+  }
+
   protected handleErrorEvent(event: ErrorMessageEvent) {
-    const errorType = event.error_event.error_type;
+    const errorEvent = event.error_event;
+    const errorType = errorEvent?.error_type;
     const message =
-      event.error_event.message || event.error_event.reason || "Unknown error";
+      errorEvent?.message || errorEvent?.reason || "Unknown error";
 
     if (errorType === "max_duration_exceeded") {
-      this.endSessionWithDetails({
+      void this.endSessionWithDetails({
         reason: "error",
         message: message,
-        context: new Event("max_duration_exceeded"),
+        context: { type: "max_duration_exceeded" },
+      }).catch(error => {
+        this.onError(
+          "Failed to end session after max_duration_exceeded",
+          error
+        );
       });
       return;
     }
 
     this.onError(`Server error: ${message}`, {
       errorType,
-      code: event.error_event.code,
-      debugMessage: event.error_event.debug_message,
-      details: event.error_event.details,
+      code: errorEvent?.code,
+      debugMessage: errorEvent?.debug_message,
+      details: errorEvent?.details,
     });
   }
 
@@ -474,8 +514,10 @@ export abstract class BaseConversation {
           type: "pong",
           event_id: parsedEvent.ping_event.event_id,
         });
-        // parsedEvent.ping_event.ping_ms can be used on client side, for example
-        // to warn if ping is too high that experience might be degraded.
+        // Surface the ping event (including the estimated `ping_ms`) so
+        // consumers can, for example, warn when latency is high enough to
+        // degrade the experience.
+        this.handlePing(parsedEvent);
         return;
       }
 
@@ -519,6 +561,11 @@ export abstract class BaseConversation {
         return;
       }
 
+      case "agent_reasoning_response_part": {
+        this.handleAgentReasoningResponsePart(parsedEvent);
+        return;
+      }
+
       case "guardrail_triggered": {
         this.handleGuardrailTriggered(parsedEvent);
         return;
@@ -526,6 +573,16 @@ export abstract class BaseConversation {
 
       case "error": {
         this.handleErrorEvent(parsedEvent);
+        return;
+      }
+
+      case "agent_typing": {
+        this.handleAgentTyping(parsedEvent);
+        return;
+      }
+
+      case "external_agent_connected": {
+        this.handleExternalAgentConnected(parsedEvent);
         return;
       }
 
@@ -568,23 +625,17 @@ export abstract class BaseConversation {
   public abstract getInputVolume(): number;
   public abstract getOutputVolume(): number;
 
-  public sendFeedback(like: boolean) {
+  public sendFeedback(like: boolean | null, eventId?: number) {
     if (!this.canSendFeedback) {
-      console.warn(
-        this.lastFeedbackEventId === 0
-          ? "Cannot send feedback: the conversation has not started yet."
-          : "Cannot send feedback: feedback has already been sent for the current response."
-      );
+      console.warn("Cannot send feedback: the conversation is not connected.");
       return;
     }
 
     this.connection.sendMessage({
       type: "feedback",
-      score: like ? "like" : "dislike",
-      event_id: this.currentEventId,
+      score: like !== null ? (like ? "like" : "dislike") : null,
+      event_id: eventId ?? this.currentEventId,
     });
-    this.lastFeedbackEventId = this.currentEventId;
-    this.updateCanSendFeedback();
   }
 
   public sendContextualUpdate(text: string, options?: ContextualUpdateOptions) {
@@ -629,32 +680,10 @@ export abstract class BaseConversation {
   }
 
   public async uploadFile(file: Blob): Promise<UploadFileResult> {
-    const origin = (this.options.origin ?? HTTPS_API_ORIGIN)
-      .replace(/^wss:\/\//, "https://")
-      .replace(/^ws:\/\//, "http://");
-
-    const filename =
-      "name" in file && typeof file.name === "string"
-        ? file.name
-        : `upload.${(file.type || "image/png").split("/").pop()?.split("+")[0]}`;
-
-    const body = new FormData();
-    body.append("file", file, filename);
-
-    const response = await fetch(
-      `${origin}/v1/convai/conversations/${this.connection.conversationId}/files`,
-      { method: "POST", body }
-    );
-
-    if (!response.ok) {
-      const message = await extractApiErrorMessage(response);
-      throw new Error(`Upload failed: ${response.status} ${message}`);
-    }
-
-    const { file_id } = await response.json();
-    if (typeof file_id !== "string" || !file_id) {
-      throw new Error("Upload response is missing a valid file_id");
-    }
-    return { fileId: file_id };
+    return uploadFile({
+      conversationId: this.connection.conversationId,
+      origin: this.options.origin,
+      file,
+    });
   }
 }

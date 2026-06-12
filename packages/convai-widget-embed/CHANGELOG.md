@@ -1,5 +1,55 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.15.1
+
+## 0.15.0
+
+### Minor Changes
+
+- f7f6391: Add a `show_resize_button` widget config option (and matching
+  `show-resize-button` embed attribute) that controls the expand/collapse resize
+  button in the widget header. Defaults to `true`; set to `false` to hide it.
+
+## 0.14.12
+
+## 0.14.11
+
+## 0.14.10
+
+## 0.14.9
+
+## 0.14.8
+
+## 0.14.7
+
+## 0.14.6
+
+## 0.14.5
+
+## 0.14.4
+
+## 0.14.3
+
+## 0.14.2
+
+## 0.14.1
+
+## 0.14.0
+
+## 0.13.1
+
+## 0.13.0
+
+## 0.12.9
+
+## 0.12.8
+
+## 0.12.7
+
+## 0.12.6
+
+## 0.12.5
+
 ## 0.12.4
 
 ## 0.12.3

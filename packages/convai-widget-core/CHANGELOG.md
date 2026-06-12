@@ -1,5 +1,178 @@
 # @elevenlabs/convai-widget-core
 
+## 0.15.1
+
+### Patch Changes
+
+- Updated dependencies [a96f220]
+  - @elevenlabs/client@1.17.0
+
+## 0.15.0
+
+### Minor Changes
+
+- f7f6391: Add a `show_resize_button` widget config option (and matching
+  `show-resize-button` embed attribute) that controls the expand/collapse resize
+  button in the widget header. Defaults to `true`; set to `false` to hide it.
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/client@1.16.0
+
+## 0.14.12
+
+### Patch Changes
+
+- Updated dependencies [6b1f43d]
+  - @elevenlabs/client@1.15.2
+
+## 0.14.11
+
+### Patch Changes
+
+- Updated dependencies [df7f31a]
+- Updated dependencies [bb001b1]
+- Updated dependencies [d8892fd]
+- Updated dependencies [0f12b01]
+  - @elevenlabs/client@1.15.1
+
+## 0.14.10
+
+### Patch Changes
+
+- Updated dependencies [f149d9d]
+  - @elevenlabs/client@1.15.0
+
+## 0.14.9
+
+### Patch Changes
+
+- 0a53f6c: Render markdown for text-only agent responses that arrive without streaming parts.
+- 62e0992: Fix transcript rendering for turns that interleave text and tool calls: keep text segments split by a tool call as separate bubbles, and show the tool status badge only once per turn
+  - @elevenlabs/client@1.14.1
+
+## 0.14.8
+
+### Patch Changes
+
+- 009d28f: Re-enable agent_chat_response_part streaming in voice sessions
+
+## 0.14.7
+
+### Patch Changes
+
+- Updated dependencies [2277139]
+  - @elevenlabs/client@1.14.0
+
+## 0.14.6
+
+### Patch Changes
+
+- Updated dependencies [44336a2]
+  - @elevenlabs/client@1.13.0
+
+## 0.14.5
+
+### Patch Changes
+
+- Updated dependencies [71bc3d5]
+  - @elevenlabs/client@1.12.1
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+- Updated dependencies [bce3fac]
+  - @elevenlabs/client@1.12.0
+
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [8b362c9]
+  - @elevenlabs/client@1.11.2
+
+## 0.14.2
+
+### Patch Changes
+
+- @elevenlabs/client@1.11.1
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [062d715]
+  - @elevenlabs/client@1.11.0
+
+## 0.14.0
+
+### Minor Changes
+
+- fdad576: Add support for external_agent_joined and agent_typing events.
+
+  These events are send when an external agent takes over from the ai agent,
+  and when an agent is currently typing, respectively.
+
+  Show an "Agent is typing ..." indicator when the external agent is typing.
+
+### Patch Changes
+
+- Updated dependencies [fdad576]
+  - @elevenlabs/client@1.10.0
+
+## 0.13.1
+
+### Patch Changes
+
+- 75f6be3: Fix compact and full trigger control alignment.
+
+## 0.13.0
+
+### Minor Changes
+
+- 6458543: Add call and message entry points to the widget launcher.
+  - Multimodal agents show both; voice-only shows call; text-only shows message.
+  - Call connects directly on click; message opens the chat focused on the input.
+  - The message entry point uses the existing `start_chat` text key.
+
+## 0.12.9
+
+### Patch Changes
+
+- Updated dependencies [d1cadcd]
+  - @elevenlabs/client@1.9.0
+
+## 0.12.8
+
+### Patch Changes
+
+- 0f7e2e5: Style emotion/audio tags in voice transcripts when `strip_audio_tags` is off. Voice agent messages render plain text with tag pills instead of markdown; text chat still uses markdown.
+- cf75e07: Treat null top-level `terms_html`/`terms_text` as a kill switch for the T&C modal. Previously, agents with the dashboard "Enable terms & conditions" toggle off but stale per-language preset terms would still show the modal because the widget always preferred `language_presets[lang].terms_html`. Per-language presets are now only consulted as overrides when the feature is enabled at top level.
+
+## 0.12.7
+
+### Patch Changes
+
+- Updated dependencies [a9dcb56]
+  - @elevenlabs/client@1.8.1
+
+## 0.12.6
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/client@1.8.0
+
+## 0.12.5
+
+### Patch Changes
+
+- Updated dependencies [ae50508]
+  - @elevenlabs/client@1.7.1
+
 ## 0.12.4
 
 ### Patch Changes

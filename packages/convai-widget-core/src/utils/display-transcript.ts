@@ -40,6 +40,10 @@ export type DisplayTranscriptEntry =
       type: "mode_toggle";
       mode: ConversationMode;
       conversationIndex: number;
+    }
+  | {
+      type: "typing_indicator";
+      conversationIndex: number;
     };
 
 export interface DisplayTranscriptConfig {
@@ -49,6 +53,8 @@ export interface DisplayTranscriptConfig {
   firstMessage?: string;
   /** The conversationIndex to use for the prepended first message. */
   firstMessageConversationIndex?: number;
+  /** If true, append a typing indicator entry at the end. */
+  showTypingIndicator?: boolean;
 }
 
 export function buildDisplayTranscript(
@@ -100,8 +106,9 @@ export function buildDisplayTranscript(
     if (
       entry.type === "agent_tool_request" ||
       entry.type === "agent_tool_response"
-    )
+    ) {
       continue;
+    }
 
     // Skip empty agent messages unless they have a tool status to display
     if (
@@ -120,14 +127,17 @@ export function buildDisplayTranscript(
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
 
-    // Group consecutive messages with same eventId + role
+    // Fold an empty agent placeholder into the following same-turn message.
+    // Two non-empty entries sharing an eventId are always distinct messages
+    // (e.g. pre-tool and post-tool replies), so they stay separate bubbles.
     const prev = result[result.length - 1];
     if (
       entry.type === "message" &&
       entry.eventId != null &&
       prev?.type === "message" &&
       prev.eventId === entry.eventId &&
-      prev.role === entry.role
+      prev.role === entry.role &&
+      !prev.message.trim()
     ) {
       result[result.length - 1] = entry;
       continue;
@@ -136,8 +146,10 @@ export function buildDisplayTranscript(
     result.push(entry);
   }
 
-  // Attach tool status to agent messages
+  // Attach tool status to the first agent bubble of each turn only — a turn can
+  // render as several bubbles, but the badge should appear once.
   if (config.showAgentStatus) {
+    const statusAttached = new Set<number>();
     for (let i = 0; i < result.length; i++) {
       const entry = result[i];
       if (
@@ -146,6 +158,7 @@ export function buildDisplayTranscript(
         entry.eventId == null
       )
         continue;
+      if (statusAttached.has(entry.eventId)) continue;
       const status = toolStatuses.get(entry.eventId);
       if (!status) continue;
 
@@ -156,7 +169,19 @@ export function buildDisplayTranscript(
             ? ToolCallStatus.ERROR
             : ToolCallStatus.SUCCESS;
       result[i] = { ...entry, toolStatus };
+      statusAttached.add(entry.eventId);
     }
+  }
+
+  // Append typing indicator if configured
+  if (config.showTypingIndicator) {
+    result.push({
+      type: "typing_indicator",
+      conversationIndex:
+        entries[entries.length - 1]?.conversationIndex ??
+        config.firstMessageConversationIndex ??
+        0,
+    });
   }
 
   return result;

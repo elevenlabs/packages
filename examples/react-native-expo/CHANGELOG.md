@@ -1,5 +1,114 @@
 # elevenlabs-react-native-example
 
+## 1.1.23
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.18
+
+## 1.1.22
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.17
+
+## 1.1.21
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.16
+
+## 1.1.20
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.15
+
+## 1.1.19
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.14
+
+## 1.1.18
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.13
+
+## 1.1.17
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.12
+
+## 1.1.16
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.11
+
+## 1.1.15
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.10
+
+## 1.1.14
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.9
+
+## 1.1.13
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.8
+
+## 1.1.12
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.7
+
+## 1.1.11
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.6
+
+## 1.1.10
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.5
+
+## 1.1.9
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.4
+
+## 1.1.8
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.3
+
+## 1.1.7
+
+### Patch Changes
+
+- Updated dependencies [796ade1]
+  - @elevenlabs/react-native@1.2.2
+
+## 1.1.6
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.1
+
 ## 1.1.5
 
 ### Patch Changes

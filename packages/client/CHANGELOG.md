@@ -1,5 +1,171 @@
 # @elevenlabs/client
 
+## 1.17.0
+
+### Minor Changes
+
+- a96f220: Add `enableLogging` option (`boolean`) to the Scribe realtime API, available on `Scribe.connect` and the `useScribe` hook. Setting it to `false` sends `enable_logging=false` on the WebSocket URL, which runs the session in zero retention mode so history features are unavailable for it. Zero retention mode may only be used by enterprise customers.
+
+### Patch Changes
+
+- Updated dependencies [a96f220]
+  - @elevenlabs/types@0.19.0
+
+## 1.16.0
+
+### Minor Changes
+
+- 139ed79: Add `onAgentReasoningResponsePart` callback to receive streaming reasoning response
+  events from the agent. The callback receives `{ text, type, event_id }` where type
+  is one of "start", "delta", or "stop".
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/types@0.18.0
+
+## 1.15.2
+
+### Patch Changes
+
+- 6b1f43d: Fix `onAudioAlignment` callback never firing on the WebRTC transport. The `WebRTCConnection` `DataReceived` handler dropped the entire `type: "audio"` JSON message because audio bytes flow over LiveKit audio tracks, but the same message carries the `alignment` metadata (chars + `char_start_times_ms` + `char_durations_ms`) — which got dropped along with it. Now audio messages are routed through `handleMessage` so `VoiceConversation.handleAudio` can surface alignment, then return before the audio_base_64 playback path (LiveKit still handles playback via the audio track).
+
+## 1.15.1
+
+### Patch Changes
+
+- df7f31a: Scribe realtime now reports microphone setup failures through `RealtimeEvents.ERROR` instead of leaving an unhandled rejection. Generic local Scribe errors now use the same typed error payload as server errors.
+- bb001b1: Release microphone resources when Scribe setup fails after capture starts.
+- d8892fd: Guard `handleErrorEvent` against `error` messages that arrive without a populated `error_event` payload. Previously the handler read `event.error_event.error_type` directly, so a malformed error message threw an unhandled `TypeError: Cannot read properties of undefined (reading 'error_type')` from inside the message dispatcher. Because the `"error"` case is not wrapped in a try/catch, the throw escaped `onMessage` and crashed the consumer instead of surfacing through `onError`. The payload is now read defensively and always routed to `onError`.
+- 0f12b01: Scribe realtime (microphone mode): release the microphone reliably on teardown.
+  - Closing the connection while the async microphone setup is still resolving no longer leaks the `MediaStreamTrack`/`AudioContext`; the pipeline is torn down as soon as setup finishes.
+  - A microphone frame that arrives after the socket is gone is now dropped instead of throwing `WebSocket is not connected`.
+  - A server-initiated close now releases the microphone too, so consumers reacting to the `CLOSE` event without calling `close()` are not left with a live microphone.
+  - An app-initiated `close()` that aborts a still-connecting socket no longer logs a spurious `WebSocket closed unexpectedly: 1006` / emits `ERROR`.
+
+## 1.15.0
+
+### Minor Changes
+
+- f149d9d: Add a dedicated `onPing` callback that surfaces `ping` events (including the estimated `ping_ms`) to consumers. The SDK still replies to pings with a `pong` automatically; the callback is informational, useful for e.g. reporting connection latency. Also clarifies the documentation for `ping_ms`: "Estimated ping in milliseconds, based on previous ping/pong timing."
+
+### Patch Changes
+
+- Updated dependencies [f149d9d]
+  - @elevenlabs/types@0.17.1
+
+## 1.14.1
+
+### Patch Changes
+
+- Updated dependencies [d52d5f6]
+  - @elevenlabs/types@0.17.0
+
+## 1.14.0
+
+### Minor Changes
+
+- 2277139: Allow `sendFeedback` to clear feedback by passing `null`. `sendFeedback(like, eventId?)` now accepts `null` as the first parameter; when passed it sends `score: null` to clear the feedback on that event, allowing users to remove their like/dislike rating.
+
+### Patch Changes
+
+- Updated dependencies [2277139]
+  - @elevenlabs/types@0.16.0
+
+## 1.13.0
+
+### Minor Changes
+
+- 44336a2: Allow `sendFeedback` to target a past message by `event_id`. `sendFeedback(like, eventId?)` now accepts an optional event id; when provided it rates that specific message, and when omitted it rates the latest agent turn.
+
+  `canSendFeedback` now reflects whether the conversation is connected rather than whether the latest turn is unrated, so feedback can be sent for any message (including re-rating) while the session is live.
+
+## 1.12.1
+
+### Patch Changes
+
+- 71bc3d5: Expose the file upload helper from the internal Unity entrypoint.
+
+## 1.12.0
+
+### Minor Changes
+
+- c086dad: Add `overrides.asr.keywords` support to the browser client so per-conversation ASR keyword biasing can be sent via `conversation_initiation_client_data`.
+- bce3fac: Expose includeLanguageDetection for realtime Scribe sessions, including React useScribe support for requesting and reading detected language metadata.
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+  - @elevenlabs/types@0.15.0
+
+## 1.11.2
+
+### Patch Changes
+
+- 8b362c9: Expose the remaining Unity bridge connection exports from `@elevenlabs/client/internal/unity` so consumers can avoid importing the browser entrypoint.
+
+## 1.11.1
+
+### Patch Changes
+
+- Updated dependencies [2cc82d2]
+  - @elevenlabs/types@0.14.1
+
+## 1.11.0
+
+### Minor Changes
+
+- 062d715: Add `@elevenlabs/client/internal/unity` sub-path export for the Unity SDK's WebGL bridge.
+  - New `./internal/unity` entrypoint exposing `MediaDeviceInput`, `MediaDeviceOutput`, `attachInputToConnection`, `attachConnectionToOutput`, and `setWebRTCAudioAdapterFactory` as runtime values, plus `WebRTCAudioAdapter`, `AnalysisResult`, `MediaDeviceInputConfig`, `MediaDeviceOutputConfig`, and `WebRTCConnectionConfig` as type-only exports.
+  - New named type aliases `MediaDeviceInputConfig`, `MediaDeviceOutputConfig`, and `WebRTCConnectionConfig` (the last replaces the previous `ConnectionConfig`, which is kept as a deprecated alias).
+
+## 1.10.0
+
+### Minor Changes
+
+- fdad576: Add support for external_agent_joined and agent_typing events.
+
+  These events are send when an external agent takes over from the ai agent,
+  and when an agent is currently typing, respectively.
+
+  Show an "Agent is typing ..." indicator when the external agent is typing.
+
+## 1.9.0
+
+### Minor Changes
+
+- d1cadcd: Make microphone input chunk duration configurable via `inputChunkDurationMs` (default 25ms).
+
+## 1.8.1
+
+### Patch Changes
+
+- a9dcb56: Fix iOS Safari dropping the first message's audio on WebSocket voice sessions.
+
+  iOS Safari blocks `HTMLAudioElement` autoplay (including elements fed by `MediaStreamDestination`) when the underlying `AudioContext` wasn't started synchronously inside a user gesture, and additionally needs the audio element to have an explicit `play()` call against a non-empty playback graph. The web setup chain awaits `getUserMedia`, the connection handshake, and the audio worklet load before `MediaDeviceOutput` would have created its `AudioContext`, so by then the gesture is already consumed. The first agent message would arrive into a suspended context and never play; subsequent messages worked because the mic capture had reactivated iOS's audio session by then.
+
+  The fix has two parts:
+  - On import, the web entry point installs capture-phase `touchstart`/`touchend`/`click` listeners on `document`. The first user interaction creates and unlocks an `AudioContext` (silent `BufferSource.start(0)` + `resume()`) and stashes it for the next session. The stash auto-discards after 30s if no session starts. Capture-phase is needed because the convai widget awaits a terms-modal promise between the user's tap and `Conversation.startSession`, which would otherwise consume the gesture before any session code runs.
+  - After the worklet is wired up, `MediaDeviceOutput` on iOS posts ~100ms of silence to the worklet and explicitly calls `audioElement.play()` to prime the MediaStream → HTMLAudioElement pipeline.
+
+  Non-iOS is unchanged: it still lazily creates the context with the requested sample-rate constraint and does not register the document listeners.
+
+  WebRTC voice sessions are unaffected by this change.
+
+## 1.8.0
+
+### Minor Changes
+
+- 796ade1: Replace DOM `Event`/`CloseEvent` constructors in `DisconnectionDetails` with a platform-agnostic `DisconnectionContext` type. The `context` property on disconnection details is now `{ type: string; reason?: string; code?: number }` instead of a DOM event object. This fixes runtime failures on React Native where `Event` and `CloseEvent` constructors are not available.
+
+## 1.7.1
+
+### Patch Changes
+
+- ae50508: Pin livekit-client to 2.16.1 and force dual peer connection (v0) path to fix WebRTC connection failures with newer livekit-client versions whose join protocol is incompatible with the ElevenLabs LiveKit server.
+- Updated dependencies [fa64593]
+  - @elevenlabs/types@0.14.0
+
 ## 1.7.0
 
 ### Minor Changes

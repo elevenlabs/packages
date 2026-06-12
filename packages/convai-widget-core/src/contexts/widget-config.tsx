@@ -21,6 +21,10 @@ import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
 import { useLanguageConfig } from "./language-config";
 import { useConversation } from "./conversation";
+import {
+  interpolateDynamicVariables,
+  parseDynamicVariables,
+} from "../utils/dynamicVariables";
 
 const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
@@ -104,6 +108,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const useRtc = useAttribute("use-rtc");
   const showAgentStatus = useAttribute("show-agent-status");
   const showConversationId = useAttribute("show-conversation-id");
+  const showResizeButton = useAttribute("show-resize-button");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -154,6 +159,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(showConversationId.value) ??
       fetchedConfig.value.show_conversation_id ??
       true;
+    const patchedShowResizeButton =
+      parseBoolAttribute(showResizeButton.value) ??
+      fetchedConfig.value.show_resize_button ??
+      true;
 
     return {
       ...fetchedConfig.value,
@@ -170,6 +179,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       use_rtc: patchedUseRtc,
       show_agent_status: patchedShowAgentStatus,
       show_conversation_id: patchedShowConversationId,
+      show_resize_button: patchedShowResizeButton,
     };
   });
 
@@ -208,19 +218,35 @@ export function useFirstMessage() {
   const override = useAttribute("override-first-message");
   const config = useWidgetConfig();
   const { language } = useLanguageConfig();
-  return useComputed(
-    () =>
+  const dynamicVariablesJSON = useAttribute("dynamic-variables");
+  return useComputed(() => {
+    const firstMessage =
       override.value ??
       config.value.language_presets?.[language.value.languageCode]
         ?.first_message ??
       config.value.first_message ??
-      null
-  );
+      null;
+    if (firstMessage == null) {
+      return null;
+    }
+    return interpolateDynamicVariables(
+      firstMessage,
+      parseDynamicVariables(dynamicVariablesJSON.value)
+    );
+  });
 }
 
 export function useTextInputEnabled() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.text_input_enabled ?? false);
+}
+
+export function useTriggerEntryPoints() {
+  const textOnly = useTextOnly();
+  return {
+    showCall: useComputed(() => !textOnly.value),
+    showMessage: useTextInputEnabled(),
+  };
 }
 
 export function useFileInputEnabled() {
@@ -240,7 +266,16 @@ export function useLocalizedTerms() {
   const { language } = useLanguageConfig();
 
   return useComputed(() => {
-    const languagePreset = config.value.language_presets?.[language.value.languageCode];
+    if (config.value.terms_html == null && config.value.terms_text == null) {
+      return {
+        terms_html: undefined,
+        terms_text: undefined,
+        terms_key: undefined,
+      };
+    }
+
+    const languagePreset =
+      config.value.language_presets?.[language.value.languageCode];
 
     return {
       terms_html: languagePreset?.terms_html ?? config.value.terms_html,
@@ -331,8 +366,8 @@ export function useSyntaxTheme() {
 export function useAllowEvents() {
   const allowEvents = useAttribute("allow-events");
   return useComputed(() => {
-    return parseBoolAttribute(allowEvents.value) ?? false
-  })
+    return parseBoolAttribute(allowEvents.value) ?? false;
+  });
 }
 
 async function fetchConfig(

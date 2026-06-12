@@ -144,9 +144,18 @@ describe("buildDisplayTranscript", () => {
       expected: Array<{ message: string }>;
     }>([
       {
-        description: "groups consecutive agent messages with same eventId",
+        description:
+          "keeps two non-empty agent messages with the same eventId as separate bubbles",
         input: [
-          msg("agent", "partial", { eventId: 2 }),
+          msg("agent", "before", { eventId: 2 }),
+          msg("agent", "after", { eventId: 2 }),
+        ],
+        expected: [{ message: "before" }, { message: "after" }],
+      },
+      {
+        description: "folds an empty placeholder into the following message",
+        input: [
+          msg("agent", "", { eventId: 2 }),
           msg("agent", "full", { eventId: 2 }),
         ],
         expected: [{ message: "full" }],
@@ -169,6 +178,73 @@ describe("buildDisplayTranscript", () => {
       expect(result).toHaveLength(expected.length);
       expected.forEach((exp, i) => {
         expect(result[i]).toMatchObject(exp);
+      });
+    });
+
+    it("does not merge non-empty agent text segments separated by a tool call", () => {
+      // text > tool > text within the same turn (shared eventId). Both text
+      // segments have real content, so the second must not overwrite the first —
+      // a tool call separated them and the previous message is non-empty.
+      const input = [
+        msg("agent", "before tool", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "after tool", { eventId: 2 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ message: "before tool" });
+      expect(result[1]).toMatchObject({ message: "after tool" });
+    });
+
+    it("merges empty placeholders into the final message across tool calls", () => {
+      // The streamed flow brackets tool calls with empty placeholders, all
+      // sharing the turn's eventId. These collapse into the single real message —
+      // an empty previous message is folded in even across a tool.
+      const input = [
+        msg("agent", "", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Done", { eventId: 2 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ message: "Done" });
+    });
+
+    it("folds an empty placeholder into its finalized message after a tool", () => {
+      // The first segment ends, a tool runs, then a new segment starts with an
+      // empty placeholder that is finalized in place. The empty placeholder
+      // folds into the finalized message, leaving one bubble per segment.
+      const input = [
+        msg("agent", "before tool", { eventId: 2 }),
+        toolReq(3),
+        toolRes(3),
+        msg("agent", "", { eventId: 3 }),
+        msg("agent", "full", { eventId: 3 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ message: "before tool" });
+      expect(result[1]).toMatchObject({ message: "full" });
+    });
+
+    it("keeps pre-tool and post-tool messages when the tool emits no entries", () => {
+      // A server-side tool runs without emitting client agent_tool_request or
+      // agent_tool_response entries, so the pre-tool and post-tool replies
+      // (both non-empty, sharing the turn's eventId) sit adjacent in the
+      // transcript with nothing between them. They must remain separate bubbles.
+      const input = [
+        msg("agent", "Got it — let me look that up for you.", { eventId: 2 }),
+        msg("agent", "I've looked up the pricing for you.", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "Got it — let me look that up for you.",
+      });
+      expect(result[1]).toMatchObject({
+        message: "I've looked up the pricing for you.",
       });
     });
   });
@@ -234,6 +310,28 @@ describe("buildDisplayTranscript", () => {
       ];
       const result = build(input, { showAgentStatus: false });
       expect(result[0]).not.toHaveProperty("toolStatus");
+    });
+
+    it("attaches status to only the first bubble of a text → tool → text turn", () => {
+      // Two non-empty segments share the turn's eventId and stay as separate
+      // bubbles. The tool status attaches to the first (triggering) bubble only,
+      // so the badge is not duplicated across both.
+      const input = [
+        msg("agent", "Running the tool now.", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Tool completed successfully", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "Running the tool now.",
+        toolStatus: "success",
+      });
+      expect(result[1]).toMatchObject({
+        message: "Tool completed successfully",
+      });
+      expect(result[1]).not.toHaveProperty("toolStatus");
     });
   });
 
@@ -414,6 +512,73 @@ describe("buildDisplayTranscript", () => {
       expect(result).toHaveLength(expected.length);
       expected.forEach((exp, i) => {
         expect(result[i]).toMatchObject(exp);
+      });
+    });
+  });
+
+  describe("typing indicator", () => {
+    it("appends typing indicator when showTypingIndicator is true", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result).toHaveLength(3);
+      expect(result[2]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 0,
+      });
+    });
+
+    it("does not append typing indicator when showTypingIndicator is false", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input, { showTypingIndicator: false });
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type !== "typing_indicator")).toBe(true);
+    });
+
+    it("does not append typing indicator when showTypingIndicator is undefined", () => {
+      const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
+      const result = build(input);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type !== "typing_indicator")).toBe(true);
+    });
+
+    it("uses conversationIndex from last entry", () => {
+      const input = [
+        msg("user", "hi", { conversationIndex: 5 }),
+        msg("agent", "hello", { eventId: 1, conversationIndex: 5 }),
+      ];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result[2]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 5,
+      });
+    });
+
+    it("uses firstMessageConversationIndex when entries are empty", () => {
+      const input: TranscriptEntry[] = [];
+      const result = build(input, {
+        showTypingIndicator: true,
+        firstMessageConversationIndex: 42,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 42,
+      });
+    });
+
+    it("defaults conversationIndex to 0 when no entries and no firstMessageConversationIndex", () => {
+      const input: TranscriptEntry[] = [];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        type: "typing_indicator",
+        conversationIndex: 0,
       });
     });
   });

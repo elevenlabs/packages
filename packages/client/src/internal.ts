@@ -9,16 +9,28 @@ export { sourceInfo, setSourceInfo } from "./sourceInfo.js";
 export type { SourceInfo } from "./sourceInfo.js";
 export {
   setSetupStrategy,
-  webSessionSetup,
+  setupWebRTCSession,
 } from "./platform/VoiceSessionSetup.js";
 export type {
   VoiceSessionSetupStrategy,
   VoiceSessionSetupResult,
 } from "./platform/VoiceSessionSetup.js";
+export { createConnection } from "./utils/ConnectionFactory.js";
 export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
 } from "./utils/volumeProvider.js";
+export { setWebRTCAudioAdapterFactory } from "./WebRTCAudioAdapter.js";
+export type {
+  WebRTCAudioAdapter,
+  AnalysisResult,
+} from "./WebRTCAudioAdapter.js";
+export { setScribeMicrophoneSetup } from "./scribe/microphone.js";
+export type {
+  ScribeMicrophoneSetup,
+  ScribeMicrophoneConfig,
+  ScribeMicrophoneResult,
+} from "./scribe/microphone.js";
 export type {
   ConversationCreatedCallback,
   ConversationLifecycleOptions,

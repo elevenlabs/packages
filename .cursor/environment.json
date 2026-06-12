@@ -1,0 +1,8 @@
+{
+  "name": "Node 24 Krypton",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "node --version && pnpm --version && pnpm install --frozen-lockfile"
+}

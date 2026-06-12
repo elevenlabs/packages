@@ -77,8 +77,6 @@ describe("Dismiss Button", () => {
         const acceptButton = page.getByRole("button", { name: "Accept" });
         await acceptButton.click();
 
-        await startButton.click();
-
         // Dismiss button should be hidden during call
         await expect.element(dismissButton).not.toBeInTheDocument();
 

@@ -45,8 +45,8 @@ export interface WidgetConfig {
   } | null;
   language: Language;
   supported_language_overrides?: Language[];
-  terms_html?: string;
-  terms_text?: string;
+  terms_html?: string | null;
+  terms_text?: string | null;
   terms_key?: string;
   mic_muting_enabled: boolean;
   transcript_enabled: boolean;
@@ -63,8 +63,8 @@ export interface WidgetConfig {
       {
         text_contents?: Partial<TextContents>;
         first_message?: string;
-        terms_html?: string;
-        terms_text?: string;
+        terms_html?: string | null;
+        terms_text?: string | null;
         terms_key?: string;
       }
     >
@@ -83,6 +83,7 @@ export interface WidgetConfig {
     enabled?: boolean;
     max_files_per_conversation?: number;
   };
+  show_resize_button?: boolean;
 }
 
 export type AvatarConfig =
@@ -103,7 +104,7 @@ export type AvatarConfig =
 export const DefaultTextContents = {
   main_label: "Need help?",
   start_call: "Start a call",
-  start_chat: "Start a chat",
+  start_chat: "Message",
   send_message: "Send",
   new_call: "New call",
   end_call: "End",
@@ -154,6 +155,7 @@ export const DefaultTextContents = {
   file_type_unsupported: "Unsupported file type. Accepted types:",
   file_too_large: "File size exceeds the maximum limit.",
   file_limit_reached: "Maximum number of files for this conversation reached.",
+  typing_indicator: "Agent is typing ...",
 };
 
 export const TextKeys = Object.keys(

@@ -1,40 +1,60 @@
 import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
-import type { FormatConfig } from "./connection.js";
-import type { AudioWorkletConfig } from "../BaseConversation.js";
+import type { FormatConfig } from "../../utils/BaseConnection.js";
+import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type {
   OutputController,
   OutputDeviceConfig,
-} from "../OutputController.js";
+  OutputConfig,
+  PlaybackEventTarget,
+  PlaybackListener,
+} from "../../OutputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
+import { isIosDevice } from "./compatibility.js";
 
-export type OutputConfig = OutputDeviceConfig;
+function maybePrimeIosPlayback({
+  sampleRate,
+  format,
+  worklet,
+  audioElement,
+}: {
+  sampleRate: number;
+  format: FormatConfig["format"];
+  worklet: AudioWorkletNode;
+  audioElement: HTMLAudioElement;
+}): void {
+  if (!isIosDevice()) {
+    return;
+  }
 
-// Audio data events from connection to output device
-export type OutputAudioEvent = {
-  audio_base_64: string;
-};
-export type OutputListener = (event: OutputAudioEvent) => void;
+  // ~100ms of silence is enough to flush the worklet → MediaStream → audio
+  // element pipeline so iOS treats the element as "playing media" and won't
+  // stall the first real audio chunk.
+  const PRIME_DURATION_MS = 100;
+  const primeFrameCount = Math.floor((sampleRate * PRIME_DURATION_MS) / 1000);
+  // μ-law silence is 0xFF, not 0x00. The worklet decodes 0x00 to ~-32124
+  // (near full-scale negative DC), which would emit a loud pop instead of
+  // priming with silence. PCM silence is plain zero, so the zero-filled
+  // Int16Array is correct as-is.
+  const silentBuffer =
+    format === "ulaw"
+      ? new Uint8Array(primeFrameCount).fill(0xff)
+      : new Int16Array(primeFrameCount);
+  worklet.port.postMessage({
+    type: "buffer",
+    buffer: silentBuffer.buffer,
+  });
+  void audioElement.play().catch(() => {});
+}
 
-export type OutputEventTarget = {
-  addListener(listener: OutputListener): void;
-  removeListener(listener: OutputListener): void;
-};
-
-// Playback state events from output worklet
-export type PlaybackStateEvent = MessageEvent<{
-  type: "process";
-  finished: boolean;
-}>;
-export type PlaybackListener = (event: PlaybackStateEvent) => void;
-
-export type PlaybackEventTarget = {
-  addListener(listener: PlaybackListener): void;
-  removeListener(listener: PlaybackListener): void;
-};
+export type MediaDeviceOutputConfig = FormatConfig &
+  OutputConfig &
+  AudioWorkletConfig & {
+    audioContext?: AudioContext;
+  };
 
 export class MediaDeviceOutput
   implements OutputController, PlaybackEventTarget
@@ -45,17 +65,18 @@ export class MediaDeviceOutput
     outputDeviceId,
     workletPaths,
     libsampleratePath,
-  }: FormatConfig &
-    OutputConfig &
-    AudioWorkletConfig): Promise<MediaDeviceOutput> {
-    let context: AudioContext | null = null;
+    audioContext,
+  }: MediaDeviceOutputConfig): Promise<MediaDeviceOutput> {
+    let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {
       const supportsSampleRateConstraint =
         navigator.mediaDevices.getSupportedConstraints().sampleRate;
-      context = new AudioContext(
-        supportsSampleRateConstraint ? { sampleRate } : {}
-      );
+      if (!context) {
+        context = new AudioContext(
+          supportsSampleRateConstraint ? { sampleRate } : {}
+        );
+      }
 
       const analyser = context.createAnalyser();
       const gain = context.createGain();
@@ -93,6 +114,8 @@ export class MediaDeviceOutput
       worklet.connect(gain);
 
       await context.resume();
+
+      maybePrimeIosPlayback({ sampleRate, format, worklet, audioElement });
 
       // Set initial output device if provided
       if (outputDeviceId && audioElement.setSinkId) {

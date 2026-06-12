@@ -15,6 +15,8 @@ export interface PageConfig {
 const SheetContentContext = createContext<{
   currentContent: Signal<SheetContentType>;
   currentConfig: PageConfig;
+  // Set by the message entry point to focus the sheet text input once open.
+  pendingInputFocus: Signal<boolean>;
 } | null>(null);
 
 export function SheetContentProvider({
@@ -25,6 +27,7 @@ export function SheetContentProvider({
   children: ComponentChildren;
 }) {
   const currentContent = useSignal<SheetContentType>(defaultContent);
+  const pendingInputFocus = useSignal(false);
 
   const value = useMemo(() => {
     const contentType = currentContent.value;
@@ -41,7 +44,7 @@ export function SheetContentProvider({
             showHeaderBack: false,
           };
 
-    return { currentContent, currentConfig };
+    return { currentContent, currentConfig, pendingInputFocus };
   }, [currentContent.value]);
 
   return (

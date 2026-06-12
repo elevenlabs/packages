@@ -1,5 +1,8 @@
 import { useWidgetConfig } from "../contexts/widget-config";
-import { useConversation } from "../contexts/conversation";
+import {
+  useCallButtonDisabled,
+  useConversation,
+} from "../contexts/conversation";
 import { CallButton } from "./CallButton";
 import { TriggerLanguageSelect } from "./TriggerLanguageSelect";
 import { TriggerMuteButton } from "./TriggerMuteButton";
@@ -12,7 +15,8 @@ interface TriggerActionsProps {
 
 export function TriggerActions({ onDismiss }: TriggerActionsProps) {
   const variant = useWidgetConfig().value.variant;
-  const { isDisconnected, status } = useConversation();
+  const { isDisconnected } = useConversation();
+  const callDisabled = useCallButtonDisabled();
 
   return (
     <>
@@ -20,9 +24,7 @@ export function TriggerActions({ onDismiss }: TriggerActionsProps) {
         isDisconnected={isDisconnected.value}
         iconOnly={variant === "tiny"}
         className="w-full m-1 z-1"
-        disabled={
-          status.value === "disconnecting" || status.value === "connecting"
-        }
+        disabled={callDisabled.value}
       />
       <TriggerLanguageSelect visible={isDisconnected.value} />
       <SizeTransition visible={!isDisconnected.value} className="p-1">

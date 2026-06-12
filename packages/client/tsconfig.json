@@ -2,7 +2,13 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.build.json"
+      "path": "./tsconfig.common.json"
+    },
+    {
+      "path": "./tsconfig.web.json"
+    },
+    {
+      "path": "./tsconfig.internal-unity.json"
     },
     {
       "path": "./tsconfig.test.json"
