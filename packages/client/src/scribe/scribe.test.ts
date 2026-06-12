@@ -237,6 +237,25 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("builds URI with includeLanguageDetection", () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&include_language_detection=true"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        includeLanguageDetection: true,
+      });
+
+      expect(connection).toBeDefined();
+
+      connection.close();
+      server.close();
+    });
+
     it("accepts valid parameter values", () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&vad_silence_threshold_secs=1.5&vad_threshold=0.5&min_speech_duration_ms=100&min_silence_duration_ms=200"

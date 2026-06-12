@@ -67,6 +67,11 @@ interface BaseOptions {
    */
   includeTimestamps?: boolean;
   /**
+   * Whether to include detected language information in the transcription results.
+   * @default false
+   */
+  includeLanguageDetection?: boolean;
+  /**
    * List of keyterms to bias the model towards.
    * Maximum 50 keyterms, each up to 20 characters.
    */
@@ -180,6 +185,12 @@ export class ScribeRealtime {
       params.append(
         "include_timestamps",
         options.includeTimestamps ? "true" : "false"
+      );
+    }
+    if (options.includeLanguageDetection !== undefined) {
+      params.append(
+        "include_language_detection",
+        options.includeLanguageDetection ? "true" : "false"
       );
     }
     if (options.keyterms !== undefined) {
