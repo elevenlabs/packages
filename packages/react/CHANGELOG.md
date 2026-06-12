@@ -1,5 +1,11 @@
 # @elevenlabs/react
 
+## 1.6.7
+
+### Patch Changes
+
+- @elevenlabs/client@1.11.1
+
 ## 1.6.6
 
 ### Patch Changes
