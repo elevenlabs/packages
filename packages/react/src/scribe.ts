@@ -50,6 +50,8 @@ export interface TranscriptSegment {
   text: string;
   timestamp: number;
   isFinal: boolean;
+  /** Detected language code (only present when includeLanguageDetection is enabled) */
+  languageCode?: string;
   /** Word-level timestamps (only present when includeTimestamps is enabled) */
   words?: WordTimestamp[];
 }
@@ -60,6 +62,7 @@ export interface ScribeCallbacks {
   onCommittedTranscript?: (data: { text: string }) => void;
   onCommittedTranscriptWithTimestamps?: (data: {
     text: string;
+    language_code?: string;
     words?: WordTimestamp[];
   }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
@@ -107,6 +110,8 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Include timestamps
   includeTimestamps?: boolean;
+  /** Include detected language information in transcription results */
+  includeLanguageDetection?: boolean;
 
   // Keyterms and verbatim control
   keyterms?: string[];
@@ -189,6 +194,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
     // Timestamps
     includeTimestamps: defaultIncludeTimestamps,
+    includeLanguageDetection: defaultIncludeLanguageDetection,
 
     // Keyterms and verbatim control
     keyterms: defaultKeyterms,
@@ -249,6 +255,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             runtimeOptions.onCommittedTranscriptWithTimestamps ||
             onCommittedTranscriptWithTimestamps
           );
+        const includeLanguageDetection =
+          runtimeOptions.includeLanguageDetection ??
+          defaultIncludeLanguageDetection;
 
         if (microphone) {
           // Microphone mode
@@ -272,6 +281,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
             microphone,
             includeTimestamps,
+            includeLanguageDetection,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -294,6 +304,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             keyterms: runtimeOptions.keyterms || defaultKeyterms,
             noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
             includeTimestamps,
+            includeLanguageDetection,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -340,6 +351,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               text: message.text,
               timestamp: Date.now(),
               isFinal: true,
+              languageCode: message.language_code,
               words: message.words,
             };
             setCommittedTranscripts(prev => [...prev, segment]);
@@ -477,6 +489,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultAudioFormat,
       defaultSampleRate,
       defaultIncludeTimestamps,
+      defaultIncludeLanguageDetection,
       defaultKeyterms,
       defaultNoVerbatim,
       onSessionStarted,
