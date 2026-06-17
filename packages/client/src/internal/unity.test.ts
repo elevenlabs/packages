@@ -32,9 +32,7 @@ describe("@elevenlabs/client/internal/unity", () => {
     vi.stubGlobal("navigator", undefined);
     vi.stubGlobal("document", undefined);
 
-    await expect(
-      import(`./unity.js?no-browser-globals=${Date.now()}`)
-    ).resolves.toEqual(
+    await expect(import("./unity.js")).resolves.toEqual(
       expect.objectContaining({
         WebSocketConnection: expect.any(Function),
         WebRTCConnection: expect.any(Function),
