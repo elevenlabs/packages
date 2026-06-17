@@ -25,3 +25,21 @@ pnpm exec vitest --browser.headless src/conversation/ConversationClientTools.tes
 ```
 
 Always pass `--browser.headless` to avoid launching a visible browser window.
+
+## Changesets
+
+When changing a published package in a way that should trigger a release, add a
+Changeset in `.changeset/` before committing. Include every affected package and
+the appropriate bump type (`patch`, `minor`, or `major`) with a concise summary
+that can be used in the changelog.
+
+Use `pnpm run changeset` when interactive prompts are practical. Otherwise,
+write the Changeset file directly using the standard frontmatter format:
+
+```md
+---
+"@elevenlabs/client": patch
+---
+
+Describe the user-visible package change.
+```
