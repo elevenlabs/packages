@@ -13,6 +13,9 @@
     },
     {
       "path": "./tsconfig.web.json"
+    },
+    {
+      "path": "./tsconfig.internal-unity.json"
     }
   ]
 }
