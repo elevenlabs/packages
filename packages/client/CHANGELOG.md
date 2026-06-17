@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.11.2
+
+### Patch Changes
+
+- 8b362c9: Expose the remaining Unity bridge connection exports from `@elevenlabs/client/internal/unity` so consumers can avoid importing the browser entrypoint.
+
 ## 1.11.1
 
 ### Patch Changes
