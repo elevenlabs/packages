@@ -42,6 +42,10 @@ export type BaseSessionConfig = {
       stability?: number;
       similarityBoost?: number;
     };
+    asr?: {
+      /** Keywords to boost ASR prediction probability for this conversation. */
+      keywords?: string[];
+    };
     conversation?: {
       textOnly?: boolean;
     };
