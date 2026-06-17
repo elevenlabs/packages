@@ -41,6 +41,13 @@
 // (Unity calls .create() on these from its JS factory glue.)
 export { MediaDeviceInput } from "../platform/web/input.js";
 export { MediaDeviceOutput } from "../platform/web/output.js";
+export { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
+
+// Connection primitives Unity may compose directly without importing the public
+// browser entrypoint and triggering its module-init side effects.
+export { createConnection } from "../utils/ConnectionFactory.js";
+export { WebSocketConnection } from "../utils/WebSocketConnection.js";
+export { WebRTCConnection } from "../utils/WebRTCConnection.js";
 
 // I/O ↔ connection wiring primitives.  Unity's audio-glue.ts composes
 // these (plus a Unity-local audio-payload-stripping wrapper) into its own
@@ -51,6 +58,10 @@ export { attachConnectionToOutput } from "../utils/attachConnectionToOutput.js";
 // v0.3: Unity-routed audio adapter slot.  Already exported from ./internal —
 // re-exported here so all Unity-consumed symbols live behind one import.
 export { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
+
+// Callable web platform setup hook. Export the function itself so Unity hosts
+// decide whether and when to install the browser-specific gesture listener.
+export { installIosAudioUnlockListener } from "../platform/web/audioUnlock.js";
 
 // ── Types only (erased at compile time, never reach the consumer's bundle) ────
 
@@ -63,6 +74,17 @@ export type {
 // Named convenience aliases for the MediaDevice* config shapes.
 export type { MediaDeviceInputConfig } from "../platform/web/input.js";
 export type { MediaDeviceOutputConfig } from "../platform/web/output.js";
+
+// Public configuration/event shapes needed when Unity composes connections.
+export type { InputConfig } from "../InputController.js";
+export type { OutputConfig } from "../OutputController.js";
+export type {
+  ConnectionType,
+  DisconnectionDetails,
+  FormatConfig,
+  SessionConfig,
+} from "../utils/BaseConnection.js";
+export type { IncomingSocketEvent } from "../utils/events.js";
 
 // WebRTCConnection's config type under a stable, descriptive name.
 export type { WebRTCConnectionConfig } from "../utils/WebRTCConnection.js";
