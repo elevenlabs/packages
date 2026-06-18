@@ -19,7 +19,7 @@ describe("constructOverrides", () => {
     ]);
   });
 
-  it("omits asr keywords when not provided", () => {
+  it("omits asr when keywords are not provided", () => {
     const event = constructOverrides({
       agentId: "agent_123",
       overrides: {
@@ -29,6 +29,19 @@ describe("constructOverrides", () => {
       },
     });
 
-    expect(event.conversation_config_override?.asr?.keywords).toBeUndefined();
+    expect(event.conversation_config_override?.asr).toBeUndefined();
+  });
+
+  it("includes asr with an empty keywords array when explicitly provided", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: {
+        asr: {
+          keywords: [],
+        },
+      },
+    });
+
+    expect(event.conversation_config_override?.asr?.keywords).toEqual([]);
   });
 });
