@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.15.0
+
+### Minor Changes
+
+- c086dad: Add `overrides.asr.keywords` support to the browser client so per-conversation ASR keyword biasing can be sent via `conversation_initiation_client_data`.
+
 ## 0.14.1
 
 ### Patch Changes

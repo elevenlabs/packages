@@ -1,5 +1,17 @@
 # @elevenlabs/client
 
+## 1.12.0
+
+### Minor Changes
+
+- c086dad: Add `overrides.asr.keywords` support to the browser client so per-conversation ASR keyword biasing can be sent via `conversation_initiation_client_data`.
+- bce3fac: Expose includeLanguageDetection for realtime Scribe sessions, including React useScribe support for requesting and reading detected language metadata.
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+  - @elevenlabs/types@0.15.0
+
 ## 1.11.2
 
 ### Patch Changes

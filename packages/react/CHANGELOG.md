@@ -1,5 +1,17 @@
 # @elevenlabs/react
 
+## 1.7.0
+
+### Minor Changes
+
+- bce3fac: Expose includeLanguageDetection for realtime Scribe sessions, including React useScribe support for requesting and reading detected language metadata.
+
+### Patch Changes
+
+- Updated dependencies [c086dad]
+- Updated dependencies [bce3fac]
+  - @elevenlabs/client@1.12.0
+
 ## 1.6.8
 
 ### Patch Changes
