@@ -60,6 +60,7 @@ export interface ConversationInitiation {
 
 export interface ConversationConfigOverride {
   agent?: ConversationConfigOverrideAgent;
+  asr?: ConversationConfigOverrideAsr;
   tts?: ConversationConfigOverrideTts;
   conversation?: ConversationConfigOverrideConversation;
 }
@@ -148,6 +149,10 @@ export type ConversationConfigOverrideAgentLanguage =
 export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
   llm?: string;
+}
+
+export interface ConversationConfigOverrideAsr {
+  keywords?: string[];
 }
 
 export interface ConversationConfigOverrideTts {

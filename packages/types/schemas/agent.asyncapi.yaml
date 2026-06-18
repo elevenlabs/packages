@@ -1286,10 +1286,23 @@ components:
       properties:
         agent:
           $ref: "#/components/schemas/AgentConfigOverride"
+        asr:
+          $ref: "#/components/schemas/ASRConversationalConfigOverride"
         tts:
           $ref: "#/components/schemas/TTSConversationalConfigOverride"
         conversation:
           $ref: "#/components/schemas/ConversationConfigOverride"
+
+    ASRConversationalConfigOverride:
+      type: object
+      description: Automatic speech recognition configuration overrides
+      properties:
+        keywords:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Keywords to boost prediction probability for
 
     AgentConfigOverride:
       type: object
