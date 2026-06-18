@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Scribe } from "@elevenlabs/client";
+import { AudioFormat, Scribe } from "@elevenlabs/client";
 import type { RealtimeConnection } from "@elevenlabs/client";
 import { useScribe } from "./scribe.js";
 
@@ -49,6 +49,27 @@ describe("useScribe", () => {
         microphone: expect.objectContaining({
           deviceId,
         }),
+      })
+    );
+  });
+
+  it("passes language detection through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ includeLanguageDetection: true })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeLanguageDetection: true,
       })
     );
   });
