@@ -329,11 +329,11 @@ function useConversationSetup() {
               });
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (conversationTextOnly.peek() !== true) {
-                return;
-              }
-
-              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
+              if (
+                firstMessage.peek() &&
+                conversationTextOnly.peek() === true &&
+                !receivedFirstMessageRef.current
+              ) {
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
