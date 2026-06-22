@@ -81,33 +81,11 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
-// Voice user transcripts can arrive after the agent response for the same
-// server turn. Insert those late user messages before the matching agent row;
-// keep local text/multimodal messages anchored by normal append order.
 function appendTranscriptMessage(
   entries: TranscriptEntry[],
   entry: Extract<TranscriptEntry, { type: "message" }>
 ): TranscriptEntry[] {
-  if (entry.role !== "user" || entry.eventId == null) {
-    return [...entries, entry];
-  }
-
-  const matchingAgentIndex = entries.findIndex(
-    candidate =>
-      candidate.type === "message" &&
-      candidate.role === "agent" &&
-      candidate.eventId === entry.eventId &&
-      candidate.conversationIndex === entry.conversationIndex
-  );
-  if (matchingAgentIndex === -1) {
-    return [...entries, entry];
-  }
-
-  return [
-    ...entries.slice(0, matchingAgentIndex),
-    entry,
-    ...entries.slice(matchingAgentIndex),
-  ];
+  return [...entries, entry];
 }
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
