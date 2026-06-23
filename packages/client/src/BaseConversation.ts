@@ -5,8 +5,7 @@ import type {
   SessionConfig,
   FormatConfig,
 } from "./utils/BaseConnection.js";
-import { assertJsonObject } from "./utils/assert.js";
-import { extractApiErrorMessage } from "./utils/errors.js";
+import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -34,7 +33,6 @@ import type {
 import type { InputConfig } from "./InputController.js";
 import type { OutputConfig } from "./OutputController.js";
 
-const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const END_CALL_DETAILS: DisconnectionDetails = {
   reason: "agent",
   context: { type: "end_call", reason: "Agent ended the call" },
@@ -42,6 +40,7 @@ const END_CALL_DETAILS: DisconnectionDetails = {
 
 export type { Role, Mode, Status, Callbacks } from "./types.js";
 export { CALLBACK_KEYS } from "./types.js";
+export type { UploadFileResult } from "./utils/uploadFile.js";
 
 /** Allows self-hosting the worklets to avoid whitelisting blob: and data: in the CSP script-src  */
 export type AudioWorkletConfig = {
@@ -82,10 +81,6 @@ export type PartialOptions = SessionConfig &
 export type MultimodalMessageInput = {
   text?: string;
   fileId?: string;
-};
-
-export type UploadFileResult = {
-  fileId: string;
 };
 
 export type ClientToolsConfig = {
@@ -659,34 +654,10 @@ export abstract class BaseConversation {
   }
 
   public async uploadFile(file: Blob): Promise<UploadFileResult> {
-    const origin = (this.options.origin ?? HTTPS_API_ORIGIN)
-      .replace(/^wss:\/\//, "https://")
-      .replace(/^ws:\/\//, "http://");
-
-    const filename =
-      "name" in file && typeof file.name === "string"
-        ? file.name
-        : `upload.${(file.type || "image/png").split("/").pop()?.split("+")[0]}`;
-
-    const body = new FormData();
-    body.append("file", file, filename);
-
-    const response = await fetch(
-      `${origin}/v1/convai/conversations/${this.connection.conversationId}/files`,
-      { method: "POST", body }
-    );
-
-    if (!response.ok) {
-      const message = await extractApiErrorMessage(response);
-      throw new Error(`Upload failed: ${response.status} ${message}`);
-    }
-
-    const result: unknown = await response.json();
-    assertJsonObject(result, "Upload response is not a JSON object");
-    const { file_id } = result;
-    if (typeof file_id !== "string" || !file_id) {
-      throw new Error("Upload response is missing a valid file_id");
-    }
-    return { fileId: file_id };
+    return uploadFile({
+      conversationId: this.connection.conversationId,
+      origin: this.options.origin,
+      file,
+    });
   }
 }
