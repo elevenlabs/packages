@@ -48,6 +48,7 @@ export { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 export { createConnection } from "../utils/ConnectionFactory.js";
 export { WebSocketConnection } from "../utils/WebSocketConnection.js";
 export { WebRTCConnection } from "../utils/WebRTCConnection.js";
+export { uploadFile } from "../utils/uploadFile.js";
 
 // I/O ↔ connection wiring primitives.  Unity's audio-glue.ts composes
 // these (plus a Unity-local audio-payload-stripping wrapper) into its own

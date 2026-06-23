@@ -49,6 +49,7 @@ describe("@elevenlabs/client/internal/unity", () => {
       connectionFactory,
       webSocketConnection,
       webRTCConnection,
+      uploadFile,
       audioUnlock,
       webAudioAdapter,
     ] = await Promise.all([
@@ -56,6 +57,7 @@ describe("@elevenlabs/client/internal/unity", () => {
       import("../utils/ConnectionFactory.js"),
       import("../utils/WebSocketConnection.js"),
       import("../utils/WebRTCConnection.js"),
+      import("../utils/uploadFile.js"),
       import("../platform/web/audioUnlock.js"),
       import("../platform/web/webAudioAdapter.js"),
     ]);
@@ -65,6 +67,7 @@ describe("@elevenlabs/client/internal/unity", () => {
       webSocketConnection.WebSocketConnection
     );
     expect(unity.WebRTCConnection).toBe(webRTCConnection.WebRTCConnection);
+    expect(unity.uploadFile).toBe(uploadFile.uploadFile);
     expect(unity.installIosAudioUnlockListener).toBe(
       audioUnlock.installIosAudioUnlockListener
     );
