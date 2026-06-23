@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.12.1
+
+### Patch Changes
+
+- 71bc3d5: Expose the file upload helper from the internal Unity entrypoint.
+
 ## 1.12.0
 
 ### Minor Changes
