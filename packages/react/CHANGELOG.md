@@ -1,5 +1,18 @@
 # @elevenlabs/react
 
+## 1.8.0
+
+### Minor Changes
+
+- 44336a2: Allow `sendFeedback` to target a past message by `event_id`. `sendFeedback(like, eventId?)` now accepts an optional event id; when provided it rates that specific message, and when omitted it rates the latest agent turn.
+
+  `canSendFeedback` now reflects whether the conversation is connected rather than whether the latest turn is unrated, so feedback can be sent for any message (including re-rating) while the session is live.
+
+### Patch Changes
+
+- Updated dependencies [44336a2]
+  - @elevenlabs/client@1.13.0
+
 ## 1.7.1
 
 ### Patch Changes
