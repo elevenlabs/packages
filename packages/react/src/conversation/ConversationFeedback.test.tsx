@@ -32,11 +32,7 @@ function useTestHook() {
 
 function createWrapper(props: Record<string, unknown> = {}) {
   return function Wrapper({ children }: React.PropsWithChildren) {
-    return (
-      <ConversationProvider {...props}>
-        {children}
-      </ConversationProvider>
-    );
+    return <ConversationProvider {...props}>{children}</ConversationProvider>;
   };
 }
 
@@ -105,7 +101,28 @@ describe("ConversationFeedback", () => {
     act(() => {
       result.current.feedback.sendFeedback(false);
     });
-    expect(mockConversation.sendFeedback).toHaveBeenCalledWith(false);
+    expect(mockConversation.sendFeedback).toHaveBeenCalledWith(
+      false,
+      undefined
+    );
+  });
+
+  it("forwards an explicit eventId to rate a past message", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.feedback.sendFeedback(true, 42);
+    });
+    expect(mockConversation.sendFeedback).toHaveBeenCalledWith(true, 42);
   });
 
   it("composes with user-provided onCanSendFeedbackChange callback", async () => {

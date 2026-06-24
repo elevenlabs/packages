@@ -593,23 +593,40 @@ export abstract class BaseConversation {
   public abstract getInputVolume(): number;
   public abstract getOutputVolume(): number;
 
-  public sendFeedback(like: boolean) {
-    if (!this.canSendFeedback) {
-      console.warn(
-        this.lastFeedbackEventId === 0
-          ? "Cannot send feedback: the conversation has not started yet."
-          : "Cannot send feedback: feedback has already been sent for the current response."
-      );
+  /**
+   * Sends thumbs up/down feedback for a message.
+   *
+   * When `eventId` is omitted, feedback targets the latest agent turn and is
+   * gated by `canSendFeedback` (one rating per turn). Pass an explicit
+   * `eventId` to rate an arbitrary past message — this bypasses that gate so
+   * earlier messages in the transcript can be (re)rated.
+   */
+  public sendFeedback(like: boolean, eventId?: number) {
+    if (eventId === undefined) {
+      if (!this.canSendFeedback) {
+        console.warn(
+          this.lastFeedbackEventId === 0
+            ? "Cannot send feedback: the conversation has not started yet."
+            : "Cannot send feedback: feedback has already been sent for the current response."
+        );
+        return;
+      }
+
+      this.connection.sendMessage({
+        type: "feedback",
+        score: like ? "like" : "dislike",
+        event_id: this.currentEventId,
+      });
+      this.lastFeedbackEventId = this.currentEventId;
+      this.updateCanSendFeedback();
       return;
     }
 
     this.connection.sendMessage({
       type: "feedback",
       score: like ? "like" : "dislike",
-      event_id: this.currentEventId,
+      event_id: eventId,
     });
-    this.lastFeedbackEventId = this.currentEventId;
-    this.updateCanSendFeedback();
   }
 
   public sendContextualUpdate(text: string, options?: ContextualUpdateOptions) {
