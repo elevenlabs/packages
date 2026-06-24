@@ -22,14 +22,15 @@ class TestConversation extends BaseConversation {
   }
 
   public static create(
-    options: Partial<Options> & { origin?: string } = {}
+    options: Partial<Options> & { origin?: string } = {},
+    connection: BaseConnection = noopConnection
   ): TestConversation {
     const fullOptions = TestConversation.getFullOptions({
       agentId: "test-agent-id",
       connectionType: "webrtc",
       ...options,
     } as PartialOptions);
-    return new TestConversation(fullOptions, noopConnection);
+    return new TestConversation(fullOptions, connection);
   }
 
   constructor(options: Options, connection: BaseConnection) {
@@ -55,6 +56,19 @@ class TestConversation extends BaseConversation {
     event: Parameters<Parameters<BaseConnection["onMessage"]>[0]>[0]
   ) {
     return this["onMessage"](event);
+  }
+
+  public connect(currentEventId = 1) {
+    this.currentEventId = currentEventId;
+    this.markConnected();
+  }
+
+  public setStatus(status: Parameters<TestConversation["updateStatus"]>[0]) {
+    this.updateStatus(status);
+  }
+
+  public getCanSendFeedback() {
+    return this.canSendFeedback;
   }
 }
 
@@ -351,6 +365,101 @@ describe("BaseConversation", () => {
         reason: "error",
         message: "Maximum duration exceeded",
         context: { type: "max_duration_exceeded" },
+      });
+    });
+  });
+
+  describe("sendFeedback", () => {
+    function createWithSpy() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create({}, connection);
+      return { conversation, sendMessage };
+    }
+
+    it("warns and does not send when not connected", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      expect(conversation.getCanSendFeedback()).toBe(false);
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+    });
+
+    it("targets the current turn when eventId is omitted", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "like",
+        event_id: 5,
+      });
+    });
+
+    it("advances the default target as agent responses arrive", async () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect();
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Hello there",
+          event_id: 7,
+        },
+      });
+      conversation.sendFeedback(true);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "like",
+        event_id: 7,
+      });
+    });
+
+    it("targets an explicit past message", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(false, 2);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: "dislike",
+        event_id: 2,
+      });
+    });
+
+    it("can send repeatedly while connected", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(true, 2);
+      conversation.sendFeedback(true, 5);
+
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+      expect(conversation.getCanSendFeedback()).toBe(true);
+    });
+
+    it("notifies onCanSendFeedbackChange on connect and disconnect", () => {
+      const onCanSendFeedbackChange = vi.fn();
+      const conversation = TestConversation.create({ onCanSendFeedbackChange });
+
+      conversation.connect(1);
+      expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
+        canSendFeedback: true,
+      });
+
+      conversation.setStatus("disconnected");
+      expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
+        canSendFeedback: false,
       });
     });
   });
