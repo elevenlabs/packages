@@ -5,11 +5,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRawConversationRef, useRegisterCallbacks } from "./ConversationContext.js";
+import {
+  useRawConversationRef,
+  useRegisterCallbacks,
+} from "./ConversationContext.js";
 
 export type ConversationFeedbackValue = {
   canSendFeedback: boolean;
-  sendFeedback: (like: boolean) => void;
+  sendFeedback: (like: boolean, eventId?: number) => void;
 };
 
 const ConversationFeedbackContext =
@@ -36,9 +39,12 @@ export function ConversationFeedbackProvider({
     },
   });
 
-  const sendFeedback = useCallback((like: boolean) => {
-    conversationRef.current?.sendFeedback(like);
-  }, [conversationRef]);
+  const sendFeedback = useCallback(
+    (like: boolean, eventId?: number) => {
+      conversationRef.current?.sendFeedback(like, eventId);
+    },
+    [conversationRef]
+  );
 
   const value = useMemo<ConversationFeedbackValue>(
     () => ({
