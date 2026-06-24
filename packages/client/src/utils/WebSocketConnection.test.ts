@@ -168,4 +168,36 @@ describe("WebSocketConnection", () => {
 
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it("forwards alignment-bearing audio on the WebSocket", async () => {
+    const connection = await createConnection();
+    const onMessage = vi.fn();
+    const alignment = {
+      chars: ["H", "i"],
+      char_start_times_ms: [0, 100],
+      char_durations_ms: [100, 150],
+    };
+
+    connection.onMessage(onMessage);
+
+    emit("message", {
+      data: JSON.stringify({
+        type: "audio",
+        audio_event: {
+          audio_base_64: "dGVzdA==",
+          event_id: 2,
+          alignment,
+        },
+      }),
+    });
+
+    expect(onMessage).toHaveBeenCalledWith({
+      type: "audio",
+      audio_event: {
+        audio_base_64: "dGVzdA==",
+        event_id: 2,
+        alignment,
+      },
+    });
+  });
 });

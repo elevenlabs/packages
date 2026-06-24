@@ -45,6 +45,7 @@ vi.mock("livekit-client", () => {
       ConnectionStateChanged: "connectionStateChanged",
       DataReceived: "dataReceived",
       TrackSubscribed: "trackSubscribed",
+      TrackUnsubscribed: "trackUnsubscribed",
       ActiveSpeakersChanged: "activeSpeakersChanged",
       ParticipantDisconnected: "participantDisconnected",
     },
@@ -64,6 +65,7 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack } from "livekit-client";
 import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
+import { TestVoiceConversation } from "../VoiceConversation.test.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -328,6 +330,141 @@ describe("WebRTCConnection", () => {
         reason: "agent",
         context: { type: "close", reason: "agent disconnected" },
       });
+    });
+  });
+
+  describe("WebRTC audio data channel", () => {
+    async function createWithHandlers() {
+      const mockRoom = new Room() as any;
+      const eventHandlers = new Map<string, (...args: unknown[]) => void>();
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          eventHandlers.set(event, callback);
+          if (event === "connected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      return { connection, eventHandlers, mockRoom };
+    }
+
+    it("forwards alignment on data channel without playback audio", async () => {
+      const alignment = {
+        chars: ["H", "i"],
+        char_start_times_ms: [0, 100],
+        char_durations_ms: [100, 150],
+      };
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onMessage = vi.fn();
+      connection.onMessage(onMessage);
+
+      eventHandlers.get("dataReceived")?.(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: "audio",
+            audio_event: {
+              audio_base_64: "dGVzdA==",
+              event_id: 42,
+              alignment,
+            },
+          })
+        )
+      );
+
+      expect(onMessage).toHaveBeenCalledWith({
+        type: "audio",
+        audio_event: {
+          audio_base_64: "",
+          event_id: 42,
+          alignment,
+        },
+      });
+      connection.close();
+    });
+
+    it("drops audio data channel messages without alignment", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onMessage = vi.fn();
+      connection.onMessage(onMessage);
+
+      eventHandlers.get("dataReceived")?.(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: "audio",
+            audio_event: {
+              audio_base_64: "dGVzdA==",
+              event_id: 44,
+            },
+          })
+        )
+      );
+
+      expect(onMessage).not.toHaveBeenCalled();
+      connection.close();
+    });
+
+    it("forwards onAudioAlignment through VoiceConversation", async () => {
+      const alignment = {
+        chars: ["W", "o", "r", "d"],
+        char_start_times_ms: [0, 50, 100, 150],
+        char_durations_ms: [50, 50, 50, 80],
+      };
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onAudioAlignment = vi.fn();
+      const onAudio = vi.fn();
+
+      TestVoiceConversation.create({ onAudioAlignment, onAudio }, connection);
+
+      eventHandlers.get("dataReceived")?.(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: "audio",
+            audio_event: {
+              audio_base_64: "dGVzdA==",
+              event_id: 100,
+              alignment,
+            },
+          })
+        )
+      );
+
+      expect(onAudioAlignment).toHaveBeenCalledWith(alignment);
+      expect(onAudio).not.toHaveBeenCalled();
+      connection.close();
+    });
+
+    it("setVolume uses LiveKit track.setVolume when no audio adapter is registered", async () => {
+      setWebRTCAudioAdapterFactory(undefined as never);
+      const { connection, eventHandlers } = await createWithHandlers();
+      const mockSetVolume = vi.fn();
+
+      await eventHandlers.get("trackSubscribed")?.(
+        {
+          kind: "audio",
+          mediaStreamTrack: { id: "remote-track" },
+          setVolume: mockSetVolume,
+        },
+        {},
+        { identity: "agent_123" }
+      );
+
+      connection.output.setVolume(0.75);
+      expect(mockSetVolume).toHaveBeenCalledWith(0.75);
+      connection.close();
     });
   });
 
