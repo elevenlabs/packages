@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.16.0
+
+### Minor Changes
+
+- 2277139: Allow `sendFeedback` to clear feedback by passing `null`. `sendFeedback(like, eventId?)` now accepts `null` as the first parameter; when passed it sends `score: null` to clear the feedback on that event, allowing users to remove their like/dislike rating.
+
 ## 0.15.0
 
 ### Minor Changes

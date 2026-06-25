@@ -1,5 +1,11 @@
 # elevenlabs-react-native-example
 
+## 1.1.17
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.12
+
 ## 1.1.16
 
 ### Patch Changes
