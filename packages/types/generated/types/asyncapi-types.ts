@@ -24,10 +24,10 @@ export interface UserActivity {
 export interface UserFeedback {
   type: "feedback";
   event_id: number;
-  score: Score;
+  score: ScoreOneOf_0 | null;
 }
 
-export type Score = "like" | "dislike";
+export type ScoreOneOf_0 = "like" | "dislike";
 
 export interface ClientToolResult {
   type: "client_tool_result";
@@ -683,7 +683,7 @@ export interface UserActivityClientToOrchestratorEvent {
 export interface UserFeedbackClientToOrchestratorEvent {
   type: "feedback";
   event_id: number;
-  score: Score;
+  score: ScoreOneOf_0 | null;
 }
 
 export interface ClientToolResultClientToOrchestratorEvent {

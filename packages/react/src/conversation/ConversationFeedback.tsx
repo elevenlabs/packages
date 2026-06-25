@@ -12,7 +12,7 @@ import {
 
 export type ConversationFeedbackValue = {
   canSendFeedback: boolean;
-  sendFeedback: (like: boolean, eventId?: number) => void;
+  sendFeedback: (like: boolean | null, eventId?: number) => void;
 };
 
 const ConversationFeedbackContext =
@@ -40,7 +40,7 @@ export function ConversationFeedbackProvider({
   });
 
   const sendFeedback = useCallback(
-    (like: boolean, eventId?: number) => {
+    (like: boolean | null, eventId?: number) => {
       conversationRef.current?.sendFeedback(like, eventId);
     },
     [conversationRef]

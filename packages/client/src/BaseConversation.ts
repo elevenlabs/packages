@@ -594,7 +594,7 @@ export abstract class BaseConversation {
   public abstract getInputVolume(): number;
   public abstract getOutputVolume(): number;
 
-  public sendFeedback(like: boolean, eventId?: number) {
+  public sendFeedback(like: boolean | null, eventId?: number) {
     if (!this.canSendFeedback) {
       console.warn("Cannot send feedback: the conversation is not connected.");
       return;
@@ -602,7 +602,7 @@ export abstract class BaseConversation {
 
     this.connection.sendMessage({
       type: "feedback",
-      score: like ? "like" : "dislike",
+      score: like === null ? null : like ? "like" : "dislike",
       event_id: eventId ?? this.currentEventId,
     });
   }
