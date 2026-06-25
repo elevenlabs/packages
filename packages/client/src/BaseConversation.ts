@@ -602,7 +602,7 @@ export abstract class BaseConversation {
 
     this.connection.sendMessage({
       type: "feedback",
-      score: like === null ? null : like ? "like" : "dislike",
+      score: like !== null ? (like ? "like" : "dislike") : null,
       event_id: eventId ?? this.currentEventId,
     });
   }
