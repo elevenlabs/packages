@@ -125,6 +125,24 @@ describe("ConversationFeedback", () => {
     expect(mockConversation.sendFeedback).toHaveBeenCalledWith(true, 42);
   });
 
+  it("clears feedback when null is passed", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    act(() => {
+      result.current.feedback.sendFeedback(null, 42);
+    });
+    expect(mockConversation.sendFeedback).toHaveBeenCalledWith(null, 42);
+  });
+
   it("composes with user-provided onCanSendFeedbackChange callback", async () => {
     const userOnCanSendFeedbackChange = vi.fn();
     const mockConversation = createMockConversation();

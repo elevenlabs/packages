@@ -486,11 +486,13 @@ components:
       description: Audio encoding format for user input
 
     FeedbackScore:
-      type: string
-      enum:
-        - like
-        - dislike
-      description: User's feedback score
+      oneOf:
+        - type: string
+          enum:
+            - like
+            - dislike
+        - type: "null"
+      description: User's feedback score. Pass null to clear the feedback.
 
     MCPIntegrationType:
       type: string

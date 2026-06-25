@@ -437,6 +437,32 @@ describe("BaseConversation", () => {
       });
     });
 
+    it("clears feedback when null is passed", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(null, 2);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: null,
+        event_id: 2,
+      });
+    });
+
+    it("clears feedback for the current turn when eventId is omitted", () => {
+      const { conversation, sendMessage } = createWithSpy();
+      conversation.connect(5);
+
+      conversation.sendFeedback(null);
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "feedback",
+        score: null,
+        event_id: 5,
+      });
+    });
+
     it("can send repeatedly while connected", () => {
       const { conversation, sendMessage } = createWithSpy();
       conversation.connect(5);
