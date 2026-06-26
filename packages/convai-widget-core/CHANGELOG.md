@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.14.8
+
+### Patch Changes
+
+- 009d28f: Re-enable agent_chat_response_part streaming in voice sessions
+
 ## 0.14.7
 
 ### Patch Changes
