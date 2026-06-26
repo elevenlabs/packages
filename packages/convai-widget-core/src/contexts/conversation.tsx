@@ -81,35 +81,6 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
-// Voice user transcripts can arrive after the agent response for the same
-// server turn. Insert those late user messages before the matching agent row;
-// keep local text/multimodal messages anchored by normal append order.
-function appendTranscriptMessage(
-  entries: TranscriptEntry[],
-  entry: Extract<TranscriptEntry, { type: "message" }>
-): TranscriptEntry[] {
-  if (entry.role !== "user" || entry.eventId == null) {
-    return [...entries, entry];
-  }
-
-  const matchingAgentIndex = entries.findIndex(
-    candidate =>
-      candidate.type === "message" &&
-      candidate.role === "agent" &&
-      candidate.eventId === entry.eventId &&
-      candidate.conversationIndex === entry.conversationIndex
-  );
-  if (matchingAgentIndex === -1) {
-    return [...entries, entry];
-  }
-
-  return [
-    ...entries.slice(0, matchingAgentIndex),
-    entry,
-    ...entries.slice(matchingAgentIndex),
-  ];
-}
-
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -309,7 +280,7 @@ function useConversationSetup() {
                     type: "message",
                     role: "agent",
                     message,
-                    isText: true,
+                    isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
                   };
@@ -319,21 +290,24 @@ function useConversationSetup() {
                 return;
               }
 
-              transcript.value = appendTranscriptMessage(transcript.peek(), {
-                type: "message",
-                role,
-                message,
-                isText: false,
-                conversationIndex: conversationIndex.peek(),
-                eventId: event_id,
-              });
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "message",
+                  role,
+                  message,
+                  isText: false,
+                  conversationIndex: conversationIndex.peek(),
+                  eventId: event_id,
+                },
+              ];
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (conversationTextOnly.peek() !== true) {
-                return;
-              }
-
-              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
+              if (
+                firstMessage.peek() &&
+                conversationTextOnly.peek() === true &&
+                !receivedFirstMessageRef.current
+              ) {
                 // Text mode is always started by the user sending a text message.
                 // We need to ignore the first agent message as it is immediately
                 // interrupted by the user input.
@@ -351,7 +325,7 @@ function useConversationSetup() {
                     type: "message",
                     role: "agent",
                     message: "",
-                    isText: true,
+                    isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
                   },
