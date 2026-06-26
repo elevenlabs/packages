@@ -81,13 +81,6 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
-function appendTranscriptMessage(
-  entries: TranscriptEntry[],
-  entry: Extract<TranscriptEntry, { type: "message" }>
-): TranscriptEntry[] {
-  return [...entries, entry];
-}
-
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -297,14 +290,17 @@ function useConversationSetup() {
                 return;
               }
 
-              transcript.value = appendTranscriptMessage(transcript.peek(), {
-                type: "message",
-                role,
-                message,
-                isText: false,
-                conversationIndex: conversationIndex.peek(),
-                eventId: event_id,
-              });
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "message",
+                  role,
+                  message,
+                  isText: false,
+                  conversationIndex: conversationIndex.peek(),
+                  eventId: event_id,
+                },
+              ];
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
               if (
