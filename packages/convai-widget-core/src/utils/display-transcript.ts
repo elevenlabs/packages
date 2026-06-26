@@ -101,13 +101,21 @@ export function buildDisplayTranscript(
     }
   }
 
+  // Tracks whether a tool entry appeared since the last emitted message. Used to
+  // avoid merging two agent text segments of the same turn that are separated by
+  // a tool call — they share an eventId but are distinct bubbles, not a
+  // streamed-partial/finalized pair.
+  let toolBetween = false;
+
   for (const entry of entries) {
     // Skip tool entries (consumed into status)
     if (
       entry.type === "agent_tool_request" ||
       entry.type === "agent_tool_response"
-    )
+    ) {
+      toolBetween = true;
       continue;
+    }
 
     // Skip empty agent messages unless they have a tool status to display
     if (
@@ -126,9 +134,12 @@ export function buildDisplayTranscript(
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
 
-    // Group consecutive messages with same eventId + role
+    // Group consecutive messages with same eventId + role (collapses a streamed
+    // partial into its finalized message). Skip when a tool call separated them —
+    // those are distinct text segments of the same turn and must stay separate.
     const prev = result[result.length - 1];
     if (
+      !toolBetween &&
       entry.type === "message" &&
       entry.eventId != null &&
       prev?.type === "message" &&
@@ -140,6 +151,7 @@ export function buildDisplayTranscript(
     }
 
     result.push(entry);
+    toolBetween = false;
   }
 
   // Attach tool status to agent messages
