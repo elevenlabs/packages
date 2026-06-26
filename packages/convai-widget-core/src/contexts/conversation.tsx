@@ -280,7 +280,7 @@ function useConversationSetup() {
                     type: "message",
                     role: "agent",
                     message,
-                    isText: true,
+                    isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
                   };
@@ -325,7 +325,7 @@ function useConversationSetup() {
                     type: "message",
                     role: "agent",
                     message: "",
-                    isText: true,
+                    isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
                   },
