@@ -101,10 +101,7 @@ export function buildDisplayTranscript(
     }
   }
 
-  // Tracks whether a tool entry appeared since the last emitted message. Used to
-  // protect a non-empty text segment that is followed by a tool call and then
-  // more text (text → tool → text): those are distinct bubbles of the same turn
-  // and must not be collapsed into one.
+  // Whether a tool entry appeared since the last emitted message.
   let toolBetween = false;
 
   for (const entry of entries) {
@@ -134,15 +131,9 @@ export function buildDisplayTranscript(
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
 
-    // Group consecutive messages with same eventId + role. This collapses a
-    // streamed partial into its finalized message, and folds the empty
-    // placeholders that bracket tool calls into the turn's real message.
-    //
-    // The one case we must NOT collapse: a non-empty text segment followed by a
-    // tool call and then more text (text → tool → text). Overwriting the first
-    // would lose it. So refuse to merge only when a tool separated the two AND
-    // the previous message already has real content; empty placeholders (incl.
-    // whitespace-only) still merge freely across tools.
+    // Merge same-eventId+role messages (collapses streamed partials and empty
+    // placeholders into the final message). Don't merge text → tool → text:
+    // a tool split two non-empty segments, so they stay distinct bubbles.
     const prev = result[result.length - 1];
     if (
       entry.type === "message" &&
@@ -160,12 +151,8 @@ export function buildDisplayTranscript(
     toolBetween = false;
   }
 
-  // Attach tool status to agent messages. A turn (eventId) may now render as
-  // several bubbles (text → tool → text), so attach the status to only the first
-  // agent bubble of the turn — the one that triggered the tool. This keeps a
-  // single status badge and keeps it stable: it appears under the triggering
-  // message during loading instead of jumping to a later bubble when post-tool
-  // text arrives.
+  // Attach tool status to the first agent bubble of each turn only — a turn can
+  // render as several bubbles, but the badge should appear once.
   if (config.showAgentStatus) {
     const statusAttached = new Set<number>();
     for (let i = 0; i < result.length; i++) {
