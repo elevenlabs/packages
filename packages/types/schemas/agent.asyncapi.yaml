@@ -1154,8 +1154,9 @@ components:
         event_id:
           type: integer
         ping_ms:
-          type: integer
-          nullable: true
+          anyOf:
+            - type: integer
+            - type: "null"
           description: Estimated round-trip time in milliseconds
 
     ASRInitiationMetadataPayload:
