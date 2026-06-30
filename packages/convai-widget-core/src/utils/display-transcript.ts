@@ -160,8 +160,14 @@ export function buildDisplayTranscript(
     toolBetween = false;
   }
 
-  // Attach tool status to agent messages
+  // Attach tool status to agent messages. A turn (eventId) may now render as
+  // several bubbles (text → tool → text), so attach the status to only the first
+  // agent bubble of the turn — the one that triggered the tool. This keeps a
+  // single status badge and keeps it stable: it appears under the triggering
+  // message during loading instead of jumping to a later bubble when post-tool
+  // text arrives.
   if (config.showAgentStatus) {
+    const statusAttached = new Set<number>();
     for (let i = 0; i < result.length; i++) {
       const entry = result[i];
       if (
@@ -170,6 +176,7 @@ export function buildDisplayTranscript(
         entry.eventId == null
       )
         continue;
+      if (statusAttached.has(entry.eventId)) continue;
       const status = toolStatuses.get(entry.eventId);
       if (!status) continue;
 
@@ -180,6 +187,7 @@ export function buildDisplayTranscript(
             ? ToolCallStatus.ERROR
             : ToolCallStatus.SUCCESS;
       result[i] = { ...entry, toolStatus };
+      statusAttached.add(entry.eventId);
     }
   }
 

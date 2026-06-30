@@ -283,6 +283,28 @@ describe("buildDisplayTranscript", () => {
       const result = build(input, { showAgentStatus: false });
       expect(result[0]).not.toHaveProperty("toolStatus");
     });
+
+    it("attaches status to only the first bubble of a text → tool → text turn", () => {
+      // Two non-empty segments share the turn's eventId and stay as separate
+      // bubbles. The tool status attaches to the first (triggering) bubble only,
+      // so the badge is not duplicated across both.
+      const input = [
+        msg("agent", "Running the tool now.", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Tool completed successfully", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "Running the tool now.",
+        toolStatus: "success",
+      });
+      expect(result[1]).toMatchObject({
+        message: "Tool completed successfully",
+      });
+      expect(result[1]).not.toHaveProperty("toolStatus");
+    });
   });
 
   describe("transcript filtering", () => {
