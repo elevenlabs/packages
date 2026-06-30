@@ -102,9 +102,9 @@ export function buildDisplayTranscript(
   }
 
   // Tracks whether a tool entry appeared since the last emitted message. Used to
-  // avoid merging two agent text segments of the same turn that are separated by
-  // a tool call — they share an eventId but are distinct bubbles, not a
-  // streamed-partial/finalized pair.
+  // protect a non-empty text segment that is followed by a tool call and then
+  // more text (text → tool → text): those are distinct bubbles of the same turn
+  // and must not be collapsed into one.
   let toolBetween = false;
 
   for (const entry of entries) {
@@ -134,17 +134,23 @@ export function buildDisplayTranscript(
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
 
-    // Group consecutive messages with same eventId + role (collapses a streamed
-    // partial into its finalized message). Skip when a tool call separated them —
-    // those are distinct text segments of the same turn and must stay separate.
+    // Group consecutive messages with same eventId + role. This collapses a
+    // streamed partial into its finalized message, and folds the empty
+    // placeholders that bracket tool calls into the turn's real message.
+    //
+    // The one case we must NOT collapse: a non-empty text segment followed by a
+    // tool call and then more text (text → tool → text). Overwriting the first
+    // would lose it. So refuse to merge only when a tool separated the two AND
+    // the previous message already has real content; empty placeholders still
+    // merge freely across tools.
     const prev = result[result.length - 1];
     if (
-      !toolBetween &&
       entry.type === "message" &&
       entry.eventId != null &&
       prev?.type === "message" &&
       prev.eventId === entry.eventId &&
-      prev.role === entry.role
+      prev.role === entry.role &&
+      (!toolBetween || !prev.message)
     ) {
       result[result.length - 1] = entry;
       continue;

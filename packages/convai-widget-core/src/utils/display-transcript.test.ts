@@ -172,10 +172,10 @@ describe("buildDisplayTranscript", () => {
       });
     });
 
-    it("does not merge agent text segments separated by a tool call", () => {
-      // text > tool > text within the same turn (shared eventId). The two text
-      // segments are distinct bubbles and must both survive — the tool call
-      // between them prevents the same-eventId merge.
+    it("does not merge non-empty agent text segments separated by a tool call", () => {
+      // text > tool > text within the same turn (shared eventId). Both text
+      // segments have real content, so the second must not overwrite the first —
+      // a tool call separated them and the previous message is non-empty.
       const input = [
         msg("agent", "before tool", { eventId: 2 }),
         toolReq(2),
@@ -186,6 +186,21 @@ describe("buildDisplayTranscript", () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({ message: "before tool" });
       expect(result[1]).toMatchObject({ message: "after tool" });
+    });
+
+    it("merges empty placeholders into the final message across tool calls", () => {
+      // The streamed flow brackets tool calls with empty placeholders, all
+      // sharing the turn's eventId. These collapse into the single real message —
+      // an empty previous message is folded in even across a tool.
+      const input = [
+        msg("agent", "", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Done", { eventId: 2 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ message: "Done" });
     });
 
     it("still merges a streamed partial into its finalized message after a tool", () => {
