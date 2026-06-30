@@ -141,8 +141,8 @@ export function buildDisplayTranscript(
     // The one case we must NOT collapse: a non-empty text segment followed by a
     // tool call and then more text (text → tool → text). Overwriting the first
     // would lose it. So refuse to merge only when a tool separated the two AND
-    // the previous message already has real content; empty placeholders still
-    // merge freely across tools.
+    // the previous message already has real content; empty placeholders (incl.
+    // whitespace-only) still merge freely across tools.
     const prev = result[result.length - 1];
     if (
       entry.type === "message" &&
@@ -150,7 +150,7 @@ export function buildDisplayTranscript(
       prev?.type === "message" &&
       prev.eventId === entry.eventId &&
       prev.role === entry.role &&
-      (!toolBetween || !prev.message)
+      (!toolBetween || !prev.message.trim())
     ) {
       result[result.length - 1] = entry;
       continue;
