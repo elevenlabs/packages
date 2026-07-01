@@ -1,5 +1,11 @@
 # @elevenlabs/react
 
+## 1.9.1
+
+### Patch Changes
+
+- @elevenlabs/client@1.14.1
+
 ## 1.9.0
 
 ### Minor Changes

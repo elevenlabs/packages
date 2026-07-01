@@ -1,5 +1,12 @@
 # @elevenlabs/client
 
+## 1.14.1
+
+### Patch Changes
+
+- Updated dependencies [d52d5f6]
+  - @elevenlabs/types@0.17.0
+
 ## 1.14.0
 
 ### Minor Changes
