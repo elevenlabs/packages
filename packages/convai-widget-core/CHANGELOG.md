@@ -1,5 +1,12 @@
 # @elevenlabs/convai-widget-core
 
+## 0.14.9
+
+### Patch Changes
+
+- 62e0992: Fix transcript rendering for turns that interleave text and tool calls: keep text segments split by a tool call as separate bubbles, and show the tool status badge only once per turn
+  - @elevenlabs/client@1.14.1
+
 ## 0.14.8
 
 ### Patch Changes
