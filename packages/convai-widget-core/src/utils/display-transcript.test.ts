@@ -171,6 +171,54 @@ describe("buildDisplayTranscript", () => {
         expect(result[i]).toMatchObject(exp);
       });
     });
+
+    it("does not merge non-empty agent text segments separated by a tool call", () => {
+      // text > tool > text within the same turn (shared eventId). Both text
+      // segments have real content, so the second must not overwrite the first —
+      // a tool call separated them and the previous message is non-empty.
+      const input = [
+        msg("agent", "before tool", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "after tool", { eventId: 2 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ message: "before tool" });
+      expect(result[1]).toMatchObject({ message: "after tool" });
+    });
+
+    it("merges empty placeholders into the final message across tool calls", () => {
+      // The streamed flow brackets tool calls with empty placeholders, all
+      // sharing the turn's eventId. These collapse into the single real message —
+      // an empty previous message is folded in even across a tool.
+      const input = [
+        msg("agent", "", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Done", { eventId: 2 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ message: "Done" });
+    });
+
+    it("still merges a streamed partial into its finalized message after a tool", () => {
+      // The first segment ends, a tool runs, then a new segment streams a
+      // partial and finalizes. The partial/full pair (no tool between them)
+      // still collapses to the finalized message.
+      const input = [
+        msg("agent", "before tool", { eventId: 2 }),
+        toolReq(3),
+        toolRes(3),
+        msg("agent", "partial", { eventId: 3 }),
+        msg("agent", "full", { eventId: 3 }),
+      ];
+      const result = build(input);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ message: "before tool" });
+      expect(result[1]).toMatchObject({ message: "full" });
+    });
   });
 
   describe("tool status", () => {
@@ -234,6 +282,28 @@ describe("buildDisplayTranscript", () => {
       ];
       const result = build(input, { showAgentStatus: false });
       expect(result[0]).not.toHaveProperty("toolStatus");
+    });
+
+    it("attaches status to only the first bubble of a text → tool → text turn", () => {
+      // Two non-empty segments share the turn's eventId and stay as separate
+      // bubbles. The tool status attaches to the first (triggering) bubble only,
+      // so the badge is not duplicated across both.
+      const input = [
+        msg("agent", "Running the tool now.", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        msg("agent", "Tool completed successfully", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "Running the tool now.",
+        toolStatus: "success",
+      });
+      expect(result[1]).toMatchObject({
+        message: "Tool completed successfully",
+      });
+      expect(result[1]).not.toHaveProperty("toolStatus");
     });
   });
 
