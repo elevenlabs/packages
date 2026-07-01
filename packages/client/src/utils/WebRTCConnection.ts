@@ -282,12 +282,7 @@ export class WebRTCConnection extends BaseConnection {
       );
     }
 
-    const room = new Room({
-      // Force dual peer connection (v0) path to maintain compatibility
-      // with LiveKit servers that don't support the v1 join protocol
-      // (publisher offer bundled in JoinRequest). See #781.
-      singlePeerConnection: false,
-    });
+    const room = new Room();
 
     try {
       // Create connection instance first to set up event listeners
