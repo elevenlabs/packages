@@ -84,7 +84,13 @@ In the Extended Controls panel, enable "Virtual microphone uses host audio input
 
 ## Web
 
-Note that React Native Web is currently not supported. For web implementations please use the [ElevenLabs React SDK](https://elevenlabs.io/docs/conversational-ai/libraries/react).
+React Native Web is supported and has been since the v1 release of the SDK. You can run this example in the browser without a development build:
+
+```bash
+pnpm web
+```
+
+Or press `w` after starting the Expo dev server. Grant microphone permissions when prompted.
 
 ## Troubleshooting
 
