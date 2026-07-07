@@ -296,7 +296,7 @@ function useConversationSetup() {
                   type: "message",
                   role,
                   message,
-                  isText: false,
+                  isText: conversationTextOnly.peek() === true,
                   conversationIndex: conversationIndex.peek(),
                   eventId: event_id,
                 },

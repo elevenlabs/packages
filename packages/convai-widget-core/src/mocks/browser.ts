@@ -153,6 +153,16 @@ const codeBlock = true;
     default_expanded: true,
     first_message: `[Relative link](/relative)`,
   },
+  markdown_agent_response: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
+    first_message: "Agent response",
+  },
   tool_call: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -292,11 +302,15 @@ export const Worker = setupWorker(
         agentId !== "file_upload" &&
         agentId !== "no_file_upload"
       ) {
+        const agentResponse =
+          agentId === "markdown_agent_response"
+            ? "Read the [setup guide](https://example.com/setup)."
+            : "Another agent response";
         client.send(
           JSON.stringify({
             type: "agent_response",
             agent_response_event: {
-              agent_response: "Another agent response",
+              agent_response: agentResponse,
               event_id: 2,
             },
           })
