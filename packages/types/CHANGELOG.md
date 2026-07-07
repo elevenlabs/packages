@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.17.0
+
+### Minor Changes
+
+- d52d5f6: Allow null values for PingEvent
+
 ## 0.16.0
 
 ### Minor Changes
