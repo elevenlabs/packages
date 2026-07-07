@@ -1,10 +1,4 @@
-import {
-  Conversation,
-  Mode,
-  Role,
-  SessionConfig,
-  Status,
-} from "@elevenlabs/client";
+import { Conversation, Mode, SessionConfig, Status } from "@elevenlabs/client";
 import {
   computed,
   signal,
@@ -18,10 +12,24 @@ import { useSessionConfig } from "./session-config";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 import { useContextSafely } from "../utils/useContextSafely";
+import {
+  applyTranscriptEvent,
+  createIngestState,
+  type TranscriptIngestContext,
+  type TranscriptIngestEvent,
+  type TranscriptIngestState,
+  type TranscriptEntry,
+  type TranscriptFileInput,
+} from "../utils/transcript-events";
 import { useTerms } from "./terms";
 import { useFirstMessage, useWidgetConfig } from "./widget-config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
+
+export type {
+  TranscriptEntry,
+  TranscriptFileInput,
+} from "../utils/transcript-events";
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -32,54 +40,6 @@ export const ConversationContext = createContext<ConversationSetup | null>(
 interface ConversationProviderProps {
   children: ComponentChildren;
 }
-
-/** File metadata stored alongside a user message in the local transcript. */
-export type TranscriptFileInput = {
-  fileName: string;
-  mimeType: string;
-  previewUrl: string | null;
-};
-
-export type TranscriptEntry =
-  | {
-      type: "message";
-      role: Role;
-      message: string;
-      isText: boolean;
-      conversationIndex: number;
-      eventId?: number;
-      fileInput?: TranscriptFileInput | null;
-    }
-  | {
-      type: "agent_tool_request";
-      toolName: string;
-      toolCallId: string;
-      eventId: number;
-      conversationIndex: number;
-    }
-  | {
-      type: "agent_tool_response";
-      toolCallId: string;
-      eventId: number;
-      isError: boolean;
-      conversationIndex: number;
-    }
-  | {
-      type: "disconnection";
-      role: Role;
-      message?: undefined;
-      conversationIndex: number;
-    }
-  | {
-      type: "error";
-      message: string;
-      conversationIndex: number;
-    }
-  | {
-      type: "mode_toggle";
-      mode: ConversationMode;
-      conversationIndex: number;
-    };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
@@ -121,9 +81,7 @@ export function useCallButtonDisabled() {
 function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
-  const receivedFirstMessageRef = useRef(false);
-  const streamingMessageIndexRef = useRef<number | null>(null);
-  const isReceivingStreamRef = useRef(false);
+  const ingestStateRef = useRef<TranscriptIngestState>(createIngestState());
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shadowHost = useShadowHost();
 
@@ -174,6 +132,32 @@ function useConversationSetup() {
           isAgentTyping.value = false;
         }, durationMs);
       }
+    };
+
+    const ingestContext = (): TranscriptIngestContext => ({
+      isTextConversation: conversationTextOnly.peek() === true,
+      conversationIndex: conversationIndex.peek(),
+      suppressFirstAgentMessage:
+        !!firstMessage.peek() && conversationTextOnly.peek() === true,
+    });
+
+    // The only mutation path for the transcript: runs the pure ingest reducer
+    // and mirrors the resulting entries into the transcript signal. Returns
+    // whether the event was accepted (not dropped by first-message suppression).
+    const dispatchTranscriptEvent = (event: TranscriptIngestEvent): boolean => {
+      const result = applyTranscriptEvent(
+        ingestStateRef.current,
+        event,
+        ingestContext()
+      );
+      ingestStateRef.current = result.state;
+      transcript.value = result.state.entries;
+      return result.accepted;
+    };
+
+    const resetIngestState = () => {
+      ingestStateRef.current = createIngestState();
+      transcript.value = ingestStateRef.current.entries;
     };
 
     return {
@@ -230,17 +214,13 @@ function useConversationSetup() {
         }
 
         conversationTextOnly.value = processedConfig.textOnly ?? false;
-        transcript.value = initialMessage
-          ? [
-              {
-                type: "message",
-                role: "user",
-                message: initialMessage,
-                isText: true,
-                conversationIndex: conversationIndex.peek(),
-              },
-            ]
-          : [];
+        resetIngestState();
+        if (initialMessage) {
+          dispatchTranscriptEvent({
+            type: "user_message",
+            message: initialMessage,
+          });
+        }
 
         try {
           lockRef.current = Conversation.startSession({
@@ -255,122 +235,42 @@ function useConversationSetup() {
               canSendFeedback.value = props.canSendFeedback;
             },
             onMessage: ({ role, message, event_id }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                role === "agent" &&
-                !receivedFirstMessageRef.current
-              ) {
-                receivedFirstMessageRef.current = true;
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
-                return;
-              } else if (role === "agent") {
-                receivedFirstMessageRef.current = true;
+              const accepted = dispatchTranscriptEvent({
+                type: "message",
+                role,
+                message,
+                eventId: event_id,
+              });
+              if (accepted && role === "agent") {
                 setAgentTyping(false);
               }
-
-              if (role === "agent" && isReceivingStreamRef.current) {
-                const streamingIndex = streamingMessageIndexRef.current;
-                if (streamingIndex !== null) {
-                  const currentTranscript = transcript.peek();
-                  const updatedTranscript = [...currentTranscript];
-                  updatedTranscript[streamingIndex] = {
-                    type: "message",
-                    role: "agent",
-                    message,
-                    isText: conversationTextOnly.peek() === true,
-                    conversationIndex: conversationIndex.peek(),
-                    eventId: event_id,
-                  };
-                  transcript.value = updatedTranscript;
-                }
-                isReceivingStreamRef.current = false;
-                return;
-              }
-
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "message",
-                  role,
-                  message,
-                  isText: conversationTextOnly.peek() === true,
-                  conversationIndex: conversationIndex.peek(),
-                  eventId: event_id,
-                },
-              ];
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                !receivedFirstMessageRef.current
-              ) {
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
-                return;
-              }
-              setAgentTyping(false);
-
-              if (type === "start") {
-                isReceivingStreamRef.current = true;
-                const currentTranscript = transcript.peek();
-                streamingMessageIndexRef.current = currentTranscript.length;
-                transcript.value = [
-                  ...currentTranscript,
-                  {
-                    type: "message",
-                    role: "agent",
-                    message: "",
-                    isText: conversationTextOnly.peek() === true,
-                    conversationIndex: conversationIndex.peek(),
-                    eventId: event_id,
-                  },
-                ];
-              } else if (type === "delta") {
-                const streamingIndex = streamingMessageIndexRef.current;
-                if (streamingIndex !== null && text) {
-                  const currentTranscript = transcript.peek();
-                  const entry = currentTranscript[streamingIndex];
-                  if (entry.type === "message") {
-                    const updatedTranscript = [...currentTranscript];
-                    updatedTranscript[streamingIndex] = {
-                      ...entry,
-                      message: entry.message + text,
-                    };
-                    transcript.value = updatedTranscript;
-                  }
-                }
-              } else if (type === "stop") {
-                streamingMessageIndexRef.current = null;
+              const accepted = dispatchTranscriptEvent({
+                type: "response_part",
+                part: type,
+                text,
+                eventId: event_id,
+              });
+              if (accepted) {
+                setAgentTyping(false);
               }
             },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "agent_tool_request",
-                  toolName: tool_name,
-                  toolCallId: tool_call_id,
-                  eventId: event_id,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
+              dispatchTranscriptEvent({
+                type: "tool_request",
+                toolName: tool_name,
+                toolCallId: tool_call_id,
+                eventId: event_id,
+              });
             },
             onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "agent_tool_response",
-                  toolCallId: tool_call_id,
-                  eventId: event_id,
-                  isError: is_error,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
+              dispatchTranscriptEvent({
+                type: "tool_response",
+                toolCallId: tool_call_id,
+                isError: is_error,
+                eventId: event_id,
+              });
             },
             onAgentTyping: ({ is_typing, duration_ms }) => {
               setAgentTyping(is_typing, duration_ms);
@@ -379,27 +279,18 @@ function useConversationSetup() {
               isExternalAgentMode.value = true;
             },
             onDisconnect: details => {
-              receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
-              streamingMessageIndexRef.current = null;
-              isReceivingStreamRef.current = false;
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
-              transcript.value = [
-                ...transcript.peek(),
+              dispatchTranscriptEvent(
                 details.reason === "error"
-                  ? {
-                      type: "error",
-                      message: details.message,
-                      conversationIndex: conversationIndex.peek(),
-                    }
+                  ? { type: "error", message: details.message }
                   : {
                       type: "disconnection",
                       role: details.reason === "user" ? "user" : "agent",
-                      conversationIndex: conversationIndex.peek(),
-                    },
-              ];
+                    }
+              );
               conversationIndex.value++;
               if (details.reason === "error") {
                 error.value = details.message;
@@ -430,14 +321,7 @@ function useConversationSetup() {
             message = e.message || message;
           }
           error.value = message;
-          transcript.value = [
-            ...transcript.value,
-            {
-              type: "error",
-              message,
-              conversationIndex: conversationIndex.peek(),
-            },
-          ];
+          dispatchTranscriptEvent({ type: "error", message });
         } finally {
           lockRef.current = null;
         }
@@ -464,16 +348,7 @@ function useConversationSetup() {
       },
       sendUserMessage: (text: string) => {
         conversationRef.current?.sendUserMessage(text);
-        transcript.value = [
-          ...transcript.value,
-          {
-            type: "message",
-            role: "user",
-            message: text,
-            isText: true,
-            conversationIndex: conversationIndex.peek(),
-          },
-        ];
+        dispatchTranscriptEvent({ type: "user_message", message: text });
       },
       sendMultimodalMessage: (input: {
         text?: string;
@@ -485,17 +360,11 @@ function useConversationSetup() {
           text: trimmed || undefined,
           fileId,
         });
-        transcript.value = [
-          ...transcript.value,
-          {
-            type: "message",
-            role: "user",
-            message: trimmed,
-            isText: true,
-            conversationIndex: conversationIndex.peek(),
-            fileInput,
-          },
-        ];
+        dispatchTranscriptEvent({
+          type: "user_message",
+          message: trimmed,
+          fileInput,
+        });
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
@@ -506,14 +375,7 @@ function useConversationSetup() {
       addModeToggleEntry: (mode: ConversationMode) => {
         // Only add entry if conversation is active
         if (!conversationRef.current?.isOpen()) return;
-        transcript.value = [
-          ...transcript.value,
-          {
-            type: "mode_toggle",
-            mode,
-            conversationIndex: conversationIndex.peek(),
-          },
-        ];
+        dispatchTranscriptEvent({ type: "mode_toggle", mode });
       },
     };
   }, [config]);
