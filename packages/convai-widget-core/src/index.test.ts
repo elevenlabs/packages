@@ -465,6 +465,25 @@ describe("elevenlabs-convai", () => {
   });
 
   describe("markdown link allowlist", () => {
+    it("should render links from bare text-only agent responses", async () => {
+      setupWebComponent({
+        "agent-id": "markdown_agent_response",
+        variant: "compact",
+      });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Text message");
+      await userEvent.keyboard("{Enter}");
+
+      const link = page.getByRole("link", { name: "setup guide" });
+      await expect.element(link).toBeInTheDocument();
+      await expect
+        .element(link)
+        .toHaveAttribute("href", "https://example.com/setup");
+    });
+
     it("should allow widget domain by default when config omits allowlist", async () => {
       setupWebComponent({
         "agent-id": "markdown_default_domain",
