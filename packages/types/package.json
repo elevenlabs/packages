@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/types",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "AsyncAPI contracts and generated TypeScript types for ElevenLabs agent communication",
   "license": "MIT",
   "type": "module",
