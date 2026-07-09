@@ -93,8 +93,6 @@ export const loadedTranslations = signal<
 const inFlight = new Set<Language>();
 
 export function ensureTranslationLoaded(language: Language): void {
-  console.log("in translations index", loadedTranslations);
-
   if (loadedTranslations.peek()[language] || inFlight.has(language)) {
     return;
   }
