@@ -1,7 +1,13 @@
-import { computed, ReadonlySignal, useComputed } from "@preact/signals";
+import {
+  computed,
+  ReadonlySignal,
+  useComputed,
+  useSignalEffect,
+} from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 import { DefaultTextContents, TextContents, TextKeys } from "../types/config";
+import { ensureTranslationLoaded, loadedTranslations } from "../translations";
 import { useAttribute } from "./attributes";
 import { useWidgetConfig } from "./widget-config";
 
@@ -37,6 +43,10 @@ export function TextContentsProvider({ children }: TextContentsProviderProps) {
     return {};
   });
 
+  useSignalEffect(() => {
+    ensureTranslationLoaded(language.value.languageCode);
+  });
+
   const value = useMemo(() => {
     return Object.fromEntries(
       TextKeys.map(key => [
@@ -47,6 +57,7 @@ export function TextContentsProvider({ children }: TextContentsProviderProps) {
             config.value.language_presets?.[language.value.languageCode]
               ?.text_contents?.[key] ??
             config.value.text_contents?.[key] ??
+            loadedTranslations.value[language.value.languageCode]?.[key] ??
             DefaultTextContents[key]
         ),
       ])
