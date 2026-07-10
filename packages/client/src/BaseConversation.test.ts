@@ -210,6 +210,61 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("ping events", () => {
+    it("replies with a pong and forwards the payload to onPing", async () => {
+      const onPing = vi.fn();
+      const onDebug = vi.fn();
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onPing, onDebug },
+        connection
+      );
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 99,
+          ping_ms: 42,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 99,
+      });
+      expect(onPing).toHaveBeenCalledWith({
+        event_id: 99,
+        ping_ms: 42,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("still replies with a pong when no onPing callback is provided", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create({}, connection);
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 7,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 7,
+      });
+    });
+  });
+
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",

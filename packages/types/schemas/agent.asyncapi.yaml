@@ -1157,7 +1157,7 @@ components:
           anyOf:
             - type: integer
             - type: "null"
-          description: Estimated round-trip time in milliseconds
+          description: Estimated ping in milliseconds, based on previous ping/pong timing.
 
     ASRInitiationMetadataPayload:
       type: object

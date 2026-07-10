@@ -45,6 +45,7 @@ export type HookCallbacks = Pick<
   | "onGuardrailTriggered"
   | "onAgentTyping"
   | "onExternalAgentConnected"
+  | "onPing"
 >;
 
 export type HookOptions = Partial<
