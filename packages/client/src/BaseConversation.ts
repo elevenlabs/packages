@@ -18,6 +18,7 @@ import type {
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
+  PingEvent,
   UserTranscriptionEvent,
   VadScoreEvent,
   MCPToolCallClientEvent,
@@ -137,6 +138,7 @@ export abstract class BaseConversation {
       onAgentResponseCorrection: () => {},
       onAgentTyping: () => {},
       onExternalAgentConnected: () => {},
+      onPing: () => {},
       ...partialOptions,
       textOnly,
       overrides: {
@@ -270,6 +272,12 @@ export abstract class BaseConversation {
       this.options.onVadScore({
         vadScore: event.vad_score_event.vad_score,
       });
+    }
+  }
+
+  protected handlePing(event: PingEvent) {
+    if (this.options.onPing) {
+      this.options.onPing(event.ping_event);
     }
   }
 
@@ -490,8 +498,10 @@ export abstract class BaseConversation {
           type: "pong",
           event_id: parsedEvent.ping_event.event_id,
         });
-        // parsedEvent.ping_event.ping_ms can be used on client side, for example
-        // to warn if ping is too high that experience might be degraded.
+        // Surface the ping event (including the estimated `ping_ms`) so
+        // consumers can, for example, warn when latency is high enough to
+        // degrade the experience.
+        this.handlePing(parsedEvent);
         return;
       }
 
