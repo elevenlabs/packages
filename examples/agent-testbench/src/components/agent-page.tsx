@@ -38,6 +38,7 @@ const EVENT_METHOD_NAMES = [
   "onAgentChatResponsePart",
   "onAudioAlignment",
   "onGuardrailTriggered",
+  "onPing",
   "onDebug",
 ] satisfies (keyof PartialOptions)[];
 
