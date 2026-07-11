@@ -457,6 +457,106 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("normalizes malformed WebSocket messages as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.send("not valid JSON");
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message_type: "error",
+          error: expect.stringContaining("Failed to parse message:"),
+        })
+      );
+
+      connection.close();
+      server.close();
+    });
+
+    it("normalizes WebSocket error events as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.target.dispatchEvent(new Event("error"));
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith({
+        message_type: "error",
+        error: "WebSocket error",
+      });
+
+      connection.close();
+      server.close();
+    });
+
+    it("normalizes unexpected WebSocket closes as Scribe errors", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      const onError = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+      client.close({ code: 1011, reason: "server failed", wasClean: false });
+
+      await sleep(100);
+      expect(onError).toHaveBeenCalledWith({
+        message_type: "error",
+        error: "WebSocket closed unexpectedly: 1011 - server failed",
+      });
+
+      server.close();
+    });
+
     it("handles auth_error event", async () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=test-token-123"
