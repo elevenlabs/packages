@@ -92,6 +92,24 @@ class EventEmitter {
   }
 }
 
+function normalizeError(error: unknown): ScribeErrorMessage {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message_type" in error &&
+    "error" in error &&
+    typeof error.message_type === "string" &&
+    typeof error.error === "string"
+  ) {
+    return error as ScribeErrorMessage;
+  }
+
+  return {
+    message_type: "error",
+    error: error instanceof Error ? error.message : String(error),
+  };
+}
+
 /**
  * Events emitted by the RealtimeConnection.
  */
@@ -366,16 +384,13 @@ export class RealtimeConnection {
         }
       } catch (error) {
         console.error("Failed to parse WebSocket message:", error, event.data);
-        this.eventEmitter.emit(
-          RealtimeEvents.ERROR,
-          new Error(`Failed to parse message: ${error}`)
-        );
+        this._emitError(new Error(`Failed to parse message: ${error}`));
       }
     });
 
     this.websocket.addEventListener("error", (error: Event) => {
       console.error("WebSocket error:", error);
-      this.eventEmitter.emit(RealtimeEvents.ERROR, error);
+      this._emitError(new Error("WebSocket error"));
     });
 
     this.websocket.addEventListener("close", (event: CloseEvent) => {
@@ -387,7 +402,7 @@ export class RealtimeConnection {
       if (!event.wasClean || (event.code !== 1000 && event.code !== 1005)) {
         const errorMessage = `WebSocket closed unexpectedly: ${event.code} - ${event.reason || "No reason provided"}`;
         console.error(errorMessage);
-        this.eventEmitter.emit(RealtimeEvents.ERROR, new Error(errorMessage));
+        this._emitError(new Error(errorMessage));
       }
 
       this.eventEmitter.emit(RealtimeEvents.CLOSE, event);
@@ -446,6 +461,11 @@ export class RealtimeConnection {
       : (data: RealtimeEventMap[E]) => void
   ): void {
     this.eventEmitter.off(event, listener as (...args: unknown[]) => void);
+  }
+
+  /** @internal Report a local failure through the public Scribe error event. */
+  public _emitError(error: unknown): void {
+    this.eventEmitter.emit(RealtimeEvents.ERROR, normalizeError(error));
   }
 
   /**
