@@ -30,8 +30,8 @@
   "author": "ElevenLabs",
   "license": "MIT",
   "peerDependencies": {
-    "@livekit/react-native": "^2.9.2",
-    "@livekit/react-native-webrtc": "^137.0.2",
+    "@livekit/react-native": "^2.11.0",
+    "@livekit/react-native-webrtc": "^144.1.0",
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
   },
