@@ -281,7 +281,7 @@ export class ScribeRealtime {
       connection._audioCleanup = result.cleanup;
     } catch (error) {
       console.error("Failed to start microphone streaming:", error);
-      throw error;
+      connection._emitError(error);
     }
   }
 }
