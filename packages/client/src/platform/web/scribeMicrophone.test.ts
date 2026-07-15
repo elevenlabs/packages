@@ -66,6 +66,22 @@ describe("webScribeMicrophoneSetup", () => {
     vi.unstubAllGlobals();
   });
 
+  it("retains the successful setup cleanup behavior", async () => {
+    const { audioContext, scribeNode, source, track } =
+      installAudioEnvironment();
+    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+    const result = await webScribeMicrophoneSetup({}, vi.fn());
+    result.cleanup();
+
+    expect(result.mediaStreamTrack).toBe(track);
+    expect(source.connect).toHaveBeenCalledWith(scribeNode);
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(source.disconnect).toHaveBeenCalledOnce();
+    expect(scribeNode.disconnect).toHaveBeenCalledOnce();
+    expect(audioContext.close).toHaveBeenCalledOnce();
+  });
+
   it("releases the stream and AudioContext when worklet loading fails", async () => {
     const { audioContext, track } = installAudioEnvironment();
     const workletError = new Error("worklet blocked");
