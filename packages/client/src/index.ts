@@ -32,6 +32,7 @@ export type {
 export type {
   IncomingSocketEvent,
   VadScoreEvent,
+  PingEvent,
   AudioAlignmentEvent,
 } from "./utils/events.js";
 export type {

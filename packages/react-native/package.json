@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react-native",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "ElevenLabs React Native SDK for the Agents Platform",
   "type": "module",
   "exports": {

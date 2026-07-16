@@ -290,7 +290,7 @@ export class ScribeRealtime {
       }
     } catch (error) {
       console.error("Failed to start microphone streaming:", error);
-      throw error;
+      connection._emitError(error);
     }
   }
 }

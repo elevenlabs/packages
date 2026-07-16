@@ -210,6 +210,61 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("ping events", () => {
+    it("replies with a pong and forwards the payload to onPing", async () => {
+      const onPing = vi.fn();
+      const onDebug = vi.fn();
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onPing, onDebug },
+        connection
+      );
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 99,
+          ping_ms: 42,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 99,
+      });
+      expect(onPing).toHaveBeenCalledWith({
+        event_id: 99,
+        ping_ms: 42,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("still replies with a pong when no onPing callback is provided", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create({}, connection);
+
+      await conversation.receiveMessage({
+        type: "ping",
+        ping_event: {
+          event_id: 7,
+        },
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "pong",
+        event_id: 7,
+      });
+    });
+  });
+
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",
@@ -365,6 +420,62 @@ describe("BaseConversation", () => {
         reason: "error",
         message: "Maximum duration exceeded",
         context: { type: "max_duration_exceeded" },
+      });
+    });
+  });
+
+  describe("error events", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("surfaces a non-terminal server error via onError", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onError });
+
+      await conversation.receiveMessage({
+        type: "error",
+        error_event: {
+          code: 1008 as const,
+          error_type: "override_error",
+          message: "Override not allowed",
+        },
+      });
+
+      expect(onError).toHaveBeenCalledWith(
+        "Server error: Override not allowed",
+        {
+          errorType: "override_error",
+          code: 1008,
+          debugMessage: undefined,
+          details: undefined,
+        }
+      );
+    });
+
+    it("does not throw when the error message has no error_event payload", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onError });
+
+      // The orchestrator can emit an `error` message without a populated
+      // `error_event`. This must surface via onError, not throw a TypeError
+      // ("Cannot read properties of undefined (reading 'error_type')") that
+      // escapes the message dispatcher and crashes the consumer.
+      const malformedError = { type: "error" } as unknown as Parameters<
+        typeof conversation.receiveMessage
+      >[0];
+
+      await expect(
+        conversation.receiveMessage(malformedError)
+      ).resolves.toBeUndefined();
+
+      expect(onError).toHaveBeenCalledWith("Server error: Unknown error", {
+        errorType: undefined,
+        code: undefined,
+        debugMessage: undefined,
+        details: undefined,
       });
     });
   });

@@ -13,6 +13,7 @@ import type {
   Interruption,
   AgentResponseCorrection,
   AgentChatResponsePartClientEvent,
+  Ping,
 } from "@elevenlabs/types";
 
 /**
@@ -123,6 +124,16 @@ export type Callbacks = {
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;
+  /**
+   * Called for every `ping` event received from the server. The SDK
+   * automatically replies with a `pong`, so this callback is purely
+   * informational — a common use is surfacing connection latency to the user.
+   *
+   * The `ping_ms` property is the estimated ping in milliseconds, based on
+   * previous ping/pong timing. It may be `undefined` or `null` when no
+   * estimate is available yet.
+   */
+  onPing?: (props: Ping["ping_event"]) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
 };
@@ -155,5 +166,6 @@ export const CALLBACK_KEYS = [
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",
+  "onPing",
   "onDebug",
 ] as const satisfies readonly (keyof Callbacks)[];
