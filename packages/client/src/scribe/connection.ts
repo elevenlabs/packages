@@ -216,6 +216,8 @@ export class RealtimeConnection {
   private eventEmitter: EventEmitter = new EventEmitter();
   private currentSampleRate: number = 16000;
   private _muted: boolean = false;
+  /** @internal True once the socket is gone (via close() or a server close); read by ScribeRealtime to abort a racing mic setup. */
+  public _closed: boolean = false;
   public _audioCleanup?: () => void;
   /** @internal Set by ScribeRealtime in microphone mode to enable track-level muting. */
   public _mediaStreamTrack?: MediaStreamTrack;
@@ -389,20 +391,39 @@ export class RealtimeConnection {
     });
 
     this.websocket.addEventListener("error", (error: Event) => {
+      // Aborting a still-connecting socket fires an error event; an
+      // app-initiated close() is expected, not a failure.
+      if (this._closed) return;
       console.error("WebSocket error:", error);
       this._emitError(new Error("WebSocket error"));
     });
 
     this.websocket.addEventListener("close", (event: CloseEvent) => {
-      console.log(
-        `WebSocket closed: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}`
-      );
+      // close() sets _closed before closing the socket; a server-initiated
+      // close reaches this listener with _closed still false.
+      const appInitiated = this._closed;
+      this._closed = true;
 
-      // Emit error if close was not clean or had an error code
-      if (!event.wasClean || (event.code !== 1000 && event.code !== 1005)) {
-        const errorMessage = `WebSocket closed unexpectedly: ${event.code} - ${event.reason || "No reason provided"}`;
-        console.error(errorMessage);
-        this._emitError(new Error(errorMessage));
+      // An app-initiated close is expected. Closing a still-connecting socket
+      // yields code 1006, which would otherwise log/emit as an unexpected error.
+      if (!appInitiated) {
+        console.log(
+          `WebSocket closed: code=${event.code}, reason="${event.reason}", wasClean=${event.wasClean}`
+        );
+
+        // Emit error if close was not clean or had an error code
+        if (!event.wasClean || (event.code !== 1000 && event.code !== 1005)) {
+          const errorMessage = `WebSocket closed unexpectedly: ${event.code} - ${event.reason || "No reason provided"}`;
+          console.error(errorMessage);
+          this._emitError(new Error(errorMessage));
+        }
+      }
+
+      // A server-initiated close only fires this listener, never close(), so
+      // release the microphone here too. Guarded so it never double-runs.
+      if (this._audioCleanup) {
+        this._audioCleanup();
+        this._audioCleanup = undefined;
       }
 
       this.eventEmitter.emit(RealtimeEvents.CLOSE, event);
@@ -573,9 +594,14 @@ export class RealtimeConnection {
    * ```
    */
   public close(): void {
+    // Flag first so a mic setup still resolving (see ScribeRealtime.
+    // streamFromMicrophone) can tell the connection is gone and clean up.
+    this._closed = true;
+
     // Cleanup audio resources (microphone stream, audio context)
     if (this._audioCleanup) {
       this._audioCleanup();
+      this._audioCleanup = undefined;
     }
 
     // Close WebSocket connection

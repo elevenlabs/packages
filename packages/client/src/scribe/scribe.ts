@@ -274,11 +274,20 @@ export class ScribeRealtime {
     try {
       const setup = getScribeMicrophoneSetup();
       const result = await setup(options.microphone ?? {}, base64Audio => {
+        // A frame can arrive after close(); send() throws on a closed socket.
+        if (connection._closed) return;
         connection.send({ audioBase64: base64Audio });
       });
 
       connection._mediaStreamTrack = result.mediaStreamTrack;
       connection._audioCleanup = result.cleanup;
+
+      // close() may have run while this setup was in flight, before
+      // _audioCleanup was assigned; release the mic now so it does not leak.
+      if (connection._closed) {
+        result.cleanup();
+        connection._audioCleanup = undefined;
+      }
     } catch (error) {
       console.error("Failed to start microphone streaming:", error);
       connection._emitError(error);

@@ -1017,6 +1017,136 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("releases the microphone when close() races the async mic setup", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+      let capturedOnAudioData: ((base64: string) => void) | null = null;
+      let resolveSetup: (() => void) | null = null;
+
+      const mockSetup = vi.fn((_config, onAudioData) => {
+        capturedOnAudioData = onAudioData;
+        return new Promise<{
+          mediaStreamTrack: MediaStreamTrack;
+          cleanup: () => void;
+        }>(resolve => {
+          resolveSetup = () =>
+            resolve({ mediaStreamTrack: mockTrack, cleanup });
+        });
+      });
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: { echoCancellation: true },
+      });
+
+      const client = await clientPromise;
+      const onMessage = vi.fn();
+      client.on("message", onMessage);
+
+      // Mic setup has started (on socket open) but has not resolved yet.
+      await sleep(100);
+      expect(mockSetup).toHaveBeenCalledTimes(1);
+      expect(resolveSetup).not.toBeNull();
+
+      // User releases before the mic pipeline is wired up.
+      connection.close();
+
+      // The pipeline finishes resolving afterwards.
+      resolveSetup!();
+      await sleep(50);
+
+      // Cleanup runs immediately even though close() ran before it was assigned.
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      // A late audio frame is dropped rather than sent on the closed socket,
+      // and does not throw "WebSocket is not connected".
+      expect(capturedOnAudioData).not.toBeNull();
+      expect(() => capturedOnAudioData!("dGVzdA==")).not.toThrow();
+      await sleep(50);
+      expect(onMessage).not.toHaveBeenCalled();
+
+      server.close();
+    });
+
+    it("releases the microphone when the server closes the socket", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+
+      const mockSetup = vi.fn((_config, _onAudioData) =>
+        Promise.resolve({ mediaStreamTrack: mockTrack, cleanup })
+      );
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: { echoCancellation: true },
+      });
+
+      const client = await clientPromise;
+      const onClose = vi.fn();
+      connection.on(RealtimeEvents.CLOSE, onClose);
+
+      await sleep(100);
+      expect(cleanup).not.toHaveBeenCalled();
+
+      // Server drops the connection; the consumer never calls close().
+      client.close();
+      await sleep(100);
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      server.close();
+    });
+
+    it("does not emit an error when close() aborts a still-connecting socket", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      const onError = vi.fn();
+      const onClose = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+      connection.on(RealtimeEvents.CLOSE, onClose);
+
+      // Release immediately, before the handshake completes.
+      connection.close();
+      await sleep(100);
+
+      expect(onError).not.toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      server.close();
+    });
+
     it("emits an error instead of rejecting when microphone setup fails", async () => {
       const setupError = new Error("microphone permission denied");
       setScribeMicrophoneSetup(() => Promise.reject(setupError));
@@ -1035,6 +1165,7 @@ describe("Scribe", () => {
         modelId: TEST_MODEL_ID,
         microphone: { echoCancellation: true },
       });
+
       const onError = vi.fn();
       connection.on(RealtimeEvents.ERROR, onError);
 
