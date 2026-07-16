@@ -1,5 +1,18 @@
 # @elevenlabs/client
 
+## 1.15.1
+
+### Patch Changes
+
+- df7f31a: Scribe realtime now reports microphone setup failures through `RealtimeEvents.ERROR` instead of leaving an unhandled rejection. Generic local Scribe errors now use the same typed error payload as server errors.
+- bb001b1: Release microphone resources when Scribe setup fails after capture starts.
+- d8892fd: Guard `handleErrorEvent` against `error` messages that arrive without a populated `error_event` payload. Previously the handler read `event.error_event.error_type` directly, so a malformed error message threw an unhandled `TypeError: Cannot read properties of undefined (reading 'error_type')` from inside the message dispatcher. Because the `"error"` case is not wrapped in a try/catch, the throw escaped `onMessage` and crashed the consumer instead of surfacing through `onError`. The payload is now read defensively and always routed to `onError`.
+- 0f12b01: Scribe realtime (microphone mode): release the microphone reliably on teardown.
+  - Closing the connection while the async microphone setup is still resolving no longer leaks the `MediaStreamTrack`/`AudioContext`; the pipeline is torn down as soon as setup finishes.
+  - A microphone frame that arrives after the socket is gone is now dropped instead of throwing `WebSocket is not connected`.
+  - A server-initiated close now releases the microphone too, so consumers reacting to the `CLOSE` event without calling `close()` are not left with a live microphone.
+  - An app-initiated `close()` that aborts a still-connecting socket no longer logs a spurious `WebSocket closed unexpectedly: 1006` / emits `ERROR`.
+
 ## 1.15.0
 
 ### Minor Changes
