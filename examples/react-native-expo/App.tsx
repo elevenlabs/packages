@@ -58,6 +58,10 @@ const ConversationScreen = () => {
       connectionType,
       userId: "demo-user",
       textOnly: isTextOnly || undefined,
+      ...(connectionType === "webrtc" &&
+        process.env.EXPO_PUBLIC_SERVER_URL && {
+          serverUrl: process.env.EXPO_PUBLIC_SERVER_URL,
+        }),
     });
   };
 
