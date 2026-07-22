@@ -81,7 +81,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               "block whitespace-nowrap max-w-64 truncate",
               variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
-            >
+          >
             {children}
           </span>
         </SizeTransition>
