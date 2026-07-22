@@ -26,7 +26,10 @@ function Playground() {
 
   return (
     <div className="playground">
-      <PlaygroundSettingsPanel state={state} onToggleExpand={handleToggleExpand} />
+      <PlaygroundSettingsPanel
+        state={state}
+        onToggleExpand={handleToggleExpand}
+      />
       <div ref={ref} className="dev-host">
         <ConvAIWidget
           agent-id={import.meta.env.VITE_AGENT_ID}
@@ -40,6 +43,7 @@ function Playground() {
           allow-events={JSON.stringify(state.allowEvents)}
           dismissible={JSON.stringify(state.dismissible)}
           show-agent-status={JSON.stringify(state.showAgentStatus)}
+          hide-resize-button={JSON.stringify(state.hideResizeButton)}
           dynamic-variables={JSON.stringify(state.dynamicVariables)}
           server-location={state.location}
           override-first-message={
