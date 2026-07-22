@@ -55,7 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "h-9 flex px-2.5 text-sm items-center transition-[colors,opacity] justify-center rounded-button duration-200 focus-ring overflow-hidden select-none cursor-pointer",
+          "h-9 flex px-2.5 text-sm items-center transition-[colors,opacity] justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
           "disabled:opacity-50 disabled:pointer-events-none",
           VARIANT_CLASSES[variant],
           iconOnly && "min-w-9",
@@ -81,7 +81,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               "block whitespace-nowrap max-w-64 truncate",
               variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
-            >
+          >
             {children}
           </span>
         </SizeTransition>

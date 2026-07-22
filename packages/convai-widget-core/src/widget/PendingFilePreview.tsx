@@ -61,7 +61,7 @@ export function PendingFilePreview({
         type="button"
         onClick={onRemove}
         aria-label={text.remove_file.value}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 !mt-0 text-base-subtle hover:text-base-primary transition-colors cursor-pointer"
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 !mt-0 text-base-subtle hover:text-base-primary transition-colors"
       >
         <Icon name="x" size="sm" />
       </button>
