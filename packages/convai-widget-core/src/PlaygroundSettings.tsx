@@ -21,7 +21,7 @@ export function usePlaygroundSettings() {
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
   const [dismissible, setDismissible] = useState(false);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
-  const [hideResizeButton, setHideResizeButton] = useState(false);
+  const [showResizeButton, setShowResizeButton] = useState(true);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [allowEvents, setAllowEvents] = useState(false);
@@ -68,8 +68,8 @@ export function usePlaygroundSettings() {
     setDismissible,
     showAgentStatus,
     setShowAgentStatus,
-    hideResizeButton,
-    setHideResizeButton,
+    showResizeButton,
+    setShowResizeButton,
     dynamicVariablesStr,
     setDynamicVariablesStr,
     dynamicVariables,
@@ -188,10 +188,10 @@ export function PlaygroundSettingsPanel({
       <label>
         <input
           type="checkbox"
-          checked={state.hideResizeButton}
-          onChange={e => state.setHideResizeButton(e.currentTarget.checked)}
+          checked={state.showResizeButton}
+          onChange={e => state.setShowResizeButton(e.currentTarget.checked)}
         />{" "}
-        Hide resize button
+        Show resize button
       </label>
       <label>
         Dynamic variables (i.e., new-line separated name=value)

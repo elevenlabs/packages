@@ -56,7 +56,7 @@ export const CustomAttributeList = [
   "allow-events",
   "show-agent-status",
   "show-conversation-id",
-  "hide-resize-button",
+  "show-resize-button",
   "environment",
 ] as const;
 

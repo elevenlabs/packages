@@ -83,7 +83,7 @@ export interface WidgetConfig {
     enabled?: boolean;
     max_files_per_conversation?: number;
   };
-  hide_resize_button?: boolean;
+  show_resize_button?: boolean;
 }
 
 export type AvatarConfig =

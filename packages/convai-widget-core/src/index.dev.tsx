@@ -43,7 +43,7 @@ function Playground() {
           allow-events={JSON.stringify(state.allowEvents)}
           dismissible={JSON.stringify(state.dismissible)}
           show-agent-status={JSON.stringify(state.showAgentStatus)}
-          hide-resize-button={JSON.stringify(state.hideResizeButton)}
+          show-resize-button={JSON.stringify(state.showResizeButton)}
           dynamic-variables={JSON.stringify(state.dynamicVariables)}
           server-location={state.location}
           override-first-message={

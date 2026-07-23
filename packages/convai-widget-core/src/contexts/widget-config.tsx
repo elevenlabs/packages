@@ -104,7 +104,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const useRtc = useAttribute("use-rtc");
   const showAgentStatus = useAttribute("show-agent-status");
   const showConversationId = useAttribute("show-conversation-id");
-  const hideResizeButton = useAttribute("hide-resize-button");
+  const showResizeButton = useAttribute("show-resize-button");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -155,10 +155,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(showConversationId.value) ??
       fetchedConfig.value.show_conversation_id ??
       true;
-    const patchedHideResizeButton =
-      parseBoolAttribute(hideResizeButton.value) ??
-      fetchedConfig.value.hide_resize_button ??
-      false;
+    const patchedShowResizeButton =
+      parseBoolAttribute(showResizeButton.value) ??
+      fetchedConfig.value.show_resize_button ??
+      true;
 
     return {
       ...fetchedConfig.value,
@@ -175,7 +175,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       use_rtc: patchedUseRtc,
       show_agent_status: patchedShowAgentStatus,
       show_conversation_id: patchedShowConversationId,
-      hide_resize_button: patchedHideResizeButton,
+      show_resize_button: patchedShowResizeButton,
     };
   });
 

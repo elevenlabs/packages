@@ -94,7 +94,7 @@ export function Sheet({ open }: SheetProps) {
   );
 
   const showExpandButton = useComputed(
-    () => showTranscript.value && !config.value.hide_resize_button
+    () => showTranscript.value && (config.value.show_resize_button ?? true)
   );
 
   return (
