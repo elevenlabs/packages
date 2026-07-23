@@ -37,17 +37,18 @@ function Playground() {
       "allow-events": JSON.stringify(state.allowEvents),
       dismissible: JSON.stringify(state.dismissible),
       "show-agent-status": JSON.stringify(state.showAgentStatus),
+      "show-resize-button": JSON.stringify(state.showResizeButton),
       "dynamic-variables": JSON.stringify(state.dynamicVariables),
       "server-location": state.location,
       "override-first-message": state.overrideFirstMessage
         ? state.firstMessage
         : undefined,
     };
-    
+
     for (const [key, value] of Object.entries(attrs)) {
       if (value != null) el.setAttribute(key, value);
     }
-    
+
     container.appendChild(el);
 
     return () => {
@@ -64,6 +65,7 @@ function Playground() {
     state.allowEvents,
     state.dismissible,
     state.showAgentStatus,
+    state.showResizeButton,
     state.dynamicVariables,
     state.location,
     state.overrideFirstMessage,
@@ -81,7 +83,10 @@ function Playground() {
 
   return (
     <div className="playground">
-      <PlaygroundSettingsPanel state={state} onToggleExpand={handleToggleExpand} />
+      <PlaygroundSettingsPanel
+        state={state}
+        onToggleExpand={handleToggleExpand}
+      />
       <div ref={ref} />
     </div>
   );

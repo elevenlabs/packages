@@ -93,7 +93,9 @@ export function Sheet({ open }: SheetProps) {
       !isDisconnected.value
   );
 
-  const showExpandButton = useComputed(() => showTranscript.value);
+  const showExpandButton = useComputed(
+    () => showTranscript.value && (config.value.show_resize_button ?? true)
+  );
 
   return (
     <InOutTransition initial={false} active={open}>

@@ -21,6 +21,7 @@ export function usePlaygroundSettings() {
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
   const [dismissible, setDismissible] = useState(false);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
+  const [showResizeButton, setShowResizeButton] = useState(true);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [allowEvents, setAllowEvents] = useState(false);
@@ -67,6 +68,8 @@ export function usePlaygroundSettings() {
     setDismissible,
     showAgentStatus,
     setShowAgentStatus,
+    showResizeButton,
+    setShowResizeButton,
     dynamicVariablesStr,
     setDynamicVariablesStr,
     dynamicVariables,
@@ -94,9 +97,9 @@ export function PlaygroundSettingsPanel({
         Variant
         <select
           value={state.variant}
-          onChange={(e) => state.setVariant(parseVariant(e.currentTarget.value))}
+          onChange={e => state.setVariant(parseVariant(e.currentTarget.value))}
         >
-          {Variants.map((variant) => (
+          {Variants.map(variant => (
             <option key={variant} value={variant}>
               {variant}
             </option>
@@ -107,11 +110,11 @@ export function PlaygroundSettingsPanel({
         Placement
         <select
           value={state.placement}
-          onChange={(e) =>
+          onChange={e =>
             state.setPlacement(parsePlacement(e.currentTarget.value))
           }
         >
-          {Placements.map((placement) => (
+          {Placements.map(placement => (
             <option key={placement} value={placement}>
               {placement}
             </option>
@@ -122,7 +125,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.micMuting}
-          onChange={(e) => state.setMicMuting(e.currentTarget.checked)}
+          onChange={e => state.setMicMuting(e.currentTarget.checked)}
         />{" "}
         Mic muting
       </label>
@@ -130,7 +133,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.transcript}
-          onChange={(e) => state.setTranscript(e.currentTarget.checked)}
+          onChange={e => state.setTranscript(e.currentTarget.checked)}
         />{" "}
         Transcript
       </label>
@@ -138,7 +141,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.textInput}
-          onChange={(e) => state.setTextInput(e.currentTarget.checked)}
+          onChange={e => state.setTextInput(e.currentTarget.checked)}
         />{" "}
         Text input
       </label>
@@ -146,7 +149,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.textOnly}
-          onChange={(e) => state.setTextOnly(e.currentTarget.checked)}
+          onChange={e => state.setTextOnly(e.currentTarget.checked)}
         />{" "}
         Text only
       </label>
@@ -154,7 +157,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.alwaysExpanded}
-          onChange={(e) => state.setAlwaysExpanded(e.currentTarget.checked)}
+          onChange={e => state.setAlwaysExpanded(e.currentTarget.checked)}
         />{" "}
         Always expanded
       </label>
@@ -162,7 +165,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.dismissible}
-          onChange={(e) => state.setDismissible(e.currentTarget.checked)}
+          onChange={e => state.setDismissible(e.currentTarget.checked)}
         />{" "}
         Dismissible
       </label>
@@ -170,7 +173,7 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.allowEvents}
-          onChange={(e) => state.setAllowEvents(e.currentTarget.checked)}
+          onChange={e => state.setAllowEvents(e.currentTarget.checked)}
         />{" "}
         Allow events
       </label>
@@ -178,14 +181,22 @@ export function PlaygroundSettingsPanel({
         <input
           type="checkbox"
           checked={state.showAgentStatus}
-          onChange={(e) => state.setShowAgentStatus(e.currentTarget.checked)}
+          onChange={e => state.setShowAgentStatus(e.currentTarget.checked)}
         />{" "}
         Show agent status
       </label>
       <label>
+        <input
+          type="checkbox"
+          checked={state.showResizeButton}
+          onChange={e => state.setShowResizeButton(e.currentTarget.checked)}
+        />{" "}
+        Show resize button
+      </label>
+      <label>
         Dynamic variables (i.e., new-line separated name=value)
         <textarea
-          onChange={(e) => state.setDynamicVariablesStr(e.currentTarget.value)}
+          onChange={e => state.setDynamicVariablesStr(e.currentTarget.value)}
           value={state.dynamicVariablesStr}
           rows={5}
         />
@@ -196,7 +207,7 @@ export function PlaygroundSettingsPanel({
             <input
               type="checkbox"
               checked={state.overrideFirstMessage}
-              onChange={(e) =>
+              onChange={e =>
                 state.setOverrideFirstMessage(e.currentTarget.checked)
               }
             />{" "}
@@ -209,7 +220,7 @@ export function PlaygroundSettingsPanel({
               type="text"
               value={state.firstMessage}
               disabled={!state.overrideFirstMessage}
-              onChange={(e) => state.setFirstMessage(e.currentTarget.value)}
+              onChange={e => state.setFirstMessage(e.currentTarget.value)}
             />
           )}
         </div>
@@ -218,11 +229,11 @@ export function PlaygroundSettingsPanel({
         Server Location
         <select
           value={state.location}
-          onChange={(e) =>
+          onChange={e =>
             state.setLocation(parseLocation(e.currentTarget.value))
           }
         >
-          {["us", "global", "eu-residency", "in-residency"].map((location) => (
+          {["us", "global", "eu-residency", "in-residency"].map(location => (
             <option key={location} value={location}>
               {location}
             </option>
