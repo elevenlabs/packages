@@ -21,6 +21,10 @@ import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
 import { useLanguageConfig } from "./language-config";
 import { useConversation } from "./conversation";
+import {
+  interpolateDynamicVariables,
+  parseDynamicVariables,
+} from "../utils/dynamicVariables";
 
 const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
@@ -208,14 +212,22 @@ export function useFirstMessage() {
   const override = useAttribute("override-first-message");
   const config = useWidgetConfig();
   const { language } = useLanguageConfig();
-  return useComputed(
-    () =>
+  const dynamicVariablesJSON = useAttribute("dynamic-variables");
+  return useComputed(() => {
+    const firstMessage =
       override.value ??
       config.value.language_presets?.[language.value.languageCode]
         ?.first_message ??
       config.value.first_message ??
-      null
-  );
+      null;
+    if (firstMessage == null) {
+      return null;
+    }
+    return interpolateDynamicVariables(
+      firstMessage,
+      parseDynamicVariables(dynamicVariablesJSON.value)
+    );
+  });
 }
 
 export function useTextInputEnabled() {
