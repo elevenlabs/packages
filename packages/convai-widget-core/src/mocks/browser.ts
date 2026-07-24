@@ -173,6 +173,15 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  stream_consolidation: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   audio_tags_strip: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -299,6 +308,7 @@ export const Worker = setupWorker(
         config.text_only &&
         agentId !== "end_call_test" &&
         agentId !== "tool_call" &&
+        agentId !== "stream_consolidation" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload"
       ) {
@@ -449,6 +459,48 @@ export const Worker = setupWorker(
                 agent_response: "Tool completed successfully",
                 event_id: 2,
               },
+            })
+          );
+        });
+      }
+      if (agentId === "stream_consolidation") {
+        let hasStreamed = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasStreamed) return;
+          hasStreamed = true;
+          // Stream a partial, then deliver the final text as an agent_response
+          // for the same event_id (before stop) so it overwrites in place.
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "partial",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: { agent_response: "full", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
             })
           );
         });
