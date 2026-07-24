@@ -144,9 +144,18 @@ describe("buildDisplayTranscript", () => {
       expected: Array<{ message: string }>;
     }>([
       {
-        description: "groups consecutive agent messages with same eventId",
+        description:
+          "keeps two non-empty agent messages with the same eventId as separate bubbles",
         input: [
-          msg("agent", "partial", { eventId: 2 }),
+          msg("agent", "before", { eventId: 2 }),
+          msg("agent", "after", { eventId: 2 }),
+        ],
+        expected: [{ message: "before" }, { message: "after" }],
+      },
+      {
+        description: "folds an empty placeholder into the following message",
+        input: [
+          msg("agent", "", { eventId: 2 }),
           msg("agent", "full", { eventId: 2 }),
         ],
         expected: [{ message: "full" }],
@@ -203,21 +212,40 @@ describe("buildDisplayTranscript", () => {
       expect(result[0]).toMatchObject({ message: "Done" });
     });
 
-    it("still merges a streamed partial into its finalized message after a tool", () => {
-      // The first segment ends, a tool runs, then a new segment streams a
-      // partial and finalizes. The partial/full pair (no tool between them)
-      // still collapses to the finalized message.
+    it("folds an empty placeholder into its finalized message after a tool", () => {
+      // The first segment ends, a tool runs, then a new segment starts with an
+      // empty placeholder that is finalized in place. The empty placeholder
+      // folds into the finalized message, leaving one bubble per segment.
       const input = [
         msg("agent", "before tool", { eventId: 2 }),
         toolReq(3),
         toolRes(3),
-        msg("agent", "partial", { eventId: 3 }),
+        msg("agent", "", { eventId: 3 }),
         msg("agent", "full", { eventId: 3 }),
       ];
       const result = build(input);
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({ message: "before tool" });
       expect(result[1]).toMatchObject({ message: "full" });
+    });
+
+    it("keeps pre-tool and post-tool messages when the tool emits no entries", () => {
+      // A server-side tool runs without emitting client agent_tool_request or
+      // agent_tool_response entries, so the pre-tool and post-tool replies
+      // (both non-empty, sharing the turn's eventId) sit adjacent in the
+      // transcript with nothing between them. They must remain separate bubbles.
+      const input = [
+        msg("agent", "Got it — let me look that up for you.", { eventId: 2 }),
+        msg("agent", "I've looked up the pricing for you.", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "Got it — let me look that up for you.",
+      });
+      expect(result[1]).toMatchObject({
+        message: "I've looked up the pricing for you.",
+      });
     });
   });
 
