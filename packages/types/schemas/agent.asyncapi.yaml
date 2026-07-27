@@ -216,6 +216,7 @@ components:
       title: Agent Chat Response Part
       summary: Streaming text chunk from agent (text-only mode)
       contentType: application/json
+      x-experimental: true
       payload:
         $ref: "#/components/schemas/AgentChatResponsePartPayload"
 
@@ -224,6 +225,7 @@ components:
       title: Agent Reasoning Response Part
       summary: Streaming reasoning text from agent
       contentType: application/json
+      x-experimental: true
       payload:
         $ref: "#/components/schemas/AgentReasoningResponsePartPayload"
 

@@ -281,6 +281,9 @@ export interface AgentResponseCorrectionEvent {
   event_id: number;
 }
 
+/**
+ * @experimental
+ */
 export interface AgentChatResponsePart {
   type: "agent_chat_response_part";
   text_response_part: TextResponsePart;
@@ -294,6 +297,9 @@ export interface TextResponsePart {
 
 export type TextResponsePartType = "start" | "delta" | "stop";
 
+/**
+ * @experimental
+ */
 export interface AgentReasoningResponsePart {
   type: "agent_reasoning_response_part";
   reasoning_response_part: ReasoningResponsePart;
@@ -602,11 +608,17 @@ export interface AgentResponseCorrectionClientEvent {
   agent_response_correction_event: AgentResponseCorrectionEvent;
 }
 
+/**
+ * @experimental
+ */
 export interface AgentChatResponsePartClientEvent {
   type: "agent_chat_response_part";
   text_response_part: TextResponsePart;
 }
 
+/**
+ * @experimental
+ */
 export interface AgentReasoningResponsePartClientEvent {
   type: "agent_reasoning_response_part";
   reasoning_response_part: ReasoningResponsePart;

@@ -39,6 +39,7 @@ type PayloadItem = {
   baseName: string;
   schema: any;
   dir?: Dir;
+  experimental?: boolean;
 };
 
 async function collectPayloads(
@@ -76,7 +77,12 @@ async function collectPayloads(
     const key = `c:${msgName}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    items.push({ baseName: msgName, schema: { ...payload, $id: msgName } });
+    const experimental = (message as any)?.["x-experimental"] === true;
+    items.push({
+      baseName: msgName,
+      schema: { ...payload, $id: msgName },
+      experimental,
+    });
   }
 
   // B) channels: publish & subscribe (handle oneOf)
@@ -102,10 +108,21 @@ async function collectPayloads(
         if (seen.has(key)) continue;
         seen.add(key);
 
+        // Check for experimental flag on the message or via $ref resolution
+        let experimental = (m as any)?.["x-experimental"] === true;
+        if (!experimental && m?.$ref) {
+          const refName = String(m.$ref).split("/").pop();
+          const refMessage = cm[refName as string];
+          if (refMessage?.["x-experimental"] === true) {
+            experimental = true;
+          }
+        }
+
         items.push({
           baseName: base,
           schema: { ...payload, $id: base },
           dir: opKindToDir(opKind, role),
+          experimental,
         });
       }
     }
@@ -148,6 +165,8 @@ async function main() {
   const pieces: string[] = [];
   const incomingNames = new Set<string>();
   const outgoingNames = new Set<string>();
+  // Track which type names should have @experimental JSDoc
+  const experimentalTypes = new Set<string>();
 
   // Process each schema file
   for (const schemaFile of schemaFiles) {
@@ -160,23 +179,29 @@ async function main() {
 
       console.log(`  Found ${payloads.length} payload(s) in ${fileName}`);
 
-      for (const { schema, dir } of payloads) {
+      for (const { schema, dir, experimental } of payloads) {
         const models = await generator.generate(schema);
 
         // Record root for barrels (first model matches $id)
         const root = models[0]?.modelName;
         if (root && dir)
           (dir === "incoming" ? incomingNames : outgoingNames).add(root);
+        if (root && experimental) experimentalTypes.add(root);
 
         for (const m of models) {
           if (emitted.has(m.modelName)) continue;
           emitted.add(m.modelName);
 
           // Add `export` to top-level declarations (interface | type | enum)
-          const exported = m.result
+          let exported = m.result
             .replace(/^(\s*)(interface\s+)/m, "$1export $2")
             .replace(/^(\s*)(type\s+)/m, "$1export $2")
             .replace(/^(\s*)(enum\s+)/m, "$1export $2");
+
+          // Prepend @experimental JSDoc if marked as experimental
+          if (experimentalTypes.has(m.modelName)) {
+            exported = "/**\n * @experimental\n */\n" + exported;
+          }
 
           pieces.push(exported);
         }
