@@ -224,6 +224,7 @@ components:
       title: Agent Reasoning Response Part
       summary: Streaming reasoning text from agent
       contentType: application/json
+      x-experimental: true
       payload:
         $ref: "#/components/schemas/AgentReasoningResponsePartPayload"
 

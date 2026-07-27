@@ -294,6 +294,9 @@ export interface TextResponsePart {
 
 export type TextResponsePartType = "start" | "delta" | "stop";
 
+/**
+ * @experimental
+ */
 export interface AgentReasoningResponsePart {
   type: "agent_reasoning_response_part";
   reasoning_response_part: ReasoningResponsePart;
@@ -607,6 +610,9 @@ export interface AgentChatResponsePartClientEvent {
   text_response_part: TextResponsePart;
 }
 
+/**
+ * @experimental
+ */
 export interface AgentReasoningResponsePartClientEvent {
   type: "agent_reasoning_response_part";
   reasoning_response_part: ReasoningResponsePart;
