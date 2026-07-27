@@ -52,6 +52,7 @@ channels:
           - $ref: "#/components/messages/AgentResponse"
           - $ref: "#/components/messages/AgentResponseCorrection"
           - $ref: "#/components/messages/AgentChatResponsePart"
+          - $ref: "#/components/messages/AgentReasoningResponsePart"
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
           - $ref: "#/components/messages/ClientToolCallMessage"
@@ -218,6 +219,14 @@ components:
       payload:
         $ref: "#/components/schemas/AgentChatResponsePartPayload"
 
+    AgentReasoningResponsePart:
+      name: AgentReasoningResponsePartClientEvent
+      title: Agent Reasoning Response Part
+      summary: Streaming reasoning text from agent
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentReasoningResponsePartPayload"
+
     Interruption:
       name: InterruptionEvent
       title: Interruption
@@ -364,6 +373,7 @@ components:
         - agent_response
         - agent_response_correction
         - agent_chat_response_part
+        - agent_reasoning_response_part
         - interruption
         - user_transcript
         - tentative_user_transcript
@@ -820,6 +830,16 @@ components:
         text_response_part:
           $ref: "#/components/schemas/AgentChatResponsePartData"
 
+    AgentReasoningResponsePartPayload:
+      type: object
+      required: [reasoning_response_part, type]
+      properties:
+        type:
+          type: string
+          const: agent_reasoning_response_part
+        reasoning_response_part:
+          $ref: "#/components/schemas/AgentReasoningResponsePartData"
+
     InterruptionPayload:
       type: object
       required: [interruption_event, type]
@@ -996,6 +1016,27 @@ components:
         event_id:
           type: integer
           description: Event ID of this chat response part
+
+    AgentReasoningResponsePartType:
+      type: string
+      enum:
+        - start
+        - delta
+        - stop
+      description: Type of streaming reasoning response chunk
+
+    AgentReasoningResponsePartData:
+      type: object
+      required: [text, type, event_id]
+      properties:
+        text:
+          type: string
+          description: Reasoning text chunk (empty for start/stop events)
+        type:
+          $ref: "#/components/schemas/AgentReasoningResponsePartType"
+        event_id:
+          type: string
+          description: Event ID of this reasoning response part
 
     InterruptionData:
       type: object
