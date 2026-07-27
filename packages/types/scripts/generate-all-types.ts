@@ -186,7 +186,13 @@ async function main() {
         const root = models[0]?.modelName;
         if (root && dir)
           (dir === "incoming" ? incomingNames : outgoingNames).add(root);
-        if (root && experimental) experimentalTypes.add(root);
+
+        // Mark all types from an experimental payload as experimental
+        if (experimental) {
+          for (const m of models) {
+            experimentalTypes.add(m.modelName);
+          }
+        }
 
         for (const m of models) {
           if (emitted.has(m.modelName)) continue;

@@ -302,12 +302,18 @@ export interface AgentReasoningResponsePart {
   reasoning_response_part: ReasoningResponsePart;
 }
 
+/**
+ * @experimental
+ */
 export interface ReasoningResponsePart {
   text: string;
   type: ReasoningResponsePartType;
   event_id: string;
 }
 
+/**
+ * @experimental
+ */
 export type ReasoningResponsePartType = "start" | "delta" | "stop";
 
 export interface Interruption {
