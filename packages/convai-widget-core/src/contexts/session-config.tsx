@@ -9,8 +9,7 @@ import { useServerLocation } from "./server-location";
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
 import { useTextOnly, useWebRTC } from "./widget-config";
-
-type DynamicVariables = Record<string, string | number | boolean>;
+import { parseDynamicVariables } from "../utils/dynamicVariables";
 
 const SessionConfigContext =
   createContext<ReadonlySignal<SessionConfig> | null>(null);
@@ -44,8 +43,12 @@ export function SessionConfigProvider({
     tts: {
       voiceId: overrideVoiceId.value,
       speed: overrideSpeed.value ? parseFloat(overrideSpeed.value) : undefined,
-      stability: overrideStability.value ? parseFloat(overrideStability.value) : undefined,
-      similarityBoost: overrideSimilarityBoost.value ? parseFloat(overrideSimilarityBoost.value) : undefined,
+      stability: overrideStability.value
+        ? parseFloat(overrideStability.value)
+        : undefined,
+      similarityBoost: overrideSimilarityBoost.value
+        ? parseFloat(overrideSimilarityBoost.value)
+        : undefined,
     },
     conversation: {
       textOnly: parseBoolAttribute(overrideTextOnly.value) ?? undefined,
@@ -53,19 +56,9 @@ export function SessionConfigProvider({
   }));
 
   const dynamicVariablesJSON = useAttribute("dynamic-variables");
-  const dynamicVariables = useComputed(() => {
-    if (dynamicVariablesJSON.value) {
-      try {
-        return JSON.parse(dynamicVariablesJSON.value) as DynamicVariables;
-      } catch (e: any) {
-        console.error(
-          `[ConversationalAI] Cannot parse dynamic-variables: ${e?.message}`
-        );
-      }
-    }
-
-    return undefined;
-  });
+  const dynamicVariables = useComputed(() =>
+    parseDynamicVariables(dynamicVariablesJSON.value)
+  );
 
   const rawAudioProcessor = useAttribute("worklet-path-raw-audio-processor");
   const audioConcatProcessor = useAttribute(
