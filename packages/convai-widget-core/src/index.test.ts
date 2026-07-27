@@ -143,6 +143,29 @@ describe("elevenlabs-convai", () => {
       .toBeInTheDocument();
   });
 
+  it("consolidates a streamed partial and its final into a single bubble", async () => {
+    // The reducer must consolidate a streamed message into one entry. The mock
+    // streams "partial" then delivers "full" as an agent_response for the same
+    // event_id, so "full" overwrites the partial in place.
+    setupWebComponent({
+      "agent-id": "stream_consolidation",
+      variant: "compact",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("go");
+    await userEvent.keyboard("{Enter}");
+
+    const finalMessage = page.getByText("full", { exact: true });
+    await expect.element(finalMessage).toBeInTheDocument();
+    expect(finalMessage.elements()).toHaveLength(1);
+    await expect
+      .element(page.getByText("partial", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
   it.each(Variants)(
     "$0 expandable variant should go through a happy path (text-only)",
     async variant => {
