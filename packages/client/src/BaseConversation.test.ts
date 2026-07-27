@@ -210,6 +210,99 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("agent_reasoning_response_part events", () => {
+    it("calls onAgentReasoningResponsePart with the reasoning payload", async () => {
+      const onAgentReasoningResponsePart = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentReasoningResponsePart,
+        onDebug,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "Let me think about this...",
+          type: "delta",
+          event_id: "123",
+        },
+      });
+
+      expect(onAgentReasoningResponsePart).toHaveBeenCalledWith({
+        text: "Let me think about this...",
+        type: "delta",
+        event_id: "123",
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("handles start, delta, and stop types", async () => {
+      const onAgentReasoningResponsePart = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentReasoningResponsePart,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "",
+          type: "start",
+          event_id: "1",
+        },
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "Analyzing the request...",
+          type: "delta",
+          event_id: "1",
+        },
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_reasoning_response_part",
+        reasoning_response_part: {
+          text: "",
+          type: "stop",
+          event_id: "1",
+        },
+      });
+
+      expect(onAgentReasoningResponsePart).toHaveBeenCalledTimes(3);
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(1, {
+        text: "",
+        type: "start",
+        event_id: "1",
+      });
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(2, {
+        text: "Analyzing the request...",
+        type: "delta",
+        event_id: "1",
+      });
+      expect(onAgentReasoningResponsePart).toHaveBeenNthCalledWith(3, {
+        text: "",
+        type: "stop",
+        event_id: "1",
+      });
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage({
+          type: "agent_reasoning_response_part",
+          reasoning_response_part: {
+            text: "Thinking...",
+            type: "delta",
+            event_id: "42",
+          },
+        })
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe("ping events", () => {
     it("replies with a pong and forwards the payload to onPing", async () => {
       const onPing = vi.fn();

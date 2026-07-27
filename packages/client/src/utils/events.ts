@@ -1,5 +1,6 @@
 import type {
   AgentChatResponsePartClientEvent,
+  AgentReasoningResponsePartClientEvent,
   AgentResponse,
   AgentResponseCorrection,
   AgentToolResponseClientEvent,
@@ -45,6 +46,8 @@ export type ConversationMetadataEvent = ConversationMetadata;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
+export type AgentReasoningResponsePartEvent =
+  AgentReasoningResponsePartClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type GuardrailTriggeredEvent = GuardrailTriggered;
 export type AgentTypingEvent = AgentTypingClientEvent;
@@ -70,6 +73,7 @@ export type IncomingSocketEvent =
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
+  | AgentReasoningResponsePartEvent
   | ErrorMessageEvent
   | GuardrailTriggeredEvent
   | AgentTypingEvent
