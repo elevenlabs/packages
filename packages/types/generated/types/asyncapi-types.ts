@@ -281,9 +281,6 @@ export interface AgentResponseCorrectionEvent {
   event_id: number;
 }
 
-/**
- * @experimental
- */
 export interface AgentChatResponsePart {
   type: "agent_chat_response_part";
   text_response_part: TextResponsePart;
@@ -608,9 +605,6 @@ export interface AgentResponseCorrectionClientEvent {
   agent_response_correction_event: AgentResponseCorrectionEvent;
 }
 
-/**
- * @experimental
- */
 export interface AgentChatResponsePartClientEvent {
   type: "agent_chat_response_part";
   text_response_part: TextResponsePart;

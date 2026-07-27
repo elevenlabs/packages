@@ -216,7 +216,6 @@ components:
       title: Agent Chat Response Part
       summary: Streaming text chunk from agent (text-only mode)
       contentType: application/json
-      x-experimental: true
       payload:
         $ref: "#/components/schemas/AgentChatResponsePartPayload"
 
