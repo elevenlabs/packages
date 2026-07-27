@@ -13,6 +13,7 @@ import type {
   Interruption,
   AgentResponseCorrection,
   AgentChatResponsePartClientEvent,
+  AgentReasoningResponsePartClientEvent,
   Ping,
 } from "@elevenlabs/types";
 
@@ -120,6 +121,17 @@ export type Callbacks = {
   onAgentChatResponsePart?: (
     props: AgentChatResponsePartClientEvent["text_response_part"]
   ) => void;
+  /**
+   * Called for each streaming reasoning response chunk from the agent.
+   * Receives `{ text, type, event_id }` where `type` is `"start"`, `"delta"`,
+   * or `"stop"`.
+   *
+   * @experimental This API is experimental and may change without following
+   * semver guarantees.
+   */
+  onAgentReasoningResponsePart?: (
+    props: AgentReasoningResponsePartClientEvent["reasoning_response_part"]
+  ) => void;
   onGuardrailTriggered?: () => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
@@ -162,6 +174,7 @@ export const CALLBACK_KEYS = [
   "onInterruption",
   "onAgentResponseCorrection",
   "onAgentChatResponsePart",
+  "onAgentReasoningResponsePart",
   "onAudioAlignment",
   "onGuardrailTriggered",
   "onAgentTyping",

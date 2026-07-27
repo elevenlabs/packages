@@ -172,6 +172,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "agent_response"
   | "agent_response_correction"
   | "agent_chat_response_part"
+  | "agent_reasoning_response_part"
   | "interruption"
   | "user_transcript"
   | "tentative_user_transcript"
@@ -292,6 +293,19 @@ export interface TextResponsePart {
 }
 
 export type TextResponsePartType = "start" | "delta" | "stop";
+
+export interface AgentReasoningResponsePart {
+  type: "agent_reasoning_response_part";
+  reasoning_response_part: ReasoningResponsePart;
+}
+
+export interface ReasoningResponsePart {
+  text: string;
+  type: ReasoningResponsePartType;
+  event_id: string;
+}
+
+export type ReasoningResponsePartType = "start" | "delta" | "stop";
 
 export interface Interruption {
   type: "interruption";
@@ -591,6 +605,11 @@ export interface AgentResponseCorrectionClientEvent {
 export interface AgentChatResponsePartClientEvent {
   type: "agent_chat_response_part";
   text_response_part: TextResponsePart;
+}
+
+export interface AgentReasoningResponsePartClientEvent {
+  type: "agent_reasoning_response_part";
+  reasoning_response_part: ReasoningResponsePart;
 }
 
 export interface ClientToolCallClientEvent {

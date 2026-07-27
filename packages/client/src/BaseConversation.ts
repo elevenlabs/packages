@@ -10,6 +10,7 @@ import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
   AgentChatResponsePartEvent,
+  AgentReasoningResponsePartEvent,
   AgentResponseEvent,
   AgentResponseCorrectionEvent,
   AgentTypingEvent,
@@ -402,6 +403,14 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleAgentReasoningResponsePart(
+    event: AgentReasoningResponsePartEvent
+  ) {
+    if (this.options.onAgentReasoningResponsePart) {
+      this.options.onAgentReasoningResponsePart(event.reasoning_response_part);
+    }
+  }
+
   protected handleGuardrailTriggered(_event: GuardrailTriggeredEvent) {
     if (this.options.onGuardrailTriggered) {
       this.options.onGuardrailTriggered();
@@ -543,6 +552,11 @@ export abstract class BaseConversation {
 
       case "agent_chat_response_part": {
         this.handleAgentChatResponsePart(parsedEvent);
+        return;
+      }
+
+      case "agent_reasoning_response_part": {
+        this.handleAgentReasoningResponsePart(parsedEvent);
         return;
       }
 
