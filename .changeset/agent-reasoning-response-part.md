@@ -1,6 +1,7 @@
 ---
 "@elevenlabs/client": minor
 "@elevenlabs/react": minor
+"@elevenlabs/types": minor
 ---
 
 Add `onAgentReasoningResponsePart` callback to receive streaming reasoning response
