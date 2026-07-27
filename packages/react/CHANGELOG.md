@@ -1,5 +1,18 @@
 # @elevenlabs/react
 
+## 1.11.0
+
+### Minor Changes
+
+- 139ed79: Add `onAgentReasoningResponsePart` callback to receive streaming reasoning response
+  events from the agent. The callback receives `{ text, type, event_id }` where type
+  is one of "start", "delta", or "stop".
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/client@1.16.0
+
 ## 1.10.2
 
 ### Patch Changes

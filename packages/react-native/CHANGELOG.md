@@ -1,5 +1,13 @@
 # @elevenlabs/react-native
 
+## 1.2.17
+
+### Patch Changes
+
+- Updated dependencies [139ed79]
+  - @elevenlabs/client@1.16.0
+  - @elevenlabs/react@1.11.0
+
 ## 1.2.16
 
 ### Patch Changes
