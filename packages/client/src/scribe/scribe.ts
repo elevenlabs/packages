@@ -81,6 +81,13 @@ interface BaseOptions {
    * @default false
    */
   noVerbatim?: boolean;
+  /**
+   * Whether to log the request for history features. When false, the request
+   * uses zero retention mode. Zero retention mode may only be used by
+   * enterprise customers.
+   * @default true
+   */
+  enableLogging?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -200,6 +207,9 @@ export class ScribeRealtime {
     }
     if (options.noVerbatim !== undefined) {
       params.append("no_verbatim", options.noVerbatim ? "true" : "false");
+    }
+    if (options.enableLogging !== undefined) {
+      params.append("enable_logging", options.enableLogging ? "true" : "false");
     }
 
     const queryString = params.toString();
