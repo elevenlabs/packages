@@ -347,9 +347,9 @@ components:
             model_id:
               type: string
               description: ID of the model to use for transcription
-            disable_logging:
+            enable_logging:
               type: boolean
-              description: Whether to disable logging
+              description: Whether the session may be logged. When false, zero retention mode is used and history features are unavailable for the session.
             keyterms:
               type: array
               items:

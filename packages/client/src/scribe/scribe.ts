@@ -81,6 +81,14 @@ interface BaseOptions {
    * @default false
    */
   noVerbatim?: boolean;
+  /**
+   * Whether the request may be logged by ElevenLabs.
+   * When set to false, zero retention mode is used for the session, which means
+   * history features are unavailable for it. Zero retention mode may only be
+   * used by enterprise customers.
+   * @default true
+   */
+  enableLogging?: boolean;
 }
 
 export interface AudioOptions extends BaseOptions {
@@ -200,6 +208,9 @@ export class ScribeRealtime {
     }
     if (options.noVerbatim !== undefined) {
       params.append("no_verbatim", options.noVerbatim ? "true" : "false");
+    }
+    if (options.enableLogging !== undefined) {
+      params.append("enable_logging", options.enableLogging ? "true" : "false");
     }
 
     const queryString = params.toString();

@@ -73,4 +73,42 @@ describe("useScribe", () => {
       })
     );
   });
+
+  it("passes enableLogging through to the client", async () => {
+    const { result } = renderHook(() => useScribe({ enableLogging: false }));
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enableLogging: false,
+      })
+    );
+  });
+
+  it("lets connect() disable logging for a session enabled at the hook level", async () => {
+    const { result } = renderHook(() => useScribe({ enableLogging: true }));
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        microphone: {},
+        enableLogging: false,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enableLogging: false,
+      })
+    );
+  });
 });

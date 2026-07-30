@@ -116,6 +116,14 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   // Keyterms and verbatim control
   keyterms?: string[];
   noVerbatim?: boolean;
+
+  /**
+   * Whether the session may be logged by ElevenLabs. Set to `false` to use zero
+   * retention mode, which makes history features unavailable for the session.
+   * Zero retention mode may only be used by enterprise customers.
+   * @default true
+   */
+  enableLogging?: boolean;
 }
 
 export interface UseScribeReturn {
@@ -199,6 +207,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     // Keyterms and verbatim control
     keyterms: defaultKeyterms,
     noVerbatim: defaultNoVerbatim,
+
+    // Logging
+    enableLogging: defaultEnableLogging,
   } = options;
 
   const connectionRef = useRef<RealtimeConnection | null>(null);
@@ -258,6 +269,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         const includeLanguageDetection =
           runtimeOptions.includeLanguageDetection ??
           defaultIncludeLanguageDetection;
+        const enableLogging =
+          runtimeOptions.enableLogging ?? defaultEnableLogging;
 
         if (microphone) {
           // Microphone mode
@@ -282,6 +295,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             microphone,
             includeTimestamps,
             includeLanguageDetection,
+            enableLogging,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -305,6 +319,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
             includeTimestamps,
             includeLanguageDetection,
+            enableLogging,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -492,6 +507,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultIncludeLanguageDetection,
       defaultKeyterms,
       defaultNoVerbatim,
+      defaultEnableLogging,
       onSessionStarted,
       onPartialTranscript,
       onCommittedTranscript,
