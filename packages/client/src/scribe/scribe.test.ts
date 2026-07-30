@@ -1,4 +1,4 @@
-import { it, expect, describe, vi, beforeEach } from "vitest";
+import { it, expect, describe, vi, beforeEach, onTestFinished } from "vitest";
 import { Server } from "mock-socket";
 import type { Client } from "mock-socket";
 import {
@@ -18,6 +18,31 @@ const TEST_MODEL_ID = "scribe_v2_realtime";
 const TEST_SESSION_ID = "test-session-id";
 const PARTIAL_TRANSCRIPT_TEXT = "Hello, this is a partial";
 const COMMITTED_TRANSCRIPT_TEXT = "Hello, this is a committed transcript.";
+const SCRIBE_WS_URL = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
+
+/**
+ * Starts a mock Scribe server and resolves with the query params the client
+ * connected with. The mock server matches on the URL without its query part, so
+ * inspecting the client URI is the only way to assert on the URI that was built.
+ * Call before connecting so the connection listener is already attached.
+ */
+function connectionQuery(): Promise<URLSearchParams> {
+  const server = new Server(SCRIBE_WS_URL);
+  onTestFinished(() => server.close());
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error("timed out waiting for connection")),
+      5000
+    );
+    onTestFinished(() => clearTimeout(timeout));
+
+    server.on("connection", socket =>
+      resolve(new URL(socket.url).searchParams)
+    );
+    server.on("error", reject);
+  });
+}
 
 describe("Scribe", () => {
   describe("WebSocket URI Building", () => {
@@ -254,6 +279,41 @@ describe("Scribe", () => {
 
       connection.close();
       server.close();
+    });
+
+    it.each([
+      { enableLogging: false, expected: "false" },
+      { enableLogging: true, expected: "true" },
+    ])(
+      "builds URI with enable_logging=$expected when enableLogging is $enableLogging",
+      async ({ enableLogging, expected }) => {
+        const query = connectionQuery();
+
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+          enableLogging,
+        });
+        onTestFinished(() => connection.close());
+
+        expect((await query).get("enable_logging")).toBe(expected);
+      }
+    );
+
+    it("omits enable_logging when enableLogging is not set", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).has("enable_logging")).toBe(false);
     });
 
     it("accepts valid parameter values", () => {
