@@ -776,7 +776,7 @@ export interface Config {
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
   model_id?: string;
-  disable_logging?: boolean;
+  enable_logging?: boolean;
   keyterms?: string[];
   no_verbatim?: boolean;
 }
