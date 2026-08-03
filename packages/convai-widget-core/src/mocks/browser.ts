@@ -241,11 +241,53 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  rich_content: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
 }
+
+const RICH_CONTENT_CARDS = [
+  {
+    id: "item_1",
+    title: "First item, with a title long enough to wrap onto two lines",
+    subtitle: "Category",
+    description: "A sentence about the item.",
+    price: "$21.99",
+    image_url:
+      "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs=",
+    buttons: [
+      {
+        label: "Ask more",
+        message: "Tell me more about the first item",
+      },
+    ],
+  },
+  {
+    id: "item_2",
+    title: "Second item",
+    subtitle: "Category",
+    description:
+      "A description over several lines.\nThe second line.\nThe third line.",
+    buttons: [
+      {
+        label: "Ask more",
+        message: "Tell me more about the second item",
+      },
+    ],
+  },
+];
+
+const RICH_CONTENT_REPLY = "Here are a couple of options.";
 
 export const Worker = setupWorker(
   http.get<{ agentId: string }>(
@@ -310,7 +352,8 @@ export const Worker = setupWorker(
         agentId !== "tool_call" &&
         agentId !== "stream_consolidation" &&
         agentId !== "file_upload" &&
-        agentId !== "no_file_upload"
+        agentId !== "no_file_upload" &&
+        agentId !== "rich_content"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -378,6 +421,71 @@ export const Worker = setupWorker(
           );
           await new Promise(resolve => setTimeout(resolve, 50));
           client.close(1000);
+        });
+      }
+      if (agentId === "rich_content") {
+        client.addEventListener("message", async () => {
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          for (const [index, props] of RICH_CONTENT_CARDS.entries()) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+            client.send(
+              JSON.stringify({
+                type: "rich_content",
+                rich_content: {
+                  rich_content_id: `show_rich_content_${index + 1}`,
+                  component: "item_card",
+                  props,
+                  event_id: 2,
+                },
+              })
+            );
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: RICH_CONTENT_REPLY,
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: RICH_CONTENT_REPLY,
+                event_id: 2,
+              },
+            })
+          );
         });
       }
       if (agentId === "tool_call") {

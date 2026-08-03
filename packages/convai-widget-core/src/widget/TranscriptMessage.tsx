@@ -20,6 +20,7 @@ import { stripAudioTags } from "../utils/stripAudioTags";
 import { WidgetStreamdown } from "../markdown";
 import { isImageMimeType } from "./useFileUpload";
 import { ShimmeringText } from "../components/ShimmeringText";
+import { RichContentRenderer } from "../rich-content/RichContentRenderer";
 
 interface TranscriptMessageProps {
   entry: DisplayTranscriptEntry;
@@ -285,6 +286,18 @@ function TypingIndicatorMessage() {
   );
 }
 
+function RichContentMessage({
+  entry,
+}: {
+  entry: Extract<DisplayTranscriptEntry, { type: "rich_content" }>;
+}) {
+  return (
+    <div className="pe-8">
+      <RichContentRenderer component={entry.component} props={entry.props} />
+    </div>
+  );
+}
+
 function getMessageComponent(entry: DisplayTranscriptEntry) {
   if (entry.type === "disconnection") {
     return <DisconnectionMessage entry={entry} />;
@@ -297,6 +310,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "typing_indicator") {
     return <TypingIndicatorMessage />;
+  }
+  if (entry.type === "rich_content") {
+    return <RichContentMessage entry={entry} />;
   }
   if (entry.role === "agent") {
     return <AgentMessageBubble entry={entry} />;
