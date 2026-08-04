@@ -48,10 +48,10 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
+    "eslint": "^10.8.0",
     "jsdom": "^27.0.0",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.59.2",
+    "typescript-eslint": "^8.65.0",
     "vite": "^8.0.12",
     "web-vitals": "^5.2.0",
     "zod": "^4.3.5"
