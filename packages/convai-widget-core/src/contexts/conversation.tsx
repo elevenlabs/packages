@@ -65,6 +65,14 @@ export type TranscriptEntry =
       conversationIndex: number;
     }
   | {
+      type: "rich_content";
+      component: string;
+      props: unknown;
+      conversationIndex: number;
+      eventId: number;
+      richContentId: string;
+    }
+  | {
       type: "disconnection";
       role: Role;
       message?: undefined;
@@ -164,6 +172,33 @@ function useConversationSetup() {
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
+
+    const appendRichContent = (entry: {
+      component: string;
+      props: unknown;
+      eventId: number;
+      richContentId: string;
+    }) => {
+      const current = transcript.peek();
+      if (
+        current.some(
+          existing =>
+            existing.type === "rich_content" &&
+            existing.richContentId === entry.richContentId
+        )
+      ) {
+        return;
+      }
+
+      transcript.value = [
+        ...current,
+        {
+          type: "rich_content",
+          ...entry,
+          conversationIndex: conversationIndex.peek(),
+        },
+      ];
+    };
 
     const setAgentTyping = (typing: boolean, durationMs?: number | null) => {
       clearTypingTimer();
@@ -371,6 +406,14 @@ function useConversationSetup() {
                   conversationIndex: conversationIndex.peek(),
                 },
               ];
+            },
+            onRichContent: ({ component, props, event_id, rich_content_id }) => {
+              appendRichContent({
+                component,
+                props,
+                eventId: event_id,
+                richContentId: rich_content_id,
+              });
             },
             onAgentTyping: ({ is_typing, duration_ms }) => {
               setAgentTyping(is_typing, duration_ms);
