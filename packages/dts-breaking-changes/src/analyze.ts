@@ -104,6 +104,21 @@ function cleanMessage(message: string): string {
 }
 
 /**
+ * A "separate declarations of a private/protected property" (or "is private/
+ * protected in type") diagnostic is a nominal artifact of comparing two
+ * independent builds: access-restricted members are not part of the
+ * consumer-visible contract, so such a mismatch can never be a real breaking
+ * change. `MethodsToProperties` strips these where it recurses, but classes
+ * reached only through parameter positions (kept positional to preserve variance
+ * and overloads) slip through — hence this guard.
+ */
+function isNominalAccessArtifact(message: string): boolean {
+  return /separate declarations of a (private|protected) property|is (private|protected) in type/.test(
+    message
+  );
+}
+
+/**
  * Base severity before per-symbol overrides. Consumer-direction failures always
  * break. Forward-direction failures are informational on the value surface, but
  * a warning on the (ambiguous) type surface: an added required field breaks any
@@ -353,6 +368,7 @@ export function analyze(input: AnalyzeInput): Report {
   if (config.compareTypeOnlyExports) raw.push(...compareTypeSurface(ctx));
 
   const findings: Finding[] = raw
+    .filter(d => !isNominalAccessArtifact(d.message))
     .filter(
       d =>
         !config.ignore.some(

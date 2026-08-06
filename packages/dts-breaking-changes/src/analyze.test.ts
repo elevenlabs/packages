@@ -65,6 +65,22 @@ test("private/protected member changes produce no false positives", () => {
   );
 });
 
+test("private member reached only through a parameter yields no false positive across two builds", () => {
+  // Logger.level is private and reachable only via configure(options).logger, a
+  // parameter position MethodsToProperties keeps positional. Two separate (here
+  // identical) builds must not trip "separate declarations of a private property".
+  const report = analyze({
+    oldDir: fx("nominal-private-param/old"),
+    newDir: fx("nominal-private-param/new"),
+    config: { entry: "index.d.ts", gateDirection: "both" },
+  });
+  assert.deepEqual(
+    report.findings,
+    [],
+    `expected zero findings, got: ${JSON.stringify(report.findings, null, 2)}`
+  );
+});
+
 test("dropping a method overload is a consumer-breaking change", () => {
   const report = analyze({
     oldDir: fx("overload/old"),
