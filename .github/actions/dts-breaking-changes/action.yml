@@ -1,0 +1,152 @@
+name: "dts breaking changes"
+description: "Variance-aware breaking-change check for a TypeScript package's built .d.ts surface, with a sticky PR comment."
+
+# Requires Node (>= 22.18 or >= 24, for `--experimental-strip-types`) already on
+# PATH — the calling workflow's setup-node step. Uses only node/npm/gh/jq/bash,
+# so it pulls in no external actions.
+
+inputs:
+  old-dir:
+    description: "Directory of the base (previously-published) built .d.ts tree."
+    required: true
+  new-dir:
+    description: "Directory of the head (PR) built .d.ts tree."
+    required: true
+  entry:
+    description: "Entry .d.ts relative to each dir (e.g. index.d.ts). Optional if set in the config file."
+    required: false
+    default: ""
+  config:
+    description: "Path to a JSON config file for the engine (AnalyzeConfig)."
+    required: false
+    default: ""
+  base-sha:
+    description: "Base commit SHA, shown in the comment for traceability."
+    required: false
+    default: ""
+  label:
+    description: "PR label that acknowledges breaking changes and downgrades the gate to a warning."
+    required: false
+    default: "breaking"
+  title:
+    description: "Human title for this surface; also keys the sticky comment so matrix packages stay distinct."
+    required: false
+    default: "Type surface"
+  github-token:
+    description: "Token used to post the sticky PR comment."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  gate:
+    description: "Effective gate after the label escape hatch: pass | warn | fail."
+    value: ${{ steps.report.outputs.effective-gate }}
+  breaking-count:
+    description: "Number of consumer-breaking findings."
+    value: ${{ steps.analyze.outputs.breaking-count }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Analyze type surface
+      id: analyze
+      shell: bash
+      env:
+        OLD_DIR: ${{ inputs.old-dir }}
+        NEW_DIR: ${{ inputs.new-dir }}
+        ENTRY: ${{ inputs.entry }}
+        CONFIG: ${{ inputs.config }}
+        BASE_SHA: ${{ inputs.base-sha }}
+      run: |
+        set -euo pipefail
+        ENGINE="$(cd "$GITHUB_ACTION_PATH/../../../packages/dts-breaking-changes" && pwd)"
+
+        # The engine runs from source via Node type-stripping; it only needs its
+        # one runtime dependency (typescript).
+        npm install --prefix "$ENGINE" --omit=dev --no-audit --no-fund >/dev/null 2>&1
+
+        REPORT="$RUNNER_TEMP/dts-report.md"
+        JSON="$RUNNER_TEMP/dts-report.json"
+
+        set +e
+        node --experimental-strip-types "$ENGINE/src/cli.ts" \
+          --old "$OLD_DIR" --new "$NEW_DIR" \
+          ${ENTRY:+--entry "$ENTRY"} \
+          ${CONFIG:+--config "$CONFIG"} \
+          ${BASE_SHA:+--base-sha "$BASE_SHA"} \
+          --markdown "$REPORT" --json "$JSON"
+        RC=$?
+        set -e
+
+        # Exit 1 with a report is a failing gate (expected); a missing report is
+        # a real engine failure (e.g. TS2589).
+        if [ ! -f "$JSON" ]; then
+          echo "::error::dts-breaking-changes engine failed (exit $RC) without producing a report"
+          exit 1
+        fi
+
+        {
+          echo "gate=$(jq -r '.verdict.gate' "$JSON")"
+          echo "breaking-count=$(jq -r '.verdict.breakingCount' "$JSON")"
+          echo "report=$REPORT"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Resolve label and post sticky comment
+      id: report
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        LABEL: ${{ inputs.label }}
+        TITLE: ${{ inputs.title }}
+        GATE: ${{ steps.analyze.outputs.gate }}
+        REPORT: ${{ steps.analyze.outputs.report }}
+      run: |
+        set -euo pipefail
+        PR="$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH")"
+
+        ACK=false
+        if [ -n "$PR" ] && jq -e --arg L "$LABEL" 'any(.pull_request.labels[]?; .name == $L)' "$GITHUB_EVENT_PATH" >/dev/null; then
+          ACK=true
+        fi
+
+        EFFECTIVE="$GATE"
+        if [ "$GATE" = "fail" ] && [ "$ACK" = "true" ]; then
+          EFFECTIVE="warn"
+          printf '\n\n✅ Acknowledged via the `%s` label — reported as a warning, not failing the check.\n' "$LABEL" >> "$REPORT"
+        fi
+        echo "effective-gate=$EFFECTIVE" >> "$GITHUB_OUTPUT"
+
+        if [ -z "$PR" ]; then
+          echo "Not a pull request event; skipping comment."
+          exit 0
+        fi
+
+        export MARKER="<!-- dts-breaking-changes:${TITLE} -->"
+        BODY="$RUNNER_TEMP/dts-comment.md"
+        { printf '%s\n\n' "$MARKER"; cat "$REPORT"; } > "$BODY"
+
+        PAYLOAD="$RUNNER_TEMP/dts-payload.json"
+        jq -Rs '{body: .}' "$BODY" > "$PAYLOAD"
+
+        EXISTING="$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+          --jq '.[] | select(.body | contains(env.MARKER)) | .id' | head -n1 || true)"
+
+        if [ -n "$EXISTING" ]; then
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$EXISTING" --input "$PAYLOAD" >/dev/null
+        else
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --input "$PAYLOAD" >/dev/null
+        fi
+
+    - name: Gate
+      shell: bash
+      env:
+        EFFECTIVE: ${{ steps.report.outputs.effective-gate }}
+        BREAKING: ${{ steps.analyze.outputs.breaking-count }}
+        LABEL: ${{ inputs.label }}
+      run: |
+        set -euo pipefail
+        if [ "$EFFECTIVE" = "fail" ]; then
+          echo "::error::${BREAKING} consumer-breaking change(s) detected. Add the '${LABEL}' label to acknowledge and turn this into a warning."
+          exit 1
+        fi
+        echo "Type surface gate: ${EFFECTIVE}"

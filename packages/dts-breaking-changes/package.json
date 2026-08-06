@@ -1,0 +1,24 @@
+{
+  "name": "@elevenlabs/dts-breaking-changes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Variance-aware breaking-change detection for TypeScript .d.ts surfaces via structural assignability",
+  "type": "module",
+  "bin": {
+    "dts-breaking-changes": "src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test --experimental-strip-types \"src/**/*.test.ts\"",
+    "check-types": "tsc --noEmit",
+    "lint:prettier": "prettier \"src/**/*.ts\" --check"
+  },
+  "dependencies": {
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1"
+  }
+}
