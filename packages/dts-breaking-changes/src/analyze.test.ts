@@ -81,6 +81,23 @@ test("private member reached only through a parameter yields no false positive a
   );
 });
 
+test("protected member via a parameter and a type-only re-export of a value produce no false positives", () => {
+  // Across two builds: Conn.q (protected, reached via a parameter) trips the
+  // whole-module gate as a nominal artifact, and `export type { Impl as ImplType }`
+  // is a type-only re-export of a value that must not be localized as a value
+  // export (which would raise a spurious "Property does not exist").
+  const report = analyze({
+    oldDir: fx("nominal-reexport/old"),
+    newDir: fx("nominal-reexport/new"),
+    config: { entry: "index.d.ts", gateDirection: "both" },
+  });
+  assert.deepEqual(
+    report.findings,
+    [],
+    `expected zero findings, got: ${JSON.stringify(report.findings, null, 2)}`
+  );
+});
+
 test("dropping a method overload is a consumer-breaking change", () => {
   const report = analyze({
     oldDir: fx("overload/old"),

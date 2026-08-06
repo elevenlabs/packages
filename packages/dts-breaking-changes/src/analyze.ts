@@ -104,17 +104,21 @@ function cleanMessage(message: string): string {
 }
 
 /**
- * A "separate declarations of a private/protected property" (or "is private/
- * protected in type") diagnostic is a nominal artifact of comparing two
- * independent builds: access-restricted members are not part of the
- * consumer-visible contract, so such a mismatch can never be a real breaking
- * change. `MethodsToProperties` strips these where it recurses, but classes
- * reached only through parameter positions (kept positional to preserve variance
- * and overloads) slip through — hence this guard.
+ * Diagnostics whose root cause is an access-restricted (private/protected)
+ * member are nominal artifacts of comparing two independent builds: such members
+ * are not part of the consumer-visible contract, so the mismatch can never be a
+ * real breaking change. `MethodsToProperties` strips them where it recurses, but
+ * classes reached only through parameter positions (kept positional to preserve
+ * variance and overloads) slip through — hence this guard. TS phrases these
+ * several ways ("separate declarations of a private property", "is protected but
+ * type X is not a class derived from Y", "is private and only accessible ...").
+ * A real access-narrowing change instead shows up as a *missing* member, so it
+ * is not caught here.
  */
 function isNominalAccessArtifact(message: string): boolean {
-  return /separate declarations of a (private|protected) property|is (private|protected) in type/.test(
-    message
+  return (
+    /separate declarations of a (private|protected) property/.test(message) ||
+    /Property '[^']*' is (private|protected)\b/.test(message)
   );
 }
 
@@ -176,9 +180,27 @@ function assertNoDeepInstantiation(
 type ExportKind = "value" | "type";
 
 /**
- * Export names of a given kind. `value` = anything with value meaning
+ * A `export type { X }` / `export { type X }` re-export never contributes to the
+ * value namespace, even when X resolves to a value (e.g. a class) at its source —
+ * so `getAliasedSymbol` alone can't be trusted. Honor the type-only modifier
+ * before falling back to the resolved symbol's flags.
+ */
+function isValueExport(checker: ts.TypeChecker, sym: ts.Symbol): boolean {
+  for (const decl of sym.getDeclarations() ?? []) {
+    if (!ts.isExportSpecifier(decl)) continue;
+    if (decl.isTypeOnly) return false;
+    const clause = decl.parent.parent; // NamedExports -> ExportDeclaration
+    if (ts.isExportDeclaration(clause) && clause.isTypeOnly) return false;
+  }
+  const resolved =
+    sym.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sym) : sym;
+  return (resolved.flags & ts.SymbolFlags.Value) !== 0;
+}
+
+/**
+ * Export names of a given kind. `value` = anything in the value namespace
  * (class/function/const/enum/namespace); `type` = pure type-only exports
- * (interface/type alias) with no value meaning.
+ * (interface/type alias, or a `export type` re-export).
  */
 function exportNames(
   program: ts.Program,
@@ -190,17 +212,13 @@ function exportNames(
   if (!source) return [];
   const moduleSymbol = checker.getSymbolAtLocation(source);
   if (!moduleSymbol) return [];
-  const TYPE_ONLY = ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias;
   return checker
     .getExportsOfModule(moduleSymbol)
-    .filter(sym => {
-      const resolved =
-        sym.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(sym) : sym;
-      const isValue = (resolved.flags & ts.SymbolFlags.Value) !== 0;
-      return kind === "value"
-        ? isValue
-        : !isValue && (resolved.flags & TYPE_ONLY) !== 0;
-    })
+    .filter(sym =>
+      kind === "value"
+        ? isValueExport(checker, sym)
+        : !isValueExport(checker, sym)
+    )
     .map(s => s.getName());
 }
 
