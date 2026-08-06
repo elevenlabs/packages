@@ -7,5 +7,5 @@ import tseslint from "typescript-eslint";
 export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  globalIgnores([".output/**", "src/*.gen.ts"])
+  globalIgnores([".output/**", ".nitro/**", "src/*.gen.ts"])
 );
