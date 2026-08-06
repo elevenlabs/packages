@@ -1,0 +1,81 @@
+name: type surface
+
+# Warns when a PR introduces a breaking change to any package's public type
+# surface, comparing each package's built types against the merge-base and
+# reporting them in a single PR comment. A consumer-breaking change fails the
+# check; it is acknowledged (downgraded to a warning) by the `breaking` PR label
+# OR a `major` changeset for that package. labeled/unlabeled re-run so toggling
+# the label clears/raises the check.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: type-surface-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  type-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/Krypton
+
+      - name: Build head
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Build merge-base in a worktree
+        id: base
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+          BASE_SHA="$(git merge-base FETCH_HEAD HEAD)"
+          echo "sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+          (cd "$RUNNER_TEMP/base" && pnpm install --frozen-lockfile && pnpm build)
+
+      - name: Detect major changesets
+        id: changeset
+        run: |
+          set -euo pipefail
+          MAJORS=$(node -e '
+            const fs = require("fs"), p = require("path");
+            const s = new Set();
+            if (fs.existsSync(".changeset")) {
+              for (const f of fs.readdirSync(".changeset")) {
+                if (!f.endsWith(".md")) continue;
+                const t = fs.readFileSync(p.join(".changeset", f), "utf8");
+                for (const m of t.matchAll(/["\x27]([^"\x27]+)["\x27]\s*:\s*major/g)) s.add(m[1]);
+              }
+            }
+            process.stdout.write([...s].join(","));
+          ')
+          echo "majors=$MAJORS" >> "$GITHUB_OUTPUT"
+          echo "Major changesets: ${MAJORS:-(none)}"
+
+      - name: Check type surfaces
+        uses: ./.github/actions/dts-breaking-changes
+        with:
+          base-root: ${{ runner.temp }}/base
+          head-root: ${{ github.workspace }}
+          allow-breaking-packages: ${{ steps.changeset.outputs.majors }}
+          base-sha: ${{ steps.base.outputs.sha }}
+          title: packages
