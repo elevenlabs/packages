@@ -52,7 +52,7 @@ consumer repo, not duplicated here.
 # In a consumer repo, after building head into dist/ and the merge-base into base-dist/:
 - uses: actions/setup-node@v6
   with:
-    node-version: lts/*
+    node-version: lts/Krypton # or whatever the consumer repo pins
 - uses: elevenlabs/packages/.github/actions/dts-breaking-changes@main
   with:
     old-dir: base-dist
