@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { analyze } from "./analyze.ts";
 import { configFileSchema, type AnalyzeConfig } from "./config.ts";
+import { discoverSurfaces } from "./discover.ts";
 import {
   renderCombined,
   sectionFails,
@@ -23,7 +24,33 @@ function readConfig(configPath: string | undefined): Partial<AnalyzeConfig> {
 const USAGE =
   "Usage:\n" +
   "  dts-breaking-changes --old <dir> --new <dir> [--entry <path>] [--config <file>]\n" +
-  "  dts-breaking-changes --surfaces <file> [--base-sha <sha>] [--label-acknowledged] [--markdown <file>]\n";
+  "  dts-breaking-changes --surfaces <file> [--base-sha <sha>] [--label-acknowledged] [--markdown <file>]\n" +
+  "  dts-breaking-changes --discover --base-root <dir> --head-root <dir> [--allow-breaking-packages <csv>] [--out <file>]\n";
+
+/**
+ * Discover mode: enumerate the surfaces to check across a workspace (every
+ * package's public type entrypoints, base vs head) and emit them as JSON for a
+ * subsequent `--surfaces` run.
+ */
+function runDiscover(opts: {
+  baseRoot: string;
+  headRoot: string;
+  allowBreakingPackages?: string;
+  outPath?: string;
+}): number {
+  const surfaces = discoverSurfaces({
+    baseRoot: opts.baseRoot,
+    headRoot: opts.headRoot,
+    majorPackages: (opts.allowBreakingPackages ?? "")
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean),
+  });
+  const json = JSON.stringify(surfaces, null, 2);
+  if (opts.outPath) fs.writeFileSync(opts.outPath, json);
+  else process.stdout.write(`${json}\n`);
+  return 0;
+}
 
 const surfacesSchema = z.array(
   z.object({
@@ -130,12 +157,30 @@ function main(): number {
         markdown: { type: "string" },
         surfaces: { type: "string" },
         "label-acknowledged": { type: "boolean" },
+        discover: { type: "boolean" },
+        "base-root": { type: "string" },
+        "head-root": { type: "string" },
+        "allow-breaking-packages": { type: "string" },
+        out: { type: "string" },
       },
     }));
   } catch (err) {
     assert(err instanceof Error);
     process.stderr.write(`${err.message}\n${USAGE}`);
     return 2;
+  }
+
+  if (values.discover) {
+    if (!values["base-root"] || !values["head-root"]) {
+      process.stderr.write(USAGE);
+      return 2;
+    }
+    return runDiscover({
+      baseRoot: values["base-root"],
+      headRoot: values["head-root"],
+      allowBreakingPackages: values["allow-breaking-packages"],
+      outPath: values.out,
+    });
   }
 
   return values.surfaces

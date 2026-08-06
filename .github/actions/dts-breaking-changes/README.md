@@ -19,20 +19,29 @@ repo, not duplicated here.
 
 ## Inputs
 
-Pass either a `surfaces` array (multi-package) or the single-surface fields.
+Choose one mode: **workspace** (`base-root` — discovers packages and entrypoints),
+**explicit** (`surfaces`), or **single-surface** (the `*-dir` fields).
 
-| Input            | Default               | Description                                                                                          |
-| ---------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
-| `surfaces`       | —                     | JSON array `[{ title, oldDir, newDir, entry?, config?, allowBreaking? }]`. Overrides the fields below. |
-| `old-dir`        | —                     | Single-surface: base (previously-published) built `.d.ts` dir.                                      |
-| `new-dir`        | —                     | Single-surface: head (PR) built `.d.ts` dir.                                                        |
-| `entry`          | —                     | Single-surface: entry `.d.ts` relative to each dir. Optional if set in `config`.                    |
-| `config`         | —                     | Single-surface: path to a JSON config file ([`AnalyzeConfig`](../../../packages/dts-breaking-changes/README.md#config)). |
-| `allow-breaking` | `false`               | Single-surface: `true` to allow breaking changes without the label (e.g. a major changeset).        |
-| `base-sha`       | —                     | Base SHA (shared by all surfaces), shown in the comment for traceability.                            |
-| `label`          | `breaking`            | PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning.    |
-| `title`          | `Type surface`        | Single-surface heading and the sticky-comment key.                                                  |
-| `github-token`   | `${{ github.token }}` | Token used to post the comment.                                                                      |
+| Input                     | Default               | Description                                                                                                                                                              |
+| ------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `base-root`               | —                     | Workspace mode: root of the built base tree. Discovers each package's public type entrypoints (honoring `exports`/`types`/implicit siblings). Overrides the other modes. |
+| `head-root`               | `.`                   | Workspace mode: root of the built head tree.                                                                                                                             |
+| `allow-breaking-packages` | —                     | Workspace mode: comma-separated package names whose breaks are pre-acknowledged (e.g. major changesets).                                                                 |
+| `surfaces`                | —                     | Explicit mode: JSON array `[{ title, oldDir, newDir, entry?, config?, allowBreaking? }]`.                                                                                |
+| `old-dir`                 | —                     | Single-surface: base (previously-published) built `.d.ts` dir.                                                                                                           |
+| `new-dir`                 | —                     | Single-surface: head (PR) built `.d.ts` dir.                                                                                                                             |
+| `entry`                   | —                     | Single-surface: entry `.d.ts` relative to each dir. Optional if set in `config`.                                                                                         |
+| `config`                  | —                     | Single-surface: path to a JSON config file ([`AnalyzeConfig`](../../../packages/dts-breaking-changes/README.md#config)).                                                 |
+| `allow-breaking`          | `false`               | Single-surface: `true` to allow breaking changes without the label.                                                                                                      |
+| `base-sha`                | —                     | Base SHA (shared by all surfaces), shown in the comment for traceability.                                                                                                |
+| `label`                   | `breaking`            | PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning.                                                                         |
+| `title`                   | `Type surface`        | Single-surface heading and the sticky-comment key.                                                                                                                       |
+| `github-token`            | `${{ github.token }}` | Token used to post the comment.                                                                                                                                          |
+
+In workspace mode, each package's public entrypoints are discovered via the TS
+compiler's own module resolution — including implicit sibling `.d.ts` and every
+`exports` subpath (e.g. `@scope/pkg/internal`). A package can drop subpaths with
+`ignoreEntrypoints` in its `dts-breaking-changes.json`.
 
 ## Outputs
 
@@ -65,12 +74,15 @@ Pass either a `surfaces` array (multi-package) or the single-surface fields.
     title: "@elevenlabs/elevenlabs-js"
 ```
 
-## Example (multiple packages)
+## Example (workspace)
 
 ```yaml
+# After building head and the merge-base (into $RUNNER_TEMP/base):
 - uses: ./.github/actions/dts-breaking-changes
   with:
-    surfaces: ${{ steps.surfaces.outputs.surfaces }} # [{ title, oldDir, newDir, entry, config, allowBreaking }]
+    base-root: ${{ runner.temp }}/base
+    head-root: ${{ github.workspace }}
+    allow-breaking-packages: ${{ steps.changeset.outputs.majors }}
     base-sha: ${{ steps.base.outputs.sha }}
     title: packages
 ```

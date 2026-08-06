@@ -1,0 +1,1 @@
+{ "name": "@fx/explicit", "exports": { ".": { "types": "./built/index.d.ts", "default": "./built/index.js" }, "./sub": "./built/sub.js" } }

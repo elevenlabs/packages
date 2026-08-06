@@ -12,4 +12,11 @@ export {
   sectionFails,
   type CombinedSection,
 } from "./report.ts";
+export {
+  discoverSurfaces,
+  discoverWorkspacePackages,
+  resolveEntrypoints,
+  type Surface,
+  type DiscoverOptions,
+} from "./discover.ts";
 export type { Direction, Finding, Report, Severity, Verdict } from "./types.ts";

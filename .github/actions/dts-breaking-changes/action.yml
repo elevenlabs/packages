@@ -6,6 +6,18 @@ description: "Variance-aware breaking-change check for one or more TypeScript pa
 # so it pulls in no external actions.
 
 inputs:
+  base-root:
+    description: "Workspace mode: root of the built base (merge-base) tree. When set, packages and their type entrypoints are discovered automatically. Overrides `surfaces` and the single-surface inputs."
+    required: false
+    default: ""
+  head-root:
+    description: "Workspace mode: root of the built head (PR) tree."
+    required: false
+    default: "."
+  allow-breaking-packages:
+    description: "Workspace mode: comma-separated package names whose breaking changes are pre-acknowledged (e.g. those with a major changeset)."
+    required: false
+    default: ""
   surfaces:
     description: "JSON array of surfaces to check: [{ title, oldDir, newDir, entry?, config?, allowBreaking? }]. Overrides the single-surface inputs below."
     required: false
@@ -59,6 +71,9 @@ runs:
       id: analyze
       shell: bash
       env:
+        BASE_ROOT: ${{ inputs.base-root }}
+        HEAD_ROOT: ${{ inputs.head-root }}
+        ALLOW_BREAKING_PACKAGES: ${{ inputs.allow-breaking-packages }}
         SURFACES: ${{ inputs.surfaces }}
         OLD_DIR: ${{ inputs.old-dir }}
         NEW_DIR: ${{ inputs.new-dir }}
@@ -71,13 +86,18 @@ runs:
       run: |
         set -euo pipefail
         ENGINE="$(cd "$GITHUB_ACTION_PATH/../../../packages/dts-breaking-changes" && pwd)"
+        CLI="node --experimental-strip-types $ENGINE/src/cli.ts"
 
         # The engine runs from source via Node type-stripping; install its runtime deps.
         npm install --prefix "$ENGINE" --omit=dev --no-audit --no-fund >/dev/null 2>&1
 
-        # Build the surfaces list: the explicit input, or one from the single-surface inputs.
+        # Build the surfaces list: discover a workspace, an explicit input, or the single-surface inputs.
         SURFACES_FILE="$RUNNER_TEMP/dts-surfaces.json"
-        if [ -n "$SURFACES" ]; then
+        if [ -n "$BASE_ROOT" ]; then
+          $CLI --discover --base-root "$BASE_ROOT" --head-root "$HEAD_ROOT" \
+            ${ALLOW_BREAKING_PACKAGES:+--allow-breaking-packages "$ALLOW_BREAKING_PACKAGES"} \
+            --out "$SURFACES_FILE"
+        elif [ -n "$SURFACES" ]; then
           printf '%s' "$SURFACES" > "$SURFACES_FILE"
         else
           ALLOW=$([ "$ALLOW_BREAKING" = "true" ] && echo true || echo false)
@@ -94,8 +114,7 @@ runs:
 
         REPORT="$RUNNER_TEMP/dts-report.md"
         set +e
-        node --experimental-strip-types "$ENGINE/src/cli.ts" \
-          --surfaces "$SURFACES_FILE" \
+        $CLI --surfaces "$SURFACES_FILE" \
           ${BASE_SHA:+--base-sha "$BASE_SHA"} \
           $LABEL_ACK \
           --markdown "$REPORT"
