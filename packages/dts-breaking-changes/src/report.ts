@@ -64,7 +64,8 @@ export function renderMarkdown(
   baseSha?: string
 ): string {
   const header = "### Type surface: breaking-change report";
-  const base = baseSha ? `\n\nCompared against base \`${baseSha}\`.` : "";
+  // No backticks around the SHA: GitHub auto-links a bare commit SHA, not a code-spanned one.
+  const base = baseSha ? `\n\nCompared against base ${baseSha}.` : "";
 
   if (findings.length === 0) {
     return `${header}${base}\n\n✅ No type-surface changes detected.\n`;
