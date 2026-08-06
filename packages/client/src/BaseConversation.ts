@@ -20,6 +20,7 @@ import type {
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
   PingEvent,
+  RichContentEvent,
   UserTranscriptionEvent,
   VadScoreEvent,
   MCPToolCallClientEvent,
@@ -411,6 +412,12 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleRichContent(event: RichContentEvent) {
+    if (this.options.onRichContent) {
+      this.options.onRichContent(event.rich_content);
+    }
+  }
+
   protected handleGuardrailTriggered(_event: GuardrailTriggeredEvent) {
     if (this.options.onGuardrailTriggered) {
       this.options.onGuardrailTriggered();
@@ -557,6 +564,11 @@ export abstract class BaseConversation {
 
       case "agent_reasoning_response_part": {
         this.handleAgentReasoningResponsePart(parsedEvent);
+        return;
+      }
+
+      case "rich_content": {
+        this.handleRichContent(parsedEvent);
         return;
       }
 

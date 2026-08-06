@@ -15,6 +15,7 @@ import type {
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
   Ping,
+  RichContentClientEvent,
 } from "@elevenlabs/types";
 
 /**
@@ -132,6 +133,17 @@ export type Callbacks = {
   onAgentReasoningResponsePart?: (
     props: AgentReasoningResponsePartClientEvent["reasoning_response_part"]
   ) => void;
+  /**
+   * Called when the agent sends a component for the client to display, such as
+   * an item card. Receives `{ rich_content_id, component, props, event_id }`.
+   *
+   * Backs the embedded widget. The server only offers components to the widget
+   * today, so this does not fire for other consumers.
+   *
+   * @experimental This API is experimental and may change without following
+   * semver guarantees.
+   */
+  onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
@@ -175,6 +187,7 @@ export const CALLBACK_KEYS = [
   "onAgentResponseCorrection",
   "onAgentChatResponsePart",
   "onAgentReasoningResponsePart",
+  "onRichContent",
   "onAudioAlignment",
   "onGuardrailTriggered",
   "onAgentTyping",

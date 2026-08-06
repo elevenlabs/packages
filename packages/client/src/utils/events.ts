@@ -22,6 +22,7 @@ import type {
   InternalTentativeAgentResponse as TentativeAgentResponseInternal,
   UserTranscript,
   VadScore,
+  RichContentClientEvent,
 } from "@elevenlabs/types";
 import type { AudioAlignmentEvent } from "../types.js";
 
@@ -48,6 +49,7 @@ export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
 export type AgentReasoningResponsePartEvent =
   AgentReasoningResponsePartClientEvent;
+export type RichContentEvent = RichContentClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type GuardrailTriggeredEvent = GuardrailTriggered;
 export type AgentTypingEvent = AgentTypingClientEvent;
@@ -74,6 +76,7 @@ export type IncomingSocketEvent =
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent
   | AgentReasoningResponsePartEvent
+  | RichContentEvent
   | ErrorMessageEvent
   | GuardrailTriggeredEvent
   | AgentTypingEvent
