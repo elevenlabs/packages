@@ -1,5 +1,5 @@
 import type { ResolvedConfig } from "./config.ts";
-import type { Finding, Severity, Verdict } from "./types.ts";
+import type { Finding, Report, Severity, Verdict } from "./types.ts";
 
 const SEVERITY_RANK: Record<Severity, number> = {
   breaking: 3,
@@ -85,6 +85,80 @@ export function renderMarkdown(
     section(findings, "warning"),
     section(findings, "info"),
     "\n_Add the `breaking` label to acknowledge and turn this check into a warning._",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** One package's result within a combined, multi-package report. */
+export interface CombinedSection {
+  /** Visible heading for this section (e.g. the package name). */
+  title: string;
+  /** Whether a breaking result here is acknowledged (label or major changeset). */
+  acknowledged: boolean;
+  /** Human reason shown when acknowledged, e.g. "the `breaking` label". */
+  ackReason?: string;
+  report: Report;
+}
+
+/** A section is an unacknowledged failure when it breaks and nobody signed off. */
+export function sectionFails(s: CombinedSection): boolean {
+  return s.report.verdict.gate === "fail" && !s.acknowledged;
+}
+
+function renderSection(s: CombinedSection): string {
+  const { findings } = s.report;
+  const title = `## ${s.title}`;
+  if (findings.length === 0) return `${title}\n\n✅ No type-surface changes.\n`;
+  const ackNote =
+    s.acknowledged && s.report.verdict.gate === "fail"
+      ? `\n✅ Acknowledged via ${s.ackReason ?? "an override"} — reported as a warning.\n`
+      : "";
+  return [
+    title,
+    section(findings, "breaking"),
+    section(findings, "warning"),
+    section(findings, "info"),
+    ackNote,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** Render one comment covering several packages, each under its own heading. */
+export function renderCombined(
+  sections: CombinedSection[],
+  baseSha?: string
+): string {
+  const header = "### Type surface report";
+  const base = baseSha ? `\n\nCompared against base ${baseSha}.` : "";
+
+  const failing = sections.filter(sectionFails).length;
+  const acked = sections.filter(
+    s => s.report.verdict.gate === "fail" && s.acknowledged
+  ).length;
+  const anyFindings = sections.some(s => s.report.findings.length > 0);
+
+  const summary =
+    failing > 0
+      ? `❌ **${failing} of ${sections.length} package(s)** have consumer-breaking changes${acked ? ` (${acked} acknowledged)` : ""}.`
+      : anyFindings
+        ? `⚠️ No unacknowledged breaking changes across ${sections.length} package(s).`
+        : `✅ No type-surface changes across ${sections.length} package(s).`;
+
+  const hint =
+    failing > 0
+      ? "\n_Add the `breaking` label or a `major` changeset to acknowledge and turn this into a warning._"
+      : "";
+
+  return [
+    header,
+    base,
+    "",
+    summary,
+    "",
+    sections.map(renderSection).join("\n"),
+    hint,
   ]
     .filter(Boolean)
     .join("\n");
