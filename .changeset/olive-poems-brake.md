@@ -3,4 +3,4 @@
 "@elevenlabs/convai-widget-embed": minor
 ---
 
-Add on-prem support. Setting the `on-prem-url` attribute (optionally with `on-prem-agent-config` carrying the exported agent configuration JSON) connects the widget to a self-hosted orchestrator instead of the ElevenLabs cloud, with no HTTP config fetch.
+Add self-hosted orchestrator support. Setting the `orchestrator-url` attribute (optionally with `orchestrator-agent-config` carrying the exported agent configuration JSON) connects the widget to a self-hosted orchestrator instead of the ElevenLabs cloud, with no HTTP config fetch.

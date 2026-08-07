@@ -97,7 +97,10 @@ export const ImageComponent = ({
   }
 
   return (
-    <ContentBlock className="inline-block self-auto" data-streamdown="image-wrapper">
+    <ContentBlock
+      className="inline-block self-auto"
+      data-streamdown="image-wrapper"
+    >
       <ContentBlock.Actions>
         <Button
           aria-label={textContents.download.value}

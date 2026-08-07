@@ -1,20 +1,20 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { parseOnPremConfig } from "./parseOnPremConfig";
+import { parseOrchestratorConfig } from "./parseOrchestratorConfig";
 
-describe("parseOnPremConfig", () => {
+describe("parseOrchestratorConfig", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   it("returns a URL-only config when no agent config is given", () => {
-    expect(parseOnPremConfig("wss://host/convai", undefined)).toEqual({
-      conversationUrl: "wss://host/convai",
+    expect(parseOrchestratorConfig("wss://host/convai", undefined)).toEqual({
+      url: "wss://host/convai",
     });
   });
 
   it("maps exported agent config keys to the client SDK shape", () => {
     expect(
-      parseOnPremConfig(
+      parseOrchestratorConfig(
         "wss://host/convai",
         JSON.stringify({
           agent_config_dict: { name: "agent" },
@@ -28,7 +28,7 @@ describe("parseOnPremConfig", () => {
         })
       )
     ).toEqual({
-      conversationUrl: "wss://host/convai",
+      url: "wss://host/convai",
       agentConfig: { name: "agent" },
       toolsConfigList: [{ type: "webhook" }],
       overrideAgentConfigList: [{ language: "en" }],
@@ -43,7 +43,7 @@ describe("parseOnPremConfig", () => {
 
   it("accepts the alternate export key names", () => {
     expect(
-      parseOnPremConfig(
+      parseOrchestratorConfig(
         "wss://host/convai",
         JSON.stringify({
           agent_config: { name: "agent" },
@@ -62,7 +62,9 @@ describe("parseOnPremConfig", () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    expect(parseOnPremConfig("wss://host/convai", "{not json")).toBeNull();
+    expect(
+      parseOrchestratorConfig("wss://host/convai", "{not json")
+    ).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
@@ -72,23 +74,23 @@ describe("parseOnPremConfig", () => {
       const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
-      expect(parseOnPremConfig("wss://host/convai", json)).toBeNull();
+      expect(parseOrchestratorConfig("wss://host/convai", json)).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalled();
     }
   );
 
   it("normalizes http(s) URLs to ws(s)", () => {
-    expect(parseOnPremConfig("https://host/convai", undefined)).toEqual({
-      conversationUrl: "wss://host/convai",
+    expect(parseOrchestratorConfig("https://host/convai", undefined)).toEqual({
+      url: "wss://host/convai",
     });
     expect(
-      parseOnPremConfig("http://localhost:8000/convai", undefined)
-    ).toEqual({ conversationUrl: "ws://localhost:8000/convai" });
+      parseOrchestratorConfig("http://localhost:8000/convai", undefined)
+    ).toEqual({ url: "ws://localhost:8000/convai" });
   });
 
   it("drops webhooks with non-string fields", () => {
     expect(
-      parseOnPremConfig(
+      parseOrchestratorConfig(
         "wss://host/convai",
         JSON.stringify({
           post_call_transcription_webhook: { url: 123 },

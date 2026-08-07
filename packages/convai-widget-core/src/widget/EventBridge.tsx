@@ -9,10 +9,11 @@ const eventUserMessage = "elevenlabs-agent:user-message";
 const eventContextualUpdate = "elevenlabs-agent:contextual-update";
 
 export const EventBridge = memo(function EventBridge({ children }) {
-  const { sendContextualUpdate, sendUserActivity, sendUserMessage } = useConversation();
+  const { sendContextualUpdate, sendUserActivity, sendUserMessage } =
+    useConversation();
   const shadowHost = useShadowHost();
   const allowEvents = useAllowEvents();
-  
+
   useSignalEffect(() => {
     function handleUserActivity(): void {
       sendUserActivity();
@@ -55,6 +56,12 @@ function isCustomEvent(event: Event): event is CustomEvent {
   return "detail" in event && !!event.detail;
 }
 
-function isCustomEventWithMessage(event: Event): event is CustomEvent<{ message: string }> {
-  return isCustomEvent(event) && typeof event.detail.message === "string" && !!event.detail.message;
+function isCustomEventWithMessage(
+  event: Event
+): event is CustomEvent<{ message: string }> {
+  return (
+    isCustomEvent(event) &&
+    typeof event.detail.message === "string" &&
+    !!event.detail.message
+  );
 }

@@ -141,7 +141,9 @@ export const TableComponent = ({
     <ContentBlock data-streamdown="table-wrapper">
       <ContentBlock.Actions>
         <Button
-          aria-label={isCopied.value ? textContents.copied.value : textContents.copy.value}
+          aria-label={
+            isCopied.value ? textContents.copied.value : textContents.copy.value
+          }
           disabled={disabled}
           icon={isCopied.value ? "check" : "copy"}
           onClick={copyTableData}

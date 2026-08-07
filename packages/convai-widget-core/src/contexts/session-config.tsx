@@ -11,7 +11,7 @@ import { parseBoolAttribute } from "../types/attributes";
 import { isValidLanguage } from "../types/languages";
 import { useTextOnly, useWebRTC, useWidgetConfig } from "./widget-config";
 import { parseDynamicVariables } from "../utils/dynamicVariables";
-import { parseOnPremConfig } from "../utils/parseOnPremConfig";
+import { parseOrchestratorConfig } from "../utils/parseOrchestratorConfig";
 
 const SessionConfigContext =
   createContext<ReadonlySignal<SessionConfig> | null>(null);
@@ -71,17 +71,20 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
-  const onPremUrl = useAttribute("on-prem-url");
-  const onPremAgentConfig = useAttribute("on-prem-agent-config");
+  const orchestratorUrl = useAttribute("orchestrator-url");
+  const orchestratorAgentConfig = useAttribute("orchestrator-agent-config");
   const overrideLanguage = useAttribute("override-language");
   const languageAttribute = useAttribute("language");
   const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
-  const parsedOnPremConfig = useComputed(() =>
-    onPremUrl.value
-      ? parseOnPremConfig(onPremUrl.value, onPremAgentConfig.value)
+  const parsedOrchestratorConfig = useComputed(() =>
+    orchestratorUrl.value
+      ? parseOrchestratorConfig(
+          orchestratorUrl.value,
+          orchestratorAgentConfig.value
+        )
       : null
   );
   const value = useComputed<SessionConfig | null>(() => {
@@ -99,14 +102,14 @@ export function SessionConfigProvider({
       },
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
-    if (onPremUrl.value) {
-      const onPremConfig = parsedOnPremConfig.value;
-      if (!onPremConfig) {
+    if (orchestratorUrl.value) {
+      const orchestratorConfig = parsedOrchestratorConfig.value;
+      if (!orchestratorConfig) {
         return null;
       }
       if (agentId.value || signedUrl.value) {
         console.warn(
-          "[ConversationalAI] on-prem-url takes precedence; agent-id and signed-url are ignored"
+          "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
         );
       }
       // The agent config carries its own language; only send an explicitly chosen override, not the default fallback.
@@ -120,9 +123,9 @@ export function SessionConfigProvider({
             ? languageAttribute.value
             : undefined;
 
-      // On-prem orchestrators only expose the conversation WebSocket
+      // Self-hosted orchestrators only expose the conversation WebSocket
       return {
-        onPremConfig,
+        orchestratorConfig,
         connectionType: "websocket" as const,
         ...baseConfig,
         overrides: {
@@ -168,7 +171,7 @@ export function SessionConfigProvider({
     }
 
     console.error(
-      "[ConversationalAI] Either agent-id, signed-url or on-prem-url is required"
+      "[ConversationalAI] Either agent-id, signed-url or orchestrator-url is required"
     );
     return null;
   });
