@@ -39,9 +39,13 @@ Choose one mode: **workspace** (`base-root` — discovers packages and entrypoin
 | `github-token`            | `${{ github.token }}` | Token used to post the comment.                                                                                                                                          |
 
 In workspace mode, each package's public entrypoints are discovered via the TS
-compiler's own module resolution — including implicit sibling `.d.ts` and every
-`exports` subpath (e.g. `@scope/pkg/internal`). A package can drop subpaths with
-`ignoreEntrypoints` in its `dts-breaking-changes.json`.
+compiler's own module resolution — including implicit sibling `.d.ts`, every
+`exports` subpath (e.g. `@scope/pkg/internal`), and every export **condition**
+that resolves to a distinct type surface (e.g. a `react-native` condition
+pointing at different types than `default`). A package can drop subpaths with
+`ignoreEntrypoints` in its `dts-breaking-changes.json`. The comment groups results
+by package, with a subsection per entrypoint (subpath, and condition when it
+isn't the default).
 
 ## Outputs
 

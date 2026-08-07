@@ -90,10 +90,14 @@ export function renderMarkdown(
     .join("\n");
 }
 
-/** One package's result within a combined, multi-package report. */
+/** One entrypoint's result within a combined, multi-package report. */
 export interface CombinedSection {
-  /** Visible heading for this section (e.g. the package name). */
-  title: string;
+  /** Package name; sections sharing it are grouped under one heading. */
+  package: string;
+  /** Export subpath within the package (e.g. "." or "./internal"). */
+  subpath: string;
+  /** Export condition that selects this surface; "default" is implicit. */
+  condition: string;
   /** Whether a breaking result here is acknowledged (label or major changeset). */
   acknowledged: boolean;
   /** Human reason shown when acknowledged, e.g. "the `breaking` label". */
@@ -106,16 +110,22 @@ export function sectionFails(s: CombinedSection): boolean {
   return s.report.verdict.gate === "fail" && !s.acknowledged;
 }
 
-function renderSection(s: CombinedSection): string {
+/** Entrypoint label: the subpath, plus the condition when it isn't the default. */
+function entrypointLabel(s: CombinedSection): string {
+  return s.condition === "default"
+    ? `\`${s.subpath}\``
+    : `\`${s.subpath}\` (${s.condition})`;
+}
+
+/** The findings body for one section, without its own heading. */
+function sectionBody(s: CombinedSection): string {
   const { findings } = s.report;
-  const title = `## ${s.title}`;
-  if (findings.length === 0) return `${title}\n\n✅ No type-surface changes.\n`;
+  if (findings.length === 0) return "✅ No type-surface changes.";
   const ackNote =
     s.acknowledged && s.report.verdict.gate === "fail"
       ? `\n✅ Acknowledged via ${s.ackReason ?? "an override"} — reported as a warning.\n`
       : "";
   return [
-    title,
     section(findings, "breaking"),
     section(findings, "warning"),
     section(findings, "info"),
@@ -123,6 +133,30 @@ function renderSection(s: CombinedSection): string {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+/** Group sections by package, preserving first-seen order. */
+function groupByPackage(
+  sections: CombinedSection[]
+): Map<string, CombinedSection[]> {
+  const groups = new Map<string, CombinedSection[]>();
+  for (const s of sections) {
+    const group = groups.get(s.package);
+    if (group) group.push(s);
+    else groups.set(s.package, [s]);
+  }
+  return groups;
+}
+
+/** One package heading; entrypoints become subsections only when there is more than one. */
+function renderPackage(pkg: string, sections: CombinedSection[]): string {
+  const heading = `## ${pkg}`;
+  if (sections.length === 1)
+    return `${heading}\n\n${sectionBody(sections[0])}\n`;
+  return [
+    heading,
+    ...sections.map(s => `### ${entrypointLabel(s)}\n\n${sectionBody(s)}\n`),
+  ].join("\n");
 }
 
 /** Render one comment covering several packages, each under its own heading. */
@@ -133,18 +167,23 @@ export function renderCombined(
   const header = "### Type surface report";
   const base = baseSha ? `\n\nCompared against base ${baseSha}.` : "";
 
-  const failing = sections.filter(sectionFails).length;
-  const acked = sections.filter(
-    s => s.report.verdict.gate === "fail" && s.acknowledged
+  const groups = groupByPackage(sections);
+  const pkgCount = groups.size;
+  const groupList = [...groups.values()];
+  const failing = groupList.filter(g => g.some(sectionFails)).length;
+  const acked = groupList.filter(
+    g =>
+      !g.some(sectionFails) &&
+      g.some(s => s.report.verdict.gate === "fail" && s.acknowledged)
   ).length;
   const anyFindings = sections.some(s => s.report.findings.length > 0);
 
   const summary =
     failing > 0
-      ? `❌ **${failing} of ${sections.length} package(s)** have consumer-breaking changes${acked ? ` (${acked} acknowledged)` : ""}.`
+      ? `❌ **${failing} of ${pkgCount} package(s)** have consumer-breaking changes${acked ? ` (${acked} acknowledged)` : ""}.`
       : anyFindings
-        ? `⚠️ No unacknowledged breaking changes across ${sections.length} package(s).`
-        : `✅ No type-surface changes across ${sections.length} package(s).`;
+        ? `⚠️ No unacknowledged breaking changes across ${pkgCount} package(s).`
+        : `✅ No type-surface changes across ${pkgCount} package(s).`;
 
   const hint =
     failing > 0
@@ -157,7 +196,7 @@ export function renderCombined(
     "",
     summary,
     "",
-    sections.map(renderSection).join("\n"),
+    [...groups].map(([pkg, secs]) => renderPackage(pkg, secs)).join("\n"),
     hint,
   ]
     .filter(Boolean)

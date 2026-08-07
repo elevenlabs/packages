@@ -103,7 +103,7 @@ runs:
           ALLOW=$([ "$ALLOW_BREAKING" = "true" ] && echo true || echo false)
           jq -n --arg t "$TITLE" --arg o "$OLD_DIR" --arg n "$NEW_DIR" \
             --arg e "$ENTRY" --arg c "$CONFIG" --argjson a "$ALLOW" \
-            '[{title:$t, oldDir:$o, newDir:$n, entry:$e, config:$c, allowBreaking:$a}]' > "$SURFACES_FILE"
+            '[{package:$t, subpath:".", condition:"default", oldDir:$o, newDir:$n, entry:$e, config:$c, allowBreaking:$a}]' > "$SURFACES_FILE"
         fi
 
         # The `breaking` label acknowledges every surface's breaking changes.

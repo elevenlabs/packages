@@ -54,7 +54,9 @@ function runDiscover(opts: {
 
 const surfacesSchema = z.array(
   z.object({
-    title: z.string(),
+    package: z.string(),
+    subpath: z.string().default("."),
+    condition: z.string().default("default"),
     oldDir: z.string(),
     newDir: z.string(),
     entry: z.string().optional(),
@@ -81,7 +83,11 @@ function runSurfaces(
   const sections: CombinedSection[] = surfaces.map(s => {
     const fileConfig = readConfig(s.config);
     const entry = s.entry || fileConfig.entry;
-    if (!entry) throw new Error(`Surface "${s.title}" is missing an entry.`);
+    if (!entry) {
+      throw new Error(
+        `Surface "${s.package} ${s.subpath}" is missing an entry.`
+      );
+    }
     const report = analyze({
       oldDir: s.oldDir,
       newDir: s.newDir,
@@ -94,7 +100,14 @@ function runSurfaces(
       : s.allowBreaking
         ? "a major changeset"
         : undefined;
-    return { title: s.title, acknowledged, ackReason, report };
+    return {
+      package: s.package,
+      subpath: s.subpath,
+      condition: s.condition,
+      acknowledged,
+      ackReason,
+      report,
+    };
   });
 
   const markdown = renderCombined(sections, opts.baseSha);

@@ -7,7 +7,12 @@ import { parse as parseYaml } from "yaml";
 import { configFileSchema } from "./config.ts";
 
 export interface Surface {
-  title: string;
+  /** Package name (groups sections in the report). */
+  package: string;
+  /** Export subpath, e.g. "." or "./internal". */
+  subpath: string;
+  /** Export condition that selects this type surface; "default" is implicit. */
+  condition: string;
   oldDir: string;
   newDir: string;
   entry: string;
@@ -57,37 +62,87 @@ function legacyEntry(pkgDir: string, pkg: PackageJson): string | undefined {
   return fs.existsSync(path.join(pkgDir, rel)) ? rel : undefined;
 }
 
+/** The `exports` value for a subpath ("." when exports is a string or conditions-only). */
+function subpathValue(exports: unknown, subpath: string): unknown {
+  if (exports == null || typeof exports !== "object") return exports;
+  const record = exports as Record<string, unknown>;
+  const hasSubpaths = Object.keys(record).some(
+    k => k === "." || k.startsWith("./")
+  );
+  return hasSubpaths ? record[subpath] : record;
+}
+
+/** Condition names (recursively) in an exports value — every key that isn't a subpath. */
+function conditionNames(value: unknown): string[] {
+  const names = new Set<string>();
+  const walk = (v: unknown) => {
+    if (!v || typeof v !== "object" || Array.isArray(v)) return;
+    for (const [key, child] of Object.entries(v)) {
+      if (!key.startsWith(".")) names.add(key);
+      walk(child);
+    }
+  };
+  walk(value);
+  return [...names];
+}
+
+/** Resolve a specifier's types under a set of custom conditions, relative to the package. */
+function resolveDts(
+  pkgDir: string,
+  spec: string,
+  containingFile: string,
+  conditions: string[]
+): string | undefined {
+  const options: ts.CompilerOptions = {
+    ...TS_OPTIONS,
+    ...(conditions.length ? { customConditions: conditions } : {}),
+  };
+  const resolved = ts.resolveModuleName(spec, containingFile, options, ts.sys)
+    .resolvedModule?.resolvedFileName;
+  return resolved && /\.d\.[mc]?ts$/.test(resolved)
+    ? path.relative(pkgDir, resolved)
+    : undefined;
+}
+
 /**
- * Resolve a package's public type entrypoints — one per export subpath — using
- * the TS compiler's own module resolution. Resolving the package by its own name
- * from a virtual file inside its directory (self-reference) honors its `exports`,
- * the `types` condition, and the implicit JS-sibling `.d.ts` fallback, exactly as
- * a consumer's `tsc` would. Requires the package to be already built.
+ * Resolve a package's public type entrypoints using the TS compiler's own module
+ * resolution — one per (subpath × condition) that resolves to a distinct `.d.ts`.
+ * Resolving the package by its own name from a virtual file inside its directory
+ * (self-reference) honors `exports`, the `types` condition, and the implicit
+ * JS-sibling `.d.ts` fallback, exactly as a consumer's `tsc` would. A subpath's
+ * export conditions are enumerated and resolved individually, so a condition that
+ * points at a different type surface (e.g. `react-native`) is checked too; the
+ * `default` resolution is implicit and conditions that resolve to the same file
+ * are folded into it. Requires the package to be already built.
  */
 export function resolveEntrypoints(
   pkgDir: string
-): Array<{ subpath: string; entry: string }> {
+): Array<{ subpath: string; condition: string; entry: string }> {
   const pkg = readJson(path.join(pkgDir, "package.json")) as PackageJson;
   const containingFile = path.join(pkgDir, "__dts_resolve__.ts");
-  const out: Array<{ subpath: string; entry: string }> = [];
+  const out: Array<{ subpath: string; condition: string; entry: string }> = [];
   for (const subpath of enumerateSubpaths(pkg)) {
-    let entry: string | undefined;
+    const byFile = new Map<string, string>(); // entry -> condition label
     if (pkg.name) {
       const spec =
         subpath === "." ? pkg.name : `${pkg.name}/${subpath.slice(2)}`;
-      const resolved = ts.resolveModuleName(
-        spec,
-        containingFile,
-        TS_OPTIONS,
-        ts.sys
-      ).resolvedModule?.resolvedFileName;
-      if (resolved && /\.d\.[mc]?ts$/.test(resolved)) {
-        entry = path.relative(pkgDir, resolved);
+      const def = resolveDts(pkgDir, spec, containingFile, []);
+      if (def) byFile.set(def, "default");
+      for (const condition of conditionNames(
+        subpathValue(pkg.exports, subpath)
+      )) {
+        const entry = resolveDts(pkgDir, spec, containingFile, [condition]);
+        if (entry && !byFile.has(entry)) byFile.set(entry, condition);
       }
     }
-    if (!entry && subpath === ".") entry = legacyEntry(pkgDir, pkg);
-    if (entry && fs.existsSync(path.join(pkgDir, entry))) {
-      out.push({ subpath, entry });
+    if (byFile.size === 0 && subpath === ".") {
+      const entry = legacyEntry(pkgDir, pkg);
+      if (entry) byFile.set(entry, "default");
+    }
+    for (const [entry, condition] of byFile) {
+      if (fs.existsSync(path.join(pkgDir, entry))) {
+        out.push({ subpath, condition, entry });
+      }
     }
   }
   return out;
@@ -188,7 +243,9 @@ export function discoverSurfaces(opts: DiscoverOptions): Surface[] {
       if (ignore.some(g => matchEntrypoint(g, ep.subpath))) continue;
       if (!fs.existsSync(path.join(opts.baseRoot, rel, ep.entry))) continue;
       surfaces.push({
-        title: ep.subpath === "." ? name : `${name}/${ep.subpath.slice(2)}`,
+        package: name,
+        subpath: ep.subpath,
+        condition: ep.condition,
         oldDir: path.join(opts.baseRoot, rel),
         newDir: path.join(opts.headRoot, rel),
         entry: ep.entry,

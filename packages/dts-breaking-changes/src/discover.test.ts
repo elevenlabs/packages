@@ -30,11 +30,22 @@ test("resolveEntrypoints handles explicit types, subpaths, implicit siblings, an
   assert.deepEqual(entries(pkg("notypes")), []);
 });
 
+test("resolveEntrypoints enumerates conditions that resolve to distinct type surfaces", () => {
+  const entries = resolveEntrypoints(pkg("conditions"))
+    .map(e => `${e.subpath} (${e.condition}) -> ${e.entry}`)
+    .sort();
+  assert.deepEqual(entries, [
+    ". (default) -> built/index.d.ts",
+    ". (react-native) -> built/index.native.d.ts",
+  ]);
+});
+
 test("discoverWorkspacePackages reads pnpm-workspace.yaml globs", () => {
   const names = discoverWorkspacePackages(WS)
     .map(p => p.name)
     .sort();
   assert.deepEqual(names, [
+    "@fx/conditions",
     "@fx/explicit",
     "@fx/implicit",
     "@fx/legacy",
@@ -42,26 +53,30 @@ test("discoverWorkspacePackages reads pnpm-workspace.yaml globs", () => {
   ]);
 });
 
-test("discoverSurfaces yields one surface per public entrypoint, base paired with head", () => {
+test("discoverSurfaces yields one surface per (subpath, condition), base paired with head", () => {
   const surfaces = discoverSurfaces({
     baseRoot: WS,
     headRoot: WS,
     majorPackages: ["@fx/legacy"],
   });
-  const titles = surfaces.map(s => s.title).sort();
-  assert.deepEqual(titles, [
-    "@fx/explicit",
-    "@fx/explicit/sub",
-    "@fx/implicit",
-    "@fx/legacy",
+  const ids = surfaces
+    .map(s => `${s.package} ${s.subpath} (${s.condition})`)
+    .sort();
+  assert.deepEqual(ids, [
+    "@fx/conditions . (default)",
+    "@fx/conditions . (react-native)",
+    "@fx/explicit . (default)",
+    "@fx/explicit ./sub (default)",
+    "@fx/implicit . (default)",
+    "@fx/legacy . (default)",
   ]);
   // majorPackages pre-acknowledges the affected package.
   assert.equal(
-    surfaces.find(s => s.title === "@fx/legacy")?.allowBreaking,
+    surfaces.find(s => s.package === "@fx/legacy")?.allowBreaking,
     true
   );
   assert.equal(
-    surfaces.find(s => s.title === "@fx/explicit")?.allowBreaking,
+    surfaces.find(s => s.package === "@fx/explicit")?.allowBreaking,
     false
   );
 });
