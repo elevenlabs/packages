@@ -3,14 +3,14 @@ import { createConnection } from "./ConnectionFactory.js";
 import type { SessionConfig } from "./BaseConnection.js";
 
 describe("createConnection", () => {
-  const onPremConfig = {
-    conversationUrl: "wss://orchestrator.internal/convai",
+  const orchestratorConfig = {
+    url: "wss://orchestrator.internal/convai",
   };
 
-  it("rejects onPremConfig combined with webrtc", async () => {
+  it("rejects orchestratorConfig combined with webrtc", async () => {
     await expect(
       createConnection({
-        onPremConfig,
+        orchestratorConfig,
         connectionType: "webrtc",
       } as unknown as SessionConfig)
     ).rejects.toThrow("only supports websocket");
@@ -20,9 +20,12 @@ describe("createConnection", () => {
     { signedUrl: "wss://api.elevenlabs.io/v1/convai/conversation?token=x" },
     { conversationToken: "token" },
     { authorization: "bearer-token" },
-  ])("rejects onPremConfig combined with %o", async extra => {
+  ])("rejects orchestratorConfig combined with %o", async extra => {
     await expect(
-      createConnection({ onPremConfig, ...extra } as unknown as SessionConfig)
+      createConnection({
+        orchestratorConfig,
+        ...extra,
+      } as unknown as SessionConfig)
     ).rejects.toThrow("cannot be combined");
   });
 });

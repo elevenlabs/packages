@@ -72,7 +72,7 @@ export type ConnectionType = "websocket" | "webrtc";
 /**
  * @experimental
  */
-export type OnPremWebhookConfig = {
+export type PostCallWebhookConfig = {
   url: string;
   /** Secret the orchestrator uses to sign deliveries. The orchestrator rejects secrets shorter than 16 characters. */
   hmacSecret?: string;
@@ -81,9 +81,9 @@ export type OnPremWebhookConfig = {
 /**
  * @experimental
  */
-export type OnPremConfig = {
+export type OrchestratorConfig = {
   /** WebSocket URL of the orchestrator, e.g. "wss://<host>/sagemaker/convai/conversation". */
-  conversationUrl: string;
+  url: string;
   /** Full agent definition, as exported from the ElevenLabs platform. */
   agentConfig?: Record<string, unknown>;
   /** Partial configs applied as overrides on top of the base agent config. */
@@ -93,9 +93,9 @@ export type OnPremConfig = {
   /** Strings appended to the system prompt at runtime. */
   promptKnowledgeBase?: string[];
   /** Called with the conversation transcript once the session ends. */
-  postCallTranscriptionWebhook?: OnPremWebhookConfig;
+  postCallTranscriptionWebhook?: PostCallWebhookConfig;
   /** Called with the conversation audio once the session ends. */
-  postCallAudioWebhook?: OnPremWebhookConfig;
+  postCallAudioWebhook?: PostCallWebhookConfig;
 };
 
 export type PublicSessionConfig = BaseSessionConfig & {
@@ -103,7 +103,7 @@ export type PublicSessionConfig = BaseSessionConfig & {
   connectionType?: ConnectionType;
   signedUrl?: never;
   conversationToken?: never;
-  onPremConfig?: never;
+  orchestratorConfig?: never;
 };
 
 export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
@@ -111,7 +111,7 @@ export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
   connectionType?: "websocket";
   agentId?: never;
   conversationToken?: never;
-  onPremConfig?: never;
+  orchestratorConfig?: never;
 };
 
 export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
@@ -119,18 +119,18 @@ export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
   connectionType?: "webrtc";
   agentId?: never;
   signedUrl?: never;
-  onPremConfig?: never;
+  orchestratorConfig?: never;
 };
 
 /**
  * @experimental
  */
-export type OnPremSessionConfig = BaseSessionConfig & {
+export type OrchestratorSessionConfig = BaseSessionConfig & {
   /**
    * Routes the session to a self-hosted orchestrator instead of the ElevenLabs cloud.
    * @experimental
    */
-  onPremConfig: OnPremConfig;
+  orchestratorConfig: OrchestratorConfig;
   connectionType?: "websocket";
   agentId?: never;
   signedUrl?: never;
@@ -145,7 +145,7 @@ export type SessionConfig =
   | PublicSessionConfig
   | PrivateWebSocketSessionConfig
   | PrivateWebRTCSessionConfig
-  | OnPremSessionConfig;
+  | OrchestratorSessionConfig;
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;

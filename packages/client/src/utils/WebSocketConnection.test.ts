@@ -59,15 +59,14 @@ describe("WebSocketConnection", () => {
     return promise;
   }
 
-  describe("on-prem sessions", () => {
-    const onPremConfig = {
-      conversationUrl:
-        "wss://orchestrator.internal/sagemaker/convai/conversation",
+  describe("self-hosted orchestrator sessions", () => {
+    const orchestratorConfig = {
+      url: "wss://orchestrator.internal/sagemaker/convai/conversation",
       agentConfig: { name: "test-agent" },
     };
 
-    async function createOnPremConnection(): Promise<WebSocketConnection> {
-      const promise = WebSocketConnection.create({ onPremConfig });
+    async function createOrchestratorConnection(): Promise<WebSocketConnection> {
+      const promise = WebSocketConnection.create({ orchestratorConfig });
 
       emit("open", {});
       emit("message", {
@@ -85,16 +84,16 @@ describe("WebSocketConnection", () => {
     }
 
     it("connects to the configured URL without subprotocols", async () => {
-      await createOnPremConnection();
+      await createOrchestratorConnection();
 
       expect(globalThis.WebSocket).toHaveBeenCalledWith(
-        onPremConfig.conversationUrl,
+        orchestratorConfig.url,
         undefined
       );
     });
 
     it("sends the enclave setup config before the initiation message", async () => {
-      await createOnPremConnection();
+      await createOrchestratorConnection();
 
       expect(mockSocket.send).toHaveBeenCalledTimes(2);
       const first = JSON.parse(mockSocket.send.mock.calls[0][0]);

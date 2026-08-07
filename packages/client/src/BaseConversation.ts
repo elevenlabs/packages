@@ -674,9 +674,11 @@ export abstract class BaseConversation {
   }
 
   public async uploadFile(file: Blob): Promise<UploadFileResult> {
-    if (this.options.onPremConfig) {
+    if (this.options.orchestratorConfig) {
       // Without this guard the file body would leave the customer network for the ElevenLabs cloud.
-      throw new Error("uploadFile is not supported for on-prem sessions.");
+      throw new Error(
+        "uploadFile is not supported for self-hosted orchestrator sessions."
+      );
     }
     return uploadFile({
       conversationId: this.connection.conversationId,

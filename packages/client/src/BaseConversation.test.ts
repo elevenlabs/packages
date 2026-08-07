@@ -182,16 +182,16 @@ describe("BaseConversation", () => {
       expect(getUploadedFilename()).toBe("upload.svg");
     });
 
-    it("throws for on-prem sessions instead of calling the cloud API", async () => {
+    it("throws for self-hosted orchestrator sessions instead of calling the cloud API", async () => {
       mockFetchSuccess();
       const conversation = TestConversation.create({
-        onPremConfig: {
-          conversationUrl: "wss://orchestrator.internal/convai",
+        orchestratorConfig: {
+          url: "wss://orchestrator.internal/convai",
         },
       } as Partial<Options>);
 
       await expect(conversation.uploadFile(new Blob(["test"]))).rejects.toThrow(
-        "not supported for on-prem sessions"
+        "not supported for self-hosted orchestrator sessions"
       );
       expect(fetchSpy).not.toHaveBeenCalled();
     });

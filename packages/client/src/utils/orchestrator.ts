@@ -1,4 +1,7 @@
-import type { OnPremConfig, OnPremWebhookConfig } from "./BaseConnection.js";
+import type {
+  OrchestratorConfig,
+  PostCallWebhookConfig,
+} from "./BaseConnection.js";
 
 export const ENCLAVE_SETUP_CONFIG_TYPE = "enclave_setup_config";
 
@@ -12,7 +15,7 @@ export type EnclaveSetupConfigEvent = {
   post_call_audio_webhook?: { url: string; hmac_secret?: string };
 };
 
-function webhookToWire(webhook: OnPremWebhookConfig) {
+function webhookToWire(webhook: PostCallWebhookConfig) {
   return {
     url: webhook.url,
     ...(webhook.hmacSecret !== undefined
@@ -22,7 +25,7 @@ function webhookToWire(webhook: OnPremWebhookConfig) {
 }
 
 export function constructEnclaveSetupConfig(
-  config: OnPremConfig
+  config: OrchestratorConfig
 ): EnclaveSetupConfigEvent {
   const event: EnclaveSetupConfigEvent = {
     type: ENCLAVE_SETUP_CONFIG_TYPE,

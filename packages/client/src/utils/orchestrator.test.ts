@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { constructEnclaveSetupConfig } from "./onPrem.js";
+import { constructEnclaveSetupConfig } from "./orchestrator.js";
 
 describe("constructEnclaveSetupConfig", () => {
   it("maps unset fields to nulls", () => {
     expect(
       constructEnclaveSetupConfig({
-        conversationUrl: "ws://localhost:8000/sagemaker/convai/conversation",
+        url: "ws://localhost:8000/sagemaker/convai/conversation",
       })
     ).toEqual({
       type: "enclave_setup_config",
@@ -19,7 +19,7 @@ describe("constructEnclaveSetupConfig", () => {
   it("maps all fields to the wire format", () => {
     expect(
       constructEnclaveSetupConfig({
-        conversationUrl: "ws://localhost:8000/sagemaker/convai/conversation",
+        url: "ws://localhost:8000/sagemaker/convai/conversation",
         agentConfig: { name: "agent" },
         overrideAgentConfigList: [{ language: "en" }],
         toolsConfigList: [{ type: "webhook" }],

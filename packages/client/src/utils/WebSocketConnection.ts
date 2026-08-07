@@ -12,7 +12,7 @@ import {
   type IncomingSocketEvent,
 } from "./events.js";
 import { constructOverrides } from "./overrides.js";
-import { constructEnclaveSetupConfig } from "./onPrem.js";
+import { constructEnclaveSetupConfig } from "./orchestrator.js";
 import { SessionConnectionError } from "./errors.js";
 import type {
   OutputEventTarget,
@@ -117,9 +117,9 @@ export class WebSocketConnection
 
       const { name: source, version } = sourceInfo;
 
-      if (config.onPremConfig) {
-        // On-prem orchestrators don't negotiate subprotocols; requesting one makes browsers fail the connection.
-        url = config.onPremConfig.conversationUrl;
+      if (config.orchestratorConfig) {
+        // Self-hosted orchestrators don't negotiate subprotocols; requesting one makes browsers fail the connection.
+        url = config.orchestratorConfig.url;
       } else {
         const origin = config.origin ?? WSS_API_ORIGIN;
 
@@ -147,9 +147,11 @@ export class WebSocketConnection
         socket!.addEventListener(
           "open",
           () => {
-            if (config.onPremConfig) {
+            if (config.orchestratorConfig) {
               socket?.send(
-                JSON.stringify(constructEnclaveSetupConfig(config.onPremConfig))
+                JSON.stringify(
+                  constructEnclaveSetupConfig(config.orchestratorConfig)
+                )
               );
             }
 

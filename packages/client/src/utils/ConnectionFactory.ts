@@ -8,7 +8,8 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
   const hasSignedUrl = "signedUrl" in config && config.signedUrl;
-  const hasOnPremConfig = "onPremConfig" in config && config.onPremConfig;
+  const hasOrchestratorConfig =
+    "orchestratorConfig" in config && config.orchestratorConfig;
 
   // Reject invalid combination: signedUrl only supports websocket
   // Cast needed because TS narrows signedUrl configs to connectionType?: "websocket",
@@ -20,22 +21,22 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
   }
 
   if (
-    hasOnPremConfig &&
+    hasOrchestratorConfig &&
     (config.connectionType as ConnectionType) === "webrtc"
   ) {
     throw new Error(
-      "onPremConfig only supports websocket connections. Remove connectionType or set it to 'websocket'."
+      "orchestratorConfig only supports websocket connections. Remove connectionType or set it to 'websocket'."
     );
   }
 
   if (
-    hasOnPremConfig &&
+    hasOrchestratorConfig &&
     (hasSignedUrl ||
       ("conversationToken" in config && config.conversationToken) ||
       config.authorization)
   ) {
     throw new Error(
-      "onPremConfig cannot be combined with signedUrl, conversationToken or authorization."
+      "orchestratorConfig cannot be combined with signedUrl, conversationToken or authorization."
     );
   }
 
@@ -54,7 +55,7 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     return "websocket";
   }
 
-  if (hasOnPremConfig) {
+  if (hasOrchestratorConfig) {
     return "websocket";
   }
 
