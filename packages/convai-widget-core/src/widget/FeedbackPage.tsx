@@ -20,11 +20,10 @@ export function FeedbackPage() {
     <div className="grow flex flex-col overflow-y-auto overflow-x-hidden px-4">
       <div className="flex flex-col gap-8 min-h-full pt-4 pb-2">
         <div className="flex flex-col items-center justify-center gap-3">
-         
-          <FeedbackIcon 
-            orbColor="var(--el-base-subtle)" 
+          <FeedbackIcon
+            orbColor="var(--el-base-subtle)"
             circleBackgroundColor="var(--el-base)"
-            starColor="var(--el-base-primary)" 
+            starColor="var(--el-base-primary)"
             className="w-20 h-22"
           />
           {rating.value !== null && (
@@ -50,6 +49,3 @@ export function FeedbackPage() {
     </div>
   );
 }
-
-
-

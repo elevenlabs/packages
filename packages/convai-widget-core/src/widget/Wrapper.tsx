@@ -62,9 +62,11 @@ export const Wrapper = memo(function Wrapper() {
     )
   );
   // Powered by should always at bottom of the viewport in fullscreen mode
-  const poweredByClassName = useComputed(() => (
-    variant.value === "fullscreen" ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
-  ));
+  const poweredByClassName = useComputed(() =>
+    variant.value === "fullscreen"
+      ? cn(className.value, PLACEMENT_CLASSES["bottom"])
+      : className.value
+  );
 
   useSignalEffect(() => {
     if (error.value) {
@@ -100,7 +102,10 @@ export const Wrapper = memo(function Wrapper() {
     host?.addEventListener("elevenlabs-agent:expand", handleExpandEvent);
 
     return () => {
-      document.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
+      document.removeEventListener(
+        "elevenlabs-agent:expand",
+        handleExpandEvent
+      );
       host?.removeEventListener("elevenlabs-agent:expand", handleExpandEvent);
     };
   });
@@ -127,16 +132,22 @@ export const Wrapper = memo(function Wrapper() {
     hidden.value = false;
   };
 
-  const showConversation = useComputed(() => isConversation.value && !hidden.value);
+  const showConversation = useComputed(
+    () => isConversation.value && !hidden.value
+  );
   const showTerms = useComputed(() => isTerms.value && !hidden.value);
   const showError = useComputed(() => isError.value && !hidden.value);
   const showPoweredBy = useComputed(() => !hidden.value);
 
   // Only show dismiss button if dismissible is enabled AND call is not active
-  const showDismiss = useComputed(() => config.value.dismissible && isDisconnected.value);
+  const showDismiss = useComputed(
+    () => config.value.dismissible && isDisconnected.value
+  );
 
   // Show expand button when widget is hidden and dismissible is enabled
-  const showExpandButton = useComputed(() => config.value.dismissible && hidden.value);
+  const showExpandButton = useComputed(
+    () => config.value.dismissible && hidden.value
+  );
 
   return (
     <>

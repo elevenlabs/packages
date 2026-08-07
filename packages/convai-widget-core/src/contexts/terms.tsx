@@ -1,4 +1,9 @@
-import { computed, ReadonlySignal, useSignal, useSignalEffect } from "@preact/signals";
+import {
+  computed,
+  ReadonlySignal,
+  useSignal,
+  useSignalEffect,
+} from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
@@ -27,7 +32,7 @@ export function TermsProvider({ children }: TermsProviderProps) {
 
   const termsShown = useSignal(false);
   const termsAcceptedState = useSignal(false);
-  
+
   const value = useMemo(() => {
     const termsAccepted = computed(
       () => !localizedTerms.value.terms_html || termsAcceptedState.value

@@ -1,6 +1,9 @@
-import type { OnPremConfig, OnPremWebhookConfig } from "@elevenlabs/client";
+import type {
+  OrchestratorConfig,
+  PostCallWebhookConfig,
+} from "@elevenlabs/client";
 
-function parseWebhook(value: unknown): OnPremWebhookConfig | undefined {
+function parseWebhook(value: unknown): PostCallWebhookConfig | undefined {
   if (!value || typeof value !== "object") {
     return undefined;
   }
@@ -16,28 +19,28 @@ function parseWebhook(value: unknown): OnPremWebhookConfig | undefined {
   };
 }
 
-export function parseOnPremConfig(
-  rawConversationUrl: string,
+export function parseOrchestratorConfig(
+  rawUrl: string,
   agentConfigJSON: string | undefined
-): OnPremConfig | null {
-  const conversationUrl = rawConversationUrl
+): OrchestratorConfig | null {
+  const url = rawUrl
     .replace(/^https:\/\//, "wss://")
     .replace(/^http:\/\//, "ws://");
 
   if (!agentConfigJSON) {
-    return { conversationUrl };
+    return { url };
   }
 
   try {
     const parsed = JSON.parse(agentConfigJSON);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       console.error(
-        "[ConversationalAI] on-prem-agent-config must be a JSON object"
+        "[ConversationalAI] orchestrator-agent-config must be a JSON object"
       );
       return null;
     }
     return {
-      conversationUrl,
+      url,
       agentConfig: parsed.agent_config_dict ?? parsed.agent_config ?? undefined,
       overrideAgentConfigList:
         parsed.override_agent_config_list ??
@@ -53,7 +56,7 @@ export function parseOnPremConfig(
     };
   } catch (error) {
     console.error(
-      `[ConversationalAI] Cannot parse on-prem-agent-config: ${
+      `[ConversationalAI] Cannot parse orchestrator-agent-config: ${
         error instanceof Error ? error.message : String(error)
       }`
     );

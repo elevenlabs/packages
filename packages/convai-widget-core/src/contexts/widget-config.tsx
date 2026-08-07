@@ -30,8 +30,8 @@ const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
 );
 
-// On-prem orchestrators have no HTTP API to serve a widget appearance config.
-const DefaultOnPremWidgetConfig: WidgetConfig = {
+// Self-hosted orchestrators have no HTTP API to serve a widget appearance config.
+const DefaultOrchestratorWidgetConfig: WidgetConfig = {
   variant: "full",
   placement: "bottom-right",
   avatar: {
@@ -63,7 +63,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const agentId = useAttribute("agent-id");
   const overrideConfig = useAttribute("override-config");
   const signedUrl = useAttribute("signed-url");
-  const onPremUrl = useAttribute("on-prem-url");
+  const orchestratorUrl = useAttribute("orchestrator-url");
   const fetchedConfig = useSignal<WidgetConfig | null>(null);
 
   useSignalEffect(() => {
@@ -80,8 +80,8 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
         );
       }
     }
-    if (onPremUrl.value) {
-      fetchedConfig.value = structuredClone(DefaultOnPremWidgetConfig);
+    if (orchestratorUrl.value) {
+      fetchedConfig.value = structuredClone(DefaultOrchestratorWidgetConfig);
       return;
     }
     let currentAgentId: string | undefined = agentId.value;
