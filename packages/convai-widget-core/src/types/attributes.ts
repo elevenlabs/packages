@@ -21,6 +21,8 @@ export const CustomAttributeList = [
   "avatar-orb-color-2",
   "agent-id",
   "signed-url",
+  "on-prem-url",
+  "on-prem-agent-config",
   "terms-key",
   "server-location",
   "language",

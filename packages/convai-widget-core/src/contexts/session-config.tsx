@@ -10,6 +10,7 @@ import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
 import { useTextOnly, useWebRTC } from "./widget-config";
 import { parseDynamicVariables } from "../utils/dynamicVariables";
+import { parseOnPremConfig } from "../utils/parseOnPremConfig";
 
 const SessionConfigContext =
   createContext<ReadonlySignal<SessionConfig> | null>(null);
@@ -69,6 +70,8 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
+  const onPremUrl = useAttribute("on-prem-url");
+  const onPremAgentConfig = useAttribute("on-prem-agent-config");
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
@@ -80,7 +83,6 @@ export function SessionConfigProvider({
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
       userId: userId.value || undefined,
-      environment: environment.value || undefined,
       libsampleratePath: libsamplerate.value,
       workletPaths: {
         rawAudioProcessor: rawAudioProcessor.value,
@@ -88,12 +90,29 @@ export function SessionConfigProvider({
       },
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
+    if (onPremUrl.value) {
+      const onPremConfig = parseOnPremConfig(
+        onPremUrl.value,
+        onPremAgentConfig.value
+      );
+      if (!onPremConfig) {
+        return null;
+      }
+      // On-prem orchestrators only expose the conversation WebSocket
+      return {
+        onPremConfig,
+        connectionType: "websocket" as const,
+        ...baseConfig,
+      };
+    }
+
     if (agentId.value) {
       if (isWebRTC) {
         return {
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "webrtc" as const,
+          environment: environment.value || undefined,
           ...baseConfig,
         };
       } else {
@@ -101,6 +120,7 @@ export function SessionConfigProvider({
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "websocket" as const,
+          environment: environment.value || undefined,
           ...baseConfig,
         };
       }
@@ -111,12 +131,13 @@ export function SessionConfigProvider({
       return {
         signedUrl: signedUrl.value,
         connectionType: "websocket" as const,
+        environment: environment.value || undefined,
         ...baseConfig,
       };
     }
 
     console.error(
-      "[ConversationalAI] Either agent-id or signed-url is required"
+      "[ConversationalAI] Either agent-id, signed-url or on-prem-url is required"
     );
     return null;
   });
