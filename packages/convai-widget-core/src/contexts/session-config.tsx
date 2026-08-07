@@ -23,7 +23,7 @@ interface SessionConfigProviderProps {
 export function SessionConfigProvider({
   children,
 }: SessionConfigProviderProps) {
-  const { language } = useLanguageConfig();
+  const { language, languageChosen } = useLanguageConfig();
   const overridePrompt = useAttribute("override-prompt");
   const overrideLLM = useAttribute("override-llm");
   const overrideSpeed = useAttribute("override-speed");
@@ -74,6 +74,7 @@ export function SessionConfigProvider({
   const onPremUrl = useAttribute("on-prem-url");
   const onPremAgentConfig = useAttribute("on-prem-agent-config");
   const overrideLanguage = useAttribute("override-language");
+  const languageAttribute = useAttribute("language");
   const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
@@ -112,9 +113,12 @@ export function SessionConfigProvider({
       const resolvedLanguage = language.value.languageCode;
       const languageOverride =
         isValidLanguage(overrideLanguage.value) ||
+        languageChosen.value ||
         resolvedLanguage !== widgetConfig.value.language
           ? resolvedLanguage
-          : undefined;
+          : isValidLanguage(languageAttribute.value)
+            ? languageAttribute.value
+            : undefined;
 
       // On-prem orchestrators only expose the conversation WebSocket
       return {
