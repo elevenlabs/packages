@@ -65,4 +65,42 @@ describe("parseOnPremConfig", () => {
     expect(parseOnPremConfig("wss://host/convai", "{not json")).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
+
+  it.each(["null", "123", '"text"', "[1,2]"])(
+    "returns null and logs when the JSON is not an object (%s)",
+    json => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      expect(parseOnPremConfig("wss://host/convai", json)).toBeNull();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    }
+  );
+
+  it("normalizes http(s) URLs to ws(s)", () => {
+    expect(parseOnPremConfig("https://host/convai", undefined)).toEqual({
+      conversationUrl: "wss://host/convai",
+    });
+    expect(
+      parseOnPremConfig("http://localhost:8000/convai", undefined)
+    ).toEqual({ conversationUrl: "ws://localhost:8000/convai" });
+  });
+
+  it("drops webhooks with non-string fields", () => {
+    expect(
+      parseOnPremConfig(
+        "wss://host/convai",
+        JSON.stringify({
+          post_call_transcription_webhook: { url: 123 },
+          post_call_audio_webhook: {
+            url: "https://example.com/a",
+            hmac_secret: 42,
+          },
+        })
+      )
+    ).toMatchObject({
+      postCallTranscriptionWebhook: undefined,
+      postCallAudioWebhook: { url: "https://example.com/a" },
+    });
+  });
 });

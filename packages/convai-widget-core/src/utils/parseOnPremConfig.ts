@@ -4,28 +4,38 @@ function parseWebhook(value: unknown): OnPremWebhookConfig | undefined {
   if (!value || typeof value !== "object") {
     return undefined;
   }
-  const webhook = value as { url?: string; hmac_secret?: string };
-  if (!webhook.url) {
+  const webhook = value as { url?: unknown; hmac_secret?: unknown };
+  if (typeof webhook.url !== "string" || !webhook.url) {
     return undefined;
   }
   return {
     url: webhook.url,
-    ...(webhook.hmac_secret !== undefined
+    ...(typeof webhook.hmac_secret === "string"
       ? { hmacSecret: webhook.hmac_secret }
       : {}),
   };
 }
 
 export function parseOnPremConfig(
-  conversationUrl: string,
+  rawConversationUrl: string,
   agentConfigJSON: string | undefined
 ): OnPremConfig | null {
+  const conversationUrl = rawConversationUrl
+    .replace(/^https:\/\//, "wss://")
+    .replace(/^http:\/\//, "ws://");
+
   if (!agentConfigJSON) {
     return { conversationUrl };
   }
 
   try {
     const parsed = JSON.parse(agentConfigJSON);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      console.error(
+        "[ConversationalAI] on-prem-agent-config must be a JSON object"
+      );
+      return null;
+    }
     return {
       conversationUrl,
       agentConfig: parsed.agent_config_dict ?? parsed.agent_config ?? undefined,
