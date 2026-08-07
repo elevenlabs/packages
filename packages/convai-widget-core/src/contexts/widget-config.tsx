@@ -30,6 +30,30 @@ const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
 );
 
+// On-prem orchestrators have no HTTP API to serve a widget appearance config.
+const DefaultOnPremWidgetConfig: WidgetConfig = {
+  variant: "full",
+  placement: "bottom-right",
+  avatar: {
+    type: "orb",
+    color_1: "#2792dc",
+    color_2: "#9ce6e6",
+  },
+  feedback_mode: "none",
+  language: "en",
+  mic_muting_enabled: false,
+  transcript_enabled: true,
+  text_input_enabled: true,
+  default_expanded: false,
+  always_expanded: false,
+  dismissible: false,
+  text_contents: {},
+  language_presets: {},
+  disable_banner: false,
+  text_only: false,
+  supports_text_only: true,
+};
+
 interface WidgetConfigProviderProps {
   children: ComponentChildren;
 }
@@ -39,6 +63,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const agentId = useAttribute("agent-id");
   const overrideConfig = useAttribute("override-config");
   const signedUrl = useAttribute("signed-url");
+  const onPremUrl = useAttribute("on-prem-url");
   const fetchedConfig = useSignal<WidgetConfig | null>(null);
 
   useSignalEffect(() => {
@@ -54,6 +79,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
           `[ConversationalAI] Cannot parse override-config: ${error?.message}`
         );
       }
+    }
+    if (onPremUrl.value) {
+      fetchedConfig.value = DefaultOnPremWidgetConfig;
+      return;
     }
     let currentAgentId: string | undefined = agentId.value;
     let conversationSignature: string | undefined;
