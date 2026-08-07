@@ -36,7 +36,7 @@ Choose one mode: **workspace** (`base-root` — discovers packages and entrypoin
 | `base-sha`                | —                     | Base SHA (shared by all surfaces), shown in the comment for traceability.                                                                                                |
 | `label`                   | `breaking`            | PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning.                                                                         |
 | `api-summary`             | `false`               | Include a structural `diff` summary of API additions/removals/changes (review aid; does not affect the gate).                                                            |
-| `title`                   | `Type surface`        | Single-surface heading and the sticky-comment key.                                                                                                                       |
+| `title`                   | `Type surface`        | Package name used in single-surface mode (ignored when packages are discovered).                                                                                         |
 | `github-token`            | `${{ github.token }}` | Token used to post the comment.                                                                                                                                          |
 
 In workspace mode, each package's public entrypoints are discovered via the TS
@@ -62,7 +62,8 @@ isn't the default).
   (all surfaces) or a surface's own `allowBreaking` (e.g. a major changeset).
   Trigger the workflow on `labeled`/`unlabeled` so toggling the label clears or
   raises the check.
-- The comment is **sticky**, keyed by `title`, so re-runs update it in place.
+- One combined **sticky** comment per PR (keyed by a fixed marker), so re-runs
+  update it in place.
 
 ## Example (single package)
 

@@ -191,7 +191,10 @@ export function renderCombined(
   baseSha?: string
 ): string {
   const header = "### Type surface report";
-  const base = baseSha ? `\n\nCompared against base ${baseSha}.` : "";
+  // A bare SHA auto-links; kept in the footer so the verdict leads.
+  const base = baseSha
+    ? `\n<small>Compared against base ${baseSha}.</small>`
+    : "";
 
   const groups = groupByPackage(sections);
   const pkgCount = groups.size;
@@ -241,10 +244,10 @@ export function renderCombined(
 
   const considered =
     consideredList.length > 0
-      ? `\n<small>No type-surface changes in ${consideredList.join(", ")}.</small>`
+      ? `\n<small>Unchanged: ${consideredList.join(", ")}.</small>`
       : "";
 
-  return [header, base, "", summary, "", body, hint, considered]
+  return [`${header}\n`, summary, body && `\n${body}`, hint, considered, base]
     .filter(Boolean)
     .join("\n");
 }

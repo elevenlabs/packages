@@ -144,7 +144,6 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        TITLE: ${{ inputs.title }}
         REPORT: ${{ steps.analyze.outputs.report }}
       run: |
         set -euo pipefail
@@ -154,7 +153,8 @@ runs:
           exit 0
         fi
 
-        export MARKER="<!-- dts-breaking-changes:${TITLE} -->"
+        # One combined comment per PR, so the marker needs no title to disambiguate.
+        export MARKER="<!-- dts-breaking-changes -->"
         RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
         BODY="$RUNNER_TEMP/dts-comment.md"
         {

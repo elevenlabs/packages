@@ -54,11 +54,13 @@ test("packages with no changes roll into one line instead of a heading each", ()
   assert.doesNotMatch(md, /^## /m); // no per-package headings when nothing changed
   assert.match(
     md,
-    /No type-surface changes in @elevenlabs\/client \(`\.`\), @elevenlabs\/types \(`\.`\)\./
+    /Unchanged: @elevenlabs\/client \(`\.`\), @elevenlabs\/types \(`\.`\)\./
   );
   assert.match(md, /No type-surface changes across 2 package\(s\)/);
   assert.match(md, /Compared against base abc1234\./);
   assert.doesNotMatch(md, /`abc1234`/); // SHA stays un-backticked for auto-linking
+  // The base line sits at the bottom, below the unchanged ledger.
+  assert.ok(md.indexOf("Compared against base") > md.indexOf("Unchanged:"));
 });
 
 test("multiple changed entrypoints group under one package with subsections; count is per package", () => {
@@ -110,7 +112,7 @@ test("a clean entrypoint of a changed package is noted, not rendered as a sectio
   // The clean entrypoint and the clean package both appear in the considered line.
   assert.match(
     md,
-    /No type-surface changes in @elevenlabs\/client \(`\.\/internal`\), @elevenlabs\/types \(`\.`\)\./
+    /Unchanged: @elevenlabs\/client \(`\.\/internal`\), @elevenlabs\/types \(`\.`\)\./
   );
 });
 
