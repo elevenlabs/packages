@@ -24,6 +24,7 @@ describe("constructEnclaveSetupConfig", () => {
         overrideAgentConfigList: [{ language: "en" }],
         toolsConfigList: [{ type: "webhook" }],
         promptKnowledgeBase: ["fact"],
+        bedrockInferenceProfile: "global",
         postCallTranscriptionWebhook: {
           url: "https://example.com/transcript",
           hmacSecret: "0123456789abcdef",
@@ -36,6 +37,7 @@ describe("constructEnclaveSetupConfig", () => {
       override_agent_config_list: [{ language: "en" }],
       tools_config_list: [{ type: "webhook" }],
       prompt_knowledge_base: ["fact"],
+      bedrock_inference_profile: "global",
       post_call_transcription_webhook: {
         url: "https://example.com/transcript",
         hmac_secret: "0123456789abcdef",

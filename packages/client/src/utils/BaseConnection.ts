@@ -92,6 +92,8 @@ export type OrchestratorConfig = {
   toolsConfigList?: Record<string, unknown>[];
   /** Strings appended to the system prompt at runtime. */
   promptKnowledgeBase?: string[];
+  /** Bedrock cross-region inference profile, e.g. "global". The orchestrator defaults to "us". */
+  bedrockInferenceProfile?: string;
   /** Called with the conversation transcript once the session ends. */
   postCallTranscriptionWebhook?: PostCallWebhookConfig;
   /** Called with the conversation audio once the session ends. */

@@ -11,6 +11,7 @@ export type EnclaveSetupConfigEvent = {
   override_agent_config_list: Record<string, unknown>[] | null;
   tools_config_list: Record<string, unknown>[] | null;
   prompt_knowledge_base: string[] | null;
+  bedrock_inference_profile?: string;
   post_call_transcription_webhook?: { url: string; hmac_secret?: string };
   post_call_audio_webhook?: { url: string; hmac_secret?: string };
 };
@@ -35,6 +36,9 @@ export function constructEnclaveSetupConfig(
     prompt_knowledge_base: config.promptKnowledgeBase ?? null,
   };
 
+  if (config.bedrockInferenceProfile !== undefined) {
+    event.bedrock_inference_profile = config.bedrockInferenceProfile;
+  }
   if (config.postCallTranscriptionWebhook) {
     event.post_call_transcription_webhook = webhookToWire(
       config.postCallTranscriptionWebhook
