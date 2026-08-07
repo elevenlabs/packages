@@ -49,6 +49,10 @@ export function parseOrchestratorConfig(
       toolsConfigList:
         parsed.tools_config_list ?? parsed.tools_config ?? undefined,
       promptKnowledgeBase: parsed.prompt_knowledge_base ?? undefined,
+      bedrockInferenceProfile:
+        typeof parsed.bedrock_inference_profile === "string"
+          ? parsed.bedrock_inference_profile
+          : undefined,
       postCallTranscriptionWebhook: parseWebhook(
         parsed.post_call_transcription_webhook
       ),

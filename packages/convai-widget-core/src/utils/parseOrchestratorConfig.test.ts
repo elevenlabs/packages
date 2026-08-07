@@ -21,6 +21,7 @@ describe("parseOrchestratorConfig", () => {
           tools_config_list: [{ type: "webhook" }],
           override_agent_config_list: [{ language: "en" }],
           prompt_knowledge_base: ["fact"],
+          bedrock_inference_profile: "global",
           post_call_transcription_webhook: {
             url: "https://example.com/t",
             hmac_secret: "0123456789abcdef",
@@ -33,6 +34,7 @@ describe("parseOrchestratorConfig", () => {
       toolsConfigList: [{ type: "webhook" }],
       overrideAgentConfigList: [{ language: "en" }],
       promptKnowledgeBase: ["fact"],
+      bedrockInferenceProfile: "global",
       postCallTranscriptionWebhook: {
         url: "https://example.com/t",
         hmacSecret: "0123456789abcdef",
@@ -86,6 +88,15 @@ describe("parseOrchestratorConfig", () => {
     expect(
       parseOrchestratorConfig("http://localhost:8000/convai", undefined)
     ).toEqual({ url: "ws://localhost:8000/convai" });
+  });
+
+  it("drops a non-string bedrock_inference_profile", () => {
+    expect(
+      parseOrchestratorConfig(
+        "wss://host/convai",
+        JSON.stringify({ bedrock_inference_profile: { region: "eu" } })
+      )
+    ).toMatchObject({ bedrockInferenceProfile: undefined });
   });
 
   it("drops webhooks with non-string fields", () => {
