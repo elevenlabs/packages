@@ -1,4 +1,8 @@
-import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
+import {
+  SessionConfig,
+  AudioWorkletConfig,
+  Language,
+} from "@elevenlabs/client";
 import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
@@ -72,9 +76,15 @@ export function SessionConfigProvider({
   const signedUrl = useAttribute("signed-url");
   const onPremUrl = useAttribute("on-prem-url");
   const onPremAgentConfig = useAttribute("on-prem-agent-config");
+  const languageAttribute = useAttribute("language");
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
+  const parsedOnPremConfig = useComputed(() =>
+    onPremUrl.value
+      ? parseOnPremConfig(onPremUrl.value, onPremAgentConfig.value)
+      : null
+  );
   const value = useComputed<SessionConfig | null>(() => {
     const isWebRTC = useWebRTCEnabled.value;
     const baseConfig = {
@@ -91,20 +101,35 @@ export function SessionConfigProvider({
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
     if (onPremUrl.value) {
-      const onPremConfig = parseOnPremConfig(
-        onPremUrl.value,
-        onPremAgentConfig.value
-      );
+      const onPremConfig = parsedOnPremConfig.value;
       if (!onPremConfig) {
         return null;
+      }
+      if (agentId.value || signedUrl.value) {
+        console.warn(
+          "[ConversationalAI] on-prem-url takes precedence; agent-id and signed-url are ignored"
+        );
       }
       // On-prem orchestrators only expose the conversation WebSocket
       return {
         onPremConfig,
         connectionType: "websocket" as const,
         ...baseConfig,
+        // The agent config carries its own language; only send an override when the attribute is set.
+        overrides: {
+          ...overrides.value,
+          agent: {
+            ...overrides.value?.agent,
+            language: (languageAttribute.value as Language) || undefined,
+          },
+        },
       };
     }
+
+    const cloudBaseConfig = {
+      ...baseConfig,
+      environment: environment.value || undefined,
+    };
 
     if (agentId.value) {
       if (isWebRTC) {
@@ -112,16 +137,14 @@ export function SessionConfigProvider({
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "webrtc" as const,
-          environment: environment.value || undefined,
-          ...baseConfig,
+          ...cloudBaseConfig,
         };
       } else {
         return {
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "websocket" as const,
-          environment: environment.value || undefined,
-          ...baseConfig,
+          ...cloudBaseConfig,
         };
       }
     }
@@ -131,8 +154,7 @@ export function SessionConfigProvider({
       return {
         signedUrl: signedUrl.value,
         connectionType: "websocket" as const,
-        environment: environment.value || undefined,
-        ...baseConfig,
+        ...cloudBaseConfig,
       };
     }
 

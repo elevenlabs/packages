@@ -81,7 +81,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       }
     }
     if (onPremUrl.value) {
-      fetchedConfig.value = DefaultOnPremWidgetConfig;
+      fetchedConfig.value = structuredClone(DefaultOnPremWidgetConfig);
       return;
     }
     let currentAgentId: string | undefined = agentId.value;
