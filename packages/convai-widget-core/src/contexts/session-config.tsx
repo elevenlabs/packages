@@ -74,7 +74,6 @@ export function SessionConfigProvider({
   const orchestratorUrl = useAttribute("orchestrator-url");
   const orchestratorAgentConfig = useAttribute("orchestrator-agent-config");
   const overrideLanguage = useAttribute("override-language");
-  const languageAttribute = useAttribute("language");
   const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
@@ -112,16 +111,14 @@ export function SessionConfigProvider({
           "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
         );
       }
-      // The agent config carries its own language; only send an explicitly chosen override, not the default fallback.
+      // The agent config carries its own language; use override-language to force one when no supported set is declared.
       const resolvedLanguage = language.value.languageCode;
       const languageOverride =
         isValidLanguage(overrideLanguage.value) ||
         languageChosen.value ||
         resolvedLanguage !== widgetConfig.value.language
           ? resolvedLanguage
-          : isValidLanguage(languageAttribute.value)
-            ? languageAttribute.value
-            : undefined;
+          : undefined;
 
       // Self-hosted orchestrators only expose the conversation WebSocket
       return {
