@@ -1,8 +1,4 @@
-import {
-  SessionConfig,
-  AudioWorkletConfig,
-  Language,
-} from "@elevenlabs/client";
+import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
 import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
@@ -12,7 +8,8 @@ import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
-import { useTextOnly, useWebRTC } from "./widget-config";
+import { isValidLanguage } from "../types/languages";
+import { useTextOnly, useWebRTC, useWidgetConfig } from "./widget-config";
 import { parseDynamicVariables } from "../utils/dynamicVariables";
 import { parseOnPremConfig } from "../utils/parseOnPremConfig";
 
@@ -76,7 +73,8 @@ export function SessionConfigProvider({
   const signedUrl = useAttribute("signed-url");
   const onPremUrl = useAttribute("on-prem-url");
   const onPremAgentConfig = useAttribute("on-prem-agent-config");
-  const languageAttribute = useAttribute("language");
+  const overrideLanguage = useAttribute("override-language");
+  const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
@@ -110,17 +108,24 @@ export function SessionConfigProvider({
           "[ConversationalAI] on-prem-url takes precedence; agent-id and signed-url are ignored"
         );
       }
+      // The agent config carries its own language; only send an explicitly chosen override, not the default fallback.
+      const resolvedLanguage = language.value.languageCode;
+      const languageOverride =
+        isValidLanguage(overrideLanguage.value) ||
+        resolvedLanguage !== widgetConfig.value.language
+          ? resolvedLanguage
+          : undefined;
+
       // On-prem orchestrators only expose the conversation WebSocket
       return {
         onPremConfig,
         connectionType: "websocket" as const,
         ...baseConfig,
-        // The agent config carries its own language; only send an override when the attribute is set.
         overrides: {
           ...overrides.value,
           agent: {
             ...overrides.value?.agent,
-            language: (languageAttribute.value as Language) || undefined,
+            language: languageOverride,
           },
         },
       };
