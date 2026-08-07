@@ -46,39 +46,72 @@ function section(
   };
 }
 
-test("combined report shows a visible heading per package", () => {
+test("packages with no changes roll into one line instead of a heading each", () => {
   const md = renderCombined(
     [section("@elevenlabs/client"), section("@elevenlabs/types")],
     "abc1234"
   );
-  assert.match(md, /## @elevenlabs\/client/);
-  assert.match(md, /## @elevenlabs\/types/);
+  assert.doesNotMatch(md, /^## /m); // no per-package headings when nothing changed
+  assert.match(
+    md,
+    /No type-surface changes in @elevenlabs\/client, @elevenlabs\/types\./
+  );
   assert.match(md, /No type-surface changes across 2 package\(s\)/);
   assert.match(md, /Compared against base abc1234\./);
   assert.doesNotMatch(md, /`abc1234`/); // SHA stays un-backticked for auto-linking
 });
 
-test("multiple entrypoints group under one package with subsections; count is per package", () => {
+test("multiple changed entrypoints group under one package with subsections; count is per package", () => {
   const md = renderCombined(
     [
-      section("@elevenlabs/client", { subpath: "." }),
-      section("@elevenlabs/client", { subpath: "./internal" }),
+      section("@elevenlabs/client", {
+        subpath: ".",
+        report: breaking("Foo"),
+      }),
+      section("@elevenlabs/client", {
+        subpath: "./internal",
+        report: breaking("Bar"),
+      }),
       section("@elevenlabs/react-native", {
         subpath: ".",
         condition: "default",
+        report: breaking("Baz"),
       }),
       section("@elevenlabs/react-native", {
         subpath: ".",
         condition: "react-native",
+        report: breaking("Qux"),
       }),
     ],
     "abc1234"
   );
   // Two packages, four entrypoints.
-  assert.match(md, /across 2 package\(s\)/);
+  assert.match(md, /2 of 2 package\(s\)/);
   assert.equal(md.match(/^## /gm)?.length, 2); // one heading per package
   assert.match(md, /### `\.\/internal`/); // subpath subsection
   assert.match(md, /### `\.` \(react-native\)/); // condition labelled when non-default
+});
+
+test("a clean entrypoint of a changed package is noted, not rendered as a section", () => {
+  const md = renderCombined(
+    [
+      section("@elevenlabs/client", {
+        subpath: ".",
+        report: breaking("Foo"),
+      }),
+      section("@elevenlabs/client", { subpath: "./internal" }), // clean
+      section("@elevenlabs/types"), // wholly clean
+    ],
+    "abc1234"
+  );
+  assert.match(md, /## @elevenlabs\/client/);
+  assert.equal(md.match(/^## /gm)?.length, 1); // only the changed package gets a heading
+  assert.doesNotMatch(md, /### `\.`/); // single rendered entrypoint drops its subheading
+  // The clean entrypoint and the clean package both appear in the considered line.
+  assert.match(
+    md,
+    /No type-surface changes in @elevenlabs\/client \(`\.\/internal`\), @elevenlabs\/types\./
+  );
 });
 
 test("an unacknowledged breaking section fails; an acknowledged one does not", () => {

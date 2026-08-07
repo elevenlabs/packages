@@ -112,6 +112,11 @@ export function sectionFails(s: CombinedSection): boolean {
   return s.report.verdict.gate === "fail" && !s.acknowledged;
 }
 
+/** A section is worth its own rendered block only when it has findings or API changes. */
+function sectionHasContent(s: CombinedSection): boolean {
+  return s.report.findings.length > 0 || (s.report.apiChanges?.length ?? 0) > 0;
+}
+
 /** Entrypoint label: the subpath, plus the condition when it isn't the default. */
 function entrypointLabel(s: CombinedSection): string {
   return s.condition === "default"
@@ -198,28 +203,49 @@ export function renderCombined(
       g.some(s => s.report.verdict.gate === "fail" && s.acknowledged)
   ).length;
   const anyFindings = sections.some(s => s.report.findings.length > 0);
+  const anyApiChanges = sections.some(
+    s => (s.report.apiChanges?.length ?? 0) > 0
+  );
 
   const summary =
     failing > 0
       ? `❌ **${failing} of ${pkgCount} package(s)** have consumer-breaking changes${acked ? ` (${acked} acknowledged)` : ""}.`
       : anyFindings
         ? `⚠️ No unacknowledged breaking changes across ${pkgCount} package(s).`
-        : `✅ No type-surface changes across ${pkgCount} package(s).`;
+        : anyApiChanges
+          ? `✅ No consumer-breaking changes across ${pkgCount} package(s).`
+          : `✅ No type-surface changes across ${pkgCount} package(s).`;
 
   const hint =
     failing > 0
       ? "\n_Add the `breaking` label or a `major` changeset to acknowledge and turn this into a warning._"
       : "";
 
-  return [
-    header,
-    base,
-    "",
-    summary,
-    "",
-    [...groups].map(([pkg, secs]) => renderPackage(pkg, secs)).join("\n"),
-    hint,
-  ]
+  // Only surfaces with something to report get a rendered block; the rest roll
+  // into one line, so a reviewer can still confirm they were considered.
+  const body = [...groups]
+    .map(([pkg, secs]) => {
+      const content = secs.filter(sectionHasContent);
+      return content.length > 0 ? renderPackage(pkg, content) : "";
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  const consideredList = [...groups]
+    .map(([pkg, secs]) => {
+      const clean = secs.filter(s => !sectionHasContent(s));
+      if (clean.length === 0) return null;
+      if (clean.length === secs.length) return pkg;
+      return `${pkg} (${clean.map(entrypointLabel).join(", ")})`;
+    })
+    .filter((p): p is string => p !== null);
+
+  const considered =
+    consideredList.length > 0
+      ? `\n<small>No type-surface changes in ${consideredList.join(", ")}.</small>`
+      : "";
+
+  return [header, base, "", summary, "", body, hint, considered]
     .filter(Boolean)
     .join("\n");
 }
