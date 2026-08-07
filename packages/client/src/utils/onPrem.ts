@@ -7,8 +7,6 @@ export type EnclaveSetupConfigEvent = {
   agent_config_dict: Record<string, unknown> | null;
   override_agent_config_list: Record<string, unknown>[] | null;
   tools_config_list: Record<string, unknown>[] | null;
-  post_call_transcription_webhook_url: string | null;
-  post_call_audio_webhook_url: string | null;
   prompt_knowledge_base: string[] | null;
   post_call_transcription_webhook?: { url: string; hmac_secret?: string };
   post_call_audio_webhook?: { url: string; hmac_secret?: string };
@@ -31,8 +29,6 @@ export function constructEnclaveSetupConfig(
     agent_config_dict: config.agentConfig ?? null,
     override_agent_config_list: config.overrideAgentConfigList ?? null,
     tools_config_list: config.toolsConfigList ?? null,
-    post_call_transcription_webhook_url: null,
-    post_call_audio_webhook_url: null,
     prompt_knowledge_base: config.promptKnowledgeBase ?? null,
   };
 

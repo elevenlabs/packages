@@ -12,8 +12,6 @@ describe("constructEnclaveSetupConfig", () => {
       agent_config_dict: null,
       override_agent_config_list: null,
       tools_config_list: null,
-      post_call_transcription_webhook_url: null,
-      post_call_audio_webhook_url: null,
       prompt_knowledge_base: null,
     });
   });
@@ -37,8 +35,6 @@ describe("constructEnclaveSetupConfig", () => {
       agent_config_dict: { name: "agent" },
       override_agent_config_list: [{ language: "en" }],
       tools_config_list: [{ type: "webhook" }],
-      post_call_transcription_webhook_url: null,
-      post_call_audio_webhook_url: null,
       prompt_knowledge_base: ["fact"],
       post_call_transcription_webhook: {
         url: "https://example.com/transcript",

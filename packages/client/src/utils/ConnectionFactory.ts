@@ -28,6 +28,17 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     );
   }
 
+  if (
+    hasOnPremConfig &&
+    (hasSignedUrl ||
+      ("conversationToken" in config && config.conversationToken) ||
+      config.authorization)
+  ) {
+    throw new Error(
+      "onPremConfig cannot be combined with signedUrl, conversationToken or authorization."
+    );
+  }
+
   // If connectionType is explicitly specified, use it
   if (config.connectionType) {
     return config.connectionType;

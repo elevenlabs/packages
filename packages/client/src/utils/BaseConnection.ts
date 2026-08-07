@@ -71,7 +71,7 @@ export type ConnectionType = "websocket" | "webrtc";
 
 export type OnPremWebhookConfig = {
   url: string;
-  /** Secret the orchestrator uses to sign deliveries. Minimum 16 characters. */
+  /** Secret the orchestrator uses to sign deliveries. The orchestrator rejects secrets shorter than 16 characters. */
   hmacSecret?: string;
 };
 
@@ -123,6 +123,9 @@ export type OnPremSessionConfig = BaseSessionConfig & {
   agentId?: never;
   signedUrl?: never;
   conversationToken?: never;
+  authorization?: never;
+  origin?: never;
+  environment?: never;
 };
 
 // Union type for all possible session configurations

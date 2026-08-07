@@ -139,7 +139,7 @@ export class WebSocketConnection
           protocols.push(`bearer.${config.authorization}`);
         }
       }
-      socket = protocols ? new WebSocket(url, protocols) : new WebSocket(url);
+      socket = new WebSocket(url, protocols);
 
       const conversationConfig = await new Promise<
         ConfigEvent["conversation_initiation_metadata_event"]

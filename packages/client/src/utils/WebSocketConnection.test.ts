@@ -88,7 +88,8 @@ describe("WebSocketConnection", () => {
       await createOnPremConnection();
 
       expect(globalThis.WebSocket).toHaveBeenCalledWith(
-        onPremConfig.conversationUrl
+        onPremConfig.conversationUrl,
+        undefined
       );
     });
 
