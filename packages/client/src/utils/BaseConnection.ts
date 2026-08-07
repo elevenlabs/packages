@@ -69,12 +69,18 @@ export type BaseSessionConfig = {
 
 export type ConnectionType = "websocket" | "webrtc";
 
+/**
+ * @experimental
+ */
 export type OnPremWebhookConfig = {
   url: string;
   /** Secret the orchestrator uses to sign deliveries. The orchestrator rejects secrets shorter than 16 characters. */
   hmacSecret?: string;
 };
 
+/**
+ * @experimental
+ */
 export type OnPremConfig = {
   /** WebSocket URL of the orchestrator, e.g. "wss://<host>/sagemaker/convai/conversation". */
   conversationUrl: string;
@@ -116,8 +122,14 @@ export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
   onPremConfig?: never;
 };
 
+/**
+ * @experimental
+ */
 export type OnPremSessionConfig = BaseSessionConfig & {
-  /** Routes the session to a self-hosted orchestrator instead of the ElevenLabs cloud. */
+  /**
+   * Routes the session to a self-hosted orchestrator instead of the ElevenLabs cloud.
+   * @experimental
+   */
   onPremConfig: OnPremConfig;
   connectionType?: "websocket";
   agentId?: never;
