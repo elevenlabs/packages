@@ -4,8 +4,7 @@ import { createContext, useMemo } from "preact/compat";
 import { useAttribute } from "./attributes";
 
 import { useContextSafely } from "../utils/useContextSafely";
-import { Location, parseLocation } from "../types/config"
-
+import { Location, parseLocation } from "../types/config";
 
 const ServerLocationContext = createContext<{
   location: ReadonlySignal<Location>;
@@ -25,19 +24,19 @@ export function ServerLocationProvider({
     const location = computed(() => parseLocation(serverLocation.value));
 
     const serverUrlMap: Record<Location, string> = {
-      'us': import.meta.env.VITE_SERVER_URL_US,
-      'eu-residency': import.meta.env.VITE_SERVER_URL_EU_RESIDENCY,
-      'in-residency': import.meta.env.VITE_SERVER_URL_IN_RESIDENCY,
-      'global': import.meta.env.VITE_SERVER_URL,
+      us: import.meta.env.VITE_SERVER_URL_US,
+      "eu-residency": import.meta.env.VITE_SERVER_URL_EU_RESIDENCY,
+      "in-residency": import.meta.env.VITE_SERVER_URL_IN_RESIDENCY,
+      global: import.meta.env.VITE_SERVER_URL,
     };
-    
+
     const websocketUrlMap: Record<Location, string> = {
-      'us': import.meta.env.VITE_WEBSOCKET_URL_US,
-      'eu-residency': import.meta.env.VITE_WEBSOCKET_URL_EU_RESIDENCY,
-      'in-residency': import.meta.env.VITE_WEBSOCKET_URL_IN_RESIDENCY,
-      'global': import.meta.env.VITE_WEBSOCKET_URL,
+      us: import.meta.env.VITE_WEBSOCKET_URL_US,
+      "eu-residency": import.meta.env.VITE_WEBSOCKET_URL_EU_RESIDENCY,
+      "in-residency": import.meta.env.VITE_WEBSOCKET_URL_IN_RESIDENCY,
+      global: import.meta.env.VITE_WEBSOCKET_URL,
     };
-    
+
     return {
       location,
       serverUrl: computed(() => serverUrlMap[location.value]),

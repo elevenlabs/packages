@@ -21,6 +21,8 @@ export const CustomAttributeList = [
   "avatar-orb-color-2",
   "agent-id",
   "signed-url",
+  "orchestrator-url",
+  "orchestrator-agent-config",
   "terms-key",
   "server-location",
   "language",
