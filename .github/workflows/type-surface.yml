@@ -79,3 +79,4 @@ jobs:
           allow-breaking-packages: ${{ steps.changeset.outputs.majors }}
           base-sha: ${{ steps.base.outputs.sha }}
           title: packages
+          api-summary: "true"
