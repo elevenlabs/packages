@@ -43,6 +43,9 @@ export type {
   Language,
   ConnectionType,
   FormatConfig,
+  OnPremConfig,
+  OnPremSessionConfig,
+  OnPremWebhookConfig,
 } from "./utils/BaseConnection.js";
 export { createConnection } from "./utils/ConnectionFactory.js";
 export { WebSocketConnection } from "./utils/WebSocketConnection.js";

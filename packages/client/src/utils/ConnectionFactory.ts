@@ -8,6 +8,7 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
   const hasSignedUrl = "signedUrl" in config && config.signedUrl;
+  const hasOnPremConfig = "onPremConfig" in config && config.onPremConfig;
 
   // Reject invalid combination: signedUrl only supports websocket
   // Cast needed because TS narrows signedUrl configs to connectionType?: "websocket",
@@ -15,6 +16,15 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
   if (hasSignedUrl && (config.connectionType as ConnectionType) === "webrtc") {
     throw new Error(
       "signedUrl only supports websocket connections. Remove connectionType or set it to 'websocket'."
+    );
+  }
+
+  if (
+    hasOnPremConfig &&
+    (config.connectionType as ConnectionType) === "webrtc"
+  ) {
+    throw new Error(
+      "onPremConfig only supports websocket connections. Remove connectionType or set it to 'websocket'."
     );
   }
 
@@ -30,6 +40,10 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
 
   // If signedUrl is provided, use WebSocket (it only supports websocket)
   if (hasSignedUrl) {
+    return "websocket";
+  }
+
+  if (hasOnPremConfig) {
     return "websocket";
   }
 

@@ -12,6 +12,7 @@ import {
   type IncomingSocketEvent,
 } from "./events.js";
 import { constructOverrides } from "./overrides.js";
+import { constructEnclaveSetupConfig } from "./onPrem.js";
 import { SessionConnectionError } from "./errors.js";
 import type {
   OutputEventTarget,
@@ -111,27 +112,34 @@ export class WebSocketConnection
     let socket: WebSocket | null = null;
 
     try {
-      const origin = config.origin ?? WSS_API_ORIGIN;
       let url: string;
+      let protocols: string[] | undefined;
 
       const { name: source, version } = sourceInfo;
 
-      if (config.signedUrl) {
-        const separator = config.signedUrl.includes("?") ? "&" : "?";
-        url = `${config.signedUrl}${separator}source=${source}&version=${version}`;
+      if (config.onPremConfig) {
+        // On-prem orchestrators don't negotiate subprotocols; requesting one makes browsers fail the connection.
+        url = config.onPremConfig.conversationUrl;
       } else {
-        url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=${source}&version=${version}`;
-      }
+        const origin = config.origin ?? WSS_API_ORIGIN;
 
-      if (config.environment) {
-        url += `&environment=${encodeURIComponent(config.environment)}`;
-      }
+        if (config.signedUrl) {
+          const separator = config.signedUrl.includes("?") ? "&" : "?";
+          url = `${config.signedUrl}${separator}source=${source}&version=${version}`;
+        } else {
+          url = `${origin}${WSS_API_PATHNAME}${config.agentId}&source=${source}&version=${version}`;
+        }
 
-      const protocols = [MAIN_PROTOCOL];
-      if (config.authorization) {
-        protocols.push(`bearer.${config.authorization}`);
+        if (config.environment) {
+          url += `&environment=${encodeURIComponent(config.environment)}`;
+        }
+
+        protocols = [MAIN_PROTOCOL];
+        if (config.authorization) {
+          protocols.push(`bearer.${config.authorization}`);
+        }
       }
-      socket = new WebSocket(url, protocols);
+      socket = protocols ? new WebSocket(url, protocols) : new WebSocket(url);
 
       const conversationConfig = await new Promise<
         ConfigEvent["conversation_initiation_metadata_event"]
@@ -139,6 +147,12 @@ export class WebSocketConnection
         socket!.addEventListener(
           "open",
           () => {
+            if (config.onPremConfig) {
+              socket?.send(
+                JSON.stringify(constructEnclaveSetupConfig(config.onPremConfig))
+              );
+            }
+
             const overridesEvent = constructOverrides(config);
 
             socket?.send(JSON.stringify(overridesEvent));

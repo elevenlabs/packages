@@ -69,11 +69,35 @@ export type BaseSessionConfig = {
 
 export type ConnectionType = "websocket" | "webrtc";
 
+export type OnPremWebhookConfig = {
+  url: string;
+  /** Secret the orchestrator uses to sign deliveries. Minimum 16 characters. */
+  hmacSecret?: string;
+};
+
+export type OnPremConfig = {
+  /** WebSocket URL of the orchestrator, e.g. "wss://<host>/sagemaker/convai/conversation". */
+  conversationUrl: string;
+  /** Full agent definition, as exported from the ElevenLabs platform. */
+  agentConfig?: Record<string, unknown>;
+  /** Partial configs applied as overrides on top of the base agent config. */
+  overrideAgentConfigList?: Record<string, unknown>[];
+  /** Tool definitions for the agent, exported alongside the agent config. */
+  toolsConfigList?: Record<string, unknown>[];
+  /** Strings appended to the system prompt at runtime. */
+  promptKnowledgeBase?: string[];
+  /** Called with the conversation transcript once the session ends. */
+  postCallTranscriptionWebhook?: OnPremWebhookConfig;
+  /** Called with the conversation audio once the session ends. */
+  postCallAudioWebhook?: OnPremWebhookConfig;
+};
+
 export type PublicSessionConfig = BaseSessionConfig & {
   agentId: string;
   connectionType?: ConnectionType;
   signedUrl?: never;
   conversationToken?: never;
+  onPremConfig?: never;
 };
 
 export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
@@ -81,6 +105,7 @@ export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
   connectionType?: "websocket";
   agentId?: never;
   conversationToken?: never;
+  onPremConfig?: never;
 };
 
 export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
@@ -88,13 +113,24 @@ export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
   connectionType?: "webrtc";
   agentId?: never;
   signedUrl?: never;
+  onPremConfig?: never;
+};
+
+export type OnPremSessionConfig = BaseSessionConfig & {
+  /** Routes the session to a self-hosted orchestrator instead of the ElevenLabs cloud. */
+  onPremConfig: OnPremConfig;
+  connectionType?: "websocket";
+  agentId?: never;
+  signedUrl?: never;
+  conversationToken?: never;
 };
 
 // Union type for all possible session configurations
 export type SessionConfig =
   | PublicSessionConfig
   | PrivateWebSocketSessionConfig
-  | PrivateWebRTCSessionConfig;
+  | PrivateWebRTCSessionConfig
+  | OnPremSessionConfig;
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;
