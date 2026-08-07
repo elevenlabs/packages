@@ -1,0 +1,194 @@
+name: "dts breaking changes"
+description: "Variance-aware breaking-change check for one or more TypeScript packages' built .d.ts surfaces, with a single sticky PR comment."
+
+# Requires Node (>= 22.18 or >= 24, for `--experimental-strip-types`) already on
+# PATH — the calling workflow's setup-node step. Uses only node/npm/gh/jq/bash,
+# so it pulls in no external actions.
+
+inputs:
+  base-root:
+    description: "Workspace mode: root of the built base (merge-base) tree. When set, packages and their type entrypoints are discovered automatically. Overrides `surfaces` and the single-surface inputs."
+    required: false
+    default: ""
+  head-root:
+    description: "Workspace mode: root of the built head (PR) tree."
+    required: false
+    default: "."
+  allow-breaking-packages:
+    description: "Workspace mode: comma-separated package names whose breaking changes are pre-acknowledged (e.g. those with a major changeset)."
+    required: false
+    default: ""
+  surfaces:
+    description: "JSON array of surfaces to check: [{ title, oldDir, newDir, entry?, config?, allowBreaking? }]. Overrides the single-surface inputs below."
+    required: false
+    default: ""
+  old-dir:
+    description: "Single-surface: directory of the base (previously-published) built .d.ts tree."
+    required: false
+    default: ""
+  new-dir:
+    description: "Single-surface: directory of the head (PR) built .d.ts tree."
+    required: false
+    default: ""
+  entry:
+    description: "Single-surface: entry .d.ts relative to each dir (e.g. index.d.ts). Optional if set in the config file."
+    required: false
+    default: ""
+  config:
+    description: "Single-surface: path to a JSON config file for the engine (AnalyzeConfig)."
+    required: false
+    default: ""
+  allow-breaking:
+    description: "Single-surface: set to 'true' to allow breaking changes without the label (e.g. a major changeset)."
+    required: false
+    default: "false"
+  base-sha:
+    description: "Base commit SHA (shared by all surfaces), shown in the comment for traceability."
+    required: false
+    default: ""
+  label:
+    description: "PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning."
+    required: false
+    default: "breaking"
+  api-summary:
+    description: "Set to 'true' to include a structural summary of API additions/removals/changes (a review aid; does not affect the gate)."
+    required: false
+    default: "false"
+  title:
+    description: "Human title, in the single-surface heading and the sticky-comment key."
+    required: false
+    default: "Type surface"
+  github-token:
+    description: "Token used to post the sticky PR comment."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  gate:
+    description: "Overall gate: pass | fail."
+    value: ${{ steps.analyze.outputs.gate }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Analyze type surfaces
+      id: analyze
+      shell: bash
+      env:
+        BASE_ROOT: ${{ inputs.base-root }}
+        HEAD_ROOT: ${{ inputs.head-root }}
+        ALLOW_BREAKING_PACKAGES: ${{ inputs.allow-breaking-packages }}
+        SURFACES: ${{ inputs.surfaces }}
+        OLD_DIR: ${{ inputs.old-dir }}
+        NEW_DIR: ${{ inputs.new-dir }}
+        ENTRY: ${{ inputs.entry }}
+        CONFIG: ${{ inputs.config }}
+        ALLOW_BREAKING: ${{ inputs.allow-breaking }}
+        BASE_SHA: ${{ inputs.base-sha }}
+        LABEL: ${{ inputs.label }}
+        API_SUMMARY: ${{ inputs.api-summary }}
+        TITLE: ${{ inputs.title }}
+      run: |
+        set -euo pipefail
+        ENGINE="$(cd "$GITHUB_ACTION_PATH/../../../packages/dts-breaking-changes" && pwd)"
+        CLI="node --experimental-strip-types $ENGINE/src/cli.ts"
+
+        # The engine runs from source via Node type-stripping; install its runtime deps.
+        npm install --prefix "$ENGINE" --omit=dev --no-audit --no-fund >/dev/null 2>&1
+
+        # Build the surfaces list: discover a workspace, an explicit input, or the single-surface inputs.
+        SURFACES_FILE="$RUNNER_TEMP/dts-surfaces.json"
+        if [ -n "$BASE_ROOT" ]; then
+          $CLI --discover --base-root "$BASE_ROOT" --head-root "$HEAD_ROOT" \
+            ${ALLOW_BREAKING_PACKAGES:+--allow-breaking-packages "$ALLOW_BREAKING_PACKAGES"} \
+            --out "$SURFACES_FILE"
+        elif [ -n "$SURFACES" ]; then
+          printf '%s' "$SURFACES" > "$SURFACES_FILE"
+        else
+          ALLOW=$([ "$ALLOW_BREAKING" = "true" ] && echo true || echo false)
+          jq -n --arg t "$TITLE" --arg o "$OLD_DIR" --arg n "$NEW_DIR" \
+            --arg e "$ENTRY" --arg c "$CONFIG" --argjson a "$ALLOW" \
+            '[{package:$t, subpath:".", condition:"default", oldDir:$o, newDir:$n, entry:$e, config:$c, allowBreaking:$a}]' > "$SURFACES_FILE"
+        fi
+
+        # The `breaking` label acknowledges every surface's breaking changes.
+        LABEL_ACK=""
+        if jq -e --arg L "$LABEL" 'any(.pull_request.labels[]?; .name == $L)' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
+          LABEL_ACK="--label-acknowledged"
+        fi
+        API_FLAG=""
+        [ "$API_SUMMARY" = "true" ] && API_FLAG="--api-summary"
+
+        REPORT="$RUNNER_TEMP/dts-report.md"
+        set +e
+        # The base SHA is rendered by the comment step (on the provenance line),
+        # not the engine, so it isn't passed here.
+        $CLI --surfaces "$SURFACES_FILE" \
+          $LABEL_ACK \
+          $API_FLAG \
+          --markdown "$REPORT"
+        RC=$?
+        set -e
+
+        # A missing report is a real engine failure (e.g. TS2589); RC=1 with a
+        # report is an unacknowledged breaking change.
+        if [ ! -f "$REPORT" ]; then
+          echo "::error::dts-breaking-changes engine failed (exit $RC) without producing a report"
+          exit 1
+        fi
+
+        echo "report=$REPORT" >> "$GITHUB_OUTPUT"
+        echo "gate-rc=$RC" >> "$GITHUB_OUTPUT"
+        echo "gate=$([ "$RC" -eq 0 ] && echo pass || echo fail)" >> "$GITHUB_OUTPUT"
+
+    - name: Post sticky comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPORT: ${{ steps.analyze.outputs.report }}
+        BASE_SHA: ${{ inputs.base-sha }}
+      run: |
+        set -euo pipefail
+        PR="$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH")"
+        if [ -z "$PR" ]; then
+          echo "Not a pull request event; skipping comment."
+          exit 0
+        fi
+
+        # One combined comment per PR, so the marker needs no title to disambiguate.
+        export MARKER="<!-- dts-breaking-changes -->"
+        RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        # Base SHA (bare, so it auto-links) and the run share one provenance line.
+        BASE_NOTE=""
+        [ -n "$BASE_SHA" ] && BASE_NOTE="Compared against base $BASE_SHA · "
+        BODY="$RUNNER_TEMP/dts-comment.md"
+        {
+          printf '%s\n\n' "$MARKER"
+          cat "$REPORT"
+          printf '\n<small>%sGenerated by the <a href="%s">%s workflow</a>.</small>\n' "$BASE_NOTE" "$RUN_URL" "$GITHUB_WORKFLOW"
+        } > "$BODY"
+
+        PAYLOAD="$RUNNER_TEMP/dts-payload.json"
+        jq -Rs '{body: .}' "$BODY" > "$PAYLOAD"
+
+        EXISTING="$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+          --jq '.[] | select(.body | contains(env.MARKER)) | .id' | head -n1 || true)"
+
+        if [ -n "$EXISTING" ]; then
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$EXISTING" --input "$PAYLOAD" >/dev/null
+        else
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --input "$PAYLOAD" >/dev/null
+        fi
+
+    - name: Gate
+      shell: bash
+      env:
+        GATE_RC: ${{ steps.analyze.outputs.gate-rc }}
+        LABEL: ${{ inputs.label }}
+      run: |
+        set -euo pipefail
+        if [ "$GATE_RC" != "0" ]; then
+          echo "::error::Unacknowledged consumer-breaking change(s) detected. Add the '${LABEL}' label (or a major changeset) to acknowledge."
+          exit 1
+        fi
+        echo "Type surface gate: pass"

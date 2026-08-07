@@ -1,0 +1,1 @@
+{ "name": "@fx/implicit", "exports": { ".": "./built/index.js" } }
