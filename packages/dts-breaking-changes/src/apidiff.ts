@@ -41,7 +41,18 @@ function memberType(
 }
 
 function sig(checker: ts.TypeChecker, type: ts.Type): string {
-  return checker.typeToString(type, undefined, FMT).replace(/\s+/g, " ");
+  return (
+    checker
+      .typeToString(type, undefined, FMT)
+      // The old and new trees live under different absolute roots, so drop the
+      // directory from `import("…")` paths — otherwise identical modules read as
+      // changed (and the bare module name displays better anyway).
+      .replace(/\bimport\("([^"]*)"\)/g, (_m, p: string) => {
+        const name = p.split("/").pop() ?? p;
+        return `import("${name}")`;
+      })
+      .replace(/\s+/g, " ")
+  );
 }
 
 interface ModuleExports {

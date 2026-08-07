@@ -54,7 +54,7 @@ test("packages with no changes roll into one line instead of a heading each", ()
   assert.doesNotMatch(md, /^## /m); // no per-package headings when nothing changed
   assert.match(
     md,
-    /No type-surface changes in @elevenlabs\/client, @elevenlabs\/types\./
+    /No type-surface changes in @elevenlabs\/client \(`\.`\), @elevenlabs\/types \(`\.`\)\./
   );
   assert.match(md, /No type-surface changes across 2 package\(s\)/);
   assert.match(md, /Compared against base abc1234\./);
@@ -110,7 +110,7 @@ test("a clean entrypoint of a changed package is noted, not rendered as a sectio
   // The clean entrypoint and the clean package both appear in the considered line.
   assert.match(
     md,
-    /No type-surface changes in @elevenlabs\/client \(`\.\/internal`\), @elevenlabs\/types\./
+    /No type-surface changes in @elevenlabs\/client \(`\.\/internal`\), @elevenlabs\/types \(`\.`\)\./
   );
 });
 

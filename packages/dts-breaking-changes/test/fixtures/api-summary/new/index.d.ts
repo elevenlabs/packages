@@ -7,3 +7,5 @@ export declare class Client {
 }
 export declare function connect(): Client;
 export declare function compose(): Client;
+
+export declare const meta: typeof import("./meta");

@@ -235,7 +235,6 @@ export function renderCombined(
     .map(([pkg, secs]) => {
       const clean = secs.filter(s => !sectionHasContent(s));
       if (clean.length === 0) return null;
-      if (clean.length === secs.length) return pkg;
       return `${pkg} (${clean.map(entrypointLabel).join(", ")})`;
     })
     .filter((p): p is string => p !== null);

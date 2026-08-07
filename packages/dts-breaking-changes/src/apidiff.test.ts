@@ -41,6 +41,13 @@ test("apiSummary enumerates added/removed exports and member-level changes", () 
     changes.some(c => c.path === "connect" || c.path.startsWith("connect.")),
     false
   );
+
+  // `meta: typeof import("./meta")` resolves under different absolute roots in
+  // each tree; the bare module name must normalize so it isn't a false change.
+  assert.equal(
+    changes.some(c => c.path === "meta"),
+    false
+  );
 });
 
 test("the report renders the API changes as a diff block", () => {
