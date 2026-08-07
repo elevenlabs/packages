@@ -28,9 +28,26 @@ export interface Verdict {
   infoCount: number;
 }
 
+/**
+ * A structural change to the public API surface, for the (opt-in) summary. This
+ * is a review aid enumerated by walking the two module types — the gate remains
+ * the authority on whether a change is breaking.
+ */
+export interface ApiChange {
+  kind: "add" | "remove" | "change";
+  /** Dotted path, e.g. "compose" or "Client.cancel". */
+  path: string;
+  /** For add/change: the (new) type rendered for display. */
+  signature?: string;
+  /** For change: the previous type, so it can render as a `-`/`+` diff. */
+  from?: string;
+}
+
 export interface Report {
   findings: Finding[];
   verdict: Verdict;
   markdown: string;
   baseSha?: string;
+  /** Present only when `apiSummary` is enabled. */
+  apiChanges?: ApiChange[];
 }

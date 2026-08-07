@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import ts from "typescript";
 
+import { diffApi } from "./apidiff.ts";
 import {
   matchGlob,
   resolveConfig,
@@ -402,6 +403,9 @@ export function analyze(input: AnalyzeInput): Report {
     }));
 
   const verdict = verdictFrom(findings, config);
-  const markdown = renderMarkdown(findings, verdict, input.baseSha);
-  return { findings, verdict, markdown, baseSha: input.baseSha };
+  const apiChanges = config.apiSummary
+    ? diffApi(prog1, oldEntry, newEntry)
+    : undefined;
+  const markdown = renderMarkdown(findings, verdict, input.baseSha, apiChanges);
+  return { findings, verdict, markdown, baseSha: input.baseSha, apiChanges };
 }

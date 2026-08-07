@@ -19,4 +19,12 @@ export {
   type Surface,
   type DiscoverOptions,
 } from "./discover.ts";
-export type { Direction, Finding, Report, Severity, Verdict } from "./types.ts";
+export { diffApi } from "./apidiff.ts";
+export type {
+  ApiChange,
+  Direction,
+  Finding,
+  Report,
+  Severity,
+  Verdict,
+} from "./types.ts";

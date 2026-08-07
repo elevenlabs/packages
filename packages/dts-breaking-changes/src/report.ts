@@ -1,5 +1,5 @@
 import type { ResolvedConfig } from "./config.ts";
-import type { Finding, Report, Severity, Verdict } from "./types.ts";
+import type { ApiChange, Finding, Report, Severity, Verdict } from "./types.ts";
 
 const SEVERITY_RANK: Record<Severity, number> = {
   breaking: 3,
@@ -61,13 +61,15 @@ function section(findings: Finding[], severity: Severity): string {
 export function renderMarkdown(
   findings: Finding[],
   verdict: Verdict,
-  baseSha?: string
+  baseSha?: string,
+  apiChanges?: ApiChange[]
 ): string {
   const header = "### Type surface: breaking-change report";
   // No backticks around the SHA: GitHub auto-links a bare commit SHA, not a code-spanned one.
   const base = baseSha ? `\n\nCompared against base ${baseSha}.` : "";
+  const hasApi = apiChanges !== undefined && apiChanges.length > 0;
 
-  if (findings.length === 0) {
+  if (findings.length === 0 && !hasApi) {
     return `${header}${base}\n\n✅ No type-surface changes detected.\n`;
   }
 
@@ -83,7 +85,7 @@ export function renderMarkdown(
     summary,
     section(findings, "breaking"),
     section(findings, "warning"),
-    section(findings, "info"),
+    hasApi ? renderApiDiff(apiChanges) : section(findings, "info"),
     "\n_Add the `breaking` label to acknowledge and turn this check into a warning._",
   ]
     .filter(Boolean)
@@ -117,10 +119,28 @@ function entrypointLabel(s: CombinedSection): string {
     : `\`${s.subpath}\` (${s.condition})`;
 }
 
+function truncate(s: string, max = 100): string {
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+}
+
+/** A ```diff summary of API additions/removals/changes (a review aid). */
+function renderApiDiff(changes: ApiChange[]): string {
+  if (changes.length === 0) return "";
+  const line = (c: ApiChange): string => {
+    const sig = c.signature ? `: ${truncate(c.signature)}` : "";
+    if (c.kind === "add") return `+ ${c.path}${sig}`;
+    if (c.kind === "remove") return `- ${c.path}`;
+    return `- ${c.path}: ${truncate(c.from ?? "")}\n+ ${c.path}${sig}`;
+  };
+  const body = changes.map(line).join("\n");
+  return `<details><summary>API changes</summary>\n\n\`\`\`diff\n${body}\n\`\`\`\n\n</details>`;
+}
+
 /** The findings body for one section, without its own heading. */
 function sectionBody(s: CombinedSection): string {
-  const { findings } = s.report;
-  if (findings.length === 0) return "✅ No type-surface changes.";
+  const { findings, apiChanges } = s.report;
+  const hasApi = apiChanges !== undefined && apiChanges.length > 0;
+  if (findings.length === 0 && !hasApi) return "✅ No type-surface changes.";
   const ackNote =
     s.acknowledged && s.report.verdict.gate === "fail"
       ? `\n✅ Acknowledged via ${s.ackReason ?? "an override"} — reported as a warning.\n`
@@ -128,7 +148,8 @@ function sectionBody(s: CombinedSection): string {
   return [
     section(findings, "breaking"),
     section(findings, "warning"),
-    section(findings, "info"),
+    // The API diff supersedes the (noisier) forward-compatibility notes.
+    hasApi ? renderApiDiff(apiChanges) : section(findings, "info"),
     ackNote,
   ]
     .filter(Boolean)

@@ -74,7 +74,12 @@ const surfacesSchema = z.array(
  */
 function runSurfaces(
   surfacesPath: string,
-  opts: { baseSha?: string; labelAcknowledged: boolean; markdownPath?: string }
+  opts: {
+    baseSha?: string;
+    labelAcknowledged: boolean;
+    apiSummary: boolean;
+    markdownPath?: string;
+  }
 ): number {
   const surfaces = surfacesSchema.parse(
     JSON.parse(fs.readFileSync(surfacesPath, "utf8"))
@@ -92,7 +97,11 @@ function runSurfaces(
       oldDir: s.oldDir,
       newDir: s.newDir,
       baseSha: opts.baseSha,
-      config: { ...fileConfig, entry },
+      config: {
+        ...fileConfig,
+        entry,
+        apiSummary: opts.apiSummary || fileConfig.apiSummary,
+      },
     });
     const acknowledged = opts.labelAcknowledged || s.allowBreaking === true;
     const ackReason = opts.labelAcknowledged
@@ -125,6 +134,7 @@ interface CliValues {
   "base-sha"?: string;
   json?: string;
   markdown?: string;
+  "api-summary"?: boolean;
 }
 
 function runSingle(values: CliValues): number {
@@ -145,7 +155,11 @@ function runSingle(values: CliValues): number {
     oldDir: values.old,
     newDir: values.new,
     baseSha: values["base-sha"],
-    config: { ...fileConfig, entry },
+    config: {
+      ...fileConfig,
+      entry,
+      apiSummary: values["api-summary"] || fileConfig.apiSummary,
+    },
   });
 
   if (values.markdown) fs.writeFileSync(values.markdown, report.markdown);
@@ -174,6 +188,7 @@ function main(): number {
         "base-root": { type: "string" },
         "head-root": { type: "string" },
         "allow-breaking-packages": { type: "string" },
+        "api-summary": { type: "boolean" },
         out: { type: "string" },
       },
     }));
@@ -200,6 +215,7 @@ function main(): number {
     ? runSurfaces(values.surfaces, {
         baseSha: values["base-sha"],
         labelAcknowledged: values["label-acknowledged"] ?? false,
+        apiSummary: values["api-summary"] ?? false,
         markdownPath: values.markdown,
       })
     : runSingle(values);

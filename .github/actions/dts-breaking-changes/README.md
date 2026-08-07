@@ -35,6 +35,7 @@ Choose one mode: **workspace** (`base-root` — discovers packages and entrypoin
 | `allow-breaking`          | `false`               | Single-surface: `true` to allow breaking changes without the label.                                                                                                      |
 | `base-sha`                | —                     | Base SHA (shared by all surfaces), shown in the comment for traceability.                                                                                                |
 | `label`                   | `breaking`            | PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning.                                                                         |
+| `api-summary`             | `false`               | Include a structural `diff` summary of API additions/removals/changes (review aid; does not affect the gate).                                                            |
 | `title`                   | `Type surface`        | Single-surface heading and the sticky-comment key.                                                                                                                       |
 | `github-token`            | `${{ github.token }}` | Token used to post the comment.                                                                                                                                          |
 

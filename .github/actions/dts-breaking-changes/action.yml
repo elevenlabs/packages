@@ -50,6 +50,10 @@ inputs:
     description: "PR label that acknowledges breaking changes (all surfaces) and downgrades the gate to a warning."
     required: false
     default: "breaking"
+  api-summary:
+    description: "Set to 'true' to include a structural summary of API additions/removals/changes (a review aid; does not affect the gate)."
+    required: false
+    default: "false"
   title:
     description: "Human title, in the single-surface heading and the sticky-comment key."
     required: false
@@ -82,6 +86,7 @@ runs:
         ALLOW_BREAKING: ${{ inputs.allow-breaking }}
         BASE_SHA: ${{ inputs.base-sha }}
         LABEL: ${{ inputs.label }}
+        API_SUMMARY: ${{ inputs.api-summary }}
         TITLE: ${{ inputs.title }}
       run: |
         set -euo pipefail
@@ -111,12 +116,15 @@ runs:
         if jq -e --arg L "$LABEL" 'any(.pull_request.labels[]?; .name == $L)' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
           LABEL_ACK="--label-acknowledged"
         fi
+        API_FLAG=""
+        [ "$API_SUMMARY" = "true" ] && API_FLAG="--api-summary"
 
         REPORT="$RUNNER_TEMP/dts-report.md"
         set +e
         $CLI --surfaces "$SURFACES_FILE" \
           ${BASE_SHA:+--base-sha "$BASE_SHA"} \
           $LABEL_ACK \
+          $API_FLAG \
           --markdown "$REPORT"
         RC=$?
         set -e

@@ -67,16 +67,17 @@ report.markdown; // sticky-comment body
 
 ## Config
 
-| Key                      | Default    | Purpose                                                                        |
-| ------------------------ | ---------- | ------------------------------------------------------------------------------ |
-| `entry`                  | —          | Entry `.d.ts` relative to each dir (e.g. `index.d.ts`, `dist/src/index.d.ts`). |
-| `gateDirection`          | `consumer` | Which direction(s) fail the gate: `consumer` \| `forward` \| `both`.           |
-| `ignore`                 | `[]`       | Globs on the dotted symbol path to drop (e.g. `core.**` for Fern internals).   |
-| `severityOverrides`      | `{}`       | Glob → `breaking` \| `warning` \| `info`.                                      |
-| `failOn`                 | `breaking` | Gate fails at or above this severity.                                          |
-| `transformDepth`         | `8`        | Recursion bound for the `MethodsToProperties` transform.                       |
-| `localizeDepth`          | `1`        | Per-symbol localization depth.                                                 |
-| `compareTypeOnlyExports` | `false`    | Also compare pure type-only exports (see below). Opt-in per package.           |
+| Key                      | Default    | Purpose                                                                                |
+| ------------------------ | ---------- | -------------------------------------------------------------------------------------- |
+| `entry`                  | —          | Entry `.d.ts` relative to each dir (e.g. `index.d.ts`, `dist/src/index.d.ts`).         |
+| `gateDirection`          | `consumer` | Which direction(s) fail the gate: `consumer` \| `forward` \| `both`.                   |
+| `ignore`                 | `[]`       | Globs on the dotted symbol path to drop (e.g. `core.**` for Fern internals).           |
+| `severityOverrides`      | `{}`       | Glob → `breaking` \| `warning` \| `info`.                                              |
+| `failOn`                 | `breaking` | Gate fails at or above this severity.                                                  |
+| `transformDepth`         | `8`        | Recursion bound for the `MethodsToProperties` transform.                               |
+| `localizeDepth`          | `1`        | Per-symbol localization depth.                                                         |
+| `compareTypeOnlyExports` | `false`    | Also compare pure type-only exports (see below). Opt-in per package.                   |
+| `apiSummary`             | `false`    | Attach a structural summary of API additions/removals/changes (review aid; see below). |
 
 ## How it works
 
