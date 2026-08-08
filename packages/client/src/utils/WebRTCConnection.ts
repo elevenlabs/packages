@@ -41,9 +41,14 @@ const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const AUDIO_VOLUME_THRESHOLD = 0.01;
 
-// Convert WSS origin to HTTPS for API calls
-function convertWssToHttps(origin: string): string {
-  return origin.replace(/^wss:\/\//, "https://");
+// Convert HTTP(S) URL to WS(S) for LiveKit connections
+function convertToWss(url: string): string {
+  return url.replace(/^https:\/\//, "wss://").replace(/^http:\/\//, "ws://");
+}
+
+// Convert any WS(S) or HTTP(S) URL to HTTP(S) for API calls
+function convertToHttps(url: string): string {
+  return url.replace(/^wss:\/\//, "https://").replace(/^ws:\/\//, "http://");
 }
 
 export type WebRTCConnectionConfig = SessionConfig & {
@@ -233,6 +238,15 @@ export class WebRTCConnection extends BaseConnection {
   ): Promise<WebRTCConnection> {
     let conversationToken: string;
 
+    // serverUrl is a convenience that derives both the token origin and LiveKit
+    // URL from one base URL. Explicit origin/livekitUrl always take precedence.
+    const resolvedOrigin =
+      config.origin ??
+      (config.serverUrl ? convertToHttps(config.serverUrl) : undefined);
+    const resolvedLivekitUrl =
+      config.livekitUrl ??
+      (config.serverUrl ? convertToWss(config.serverUrl) : undefined);
+
     // Handle different authentication scenarios
     if ("conversationToken" in config && config.conversationToken) {
       // Direct token provided
@@ -241,8 +255,8 @@ export class WebRTCConnection extends BaseConnection {
       // Agent ID provided - fetch token from API
       try {
         const { name: source, version } = sourceInfo;
-        const configOrigin = config.origin ?? HTTPS_API_ORIGIN;
-        const origin = convertWssToHttps(configOrigin); //origin is wss, not https
+        const configOrigin = resolvedOrigin ?? HTTPS_API_ORIGIN;
+        const origin = convertToHttps(configOrigin); // normalize ws(s):// and http(s):// to http(s):// for token fetch
         let url = `${origin}/v1/convai/conversation/token?agent_id=${config.agentId}&source=${source}&version=${version}`;
         if (config.environment) {
           url += `&environment=${encodeURIComponent(config.environment)}`;
@@ -303,7 +317,7 @@ export class WebRTCConnection extends BaseConnection {
       );
 
       // Use configurable LiveKit URL or default if not provided
-      const livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
+      const livekitUrl = resolvedLivekitUrl || DEFAULT_LIVEKIT_WS_URL;
 
       // Enable microphone on SignalConnected (before room.connect resolves).
       // The server may wait for the client to publish audio before fully
