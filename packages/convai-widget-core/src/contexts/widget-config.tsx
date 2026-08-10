@@ -280,7 +280,14 @@ export function useTriggerEntryPoints() {
 
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.file_input_config?.enabled ?? false);
+  const orchestratorUrl = useAttribute("orchestrator-url");
+  // File uploads go to the ElevenLabs cloud API, which orchestrator sessions
+  // must never call, so the appearance config cannot turn them on.
+  return useComputed(
+    () =>
+      !orchestratorUrl.value &&
+      (config.value.file_input_config?.enabled ?? false)
+  );
 }
 
 export function useFileInputMaxFiles() {
