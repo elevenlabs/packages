@@ -427,6 +427,43 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBe(mockConversation);
   });
 
+  it("drops a superseded session's late callbacks so they can't clobber the new session", async () => {
+    const userOnDisconnect = vi.fn();
+    const mockConversationA = createMockConversation("conv-a");
+    const mockConversationB = createMockConversation("conv-b");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(mockConversationA)
+      .mockResolvedValueOnce(mockConversationB);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onDisconnect: userOnDisconnect }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    // External disconnect starts: the conversation is released, and a new
+    // session starts while the old session's teardown is still in flight.
+    const [[optsA]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      optsA.onStatusChange!({ status: "disconnecting" });
+    });
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(result.current.conversation).toBe(mockConversationB);
+
+    // The old session's teardown completes. Its onDisconnect must not reach
+    // the listener chain — sub-providers registered there (mode, feedback)
+    // would reset state that now belongs to the new session.
+    act(() => {
+      optsA.onDisconnect!({ reason: "agent" });
+    });
+    expect(userOnDisconnect).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(mockConversationB);
+  });
+
   it("does not reconnect when textOnly prop changes while connecting", async () => {
     const mockConversation = createMockConversation();
     const { promise, resolve: resolveStartSession } =

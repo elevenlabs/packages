@@ -137,10 +137,30 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
-      const userOnConversationCreated = sessionOptions.onConversationCreated;
-      const userOnDisconnect = sessionOptions.onDisconnect;
       const isStaleStartSession = () =>
         startSessionId !== startSessionIdRef.current;
+
+      // A superseded session can outlive its replacement's start: its async
+      // teardown keeps emitting events (final "disconnected", teardown
+      // onDisconnect, errors) that would otherwise reach the listener map
+      // and clobber sub-provider state now reflecting the newer session
+      // (e.g. ConversationModeProvider resets mode on onDisconnect). Drop
+      // every callback once this start is stale.
+      for (const key of CALLBACK_KEYS) {
+        const callback = sessionOptions[key];
+        if (typeof callback === "function") {
+          (sessionOptions as Record<string, unknown>)[key] = (
+            ...args: never[]
+          ) => {
+            if (!isStaleStartSession()) {
+              (callback as (...a: never[]) => void)(...args);
+            }
+          };
+        }
+      }
+
+      const userOnConversationCreated = sessionOptions.onConversationCreated;
+      const userOnDisconnect = sessionOptions.onDisconnect;
 
       // Set once this session's conversation is known. endSession() clears
       // conversationRef optimistically (so restart-from-callback patterns
@@ -197,6 +217,9 @@ export function ConversationProvider({
       const handleDisconnect: NonNullable<
         Callbacks["onDisconnect"]
       > = details => {
+        if (isStaleStartSession()) {
+          return;
+        }
         if (conversationRef.current === thisSessionConv) {
           conversationRef.current = null;
           setConversation(null);
