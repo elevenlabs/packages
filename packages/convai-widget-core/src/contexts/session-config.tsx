@@ -102,8 +102,8 @@ export function SessionConfigProvider({
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
     if (orchestratorUrl.value) {
-      const orchestratorConfig = parsedOrchestratorConfig.value;
-      if (!orchestratorConfig) {
+      const orchestrator = parsedOrchestratorConfig.value;
+      if (!orchestrator) {
         return null;
       }
       if (agentId.value || signedUrl.value) {
@@ -122,7 +122,7 @@ export function SessionConfigProvider({
 
       // Self-hosted orchestrators only expose the conversation WebSocket
       return {
-        orchestratorConfig,
+        orchestrator,
         connectionType: "websocket" as const,
         ...baseConfig,
         overrides: {

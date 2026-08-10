@@ -42,12 +42,11 @@ export function parseOrchestratorConfig(
     return {
       url,
       agentConfig: parsed.agent_config_dict ?? parsed.agent_config ?? undefined,
-      overrideAgentConfigList:
+      agentConfigOverrides:
         parsed.override_agent_config_list ??
         parsed.override_agent_config ??
         undefined,
-      toolsConfigList:
-        parsed.tools_config_list ?? parsed.tools_config ?? undefined,
+      tools: parsed.tools_config_list ?? parsed.tools_config ?? undefined,
       promptKnowledgeBase: parsed.prompt_knowledge_base ?? undefined,
       bedrockInferenceProfile:
         typeof parsed.bedrock_inference_profile === "string"

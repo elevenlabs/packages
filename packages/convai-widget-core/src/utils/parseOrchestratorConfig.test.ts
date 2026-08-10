@@ -31,8 +31,8 @@ describe("parseOrchestratorConfig", () => {
     ).toEqual({
       url: "wss://host/convai",
       agentConfig: { name: "agent" },
-      toolsConfigList: [{ type: "webhook" }],
-      overrideAgentConfigList: [{ language: "en" }],
+      tools: [{ type: "webhook" }],
+      agentConfigOverrides: [{ language: "en" }],
       promptKnowledgeBase: ["fact"],
       bedrockInferenceProfile: "global",
       postCallTranscriptionWebhook: {
@@ -55,8 +55,8 @@ describe("parseOrchestratorConfig", () => {
       )
     ).toMatchObject({
       agentConfig: { name: "agent" },
-      toolsConfigList: [{ type: "webhook" }],
-      overrideAgentConfigList: [{ language: "en" }],
+      tools: [{ type: "webhook" }],
+      agentConfigOverrides: [{ language: "en" }],
     });
   });
 
