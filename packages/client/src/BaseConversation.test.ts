@@ -515,6 +515,27 @@ describe("BaseConversation", () => {
         context: { type: "max_duration_exceeded" },
       });
     });
+
+    it("still reaches disconnected and fires onDisconnect if teardown throws", async () => {
+      const onDisconnect = vi.fn();
+      const onStatusChange = vi.fn();
+      const throwingConnection = {
+        ...noopConnection,
+        close: () => {
+          throw new Error("teardown boom");
+        },
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onDisconnect, onStatusChange },
+        throwingConnection
+      );
+      conversation.connect();
+
+      await expect(conversation.endSession()).rejects.toThrow("teardown boom");
+
+      expect(onStatusChange).toHaveBeenCalledWith({ status: "disconnected" });
+      expect(onDisconnect).toHaveBeenCalledWith({ reason: "user" });
+    });
   });
 
   describe("error events", () => {

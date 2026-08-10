@@ -172,10 +172,16 @@ export abstract class BaseConversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
-    await this.handleEndSession();
-    this.updateStatus("disconnected");
-    if (this.options.onDisconnect) {
-      this.options.onDisconnect(details);
+    try {
+      await this.handleEndSession();
+    } finally {
+      // Always reach "disconnected" and notify onDisconnect, even if
+      // teardown throws — otherwise callers relying on onDisconnect to
+      // release their reference to this conversation get stuck forever.
+      this.updateStatus("disconnected");
+      if (this.options.onDisconnect) {
+        this.options.onDisconnect(details);
+      }
     }
   };
 
