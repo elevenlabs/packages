@@ -117,9 +117,9 @@ export class WebSocketConnection
 
       const { name: source, version } = sourceInfo;
 
-      if (config.orchestratorConfig) {
+      if (config.orchestrator) {
         // Self-hosted orchestrators don't negotiate subprotocols; requesting one makes browsers fail the connection.
-        url = config.orchestratorConfig.url;
+        url = config.orchestrator.url;
       } else {
         const origin = config.origin ?? WSS_API_ORIGIN;
 
@@ -147,11 +147,9 @@ export class WebSocketConnection
         socket!.addEventListener(
           "open",
           () => {
-            if (config.orchestratorConfig) {
+            if (config.orchestrator) {
               socket?.send(
-                JSON.stringify(
-                  constructEnclaveSetupConfig(config.orchestratorConfig)
-                )
+                JSON.stringify(constructEnclaveSetupConfig(config.orchestrator))
               );
             }
 

@@ -87,10 +87,19 @@ export type OrchestratorConfig = {
   /** Full agent definition, as exported from the ElevenLabs platform. */
   agentConfig?: Record<string, unknown>;
   /** Partial configs applied as overrides on top of the base agent config. */
-  overrideAgentConfigList?: Record<string, unknown>[];
-  /** Tool definitions for the agent, exported alongside the agent config. */
-  toolsConfigList?: Record<string, unknown>[];
-  /** Strings appended to the system prompt at runtime. */
+  agentConfigOverrides?: Record<string, unknown>[];
+  /**
+   * Tool definitions for the agent, in the platform's tool export format
+   * (the `tools_config_list` entries produced by the agent export tooling,
+   * matching the Python SDK field of the same name). The orchestrator
+   * validates each entry server-side and rejects the session on mismatch.
+   */
+  tools?: Record<string, unknown>[];
+  /**
+   * Replaces the knowledge-base section of the system prompt. Independent of
+   * `overrides.agent.prompt`, which sets the prompt text; the orchestrator
+   * composes the two, so both may be provided together.
+   */
   promptKnowledgeBase?: string[];
   /** Bedrock cross-region inference profile, e.g. "global". The orchestrator defaults to "us". */
   bedrockInferenceProfile?: string;
@@ -105,7 +114,7 @@ export type PublicSessionConfig = BaseSessionConfig & {
   connectionType?: ConnectionType;
   signedUrl?: never;
   conversationToken?: never;
-  orchestratorConfig?: never;
+  orchestrator?: never;
 };
 
 export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
@@ -113,7 +122,7 @@ export type PrivateWebSocketSessionConfig = BaseSessionConfig & {
   connectionType?: "websocket";
   agentId?: never;
   conversationToken?: never;
-  orchestratorConfig?: never;
+  orchestrator?: never;
 };
 
 export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
@@ -121,7 +130,7 @@ export type PrivateWebRTCSessionConfig = BaseSessionConfig & {
   connectionType?: "webrtc";
   agentId?: never;
   signedUrl?: never;
-  orchestratorConfig?: never;
+  orchestrator?: never;
 };
 
 /**
@@ -132,7 +141,7 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
    * Routes the session to a self-hosted orchestrator instead of the ElevenLabs cloud.
    * @experimental
    */
-  orchestratorConfig: OrchestratorConfig;
+  orchestrator: OrchestratorConfig;
   connectionType?: "websocket";
   agentId?: never;
   signedUrl?: never;

@@ -31,8 +31,8 @@ export function constructEnclaveSetupConfig(
   const event: EnclaveSetupConfigEvent = {
     type: ENCLAVE_SETUP_CONFIG_TYPE,
     agent_config_dict: config.agentConfig ?? null,
-    override_agent_config_list: config.overrideAgentConfigList ?? null,
-    tools_config_list: config.toolsConfigList ?? null,
+    override_agent_config_list: config.agentConfigOverrides ?? null,
+    tools_config_list: config.tools ?? null,
     prompt_knowledge_base: config.promptKnowledgeBase ?? null,
   };
 

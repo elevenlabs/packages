@@ -60,13 +60,13 @@ describe("WebSocketConnection", () => {
   }
 
   describe("self-hosted orchestrator sessions", () => {
-    const orchestratorConfig = {
+    const orchestrator = {
       url: "wss://orchestrator.internal/sagemaker/convai/conversation",
       agentConfig: { name: "test-agent" },
     };
 
     async function createOrchestratorConnection(): Promise<WebSocketConnection> {
-      const promise = WebSocketConnection.create({ orchestratorConfig });
+      const promise = WebSocketConnection.create({ orchestrator });
 
       emit("open", {});
       emit("message", {
@@ -87,7 +87,7 @@ describe("WebSocketConnection", () => {
       await createOrchestratorConnection();
 
       expect(globalThis.WebSocket).toHaveBeenCalledWith(
-        orchestratorConfig.url,
+        orchestrator.url,
         undefined
       );
     });

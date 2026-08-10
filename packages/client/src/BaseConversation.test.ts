@@ -185,7 +185,7 @@ describe("BaseConversation", () => {
     it("throws for self-hosted orchestrator sessions instead of calling the cloud API", async () => {
       mockFetchSuccess();
       const conversation = TestConversation.create({
-        orchestratorConfig: {
+        orchestrator: {
           url: "wss://orchestrator.internal/convai",
         },
       } as Partial<Options>);

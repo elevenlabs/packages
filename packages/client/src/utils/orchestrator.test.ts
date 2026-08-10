@@ -21,8 +21,8 @@ describe("constructEnclaveSetupConfig", () => {
       constructEnclaveSetupConfig({
         url: "ws://localhost:8000/sagemaker/convai/conversation",
         agentConfig: { name: "agent" },
-        overrideAgentConfigList: [{ language: "en" }],
-        toolsConfigList: [{ type: "webhook" }],
+        agentConfigOverrides: [{ language: "en" }],
+        tools: [{ type: "webhook" }],
         promptKnowledgeBase: ["fact"],
         bedrockInferenceProfile: "global",
         postCallTranscriptionWebhook: {
