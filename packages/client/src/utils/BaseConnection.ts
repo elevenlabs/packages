@@ -74,7 +74,13 @@ export type ConnectionType = "websocket" | "webrtc";
  */
 export type PostCallWebhookConfig = {
   url: string;
-  /** Secret the orchestrator uses to sign deliveries. The orchestrator rejects secrets shorter than 16 characters. */
+  /**
+   * Secret the orchestrator uses to sign deliveries. The orchestrator
+   * rejects secrets shorter than 16 characters. Anything set here is visible
+   * to the end user running the page, like the rest of the orchestrator
+   * session config; intended for testing against trusted deployments, not
+   * production use.
+   */
   hmacSecret?: string;
 };
 

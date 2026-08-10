@@ -13,7 +13,7 @@ describe("createConnection", () => {
         orchestrator,
         connectionType: "webrtc",
       } as unknown as SessionConfig)
-    ).rejects.toThrow("only supports websocket");
+    ).rejects.toThrow("only support websocket");
   });
 
   it.each([

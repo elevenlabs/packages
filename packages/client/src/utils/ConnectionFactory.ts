@@ -24,7 +24,7 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     (config.connectionType as ConnectionType) === "webrtc"
   ) {
     throw new Error(
-      "orchestrator only supports websocket connections. Remove connectionType or set it to 'websocket'."
+      "Orchestrator sessions only support websocket connections. Remove connectionType or set it to 'websocket'."
     );
   }
 
@@ -35,7 +35,7 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
       config.authorization)
   ) {
     throw new Error(
-      "orchestrator cannot be combined with signedUrl, conversationToken or authorization."
+      "The orchestrator option cannot be combined with signedUrl, conversationToken or authorization."
     );
   }
 
