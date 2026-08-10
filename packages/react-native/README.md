@@ -20,6 +20,17 @@ The LiveKit peer dependencies provide the native WebRTC modules required for voi
 
 > **Note:** This SDK requires Expo development builds. Expo Go is not supported due to native module requirements.
 
+> **Note:** This package resolves its React Native entry point via the `package.json` [`"exports"`](https://nodejs.org/api/packages.html#exports) field. Metro only resolves `"exports"` by default starting with Metro 0.82.0, which shipped in [React Native 0.79.0](https://reactnative.dev/blog/2025/04/08/react-native-0.79) (released April 8, 2025). If you're on a React Native version older than 0.79, set `resolver.unstable_enablePackageExports = true` in your `metro.config.js` so this package resolves correctly:
+>
+> ```js
+> const { getDefaultConfig } = require("metro-config");
+>
+> const config = getDefaultConfig(__dirname);
+> config.resolver.unstable_enablePackageExports = true;
+>
+> module.exports = config;
+> ```
+
 ## Quick Start
 
 ```tsx
