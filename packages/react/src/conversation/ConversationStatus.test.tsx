@@ -30,7 +30,7 @@ const createMockConversation = (id = "test-id") =>
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
   const status = useConversationStatus();
-  return { startSession: ctx.startSession, status };
+  return { startSession: ctx.startSession, endSession: ctx.endSession, status };
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -221,6 +221,38 @@ describe("ConversationStatus", () => {
       opts.onStatusChange!({ status: "disconnecting" });
     });
     expect(result.current.status.status).toBe("disconnected");
+  });
+
+  it("ignores status events from a superseded session", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    act(() => {
+      result.current.endSession();
+    });
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[optsA], [optsB]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      optsB.onStatusChange!({ status: "connected" });
+    });
+    expect(result.current.status.status).toBe("connected");
+
+    // Session A's teardown completes late and fires its final
+    // "disconnected" — it must not clobber session B's live status.
+    act(() => {
+      optsA.onStatusChange!({ status: "disconnected" });
+    });
+    expect(result.current.status.status).toBe("connected");
   });
 
   it("never renders status connected while the conversation is released", async () => {

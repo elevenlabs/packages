@@ -167,6 +167,30 @@ export function ConversationProvider({
         sessionOptions.onConnect?.(props);
       };
 
+      // "disconnecting" marks the moment the session stops being usable, on
+      // every path (agent hangup, raw endSession(), provider endSession()) —
+      // release the conversation here so it clears in the same React batch
+      // as the status transition, and consumers never observe a live status
+      // with a released conversation (or vice versa). Stale sessions are
+      // dropped entirely so a late "disconnected" can't clobber the status
+      // of a session that replaced this one.
+      const handleStatusChange: NonNullable<
+        Callbacks["onStatusChange"]
+      > = props => {
+        if (isStaleStartSession()) {
+          return;
+        }
+        if (
+          props.status === "disconnecting" &&
+          thisSessionConv !== null &&
+          conversationRef.current === thisSessionConv
+        ) {
+          conversationRef.current = null;
+          setConversation(null);
+        }
+        sessionOptions.onStatusChange?.(props);
+      };
+
       // Syncs provider state when this session ends, whether externally
       // (agent disconnect) or via endSession(). Only clears conversationRef
       // if it still points at this session's conversation.
@@ -181,10 +205,11 @@ export function ConversationProvider({
       };
 
       const providerLifecycleOptions: ConversationLifecycleOptions &
-        Pick<Callbacks, "onConnect" | "onDisconnect"> = {
+        Pick<Callbacks, "onConnect" | "onDisconnect" | "onStatusChange"> = {
         onConversationCreated: handleConversationCreated,
         onConnect: handleConnect,
         onDisconnect: handleDisconnect,
+        onStatusChange: handleStatusChange,
       };
 
       const startSessionOptions: Options = {

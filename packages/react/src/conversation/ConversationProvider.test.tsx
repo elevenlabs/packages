@@ -396,6 +396,37 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBe(mockConversationB);
   });
 
+  it("releases the conversation when an external disconnect starts, allowing an immediate restart", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(result.current.conversation).toBe(mockConversation);
+
+    // Agent hangup: the SDK fires "disconnecting" at the *start* of async
+    // teardown — onDisconnect only arrives once it completes. The provider
+    // must release the conversation here, not at onDisconnect, or Start
+    // would be enabled (status reads disconnected) while startSession()
+    // still no-ops on the lingering conversationRef.
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      opts.onStatusChange!({ status: "disconnecting" });
+    });
+    expect(result.current.conversation).toBeNull();
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(result.current.conversation).toBe(mockConversation);
+  });
+
   it("does not reconnect when textOnly prop changes while connecting", async () => {
     const mockConversation = createMockConversation();
     const { promise, resolve: resolveStartSession } =
