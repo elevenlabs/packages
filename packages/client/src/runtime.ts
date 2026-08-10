@@ -138,7 +138,7 @@ declare global {
   // -------------------------------------------------------------------------
 
   class TextEncoder {
-    encode(input?: string): Uint8Array;
+    encode(input?: string): Uint8Array<ArrayBuffer>;
   }
 
   class TextDecoder {
