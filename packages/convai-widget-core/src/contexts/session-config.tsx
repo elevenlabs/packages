@@ -74,6 +74,7 @@ export function SessionConfigProvider({
   const orchestratorUrl = useAttribute("orchestrator-url");
   const orchestratorAgentConfig = useAttribute("orchestrator-agent-config");
   const overrideLanguage = useAttribute("override-language");
+  const languageAttribute = useAttribute("language");
   const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
@@ -111,12 +112,22 @@ export function SessionConfigProvider({
           "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
         );
       }
-      // The agent config carries its own language; use override-language to force one when no supported set is declared.
+      // The agent config carries its own language, so only clear intent
+      // forces one: override-language, a picker choice, a resolved language
+      // that differs from the appearance default, or a language attribute
+      // honoured against a declared supported set. A bare language attribute
+      // with no supported set stays inert, as embed boilerplate ships
+      // language="en".
       const resolvedLanguage = language.value.languageCode;
+      const languageAttributeHonoured =
+        (widgetConfig.value.supported_language_overrides ?? []).length > 0 &&
+        isValidLanguage(languageAttribute.value) &&
+        languageAttribute.value === resolvedLanguage;
       const languageOverride =
         isValidLanguage(overrideLanguage.value) ||
         languageChosen.value ||
-        resolvedLanguage !== widgetConfig.value.language
+        resolvedLanguage !== widgetConfig.value.language ||
+        languageAttributeHonoured
           ? resolvedLanguage
           : undefined;
 
