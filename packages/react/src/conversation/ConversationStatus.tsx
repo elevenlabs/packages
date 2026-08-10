@@ -30,11 +30,11 @@ export function ConversationStatusProvider({
 
   useRegisterCallbacks({
     onStatusChange({ status: newStatus }) {
-      if (newStatus === "disconnecting") {
-        // Transient state — keep current status
-        return;
-      }
-      setStatus(newStatus);
+      // "disconnecting" means the provider has already released the
+      // conversation (endSession clears it optimistically), so report
+      // "disconnected" immediately — holding "connected" here would let
+      // consumers observe status === "connected" with no conversation.
+      setStatus(newStatus === "disconnecting" ? "disconnected" : newStatus);
       // Clear error message when transitioning to a non-error state
       setMessage(undefined);
     },
