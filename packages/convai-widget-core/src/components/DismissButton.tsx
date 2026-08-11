@@ -1,9 +1,6 @@
 import { Button, BaseButtonProps } from "./Button";
 
-interface DismissButtonProps extends Omit<
-  BaseButtonProps,
-  "icon" | "aria-label"
-> {
+interface DismissButtonProps extends Omit<BaseButtonProps, "icon" | "aria-label"> {
   onDismiss?: () => void;
 }
 
