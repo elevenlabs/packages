@@ -10,13 +10,25 @@ export { RealtimeEvents } from "./connection.js";
 export type { RealtimeEventMap } from "./connection.js";
 
 // Export types
-export type { AudioOptions, MicrophoneOptions } from "./scribe.js";
+export type {
+  AudioOptions,
+  MicrophoneOptions,
+  EntityDetectionCategory,
+  EntityDetectionOption,
+} from "./scribe.js";
 export type {
   WebSocketMessage,
   SessionStartedMessage,
   PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  FinalTranscriptWord,
+  FinalTranscriptWordType,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  CommittedTranscriptEntitiesMessage,
+  DetectedEntity,
+  TranscriptCharacter,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -25,6 +37,7 @@ export type {
   ScribeUnacceptedTermsErrorMessage,
   ScribeRateLimitedErrorMessage,
   ScribeInputErrorMessage,
+  ScribeInvalidRequestErrorMessage,
   ScribeQueueOverflowErrorMessage,
   ScribeResourceExhaustedErrorMessage,
   ScribeSessionTimeLimitExceededErrorMessage,

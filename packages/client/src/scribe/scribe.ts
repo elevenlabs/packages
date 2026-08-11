@@ -16,6 +16,27 @@ export enum CommitStrategy {
   VAD = "vad",
 }
 
+/**
+ * Entity categories accepted by {@link BaseOptions.entityDetection}.
+ * `"all"` enables every supported entity type.
+ */
+export type EntityDetectionCategory =
+  | "all"
+  | "pii"
+  | "phi"
+  | "pci"
+  | "other"
+  | "offensive_language";
+
+/**
+ * A value accepted by {@link BaseOptions.entityDetection}: either one of the
+ * {@link EntityDetectionCategory} values, or a specific entity type such as
+ * `"email_address"` or `"credit_card"`.
+ */
+// The `string & {}` union member keeps autocomplete for the known categories
+// while still accepting any specific entity type the API supports.
+export type EntityDetectionOption = EntityDetectionCategory | (string & {});
+
 interface BaseOptions {
   /**
    * Token to use for the WebSocket connection. Obtained from the ElevenLabs API.
@@ -57,6 +78,12 @@ interface BaseOptions {
    */
   languageCode?: string;
   /**
+   * Additional ISO-639-1 or ISO-639-3 language codes that may be present in the audio.
+   * Providing them makes language identification more reliable by only focusing on a
+   * certain set of languages.
+   */
+  secondaryLanguages?: string[];
+  /**
    * Base URI to use for the WebSocket connection.
    * If not provided, the default URI will be used.
    */
@@ -81,6 +108,22 @@ interface BaseOptions {
    * @default false
    */
   noVerbatim?: boolean;
+  /**
+   * Detect entities on committed transcripts. Accepts `"all"`, a single entity type or
+   * category, or a list of types/categories. Detected entities are delivered in a separate
+   * committed_transcript_entities event with their text, type, and character positions.
+   */
+  entityDetection?: EntityDetectionOption | EntityDetectionOption[];
+  /**
+   * Enable background speech filtering to reduce false activations from nearby conversations
+   * and ambient noise. When enabled without an explicit vadThreshold, the server applies a
+   * lower default threshold.
+   *
+   * @remarks
+   * Cannot be combined with includeTimestamps.
+   * @default false
+   */
+  filterBackgroundAudio?: boolean;
   /**
    * Whether the request may be logged by ElevenLabs.
    * When set to false, zero retention mode is used for the session, which means
@@ -156,7 +199,7 @@ export class ScribeRealtime {
     }
     if (options.vadSilenceThresholdSecs !== undefined) {
       if (
-        options.vadSilenceThresholdSecs <= 0.3 ||
+        options.vadSilenceThresholdSecs < 0.3 ||
         options.vadSilenceThresholdSecs > 3.0
       ) {
         throw new Error("vadSilenceThresholdSecs must be between 0.3 and 3.0");
@@ -174,7 +217,7 @@ export class ScribeRealtime {
     }
     if (options.minSpeechDurationMs !== undefined) {
       if (
-        options.minSpeechDurationMs <= 50 ||
+        options.minSpeechDurationMs < 50 ||
         options.minSpeechDurationMs > 2000
       ) {
         throw new Error("minSpeechDurationMs must be between 50 and 2000");
@@ -186,7 +229,7 @@ export class ScribeRealtime {
     }
     if (options.minSilenceDurationMs !== undefined) {
       if (
-        options.minSilenceDurationMs <= 50 ||
+        options.minSilenceDurationMs < 50 ||
         options.minSilenceDurationMs > 2000
       ) {
         throw new Error("minSilenceDurationMs must be between 50 and 2000");
@@ -198,6 +241,11 @@ export class ScribeRealtime {
     }
     if (options.languageCode !== undefined) {
       params.append("language_code", options.languageCode);
+    }
+    if (options.secondaryLanguages !== undefined) {
+      for (const language of options.secondaryLanguages) {
+        params.append("secondary_languages", language);
+      }
     }
     if (options.includeTimestamps !== undefined) {
       params.append(
@@ -218,6 +266,20 @@ export class ScribeRealtime {
     }
     if (options.noVerbatim !== undefined) {
       params.append("no_verbatim", options.noVerbatim ? "true" : "false");
+    }
+    if (options.entityDetection !== undefined) {
+      const entityDetection = Array.isArray(options.entityDetection)
+        ? options.entityDetection
+        : [options.entityDetection];
+      for (const entity of entityDetection) {
+        params.append("entity_detection", entity);
+      }
+    }
+    if (options.filterBackgroundAudio !== undefined) {
+      params.append(
+        "filter_background_audio",
+        options.filterBackgroundAudio ? "true" : "false"
+      );
     }
     if (options.enableLogging !== undefined) {
       params.append("enable_logging", options.enableLogging ? "true" : "false");

@@ -770,6 +770,7 @@ export interface Config {
   sample_rate?: number;
   audio_format?: ConfigAudioFormat;
   language_code?: string;
+  secondary_languages?: string[];
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
@@ -777,8 +778,11 @@ export interface Config {
   min_silence_duration_ms?: number;
   model_id?: string;
   enable_logging?: boolean;
+  include_language_detection?: boolean;
   keyterms?: string[];
   no_verbatim?: boolean;
+  entity_detection?: string[];
+  filter_background_audio?: boolean;
 }
 
 export type ConfigAudioFormat =
@@ -797,6 +801,37 @@ export interface PartialTranscript {
   text: string;
 }
 
+export interface FinalTranscript {
+  message_type: "final_transcript";
+  text: string;
+}
+
+export interface FinalTranscriptWithTimestamps {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  words?: FinalTranscriptWord[];
+}
+
+export interface FinalTranscriptWord {
+  text?: string;
+  start?: number;
+  end?: number;
+  type?: FinalTranscriptWordType;
+  speaker_id?: string;
+  logprob?: number;
+  characters?: TranscriptCharacter[];
+  channel_index?: number;
+}
+
+export type FinalTranscriptWordType = "word" | "spacing" | "audio_event";
+
+export interface TranscriptCharacter {
+  text: string;
+  start?: number;
+  end?: number;
+}
+
 export interface CommittedTranscript {
   message_type: "committed_transcript";
   text: string;
@@ -806,20 +841,33 @@ export interface CommittedTranscriptWithTimestamps {
   message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: WordsItem[];
+  words?: Word[];
 }
 
-export interface WordsItem {
+export interface Word {
   text?: string;
   start?: number;
   end?: number;
-  type?: WordsItemType;
+  type?: WordType;
   speaker_id?: string;
   logprob?: number;
   characters?: string[];
 }
 
-export type WordsItemType = "word" | "spacing";
+export type WordType = "word" | "spacing";
+
+export interface CommittedTranscriptEntities {
+  message_type: "committed_transcript_entities";
+  text: string;
+  entities: DetectedEntity[];
+}
+
+export interface DetectedEntity {
+  text: string;
+  entity_type: string;
+  start_char: number;
+  end_char: number;
+}
 
 export interface Error {
   message_type: MessageType;
@@ -835,6 +883,7 @@ export type MessageType =
   | "unaccepted_terms"
   | "rate_limited"
   | "input_error"
+  | "invalid_request"
   | "queue_overflow"
   | "resource_exhausted"
   | "session_time_limit_exceeded"
@@ -876,6 +925,11 @@ export interface InputError {
   error: string;
 }
 
+export interface InvalidRequestError {
+  message_type: "invalid_request";
+  error: string;
+}
+
 export interface QueueOverflowError {
   message_type: "queue_overflow";
   error: string;
@@ -912,6 +966,18 @@ export interface PartialTranscriptMessage {
   text: string;
 }
 
+export interface FinalTranscriptMessage {
+  message_type: "final_transcript";
+  text: string;
+}
+
+export interface FinalTranscriptWithTimestampsMessage {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  words?: FinalTranscriptWord[];
+}
+
 export interface CommittedTranscriptMessage {
   message_type: "committed_transcript";
   text: string;
@@ -921,7 +987,13 @@ export interface CommittedTranscriptWithTimestampsMessage {
   message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: WordsItem[];
+  words?: Word[];
+}
+
+export interface CommittedTranscriptEntitiesMessage {
+  message_type: "committed_transcript_entities";
+  text: string;
+  entities: DetectedEntity[];
 }
 
 export interface ScribeErrorMessage {
@@ -961,6 +1033,11 @@ export interface ScribeRateLimitedErrorMessage {
 
 export interface ScribeInputErrorMessage {
   message_type: "input_error";
+  error: string;
+}
+
+export interface ScribeInvalidRequestErrorMessage {
+  message_type: "invalid_request";
   error: string;
 }
 
