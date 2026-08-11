@@ -1077,6 +1077,45 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("forwards workletPaths.scribeAudioProcessor to the registered microphone setup", async () => {
+      const mockTrack = { enabled: true } as MediaStreamTrack;
+      const cleanup = vi.fn();
+
+      const mockSetup = vi.fn((_config, _onAudioData) =>
+        Promise.resolve({ mediaStreamTrack: mockTrack, cleanup })
+      );
+      setScribeMicrophoneSetup(mockSetup);
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      onTestFinished(() => server.close());
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: {
+          workletPaths: {
+            scribeAudioProcessor:
+              "/vendor/elevenlabs/scribe-audio-processor.js",
+          },
+        },
+      });
+      onTestFinished(() => connection.close());
+
+      await sleep(100);
+
+      expect(mockSetup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workletPaths: {
+            scribeAudioProcessor:
+              "/vendor/elevenlabs/scribe-audio-processor.js",
+          },
+        }),
+        expect.any(Function)
+      );
+    });
+
     it("releases the microphone when close() races the async mic setup", async () => {
       const mockTrack = { enabled: true } as MediaStreamTrack;
       const cleanup = vi.fn();

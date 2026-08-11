@@ -107,6 +107,16 @@ export interface MicrophoneOptions extends BaseOptions {
     noiseSuppression?: boolean;
     autoGainControl?: boolean;
     channelCount?: number;
+    /**
+     * Allows self-hosting the Scribe audio worklet to avoid whitelisting
+     * blob: and data: URLs in the CSP script-src (or script-src-elem)
+     * directive. Point this at a same-origin copy of the processor shipped
+     * at `@elevenlabs/client/worklets/scribeAudioProcessor.js`, e.g.
+     * `{ scribeAudioProcessor: "/vendor/elevenlabs/scribe-audio-processor.js" }`.
+     */
+    workletPaths?: {
+      scribeAudioProcessor?: string;
+    };
   };
   audioFormat?: never;
   sampleRate?: never;

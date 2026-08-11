@@ -95,6 +95,33 @@ describe("webScribeMicrophoneSetup", () => {
     expect(audioContext.close).toHaveBeenCalledOnce();
   });
 
+  it("forwards a custom workletPaths.scribeAudioProcessor to the loader", async () => {
+    installAudioEnvironment();
+    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+    await webScribeMicrophoneSetup(
+      { workletPaths: { scribeAudioProcessor: "/vendor/scribe-processor.js" } },
+      vi.fn()
+    );
+
+    expect(loadScribeAudioProcessor).toHaveBeenCalledWith(
+      expect.anything(),
+      "/vendor/scribe-processor.js"
+    );
+  });
+
+  it("passes undefined to the loader when no workletPaths are provided", async () => {
+    installAudioEnvironment();
+    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+    await webScribeMicrophoneSetup({}, vi.fn());
+
+    expect(loadScribeAudioProcessor).toHaveBeenCalledWith(
+      expect.anything(),
+      undefined
+    );
+  });
+
   it("releases the partial pipeline when AudioContext resume fails", async () => {
     const resumeError = new Error("resume failed");
     const { audioContext, scribeNode, source, track } = installAudioEnvironment(

@@ -63,6 +63,46 @@ For the full API reference including connection types, client tools, conversatio
 | `@elevenlabs/client`                | Public, semver-stable          |
 | `@elevenlabs/client/internal`       | Internal, no semver guarantees |
 | `@elevenlabs/client/internal/unity` | Internal, no semver guarantees |
+| `@elevenlabs/client/worklets/*`     | Public, semver-stable          |
+
+## Self-hosting AudioWorklets under a strict CSP
+
+By default, `Conversation` and `Scribe` load their `AudioWorklet` processors
+from `blob:`/`data:` URLs generated at runtime. `AudioWorklet.addModule()`
+requests are governed by the `script-src-elem` directive (falling back to
+`script-src`), so a strict CSP that only allows `script-src 'self'` will
+reject those URLs.
+
+To support strict CSPs, the raw processor sources are published as static
+assets under `@elevenlabs/client/worklets/*`. Copy the ones you need into
+your own static assets (e.g. via a build step or bundler copy plugin) and
+serve them same-origin, then point the SDK at them:
+
+```js
+import { Conversation } from "@elevenlabs/client";
+
+const conversation = await Conversation.startSession({
+  agentId: "agent_...",
+  workletPaths: {
+    rawAudioProcessor: "/vendor/elevenlabs/raw-audio-processor.js",
+    audioConcatProcessor: "/vendor/elevenlabs/audio-concat-processor.js",
+  },
+});
+```
+
+```js
+import { Scribe } from "@elevenlabs/client";
+
+const connection = Scribe.connect({
+  token: "...",
+  modelId: "scribe_v2_realtime",
+  microphone: {
+    workletPaths: {
+      scribeAudioProcessor: "/vendor/elevenlabs/scribe-audio-processor.js",
+    },
+  },
+});
+```
 
 ## Development
 
