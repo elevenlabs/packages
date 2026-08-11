@@ -137,9 +137,6 @@ export type Callbacks = {
    * Called when the agent sends a component for the client to display, such as
    * an item card. Receives `{ rich_content_id, component, props, event_id }`.
    *
-   * Backs the embedded widget. The server only offers components to the widget
-   * today, so this does not fire for other consumers.
-   *
    * @experimental This API is experimental and may change without following
    * semver guarantees.
    */
