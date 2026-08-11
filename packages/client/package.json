@@ -12,7 +12,8 @@
       "default": "./dist/index.js"
     },
     "./internal": "./dist/internal.js",
-    "./internal/unity": "./dist/internal/unity.js"
+    "./internal/unity": "./dist/internal/unity.js",
+    "./worklets/*": "./worklets/*"
   },
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
@@ -51,7 +52,8 @@
     "directory": "packages/client"
   },
   "files": [
-    "dist"
+    "dist",
+    "worklets"
   ],
   "publishConfig": {
     "access": "public",

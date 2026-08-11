@@ -57,7 +57,10 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
     );
 
     // Load scribe worklet
-    await loadScribeAudioProcessor(audioContext.audioWorklet);
+    await loadScribeAudioProcessor(
+      audioContext.audioWorklet,
+      config.workletPaths?.scribeAudioProcessor
+    );
 
     // Set up audio pipeline
     source = audioContext.createMediaStreamSource(stream);

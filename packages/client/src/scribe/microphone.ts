@@ -12,6 +12,15 @@ export interface ScribeMicrophoneConfig {
   noiseSuppression?: boolean;
   autoGainControl?: boolean;
   channelCount?: number;
+  /**
+   * Allows self-hosting the Scribe audio worklet to avoid whitelisting
+   * blob: and data: URLs in the CSP script-src (or script-src-elem)
+   * directive. Point this at a same-origin copy of the processor shipped
+   * at `@elevenlabs/client/worklets/scribeAudioProcessor.js`.
+   */
+  workletPaths?: {
+    scribeAudioProcessor?: string;
+  };
 }
 
 export interface ScribeMicrophoneResult {
