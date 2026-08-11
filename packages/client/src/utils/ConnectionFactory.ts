@@ -8,6 +8,7 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
   const hasSignedUrl = "signedUrl" in config && config.signedUrl;
+  const hasOrchestratorConfig = "orchestrator" in config && config.orchestrator;
 
   // Reject invalid combination: signedUrl only supports websocket
   // Cast needed because TS narrows signedUrl configs to connectionType?: "websocket",
@@ -15,6 +16,26 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
   if (hasSignedUrl && (config.connectionType as ConnectionType) === "webrtc") {
     throw new Error(
       "signedUrl only supports websocket connections. Remove connectionType or set it to 'websocket'."
+    );
+  }
+
+  if (
+    hasOrchestratorConfig &&
+    (config.connectionType as ConnectionType) === "webrtc"
+  ) {
+    throw new Error(
+      "Orchestrator sessions only support websocket connections. Remove connectionType or set it to 'websocket'."
+    );
+  }
+
+  if (
+    hasOrchestratorConfig &&
+    (hasSignedUrl ||
+      ("conversationToken" in config && config.conversationToken) ||
+      config.authorization)
+  ) {
+    throw new Error(
+      "The orchestrator option cannot be combined with signedUrl, conversationToken or authorization."
     );
   }
 
@@ -30,6 +51,10 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
 
   // If signedUrl is provided, use WebSocket (it only supports websocket)
   if (hasSignedUrl) {
+    return "websocket";
+  }
+
+  if (hasOrchestratorConfig) {
     return "websocket";
   }
 

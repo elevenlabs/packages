@@ -59,6 +59,51 @@ describe("WebSocketConnection", () => {
     return promise;
   }
 
+  describe("self-hosted orchestrator sessions", () => {
+    const orchestrator = {
+      url: "wss://orchestrator.internal/sagemaker/convai/conversation",
+      agentConfig: { name: "test-agent" },
+    };
+
+    async function createOrchestratorConnection(): Promise<WebSocketConnection> {
+      const promise = WebSocketConnection.create({ orchestrator });
+
+      emit("open", {});
+      emit("message", {
+        data: JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: "test-conv-id",
+            agent_output_audio_format: "pcm_16000",
+            user_input_audio_format: "pcm_16000",
+          },
+        }),
+      });
+
+      return promise;
+    }
+
+    it("connects to the configured URL without subprotocols", async () => {
+      await createOrchestratorConnection();
+
+      expect(globalThis.WebSocket).toHaveBeenCalledWith(
+        orchestrator.url,
+        undefined
+      );
+    });
+
+    it("sends the enclave setup config before the initiation message", async () => {
+      await createOrchestratorConnection();
+
+      expect(mockSocket.send).toHaveBeenCalledTimes(2);
+      const first = JSON.parse(mockSocket.send.mock.calls[0][0]);
+      const second = JSON.parse(mockSocket.send.mock.calls[1][0]);
+      expect(first.type).toBe("enclave_setup_config");
+      expect(first.agent_config_dict).toEqual({ name: "test-agent" });
+      expect(second.type).toBe("conversation_initiation_client_data");
+    });
+  });
+
   describe("disconnection context", () => {
     it("emits agent disconnect with context on normal close (code 1000)", async () => {
       const connection = await createConnection();
