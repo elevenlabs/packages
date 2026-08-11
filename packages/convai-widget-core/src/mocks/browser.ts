@@ -216,6 +216,28 @@ const codeBlock = true;
     strip_audio_tags: false,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  voice_markdown: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    markdown_link_allowed_hosts: [{ hostname: "*" }],
+    first_message:
+      "This is **bold** voice text with a [link](https://example.com) and [happy] an audio tag, but `[sad]` stays literal in code.",
+  },
+  voice_markdown_blocked_link: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+    strip_audio_tags: false,
+    markdown_link_allowed_hosts: [{ hostname: "example.com" }],
+    first_message:
+      "[happy] See [Evil link](https://evil.com/blocked) for details.",
+  },
   file_upload: {
     ...BASIC_CONFIG,
     text_only: true,

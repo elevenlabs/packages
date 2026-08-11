@@ -551,6 +551,7 @@ const CodeComponent = ({
           className
         )}
         data-streamdown="inline-code"
+        dir="ltr"
         {...props}
       >
         {children}

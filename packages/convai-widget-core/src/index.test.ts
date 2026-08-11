@@ -616,6 +616,65 @@ describe("elevenlabs-convai", () => {
         .element(happyTag.element().closest("[data-audio-tag]") as HTMLElement)
         .toBeInTheDocument();
     });
+
+    it("should render markdown in voice transcripts", async () => {
+      setupWebComponent({
+        "agent-id": "voice_markdown",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      const boldText = page.getByText("bold");
+      await expect.element(boldText).toBeInTheDocument();
+      await expect.element(boldText).toHaveClass("font-medium");
+
+      const link = page.getByRole("link", { name: "link" });
+      await expect.element(link).toBeInTheDocument();
+      await expect
+        .element(link)
+        .toHaveAttribute("href", "https://example.com/");
+
+      const happyTag = page.getByText("[happy]");
+      await expect.element(happyTag).toBeInTheDocument();
+      await expect
+        .element(happyTag.element().closest("[data-audio-tag]") as HTMLElement)
+        .toBeInTheDocument();
+
+      // Audio tags inside code must stay literal, not become styled pills
+      const codeTag = page.getByText("[sad]");
+      await expect.element(codeTag).toBeInTheDocument();
+      expect(codeTag.element().closest("[data-audio-tag]")).toBeNull();
+    });
+
+    it("should not style the blocked-link indicator as an audio tag", async () => {
+      setupWebComponent({
+        "agent-id": "voice_markdown_blocked_link",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+
+      // Real audio tags are still styled
+      const happyTag = page.getByText("[happy]");
+      await expect.element(happyTag).toBeInTheDocument();
+      await expect
+        .element(happyTag.element().closest("[data-audio-tag]") as HTMLElement)
+        .toBeInTheDocument();
+
+      // rehype-harden appends " [blocked]" to disallowed links; it must stay a
+      // plain indicator rather than becoming a tag pill
+      const blocked = page.getByText("[blocked]");
+      await expect.element(blocked).toBeInTheDocument();
+      expect(blocked.element().closest("[data-audio-tag]")).toBeNull();
+      await expect
+        .element(page.getByRole("link", { name: "Evil link" }))
+        .not.toBeInTheDocument();
+    });
   });
 
   describe("dismissable behavior", () => {
