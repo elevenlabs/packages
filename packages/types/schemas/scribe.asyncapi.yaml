@@ -287,39 +287,53 @@ components:
         - vad
       description: Strategy for committing transcriptions
 
+    # This shape is shared verbatim by CommittedTranscriptWithTimestamps and
+    # FinalTranscriptWithTimestamps: the live contract (fetched from
+    # https://api.elevenlabs.io/speech-to-text-asyncapi.yml) uses the exact
+    # same word schema for both, including "audio_event", structured
+    # characters, and channel_index.
     Word:
       type: object
       title: Word
-      description: Word-level transcription data with timing information
+      description: |
+        Word-level detail of the transcription with timing information.
+        "audio_event" is used for non-word sounds like laughter or footsteps.
+      required: [text, type, logprob]
       properties:
         text:
           type: string
-          description: The transcribed word
+          description: The word or sound that was transcribed
         start:
           type: number
-          description: Start time in seconds
+          description: The start time of the word or sound in seconds
         end:
           type: number
-          description: End time in seconds
+          description: The end time of the word or sound in seconds
         type:
           type: string
           title: WordType
-          description: The type of word
+          description: The type of the word or sound
           enum:
             - word
             - spacing
+            - audio_event
         speaker_id:
           type: string
-          description: The ID of the speaker (if available)
+          description: Unique identifier for the speaker of this word
         logprob:
           type: number
-          description: Confidence score for this word
+          description: |
+            The log of the probability with which this word was predicted.
+            Logprobs are in range [-infinity, 0], higher logprobs indicate a
+            higher confidence the model has in its predictions.
         characters:
           type: array
-          description: The characters in the word
+          description: The characters that make up the word and their timing information
           items:
-            type: string
-            description: The character
+            $ref: "#/components/schemas/TranscriptCharacter"
+        channel_index:
+          type: integer
+          description: The channel this word was spoken on (for multichannel audio). Null for single-channel transcriptions.
 
     TranscriptCharacter:
       type: object
@@ -336,48 +350,6 @@ components:
         end:
           type: number
           description: End time in seconds
-
-    FinalTranscriptWord:
-      type: object
-      title: FinalTranscriptWord
-      description: |
-        Word-level detail on a final transcript. This is a richer shape than
-        Word (which describes committed transcripts): characters carry their
-        own timings, type can be an audio event, and the originating channel
-        is reported.
-      properties:
-        text:
-          type: string
-          description: The word or sound that was transcribed
-        start:
-          type: number
-          description: Start time in seconds
-        end:
-          type: number
-          description: End time in seconds
-        type:
-          type: string
-          title: FinalTranscriptWordType
-          description: The type of word or sound
-          enum:
-            - word
-            - spacing
-            - audio_event
-        speaker_id:
-          type: string
-          description: The ID of the speaker (if available)
-        logprob:
-          type: number
-          description: Confidence score for this word
-        characters:
-          type: array
-          description: The characters that make up the word, and their timing information
-          items:
-            $ref: "#/components/schemas/TranscriptCharacter"
-        channel_index:
-          type: integer
-          nullable: true
-          description: The channel this word was spoken on. Null for single-channel transcriptions.
 
     DetectedEntity:
       type: object
@@ -450,6 +422,13 @@ components:
               items:
                 type: string
               description: Additional language codes that may be present in the audio
+            timestamps_granularity:
+              type: string
+              enum:
+                - none
+                - word
+                - character
+              description: Granularity of timestamps included in delayed final/committed transcripts.
             vad_commit_strategy:
               type: string
               enum:
@@ -468,6 +447,9 @@ components:
             min_silence_duration_ms:
               type: integer
               description: Minimum silence duration in milliseconds
+            max_tokens_to_recompute:
+              type: integer
+              description: Maximum number of tokens to recompute when finalizing a delayed transcript.
             model_id:
               type: string
               description: ID of the model to use for transcription
@@ -535,7 +517,7 @@ components:
           nullable: true
           description: Word-level information with timestamps
           items:
-            $ref: "#/components/schemas/FinalTranscriptWord"
+            $ref: "#/components/schemas/Word"
 
     CommittedTranscriptPayload:
       type: object

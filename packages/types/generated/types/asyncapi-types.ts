@@ -771,11 +771,13 @@ export interface Config {
   audio_format?: ConfigAudioFormat;
   language_code?: string;
   secondary_languages?: string[];
+  timestamps_granularity?: ConfigTimestampsGranularity;
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
+  max_tokens_to_recompute?: number;
   model_id?: string;
   enable_logging?: boolean;
   include_language_detection?: boolean;
@@ -794,6 +796,8 @@ export type ConfigAudioFormat =
   | "pcm_48000"
   | "ulaw_8000";
 
+export type ConfigTimestampsGranularity = "none" | "word" | "character";
+
 export type ConfigVadCommitStrategy = "manual" | "vad";
 
 export interface PartialTranscript {
@@ -810,21 +814,21 @@ export interface FinalTranscriptWithTimestamps {
   message_type: "final_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: FinalTranscriptWord[];
+  words?: Word[];
 }
 
-export interface FinalTranscriptWord {
-  text?: string;
+export interface Word {
+  text: string;
   start?: number;
   end?: number;
-  type?: FinalTranscriptWordType;
+  type: WordType;
   speaker_id?: string;
-  logprob?: number;
+  logprob: number;
   characters?: TranscriptCharacter[];
   channel_index?: number;
 }
 
-export type FinalTranscriptWordType = "word" | "spacing" | "audio_event";
+export type WordType = "word" | "spacing" | "audio_event";
 
 export interface TranscriptCharacter {
   text: string;
@@ -843,18 +847,6 @@ export interface CommittedTranscriptWithTimestamps {
   language_code?: string;
   words?: Word[];
 }
-
-export interface Word {
-  text?: string;
-  start?: number;
-  end?: number;
-  type?: WordType;
-  speaker_id?: string;
-  logprob?: number;
-  characters?: string[];
-}
-
-export type WordType = "word" | "spacing";
 
 export interface CommittedTranscriptEntities {
   message_type: "committed_transcript_entities";
@@ -975,7 +967,7 @@ export interface FinalTranscriptWithTimestampsMessage {
   message_type: "final_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: FinalTranscriptWord[];
+  words?: Word[];
 }
 
 export interface CommittedTranscriptMessage {
