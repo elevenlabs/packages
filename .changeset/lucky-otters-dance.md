@@ -1,6 +1,7 @@
 ---
 "@elevenlabs/client": minor
 "@elevenlabs/types": minor
+"@elevenlabs/react": patch
 ---
 
 Expose missing realtime speech-to-text options on `Scribe.connect()`, matching [elevenlabs-js#436](https://github.com/elevenlabs/elevenlabs-js/pull/436):
@@ -18,3 +19,5 @@ New server messages are now dispatched instead of being dropped:
 Also fixes `vadSilenceThresholdSecs`, `minSpeechDurationMs`, and `minSilenceDurationMs` lower-bound validation to treat the bound as inclusive, matching the API (e.g. `vadSilenceThresholdSecs: 0.3` is now accepted instead of being rejected client-side).
 
 The `scribe.asyncapi.yaml` schema (and the generated `Word`/`CommittedTranscriptWithTimestampsMessage`/`FinalTranscriptWithTimestampsMessage` types) was cross-checked against the live contract at `https://api.elevenlabs.io/speech-to-text-asyncapi.yml`. The `words[]` shape is identical between `committed_transcript_with_timestamps` and `final_transcript_with_timestamps` on that contract (both support `"audio_event"`, per-character timings, and `channel_index`), so both messages now share a single `Word` type instead of the narrower shape `committed_transcript_with_timestamps` previously used. `Config` also gained `timestamps_granularity` and `max_tokens_to_recompute` to match the session config the server echoes back.
+
+`@elevenlabs/react`'s `useScribe().committedTranscripts[].words` (`WordTimestamp`) is updated to match: `type` now includes `"audio_event"`, `characters` is now `WordTimestampCharacter[]` (each with its own `start`/`end`) instead of `string[]`, and a `channel_index` field was added.
