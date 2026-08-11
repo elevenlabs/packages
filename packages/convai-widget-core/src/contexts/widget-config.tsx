@@ -281,8 +281,7 @@ export function useTriggerEntryPoints() {
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
   const orchestratorUrl = useAttribute("orchestrator-url");
-  // File uploads go to the ElevenLabs cloud API, which orchestrator sessions
-  // must never call, so the appearance config cannot turn them on.
+  // File uploads post to the ElevenLabs cloud API, which orchestrator sessions must never call.
   return useComputed(
     () =>
       !orchestratorUrl.value &&
@@ -329,9 +328,7 @@ export function useWebRTC() {
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
   const orchestratorUrl = useAttribute("orchestrator-url");
-  // End-of-call feedback posts to the ElevenLabs cloud API, which
-  // orchestrator sessions must never call, so the appearance config cannot
-  // turn it on.
+  // End-of-call feedback posts to the ElevenLabs cloud API, which orchestrator sessions must never call.
   return useComputed(() =>
     orchestratorUrl.value ? null : (config.value.end_feedback?.type ?? null)
   );

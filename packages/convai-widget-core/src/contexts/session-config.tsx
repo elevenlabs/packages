@@ -114,12 +114,7 @@ export function SessionConfigProvider({
       if (!orchestrator) {
         return null;
       }
-      // The agent config carries its own language, so only clear intent
-      // forces one: override-language, a picker choice, a resolved language
-      // that differs from the appearance default, or a language attribute
-      // honoured against a declared supported set. A bare language attribute
-      // with no supported set stays inert, as embed boilerplate ships
-      // language="en".
+      // Boilerplate language="en" with no supported set must not override the agent config's own language.
       const resolvedLanguage = language.value.languageCode;
       const languageAttributeHonoured =
         (widgetConfig.value.supported_language_overrides ?? []).length > 0 &&
