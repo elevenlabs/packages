@@ -1,5 +1,5 @@
 import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
-import { ReadonlySignal, useComputed } from "@preact/signals";
+import { ReadonlySignal, useComputed, useSignalEffect } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import { useAttribute } from "./attributes";
@@ -87,6 +87,13 @@ export function SessionConfigProvider({
         )
       : null
   );
+  useSignalEffect(() => {
+    if (orchestratorUrl.value && (agentId.value || signedUrl.value)) {
+      console.warn(
+        "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
+      );
+    }
+  });
   const value = useComputed<SessionConfig | null>(() => {
     const isWebRTC = useWebRTCEnabled.value;
     const baseConfig = {
@@ -106,11 +113,6 @@ export function SessionConfigProvider({
       const orchestrator = parsedOrchestratorConfig.value;
       if (!orchestrator) {
         return null;
-      }
-      if (agentId.value || signedUrl.value) {
-        console.warn(
-          "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
-        );
       }
       // The agent config carries its own language, so only clear intent
       // forces one: override-language, a picker choice, a resolved language

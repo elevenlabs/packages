@@ -328,7 +328,13 @@ export function useWebRTC() {
 
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback?.type ?? null);
+  const orchestratorUrl = useAttribute("orchestrator-url");
+  // End-of-call feedback posts to the ElevenLabs cloud API, which
+  // orchestrator sessions must never call, so the appearance config cannot
+  // turn it on.
+  return useComputed(() =>
+    orchestratorUrl.value ? null : (config.value.end_feedback?.type ?? null)
+  );
 }
 
 export interface MarkdownLinkConfig {
