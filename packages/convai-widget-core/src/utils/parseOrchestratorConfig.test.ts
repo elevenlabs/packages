@@ -99,21 +99,44 @@ describe("parseOrchestratorConfig", () => {
     ).toMatchObject({ bedrockInferenceProfile: undefined });
   });
 
-  it("drops webhooks with non-string fields", () => {
+  it("drops wrongly shaped agent config fields", () => {
     expect(
       parseOrchestratorConfig(
         "wss://host/convai",
         JSON.stringify({
-          post_call_transcription_webhook: { url: 123 },
-          post_call_audio_webhook: {
-            url: "https://example.com/a",
-            hmac_secret: 42,
-          },
+          agent_config_dict: "not an object",
+          tools_config_list: [{ type: "webhook" }, "not an object"],
+          override_agent_config_list: {},
+          prompt_knowledge_base: ["fact", 42],
         })
       )
-    ).toMatchObject({
+    ).toEqual({
+      url: "wss://host/convai",
+      agentConfig: undefined,
+      agentConfigOverrides: undefined,
+      tools: undefined,
+      promptKnowledgeBase: undefined,
+      bedrockInferenceProfile: undefined,
       postCallTranscriptionWebhook: undefined,
-      postCallAudioWebhook: { url: "https://example.com/a" },
+      postCallAudioWebhook: undefined,
     });
+  });
+
+  it.each([
+    { post_call_transcription_webhook: { url: 123 } },
+    {
+      post_call_audio_webhook: {
+        url: "https://example.com/a",
+        hmac_secret: 42,
+      },
+    },
+  ])("returns null and logs on an invalid webhook (%j)", config => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    expect(
+      parseOrchestratorConfig("wss://host/convai", JSON.stringify(config))
+    ).toBeNull();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });

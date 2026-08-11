@@ -3,18 +3,41 @@ import type {
   PostCallWebhookConfig,
 } from "@elevenlabs/client";
 
-function parseWebhook(value: unknown): PostCallWebhookConfig | undefined {
-  if (!value || typeof value !== "object") {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function asRecordList(value: unknown): Record<string, unknown>[] | undefined {
+  return Array.isArray(value) && value.every(isRecord) ? value : undefined;
+}
+
+function asStringList(value: unknown): string[] | undefined {
+  return Array.isArray(value) && value.every(item => typeof item === "string")
+    ? value
+    : undefined;
+}
+
+function parseWebhook(
+  value: unknown
+): PostCallWebhookConfig | undefined | null {
+  if (value === undefined || value === null) {
     return undefined;
   }
-  const webhook = value as { url?: unknown; hmac_secret?: unknown };
-  if (typeof webhook.url !== "string" || !webhook.url) {
-    return undefined;
+  if (!isRecord(value) || typeof value.url !== "string" || !value.url) {
+    return null;
+  }
+  if ("hmac_secret" in value && typeof value.hmac_secret !== "string") {
+    // Dropping just the secret would silently disable delivery signing.
+    return null;
   }
   return {
-    url: webhook.url,
-    ...(typeof webhook.hmac_secret === "string"
-      ? { hmacSecret: webhook.hmac_secret }
+    url: value.url,
+    ...(typeof value.hmac_secret === "string"
+      ? { hmacSecret: value.hmac_secret }
       : {}),
   };
 }
@@ -33,29 +56,39 @@ export function parseOrchestratorConfig(
 
   try {
     const parsed = JSON.parse(agentConfigJSON);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (!isRecord(parsed)) {
       console.error(
         "[ConversationalAI] orchestrator-agent-config must be a JSON object"
       );
       return null;
     }
+    const transcriptionWebhook = parseWebhook(
+      parsed.post_call_transcription_webhook
+    );
+    const audioWebhook = parseWebhook(parsed.post_call_audio_webhook);
+    if (transcriptionWebhook === null || audioWebhook === null) {
+      console.error(
+        "[ConversationalAI] orchestrator-agent-config webhooks need a string url and, if given, a string hmac_secret"
+      );
+      return null;
+    }
     return {
       url,
-      agentConfig: parsed.agent_config_dict ?? parsed.agent_config ?? undefined,
+      agentConfig:
+        asRecord(parsed.agent_config_dict) ?? asRecord(parsed.agent_config),
       agentConfigOverrides:
-        parsed.override_agent_config_list ??
-        parsed.override_agent_config ??
-        undefined,
-      tools: parsed.tools_config_list ?? parsed.tools_config ?? undefined,
-      promptKnowledgeBase: parsed.prompt_knowledge_base ?? undefined,
+        asRecordList(parsed.override_agent_config_list) ??
+        asRecordList(parsed.override_agent_config),
+      tools:
+        asRecordList(parsed.tools_config_list) ??
+        asRecordList(parsed.tools_config),
+      promptKnowledgeBase: asStringList(parsed.prompt_knowledge_base),
       bedrockInferenceProfile:
         typeof parsed.bedrock_inference_profile === "string"
           ? parsed.bedrock_inference_profile
           : undefined,
-      postCallTranscriptionWebhook: parseWebhook(
-        parsed.post_call_transcription_webhook
-      ),
-      postCallAudioWebhook: parseWebhook(parsed.post_call_audio_webhook),
+      postCallTranscriptionWebhook: transcriptionWebhook,
+      postCallAudioWebhook: audioWebhook,
     };
   } catch (error) {
     console.error(
