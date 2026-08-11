@@ -317,6 +317,61 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("rich_content events", () => {
+    const richContentEvent = {
+      type: "rich_content" as const,
+      rich_content: {
+        rich_content_id: "show_rich_content_8c0948a3",
+        component: "item_card",
+        props: { id: "item_1", title: "Item Title" },
+        event_id: 2,
+      },
+    };
+
+    it("calls onRichContent with the component payload", async () => {
+      const onRichContent = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onRichContent,
+        onDebug,
+      });
+
+      await conversation.receiveMessage(richContentEvent);
+
+      expect(onRichContent).toHaveBeenCalledWith({
+        rich_content_id: "show_rich_content_8c0948a3",
+        component: "item_card",
+        props: { id: "item_1", title: "Item Title" },
+        event_id: 2,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing back, unlike a client tool call", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onRichContent: vi.fn() },
+        connection
+      );
+
+      await conversation.receiveMessage(richContentEvent);
+
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage(richContentEvent)
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe("ping events", () => {
     it("replies with a pong and forwards the payload to onPing", async () => {
       const onPing = vi.fn();
