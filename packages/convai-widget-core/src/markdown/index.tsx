@@ -16,6 +16,7 @@ import { allowedDomainsToLinkPrefixes } from "./utils/allowedDomainsToLinkPrefix
 import type { MarkdownLinkConfig } from "../contexts/widget-config";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
+import { rehypeAudioTags } from "./utils/rehype-audio-tags";
 import { cn } from "../utils/cn";
 import { ParsersContext, parserConfig } from "./utils/highlighter";
 
@@ -41,7 +42,10 @@ function getDefaultOrigin(): string {
   return document.location.origin;
 }
 
-function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
+function createRehypePlugins(
+  linkConfig: MarkdownLinkConfig,
+  styleAudioTags: boolean
+): PluggableList {
   const defaultOrigin = getDefaultOrigin();
   const allowedLinkPrefixes = [
     defaultOrigin,
@@ -60,6 +64,7 @@ function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
         },
       },
     ],
+    ...(styleAudioTags ? [rehypeAudioTags] : []),
     [
       rehypeHarden,
       {
@@ -69,7 +74,7 @@ function createRehypePlugins(linkConfig: MarkdownLinkConfig): PluggableList {
         defaultOrigin,
         allowDataImages: true,
       },
-    ]
+    ],
   ];
 }
 
@@ -85,6 +90,7 @@ export type StreamdownProps = {
   className?: string;
   isAnimating?: boolean;
   linkConfig: MarkdownLinkConfig;
+  styleAudioTags?: boolean;
 };
 
 export type StreamdownRuntimeContextType = {
@@ -130,6 +136,7 @@ export const WidgetStreamdown = memo(
     className,
     isAnimating = false,
     linkConfig,
+    styleAudioTags = false,
   }: StreamdownProps) => {
     const generatedId = useId();
     const blocks = useMemo(
@@ -140,16 +147,19 @@ export const WidgetStreamdown = memo(
     const markdownOptions = useMemo<Readonly<Options>>(
       () => ({
         components: defaultComponents,
-        rehypePlugins: createRehypePlugins(linkConfig),
+        rehypePlugins: createRehypePlugins(linkConfig, styleAudioTags),
         remarkPlugins: defaultRemarkPlugins,
       }),
-      [linkConfig]
+      [linkConfig, styleAudioTags]
     );
 
     return (
       <ParsersContext.Provider value={parserConfig}>
         <StreamdownRuntimeContext.Provider value={{ isAnimating }}>
-          <div className={cn("markdown *:first:mt-0 *:last:mb-0", className)}>
+          <div
+            dir="auto"
+            className={cn("markdown *:first:mt-0 *:last:mb-0", className)}
+          >
             {blocks.map((block, index) => (
               <Block
                 content={block}
@@ -168,5 +178,6 @@ export const WidgetStreamdown = memo(
     prevProps.isAnimating === nextProps.isAnimating &&
     prevProps.className === nextProps.className &&
     prevProps.parseIncompleteMarkdown === nextProps.parseIncompleteMarkdown &&
-    prevProps.linkConfig === nextProps.linkConfig
+    prevProps.linkConfig === nextProps.linkConfig &&
+    prevProps.styleAudioTags === nextProps.styleAudioTags
 );
