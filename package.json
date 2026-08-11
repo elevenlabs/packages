@@ -36,9 +36,6 @@
     ],
     "overrides": {
       "@asyncapi/parser": "^3.6.0"
-    },
-    "patchedDependencies": {
-      "livekit-client@2.16.1": "patches/livekit-client@2.16.1.patch"
     }
   },
   "packageManager": "pnpm@10.28.1"
