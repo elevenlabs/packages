@@ -19,8 +19,6 @@ interface LanguageConfig {
   setLanguage: (value: Language) => void;
   options: ReadonlySignal<LanguageInfo[]>;
   showPicker: ReadonlySignal<boolean>;
-  /** Whether the user picked a language in this session, as opposed to it being resolved from defaults. */
-  languageChosen: ReadonlySignal<boolean>;
 }
 
 const LanguageConfigContext = createContext<LanguageConfig | null>(null);
@@ -110,7 +108,6 @@ export function LanguageConfigProvider({
   });
 
   const languageCode = useSignal(initialLanguage);
-  const languageChosen = useSignal(false);
 
   const options = useComputed(() =>
     supportedOverrides.value
@@ -129,13 +126,11 @@ export function LanguageConfigProvider({
             : Languages[widgetConfig.value.language]
       ),
       setLanguage: (value: Language) => {
-        languageChosen.value = true;
         languageCode.value = value;
         writeLastUsedLanguage(value);
       },
       options,
       showPicker: computed(() => options.value.length > 0),
-      languageChosen,
     }),
     []
   );

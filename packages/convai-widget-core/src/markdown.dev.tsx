@@ -46,6 +46,7 @@ const DARK_THEME_STYLES = {
 import { Style } from "./styles/Style";
 import { AttributesProvider } from "./contexts/attributes";
 import { ServerLocationProvider } from "./contexts/server-location";
+import { OrchestratorProvider } from "./contexts/orchestrator-config";
 import { WidgetConfigProvider } from "./contexts/widget-config";
 import "preact/debug";
 import { TextContentsProvider } from "./contexts/text-contents";
@@ -167,7 +168,9 @@ function PlaygroundProviders({
         }}
       >
         <ServerLocationProvider>
-          <WidgetConfigProvider>{children}</WidgetConfigProvider>
+          <OrchestratorProvider>
+            <WidgetConfigProvider>{children}</WidgetConfigProvider>
+          </OrchestratorProvider>
         </ServerLocationProvider>
       </AttributesProvider>
     </ShadowHostProvider>

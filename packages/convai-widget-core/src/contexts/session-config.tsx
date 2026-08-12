@@ -1,17 +1,16 @@
 import { SessionConfig, AudioWorkletConfig } from "@elevenlabs/client";
-import { ReadonlySignal, useComputed, useSignalEffect } from "@preact/signals";
+import { ReadonlySignal, useComputed } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import { useAttribute } from "./attributes";
 import { useLanguageConfig } from "./language-config";
+import { useOrchestrator } from "./orchestrator-config";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
-import { isValidLanguage } from "../types/languages";
 import { useTextOnly, useWebRTC, useWidgetConfig } from "./widget-config";
 import { parseDynamicVariables } from "../utils/dynamicVariables";
-import { parseOrchestratorConfig } from "../utils/parseOrchestratorConfig";
 
 const SessionConfigContext =
   createContext<ReadonlySignal<SessionConfig> | null>(null);
@@ -23,7 +22,7 @@ interface SessionConfigProviderProps {
 export function SessionConfigProvider({
   children,
 }: SessionConfigProviderProps) {
-  const { language, languageChosen } = useLanguageConfig();
+  const { language } = useLanguageConfig();
   const overridePrompt = useAttribute("override-prompt");
   const overrideLLM = useAttribute("override-llm");
   const overrideSpeed = useAttribute("override-speed");
@@ -71,29 +70,11 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
-  const orchestratorUrl = useAttribute("orchestrator-url");
-  const orchestratorAgentConfig = useAttribute("orchestrator-agent-config");
-  const overrideLanguage = useAttribute("override-language");
-  const languageAttribute = useAttribute("language");
+  const orchestrator = useOrchestrator();
   const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
-  const parsedOrchestratorConfig = useComputed(() =>
-    orchestratorUrl.value
-      ? parseOrchestratorConfig(
-          orchestratorUrl.value,
-          orchestratorAgentConfig.value
-        )
-      : null
-  );
-  useSignalEffect(() => {
-    if (orchestratorUrl.value && (agentId.value || signedUrl.value)) {
-      console.warn(
-        "[ConversationalAI] orchestrator-url takes precedence; agent-id and signed-url are ignored"
-      );
-    }
-  });
   const value = useComputed<SessionConfig | null>(() => {
     const isWebRTC = useWebRTCEnabled.value;
     const baseConfig = {
@@ -109,35 +90,26 @@ export function SessionConfigProvider({
       },
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
-    if (orchestratorUrl.value) {
-      const orchestrator = parsedOrchestratorConfig.value;
-      if (!orchestrator) {
+    if (orchestrator.enabled.value) {
+      const orchestratorConfig = orchestrator.config.value;
+      if (!orchestratorConfig) {
         return null;
       }
-      // Boilerplate language="en" with no supported set must not override the agent config's own language.
       const resolvedLanguage = language.value.languageCode;
-      const languageAttributeHonoured =
-        (widgetConfig.value.supported_language_overrides ?? []).length > 0 &&
-        isValidLanguage(languageAttribute.value) &&
-        languageAttribute.value === resolvedLanguage;
-      const languageOverride =
-        isValidLanguage(overrideLanguage.value) ||
-        languageChosen.value ||
-        resolvedLanguage !== widgetConfig.value.language ||
-        languageAttributeHonoured
-          ? resolvedLanguage
-          : undefined;
 
       // Self-hosted orchestrators only expose the conversation WebSocket
       return {
-        orchestrator,
+        orchestrator: orchestratorConfig,
         connectionType: "websocket" as const,
         ...baseConfig,
         overrides: {
           ...overrides.value,
           agent: {
             ...overrides.value?.agent,
-            language: languageOverride,
+            language:
+              resolvedLanguage !== widgetConfig.value.language
+                ? resolvedLanguage
+                : undefined,
           },
         },
       };

@@ -15,6 +15,7 @@ import {
   type WidgetConfig,
 } from "../types/config";
 import { useAttribute } from "./attributes";
+import { useOrchestrator } from "./orchestrator-config";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
@@ -63,7 +64,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const agentId = useAttribute("agent-id");
   const overrideConfig = useAttribute("override-config");
   const signedUrl = useAttribute("signed-url");
-  const orchestratorUrl = useAttribute("orchestrator-url");
+  const orchestrator = useOrchestrator();
   const fetchedConfig = useSignal<WidgetConfig | null>(null);
 
   useSignalEffect(() => {
@@ -80,7 +81,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
         );
       }
     }
-    if (orchestratorUrl.value) {
+    if (orchestrator.enabled.value) {
       fetchedConfig.value = structuredClone(DefaultOrchestratorWidgetConfig);
       return;
     }
@@ -280,11 +281,11 @@ export function useTriggerEntryPoints() {
 
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
-  const orchestratorUrl = useAttribute("orchestrator-url");
+  const orchestrator = useOrchestrator();
   // File uploads post to the ElevenLabs cloud API, which orchestrator sessions must never call.
   return useComputed(
     () =>
-      !orchestratorUrl.value &&
+      !orchestrator.enabled.value &&
       (config.value.file_input_config?.enabled ?? false)
   );
 }
@@ -327,10 +328,12 @@ export function useWebRTC() {
 
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
-  const orchestratorUrl = useAttribute("orchestrator-url");
+  const orchestrator = useOrchestrator();
   // End-of-call feedback posts to the ElevenLabs cloud API, which orchestrator sessions must never call.
   return useComputed(() =>
-    orchestratorUrl.value ? null : (config.value.end_feedback?.type ?? null)
+    orchestrator.enabled.value
+      ? null
+      : (config.value.end_feedback?.type ?? null)
   );
 }
 
