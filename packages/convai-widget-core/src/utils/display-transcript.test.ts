@@ -50,6 +50,20 @@ function toolRes(
   };
 }
 
+function richContent(
+  id = "buttons_1",
+  opts: { eventId?: number } = {}
+): Extract<TranscriptEntry, { type: "rich_content" }> {
+  return {
+    type: "rich_content",
+    component: "buttons",
+    props: { buttons: [{ label: id, message: id }] },
+    conversationIndex: 0,
+    eventId: opts.eventId ?? 2,
+    richContentId: `rc_${id}`,
+  };
+}
+
 /** Default config — no status, transcript enabled */
 const defaults: DisplayTranscriptConfig = {
   showAgentStatus: false,
@@ -580,6 +594,119 @@ describe("buildDisplayTranscript", () => {
         type: "typing_indicator",
         conversationIndex: 0,
       });
+    });
+  });
+
+  describe("rich content", () => {
+    it("keeps components where they arrived, in arrival order", () => {
+      const input = [
+        msg("user", "show me some options"),
+        msg("agent", "Two options", { eventId: 2 }),
+        richContent("a"),
+        richContent("b"),
+        msg("user", "thanks"),
+        msg("agent", "Anything else?", { eventId: 4 }),
+      ];
+      const result = build(input);
+
+      expect(result).toHaveLength(6);
+      expect(result[1]).toMatchObject({ message: "Two options" });
+      expect(result[2]).toMatchObject({ richContentId: "rc_a" });
+      expect(result[3]).toMatchObject({ richContentId: "rc_b" });
+      expect(result[4]).toMatchObject({ message: "thanks" });
+      expect(result[5]).toMatchObject({ message: "Anything else?" });
+    });
+
+    it("keeps a component above the reply even when a placeholder precedes it", () => {
+      // The placeholder survives only because it carries the status badge.
+      const input = [
+        msg("agent", "", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        richContent(),
+        msg("agent", "Here you go", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toMatchObject({ message: "", toolStatus: "success" });
+      expect(result[1]).toMatchObject({ type: "rich_content" });
+      expect(result[2]).toMatchObject({ message: "Here you go" });
+    });
+
+    it("drops the placeholder a component follows when there is no badge", () => {
+      // With no status to show, nothing keeps the empty placeholder.
+      const input = [
+        msg("agent", "", { eventId: 2 }),
+        richContent(),
+        msg("agent", "Here you go", { eventId: 2 }),
+      ];
+      const result = build(input);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ type: "rich_content" });
+      expect(result[1]).toMatchObject({ message: "Here you go" });
+    });
+
+    it("places components above the reply for a real captured turn", () => {
+      // Replays the order the backend produces: empty text windows while the
+      // model calls the tool, a component per call, then the reply that
+      // introduces them.
+      const input = [
+        msg("user", "show me some options"),
+        msg("agent", "", { eventId: 2 }),
+        toolRes(2),
+        msg("agent", "", { eventId: 2 }),
+        richContent("a", { eventId: 2 }),
+        toolRes(2),
+        richContent("b", { eventId: 2 }),
+        toolRes(2),
+        msg("agent", "Here are some options.", { eventId: 2 }),
+      ];
+
+      for (const showAgentStatus of [false, true]) {
+        const result = build(input, { showAgentStatus });
+
+        expect(result).toHaveLength(4);
+        expect(result[0]).toMatchObject({ role: "user" });
+        expect(result[1]).toMatchObject({ richContentId: "rc_a" });
+        expect(result[2]).toMatchObject({ richContentId: "rc_b" });
+        expect(result[3]).toMatchObject({ message: "Here are some options." });
+      }
+    });
+
+    it("leaves the tool status badge on the first bubble of the turn", () => {
+      const input = [
+        msg("agent", "Running the tool now.", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+        richContent(),
+        msg("agent", "Tool completed successfully", { eventId: 2 }),
+      ];
+      const result = build(input, { showAgentStatus: true });
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toMatchObject({
+        message: "Running the tool now.",
+        toolStatus: "success",
+      });
+      expect(result[1]).toMatchObject({ type: "rich_content" });
+      expect(result[2]).toMatchObject({
+        message: "Tool completed successfully",
+      });
+      expect(result[2]).not.toHaveProperty("toolStatus");
+    });
+
+    it("places a component before an appended typing indicator", () => {
+      const input = [
+        msg("agent", "Here you go", { eventId: 2 }),
+        richContent(),
+      ];
+      const result = build(input, { showTypingIndicator: true });
+
+      expect(result).toHaveLength(3);
+      expect(result[1]).toMatchObject({ type: "rich_content" });
+      expect(result[2]).toMatchObject({ type: "typing_indicator" });
     });
   });
 });

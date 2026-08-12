@@ -44,6 +44,14 @@ export type DisplayTranscriptEntry =
   | {
       type: "typing_indicator";
       conversationIndex: number;
+    }
+  | {
+      type: "rich_content";
+      component: string;
+      props: unknown;
+      conversationIndex: number;
+      eventId: number;
+      richContentId: string;
     };
 
 export interface DisplayTranscriptConfig {
