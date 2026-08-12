@@ -316,7 +316,9 @@ export class WebRTCConnection extends BaseConnection {
           });
 
       // Connect to the LiveKit room
-      await room.connect(livekitUrl, conversationToken);
+      await room.connect(livekitUrl, conversationToken, {
+        rtcConfig: config.rtcConfig,
+      });
 
       // Wait for the Connected event to ensure isConnected is true
       await new Promise<void>(resolve => {

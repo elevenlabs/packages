@@ -131,6 +131,41 @@ describe("WebRTCConnection", () => {
     connection.close();
   });
 
+  it("passes rtcConfig through to room.connect", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const rtcConfig = {
+      iceTransportPolicy: "relay" as RTCIceTransportPolicy,
+    };
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      rtcConfig,
+    });
+
+    expect(mockRoom.connect).toHaveBeenCalledWith(
+      expect.any(String),
+      "test-token",
+      { rtcConfig }
+    );
+
+    connection.close();
+  });
+
   it("reconnects input analyser after unmuting", async () => {
     const mockRoom = new Room() as any;
 

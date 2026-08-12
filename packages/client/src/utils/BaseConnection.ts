@@ -1,3 +1,4 @@
+import type { RoomConnectOptions } from "livekit-client";
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
 import type { Mode } from "../BaseConversation.js";
 import type {
@@ -30,6 +31,11 @@ export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
   livekitUrl?: string;
+  /**
+   * RTCConfiguration overrides passed to LiveKit's `room.connect()`, e.g.
+   * `{ iceTransportPolicy: "relay" }`. WebRTC connections only.
+   */
+  rtcConfig?: RoomConnectOptions["rtcConfig"];
   overrides?: {
     agent?: {
       prompt?: ConversationConfigOverrideAgentPrompt;
