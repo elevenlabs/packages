@@ -149,7 +149,7 @@ describe("WebRTCConnection", () => {
     );
 
     const rtcConfig = {
-      iceTransportPolicy: "relay" as RTCIceTransportPolicy,
+      iceTransportPolicy: "relay" as const,
     };
     const connection = await WebRTCConnection.create({
       conversationToken: "test-token",
