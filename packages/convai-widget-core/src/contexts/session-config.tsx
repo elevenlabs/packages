@@ -9,7 +9,7 @@ import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { parseBoolAttribute } from "../types/attributes";
-import { useTextOnly, useWebRTC, useWidgetConfig } from "./widget-config";
+import { useTextOnly, useWebRTC } from "./widget-config";
 import { parseDynamicVariables } from "../utils/dynamicVariables";
 
 const SessionConfigContext =
@@ -22,7 +22,7 @@ interface SessionConfigProviderProps {
 export function SessionConfigProvider({
   children,
 }: SessionConfigProviderProps) {
-  const { language } = useLanguageConfig();
+  const { language, languageOverride } = useLanguageConfig();
   const overridePrompt = useAttribute("override-prompt");
   const overrideLLM = useAttribute("override-llm");
   const overrideSpeed = useAttribute("override-speed");
@@ -71,7 +71,6 @@ export function SessionConfigProvider({
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
   const orchestrator = useOrchestrator();
-  const widgetConfig = useWidgetConfig();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
@@ -95,7 +94,6 @@ export function SessionConfigProvider({
       if (!orchestratorConfig) {
         return null;
       }
-      const resolvedLanguage = language.value.languageCode;
 
       // Self-hosted orchestrators only expose the conversation WebSocket
       return {
@@ -106,10 +104,7 @@ export function SessionConfigProvider({
           ...overrides.value,
           agent: {
             ...overrides.value?.agent,
-            language:
-              resolvedLanguage !== widgetConfig.value.language
-                ? resolvedLanguage
-                : undefined,
+            language: languageOverride.value,
           },
         },
       };

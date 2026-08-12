@@ -16,6 +16,7 @@ const LAST_USED_LANGUAGE_KEY = "xi:convai-widget-last-used-language";
 
 interface LanguageConfig {
   language: ReadonlySignal<LanguageInfo>;
+  languageOverride: ReadonlySignal<Language | undefined>;
   setLanguage: (value: Language) => void;
   options: ReadonlySignal<LanguageInfo[]>;
   showPicker: ReadonlySignal<boolean>;
@@ -108,6 +109,7 @@ export function LanguageConfigProvider({
   });
 
   const languageCode = useSignal(initialLanguage);
+  const languageChosen = useSignal(false);
 
   const options = useComputed(() =>
     supportedOverrides.value
@@ -115,25 +117,37 @@ export function LanguageConfigProvider({
       .sort((a, b) => a.name.localeCompare(b.name))
   );
 
-  const value = useMemo(
-    () => ({
-      language: computed(() =>
-        isValidLanguage(overrideLanguageAttribute.value)
-          ? Languages[overrideLanguageAttribute.value]
-          : isValidLanguage(languageCode.value) &&
-              supportedOverrides.value.includes(languageCode.value)
-            ? Languages[languageCode.value]
-            : Languages[widgetConfig.value.language]
-      ),
+  const value = useMemo(() => {
+    const language = computed(() =>
+      isValidLanguage(overrideLanguageAttribute.value)
+        ? Languages[overrideLanguageAttribute.value]
+        : isValidLanguage(languageCode.value) &&
+            supportedOverrides.value.includes(languageCode.value)
+          ? Languages[languageCode.value]
+          : Languages[widgetConfig.value.language]
+    );
+    return {
+      language,
+      languageOverride: computed(() => {
+        const resolved = language.value.languageCode;
+        const explicit =
+          isValidLanguage(overrideLanguageAttribute.value) ||
+          languageChosen.value ||
+          (supportedOverrides.value.length > 0 &&
+            languageAttribute.value === resolved);
+        return explicit || resolved !== widgetConfig.value.language
+          ? resolved
+          : undefined;
+      }),
       setLanguage: (value: Language) => {
+        languageChosen.value = true;
         languageCode.value = value;
         writeLastUsedLanguage(value);
       },
       options,
       showPicker: computed(() => options.value.length > 0),
-    }),
-    []
-  );
+    };
+  }, []);
 
   return (
     <LanguageConfigContext.Provider value={value}>
