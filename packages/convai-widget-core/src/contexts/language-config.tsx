@@ -109,7 +109,6 @@ export function LanguageConfigProvider({
   });
 
   const languageCode = useSignal(initialLanguage);
-  const languageChosen = useSignal(false);
 
   const options = useComputed(() =>
     supportedOverrides.value
@@ -128,19 +127,13 @@ export function LanguageConfigProvider({
     );
     return {
       language,
-      languageOverride: computed(() => {
-        const resolved = language.value.languageCode;
-        const explicit =
-          isValidLanguage(overrideLanguageAttribute.value) ||
-          languageChosen.value ||
-          (supportedOverrides.value.length > 0 &&
-            languageAttribute.value === resolved);
-        return explicit || resolved !== widgetConfig.value.language
-          ? resolved
-          : undefined;
-      }),
+      languageOverride: computed(() =>
+        isValidLanguage(overrideLanguageAttribute.value) ||
+        supportedOverrides.value.length > 0
+          ? language.value.languageCode
+          : undefined
+      ),
       setLanguage: (value: Language) => {
-        languageChosen.value = true;
         languageCode.value = value;
         writeLastUsedLanguage(value);
       },
