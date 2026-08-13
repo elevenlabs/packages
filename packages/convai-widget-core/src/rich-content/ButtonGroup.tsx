@@ -1,8 +1,4 @@
-import {
-  Button,
-  buttonClassName,
-  buttonLabelClassName,
-} from "../components/Button";
+import { Button } from "../components/Button";
 import { useConversation } from "../contexts/conversation";
 
 export interface MessageButton {
@@ -33,15 +29,9 @@ export function ButtonGroup({ buttons }: ButtonGroupProps) {
     <div className="flex flex-wrap gap-2">
       {buttons.map((button, index) =>
         button.type === "link" ? (
-          <a
-            key={index}
-            href={button.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonClassName("outline")}
-          >
-            <span className={buttonLabelClassName()}>{button.label}</span>
-          </a>
+          <Button key={index} as="a" variant="outline" href={button.link}>
+            {button.label}
+          </Button>
         ) : (
           <Button
             key={index}
