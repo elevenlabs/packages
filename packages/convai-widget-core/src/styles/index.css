@@ -10,6 +10,7 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
+  transform: translate(0);
 
   @apply text-base-primary text-md;
   font-family:
