@@ -237,6 +237,7 @@ export class WebSocketConnection
   }
 
   public sendMessage(message: OutgoingSocketEvent) {
+    this.handleOutgoingMessage(message);
     this.socket.send(JSON.stringify(message));
   }
 

@@ -25,6 +25,7 @@ export type FormatConfig = {
 
 export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 export type OnMessageCallback = (event: IncomingSocketEvent) => void;
+export type OnOutgoingMessageCallback = (event: any) => void;
 
 export type BaseSessionConfig = {
   origin?: string;
@@ -170,11 +171,13 @@ export abstract class BaseConnection {
   public abstract readonly outputFormat: FormatConfig;
 
   protected queue: IncomingSocketEvent[] = [];
+  protected outgoingQueue: OutgoingSocketEvent[] = [];
   protected disconnectionDetails: DisconnectionDetails | null = null;
   protected onDisconnectCallback: OnDisconnectCallback | null = null;
   protected onMessageCallback: OnMessageCallback | null = null;
   protected onModeChangeCallback: ((mode: Mode) => void) | null = null;
   protected onDebug?: (info: unknown) => void;
+  protected onOutgoingMessageCallback: OnOutgoingMessageCallback | null = null;
 
   constructor(config: { onDebug?: (info: unknown) => void } = {}) {
     this.onDebug = config.onDebug;
@@ -217,6 +220,20 @@ export abstract class BaseConnection {
     this.onModeChangeCallback = callback;
   }
 
+  public onOutgoingMessage(callback: OnOutgoingMessageCallback) {
+    this.onOutgoingMessageCallback = callback;
+    const queue = this.outgoingQueue;
+    this.outgoingQueue = [];
+
+    if (queue.length > 0) {
+      // Make sure the queue is flushed after the constructors finishes and
+      // classes are initialized.
+      queueMicrotask(() => {
+        queue.forEach(callback);
+      });
+    }
+  }
+
   protected updateMode(mode: Mode) {
     this.onModeChangeCallback?.(mode);
   }
@@ -233,6 +250,14 @@ export abstract class BaseConnection {
       this.onMessageCallback(parsedEvent);
     } else {
       this.queue.push(parsedEvent);
+    }
+  }
+
+  protected handleOutgoingMessage(event: any) {
+    if (this.onOutgoingMessageCallback) {
+      this.onOutgoingMessageCallback(event);
+    } else {
+      this.outgoingQueue.push(event);
     }
   }
 }

@@ -40,6 +40,8 @@ const EVENT_METHOD_NAMES = [
   "onGuardrailTriggered",
   "onPing",
   "onDebug",
+  "onIncomingEvent",
+  "onOutgoingEvent",
 ] satisfies (keyof PartialOptions)[];
 
 export function AgentPage({ agent }: AgentPageProps) {
