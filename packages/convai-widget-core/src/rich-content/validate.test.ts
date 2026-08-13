@@ -32,6 +32,24 @@ describe("button parsing", () => {
     });
   });
 
+  it("reads an explicitly null type as a message button", () => {
+    // Absent optional fields serialize to null, not undefined, so a null type
+    // has to be treated the same as a missing one.
+    expect(
+      parseButtons([{ type: null, label: "Ask more", message: "Tell me more" }])
+    ).toEqual({
+      buttons: [
+        { type: "message", label: "Ask more", message: "Tell me more" },
+      ],
+    });
+  });
+
+  it("drops a label that is not a finite number", () => {
+    expect(
+      parseButtons([{ label: Infinity, message: "Tell me more" }])
+    ).toBeNull();
+  });
+
   it("keeps a link button", () => {
     const button = {
       type: "link",

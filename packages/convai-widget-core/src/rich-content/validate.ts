@@ -1,76 +1,66 @@
+import * as z from "zod/mini";
 import type { ButtonGroupProps, RichContentButton } from "./ButtonGroup";
 
 const MAX_BUTTONS = 3;
 const MAX_TEXT_LENGTH = 500;
 const MAX_URL_LENGTH = 2048;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const Text = z.pipe(
+  z.pipe(
+    z.union([z.string(), z.number()]),
+    z.transform(value => String(value).trim())
+  ),
+  z.string().check(
+    z.minLength(1),
+    z.overwrite(text => text.slice(0, MAX_TEXT_LENGTH))
+  )
+);
 
-function parseText(value: unknown): string | undefined {
-  let text: string;
-  if (typeof value === "string") {
-    text = value;
-  } else if (typeof value === "number" && Number.isFinite(value)) {
-    text = String(value);
-  } else {
-    return undefined;
-  }
+const Link = z.pipe(
+  z.pipe(
+    z.string(),
+    z.transform(value => value.trim())
+  ),
+  z.string().check(z.maxLength(MAX_URL_LENGTH), z.regex(/^https:\/\//i))
+);
 
-  const trimmed = text.trim();
-  if (!trimmed) return undefined;
-  return trimmed.slice(0, MAX_TEXT_LENGTH);
-}
+const MessageButton = z.pipe(
+  z.object({
+    type: z.nullish(z.literal("message")),
+    label: Text,
+    message: Text,
+  }),
+  z.transform(
+    (button): RichContentButton => ({
+      type: "message",
+      label: button.label,
+      message: button.message,
+    })
+  )
+);
 
-function isHttpsUrl(raw: string): boolean {
-  return /^https:\/\//i.test(raw);
-}
+const LinkButton = z.object({
+  type: z.literal("link"),
+  label: Text,
+  link: Link,
+});
 
-function parseLink(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const raw = value.trim();
-  if (!raw || raw.length > MAX_URL_LENGTH) return undefined;
-  return isHttpsUrl(raw) ? raw : undefined;
-}
-
-function parseButton(
-  item: Record<string, unknown>
-): RichContentButton | undefined {
-  const label = parseText(item.label);
-  if (!label) return undefined;
-
-  const type = item.type ?? "message";
-  if (type === "link") {
-    const link = parseLink(item.link);
-    return link ? { type: "link", label, link } : undefined;
-  }
-  if (type === "message") {
-    const message = parseText(item.message);
-    return message ? { type: "message", label, message } : undefined;
-  }
-  return undefined;
-}
-
-function parseButtons(value: unknown): RichContentButton[] {
-  if (!Array.isArray(value)) return [];
-
-  const buttons: RichContentButton[] = [];
-  for (const item of value) {
-    if (buttons.length >= MAX_BUTTONS) break;
-    if (!isRecord(item)) continue;
-
-    const button = parseButton(item);
-    if (button) buttons.push(button);
-  }
-  return buttons;
-}
+const Button = z.union([MessageButton, LinkButton]);
 
 export function parseButtonGroupProps(value: unknown): ButtonGroupProps | null {
-  if (!isRecord(value)) return null;
+  const parsed = z.safeParse(
+    z.object({ buttons: z.array(z.unknown()) }),
+    value
+  );
+  if (!parsed.success) return null;
 
-  const buttons = parseButtons(value.buttons);
-  if (buttons.length === 0) return null;
+  const buttons: RichContentButton[] = [];
+  for (const item of parsed.data.buttons) {
+    if (buttons.length >= MAX_BUTTONS) break;
 
-  return { buttons };
+    const button = z.safeParse(Button, item);
+    if (button.success) buttons.push(button.data);
+  }
+
+  return buttons.length > 0 ? { buttons } : null;
 }
