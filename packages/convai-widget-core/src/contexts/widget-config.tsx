@@ -15,6 +15,7 @@ import {
   type WidgetConfig,
 } from "../types/config";
 import { useAttribute } from "./attributes";
+import { useOrchestrator } from "./orchestrator-config";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
@@ -30,6 +31,30 @@ const WidgetConfigContext = createContext<ReadonlySignal<WidgetConfig> | null>(
   null
 );
 
+// Self-hosted orchestrators have no HTTP API to serve a widget appearance config.
+const DefaultOrchestratorWidgetConfig: WidgetConfig = {
+  variant: "full",
+  placement: "bottom-right",
+  avatar: {
+    type: "orb",
+    color_1: "#2792dc",
+    color_2: "#9ce6e6",
+  },
+  feedback_mode: "none",
+  language: "en",
+  mic_muting_enabled: false,
+  transcript_enabled: true,
+  text_input_enabled: true,
+  default_expanded: false,
+  always_expanded: false,
+  dismissible: false,
+  text_contents: {},
+  language_presets: {},
+  disable_banner: false,
+  text_only: false,
+  supports_text_only: true,
+};
+
 interface WidgetConfigProviderProps {
   children: ComponentChildren;
 }
@@ -39,6 +64,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const agentId = useAttribute("agent-id");
   const overrideConfig = useAttribute("override-config");
   const signedUrl = useAttribute("signed-url");
+  const orchestrator = useOrchestrator();
   const fetchedConfig = useSignal<WidgetConfig | null>(null);
 
   useSignalEffect(() => {
@@ -54,6 +80,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
           `[ConversationalAI] Cannot parse override-config: ${error?.message}`
         );
       }
+    }
+    if (orchestrator.enabled.value) {
+      fetchedConfig.value = structuredClone(DefaultOrchestratorWidgetConfig);
+      return;
     }
     let currentAgentId: string | undefined = agentId.value;
     let conversationSignature: string | undefined;
@@ -251,7 +281,13 @@ export function useTriggerEntryPoints() {
 
 export function useFileInputEnabled() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.file_input_config?.enabled ?? false);
+  const orchestrator = useOrchestrator();
+  // File uploads post to the ElevenLabs cloud API, which orchestrator sessions must never call.
+  return useComputed(
+    () =>
+      !orchestrator.enabled.value &&
+      (config.value.file_input_config?.enabled ?? false)
+  );
 }
 
 export function useFileInputMaxFiles() {
@@ -292,7 +328,13 @@ export function useWebRTC() {
 
 export function useEndFeedbackType() {
   const config = useWidgetConfig();
-  return useComputed(() => config.value.end_feedback?.type ?? null);
+  const orchestrator = useOrchestrator();
+  // End-of-call feedback posts to the ElevenLabs cloud API, which orchestrator sessions must never call.
+  return useComputed(() =>
+    orchestrator.enabled.value
+      ? null
+      : (config.value.end_feedback?.type ?? null)
+  );
 }
 
 export interface MarkdownLinkConfig {

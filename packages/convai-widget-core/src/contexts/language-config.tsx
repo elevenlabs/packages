@@ -16,6 +16,7 @@ const LAST_USED_LANGUAGE_KEY = "xi:convai-widget-last-used-language";
 
 interface LanguageConfig {
   language: ReadonlySignal<LanguageInfo>;
+  languageOverride: ReadonlySignal<Language | undefined>;
   setLanguage: (value: Language) => void;
   options: ReadonlySignal<LanguageInfo[]>;
   showPicker: ReadonlySignal<boolean>;
@@ -115,15 +116,23 @@ export function LanguageConfigProvider({
       .sort((a, b) => a.name.localeCompare(b.name))
   );
 
-  const value = useMemo(
-    () => ({
-      language: computed(() =>
-        isValidLanguage(overrideLanguageAttribute.value)
-          ? Languages[overrideLanguageAttribute.value]
-          : isValidLanguage(languageCode.value) &&
-              supportedOverrides.value.includes(languageCode.value)
-            ? Languages[languageCode.value]
-            : Languages[widgetConfig.value.language]
+  const value = useMemo(() => {
+    // Precedence: override-language attribute, then the picked/stored language if supported, then the widget default.
+    const language = computed(() =>
+      isValidLanguage(overrideLanguageAttribute.value)
+        ? Languages[overrideLanguageAttribute.value]
+        : isValidLanguage(languageCode.value) &&
+            supportedOverrides.value.includes(languageCode.value)
+          ? Languages[languageCode.value]
+          : Languages[widgetConfig.value.language]
+    );
+    return {
+      language,
+      languageOverride: computed(() =>
+        isValidLanguage(overrideLanguageAttribute.value) ||
+        supportedOverrides.value.length > 0
+          ? language.value.languageCode
+          : undefined
       ),
       setLanguage: (value: Language) => {
         languageCode.value = value;
@@ -131,9 +140,8 @@ export function LanguageConfigProvider({
       },
       options,
       showPicker: computed(() => options.value.length > 0),
-    }),
-    []
-  );
+    };
+  }, []);
 
   return (
     <LanguageConfigContext.Provider value={value}>

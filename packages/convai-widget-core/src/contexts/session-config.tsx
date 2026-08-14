@@ -4,6 +4,7 @@ import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import { useAttribute } from "./attributes";
 import { useLanguageConfig } from "./language-config";
+import { useOrchestrator } from "./orchestrator-config";
 import { useServerLocation } from "./server-location";
 
 import { useContextSafely } from "../utils/useContextSafely";
@@ -21,7 +22,7 @@ interface SessionConfigProviderProps {
 export function SessionConfigProvider({
   children,
 }: SessionConfigProviderProps) {
-  const { language } = useLanguageConfig();
+  const { language, languageOverride } = useLanguageConfig();
   const overridePrompt = useAttribute("override-prompt");
   const overrideLLM = useAttribute("override-llm");
   const overrideSpeed = useAttribute("override-speed");
@@ -69,6 +70,7 @@ export function SessionConfigProvider({
   const { webSocketUrl } = useServerLocation();
   const agentId = useAttribute("agent-id");
   const signedUrl = useAttribute("signed-url");
+  const orchestrator = useOrchestrator();
   const environment = useAttribute("environment");
   const textOnly = useTextOnly();
   const useWebRTCEnabled = useWebRTC();
@@ -80,7 +82,6 @@ export function SessionConfigProvider({
       connectionDelay: { default: 300 },
       textOnly: textOnly.value,
       userId: userId.value || undefined,
-      environment: environment.value || undefined,
       libsampleratePath: libsamplerate.value,
       workletPaths: {
         rawAudioProcessor: rawAudioProcessor.value,
@@ -88,20 +89,46 @@ export function SessionConfigProvider({
       },
     } as const satisfies Partial<SessionConfig | AudioWorkletConfig>;
 
+    if (orchestrator.enabled.value) {
+      const orchestratorConfig = orchestrator.config.value;
+      if (!orchestratorConfig) {
+        return null;
+      }
+
+      // Self-hosted orchestrators only expose the conversation WebSocket
+      return {
+        orchestrator: orchestratorConfig,
+        connectionType: "websocket" as const,
+        ...baseConfig,
+        overrides: {
+          ...overrides.value,
+          agent: {
+            ...overrides.value?.agent,
+            language: languageOverride.value,
+          },
+        },
+      };
+    }
+
+    const cloudBaseConfig = {
+      ...baseConfig,
+      environment: environment.value || undefined,
+    };
+
     if (agentId.value) {
       if (isWebRTC) {
         return {
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "webrtc" as const,
-          ...baseConfig,
+          ...cloudBaseConfig,
         };
       } else {
         return {
           agentId: agentId.value,
           origin: webSocketUrl.value,
           connectionType: "websocket" as const,
-          ...baseConfig,
+          ...cloudBaseConfig,
         };
       }
     }
@@ -111,12 +138,12 @@ export function SessionConfigProvider({
       return {
         signedUrl: signedUrl.value,
         connectionType: "websocket" as const,
-        ...baseConfig,
+        ...cloudBaseConfig,
       };
     }
 
     console.error(
-      "[ConversationalAI] Either agent-id or signed-url is required"
+      "[ConversationalAI] Either agent-id, signed-url or orchestrator-url is required"
     );
     return null;
   });
