@@ -56,6 +56,7 @@ channels:
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
           - $ref: "#/components/messages/ClientToolCallMessage"
+          - $ref: "#/components/messages/RichContentMessage"
           - $ref: "#/components/messages/AgentToolRequestMessage"
           - $ref: "#/components/messages/AgentToolResponseMessage"
           - $ref: "#/components/messages/AgentToolResponseFullPayloadMessage"
@@ -252,6 +253,15 @@ components:
       payload:
         $ref: "#/components/schemas/ClientToolCallPayload"
 
+    RichContentMessage:
+      name: RichContentClientEvent
+      title: Rich Content
+      summary: Component for the client to display
+      contentType: application/json
+      x-experimental: true
+      payload:
+        $ref: "#/components/schemas/RichContentPayload"
+
     AgentToolRequestMessage:
       name: AgentToolRequestClientEvent
       title: Agent Tool Request
@@ -380,6 +390,7 @@ components:
         - tentative_user_transcript
         - conversation_initiation_metadata
         - client_tool_call
+        - rich_content
         - agent_tool_request
         - agent_tool_response
         - agent_tool_response_full_payload
@@ -870,6 +881,15 @@ components:
           const: client_tool_call
         client_tool_call:
           $ref: "#/components/schemas/ClientToolCallData"
+    RichContentPayload:
+      type: object
+      required: [rich_content, type]
+      properties:
+        type:
+          type: string
+          const: rich_content
+        rich_content:
+          $ref: "#/components/schemas/RichContentData"
     AgentToolRequestPayload:
       type: object
       required: [agent_tool_request, type]
@@ -1068,6 +1088,21 @@ components:
           type: string
         parameters:
           type: object
+        event_id:
+          type: integer
+
+    RichContentData:
+      type: object
+      required: [rich_content_id, component, props, event_id]
+      properties:
+        rich_content_id:
+          type: string
+        component:
+          type: string
+          description: Which component to display, for example item_card
+        props:
+          type: object
+          description:  Component-specific properties; the shape of this object is defined by the component
         event_id:
           type: integer
 

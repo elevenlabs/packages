@@ -178,6 +178,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "tentative_user_transcript"
   | "conversation_initiation_metadata"
   | "client_tool_call"
+  | "rich_content"
   | "agent_tool_request"
   | "agent_tool_response"
   | "agent_tool_response_full_payload"
@@ -363,6 +364,24 @@ export interface ClientToolCall {
   tool_name: string;
   tool_call_id: string;
   parameters: Record<string, any>;
+  event_id: number;
+}
+
+/**
+ * @experimental
+ */
+export interface RichContentMessage {
+  type: "rich_content";
+  rich_content: RichContent;
+}
+
+/**
+ * @experimental
+ */
+export interface RichContent {
+  rich_content_id: string;
+  component: string;
+  props: Record<string, any>;
   event_id: number;
 }
 
@@ -627,6 +646,14 @@ export interface AgentReasoningResponsePartClientEvent {
 export interface ClientToolCallClientEvent {
   type: "client_tool_call";
   client_tool_call: ClientToolCall;
+}
+
+/**
+ * @experimental
+ */
+export interface RichContentClientEvent {
+  type: "rich_content";
+  rich_content: RichContent;
 }
 
 export interface AgentToolRequestClientEvent {

@@ -10,6 +10,7 @@ import type { BaseConnection } from "./utils/BaseConnection.js";
 const noopConnection = {
   conversationId: "test-conversation-id",
   onMessage: () => {},
+  onOutgoingMessage: () => {},
   onDisconnect: () => {},
   onModeChange: () => {},
   close: () => {},
@@ -313,6 +314,61 @@ describe("BaseConversation", () => {
             event_id: "42",
           },
         })
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe("rich_content events", () => {
+    const richContentEvent = {
+      type: "rich_content" as const,
+      rich_content: {
+        rich_content_id: "show_rich_content_8c0948a3",
+        component: "item_card",
+        props: { id: "item_1", title: "Item Title" },
+        event_id: 2,
+      },
+    };
+
+    it("calls onRichContent with the component payload", async () => {
+      const onRichContent = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onRichContent,
+        onDebug,
+      });
+
+      await conversation.receiveMessage(richContentEvent);
+
+      expect(onRichContent).toHaveBeenCalledWith({
+        rich_content_id: "show_rich_content_8c0948a3",
+        component: "item_card",
+        props: { id: "item_1", title: "Item Title" },
+        event_id: 2,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing back, unlike a client tool call", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onRichContent: vi.fn() },
+        connection
+      );
+
+      await conversation.receiveMessage(richContentEvent);
+
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage(richContentEvent)
       ).resolves.toBeUndefined();
     });
   });
@@ -726,6 +782,26 @@ describe("BaseConversation", () => {
       expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
         canSendFeedback: false,
       });
+    });
+  });
+
+  describe("message events", () => {
+    it("calls onIncomingEvent with the incoming message payload", async () => {
+      const onIncomingEvent = vi.fn();
+      const conversation = TestConversation.create({
+        onIncomingEvent,
+      });
+
+      const message = {
+        type: "ping",
+        ping_event: {
+          event_id: 1,
+        },
+      } as const;
+
+      await conversation.receiveMessage(message);
+
+      expect(onIncomingEvent).toHaveBeenCalledWith(message);
     });
   });
 });

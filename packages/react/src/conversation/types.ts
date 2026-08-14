@@ -42,11 +42,14 @@ export type HookCallbacks = Pick<
   | "onAgentChatResponsePart"
   | "onAgentReasoningResponsePart"
   | "onAgentResponseCorrection"
+  | "onRichContent"
   | "onAudioAlignment"
   | "onGuardrailTriggered"
   | "onAgentTyping"
   | "onExternalAgentConnected"
   | "onPing"
+  | "onIncomingEvent"
+  | "onOutgoingEvent"
 >;
 
 export type HookOptions = Partial<

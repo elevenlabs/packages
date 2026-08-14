@@ -15,6 +15,7 @@ import type {
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
   Ping,
+  RichContentClientEvent,
 } from "@elevenlabs/types";
 
 /**
@@ -132,6 +133,14 @@ export type Callbacks = {
   onAgentReasoningResponsePart?: (
     props: AgentReasoningResponsePartClientEvent["reasoning_response_part"]
   ) => void;
+  /**
+   * Called when the agent sends a component for the client to display, such as
+   * an item card. Receives `{ rich_content_id, component, props, event_id }`.
+   *
+   * @experimental This API is experimental and may change without following
+   * semver guarantees.
+   */
+  onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
@@ -148,6 +157,14 @@ export type Callbacks = {
   onPing?: (props: Ping["ping_event"]) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
+  /**
+   * Called for every incoming event received from the server.
+   */
+  onIncomingEvent?: (props: any) => void;
+  /**
+   * Called for every outgoing event sent to the server.
+   */
+  onOutgoingEvent?: (props: any) => void;
 };
 
 /**
@@ -175,10 +192,13 @@ export const CALLBACK_KEYS = [
   "onAgentResponseCorrection",
   "onAgentChatResponsePart",
   "onAgentReasoningResponsePart",
+  "onRichContent",
   "onAudioAlignment",
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",
   "onPing",
   "onDebug",
+  "onIncomingEvent",
+  "onOutgoingEvent",
 ] as const satisfies readonly (keyof Callbacks)[];

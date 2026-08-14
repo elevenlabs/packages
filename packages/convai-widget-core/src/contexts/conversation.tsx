@@ -65,6 +65,14 @@ export type TranscriptEntry =
       conversationIndex: number;
     }
   | {
+      type: "rich_content";
+      component: string;
+      props: unknown;
+      conversationIndex: number;
+      eventId: number;
+      richContentId: string;
+    }
+  | {
       type: "disconnection";
       role: Role;
       message?: undefined;
@@ -368,6 +376,24 @@ function useConversationSetup() {
                   toolCallId: tool_call_id,
                   eventId: event_id,
                   isError: is_error,
+                  conversationIndex: conversationIndex.peek(),
+                },
+              ];
+            },
+            onRichContent: ({
+              component,
+              props,
+              event_id,
+              rich_content_id,
+            }) => {
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "rich_content",
+                  component,
+                  props,
+                  eventId: event_id,
+                  richContentId: rich_content_id,
                   conversationIndex: conversationIndex.peek(),
                 },
               ];

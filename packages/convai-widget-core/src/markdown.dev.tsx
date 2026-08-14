@@ -80,7 +80,8 @@ type TranscriptRenderMode = "text" | "voice";
 
 const VOICE_SAMPLE_TEXT =
   "[happy] Hello! [excited] How can I help you today?\n\n" +
-  "Voice transcripts are plain text — **markdown** and [links](https://elevenlabs.io) are not rendered.";
+  "Voice transcripts render **markdown** and [links](https://elevenlabs.io) too, " +
+  "with audio tags styled on top.";
 
 const DEFAULT_TEXT =
   "Hey, how can I help you?\n\n" +
@@ -474,7 +475,7 @@ function MarkdownPlayground() {
                 }
               >
                 <option value="text">Text — markdown</option>
-                <option value="voice">Voice — plain text + audio tags</option>
+                <option value="voice">Voice — markdown + styled audio tags</option>
               </select>
             </div>
             {renderMode === "voice" && (
@@ -505,20 +506,18 @@ function MarkdownPlayground() {
                 : "Enter markdown text here..."
             }
           />
-          {renderMode === "text" && (
-            <div className="mt-4 shrink-0">
-              <label className="block text-sm font-medium mb-1">
-                Allowed Link Domains (comma-separated, * for all)
-              </label>
-              <input
-                type="text"
-                className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputBgClass} ${borderClass}`}
-                value={allowedDomainsInput}
-                onChange={e => setAllowedDomainsInput(e.currentTarget.value)}
-                placeholder="e.g. elevenlabs.io, example.com or * for all"
-              />
-            </div>
-          )}
+          <div className="mt-4 shrink-0">
+            <label className="block text-sm font-medium mb-1">
+              Allowed Link Domains (comma-separated, * for all)
+            </label>
+            <input
+              type="text"
+              className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputBgClass} ${borderClass}`}
+              value={allowedDomainsInput}
+              onChange={e => setAllowedDomainsInput(e.currentTarget.value)}
+              placeholder="e.g. elevenlabs.io, example.com or * for all"
+            />
+          </div>
         </div>
 
         <div className="w-1/2 h-full flex flex-col min-h-0 p-4">

@@ -518,6 +518,7 @@ export class WebRTCConnection extends BaseConnection {
       return;
     }
 
+    this.handleOutgoingMessage(message);
     try {
       const encoder = new TextEncoder();
       const data = encoder.encode(JSON.stringify(message));

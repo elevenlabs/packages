@@ -62,7 +62,7 @@ export const CodeBlock = ({
             data-syntax-theme={syntaxTheme.value}
             {...rest}
           >
-            <pre className={cn(
+            <pre dir="ltr" className={cn(
               "m-0 font-mono text-[13px] px-4 py-1.5",
               isWrapped.value ? "whitespace-pre-wrap overflow-x-hidden" : "whitespace-pre overflow-x-auto"
             )}>
