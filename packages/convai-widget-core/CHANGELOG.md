@@ -1,5 +1,30 @@
 # @elevenlabs/convai-widget-core
 
+## 0.16.0
+
+### Minor Changes
+
+- 1cf281e: Add experimental self-hosted orchestrator support. Setting the `orchestrator-url` attribute (optionally with `orchestrator-agent-config` carrying the exported agent configuration JSON) connects the widget to a self-hosted orchestrator instead of the ElevenLabs cloud, with no HTTP config fetch. Like the client SDK's `orchestrator` session option, these attributes are experimental and may change without a major version bump.
+- c7afdba: Render rich content components the agent sends, inline in the transcript,
+  starting with quick reply buttons. A message button sends its text as the
+  user's own turn; a link button opens its url in a new tab.
+
+  Properties are validated before rendering, so a malformed or unrecognised
+  component shows a short notice instead of breaking the transcript, and a
+  component stays where it arrived with no message moved across it.
+
+  Validation is built on `zod/mini`, which adds roughly 5 KB gzipped.
+
+### Patch Changes
+
+- 78cc4c1: Fix markdown not rendering in voice transcripts. Voice agent messages regressed to plain text in 0.12.6, so `**bold**`, lists, tables and links showed as literal markdown syntax while text chat rendered them correctly. Voice messages now go through the same markdown renderer as text, with emotion/audio tags styled by a rehype plugin that runs after sanitization (and skips code blocks).
+- 97c9571: Fix the language dropdown being positioned away from its trigger when the widget is embedded inside a CSS container-query element (`container-type: inline-size`). Floating UI treats such an ancestor as a containing block for `position: fixed` descendants while browsers do not, so the dropdown was offset by the ancestor's position on the page. The widget's overlay root now establishes a containing block of its own, making the dropdown position independent of the host page's ancestor styles.
+- Updated dependencies [92e70c6]
+- Updated dependencies [93cf08c]
+- Updated dependencies [1a1f440]
+- Updated dependencies [fb06e12]
+  - @elevenlabs/client@1.18.0
+
 ## 0.15.1
 
 ### Patch Changes
