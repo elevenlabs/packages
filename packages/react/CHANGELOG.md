@@ -1,5 +1,20 @@
 # @elevenlabs/react
 
+## 1.12.1
+
+### Patch Changes
+
+- 92e70c6: Fix conversation state consistency through disconnect:
+  - `BaseConversation` now always reaches the `disconnected` status and fires `onDisconnect`, even when session teardown throws.
+  - `ConversationProvider` no longer lets a late `onDisconnect` from a previous session clear a newer session's state, and no longer leaks unhandled rejections from `endSession()`.
+  - `useConversationStatus` now reports `disconnected` as soon as teardown starts, instead of holding `connected` while the conversation was already released — consumers guarding conversation access with `status === "connected"` could previously crash during disconnect.
+
+- Updated dependencies [92e70c6]
+- Updated dependencies [93cf08c]
+- Updated dependencies [1a1f440]
+- Updated dependencies [fb06e12]
+  - @elevenlabs/client@1.18.0
+
 ## 1.12.0
 
 ### Minor Changes

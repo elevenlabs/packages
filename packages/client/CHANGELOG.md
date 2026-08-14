@@ -1,5 +1,34 @@
 # @elevenlabs/client
 
+## 1.18.0
+
+### Minor Changes
+
+- 93cf08c: Add the experimental `rich_content` event types and an `onRichContent` callback,
+  called when the agent sends a component for the client to display, such as an
+  item card. The callback receives `{ rich_content_id, component, props, event_id }`
+  and nothing is sent back, so the agent's turn does not wait on the client.
+
+  This backs the embedded widget, which is the only client the server offers
+  components to today, so the callback does not fire for other consumers. Treat
+  `props` as agent-authored and untrusted when rendering it into a document.
+
+- 1a1f440: Add `workletPaths.scribeAudioProcessor` to `Scribe.connect({ microphone })` so the Scribe audio worklet can be self-hosted, matching the existing `Conversation` `workletPaths` option. This lets strict CSPs (`script-src`/`script-src-elem` without `blob:`/`data:`) load the worklet from a same-origin URL instead of falling back to a blob or data URL.
+
+  The generated worklet processors (including `scribeAudioProcessor.js`) are now also published as static assets under `@elevenlabs/client/worklets/*`, so bundlers can copy them into your own static assets and serve them under `script-src 'self'`.
+
+- fb06e12: Add self-hosted orchestrator session support. Passing `orchestratorConfig` to `Conversation.startSession` routes the conversation WebSocket to a self-hosted (private deployment) orchestrator and sends the agent configuration at connection time, mirroring the Python SDK's `OnPremInitiationData`.
+
+### Patch Changes
+
+- 92e70c6: Fix conversation state consistency through disconnect:
+  - `BaseConversation` now always reaches the `disconnected` status and fires `onDisconnect`, even when session teardown throws.
+  - `ConversationProvider` no longer lets a late `onDisconnect` from a previous session clear a newer session's state, and no longer leaks unhandled rejections from `endSession()`.
+  - `useConversationStatus` now reports `disconnected` as soon as teardown starts, instead of holding `connected` while the conversation was already released — consumers guarding conversation access with `status === "connected"` could previously crash during disconnect.
+
+- Updated dependencies [93cf08c]
+  - @elevenlabs/types@0.20.0
+
 ## 1.17.0
 
 ### Minor Changes
