@@ -117,6 +117,7 @@ export function LanguageConfigProvider({
   );
 
   const value = useMemo(() => {
+    // Precedence: override-language attribute, then the picked/stored language if supported, then the widget default.
     const language = computed(() =>
       isValidLanguage(overrideLanguageAttribute.value)
         ? Languages[overrideLanguageAttribute.value]
