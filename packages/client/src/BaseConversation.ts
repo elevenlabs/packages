@@ -160,6 +160,7 @@ export abstract class BaseConversation {
     this.connection.onMessage(this.onMessage);
     this.connection.onDisconnect(this.endSessionWithDetails);
     this.connection.onModeChange(mode => this.updateMode(mode));
+    this.connection.onOutgoingMessage(this.onOutgoingMessage);
   }
 
   protected markConnected() {
@@ -471,6 +472,8 @@ export abstract class BaseConversation {
   }
 
   private onMessage = async (parsedEvent: IncomingSocketEvent) => {
+    this.options.onIncomingEvent?.(parsedEvent);
+
     switch (parsedEvent.type) {
       case "interruption": {
         this.handleInterruption(parsedEvent);
@@ -613,6 +616,10 @@ export abstract class BaseConversation {
       this.options.onError(message, context);
     }
   }
+
+  private onOutgoingMessage = (event: any) => {
+    this.options.onOutgoingEvent?.(event);
+  };
 
   public getId() {
     return this.connection.conversationId;

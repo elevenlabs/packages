@@ -10,6 +10,7 @@ import type { BaseConnection } from "./utils/BaseConnection.js";
 const noopConnection = {
   conversationId: "test-conversation-id",
   onMessage: () => {},
+  onOutgoingMessage: () => {},
   onDisconnect: () => {},
   onModeChange: () => {},
   close: () => {},
@@ -781,6 +782,26 @@ describe("BaseConversation", () => {
       expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
         canSendFeedback: false,
       });
+    });
+  });
+
+  describe("message events", () => {
+    it("calls onIncomingEvent with the incoming message payload", async () => {
+      const onIncomingEvent = vi.fn();
+      const conversation = TestConversation.create({
+        onIncomingEvent,
+      });
+
+      const message = {
+        type: "ping",
+        ping_event: {
+          event_id: 1,
+        },
+      } as const;
+
+      await conversation.receiveMessage(message);
+
+      expect(onIncomingEvent).toHaveBeenCalledWith(message);
     });
   });
 });

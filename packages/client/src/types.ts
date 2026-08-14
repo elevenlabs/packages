@@ -157,6 +157,14 @@ export type Callbacks = {
   onPing?: (props: Ping["ping_event"]) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
+  /**
+   * Called for every incoming event received from the server.
+   */
+  onIncomingEvent?: (props: any) => void;
+  /**
+   * Called for every outgoing event sent to the server.
+   */
+  onOutgoingEvent?: (props: any) => void;
 };
 
 /**
@@ -191,4 +199,6 @@ export const CALLBACK_KEYS = [
   "onExternalAgentConnected",
   "onPing",
   "onDebug",
+  "onIncomingEvent",
+  "onOutgoingEvent",
 ] as const satisfies readonly (keyof Callbacks)[];

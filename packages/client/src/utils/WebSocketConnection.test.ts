@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebSocketConnection } from "./WebSocketConnection.js";
+import type { PongEvent } from "./events.js";
 
 type EventHandler = (event: any) => void;
 
@@ -212,5 +213,20 @@ describe("WebSocketConnection", () => {
     connection.addListener(listener);
 
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("properly reports sent messages", async () => {
+    const connection = await createConnection();
+    const listener = vi.fn();
+    const message: PongEvent = {
+      type: "pong",
+      event_id: 1,
+    };
+
+    connection.onOutgoingMessage(listener);
+    connection.sendMessage(message);
+    connection.close();
+
+    expect(listener).toHaveBeenCalledWith(message);
   });
 });

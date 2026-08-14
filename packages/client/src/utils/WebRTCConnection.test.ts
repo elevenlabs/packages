@@ -64,6 +64,7 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack } from "livekit-client";
 import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
+import type { PongEvent } from "./events.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -375,4 +376,22 @@ describe("WebRTCConnection", () => {
       }
     }
   );
+
+  it("properly reports sent messages", async () => {
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+    const message: PongEvent = {
+      type: "pong",
+      event_id: 1,
+    };
+
+    const listener = vi.fn();
+    connection.onOutgoingMessage(listener);
+    connection.sendMessage(message);
+    connection.close();
+
+    expect(listener).toHaveBeenCalledWith(message);
+  });
 });
