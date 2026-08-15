@@ -1077,6 +1077,42 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("closes the connection when microphone setup fails", async () => {
+      setScribeMicrophoneSetup(
+        vi.fn(() => Promise.reject(new Error("Permission denied")))
+      );
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      onTestFinished(() => server.close());
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: {},
+      });
+
+      const onError = vi.fn();
+      const onClose = vi.fn();
+      connection.on(RealtimeEvents.ERROR, onError);
+      connection.on(RealtimeEvents.CLOSE, onClose);
+
+      await clientPromise;
+      await sleep(100);
+
+      expect(onError).toHaveBeenCalledTimes(1);
+
+      // Without a microphone the session can only ever be silent, so the
+      // socket must not be left open holding it.
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards workletPaths.scribeAudioProcessor to the registered microphone setup", async () => {
       const mockTrack = { enabled: true } as MediaStreamTrack;
       const cleanup = vi.fn();

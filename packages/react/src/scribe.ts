@@ -477,6 +477,13 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         });
 
         connection.on(RealtimeEvents.CLOSE, () => {
+          // A socket that has already been replaced must not tear down the
+          // session that replaced it. A null ref still runs: disconnect()
+          // clears it before this fires, and that close is this session's.
+          if (connectionRef.current && connectionRef.current !== connection) {
+            return;
+          }
+
           setStatus("disconnected");
           setIsMuted(false);
           connectionRef.current = null;
