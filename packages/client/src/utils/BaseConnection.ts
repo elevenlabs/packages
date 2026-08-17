@@ -1,4 +1,3 @@
-import type { RoomConnectOptions } from "livekit-client";
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
 import type { Mode } from "../BaseConversation.js";
 import type {
@@ -31,11 +30,14 @@ export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
   livekitUrl?: string;
-  /**
-   * RTCConfiguration overrides passed to LiveKit's `room.connect()`, e.g.
-   * `{ iceTransportPolicy: "relay" }`. WebRTC connections only.
-   */
-  rtcConfig?: RoomConnectOptions["rtcConfig"];
+  webRtc?: {
+    /**
+     * ICE transport policy for the WebRTC connection. Set to "relay" to only
+     * use TURN relay candidates, e.g. on networks that drop direct UDP flows.
+     * Defaults to "all".
+     */
+    iceTransportPolicy?: "all" | "relay";
+  };
   overrides?: {
     agent?: {
       prompt?: ConversationConfigOverrideAgentPrompt;

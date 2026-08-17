@@ -131,7 +131,7 @@ describe("WebRTCConnection", () => {
     connection.close();
   });
 
-  it("passes rtcConfig through to room.connect", async () => {
+  it("passes webRtc.iceTransportPolicy through to room.connect", async () => {
     const mockRoom = new Room() as any;
     (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
       (event: string, callback: () => void) => {
@@ -148,19 +148,16 @@ describe("WebRTCConnection", () => {
       }
     );
 
-    const rtcConfig = {
-      iceTransportPolicy: "relay" as const,
-    };
     const connection = await WebRTCConnection.create({
       conversationToken: "test-token",
       connectionType: "webrtc",
-      rtcConfig,
+      webRtc: { iceTransportPolicy: "relay" },
     });
 
     expect(mockRoom.connect).toHaveBeenCalledWith(
       expect.any(String),
       "test-token",
-      { rtcConfig }
+      { rtcConfig: { iceTransportPolicy: "relay" } }
     );
 
     connection.close();

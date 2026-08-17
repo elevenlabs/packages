@@ -316,8 +316,9 @@ export class WebRTCConnection extends BaseConnection {
           });
 
       // Connect to the LiveKit room
+      const iceTransportPolicy = config.webRtc?.iceTransportPolicy;
       await room.connect(livekitUrl, conversationToken, {
-        rtcConfig: config.rtcConfig,
+        rtcConfig: iceTransportPolicy ? { iceTransportPolicy } : undefined,
       });
 
       // Wait for the Connected event to ensure isConnected is true
