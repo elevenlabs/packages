@@ -374,6 +374,13 @@ export class ScribeRealtime {
     } catch (error) {
       console.error("Failed to start microphone streaming:", error);
       connection._emitError(error);
+
+      // A microphone-mode session that never acquired a microphone can never
+      // send audio, so the socket is stranded: it holds a session open that
+      // will only ever be silent. Close it so the failure ends the connection
+      // the way any other terminal one does, and consumers tracking CLOSE can
+      // start a fresh session instead of waiting on this one.
+      connection.close();
     }
   }
 }

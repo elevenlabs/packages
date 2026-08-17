@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AudioFormat, Scribe } from "@elevenlabs/client";
+import { AudioFormat, RealtimeEvents, Scribe } from "@elevenlabs/client";
 import type { RealtimeConnection } from "@elevenlabs/client";
 import { useScribe } from "./scribe.js";
 
@@ -110,5 +110,77 @@ describe("useScribe", () => {
         enableLogging: false,
       })
     );
+  });
+
+  describe("close handling", () => {
+    const SESSION = {
+      token: "test-token",
+      modelId: "scribe_v2_realtime",
+      microphone: {},
+    };
+
+    function closeHandlerFor(connection: RealtimeConnection) {
+      return vi
+        .mocked(connection.on)
+        .mock.calls.find(([event]) => event === RealtimeEvents.CLOSE)?.[1] as
+        | (() => void)
+        | undefined;
+    }
+
+    it("ignores a close from a connection that has been replaced", async () => {
+      const first = createMockConnection();
+      const second = createMockConnection();
+      vi.mocked(Scribe.connect)
+        .mockReturnValueOnce(first)
+        .mockReturnValueOnce(second);
+
+      const onDisconnect = vi.fn();
+      const { result } = renderHook(() => useScribe({ onDisconnect }));
+
+      await act(async () => {
+        await result.current.connect(SESSION);
+      });
+      act(() => {
+        result.current.disconnect();
+      });
+      await act(async () => {
+        await result.current.connect(SESSION);
+      });
+
+      expect(Scribe.connect).toHaveBeenCalledTimes(2);
+
+      // The replaced socket only closes now. It must not tear down the
+      // session that took its place.
+      act(() => {
+        closeHandlerFor(first)?.();
+      });
+
+      expect(onDisconnect).not.toHaveBeenCalled();
+      expect(result.current.status).not.toBe("disconnected");
+    });
+
+    it("still reports a close for the current connection after disconnect()", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const onDisconnect = vi.fn();
+      const { result } = renderHook(() => useScribe({ onDisconnect }));
+
+      await act(async () => {
+        await result.current.connect(SESSION);
+      });
+
+      // disconnect() releases the ref before the socket's close arrives, so
+      // the close still belongs to this session.
+      act(() => {
+        result.current.disconnect();
+      });
+      act(() => {
+        closeHandlerFor(connection)?.();
+      });
+
+      expect(onDisconnect).toHaveBeenCalledTimes(1);
+      expect(result.current.status).toBe("disconnected");
+    });
   });
 });
