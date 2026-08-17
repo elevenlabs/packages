@@ -1,4 +1,5 @@
 import type { RemoteAudioTrack } from "livekit-client";
+import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type {
   WebRTCAudioAdapter,
@@ -74,7 +75,8 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
   async setupOutputAnalysis(
     track: RemoteAudioTrack,
     format: FormatConfig,
-    onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void
+    onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void,
+    workletPaths?: AudioWorkletConfig["workletPaths"]
   ): Promise<AnalysisResult> {
     // Clean up previous audio capture context
     if (this.audioCaptureContext) {
@@ -101,7 +103,10 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
       audioContext.sampleRate
     );
 
-    await loadRawAudioProcessor(audioContext.audioWorklet);
+    await loadRawAudioProcessor(
+      audioContext.audioWorklet,
+      workletPaths?.rawAudioProcessor
+    );
     const worklet = new AudioWorkletNode(audioContext, "rawAudioProcessor");
 
     // Configure the processor and set up the message listener

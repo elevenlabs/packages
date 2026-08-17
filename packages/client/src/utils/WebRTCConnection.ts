@@ -36,6 +36,7 @@ import {
   createAudioAdapter,
   type WebRTCAudioAdapter,
 } from "../WebRTCAudioAdapter.js";
+import type { AudioWorkletConfig } from "../BaseConversation.js";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -46,9 +47,10 @@ function convertWssToHttps(origin: string): string {
   return origin.replace(/^wss:\/\//, "https://");
 }
 
-export type WebRTCConnectionConfig = SessionConfig & {
-  onDebug?: (info: unknown) => void;
-};
+export type WebRTCConnectionConfig = SessionConfig &
+  Pick<AudioWorkletConfig, "workletPaths"> & {
+    onDebug?: (info: unknown) => void;
+  };
 
 /** @deprecated Use {@link WebRTCConnectionConfig} instead. */
 export type ConnectionConfig = WebRTCConnectionConfig;
@@ -64,6 +66,7 @@ export class WebRTCConnection extends BaseConnection {
   private outputDeviceId: string | null = null;
 
   private audioAdapter: WebRTCAudioAdapter | null;
+  private workletPaths: AudioWorkletConfig["workletPaths"];
 
   private inputAnalyser: unknown = undefined;
   private inputVolumeProvider: VolumeProvider = NO_VOLUME;
@@ -216,7 +219,10 @@ export class WebRTCConnection extends BaseConnection {
     conversationId: string,
     inputFormat: FormatConfig,
     outputFormat: FormatConfig,
-    config: { onDebug?: (info: unknown) => void } = {}
+    config: {
+      onDebug?: (info: unknown) => void;
+      workletPaths?: AudioWorkletConfig["workletPaths"];
+    } = {}
   ) {
     super(config);
     this.room = room;
@@ -224,6 +230,7 @@ export class WebRTCConnection extends BaseConnection {
     this.inputFormat = inputFormat;
     this.outputFormat = outputFormat;
     this.audioAdapter = createAudioAdapter();
+    this.workletPaths = config.workletPaths;
 
     this.setupRoomEventListeners();
   }
@@ -598,7 +605,8 @@ export class WebRTCConnection extends BaseConnection {
       const result = await this.audioAdapter.setupOutputAnalysis(
         track,
         this.outputFormat,
-        onAudioData
+        onAudioData,
+        this.workletPaths
       );
 
       this.outputVolumeProvider = result.volumeProvider;

@@ -1,4 +1,5 @@
 import type { RemoteAudioTrack } from "livekit-client";
+import type { AudioWorkletConfig } from "./BaseConversation.js";
 import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { VolumeProvider } from "./utils/volumeProvider.js";
 
@@ -39,11 +40,14 @@ export interface WebRTCAudioAdapter {
   /**
    * Set up output volume analysis and raw audio capture from a remote track.
    * @param onAudioData Called with captured audio data for the `onAudio` callback.
+   * @param workletPaths Optional self-hosted worklet paths, so implementations
+   * that load an AudioWorklet can avoid `blob:`/`data:` URLs under a strict CSP.
    */
   setupOutputAnalysis(
     track: RemoteAudioTrack,
     format: FormatConfig,
-    onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void
+    onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void,
+    workletPaths?: AudioWorkletConfig["workletPaths"]
   ): Promise<AnalysisResult>;
 
   /** Set playback volume (0-1) for all managed audio elements. */

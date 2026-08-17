@@ -64,6 +64,7 @@ import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack } from "livekit-client";
 import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
+import { NO_VOLUME } from "./volumeProvider.js";
 import type { PongEvent } from "./events.js";
 
 describe("WebRTCConnection", () => {
@@ -393,5 +394,76 @@ describe("WebRTCConnection", () => {
     connection.close();
 
     expect(listener).toHaveBeenCalledWith(message);
+  });
+
+  it.each([
+    {
+      name: "forwards configured workletPaths to the audio adapter",
+      workletPaths: { rawAudioProcessor: "/vendor/raw-audio-processor.js" },
+    },
+    {
+      name: "passes undefined to the audio adapter when none are configured",
+      workletPaths: undefined,
+    },
+  ])("$name", async ({ workletPaths }) => {
+    const mockRoom = new Room() as any;
+    const handlers = new Map<string, (...args: any[]) => unknown>();
+
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: (...args: any[]) => unknown) => {
+        handlers.set(event, callback);
+        if (event === "connected") {
+          queueMicrotask(callback as () => void);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const setupOutputAnalysis = vi.fn(() =>
+      Promise.resolve({ volumeProvider: NO_VOLUME })
+    );
+    setWebRTCAudioAdapterFactory(() => ({
+      attachRemoteTrack: vi.fn(() => Promise.resolve()),
+      setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
+      setupOutputAnalysis,
+      setVolume: vi.fn(),
+      setOutputDevice: vi.fn(() => Promise.resolve()),
+      cleanup: vi.fn(),
+    }));
+
+    try {
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        ...(workletPaths ? { workletPaths } : {}),
+      });
+
+      const onTrackSubscribed = handlers.get("trackSubscribed");
+      expect(onTrackSubscribed).toBeDefined();
+
+      await onTrackSubscribed?.(
+        { kind: "audio", mediaStreamTrack: { id: "agent-track" } },
+        {},
+        { identity: "agent-abc" }
+      );
+
+      expect(setupOutputAnalysis).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.any(Function),
+        workletPaths
+      );
+
+      connection.close();
+    } finally {
+      // Restore the default web adapter for any later test in this file.
+      setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+    }
   });
 });
