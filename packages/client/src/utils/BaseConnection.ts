@@ -31,6 +31,14 @@ export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
   livekitUrl?: string;
+  webRtc?: {
+    /**
+     * ICE transport policy for the WebRTC connection. Set to "relay" to only
+     * use TURN relay candidates, e.g. on networks that drop direct UDP flows.
+     * Defaults to "all".
+     */
+    iceTransportPolicy?: "all" | "relay";
+  };
   overrides?: {
     agent?: {
       prompt?: ConversationConfigOverrideAgentPrompt;
