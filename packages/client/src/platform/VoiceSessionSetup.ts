@@ -56,7 +56,7 @@ function isReactNativeEnvironment(): boolean {
  * registers its own strategy — pointing at the browser entry point there would
  * be actively wrong.
  */
-export function requireSetupStrategy(): VoiceSessionSetupStrategy {
+export function ensureSetupStrategy(): VoiceSessionSetupStrategy {
   if (setupStrategy) {
     return setupStrategy;
   }

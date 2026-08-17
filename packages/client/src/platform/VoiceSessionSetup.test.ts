@@ -76,58 +76,58 @@ describe("setupWebRTCSession", () => {
   });
 });
 
-describe("requireSetupStrategy", () => {
+describe("ensureSetupStrategy", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it("returns the registered strategy", async () => {
-    const { requireSetupStrategy, setSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy, setSetupStrategy } = await freshModule();
     const strategy = vi.fn();
     setSetupStrategy(strategy);
 
-    expect(requireSetupStrategy()).toBe(strategy);
+    expect(ensureSetupStrategy()).toBe(strategy);
   });
 
   it("points a browser user at the platform entry point", async () => {
-    const { requireSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy } = await freshModule();
 
-    expect(() => requireSetupStrategy()).toThrow(
+    expect(() => ensureSetupStrategy()).toThrow(
       'Import the platform-specific entry point (e.g. @elevenlabs/client via the "browser" export).'
     );
   });
 
   it("points a React Native user at @elevenlabs/react-native", async () => {
     vi.stubGlobal("navigator", { product: "ReactNative" });
-    const { requireSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy } = await freshModule();
 
-    expect(() => requireSetupStrategy()).toThrow(
+    expect(() => ensureSetupStrategy()).toThrow(
       "@elevenlabs/client in React Native without importing @elevenlabs/react-native"
     );
   });
 
   it("detects React Native via the Hermes global too", async () => {
     vi.stubGlobal("HermesInternal", {});
-    const { requireSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy } = await freshModule();
 
-    expect(() => requireSetupStrategy()).toThrow(
+    expect(() => ensureSetupStrategy()).toThrow(
       "@elevenlabs/client in React Native without importing @elevenlabs/react-native"
     );
   });
 
   it("does not mention React Native in a browser-like environment", async () => {
     vi.stubGlobal("navigator", { product: "Gecko" });
-    const { requireSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy } = await freshModule();
 
-    expect(() => requireSetupStrategy()).not.toThrow("React Native");
+    expect(() => ensureSetupStrategy()).not.toThrow("React Native");
   });
 
   it("never throws the browser message once a strategy is registered in React Native", async () => {
     vi.stubGlobal("navigator", { product: "ReactNative" });
-    const { requireSetupStrategy, setSetupStrategy } = await freshModule();
+    const { ensureSetupStrategy, setSetupStrategy } = await freshModule();
     const strategy = vi.fn();
     setSetupStrategy(strategy);
 
-    expect(requireSetupStrategy()).toBe(strategy);
+    expect(ensureSetupStrategy()).toBe(strategy);
   });
 });

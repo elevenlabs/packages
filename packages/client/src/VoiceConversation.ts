@@ -13,7 +13,7 @@ import {
 } from "./BaseConversation.js";
 import type { InputController } from "./InputController.js";
 import type { OutputController } from "./OutputController.js";
-import { requireSetupStrategy } from "./platform/VoiceSessionSetup.js";
+import { ensureSetupStrategy } from "./platform/VoiceSessionSetup.js";
 import type { VoiceSessionSetupResult } from "./platform/VoiceSessionSetup.js";
 
 export class VoiceConversation extends BaseConversation {
@@ -37,7 +37,7 @@ export class VoiceConversation extends BaseConversation {
     try {
       // Platform-specific strategy handles wake lock, mic permission,
       // delay, connection creation, and input/output setup.
-      sessionSetup = await requireSetupStrategy()(fullOptions);
+      sessionSetup = await ensureSetupStrategy()(fullOptions);
 
       conversation = new VoiceConversation(
         fullOptions,
