@@ -33,16 +33,29 @@ export type ScribeStatus =
   | "transcribing"
   | "error";
 
+export interface WordTimestampCharacter {
+  /** The character that was transcribed */
+  text: string;
+  /** Start time in seconds */
+  start?: number;
+  /** End time in seconds */
+  end?: number;
+}
+
 export interface WordTimestamp {
+  /** The word or sound that was transcribed */
   text?: string;
   /** Start time in seconds */
   start?: number;
   /** End time in seconds */
   end?: number;
-  type?: "word" | "spacing";
+  /** `"audio_event"` covers non-word sounds such as laughter or footsteps */
+  type?: "word" | "spacing" | "audio_event";
   speaker_id?: string;
   logprob?: number;
-  characters?: string[];
+  characters?: WordTimestampCharacter[];
+  /** The channel this word was spoken on (for multichannel audio). Undefined for single-channel transcriptions. */
+  channel_index?: number;
 }
 
 export interface TranscriptSegment {

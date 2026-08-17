@@ -43,8 +43,11 @@ channels:
           # Server -> Client messages
           - $ref: "#/components/messages/SessionStarted"
           - $ref: "#/components/messages/PartialTranscript"
+          - $ref: "#/components/messages/FinalTranscript"
+          - $ref: "#/components/messages/FinalTranscriptWithTimestamps"
           - $ref: "#/components/messages/CommittedTranscript"
           - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
+          - $ref: "#/components/messages/CommittedTranscriptEntities"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
           - $ref: "#/components/messages/QuotaExceededError"
@@ -53,6 +56,7 @@ channels:
           - $ref: "#/components/messages/UnacceptedTermsError"
           - $ref: "#/components/messages/RateLimitedError"
           - $ref: "#/components/messages/InputError"
+          - $ref: "#/components/messages/InvalidRequestError"
           - $ref: "#/components/messages/QueueOverflowError"
           - $ref: "#/components/messages/ResourceExhaustedError"
           - $ref: "#/components/messages/SessionTimeLimitExceededError"
@@ -95,6 +99,22 @@ components:
       payload:
         $ref: "#/components/schemas/PartialTranscriptPayload"
 
+    FinalTranscript:
+      name: FinalTranscriptMessage
+      title: Final Transcript
+      summary: A final transcript for a segment, sent once speech has settled but before the segment is committed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FinalTranscriptPayload"
+
+    FinalTranscriptWithTimestamps:
+      name: FinalTranscriptWithTimestampsMessage
+      title: Final Transcript with Timestamps
+      summary: A delayed final transcript with word-level timestamps and/or the detected language. Only sent when includeTimestamps or includeLanguageDetection is enabled.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FinalTranscriptWithTimestampsPayload"
+
     CommittedTranscript:
       name: CommittedTranscriptMessage
       title: Committed Transcript
@@ -110,6 +130,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CommittedTranscriptWithTimestampsPayload"
+
+    CommittedTranscriptEntities:
+      name: CommittedTranscriptEntitiesMessage
+      title: Committed Transcript Entities
+      summary: Entities detected in a committed transcript. Only sent when the entityDetection option is set.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CommittedTranscriptEntitiesPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -175,6 +203,14 @@ components:
       payload:
         $ref: "#/components/schemas/ScribeInputErrorPayload"
 
+    InvalidRequestError:
+      name: ScribeInvalidRequestErrorMessage
+      title: Scribe Invalid Request Error
+      summary: The connection parameters were rejected. The server accepts the socket, sends this error, then closes the session.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ScribeInvalidRequestErrorPayload"
+
     QueueOverflowError:
       name: ScribeQueueOverflowErrorMessage
       title: Scribe Queue Overflow Error
@@ -221,10 +257,14 @@ components:
       enum:
         - session_started
         - partial_transcript
+        - final_transcript
+        - final_transcript_with_timestamps
         - committed_transcript
         - committed_transcript_with_timestamps
+        - committed_transcript_entities
         - error
         - auth_error
+        - invalid_request
         - input_audio_chunk
       description: Types of messages that can be exchanged
 
@@ -247,37 +287,88 @@ components:
         - vad
       description: Strategy for committing transcriptions
 
+    # This shape is shared verbatim by CommittedTranscriptWithTimestamps and
+    # FinalTranscriptWithTimestamps: the live contract (fetched from
+    # https://api.elevenlabs.io/speech-to-text-asyncapi.yml) uses the exact
+    # same word schema for both, including "audio_event", structured
+    # characters, and channel_index.
     Word:
       type: object
-      description: Word-level transcription data with timing information
+      title: Word
+      description: |
+        Word-level detail of the transcription with timing information.
+        "audio_event" is used for non-word sounds like laughter or footsteps.
+      required: [text, type, logprob]
       properties:
         text:
           type: string
-          description: The transcribed word
+          description: The word or sound that was transcribed
+        start:
+          type: number
+          description: The start time of the word or sound in seconds
+        end:
+          type: number
+          description: The end time of the word or sound in seconds
+        type:
+          type: string
+          title: WordType
+          description: The type of the word or sound
+          enum:
+            - word
+            - spacing
+            - audio_event
+        speaker_id:
+          type: string
+          description: Unique identifier for the speaker of this word
+        logprob:
+          type: number
+          description: |
+            The log of the probability with which this word was predicted.
+            Logprobs are in range [-infinity, 0], higher logprobs indicate a
+            higher confidence the model has in its predictions.
+        characters:
+          type: array
+          description: The characters that make up the word and their timing information
+          items:
+            $ref: "#/components/schemas/TranscriptCharacter"
+        channel_index:
+          type: integer
+          description: The channel this word was spoken on (for multichannel audio). Null for single-channel transcriptions.
+
+    TranscriptCharacter:
+      type: object
+      title: TranscriptCharacter
+      description: A character within a word, with its own timing
+      required: [text]
+      properties:
+        text:
+          type: string
+          description: The character that was transcribed
         start:
           type: number
           description: Start time in seconds
         end:
           type: number
           description: End time in seconds
-        type:
+
+    DetectedEntity:
+      type: object
+      title: DetectedEntity
+      description: An entity detected within a committed transcript
+      required: [text, entity_type, start_char, end_char]
+      properties:
+        text:
           type: string
-          description: The type of word
-          enum:
-            - word
-            - spacing
-        speaker_id:
+          description: The text that was identified as an entity
+        entity_type:
           type: string
-          description: The ID of the speaker (if available)
-        logprob:
-          type: number
-          description: Confidence score for this word
-        characters:
-          type: array
-          description: The characters in the word
-          items:
-            type: string
-            description: The character
+          description: The type of entity detected (e.g. 'credit_card', 'email_address', 'person_name')
+        start_char:
+          type: integer
+          description: Start character position in the transcript text
+        end_char:
+          type: integer
+          description: End character position in the transcript text
 
     # ===== CLIENT MESSAGE PAYLOADS =====
 
@@ -326,6 +417,18 @@ components:
             language_code:
               type: string
               description: Language code in ISO 639-1 or ISO 639-3 format
+            secondary_languages:
+              type: array
+              items:
+                type: string
+              description: Additional language codes that may be present in the audio
+            timestamps_granularity:
+              type: string
+              enum:
+                - none
+                - word
+                - character
+              description: Granularity of timestamps included in delayed final/committed transcripts.
             vad_commit_strategy:
               type: string
               enum:
@@ -344,12 +447,18 @@ components:
             min_silence_duration_ms:
               type: integer
               description: Minimum silence duration in milliseconds
+            max_tokens_to_recompute:
+              type: integer
+              description: Maximum number of tokens to recompute when finalizing a delayed transcript.
             model_id:
               type: string
               description: ID of the model to use for transcription
             enable_logging:
               type: boolean
               description: Whether the session may be logged. When false, zero retention mode is used and history features are unavailable for the session.
+            include_language_detection:
+              type: boolean
+              description: Whether the session includes language detection in the delayed final transcript.
             keyterms:
               type: array
               items:
@@ -358,6 +467,14 @@ components:
             no_verbatim:
               type: boolean
               description: Whether filler words and disfluencies are removed from the transcript.
+            entity_detection:
+              type: array
+              items:
+                type: string
+              description: Entity categories or types the session detects on committed transcripts.
+            filter_background_audio:
+              type: boolean
+              description: Whether background speech filtering is enabled to reduce false activations from nearby conversations and ambient noise.
 
     PartialTranscriptPayload:
       type: object
@@ -369,6 +486,38 @@ components:
         text:
           type: string
           description: Partial transcription text
+
+    FinalTranscriptPayload:
+      type: object
+      required: [message_type, text]
+      properties:
+        message_type:
+          type: string
+          const: final_transcript
+        text:
+          type: string
+          description: Final transcription text for the segment. Unlike a partial transcript this will not change, but the segment is not yet committed.
+
+    FinalTranscriptWithTimestampsPayload:
+      type: object
+      required: [message_type, text]
+      properties:
+        message_type:
+          type: string
+          const: final_transcript_with_timestamps
+        text:
+          type: string
+          description: Final transcription text
+        language_code:
+          type: string
+          nullable: true
+          description: Detected or specified language code
+        words:
+          type: array
+          nullable: true
+          description: Word-level information with timestamps
+          items:
+            $ref: "#/components/schemas/Word"
 
     CommittedTranscriptPayload:
       type: object
@@ -402,6 +551,22 @@ components:
           items:
             $ref: "#/components/schemas/Word"
 
+    CommittedTranscriptEntitiesPayload:
+      type: object
+      required: [message_type, text, entities]
+      properties:
+        message_type:
+          type: string
+          const: committed_transcript_entities
+        text:
+          type: string
+          description: The committed transcript text the entities were detected in
+        entities:
+          type: array
+          description: Detected entities. Empty when none were found.
+          items:
+            $ref: "#/components/schemas/DetectedEntity"
+
     # Base error structure - used as anchor for all error payloads
     ScribeErrorBase: &ScribeErrorBase
       type: object
@@ -427,6 +592,7 @@ components:
             - unaccepted_terms
             - rate_limited
             - input_error
+            - invalid_request
             - queue_overflow
             - resource_exhausted
             - session_time_limit_exceeded
@@ -497,6 +663,15 @@ components:
         message_type:
           type: string
           const: input_error
+        error:
+          type: string
+
+    ScribeInvalidRequestErrorPayload:
+      <<: *ScribeErrorBase
+      properties:
+        message_type:
+          type: string
+          const: invalid_request
         error:
           type: string
 

@@ -224,6 +224,125 @@ describe("Scribe", () => {
       }).toThrow("minSilenceDurationMs must be between 50 and 2000");
     });
 
+    it.each([
+      ["vadSilenceThresholdSecs", 0.3, 3.0],
+      ["vadThreshold", 0.1, 0.9],
+      ["minSpeechDurationMs", 50, 2000],
+      ["minSilenceDurationMs", 50, 2000],
+    ])("treats the %s bounds as inclusive", (option, min, max) => {
+      const server = new Server(SCRIBE_WS_URL);
+
+      expect(() => {
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+          [option]: min,
+        });
+        connection.close();
+      }).not.toThrow();
+
+      expect(() => {
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+          [option]: max,
+        });
+        connection.close();
+      }).not.toThrow();
+
+      server.close();
+    });
+
+    it("builds URI with secondaryLanguages as repeated query params", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        secondaryLanguages: ["nl", "de"],
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).getAll("secondary_languages")).toEqual(["nl", "de"]);
+    });
+
+    it("builds URI with a single entityDetection value", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityDetection: "all",
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).getAll("entity_detection")).toEqual(["all"]);
+    });
+
+    it("builds URI with entityDetection as repeated query params for a list", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityDetection: ["pii", "email_address"],
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).getAll("entity_detection")).toEqual([
+        "pii",
+        "email_address",
+      ]);
+    });
+
+    it.each([
+      { filterBackgroundAudio: false, expected: "false" },
+      { filterBackgroundAudio: true, expected: "true" },
+    ])(
+      "builds URI with filter_background_audio=$expected when filterBackgroundAudio is $filterBackgroundAudio",
+      async ({ filterBackgroundAudio, expected }) => {
+        const query = connectionQuery();
+
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+          filterBackgroundAudio,
+        });
+        onTestFinished(() => connection.close());
+
+        expect((await query).get("filter_background_audio")).toBe(expected);
+      }
+    );
+
+    it("omits filter_background_audio and secondary_languages when not specified", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+      onTestFinished(() => connection.close());
+
+      const resolved = await query;
+      expect(resolved.has("filter_background_audio")).toBe(false);
+      expect(resolved.has("secondary_languages")).toBe(false);
+      expect(resolved.has("entity_detection")).toBe(false);
+    });
+
     it("builds URI with keyterms as repeated query params", () => {
       const server = new Server(
         "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123&keyterms=ElevenLabs&keyterms=Scribe"
@@ -469,6 +588,192 @@ describe("Scribe", () => {
         message_type: "committed_transcript",
         transcript: COMMITTED_TRANSCRIPT_TEXT,
       });
+
+      connection.close();
+      server.close();
+    });
+
+    it("handles final_transcript event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onFinalTranscript = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      connection.on(RealtimeEvents.FINAL_TRANSCRIPT, onFinalTranscript);
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      client.send(
+        JSON.stringify({
+          message_type: "final_transcript",
+          text: "Hello world",
+        })
+      );
+
+      await sleep(100);
+      expect(onFinalTranscript).toHaveBeenCalledTimes(1);
+      expect(onFinalTranscript).toHaveBeenCalledWith({
+        message_type: "final_transcript",
+        text: "Hello world",
+      });
+
+      connection.close();
+      server.close();
+    });
+
+    it("handles final_transcript_with_timestamps event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onFinalTranscriptWithTimestamps = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      connection.on(
+        RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS,
+        onFinalTranscriptWithTimestamps
+      );
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      const payload = {
+        message_type: "final_transcript_with_timestamps",
+        text: "Hello world",
+        language_code: "en",
+        words: [
+          { text: "Hello", start: 0, end: 0.5, type: "word" },
+          {
+            text: "[laughter]",
+            start: 0.5,
+            end: 1,
+            type: "audio_event",
+            channel_index: 0,
+          },
+        ],
+      };
+      client.send(JSON.stringify(payload));
+
+      await sleep(100);
+      expect(onFinalTranscriptWithTimestamps).toHaveBeenCalledTimes(1);
+      expect(onFinalTranscriptWithTimestamps).toHaveBeenCalledWith(payload);
+
+      connection.close();
+      server.close();
+    });
+
+    it("handles committed_transcript_entities event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onCommittedTranscriptEntities = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityDetection: "all",
+      });
+
+      connection.on(
+        RealtimeEvents.COMMITTED_TRANSCRIPT_ENTITIES,
+        onCommittedTranscriptEntities
+      );
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      const payload = {
+        message_type: "committed_transcript_entities",
+        text: "Call me at 555-123-4567",
+        entities: [
+          {
+            text: "555-123-4567",
+            entity_type: "phone_number",
+            start_char: 11,
+            end_char: 23,
+          },
+        ],
+      };
+      client.send(JSON.stringify(payload));
+
+      await sleep(100);
+      expect(onCommittedTranscriptEntities).toHaveBeenCalledTimes(1);
+      expect(onCommittedTranscriptEntities).toHaveBeenCalledWith(payload);
+
+      connection.close();
+      server.close();
+    });
+
+    it("routes invalid_request to both its listener and the generic error event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onInvalidRequest = vi.fn();
+      const onError = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+
+      connection.on(RealtimeEvents.INVALID_REQUEST, onInvalidRequest);
+      connection.on(RealtimeEvents.ERROR, onError);
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      const payload = {
+        message_type: "invalid_request",
+        error: "Number of keyterms cannot exceed 50. You provided 51 keyterms.",
+      };
+      client.send(JSON.stringify(payload));
+
+      await sleep(100);
+      expect(onInvalidRequest).toHaveBeenCalledTimes(1);
+      expect(onInvalidRequest).toHaveBeenCalledWith(payload);
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith(payload);
 
       connection.close();
       server.close();

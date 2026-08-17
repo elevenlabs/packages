@@ -16,6 +16,7 @@ export type {
   ScribeStatus,
   TranscriptSegment,
   WordTimestamp,
+  WordTimestampCharacter,
   ScribeCallbacks,
   ScribeHookOptions,
   UseScribeReturn,

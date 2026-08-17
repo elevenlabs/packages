@@ -797,15 +797,21 @@ export interface Config {
   sample_rate?: number;
   audio_format?: ConfigAudioFormat;
   language_code?: string;
+  secondary_languages?: string[];
+  timestamps_granularity?: ConfigTimestampsGranularity;
   vad_commit_strategy?: ConfigVadCommitStrategy;
   vad_silence_threshold_secs?: number;
   vad_threshold?: number;
   min_speech_duration_ms?: number;
   min_silence_duration_ms?: number;
+  max_tokens_to_recompute?: number;
   model_id?: string;
   enable_logging?: boolean;
+  include_language_detection?: boolean;
   keyterms?: string[];
   no_verbatim?: boolean;
+  entity_detection?: string[];
+  filter_background_audio?: boolean;
 }
 
 export type ConfigAudioFormat =
@@ -817,11 +823,44 @@ export type ConfigAudioFormat =
   | "pcm_48000"
   | "ulaw_8000";
 
+export type ConfigTimestampsGranularity = "none" | "word" | "character";
+
 export type ConfigVadCommitStrategy = "manual" | "vad";
 
 export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
+}
+
+export interface FinalTranscript {
+  message_type: "final_transcript";
+  text: string;
+}
+
+export interface FinalTranscriptWithTimestamps {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  words?: Word[];
+}
+
+export interface Word {
+  text: string;
+  start?: number;
+  end?: number;
+  type: WordType;
+  speaker_id?: string;
+  logprob: number;
+  characters?: TranscriptCharacter[];
+  channel_index?: number;
+}
+
+export type WordType = "word" | "spacing" | "audio_event";
+
+export interface TranscriptCharacter {
+  text: string;
+  start?: number;
+  end?: number;
 }
 
 export interface CommittedTranscript {
@@ -833,20 +872,21 @@ export interface CommittedTranscriptWithTimestamps {
   message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: WordsItem[];
+  words?: Word[];
 }
 
-export interface WordsItem {
-  text?: string;
-  start?: number;
-  end?: number;
-  type?: WordsItemType;
-  speaker_id?: string;
-  logprob?: number;
-  characters?: string[];
+export interface CommittedTranscriptEntities {
+  message_type: "committed_transcript_entities";
+  text: string;
+  entities: DetectedEntity[];
 }
 
-export type WordsItemType = "word" | "spacing";
+export interface DetectedEntity {
+  text: string;
+  entity_type: string;
+  start_char: number;
+  end_char: number;
+}
 
 export interface Error {
   message_type: MessageType;
@@ -862,6 +902,7 @@ export type MessageType =
   | "unaccepted_terms"
   | "rate_limited"
   | "input_error"
+  | "invalid_request"
   | "queue_overflow"
   | "resource_exhausted"
   | "session_time_limit_exceeded"
@@ -903,6 +944,11 @@ export interface InputError {
   error: string;
 }
 
+export interface InvalidRequestError {
+  message_type: "invalid_request";
+  error: string;
+}
+
 export interface QueueOverflowError {
   message_type: "queue_overflow";
   error: string;
@@ -939,6 +985,18 @@ export interface PartialTranscriptMessage {
   text: string;
 }
 
+export interface FinalTranscriptMessage {
+  message_type: "final_transcript";
+  text: string;
+}
+
+export interface FinalTranscriptWithTimestampsMessage {
+  message_type: "final_transcript_with_timestamps";
+  text: string;
+  language_code?: string;
+  words?: Word[];
+}
+
 export interface CommittedTranscriptMessage {
   message_type: "committed_transcript";
   text: string;
@@ -948,7 +1006,13 @@ export interface CommittedTranscriptWithTimestampsMessage {
   message_type: "committed_transcript_with_timestamps";
   text: string;
   language_code?: string;
-  words?: WordsItem[];
+  words?: Word[];
+}
+
+export interface CommittedTranscriptEntitiesMessage {
+  message_type: "committed_transcript_entities";
+  text: string;
+  entities: DetectedEntity[];
 }
 
 export interface ScribeErrorMessage {
@@ -988,6 +1052,11 @@ export interface ScribeRateLimitedErrorMessage {
 
 export interface ScribeInputErrorMessage {
   message_type: "input_error";
+  error: string;
+}
+
+export interface ScribeInvalidRequestErrorMessage {
+  message_type: "invalid_request";
   error: string;
 }
 

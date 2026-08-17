@@ -2,8 +2,15 @@ import type {
   InputAudioChunk,
   SessionStartedMessage,
   PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  Word,
+  WordType,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  CommittedTranscriptEntitiesMessage,
+  DetectedEntity,
+  TranscriptCharacter,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -12,6 +19,7 @@ import type {
   ScribeUnacceptedTermsErrorMessage,
   ScribeRateLimitedErrorMessage,
   ScribeInputErrorMessage,
+  ScribeInvalidRequestErrorMessage,
   ScribeQueueOverflowErrorMessage,
   ScribeResourceExhaustedErrorMessage,
   ScribeSessionTimeLimitExceededErrorMessage,
@@ -23,8 +31,15 @@ import type {
 export type {
   SessionStartedMessage,
   PartialTranscriptMessage,
+  FinalTranscriptMessage,
+  FinalTranscriptWithTimestampsMessage,
+  Word,
+  WordType,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  CommittedTranscriptEntitiesMessage,
+  DetectedEntity,
+  TranscriptCharacter,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -33,6 +48,7 @@ export type {
   ScribeUnacceptedTermsErrorMessage,
   ScribeRateLimitedErrorMessage,
   ScribeInputErrorMessage,
+  ScribeInvalidRequestErrorMessage,
   ScribeQueueOverflowErrorMessage,
   ScribeResourceExhaustedErrorMessage,
   ScribeSessionTimeLimitExceededErrorMessage,
@@ -43,8 +59,11 @@ export type {
 export type WebSocketMessage =
   | SessionStartedMessage
   | PartialTranscriptMessage
+  | FinalTranscriptMessage
+  | FinalTranscriptWithTimestampsMessage
   | CommittedTranscriptMessage
   | CommittedTranscriptWithTimestampsMessage
+  | CommittedTranscriptEntitiesMessage
   | ScribeErrorMessage
   | ScribeAuthErrorMessage
   | ScribeQuotaExceededErrorMessage
@@ -53,6 +72,7 @@ export type WebSocketMessage =
   | ScribeUnacceptedTermsErrorMessage
   | ScribeRateLimitedErrorMessage
   | ScribeInputErrorMessage
+  | ScribeInvalidRequestErrorMessage
   | ScribeQueueOverflowErrorMessage
   | ScribeResourceExhaustedErrorMessage
   | ScribeSessionTimeLimitExceededErrorMessage
@@ -118,10 +138,16 @@ export enum RealtimeEvents {
   SESSION_STARTED = "session_started",
   /** Emitted when a partial (interim) transcript is available */
   PARTIAL_TRANSCRIPT = "partial_transcript",
+  /** Emitted when a final transcript for a segment is available, before it is committed */
+  FINAL_TRANSCRIPT = "final_transcript",
+  /** Emitted when a delayed final transcript with timestamps and/or detected language is available */
+  FINAL_TRANSCRIPT_WITH_TIMESTAMPS = "final_transcript_with_timestamps",
   /** Emitted when a final transcript is available */
   COMMITTED_TRANSCRIPT = "committed_transcript",
   /** Emitted when a final transcript with timestamps is available */
   COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS = "committed_transcript_with_timestamps",
+  /** Emitted when entities detected in a committed transcript are available */
+  COMMITTED_TRANSCRIPT_ENTITIES = "committed_transcript_entities",
   /** Emitted when an authentication error occurs */
   AUTH_ERROR = "auth_error",
   /** Emitted when an error occurs (also emitted for all specific error types) */
@@ -142,6 +168,8 @@ export enum RealtimeEvents {
   RATE_LIMITED = "rate_limited",
   /** Emitted when there's an input error */
   INPUT_ERROR = "input_error",
+  /** Emitted when the connection parameters were rejected by the server */
+  INVALID_REQUEST = "invalid_request",
   /** Emitted when the queue overflows */
   QUEUE_OVERFLOW = "queue_overflow",
   /** Emitted when resources are exhausted */
@@ -160,8 +188,11 @@ export enum RealtimeEvents {
 export interface RealtimeEventMap {
   [RealtimeEvents.SESSION_STARTED]: SessionStartedMessage;
   [RealtimeEvents.PARTIAL_TRANSCRIPT]: PartialTranscriptMessage;
+  [RealtimeEvents.FINAL_TRANSCRIPT]: FinalTranscriptMessage;
+  [RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS]: FinalTranscriptWithTimestampsMessage;
   [RealtimeEvents.COMMITTED_TRANSCRIPT]: CommittedTranscriptMessage;
   [RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS]: CommittedTranscriptWithTimestampsMessage;
+  [RealtimeEvents.COMMITTED_TRANSCRIPT_ENTITIES]: CommittedTranscriptEntitiesMessage;
   [RealtimeEvents.ERROR]: ScribeErrorMessage;
   [RealtimeEvents.AUTH_ERROR]: ScribeAuthErrorMessage;
   [RealtimeEvents.QUOTA_EXCEEDED]: ScribeQuotaExceededErrorMessage;
@@ -170,6 +201,7 @@ export interface RealtimeEventMap {
   [RealtimeEvents.UNACCEPTED_TERMS]: ScribeUnacceptedTermsErrorMessage;
   [RealtimeEvents.RATE_LIMITED]: ScribeRateLimitedErrorMessage;
   [RealtimeEvents.INPUT_ERROR]: ScribeInputErrorMessage;
+  [RealtimeEvents.INVALID_REQUEST]: ScribeInvalidRequestErrorMessage;
   [RealtimeEvents.QUEUE_OVERFLOW]: ScribeQueueOverflowErrorMessage;
   [RealtimeEvents.RESOURCE_EXHAUSTED]: ScribeResourceExhaustedErrorMessage;
   [RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED]: ScribeSessionTimeLimitExceededErrorMessage;
@@ -314,12 +346,27 @@ export class RealtimeConnection {
           case "partial_transcript":
             this.eventEmitter.emit(RealtimeEvents.PARTIAL_TRANSCRIPT, data);
             break;
+          case "final_transcript":
+            this.eventEmitter.emit(RealtimeEvents.FINAL_TRANSCRIPT, data);
+            break;
+          case "final_transcript_with_timestamps":
+            this.eventEmitter.emit(
+              RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS,
+              data
+            );
+            break;
           case "committed_transcript":
             this.eventEmitter.emit(RealtimeEvents.COMMITTED_TRANSCRIPT, data);
             break;
           case "committed_transcript_with_timestamps":
             this.eventEmitter.emit(
               RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
+              data
+            );
+            break;
+          case "committed_transcript_entities":
+            this.eventEmitter.emit(
+              RealtimeEvents.COMMITTED_TRANSCRIPT_ENTITIES,
               data
             );
             break;
@@ -350,6 +397,10 @@ export class RealtimeConnection {
             break;
           case "input_error":
             this.eventEmitter.emit(RealtimeEvents.INPUT_ERROR, data);
+            this.eventEmitter.emit(RealtimeEvents.ERROR, data);
+            break;
+          case "invalid_request":
+            this.eventEmitter.emit(RealtimeEvents.INVALID_REQUEST, data);
             this.eventEmitter.emit(RealtimeEvents.ERROR, data);
             break;
           case "queue_overflow":
