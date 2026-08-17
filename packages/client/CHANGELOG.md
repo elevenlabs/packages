@@ -1,5 +1,13 @@
 # @elevenlabs/client
 
+## 1.19.1
+
+### Patch Changes
+
+- a82a0c5: Point React Native users at `@elevenlabs/react-native` when no voice session setup strategy is registered, instead of suggesting the browser entry point.
+- 118fd04: Pass `workletPaths` through on the WebRTC connection path, so self-hosted AudioWorklet files are used for output capture instead of falling back to `blob:`/`data:` URLs under a strict CSP.
+- f4c5588: Key the worklet module cache by the requested source as well as the worklet name, so a self-hosted `workletPaths` entry is no longer served an inlined `blob:` URL cached by an earlier load.
+
 ## 1.19.0
 
 ### Minor Changes
