@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.20.0
+
+### Minor Changes
+
+- d73eca4: Add an optional `webRtc.iceTransportPolicy` session option for WebRTC connections. Set to `"relay"` to restrict ICE to TURN relay candidates, for networks that drop direct UDP flows, without patching the global `RTCPeerConnection`.
+
 ## 1.19.1
 
 ### Patch Changes
