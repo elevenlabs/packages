@@ -1,8 +1,17 @@
 const URLCache = new Map<string, string>();
 
+// The cache has to distinguish "the caller asked for this specific path" from
+// "the caller asked us to inline the source", and one self-hosted path from
+// another. Keying on the name alone lets whichever call happens to land first
+// answer every later call, whatever it asked for.
+function cacheKey(name: string, path?: string) {
+  return path ? `${name} ${path}` : name;
+}
+
 export function createWorkletModuleLoader(name: string, sourceCode: string) {
   return async (worklet: AudioWorklet, path?: string) => {
-    const cachedUrl = URLCache.get(name);
+    const key = cacheKey(name, path);
+    const cachedUrl = URLCache.get(key);
     if (cachedUrl) {
       return worklet.addModule(cachedUrl);
     }
@@ -11,7 +20,7 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
     if (path) {
       try {
         await worklet.addModule(path);
-        URLCache.set(name, path);
+        URLCache.set(key, path);
         return;
       } catch (error) {
         throw new Error(
@@ -24,7 +33,7 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
     const blobURL = URL.createObjectURL(blob);
     try {
       await worklet.addModule(blobURL);
-      URLCache.set(name, blobURL);
+      URLCache.set(key, blobURL);
       return;
     } catch {
       URL.revokeObjectURL(blobURL);
@@ -37,7 +46,7 @@ export function createWorkletModuleLoader(name: string, sourceCode: string) {
       const base64 = btoa(sourceCode);
       const moduleURL = `data:application/javascript;base64,${base64}`;
       await worklet.addModule(moduleURL);
-      URLCache.set(name, moduleURL);
+      URLCache.set(key, moduleURL);
     } catch (error) {
       throw new Error(
         `Failed to load the ${name} worklet module. Make sure the browser supports AudioWorklets. If you are using a strict CSP, you may need to self-host the worklet files.`
