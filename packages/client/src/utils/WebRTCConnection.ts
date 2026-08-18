@@ -96,18 +96,11 @@ export class WebRTCConnection extends BaseConnection {
       }
     },
     setDevice: async (config?: Partial<FormatConfig> & InputDeviceConfig) => {
-      // WebRTC only supports changing inputDeviceId
-      // sampleRate, format, and preferHeadphonesForIosDevices are not supported
-      if (
-        config?.sampleRate !== undefined ||
-        config?.format !== undefined ||
-        config?.preferHeadphonesForIosDevices !== undefined
-      ) {
-        throw new Error(
-          "WebRTC input device does not support sampleRate, format, or preferHeadphonesForIosDevices options"
-        );
-      }
-
+      // WebRTC only supports changing inputDeviceId. sampleRate, format and
+      // preferHeadphonesForIosDevices are ignored, matching the WebSocket
+      // input path, which ignores them because they cannot be applied to an
+      // already-running AudioContext. Throwing here instead would make the two
+      // connection types non-interchangeable behind InputController.
       const inputDeviceId = config?.inputDeviceId;
       if (!inputDeviceId) {
         // No device ID specified - this is a no-op for WebRTC
@@ -183,14 +176,9 @@ export class WebRTCConnection extends BaseConnection {
       // Audio elements are cleaned up when the connection closes
     },
     setDevice: async (config?: Partial<FormatConfig> & OutputDeviceConfig) => {
-      // WebRTC only supports changing outputDeviceId
-      // sampleRate and format are not supported
-      if (config?.sampleRate !== undefined || config?.format !== undefined) {
-        throw new Error(
-          "WebRTC output device does not support sampleRate or format options"
-        );
-      }
-
+      // WebRTC only supports changing outputDeviceId. sampleRate and format are
+      // ignored, matching the WebSocket output path — see the input controller
+      // above for why this ignores rather than throws.
       const outputDeviceId = config?.outputDeviceId;
       if (!outputDeviceId) {
         // No device ID specified - this is a no-op for WebRTC
