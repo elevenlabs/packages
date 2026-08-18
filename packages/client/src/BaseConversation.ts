@@ -406,6 +406,17 @@ export abstract class BaseConversation {
     const handler = this.options.onMCPToolApprovalRequest;
     if (!handler) return;
 
+    if (this.status === "disconnecting" || this.status === "disconnected") {
+      // Teardown has begun, so a decision could never be sent. Dispatching
+      // would put approval UI on screen for a conversation that is already
+      // gone. Mirrors the status guard in `endSessionWithDetails`.
+      this.onError(
+        `Ignored an approval request for MCP tool call ${toolCall.tool_call_id}, which arrived after the session ended`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      return;
+    }
+
     if (this.mcpApprovals.has(toolCall.tool_call_id)) {
       // Asking again for an id already in the ledger would either race a
       // pending decision or contradict one already sent.

@@ -1126,6 +1126,33 @@ describe("BaseConversation", () => {
       });
     });
 
+    it.each(["disconnecting", "disconnected"] as const)(
+      "does not ask for approval when the session is already %s",
+      async status => {
+        const onError = vi.fn();
+        const onMCPToolApprovalRequest = vi.fn().mockResolvedValue(true);
+        const { conversation, sendMessage } = createWithSpy({
+          onError,
+          onMCPToolApprovalRequest,
+        });
+        conversation.connect();
+        conversation.setStatus(status);
+
+        await conversation.receiveMessage(awaitingApproval("call-1"));
+
+        expect(onMCPToolApprovalRequest).not.toHaveBeenCalled();
+        expect(sendMessage).not.toHaveBeenCalled();
+        expect(onError).toHaveBeenCalledWith(
+          "Ignored an approval request for MCP tool call call-1, which arrived after the session ended",
+          {
+            toolCallId: "call-1",
+            toolName: "search_docs",
+            serviceId: "service-1",
+          }
+        );
+      }
+    );
+
     it("keeps distinct tool calls independent", async () => {
       const { conversation, sendMessage } = createWithSpy({
         onMCPToolApprovalRequest: toolCall =>
