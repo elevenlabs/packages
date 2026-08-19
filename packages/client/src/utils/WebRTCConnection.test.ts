@@ -624,17 +624,74 @@ describe("WebRTCConnection", () => {
       return mockRoom;
     }
 
-    // Options the WebSocket input path silently ignores because they cannot be
-    // applied to an already-running AudioContext. WebRTC used to throw on them,
-    // which meant `changeInputDevice` switched the device on one connection type
-    // and failed outright on the other.
-    const IGNORED_INPUT_OPTIONS = {
-      sampleRate: 16000,
-      format: "pcm",
-      preferHeadphonesForIosDevices: true,
-    } as const;
+    it("rejects a sampleRate change on the input device, even alongside a device id", async () => {
+      mockConnectedRoom();
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
 
-    it("switches the input device when unsupported options are also passed", async () => {
+      await expect(
+        connection.input.setDevice({
+          sampleRate: 16000,
+          inputDeviceId: "mic-2",
+        })
+      ).rejects.toThrow(/sampleRate or format/);
+
+      expect(createLocalAudioTrack).not.toHaveBeenCalled();
+
+      connection.close();
+    });
+
+    it("rejects a format change on the input device", async () => {
+      mockConnectedRoom();
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      await expect(
+        connection.input.setDevice({ format: "ulaw" })
+      ).rejects.toThrow(/sampleRate or format/);
+
+      connection.close();
+    });
+
+    it("switches the input device when the negotiated sampleRate and format are re-passed unchanged", async () => {
+      const mockRoom = mockConnectedRoom();
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockReturnValue(undefined);
+      (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValue({
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+      });
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      // WebRTC always negotiates pcm_48000 (see connectionType: "webrtc"
+      // handling in create()), so re-sending that same pair is not a change
+      // request, and callers do this routinely alongside a device id.
+      await expect(
+        connection.input.setDevice({
+          sampleRate: 48000,
+          format: "pcm",
+          inputDeviceId: "mic-2",
+        })
+      ).resolves.toBeUndefined();
+
+      expect(createLocalAudioTrack).toHaveBeenCalledWith(
+        expect.objectContaining({ deviceId: { exact: "mic-2" } })
+      );
+
+      connection.close();
+    });
+
+    it("switches the input device when only preferHeadphonesForIosDevices is also passed", async () => {
       const mockRoom = mockConnectedRoom();
       (
         mockRoom.localParticipant.getTrackPublication as ReturnType<
@@ -652,7 +709,7 @@ describe("WebRTCConnection", () => {
 
       await expect(
         connection.input.setDevice({
-          ...IGNORED_INPUT_OPTIONS,
+          preferHeadphonesForIosDevices: true,
           inputDeviceId: "mic-2",
         })
       ).resolves.toBeUndefined();
@@ -664,7 +721,7 @@ describe("WebRTCConnection", () => {
       connection.close();
     });
 
-    it("stays a no-op when only unsupported input options are passed", async () => {
+    it("stays a no-op when only preferHeadphonesForIosDevices is passed", async () => {
       mockConnectedRoom();
       const connection = await WebRTCConnection.create({
         conversationToken: "test-token",
@@ -672,7 +729,7 @@ describe("WebRTCConnection", () => {
       });
 
       await expect(
-        connection.input.setDevice({ ...IGNORED_INPUT_OPTIONS })
+        connection.input.setDevice({ preferHeadphonesForIosDevices: true })
       ).resolves.toBeUndefined();
 
       expect(createLocalAudioTrack).not.toHaveBeenCalled();
@@ -680,7 +737,7 @@ describe("WebRTCConnection", () => {
       connection.close();
     });
 
-    it("switches the output device when unsupported options are also passed", async () => {
+    it("rejects a sampleRate or format change on the output device, even alongside a device id", async () => {
       mockConnectedRoom();
       const setOutputDevice = vi.fn(() => Promise.resolve());
       setWebRTCAudioAdapterFactory(() => ({
@@ -706,9 +763,9 @@ describe("WebRTCConnection", () => {
             format: "pcm",
             outputDeviceId: "speaker-2",
           })
-        ).resolves.toBeUndefined();
+        ).rejects.toThrow(/sampleRate or format/);
 
-        expect(setOutputDevice).toHaveBeenCalledWith("speaker-2");
+        expect(setOutputDevice).not.toHaveBeenCalled();
 
         connection.close();
       } finally {
@@ -716,7 +773,7 @@ describe("WebRTCConnection", () => {
       }
     });
 
-    it("stays a no-op when only unsupported output options are passed", async () => {
+    it("switches the output device when the negotiated sampleRate and format are re-passed unchanged", async () => {
       mockConnectedRoom();
       const setOutputDevice = vi.fn(() => Promise.resolve());
       setWebRTCAudioAdapterFactory(() => ({
@@ -737,10 +794,14 @@ describe("WebRTCConnection", () => {
         });
 
         await expect(
-          connection.output.setDevice({ sampleRate: 16000, format: "pcm" })
+          connection.output.setDevice({
+            sampleRate: 48000,
+            format: "pcm",
+            outputDeviceId: "speaker-2",
+          })
         ).resolves.toBeUndefined();
 
-        expect(setOutputDevice).not.toHaveBeenCalled();
+        expect(setOutputDevice).toHaveBeenCalledWith("speaker-2");
 
         connection.close();
       } finally {

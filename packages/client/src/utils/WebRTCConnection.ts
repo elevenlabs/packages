@@ -96,11 +96,25 @@ export class WebRTCConnection extends BaseConnection {
       }
     },
     setDevice: async (config?: Partial<FormatConfig> & InputDeviceConfig) => {
-      // WebRTC only supports changing inputDeviceId. sampleRate, format and
-      // preferHeadphonesForIosDevices are ignored, matching the WebSocket
-      // input path, which ignores them because they cannot be applied to an
-      // already-running AudioContext. Throwing here instead would make the two
-      // connection types non-interchangeable behind InputController.
+      // sampleRate and format cannot be applied to an in-progress WebRTC or
+      // WebSocket input, on top of an inputDeviceId change or on their own, so
+      // both paths reject a value other than the one already negotiated
+      // rather than silently keeping the old format. Re-passing that same
+      // value back, which callers routinely do alongside an inputDeviceId
+      // change, stays a no-op — see the WebSocket input path for why. This is
+      // the one intentional asymmetry with preferHeadphonesForIosDevices,
+      // which stays a best-effort hint the caller cannot rely on either way.
+      if (
+        (config?.sampleRate !== undefined &&
+          config.sampleRate !== this.inputFormat.sampleRate) ||
+        (config?.format !== undefined &&
+          config.format !== this.inputFormat.format)
+      ) {
+        throw new Error(
+          "WebRTC input device does not support changing sampleRate or format after the connection is created"
+        );
+      }
+
       const inputDeviceId = config?.inputDeviceId;
       if (!inputDeviceId) {
         // No device ID specified - this is a no-op for WebRTC
@@ -176,9 +190,20 @@ export class WebRTCConnection extends BaseConnection {
       // Audio elements are cleaned up when the connection closes
     },
     setDevice: async (config?: Partial<FormatConfig> & OutputDeviceConfig) => {
-      // WebRTC only supports changing outputDeviceId. sampleRate and format are
-      // ignored, matching the WebSocket output path — see the input controller
-      // above for why this ignores rather than throws.
+      // See the input controller above: sampleRate and format cannot be
+      // applied after creation on either connection type, so both reject a
+      // value other than the one already negotiated.
+      if (
+        (config?.sampleRate !== undefined &&
+          config.sampleRate !== this.outputFormat.sampleRate) ||
+        (config?.format !== undefined &&
+          config.format !== this.outputFormat.format)
+      ) {
+        throw new Error(
+          "WebRTC output device does not support changing sampleRate or format after the connection is created"
+        );
+      }
+
       const outputDeviceId = config?.outputDeviceId;
       if (!outputDeviceId) {
         // No device ID specified - this is a no-op for WebRTC
