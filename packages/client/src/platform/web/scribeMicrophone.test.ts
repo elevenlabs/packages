@@ -10,6 +10,10 @@ import { webScribeMicrophoneSetup } from "./scribeMicrophone.js";
 function installAudioEnvironment(options?: {
   state?: "running" | "suspended";
   resumeError?: Error;
+  /** Mimics WebKit's resume() that neither resolves nor rejects. */
+  resumeHangs?: boolean;
+  /** How long getUserMedia takes, standing in for the permission prompt. */
+  getUserMediaDelayMs?: number;
 }) {
   const track = {
     getSettings: vi.fn(() => ({ sampleRate: 16000 })),
@@ -36,13 +40,25 @@ function installAudioEnvironment(options?: {
     createMediaStreamSource: vi.fn(() => source),
     resume: options?.resumeError
       ? vi.fn().mockRejectedValue(options.resumeError)
-      : vi.fn().mockResolvedValue(undefined),
+      : options?.resumeHangs
+        ? vi.fn(() => new Promise<void>(() => {}))
+        : vi.fn().mockResolvedValue(undefined),
     sampleRate: 16000,
     state: options?.state ?? "running",
   };
 
+  const getUserMediaDelayMs = options?.getUserMediaDelayMs;
   vi.stubGlobal("navigator", {
-    mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+    mediaDevices: {
+      getUserMedia: getUserMediaDelayMs
+        ? vi.fn(
+            () =>
+              new Promise(resolve =>
+                setTimeout(() => resolve(stream), getUserMediaDelayMs)
+              )
+          )
+        : vi.fn().mockResolvedValue(stream),
+    },
   });
   vi.stubGlobal(
     "AudioContext",
@@ -137,5 +153,96 @@ describe("webScribeMicrophoneSetup", () => {
     expect(source.disconnect).toHaveBeenCalledOnce();
     expect(scribeNode.disconnect).toHaveBeenCalledOnce();
     expect(audioContext.close).toHaveBeenCalledOnce();
+  });
+
+  it("rejects and releases the microphone when resume never settles", async () => {
+    vi.useFakeTimers();
+    try {
+      const { audioContext, scribeNode, source, track } =
+        installAudioEnvironment({ state: "suspended", resumeHangs: true });
+      vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+      const setup = webScribeMicrophoneSetup({}, vi.fn());
+      const rejects = expect(setup).rejects.toThrow(
+        /Microphone setup timed out after 10000ms/
+      );
+      await vi.advanceTimersByTimeAsync(10_000);
+      await rejects;
+
+      // The point of the fix: the hardware is handed back. Without a bound the
+      // caller never receives `cleanup`, so nothing can stop these tracks.
+      expect(track.stop).toHaveBeenCalledOnce();
+      expect(source.disconnect).toHaveBeenCalledOnce();
+      expect(scribeNode.disconnect).toHaveBeenCalledOnce();
+      expect(audioContext.close).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("honors a custom setupTimeoutMs", async () => {
+    vi.useFakeTimers();
+    try {
+      const { track } = installAudioEnvironment({
+        state: "suspended",
+        resumeHangs: true,
+      });
+      vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+      const setup = webScribeMicrophoneSetup({ setupTimeoutMs: 250 }, vi.fn());
+      const rejects = expect(setup).rejects.toThrow(
+        /Microphone setup timed out after 250ms/
+      );
+      await vi.advanceTimersByTimeAsync(250);
+      await rejects;
+
+      expect(track.stop).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // Scope control. The timeout must not cover getUserMedia, because that is
+  // where the user is answering the browser's permission prompt. Bounding the
+  // whole of setup would abort ordinary first-run sessions.
+  it("does not time out while the permission prompt is open", async () => {
+    vi.useFakeTimers();
+    try {
+      const { track } = installAudioEnvironment({
+        getUserMediaDelayMs: 60_000,
+      });
+      vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+      const setup = webScribeMicrophoneSetup({ setupTimeoutMs: 1000 }, vi.fn());
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      await expect(setup).resolves.toMatchObject({ mediaStreamTrack: track });
+      expect(track.stop).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("waits indefinitely when setupTimeoutMs is 0", async () => {
+    vi.useFakeTimers();
+    try {
+      installAudioEnvironment({ state: "suspended", resumeHangs: true });
+      vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
+
+      let settled = false;
+      const setup = webScribeMicrophoneSetup(
+        { setupTimeoutMs: 0 },
+        vi.fn()
+      ).then(
+        () => (settled = true),
+        () => (settled = true)
+      );
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(settled).toBe(false);
+      void setup;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
