@@ -127,7 +127,9 @@ export class MediaDeviceOutput
         analyser,
         gain,
         worklet,
-        audioElement
+        audioElement,
+        sampleRate,
+        format
       );
 
       return newOutput;
@@ -155,7 +157,9 @@ export class MediaDeviceOutput
     private readonly analyser: AnalyserNode,
     private readonly gain: GainNode,
     private readonly worklet: AudioWorkletNode,
-    private readonly audioElement: HTMLAudioElement
+    private readonly audioElement: HTMLAudioElement,
+    private readonly configuredSampleRate: number,
+    private readonly configuredFormat: FormatConfig["format"]
   ) {
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
@@ -236,12 +240,24 @@ export class MediaDeviceOutput
       throw new Error("setSinkId is not supported in this browser");
     }
 
+    // sampleRate and format cannot be changed on an existing output (would
+    // require recreating the AudioContext), so a caller asking for a value
+    // other than the one this output was created with gets a clear error
+    // instead of a silently mismatched format. Re-passing the same value
+    // back, which callers routinely do alongside an outputDeviceId change,
+    // stays a no-op. Only used during initial MediaDeviceOutput.create().
+    if (
+      (config?.sampleRate !== undefined &&
+        config.sampleRate !== this.configuredSampleRate) ||
+      (config?.format !== undefined && config.format !== this.configuredFormat)
+    ) {
+      throw new Error(
+        "Output device does not support changing sampleRate or format after the connection is created"
+      );
+    }
+
     // Extract outputDeviceId from config
     const outputDeviceId = config?.outputDeviceId;
-
-    // Note: sampleRate and format cannot be changed on an existing output
-    // (would require recreating the AudioContext).
-    // These options are only used during initial MediaDeviceOutput.create()
 
     // If deviceId is undefined, use empty string which resets to default device
     await this.audioElement.setSinkId(outputDeviceId || "");
