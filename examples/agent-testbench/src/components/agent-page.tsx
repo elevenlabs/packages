@@ -39,6 +39,7 @@ const EVENT_METHOD_NAMES = [
   "onAudioAlignment",
   "onGuardrailTriggered",
   "onPing",
+  "onContextUsage",
   "onDebug",
   "onIncomingEvent",
   "onOutgoingEvent",

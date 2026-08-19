@@ -14,6 +14,7 @@ import type {
   AgentResponseCorrection,
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
+  ContextUsageClientEvent,
   Ping,
   RichContentClientEvent,
 } from "@elevenlabs/types";
@@ -155,6 +156,16 @@ export type Callbacks = {
    * estimate is available yet.
    */
   onPing?: (props: Ping["ping_event"]) => void;
+  /**
+   * Called when the server reports LLM context-window usage, which happens
+   * after each completed agent turn. Receives `{ event_id, model,
+   * context_tokens, context_limit_tokens }`, where `context_tokens` is the
+   * prompt size of the turn's last LLM generation and `context_limit_tokens`
+   * is that model's maximum context window.
+   */
+  onContextUsage?: (
+    props: ContextUsageClientEvent["context_usage_event"]
+  ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
   /**
@@ -198,6 +209,7 @@ export const CALLBACK_KEYS = [
   "onAgentTyping",
   "onExternalAgentConnected",
   "onPing",
+  "onContextUsage",
   "onDebug",
   "onIncomingEvent",
   "onOutgoingEvent",

@@ -15,6 +15,7 @@ import type {
   AgentResponseCorrectionEvent,
   AgentTypingEvent,
   ClientToolCallEvent,
+  ContextUsageEvent,
   ExternalAgentConnectedEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
@@ -290,6 +291,12 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleContextUsage(event: ContextUsageEvent) {
+    if (this.options.onContextUsage) {
+      this.options.onContextUsage(event.context_usage_event);
+    }
+  }
+
   protected async handleClientToolCall(event: ClientToolCallEvent) {
     if (
       Object.prototype.hasOwnProperty.call(
@@ -528,6 +535,11 @@ export abstract class BaseConversation {
         // consumers can, for example, warn when latency is high enough to
         // degrade the experience.
         this.handlePing(parsedEvent);
+        return;
+      }
+
+      case "context_usage": {
+        this.handleContextUsage(parsedEvent);
         return;
       }
 

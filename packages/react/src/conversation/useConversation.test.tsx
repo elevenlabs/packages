@@ -350,4 +350,29 @@ describe("useConversation", () => {
       typeof (opts as MockStartSessionOptions).onConversationCreated
     ).toBe("function");
   });
+
+  it("forwards context_usage events to a hook-level onContextUsage", async () => {
+    const onContextUsage = vi.fn();
+    mockStartSessionWithLifecycle();
+
+    const { result } = renderHook(
+      () => useConversation({ agentId: "hook-agent-id", onContextUsage }),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    const usage = {
+      event_id: 12,
+      model: "gemini-2.0-flash-001",
+      context_tokens: 4321,
+      context_limit_tokens: 1048576,
+    };
+    (opts as MockStartSessionOptions).onContextUsage?.(usage);
+
+    expect(onContextUsage).toHaveBeenCalledWith(usage);
+  });
 });

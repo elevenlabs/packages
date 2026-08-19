@@ -14,6 +14,7 @@ export type {
   CommittedTranscriptEntitiesMessage,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  ContextUsageClientEvent,
   ConversationInitiationMetadataEvent,
   ErrorClientEvent,
   ExternalAgentConnectedClientEvent,
