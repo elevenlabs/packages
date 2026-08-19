@@ -186,6 +186,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "mcp_connection_status"
   | "vad_score"
   | "ping"
+  | "context_usage"
   | "asr_initiation_metadata"
   | "guardrail_triggered"
   | "internal_turn_probability"
@@ -519,6 +520,18 @@ export interface PingEvent {
   ping_ms?: number | null;
 }
 
+export interface ContextUsage {
+  type: "context_usage";
+  context_usage_event: ContextUsageEvent;
+}
+
+export interface ContextUsageEvent {
+  event_id: number;
+  model: string;
+  context_tokens: number;
+  context_limit_tokens: number;
+}
+
 export interface AsrInitiationMetadata {
   type: "asr_initiation_metadata";
   asr_initiation_metadata_event: Record<string, any>;
@@ -688,6 +701,11 @@ export interface McpConnectionStatusClientEvent {
 export interface VadScoreClientEvent {
   type: "vad_score";
   vad_score_event: VadScoreEvent;
+}
+
+export interface ContextUsageClientEvent {
+  type: "context_usage";
+  context_usage_event: ContextUsageEvent;
 }
 
 export interface AsrInitiationMetadataEvent {

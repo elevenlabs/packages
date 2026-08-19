@@ -64,6 +64,7 @@ channels:
           - $ref: "#/components/messages/MCPConnectionStatusMessage"
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
+          - $ref: "#/components/messages/ContextUsage"
           - $ref: "#/components/messages/ASRInitiationMetadata"
           - $ref: "#/components/messages/GuardrailTriggered"
           - $ref: "#/components/messages/InternalTurnProbability"
@@ -318,6 +319,14 @@ components:
       payload:
         $ref: "#/components/schemas/PingPayload"
 
+    ContextUsage:
+      name: ContextUsageClientEvent
+      title: Context Usage
+      summary: LLM context-window usage reported after each completed agent turn
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ContextUsagePayload"
+
     ASRInitiationMetadata:
       name: ASRInitiationMetadataEvent
       title: ASR Initiation Metadata
@@ -398,6 +407,7 @@ components:
         - mcp_connection_status
         - vad_score
         - ping
+        - context_usage
         - asr_initiation_metadata
         - guardrail_triggered
         - internal_turn_probability
@@ -965,6 +975,16 @@ components:
         ping_event:
           $ref: "#/components/schemas/PingData"
 
+    ContextUsagePayload:
+      type: object
+      required: [context_usage_event, type]
+      properties:
+        type:
+          type: string
+          const: context_usage
+        context_usage_event:
+          $ref: "#/components/schemas/ContextUsageData"
+
     # ===== NAMED SCHEMAS FOR EVENT DATA =====
 
     AudioEventData:
@@ -1235,6 +1255,22 @@ components:
             - type: integer
             - type: "null"
           description: Estimated ping in milliseconds, based on previous ping/pong timing.
+
+    ContextUsageData:
+      type: object
+      required: [event_id, model, context_tokens, context_limit_tokens]
+      properties:
+        event_id:
+          type: integer
+        model:
+          type: string
+          description: Identifier of the LLM whose context window is reported
+        context_tokens:
+          type: integer
+          description: Prompt size of the turn's last LLM generation in provider tokens (uncached input plus cache reads and writes)
+        context_limit_tokens:
+          type: integer
+          description: The model's maximum context window size in tokens
 
     ASRInitiationMetadataPayload:
       type: object
