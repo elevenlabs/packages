@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "build:android": "expo prebuild --platform android",
     "build:ios": "expo prebuild --platform ios",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "node --test"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^15.0.1",
