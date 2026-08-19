@@ -10,6 +10,7 @@ import type {
   Audio,
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
+  ContextUsageClientEvent,
   ConversationMetadata,
   ErrorMessage,
   ExternalAgentConnectedClientEvent,
@@ -35,6 +36,7 @@ export type InternalTentativeAgentResponseEvent =
   TentativeAgentResponseInternal;
 export type ConfigEvent = ConversationMetadata;
 export type PingEvent = Ping;
+export type ContextUsageEvent = ContextUsageClientEvent;
 export type ClientToolCallEvent = ClientToolCallMessage;
 export type VadScoreEvent = VadScore;
 export type MCPToolCallClientEvent = McpToolCall;
@@ -65,6 +67,7 @@ export type IncomingSocketEvent =
   | InternalTentativeAgentResponseEvent
   | ConfigEvent
   | PingEvent
+  | ContextUsageEvent
   | ClientToolCallEvent
   | VadScoreEvent
   | MCPToolCallClientEvent

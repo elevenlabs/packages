@@ -428,6 +428,61 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("context_usage events", () => {
+    const contextUsageEvent = {
+      type: "context_usage" as const,
+      context_usage_event: {
+        event_id: 12,
+        model: "gemini-2.0-flash-001",
+        context_tokens: 4321,
+        context_limit_tokens: 1048576,
+      },
+    };
+
+    it("calls onContextUsage with the usage payload", async () => {
+      const onContextUsage = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onContextUsage,
+        onDebug,
+      });
+
+      await conversation.receiveMessage(contextUsageEvent);
+
+      expect(onContextUsage).toHaveBeenCalledWith({
+        event_id: 12,
+        model: "gemini-2.0-flash-001",
+        context_tokens: 4321,
+        context_limit_tokens: 1048576,
+      });
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing back to the server", async () => {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { onContextUsage: vi.fn() },
+        connection
+      );
+
+      await conversation.receiveMessage(contextUsageEvent);
+
+      expect(sendMessage).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage(contextUsageEvent)
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",
