@@ -6,6 +6,16 @@ vi.mock("./scribeAudioProcessor.generated.js", () => ({
 
 import { loadScribeAudioProcessor } from "./scribeAudioProcessor.generated.js";
 import { webScribeMicrophoneSetup } from "./scribeMicrophone.js";
+import type { MicrophoneOptions } from "../../scribe/scribe.js";
+
+// Type-level pin. `MicrophoneOptions["microphone"]` is a structural copy of
+// ScribeMicrophoneConfig rather than a reference to it, so a field added to the
+// config alone stays unreachable through Scribe.connect and useScribe. Excess
+// property checking on this literal fails the build if the two drift again.
+const _setupTimeoutIsPubliclySettable: MicrophoneOptions["microphone"] = {
+  setupTimeoutMs: 250,
+};
+void _setupTimeoutIsPubliclySettable;
 
 function installAudioEnvironment(options?: {
   state?: "running" | "suspended";
