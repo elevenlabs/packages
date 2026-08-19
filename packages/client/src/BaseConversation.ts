@@ -1,4 +1,5 @@
 import { Callbacks, Mode, Status } from "./types.js";
+import type { MCPToolApprovalConfig, MCPToolApprovalRequest } from "./types.js";
 import type {
   BaseConnection,
   DisconnectionDetails,
@@ -42,7 +43,16 @@ const END_CALL_DETAILS: DisconnectionDetails = {
   context: { type: "end_call", reason: "Agent ended the call" },
 };
 
-export type { Role, Mode, Status, Callbacks } from "./types.js";
+export type {
+  Role,
+  Mode,
+  Status,
+  Callbacks,
+  MCPToolApprovalRequest,
+  MCPToolApprovalRequestContext,
+  MCPToolApprovalHandler,
+  MCPToolApprovalConfig,
+} from "./types.js";
 export { CALLBACK_KEYS } from "./types.js";
 export type { UploadFileResult } from "./utils/uploadFile.js";
 
@@ -69,6 +79,7 @@ export type Options = SessionConfig &
   Callbacks &
   ConversationLifecycleOptions &
   ClientToolsConfig &
+  MCPToolApprovalConfig &
   InputConfig &
   OutputConfig &
   AudioWorkletConfig;
@@ -77,6 +88,7 @@ export type PartialOptions = SessionConfig &
   Partial<Callbacks> &
   ConversationLifecycleOptions &
   Partial<ClientToolsConfig> &
+  Partial<MCPToolApprovalConfig> &
   Partial<InputConfig> &
   Partial<OutputConfig> &
   Partial<FormatConfig> &
@@ -85,6 +97,19 @@ export type PartialOptions = SessionConfig &
 export type MultimodalMessageInput = {
   text?: string;
   fileId?: string;
+};
+
+/**
+ * State of one MCP tool call that was handed to `onMCPToolApprovalRequest`.
+ *
+ * - `pending` — the handler is running and its decision is still wanted.
+ * - `settled` — a decision has been sent; nothing more may be sent for this id.
+ * - `stale` — the call left `awaiting_approval`, or the session ended, before
+ *   the handler resolved; a late decision must be dropped rather than sent.
+ */
+type MCPApproval = {
+  state: "pending" | "settled" | "stale";
+  controller: AbortController;
 };
 
 export type ClientToolsConfig = {
@@ -123,6 +148,14 @@ export abstract class BaseConversation {
   protected volume = 1;
   protected currentEventId = 1;
   protected canSendFeedback = false;
+  /**
+   * Every MCP tool call this conversation has dispatched to
+   * `onMCPToolApprovalRequest`, keyed by `tool_call_id`. Entries are kept for
+   * the lifetime of the conversation on purpose: dropping a settled entry
+   * would let a repeated `awaiting_approval` event run the handler a second
+   * time and put a second, possibly contradictory, result on the wire.
+   */
+  private readonly mcpApprovals = new Map<string, MCPApproval>();
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
@@ -175,6 +208,11 @@ export abstract class BaseConversation {
   private endSessionWithDetails = async (details: DisconnectionDetails) => {
     if (this.status !== "connected" && this.status !== "connecting") return;
     this.updateStatus("disconnecting");
+    // Nothing can be answered once the socket is going away, and a handler
+    // still waiting on a person very likely outlives the session.
+    for (const toolCallId of this.mcpApprovals.keys()) {
+      this.markMCPApprovalStale(toolCallId);
+    }
     try {
       await this.handleEndSession();
     } finally {
@@ -358,10 +396,110 @@ export abstract class BaseConversation {
 
   protected handleAudio(event: AgentAudioEvent) {}
 
-  protected handleMCPToolCall(event: MCPToolCallClientEvent) {
+  protected async handleMCPToolCall(event: MCPToolCallClientEvent) {
+    const toolCall = event.mcp_tool_call;
+
     if (this.options.onMCPToolCall) {
-      this.options.onMCPToolCall(event.mcp_tool_call);
+      this.options.onMCPToolCall(toolCall);
     }
+
+    if (toolCall.state !== "awaiting_approval") {
+      // The server has moved this call on — it ran, failed, or its approval
+      // window elapsed — so a decision still in flight can no longer apply.
+      this.markMCPApprovalStale(toolCall.tool_call_id);
+      return;
+    }
+
+    const handler = this.options.onMCPToolApprovalRequest;
+    if (!handler) return;
+
+    if (this.status === "disconnecting" || this.status === "disconnected") {
+      // Teardown has begun, so a decision could never be sent. Dispatching
+      // would put approval UI on screen for a conversation that is already
+      // gone. Mirrors the status guard in `endSessionWithDetails`.
+      this.onError(
+        `Ignored an approval request for MCP tool call ${toolCall.tool_call_id}, which arrived after the session ended`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      return;
+    }
+
+    if (this.mcpApprovals.has(toolCall.tool_call_id)) {
+      // Asking again for an id already in the ledger would either race a
+      // pending decision or contradict one already sent.
+      this.onError(
+        `Ignored a repeated approval request for MCP tool call ${toolCall.tool_call_id}, which has already been handled`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      return;
+    }
+
+    const approval: MCPApproval = {
+      state: "pending",
+      controller: new AbortController(),
+    };
+    this.mcpApprovals.set(toolCall.tool_call_id, approval);
+
+    let isApproved: unknown;
+    try {
+      isApproved = await handler(toolCall, {
+        signal: approval.controller.signal,
+      });
+    } catch (e) {
+      this.onError(
+        `MCP tool approval handler failed: ${(e as Error)?.message}`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      this.settleMCPApproval(toolCall, false);
+      return;
+    }
+
+    if (typeof isApproved !== "boolean") {
+      // Fail closed: only an explicit `true` may let a tool call through.
+      this.onError(
+        `MCP tool approval handler must resolve to a boolean, received ${typeof isApproved}`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      this.settleMCPApproval(toolCall, false);
+      return;
+    }
+
+    this.settleMCPApproval(toolCall, isApproved);
+  }
+
+  /**
+   * Sends the one approval result this `tool_call_id` is allowed, or drops a
+   * decision that arrived too late to mean anything.
+   */
+  private settleMCPApproval(
+    toolCall: MCPToolApprovalRequest,
+    isApproved: boolean
+  ) {
+    const approval = this.mcpApprovals.get(toolCall.tool_call_id);
+    if (!approval || approval.state !== "pending") {
+      this.onError(
+        `Discarded an approval decision for MCP tool call ${toolCall.tool_call_id}, which is no longer awaiting approval`,
+        this.mcpApprovalErrorContext(toolCall)
+      );
+      return;
+    }
+    approval.state = "settled";
+    this.sendMCPToolApprovalResult(toolCall.tool_call_id, isApproved);
+  }
+
+  private markMCPApprovalStale(toolCallId: string) {
+    const approval = this.mcpApprovals.get(toolCallId);
+    if (!approval || approval.state !== "pending") return;
+    approval.state = "stale";
+    approval.controller.abort();
+  }
+
+  private mcpApprovalErrorContext(toolCall: MCPToolApprovalRequest) {
+    return {
+      toolCallId: toolCall.tool_call_id,
+      toolName: toolCall.tool_name,
+      serviceId: toolCall.service_id,
+    };
   }
 
   protected handleMCPConnectionStatus(event: MCPConnectionStatusEvent) {
@@ -544,7 +682,17 @@ export abstract class BaseConversation {
       }
 
       case "mcp_tool_call": {
-        this.handleMCPToolCall(parsedEvent);
+        try {
+          await this.handleMCPToolCall(parsedEvent);
+        } catch (error) {
+          this.onError(
+            `Unexpected error in MCP tool call handling: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              toolCallId: parsedEvent.mcp_tool_call.tool_call_id,
+              toolName: parsedEvent.mcp_tool_call.tool_name,
+            }
+          );
+        }
         return;
       }
 
