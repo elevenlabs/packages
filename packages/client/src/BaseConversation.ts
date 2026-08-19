@@ -16,6 +16,7 @@ import type {
   AgentTypingEvent,
   ClientToolCallEvent,
   ExternalAgentConnectedEvent,
+  ExternalAgentDisconnectedEvent,
   IncomingSocketEvent,
   InternalTentativeAgentResponseEvent,
   InterruptionEvent,
@@ -140,6 +141,7 @@ export abstract class BaseConversation {
       onAgentResponseCorrection: () => {},
       onAgentTyping: () => {},
       onExternalAgentConnected: () => {},
+      onExternalAgentDisconnected: () => {},
       onPing: () => {},
       ...partialOptions,
       textOnly,
@@ -443,6 +445,14 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleExternalAgentDisconnected(
+    _event: ExternalAgentDisconnectedEvent
+  ) {
+    if (this.options.onExternalAgentDisconnected) {
+      this.options.onExternalAgentDisconnected();
+    }
+  }
+
   protected handleErrorEvent(event: ErrorMessageEvent) {
     const errorEvent = event.error_event;
     const errorType = errorEvent?.error_type;
@@ -598,6 +608,11 @@ export abstract class BaseConversation {
 
       case "external_agent_connected": {
         this.handleExternalAgentConnected(parsedEvent);
+        return;
+      }
+
+      case "external_agent_disconnected": {
+        this.handleExternalAgentDisconnected(parsedEvent);
         return;
       }
 

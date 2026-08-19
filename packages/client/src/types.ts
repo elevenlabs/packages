@@ -145,6 +145,7 @@ export type Callbacks = {
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;
+  onExternalAgentDisconnected?: () => void;
   /**
    * Called for every `ping` event received from the server. The SDK
    * automatically replies with a `pong`, so this callback is purely
@@ -197,6 +198,7 @@ export const CALLBACK_KEYS = [
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",
+  "onExternalAgentDisconnected",
   "onPing",
   "onDebug",
   "onIncomingEvent",

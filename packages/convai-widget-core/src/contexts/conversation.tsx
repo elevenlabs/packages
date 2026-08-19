@@ -404,6 +404,10 @@ function useConversationSetup() {
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
             },
+            onExternalAgentDisconnected: () => {
+              setAgentTyping(false);
+              isExternalAgentMode.value = false;
+            },
             onDisconnect: details => {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;

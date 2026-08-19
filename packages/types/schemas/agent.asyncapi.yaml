@@ -70,6 +70,7 @@ channels:
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
           - $ref: "#/components/messages/AgentTyping"
           - $ref: "#/components/messages/ExternalAgentConnected"
+          - $ref: "#/components/messages/ExternalAgentDisconnected"
           - $ref: "#/components/messages/ErrorMessage"
     subscribe:
       summary: Messages received from client to server
@@ -366,6 +367,14 @@ components:
       payload:
         $ref: "#/components/schemas/ExternalAgentConnectedPayload"
 
+    ExternalAgentDisconnected:
+      name: ExternalAgentDisconnectedClientEvent
+      title: External Agent Disconnected
+      summary: Indicates that an external agent (e.g., Genesys) has disconnected and the AI agent resumed control
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ExternalAgentDisconnectedPayload"
+
     # ===== ERROR MESSAGES =====
 
     ErrorMessage:
@@ -404,6 +413,7 @@ components:
         - internal_tentative_agent_response
         - agent_typing
         - external_agent_connected
+        - external_agent_disconnected
       description: Types of events that can be sent from server to client
 
     Language:
@@ -1345,6 +1355,17 @@ components:
         external_agent_connected_event:
           type: object
           description: Empty event indicating external agent connection
+
+    ExternalAgentDisconnectedPayload:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: external_agent_disconnected
+        external_agent_disconnected_event:
+          type: object
+          description: Empty event indicating external agent disconnection
 
     SourceInfo:
       type: object
