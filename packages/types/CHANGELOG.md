@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.21.1
+
+### Patch Changes
+
+- eea19d2: Add support for the `context_usage` server event via a new `onContextUsage` callback. The event is emitted after each completed agent turn and reports `{ event_id, model, context_tokens, context_limit_tokens }`, where `context_tokens` is the prompt size of the turn's last LLM generation and `context_limit_tokens` is that model's maximum context window — useful for surfacing how close a long conversation is to the context limit.
+
 ## 0.21.0
 
 ### Minor Changes
