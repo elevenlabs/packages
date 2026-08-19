@@ -6,6 +6,8 @@
  * their own implementation via `setScribeMicrophoneSetup`.
  */
 
+import { missingRegistrationError } from "../platform/diagnostics.js";
+
 export interface ScribeMicrophoneConfig {
   deviceId?: MediaDeviceConstraint;
   echoCancellation?: boolean;
@@ -54,11 +56,7 @@ export function setScribeMicrophoneSetup(setup: ScribeMicrophoneSetup): void {
 
 export function getScribeMicrophoneSetup(): ScribeMicrophoneSetup {
   if (!microphoneSetup) {
-    throw new Error(
-      "No Scribe microphone implementation registered. " +
-        "Import '@elevenlabs/client/platform/web' or provide a custom " +
-        "implementation via setScribeMicrophoneSetup()."
-    );
+    throw missingRegistrationError("Scribe microphone implementation");
   }
   return microphoneSetup;
 }

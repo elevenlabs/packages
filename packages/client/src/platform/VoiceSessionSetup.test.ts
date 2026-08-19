@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 vi.mock("livekit-client", () => ({
   Room: vi.fn(),
@@ -77,10 +77,6 @@ describe("setupWebRTCSession", () => {
 });
 
 describe("ensureSetupStrategy", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("returns the registered strategy", async () => {
     const { ensureSetupStrategy, setSetupStrategy } = await freshModule();
     const strategy = vi.fn();
@@ -89,45 +85,21 @@ describe("ensureSetupStrategy", () => {
     expect(ensureSetupStrategy()).toBe(strategy);
   });
 
-  it("points a browser user at the platform entry point", async () => {
+  it("points at the platform entry point when none is registered", async () => {
     const { ensureSetupStrategy } = await freshModule();
 
     expect(() => ensureSetupStrategy()).toThrow(
-      'Import the platform-specific entry point (e.g. @elevenlabs/client via the "browser" export).'
+      'No voice session setup strategy registered. Import the platform-specific entry point (e.g. @elevenlabs/client via the "browser" export).'
     );
   });
 
-  it("points a React Native user at @elevenlabs/react-native", async () => {
-    vi.stubGlobal("navigator", { product: "ReactNative" });
+  it("uses the hint the entry point injected", async () => {
     const { ensureSetupStrategy } = await freshModule();
+    const { setPlatformSetupHint } = await import("./diagnostics.js");
+    setPlatformSetupHint("Do the platform-specific thing.");
 
     expect(() => ensureSetupStrategy()).toThrow(
-      "@elevenlabs/client in React Native without importing @elevenlabs/react-native"
+      "No voice session setup strategy registered. Do the platform-specific thing."
     );
-  });
-
-  it("detects React Native via the Hermes global too", async () => {
-    vi.stubGlobal("HermesInternal", {});
-    const { ensureSetupStrategy } = await freshModule();
-
-    expect(() => ensureSetupStrategy()).toThrow(
-      "@elevenlabs/client in React Native without importing @elevenlabs/react-native"
-    );
-  });
-
-  it("does not mention React Native in a browser-like environment", async () => {
-    vi.stubGlobal("navigator", { product: "Gecko" });
-    const { ensureSetupStrategy } = await freshModule();
-
-    expect(() => ensureSetupStrategy()).not.toThrow("React Native");
-  });
-
-  it("never throws the browser message once a strategy is registered in React Native", async () => {
-    vi.stubGlobal("navigator", { product: "ReactNative" });
-    const { ensureSetupStrategy, setSetupStrategy } = await freshModule();
-    const strategy = vi.fn();
-    setSetupStrategy(strategy);
-
-    expect(ensureSetupStrategy()).toBe(strategy);
   });
 });
