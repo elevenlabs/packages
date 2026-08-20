@@ -653,6 +653,13 @@ components:
           type: string
           nullable: true
           description: User's text message (null for text-only mode signal)
+        rich_content_id:
+          type: string
+          description: >-
+            Set when the message came from a rich-content button tap rather
+            than typing: the row the button belonged to. Given the row, the
+            text says which button. Best-effort attribution only — older
+            clients never send it.
 
     UserActivityPayload:
       type: object

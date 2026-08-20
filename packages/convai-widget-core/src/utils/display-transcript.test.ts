@@ -68,6 +68,7 @@ function richContent(
 const defaults: DisplayTranscriptConfig = {
   showAgentStatus: false,
   transcriptEnabled: true,
+  showRichContent: true,
 };
 
 function build(
@@ -597,6 +598,70 @@ describe("buildDisplayTranscript", () => {
     });
   });
 
+  describe("rich content past a user turn", () => {
+    const richContentEntries = (result: DisplayTranscriptEntry[]) =>
+      result.filter(entry => entry.type === "rich_content");
+
+    // A user turn after a row means the customer has moved on. Agent turns do
+    // not count: the tool flow puts a short agent follow-up after every row.
+    it("drops a row once a user message follows it", () => {
+      const result = build([
+        msg("agent", "Two options", { eventId: 2 }),
+        richContent("a"),
+        msg("user", "the first one"),
+      ]);
+
+      expect(richContentEntries(result)).toHaveLength(0);
+      expect(result).toHaveLength(2);
+    });
+
+    it("keeps a row live under agent follow-ups", () => {
+      const result = build([
+        msg("user", "show me options"),
+        richContent("a"),
+        msg("agent", "Which would you like?", { eventId: 2 }),
+      ]);
+
+      expect(richContentEntries(result)).toHaveLength(1);
+      expect(result[1]).toMatchObject({ type: "rich_content" });
+    });
+
+    it("counts a filtered voice turn as the customer moving on", () => {
+      // The check reads the raw entries, so a non-text user turn hidden from
+      // the display still retires the row.
+      const result = build(
+        [richContent("a"), msg("user", "spoken reply", { isText: false })],
+        { transcriptEnabled: false }
+      );
+
+      expect(richContentEntries(result)).toHaveLength(0);
+    });
+
+    it("draws no component during a voice conversation", () => {
+      // The customer is speaking, so tap targets are noise — and a spoken first
+      // message is a transcript entry rather than a locally prepended one, so a
+      // seeded row would otherwise sit above the greeting.
+      const result = build(
+        [richContent("a"), msg("agent", "Hello!", { eventId: 1 })],
+        { showRichContent: false }
+      );
+
+      expect(richContentEntries(result)).toHaveLength(0);
+      expect(result).toHaveLength(1);
+    });
+
+    it("only user turns before the row leave it live", () => {
+      const result = build([
+        msg("user", "hi"),
+        msg("agent", "Hello!", { eventId: 2 }),
+        richContent("a"),
+      ]);
+
+      expect(richContentEntries(result)).toHaveLength(1);
+      expect(result[2]).toMatchObject({ type: "rich_content" });
+    });
+  });
+
   describe("rich content", () => {
     it("keeps components where they arrived, in arrival order", () => {
       const input = [
@@ -604,17 +669,15 @@ describe("buildDisplayTranscript", () => {
         msg("agent", "Two options", { eventId: 2 }),
         richContent("a"),
         richContent("b"),
-        msg("user", "thanks"),
-        msg("agent", "Anything else?", { eventId: 4 }),
+        msg("agent", "Anything else?", { eventId: 2 }),
       ];
       const result = build(input);
 
-      expect(result).toHaveLength(6);
+      expect(result).toHaveLength(5);
       expect(result[1]).toMatchObject({ message: "Two options" });
       expect(result[2]).toMatchObject({ richContentId: "rc_a" });
       expect(result[3]).toMatchObject({ richContentId: "rc_b" });
-      expect(result[4]).toMatchObject({ message: "thanks" });
-      expect(result[5]).toMatchObject({ message: "Anything else?" });
+      expect(result[4]).toMatchObject({ message: "Anything else?" });
     });
 
     it("keeps a component above the reply even when a placeholder precedes it", () => {

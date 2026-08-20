@@ -2,6 +2,7 @@ import {
   Conversation,
   Mode,
   Role,
+  SendUserMessageOptions,
   SessionConfig,
   Status,
 } from "@elevenlabs/client";
@@ -167,7 +168,23 @@ function useConversationSetup() {
     const error = signal<string | null>(null);
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
-    const transcript = signal<TranscriptEntry[]>([]);
+
+    const firstMessageEntries = (): TranscriptEntry[] => {
+      const richContent = widgetConfig.peek().first_message_rich_content;
+      if (!richContent) return [];
+      return [
+        {
+          type: "rich_content",
+          component: richContent.component,
+          props: richContent.props,
+          eventId: 1,
+          richContentId: "first_message",
+          conversationIndex: 0,
+        },
+      ];
+    };
+
+    const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
@@ -197,7 +214,11 @@ function useConversationSetup() {
       transcript,
       isAgentTyping,
       isExternalAgentMode,
-      startSession: async (element: HTMLElement, initialMessage?: string) => {
+      startSession: async (
+        element: HTMLElement,
+        initialMessage?: string,
+        initialMessageOptions?: SendUserMessageOptions
+      ) => {
         await terms.requestTerms();
 
         if (conversationRef.current?.isOpen()) {
@@ -238,17 +259,20 @@ function useConversationSetup() {
         }
 
         conversationTextOnly.value = processedConfig.textOnly ?? false;
-        transcript.value = initialMessage
-          ? [
-              {
-                type: "message",
-                role: "user",
-                message: initialMessage,
-                isText: true,
-                conversationIndex: conversationIndex.peek(),
-              },
-            ]
-          : [];
+        transcript.value = [
+          ...firstMessageEntries(),
+          ...(initialMessage
+            ? [
+                {
+                  type: "message",
+                  role: "user",
+                  message: initialMessage,
+                  isText: true,
+                  conversationIndex: conversationIndex.peek(),
+                } satisfies TranscriptEntry,
+              ]
+            : []),
+        ];
 
         try {
           lockRef.current = Conversation.startSession({
@@ -441,7 +465,11 @@ function useConversationSetup() {
           if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
-            setTimeout(() => instance.sendUserMessage(initialMessage), 100);
+            setTimeout(
+              () =>
+                instance.sendUserMessage(initialMessage, initialMessageOptions),
+              100
+            );
           }
 
           const id = conversationRef.current.getId();
@@ -488,8 +516,8 @@ function useConversationSetup() {
       sendFeedback: (like: boolean) => {
         conversationRef.current?.sendFeedback(like);
       },
-      sendUserMessage: (text: string) => {
-        conversationRef.current?.sendUserMessage(text);
+      sendUserMessage: (text: string, options?: SendUserMessageOptions) => {
+        conversationRef.current?.sendUserMessage(text, options);
         transcript.value = [
           ...transcript.value,
           {
