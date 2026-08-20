@@ -11,6 +11,7 @@ import {
   DefaultStyles,
   parsePlacement,
   parseVariant,
+  parseLanguageSelectorPlacement,
   type SyntaxHighlightTheme,
   type WidgetConfig,
 } from "../types/config";
@@ -139,6 +140,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showAgentStatus = useAttribute("show-agent-status");
   const showConversationId = useAttribute("show-conversation-id");
   const showResizeButton = useAttribute("show-resize-button");
+  const languageSelectorPlacement = useAttribute("language-selector-placement");
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -193,6 +195,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(showResizeButton.value) ??
       fetchedConfig.value.show_resize_button ??
       true;
+    const patchedLanguageSelectorPlacement = parseLanguageSelectorPlacement(
+      languageSelectorPlacement.value ??
+        fetchedConfig.value.language_selector_placement
+    );
 
     return {
       ...fetchedConfig.value,
@@ -210,6 +216,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       show_agent_status: patchedShowAgentStatus,
       show_conversation_id: patchedShowConversationId,
       show_resize_button: patchedShowResizeButton,
+      language_selector_placement: patchedLanguageSelectorPlacement,
     };
   });
 
