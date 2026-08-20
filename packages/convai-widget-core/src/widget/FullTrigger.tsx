@@ -36,7 +36,10 @@ export function FullTrigger({
             {text.main_label}
           </span>
           <InOutTransition active={!isDisconnected.value}>
-            <StatusLabel className="absolute top-1/2 -translate-y-1/2 transition-[transform,opacity] duration-200 data-hidden:opacity-0 data-hidden:scale-90" />
+            <StatusLabel
+              compact
+              className="absolute top-1/2 -translate-y-1/2 transition-[transform,opacity] duration-200 data-hidden:opacity-0 data-hidden:scale-90"
+            />
           </InOutTransition>
         </div>
       </div>

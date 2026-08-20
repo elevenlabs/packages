@@ -8,7 +8,7 @@ import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useConversationMode } from "../contexts/conversation-mode";
 
 
-function userCurrentLabel() {
+function userCurrentLabel(compact: boolean) {
   const { status, isSpeaking, isWaitingForAgent } = useConversation();
   const textOnly = useIsConversationTextOnly();
   const { isTextMode } = useConversationMode();
@@ -17,8 +17,12 @@ function userCurrentLabel() {
   const compute = () => {
     // The waiting copy wins over the connected states: while held in the
     // concurrency wait queue the transport is connected but no agent is
-    // listening or speaking yet.
-    if (isWaitingForAgent.value) return {label: text.queue_waiting_status.value, updateImmediately: true, wrap: true};
+    // listening or speaking yet. Compact surfaces (single-line pills) get the
+    // short form; spacious ones the full reassurance, wrapped.
+    if (isWaitingForAgent.value)
+      return compact
+        ? {label: text.queue_waiting_status_short.value, updateImmediately: true, wrap: false}
+        : {label: text.queue_waiting_status.value, updateImmediately: true, wrap: true};
 
     if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true, wrap: false};
 
@@ -31,11 +35,17 @@ function userCurrentLabel() {
   return useComputed(compute)
 }
 
+interface StatusLabelProps extends HTMLAttributes<HTMLDivElement> {
+  /** Render single-line copy for cramped surfaces (header pill, trigger). */
+  compact?: boolean;
+}
+
 export function StatusLabel({
   className,
+  compact = false,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  const currentLabel = userCurrentLabel();
+}: StatusLabelProps) {
+  const currentLabel = userCurrentLabel(compact);
   const [{ label, wrap }, setLabel] = useState(() => {
     const { label, wrap } = currentLabel.peek();
     return { label, wrap };

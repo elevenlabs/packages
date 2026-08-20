@@ -44,6 +44,13 @@ export const AGENTS = {
   fail: BASIC_CONFIG,
   // Held in the concurrency wait queue and never admitted.
   queued: BASIC_CONFIG,
+  // Same, but with the sheet expanded and no transcript, so the avatar
+  // overlay (the spacious waiting-copy surface) is what renders.
+  queued_overlay: {
+    ...BASIC_CONFIG,
+    text_input_enabled: true,
+    default_expanded: true,
+  },
   // Admitted from the wait queue after a delay.
   queue_admit: BASIC_CONFIG,
   // The wait queue times out and the server closes with an error.
@@ -383,6 +390,7 @@ export const Worker = setupWorker(
       }
       if (
         agentId === "queued" ||
+        agentId === "queued_overlay" ||
         agentId === "queue_admit" ||
         agentId === "queue_timeout"
       ) {

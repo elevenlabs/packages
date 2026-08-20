@@ -310,7 +310,7 @@ describe("elevenlabs-convai", () => {
       await acceptButton.click();
 
       await expect
-        .element(page.getByText("All agents are busy right now"))
+        .element(page.getByText("Waiting for an available agent"))
         .toBeInTheDocument();
 
       // The typing indicator stays hidden while queued.
@@ -339,7 +339,7 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("You ended the conversation"))
         .toBeInTheDocument();
       await expect
-        .element(page.getByText("All agents are busy right now"))
+        .element(page.getByText("Waiting for an available agent"))
         .not.toBeInTheDocument();
 
       // No residual gating: a new conversation can start from the textarea.
@@ -347,6 +347,22 @@ describe("elevenlabs-convai", () => {
       await userEvent.keyboard("{Enter}");
       await expect
         .element(page.getByText("New text message"))
+        .toBeInTheDocument();
+    });
+
+    it("shows the full waiting message on the avatar overlay", async () => {
+      // An expanded sheet without a transcript shows the avatar overlay,
+      // which has room for the full reassurance copy instead of the short
+      // pill form.
+      setupWebComponent({ "agent-id": "queued_overlay" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("All agents are busy right now"))
         .toBeInTheDocument();
     });
 
@@ -363,7 +379,7 @@ describe("elevenlabs-convai", () => {
       await acceptButton.click();
 
       await expect
-        .element(page.getByText("All agents are busy right now"))
+        .element(page.getByText("Waiting for an available agent"))
         .toBeInTheDocument();
 
       // Admitted: the waiting status clears and the agent responds.
@@ -371,7 +387,7 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Queue cleared response"))
         .toBeInTheDocument();
       await expect
-        .element(page.getByText("All agents are busy right now"))
+        .element(page.getByText("Waiting for an available agent"))
         .not.toBeInTheDocument();
 
       // Sending works again.
@@ -398,7 +414,7 @@ describe("elevenlabs-convai", () => {
       await acceptButton.click();
 
       await expect
-        .element(page.getByText("All agents are busy right now"))
+        .element(page.getByText("Waiting for an available agent"))
         .toBeInTheDocument();
 
       // The server closes after the timeout; the caller gets friendly copy

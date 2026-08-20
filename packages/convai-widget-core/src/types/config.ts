@@ -131,6 +131,7 @@ export const DefaultTextContents = {
   chatting_status: "Chatting with AI Agent",
   queue_waiting_status:
     "All agents are busy right now. We'll connect you automatically as soon as one is available.",
+  queue_waiting_status_short: "Waiting for an available agent",
 
   input_label: "Text message input",
   input_placeholder: "Send a message...",
