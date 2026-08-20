@@ -1,6 +1,6 @@
 {
   "name": "elevenlabs-react-native-example",
-  "version": "1.1.27",
+  "version": "1.1.28",
   "main": "index.js",
   "private": true,
   "scripts": {
@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "build:android": "expo prebuild --platform android",
     "build:ios": "expo prebuild --platform ios",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "node --test"
   },
   "expo": {
     "install": {

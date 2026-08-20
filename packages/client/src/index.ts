@@ -9,6 +9,10 @@ export type {
   Options,
   PartialOptions,
   ClientToolsConfig,
+  MCPToolApprovalConfig,
+  MCPToolApprovalHandler,
+  MCPToolApprovalRequest,
+  MCPToolApprovalRequestContext,
   Callbacks,
   Status,
   AudioWorkletConfig,
@@ -33,6 +37,7 @@ export type {
   IncomingSocketEvent,
   VadScoreEvent,
   PingEvent,
+  ContextUsageEvent,
   AudioAlignmentEvent,
 } from "./utils/events.js";
 export type {

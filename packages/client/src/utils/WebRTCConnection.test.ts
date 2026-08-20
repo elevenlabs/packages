@@ -498,4 +498,109 @@ describe("WebRTCConnection", () => {
       setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
     }
   });
+
+  describe("conversation initiation payload", () => {
+    let mockRoom: any;
+
+    beforeEach(() => {
+      mockRoom = new Room() as any;
+
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockReturnValue(undefined);
+    });
+
+    it("fails setup when the initiation payload cannot be published", async () => {
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (
+        mockRoom.localParticipant.publishData as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error("publish failed"));
+
+      await expect(
+        WebRTCConnection.create({
+          conversationToken: "test-token",
+          connectionType: "webrtc",
+        })
+      ).rejects.toThrow("publish failed");
+
+      // create()'s catch must tear the room down so the caller does not keep
+      // a live room and microphone for a conversation that never started.
+      expect(mockRoom.disconnect).toHaveBeenCalled();
+    });
+
+    it("fails setup when the room disconnects before the payload is sent", async () => {
+      let connectionStateChanged: ((state: string) => void) | undefined;
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (state?: unknown) => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+          if (event === "connectionStateChanged") {
+            connectionStateChanged = callback as (state: string) => void;
+          }
+        }
+      );
+
+      // create() reads the microphone publication immediately before sending
+      // the initiation payload, so dropping the room here lands the
+      // connection in the state the send has to reject on.
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => {
+        connectionStateChanged?.("disconnected");
+        return undefined;
+      });
+
+      await expect(
+        WebRTCConnection.create({
+          conversationToken: "test-token",
+          connectionType: "webrtc",
+        })
+      ).rejects.toThrow("room not connected");
+
+      expect(mockRoom.localParticipant.publishData).not.toHaveBeenCalled();
+    });
+
+    it("keeps mid-session sends best effort when publishing fails", async () => {
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      (
+        mockRoom.localParticipant.publishData as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error("publish failed"));
+
+      const message: PongEvent = { type: "pong", event_id: 1 };
+      await expect(connection.sendMessage(message)).resolves.toBeUndefined();
+
+      connection.close();
+    });
+  });
 });

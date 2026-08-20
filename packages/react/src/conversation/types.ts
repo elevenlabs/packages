@@ -48,6 +48,7 @@ export type HookCallbacks = Pick<
   | "onAgentTyping"
   | "onExternalAgentConnected"
   | "onPing"
+  | "onContextUsage"
   | "onIncomingEvent"
   | "onOutgoingEvent"
 >;

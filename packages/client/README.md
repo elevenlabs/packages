@@ -104,6 +104,54 @@ const connection = Scribe.connect({
 });
 ```
 
+## Approving MCP tool calls
+
+When an agent's MCP tool requires approval, the server sends an
+`mcp_tool_call` event in the `awaiting_approval` state and waits for a
+decision. Pass `onMCPToolApprovalRequest` to decide, and the SDK puts the
+result on the wire for you:
+
+```js
+import { Conversation } from "@elevenlabs/client";
+
+const conversation = await Conversation.startSession({
+  agentId: "agent_...",
+  onMCPToolApprovalRequest: async toolCall =>
+    window.confirm(
+      `Allow ${toolCall.tool_name} from ${toolCall.service_id}?\n\n` +
+        JSON.stringify(toolCall.parameters, null, 2)
+    ),
+});
+```
+
+The handler resolves to `true` to allow the call and `false` to deny it.
+Rejecting, or resolving to anything that is not a boolean, is reported
+through `onError` and treated as a denial, so a broken handler can never let
+a tool call through.
+
+Each `tool_call_id` is answered at most once. If the server moves a call out
+of `awaiting_approval` before the handler resolves — its approval window
+elapsed, for example — or the session ends, the late decision is dropped
+rather than sent, and `onError` reports it. The handler's second argument
+carries an `AbortSignal` for that case, so approval UI can dismiss itself
+instead of waiting on a decision that no longer matters:
+
+```js
+const conversation = await Conversation.startSession({
+  agentId: "agent_...",
+  onMCPToolApprovalRequest: (toolCall, { signal }) =>
+    new Promise(resolve => {
+      const dialog = showApprovalDialog(toolCall, resolve);
+      signal.addEventListener("abort", () => dialog.close());
+    }),
+});
+```
+
+`onMCPToolCall` still fires for every state, including `awaiting_approval`,
+so existing observability code is unaffected. Handling approvals yourself
+with `onMCPToolCall` plus `conversation.sendMCPToolApprovalResult()` also
+keeps working — the handler is opt-in.
+
 ## Development
 
 Please refer to the README.md file in the root of this repository.

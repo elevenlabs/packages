@@ -364,7 +364,11 @@ export class WebRTCConnection extends BaseConnection {
         message: overridesEvent,
       });
 
-      await connection.sendMessage(overridesEvent);
+      // The conversation cannot start without this payload, so a failed
+      // publish has to fail setup. Otherwise create() resolves onto a live
+      // room and microphone that the server never initialized a conversation
+      // for, and the caller reports a connected session that can never speak.
+      await connection.sendRequiredMessage(overridesEvent);
 
       return connection;
     } catch (error) {
@@ -530,10 +534,7 @@ export class WebRTCConnection extends BaseConnection {
 
     this.handleOutgoingMessage(message);
     try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(JSON.stringify(message));
-
-      await this.room.localParticipant.publishData(data, { reliable: true });
+      await this.publishMessage(message);
     } catch (error) {
       this.debug({
         type: "send_message_error",
@@ -544,6 +545,28 @@ export class WebRTCConnection extends BaseConnection {
       });
       console.error("Failed to send message via WebRTC:", error);
     }
+  }
+
+  /**
+   * Sends a message the session cannot proceed without, surfacing failures to
+   * the caller instead of absorbing them the way {@link sendMessage} does.
+   */
+  private async sendRequiredMessage(message: OutgoingSocketEvent) {
+    if (!this.isConnected || !this.room.localParticipant) {
+      throw new Error(
+        "Cannot send message: room not connected or no local participant"
+      );
+    }
+
+    this.handleOutgoingMessage(message);
+    await this.publishMessage(message);
+  }
+
+  private async publishMessage(message: OutgoingSocketEvent) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(JSON.stringify(message));
+
+    await this.room.localParticipant.publishData(data, { reliable: true });
   }
 
   // Get the room instance for advanced usage
