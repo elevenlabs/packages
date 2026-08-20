@@ -84,6 +84,10 @@ export interface WidgetConfig {
     max_files_per_conversation?: number;
   };
   show_resize_button?: boolean;
+  first_message_rich_content?: {
+    component: string;
+    props: unknown;
+  } | null;
 }
 
 export type AvatarConfig =

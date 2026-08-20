@@ -17,11 +17,13 @@ export type RichContentButton = MessageButton | LinkButton;
 
 export interface ButtonGroupProps {
   buttons: RichContentButton[];
+  richContentId?: string;
 }
 
-export function ButtonGroup({ buttons }: ButtonGroupProps) {
-  const { sendUserMessage, status } = useConversation();
-  const disabled = status.value !== "connected";
+export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
+  const { sendUserMessage, startSession, isDisconnected, status } =
+    useConversation();
+  const disabled = status.value !== "connected" && !isDisconnected.value;
 
   if (buttons.length === 0) return null;
 
@@ -37,7 +39,14 @@ export function ButtonGroup({ buttons }: ButtonGroupProps) {
             key={index}
             variant="outline"
             disabled={disabled}
-            onClick={() => sendUserMessage(button.message)}
+            onClick={e => {
+              const attribution = { richContentId };
+              if (isDisconnected.value) {
+                void startSession(e.currentTarget, button.message, attribution);
+              } else {
+                sendUserMessage(button.message, attribution);
+              }
+            }}
           >
             {button.label}
           </Button>

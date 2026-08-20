@@ -21,6 +21,7 @@ export type {
   ConversationCreatedCallback,
   ConversationLifecycleOptions,
   ContextualUpdateOptions,
+  SendUserMessageOptions,
 } from "./BaseConversation.js";
 export type {
   InputController,

@@ -6,30 +6,37 @@ import { parseButtonGroupProps } from "./validate";
 interface RichContentRendererProps {
   component: string;
   props: unknown;
+  richContentId?: string;
 }
 
 interface RichContentComponentEntry {
   parseProps: (raw: unknown) => unknown | null;
-  render: (props: unknown) => ComponentChildren;
+  render: (props: unknown, richContentId?: string) => ComponentChildren;
 }
 
 const RICH_CONTENT_COMPONENTS: Record<string, RichContentComponentEntry> = {
   buttons: {
     parseProps: parseButtonGroupProps,
-    render: props => <ButtonGroup {...(props as ButtonGroupProps)} />,
+    render: (props, richContentId) => (
+      <ButtonGroup
+        {...(props as ButtonGroupProps)}
+        richContentId={richContentId}
+      />
+    ),
   },
 };
 
 export function RichContentRenderer({
   component,
   props,
+  richContentId,
 }: RichContentRendererProps) {
   const entry = RICH_CONTENT_COMPONENTS[component];
   const parsed = entry?.parseProps(props);
   if (entry && parsed) {
-    return entry.render(parsed);
+    return entry.render(parsed, richContentId);
   }
-  
+
   return <RichContentUnavailable />;
 }
 

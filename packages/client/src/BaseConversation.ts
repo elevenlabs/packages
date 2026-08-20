@@ -75,6 +75,16 @@ export type ContextualUpdateOptions = {
   contextId?: string;
 };
 
+/**
+ * Attribution for a user message that came from a rich-content button tap.
+ * Best-effort: a server that ignores it loses nothing but the reporting, and
+ * the message text alone is what the agent acts on.
+ */
+export type SendUserMessageOptions = {
+  /** The rich-content row the tapped button belonged to. */
+  richContentId?: string;
+};
+
 export type Options = SessionConfig &
   Callbacks &
   ConversationLifecycleOptions &
@@ -825,10 +835,11 @@ export abstract class BaseConversation {
     });
   }
 
-  public sendUserMessage(text: string) {
+  public sendUserMessage(text: string, options?: SendUserMessageOptions) {
     this.connection.sendMessage({
       type: "user_message",
       text,
+      rich_content_id: options?.richContentId ?? undefined,
     });
   }
 

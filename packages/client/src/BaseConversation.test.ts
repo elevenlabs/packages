@@ -373,6 +373,50 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("sendUserMessage", () => {
+    function conversationSending() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      return {
+        sendMessage,
+        conversation: TestConversation.create({}, connection),
+      };
+    }
+
+    it("attributes a tap to the row its button came from", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserMessage("Can you track my order?", {
+        richContentId: "first_message",
+      });
+
+      expect(sendMessage).toHaveBeenCalledWith({
+        type: "user_message",
+        text: "Can you track my order?",
+        rich_content_id: "first_message",
+      });
+    });
+
+    it("omits the attribution entirely for a typed message", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserMessage("Where is my order?");
+
+      // Assert the wire form, not the object: both transports JSON.stringify,
+      // which drops undefined but keeps null. A server predating the field must
+      // see exactly the payload it saw before, so an explicit null would be a
+      // regression while an undefined property is harmless.
+      const payload = sendMessage.mock.calls[0][0];
+      expect(JSON.parse(JSON.stringify(payload))).toEqual({
+        type: "user_message",
+        text: "Where is my order?",
+      });
+    });
+  });
+
   describe("ping events", () => {
     it("replies with a pong and forwards the payload to onPing", async () => {
       const onPing = vi.fn();

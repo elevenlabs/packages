@@ -283,7 +283,11 @@ function RichContentMessage({
 }) {
   return (
     <div className="pe-8">
-      <RichContentRenderer component={entry.component} props={entry.props} />
+      <RichContentRenderer
+        component={entry.component}
+        props={entry.props}
+        richContentId={entry.richContentId}
+      />
     </div>
   );
 }
