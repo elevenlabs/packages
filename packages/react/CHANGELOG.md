@@ -1,5 +1,17 @@
 # @elevenlabs/react
 
+## 1.13.0
+
+### Minor Changes
+
+- eea19d2: Add support for the `context_usage` server event via a new `onContextUsage` callback. The event is emitted after each completed agent turn and reports `{ event_id, model, context_tokens, context_limit_tokens }`, where `context_tokens` is the prompt size of the turn's last LLM generation and `context_limit_tokens` is that model's maximum context window — useful for surfacing how close a long conversation is to the context limit.
+
+### Patch Changes
+
+- Updated dependencies [eea19d2]
+- Updated dependencies [e3d1c40]
+  - @elevenlabs/client@1.21.0
+
 ## 1.12.4
 
 ### Patch Changes

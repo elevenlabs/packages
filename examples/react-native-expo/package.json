@@ -1,34 +1,46 @@
 {
   "name": "elevenlabs-react-native-example",
-  "version": "1.1.27",
+  "version": "1.1.28",
   "main": "index.js",
   "private": true,
   "scripts": {
     "dev": "expo start",
-    "android": "echo '🚨🚨 Once Expo has started, press `a` 🚨🚨' && node --run dev",
-    "ios": "echo '🚨🚨 Once Expo has started, press `i` 🚨🚨' && node --run dev",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "build:android": "expo prebuild --platform android",
     "build:ios": "expo prebuild --platform ios",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-dev-client",
+        "expo-image-picker",
+        "expo-splash-screen",
+        "@expo/metro-runtime"
+      ]
+    }
   },
   "dependencies": {
-    "@config-plugins/react-native-webrtc": "^15.0.1",
+    "@config-plugins/react-native-webrtc": "^15.0.2",
     "@elevenlabs/react-native": "workspace:*",
-    "@expo/dom-webview": "~56.0.6",
-    "@expo/log-box": "~56.0.14",
+    "@expo/dom-webview": "~57.0.1",
+    "@expo/log-box": "~57.0.2",
+    "@expo/metro-runtime": "~57.0.9",
     "@livekit/react-native": "^2.12.0",
     "@livekit/react-native-expo-plugin": "^1.0.2",
     "@livekit/react-native-webrtc": "^144.1.2",
-    "expo": "~56.0.17",
-    "expo-dev-client": "~56.0.24",
-    "expo-image-picker": "~56.0.22",
-    "expo-splash-screen": "~56.0.14",
+    "expo": "~57.0.12",
+    "expo-dev-client": "~57.0.11",
+    "expo-image-picker": "~57.0.9",
+    "expo-splash-screen": "~57.0.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-native": "0.85.3",
-    "react-native-web": "~0.21.2",
-    "@expo/metro-runtime": "~56.0.18"
+    "react-native": "0.86.2",
+    "react-native-web": "~0.21.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

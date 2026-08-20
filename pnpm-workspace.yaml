@@ -7,3 +7,7 @@ packages:
 # This mitigates supply chain attacks where malicious versions are typically
 # detected and removed within hours. See https://pnpm.io/supply-chain-security
 minimumReleaseAge: 10080 # 7 days
+# 15.0.2 opens expo peer to >=56 (required for examples/react-native-expo SDK 57).
+# Published 2026-08-15; remove this exclude after 2026-08-22.
+minimumReleaseAgeExclude:
+  - "@config-plugins/react-native-webrtc"

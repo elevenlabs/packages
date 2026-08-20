@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/client",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "description": "ElevenLabs JavaScript Client Library",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,7 @@
       "types": "./dist/index.d.ts",
       "unpkg": "./dist/lib.iife.js",
       "browser": "./dist/platform/web/index.js",
+      "react-native": "./dist/platform/react-native/index.js",
       "default": "./dist/index.js"
     },
     "./internal": "./dist/internal.js",

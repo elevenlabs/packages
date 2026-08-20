@@ -14,6 +14,7 @@ import type {
   AgentResponseCorrection,
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
+  ContextUsageClientEvent,
   Ping,
   RichContentClientEvent,
 } from "@elevenlabs/types";
@@ -80,6 +81,48 @@ export interface MessagePayload {
   source: "user" | "ai";
   role: Role;
 }
+
+/**
+ * An MCP tool call in the one state that can be answered with an approval
+ * result. Narrowed from {@link McpToolCallClientEvent} so handlers get
+ * `approval_timeout_secs` and the tool metadata without re-narrowing.
+ */
+export type MCPToolApprovalRequest = Extract<
+  McpToolCallClientEvent["mcp_tool_call"],
+  { state: "awaiting_approval" }
+>;
+
+export type MCPToolApprovalRequestContext = {
+  /**
+   * Aborted once the SDK will no longer send this handler's decision: the
+   * server moved the tool call past `awaiting_approval` (its approval window
+   * elapsed, for example), or the session ended. Use it to dismiss approval
+   * UI that can no longer have an effect.
+   */
+  signal: AbortSignal;
+};
+
+/**
+ * Decides whether an MCP tool call awaiting approval may proceed.
+ *
+ * The SDK sends the resulting `mcp_tool_approval_result` for you, exactly
+ * once per `tool_call_id`. Rejecting, or resolving to anything other than a
+ * boolean, is reported through `onError` and treated as a denial.
+ */
+export type MCPToolApprovalHandler = (
+  toolCall: MCPToolApprovalRequest,
+  context: MCPToolApprovalRequestContext
+) => Promise<boolean> | boolean;
+
+/**
+ * Handler option for MCP tool approvals. Sits outside {@link Callbacks}
+ * because it has request/response semantics — it returns a value the SDK
+ * puts on the wire — so the multi-listener composition that callbacks get in
+ * the React SDK does not apply. `clientTools` is the existing precedent.
+ */
+export type MCPToolApprovalConfig = {
+  onMCPToolApprovalRequest?: MCPToolApprovalHandler;
+};
 
 /**
  * Shared Callbacks, ensures all callbacks are implemented across all SDKs
@@ -156,6 +199,16 @@ export type Callbacks = {
    * estimate is available yet.
    */
   onPing?: (props: Ping["ping_event"]) => void;
+  /**
+   * Called when the server reports LLM context-window usage, which happens
+   * after each completed agent turn. Receives `{ event_id, model,
+   * context_tokens, context_limit_tokens }`, where `context_tokens` is the
+   * prompt size of the turn's last LLM generation and `context_limit_tokens`
+   * is that model's maximum context window.
+   */
+  onContextUsage?: (
+    props: ContextUsageClientEvent["context_usage_event"]
+  ) => void;
   // internal debug events, not to be used
   onDebug?: (props: any) => void;
   /**
@@ -200,6 +253,7 @@ export const CALLBACK_KEYS = [
   "onExternalAgentConnected",
   "onExternalAgentDisconnected",
   "onPing",
+  "onContextUsage",
   "onDebug",
   "onIncomingEvent",
   "onOutgoingEvent",
