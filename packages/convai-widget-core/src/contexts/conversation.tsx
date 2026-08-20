@@ -194,19 +194,20 @@ function useConversationSetup() {
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
     const queueStatus = signal<string | null>(null);
-    // The caller reached the agent when it never entered the concurrency wait
-    // queue (null) or was admitted from it. A status added on the backend but
-    // unknown here counts as reached, degrading gracefully to the regular UI.
-    const reachedAgent = computed(() => {
-      const s = queueStatus.value;
-      return s === null || (s !== "waiting" && s !== "timed_out");
-    });
+    // Only the statuses that hold a caller back are listed, so no queue,
+    // admission, and any status this build does not know about all mean "not
+    // held" — a status added on the backend renders like the pre-queue flow
+    // instead of locking the UI.
+    const isHeldInQueue = computed(
+      () =>
+        queueStatus.value === "waiting" || queueStatus.value === "timed_out"
+    );
     // While queued the transport is connected but the orchestrator discards
-    // client messages. "timed_out" arrives as a heads-up just before the
-    // server closes the connection, so it still counts as waiting until the
-    // disconnect actually lands.
+    // client messages. "timed_out" counts as held: the server sends it as a
+    // heads-up just before closing the connection, so it still renders as
+    // waiting until the disconnect actually lands.
     const isWaitingForAgent = computed(
-      () => !reachedAgent.value && !isDisconnected.value
+      () => isHeldInQueue.value && !isDisconnected.value
     );
 
     const setAgentTyping = (typing: boolean, durationMs?: number | null) => {
