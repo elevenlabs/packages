@@ -213,6 +213,74 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  describe("first message for voice-capable agents", () => {
+    it("shows the first message before a text conversation starts", async () => {
+      setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
+
+      await expect
+        .element(page.getByText("Welcome message"))
+        .toBeInTheDocument();
+    });
+
+    it("shows the first message rich content before a text conversation starts", async () => {
+      // The buttons belong to the first message, so a greeting offering choices
+      // must not render without them.
+      setupWebComponent({
+        "agent-id": "text_and_voice_rich_content",
+        variant: "compact",
+      });
+
+      await expect
+        .element(page.getByText("Welcome message"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .toBeInTheDocument();
+    });
+
+    it("keeps a single first message when the user starts a text chat", async () => {
+      setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
+
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Text message");
+      await userEvent.keyboard("{Enter}");
+
+      await expect.element(page.getByText("Text message")).toBeInTheDocument();
+      await expect
+        .element(page.getByText("Another agent response"))
+        .toBeInTheDocument();
+
+      // The server sends the first message too, but it arrives after the user's
+      // opening message, so the conversation drops it in favour of the locally
+      // rendered one rather than showing it twice or out of order.
+      const welcome = page.getByText("Welcome message");
+      await expect.element(welcome).toBeInTheDocument();
+      expect(welcome.elements()).toHaveLength(1);
+    });
+
+    it("does not duplicate the first message when the user starts a call", async () => {
+      setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
+
+      // The locally rendered preview has to give way to the server-sent first
+      // message once the conversation starts in voice mode.
+      await expect
+        .element(page.getByText("Welcome message"))
+        .toBeInTheDocument();
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+
+      await expect
+        .element(page.getByText("Another agent response"))
+        .toBeInTheDocument();
+
+      const welcome = page.getByText("Welcome message");
+      await expect.element(welcome).toBeInTheDocument();
+      expect(welcome.elements()).toHaveLength(1);
+    });
+  });
+
   it.each(Variants)(
     "$0 variant should show last message when agent calls end_call",
     async variant => {
@@ -572,6 +640,20 @@ describe("elevenlabs-convai", () => {
 
       // Text messages (isText: true) should preserve tags — stripping only applies to voice transcripts
       await expect.element(page.getByText(/\[happy\]/)).toBeInTheDocument();
+    });
+
+    it("should strip audio tags from the locally rendered first message of a voice-capable agent", async () => {
+      // first_message is written for TTS, so the local copy has to strip tags
+      // even though it renders as a text bubble.
+      setupWebComponent({
+        "agent-id": "text_and_voice_audio_tags",
+        variant: "compact",
+      });
+
+      await expect
+        .element(page.getByText("Hello there! How can I help you today?"))
+        .toBeInTheDocument();
+      await expect.element(page.getByText(/\[happy\]/)).not.toBeInTheDocument();
     });
 
     it("should not strip audio tags when strip_audio_tags config is false", async () => {

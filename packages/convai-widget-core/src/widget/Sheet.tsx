@@ -2,6 +2,7 @@ import { useComputed, useSignal } from "@preact/signals";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
+  useTextInputEnabled,
   useTextOnly,
   useWidgetConfig,
 } from "../contexts/widget-config";
@@ -22,6 +23,7 @@ import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
 import { SheetActions } from "./SheetActions";
 import { AvatarOverlay } from "./AvatarOverlay";
+import { stripAudioTags } from "../utils/stripAudioTags";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -50,22 +52,44 @@ export function Sheet({ open }: SheetProps) {
     isExternalAgentMode,
   } = useConversation();
   const firstMessage = useFirstMessage();
+  const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
 
+  const localFirstMessage = useComputed(() => {
+    const raw = firstMessage.value;
+    if (!raw) return undefined;
+
+    // Voice-capable agents write first_message for TTS, so strip its audio tags
+    // the way voice bubbles do. Text-only widgets keep them, which the
+    // `audio_tags_strip` test relies on.
+    const message =
+      !textOnly.value && config.value.strip_audio_tags
+        ? stripAudioTags(raw)
+        : raw;
+
+    if (isConversationTextOnly.value) return message;
+
+    const showFirstMessage =
+      isDisconnected.value &&
+      config.value.supports_text_only &&
+      textInputEnabled.value &&
+      !transcript.value.some(
+        entry => entry.type === "message" && !entry.isText
+      );
+
+    return showFirstMessage ? message : undefined;
+  });
+
   const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
+    const localMessage = localFirstMessage.value;
     return buildDisplayTranscript(transcript.value, {
       showAgentStatus: config.value.show_agent_status ?? false,
       transcriptEnabled:
         isTextOnly || (config.value.transcript_enabled ?? false),
-      showRichContent: isTextOnly,
-      // Prepend first message only when the widget is text-only
-      // (not when it switched to text-only due to user input)
-      firstMessage:
-        isTextOnly && textOnly.value && firstMessage.value
-          ? firstMessage.value
-          : undefined,
+      showRichContent: isTextOnly || localMessage !== undefined,
+      firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
       showTypingIndicator: isExternalAgentMode.value && isAgentTyping.value,
     });
