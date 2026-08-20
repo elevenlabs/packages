@@ -78,7 +78,7 @@ export function ExpandableTriggerActions({
   const collapsedConnected = !expanded.value && !isDisconnected.value;
   const showTriggerLanguageSelector =
     collapsedDisconnected &&
-    config.value.language_selector_placement === "trigger";
+    (config.value.show_language_selector_on_trigger ?? true);
 
   return (
     <>

@@ -24,20 +24,6 @@ export function parsePlacement(placement: string | undefined): Placement {
     : "bottom-right";
 }
 
-export const LanguageSelectorPlacements = ["trigger", "sheet"] as const;
-export type LanguageSelectorPlacement =
-  (typeof LanguageSelectorPlacements)[number];
-
-export function parseLanguageSelectorPlacement(
-  placement: string | undefined
-): LanguageSelectorPlacement {
-  return LanguageSelectorPlacements.includes(
-    placement as LanguageSelectorPlacement
-  )
-    ? (placement as LanguageSelectorPlacement)
-    : "trigger";
-}
-
 export type FeedbackMode = "none" | "during" | "end";
 export type FeedbackType = "rating";
 export type SyntaxHighlightTheme = "light" | "dark";
@@ -98,7 +84,7 @@ export interface WidgetConfig {
     max_files_per_conversation?: number;
   };
   show_resize_button?: boolean;
-  language_selector_placement?: LanguageSelectorPlacement;
+  show_language_selector_on_trigger?: boolean;
 }
 
 export type AvatarConfig =

@@ -120,13 +120,13 @@ describe("Trigger entry points", () => {
     );
 
     it.each(Variants)(
-      "$0 hides the language picker on the launcher when placement is sheet",
+      "$0 hides the language picker on the launcher when disabled",
       async variant => {
         setupWebComponent({
           "agent-id": "localized",
           variant,
           "text-input": "true",
-          "language-selector-placement": "sheet",
+          "show-language-selector-on-trigger": "false",
         });
 
         await expect
@@ -135,12 +135,12 @@ describe("Trigger entry points", () => {
       }
     );
 
-    it("shows the language picker in the sheet when placement is sheet", async () => {
+    it("shows the language picker in the sheet when hidden on the launcher", async () => {
       setupWebComponent({
         "agent-id": "localized",
         variant: "compact",
         "text-input": "true",
-        "language-selector-placement": "sheet",
+        "show-language-selector-on-trigger": "false",
       });
 
       await page.getByRole("button", { name: "Message" }).click();

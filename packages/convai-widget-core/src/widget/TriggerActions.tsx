@@ -14,9 +14,13 @@ interface TriggerActionsProps {
 }
 
 export function TriggerActions({ onDismiss }: TriggerActionsProps) {
-  const variant = useWidgetConfig().value.variant;
+  const config = useWidgetConfig();
+  const variant = config.value.variant;
   const { isDisconnected } = useConversation();
   const callDisabled = useCallButtonDisabled();
+  const showTriggerLanguageSelector =
+    isDisconnected.value &&
+    (config.value.show_language_selector_on_trigger ?? true);
 
   return (
     <>
@@ -26,7 +30,7 @@ export function TriggerActions({ onDismiss }: TriggerActionsProps) {
         className="w-full m-1 z-1"
         disabled={callDisabled.value}
       />
-      <TriggerLanguageSelect visible={isDisconnected.value} />
+      <TriggerLanguageSelect visible={showTriggerLanguageSelector} />
       <SizeTransition visible={!isDisconnected.value} className="p-1">
         <TriggerMuteButton />
       </SizeTransition>
