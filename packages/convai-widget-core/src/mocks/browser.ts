@@ -538,6 +538,9 @@ export const Worker = setupWorker(
         });
       }
       if (agentId === "external_agent") {
+        // Simulates a human agent takeover: the first user message triggers
+        // "external agent connected + typing", the second one triggers a
+        // handback via external_agent_disconnected with no other frames.
         let takenOver = false;
         client.addEventListener("message", async event => {
           const data =
@@ -553,7 +556,6 @@ export const Worker = setupWorker(
               })
             );
             await new Promise(resolve => setTimeout(resolve, 0));
-            // No duration_ms, so the indicator stays up until something clears it.
             client.send(
               JSON.stringify({
                 type: "agent_typing",
@@ -563,9 +565,6 @@ export const Worker = setupWorker(
             return;
           }
 
-          // Deliberately the only frame sent on handback. An `agent_response`
-          // would also clear the typing indicator, which would make this
-          // scenario pass even if `external_agent_disconnected` were ignored.
           client.send(
             JSON.stringify({
               type: "external_agent_disconnected",
