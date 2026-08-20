@@ -44,6 +44,9 @@ function Playground() {
           dismissible={JSON.stringify(state.dismissible)}
           show-agent-status={JSON.stringify(state.showAgentStatus)}
           show-resize-button={JSON.stringify(state.showResizeButton)}
+          show-language-selector-on-trigger={JSON.stringify(
+            state.showLanguageSelectorOnTrigger
+          )}
           dynamic-variables={JSON.stringify(state.dynamicVariables)}
           server-location={state.location}
           override-first-message={

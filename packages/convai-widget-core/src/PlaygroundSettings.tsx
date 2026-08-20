@@ -22,6 +22,8 @@ export function usePlaygroundSettings() {
   const [dismissible, setDismissible] = useState(false);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [showResizeButton, setShowResizeButton] = useState(true);
+  const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
+    useState(true);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [allowEvents, setAllowEvents] = useState(false);
@@ -70,6 +72,8 @@ export function usePlaygroundSettings() {
     setShowAgentStatus,
     showResizeButton,
     setShowResizeButton,
+    showLanguageSelectorOnTrigger,
+    setShowLanguageSelectorOnTrigger,
     dynamicVariablesStr,
     setDynamicVariablesStr,
     dynamicVariables,
@@ -192,6 +196,16 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setShowResizeButton(e.currentTarget.checked)}
         />{" "}
         Show resize button
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.showLanguageSelectorOnTrigger}
+          onChange={e =>
+            state.setShowLanguageSelectorOnTrigger(e.currentTarget.checked)
+          }
+        />{" "}
+        Show language selector on trigger
       </label>
       <label>
         Dynamic variables (i.e., new-line separated name=value)
