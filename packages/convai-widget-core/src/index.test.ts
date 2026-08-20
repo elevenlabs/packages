@@ -296,6 +296,128 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  describe("concurrency wait queue", () => {
+    it("shows the waiting status and blocks sending while queued", async () => {
+      setupWebComponent({
+        "agent-id": "queued",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .toBeInTheDocument();
+
+      // The typing indicator stays hidden while queued.
+      await expect
+        .element(page.getByText("Agent is typing ..."))
+        .not.toBeInTheDocument();
+
+      // Sending is blocked: the orchestrator discards client messages while
+      // held in the queue, so they would only pollute the local transcript.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Queued message");
+      await expect
+        .element(page.getByRole("button", { name: "Send", exact: true }))
+        .toBeDisabled();
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("Queued message"))
+        .not.toBeInTheDocument();
+
+      // Hanging up while queued goes through the regular disconnect flow.
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await endButton.click();
+      await expect
+        .element(page.getByText("You ended the conversation"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .not.toBeInTheDocument();
+
+      // No residual gating: a new conversation can start from the textarea.
+      await textInput.fill("New text message");
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("New text message"))
+        .toBeInTheDocument();
+    });
+
+    it("returns to the regular flow when admitted from the queue", async () => {
+      setupWebComponent({
+        "agent-id": "queue_admit",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .toBeInTheDocument();
+
+      // Admitted: the waiting status clears and the agent responds.
+      await expect
+        .element(page.getByText("Queue cleared response"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .not.toBeInTheDocument();
+
+      // Sending works again.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Hello after queue");
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("Hello after queue"))
+        .toBeInTheDocument();
+    });
+
+    it("shows a friendly message when the queue wait times out", async () => {
+      setupWebComponent({
+        "agent-id": "queue_timeout",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .toBeInTheDocument();
+
+      // The server closes after the timeout; the caller gets friendly copy
+      // instead of the raw close reason or error styling.
+      await expect
+        .element(
+          page.getByText("All agents are still busy. Please try again later.")
+        )
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("An error occurred"))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("too many concurrent connections"))
+        .not.toBeInTheDocument();
+      await expect.element(startButton).toBeInTheDocument();
+    });
+  });
+
   describe("expansion events", () => {
     it.each(["document", "widget"])(
       "should expand and collapse widget when elevenlabs-agent:expand event is dispatched (%s)",

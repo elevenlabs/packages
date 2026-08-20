@@ -9,19 +9,24 @@ import { useConversationMode } from "../contexts/conversation-mode";
 
 
 function userCurrentLabel() {
-  const { status, isSpeaking } = useConversation();
+  const { status, isSpeaking, isWaitingForAgent } = useConversation();
   const textOnly = useIsConversationTextOnly();
   const { isTextMode } = useConversationMode();
   const text = useTextContents();
 
   const compute = () => {
-    if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true};
+    // The waiting copy wins over the connected states: while held in the
+    // concurrency wait queue the transport is connected but no agent is
+    // listening or speaking yet.
+    if (isWaitingForAgent.value) return {label: text.queue_waiting_status.value, updateImmediately: true, wrap: true};
 
-    if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value};
+    if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true, wrap: false};
 
-    if (isSpeaking.value) return {label: text.speaking_status.value, updateImmediately: isSpeaking.value};
+    if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value, wrap: false};
 
-    return {label: text.listening_status.value, updateImmediately: isSpeaking.value};
+    if (isSpeaking.value) return {label: text.speaking_status.value, updateImmediately: isSpeaking.value, wrap: false};
+
+    return {label: text.listening_status.value, updateImmediately: isSpeaking.value, wrap: false};
   }
   return useComputed(compute)
 }
@@ -31,14 +36,17 @@ export function StatusLabel({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   const currentLabel = userCurrentLabel();
-  const [label, setLabel] = useState(currentLabel.peek().label);
+  const [{ label, wrap }, setLabel] = useState(() => {
+    const { label, wrap } = currentLabel.peek();
+    return { label, wrap };
+  });
   useSignalEffect(() => {
-    const label = currentLabel.value;
-    if (label.updateImmediately) {
-      setLabel(label.label);
+    const next = currentLabel.value;
+    if (next.updateImmediately) {
+      setLabel({ label: next.label, wrap: next.wrap });
     } else {
       const timeout = setTimeout(() => {
-        setLabel(label.label);
+        setLabel({ label: next.label, wrap: next.wrap });
       }, 500);
       return () => clearTimeout(timeout);
     }
@@ -53,7 +61,12 @@ export function StatusLabel({
       {...props}
     >
       <InOutTransition key={label} initial={false} active={true}>
-        <div className="animate-text whitespace-nowrap transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2">
+        <div
+          className={clsx(
+            "animate-text transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2",
+            wrap ? "whitespace-normal max-w-60 text-center" : "whitespace-nowrap"
+          )}
+        >
           {label}
         </div>
       </InOutTransition>

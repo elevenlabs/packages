@@ -42,6 +42,12 @@ export const AGENTS = {
     use_rtc: true,
   },
   fail: BASIC_CONFIG,
+  // Held in the concurrency wait queue and never admitted.
+  queued: BASIC_CONFIG,
+  // Admitted from the wait queue after a delay.
+  queue_admit: BASIC_CONFIG,
+  // The wait queue times out and the server closes with an error.
+  queue_timeout: BASIC_CONFIG,
   end_call_test: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -374,6 +380,57 @@ export const Worker = setupWorker(
         client.addEventListener("message", () => {
           client.close(3000, "Test reason");
         });
+      }
+      if (
+        agentId === "queued" ||
+        agentId === "queue_admit" ||
+        agentId === "queue_timeout"
+      ) {
+        client.send(
+          JSON.stringify({
+            type: "queue_status",
+            queue_status_event: { status: "waiting" },
+          })
+        );
+      }
+      if (agentId === "queued") {
+        // A typing indicator arriving while queued must stay hidden.
+        client.send(JSON.stringify({ type: "external_agent_connected" }));
+        client.send(
+          JSON.stringify({
+            type: "agent_typing",
+            agent_typing_event: { is_typing: true },
+          })
+        );
+      }
+      if (agentId === "queue_admit") {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        client.send(
+          JSON.stringify({
+            type: "queue_status",
+            queue_status_event: { status: "admitted" },
+          })
+        );
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response: "Queue cleared response",
+              event_id: 4,
+            },
+          })
+        );
+      }
+      if (agentId === "queue_timeout") {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        client.send(
+          JSON.stringify({
+            type: "queue_status",
+            queue_status_event: { status: "timed_out" },
+          })
+        );
+        await new Promise(resolve => setTimeout(resolve, 400));
+        client.close(3008, "too many concurrent connections");
       }
       if (agentId === "end_call_test") {
         client.addEventListener("message", async () => {

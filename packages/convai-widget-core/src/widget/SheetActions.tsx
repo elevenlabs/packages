@@ -53,6 +53,7 @@ export function SheetActions({
     startSession,
     sendUserMessage,
     sendMultimodalMessage,
+    isWaitingForAgent,
   } = useConversation();
 
   const fileError = useSignal<string | null>(null);
@@ -89,7 +90,8 @@ export function SheetActions({
     () =>
       !pendingFile.value &&
       !hasReachedLimit.value &&
-      status.value === "connected"
+      status.value === "connected" &&
+      !isWaitingForAgent.value
   );
 
   const handleFileSelect = useCallback(
@@ -112,7 +114,13 @@ export function SheetActions({
   const canSend = useComputed(() => {
     const hasText = !!userMessage.value.trim();
     const hasReadyFile = pendingFile.value?.status === "ready";
-    return (hasText || hasReadyFile) && !isUploading.value;
+    // While held in the concurrency wait queue the orchestrator discards
+    // client messages, so sending would only pollute the local transcript.
+    return (
+      (hasText || hasReadyFile) &&
+      !isUploading.value &&
+      !isWaitingForAgent.value
+    );
   });
 
   const handleSendMessage = useCallback(
