@@ -15,6 +15,7 @@ export interface Pong {
 export interface UserMessage {
   type: "user_message";
   text?: string;
+  rich_content_id?: string;
 }
 
 export interface UserActivity {
@@ -218,6 +219,7 @@ export interface MultimodalMessage {
 export interface ReservedText {
   type: "user_message";
   text?: string;
+  rich_content_id?: string;
 }
 
 export interface File {
@@ -750,6 +752,7 @@ export interface PongClientToOrchestratorEvent {
 export interface UserMessageClientToOrchestratorEvent {
   type: "user_message";
   text?: string;
+  rich_content_id?: string;
 }
 
 export interface UserActivityClientToOrchestratorEvent {

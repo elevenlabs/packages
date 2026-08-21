@@ -59,6 +59,7 @@ export function Sheet({ open }: SheetProps) {
       showAgentStatus: config.value.show_agent_status ?? false,
       transcriptEnabled:
         isTextOnly || (config.value.transcript_enabled ?? false),
+      showRichContent: isTextOnly,
       // Prepend first message only when the widget is text-only
       // (not when it switched to text-only due to user input)
       firstMessage:

@@ -85,6 +85,10 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   show_language_selector_on_trigger?: boolean;
+  first_message_rich_content?: {
+    component: string;
+    props: unknown;
+  } | null;
 }
 
 export type AvatarConfig =

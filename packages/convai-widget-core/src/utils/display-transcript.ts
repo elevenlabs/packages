@@ -57,6 +57,7 @@ export type DisplayTranscriptEntry =
 export interface DisplayTranscriptConfig {
   showAgentStatus: boolean;
   transcriptEnabled: boolean;
+  showRichContent: boolean;
   /** If set, prepend as the first agent message (for text-only first message). */
   firstMessage?: string;
   /** The conversationIndex to use for the prepended first message. */
@@ -109,11 +110,25 @@ export function buildDisplayTranscript(
     }
   }
 
-  for (const entry of entries) {
+  let lastUserEntryIndex = -1;
+  entries.forEach((entry, index) => {
+    if (entry.type === "message" && entry.role === "user") {
+      lastUserEntryIndex = index;
+    }
+  });
+
+  for (const [entryIndex, entry] of entries.entries()) {
     // Skip tool entries (consumed into status)
     if (
       entry.type === "agent_tool_request" ||
       entry.type === "agent_tool_response"
+    ) {
+      continue;
+    }
+
+    if (
+      entry.type === "rich_content" &&
+      (!config.showRichContent || entryIndex < lastUserEntryIndex)
     ) {
       continue;
     }
