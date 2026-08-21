@@ -575,6 +575,8 @@ function useConversationSetup() {
         conversationRef.current?.sendFeedback(like);
       },
       sendUserMessage: (text: string, options?: SendUserMessageOptions) => {
+        // The orchestrator discards messages sent while held in the queue.
+        if (isWaitingForAgent.peek()) return;
         conversationRef.current?.sendUserMessage(text, options);
         transcript.value = [
           ...transcript.value,
@@ -591,6 +593,7 @@ function useConversationSetup() {
         text?: string;
         file: TranscriptFileInput & { fileId: string };
       }) => {
+        if (isWaitingForAgent.peek()) return;
         const trimmed = input.text?.trim() ?? "";
         const { fileId, ...fileInput } = input.file;
         conversationRef.current?.sendMultimodalMessage({

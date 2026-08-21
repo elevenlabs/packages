@@ -409,6 +409,26 @@ export const Worker = setupWorker(
             agent_typing_event: { is_typing: true },
           })
         );
+        // Rich-content buttons arriving while queued must render disabled.
+        client.send(
+          JSON.stringify({
+            type: "rich_content",
+            rich_content: {
+              rich_content_id: "rc_queued",
+              component: "buttons",
+              props: {
+                buttons: [
+                  {
+                    type: "message",
+                    label: "Quick reply",
+                    message: "Quick reply",
+                  },
+                ],
+              },
+              event_id: 2,
+            },
+          })
+        );
       }
       if (agentId === "queue_admit") {
         await new Promise(resolve => setTimeout(resolve, 1500));

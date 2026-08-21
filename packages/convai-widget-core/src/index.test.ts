@@ -349,6 +349,45 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
     });
 
+    it("disables rich-content buttons and drops bridged sends while queued", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "queued",
+        transcript: "true",
+        "text-input": "true",
+        "allow-events": "true",
+        "default-expanded": "true",
+      });
+
+      // Start via the textarea so the conversation is text-only and rich
+      // content renders.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Hello");
+      await userEvent.keyboard("{Enter}");
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .toBeInTheDocument();
+
+      // Rich-content buttons received while queued render disabled.
+      await expect
+        .element(page.getByRole("button", { name: "Quick reply" }))
+        .toBeDisabled();
+
+      // Programmatic sends via the event bridge are dropped while queued.
+      widget.dispatchEvent(
+        new CustomEvent("elevenlabs-agent:user-message", {
+          detail: { message: "Bridged message" },
+        })
+      );
+      await expect
+        .element(page.getByText("Bridged message"))
+        .not.toBeInTheDocument();
+    });
+
     it("shows the full waiting message on the avatar overlay", async () => {
       // The expanded sheet without a transcript shows the avatar overlay,
       // which renders the full waiting copy.
