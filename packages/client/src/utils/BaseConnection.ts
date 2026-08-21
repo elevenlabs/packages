@@ -38,6 +38,38 @@ export type BaseSessionConfig = {
      * Defaults to "all".
      */
     iceTransportPolicy?: "all" | "relay";
+    /**
+     * @elevenlabs/react-native only. Ignored on other platforms.
+     */
+    reactNative?: {
+      /**
+       * Overrides the native AudioSession routing @elevenlabs/react-native
+       * applies before the connection starts.
+       */
+      audioSession?: {
+        android?: {
+          /**
+           * The automatic output routing order. Omit to use the native
+           * module's own default (bluetooth, then headset, then speaker,
+           * then earpiece), which routes to a connected Bluetooth or wired
+           * headset instead of always using the speaker.
+           */
+          preferredOutputList?: (
+            | "speaker"
+            | "earpiece"
+            | "headset"
+            | "bluetooth"
+          )[];
+        };
+        ios?: {
+          /**
+           * The output to prefer when no headset or Bluetooth device is
+           * connected. Defaults to "speaker".
+           */
+          defaultOutput?: "speaker" | "earpiece";
+        };
+      };
+    };
   };
   overrides?: {
     agent?: {

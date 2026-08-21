@@ -38,13 +38,24 @@ async function reactNativeSessionSetup(
     );
   }
 
+  const audioSessionOverrides = options.webRtc?.reactNative?.audioSession;
   await AudioSession.configureAudio({
     android: {
-      preferredOutputList: ["speaker"],
+      // No preferredOutputList here routes to the native module's own
+      // default (bluetooth > headset > speaker > earpiece), so a connected
+      // Bluetooth or wired headset is used automatically instead of always
+      // forcing the speaker. Callers who want a fixed order, e.g. always
+      // "speaker", can still ask for one explicitly.
+      ...(audioSessionOverrides?.android?.preferredOutputList !== undefined
+        ? {
+            preferredOutputList:
+              audioSessionOverrides.android.preferredOutputList,
+          }
+        : {}),
       audioTypeOptions: AndroidAudioTypePresets.communication,
     },
     ios: {
-      defaultOutput: "speaker",
+      defaultOutput: audioSessionOverrides?.ios?.defaultOutput ?? "speaker",
     },
   });
   await AudioSession.startAudioSession();
