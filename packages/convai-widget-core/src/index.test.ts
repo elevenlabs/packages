@@ -366,6 +366,33 @@ describe("elevenlabs-convai", () => {
         .toBeInTheDocument();
     });
 
+    it("keeps the waiting status inside the full trigger", async () => {
+      // The trigger sizes itself from the labels' shared grid cell; with an
+      // absolutely positioned status label the long waiting copy would not
+      // affect layout and would get clipped at the card edge mid-word.
+      setupWebComponent({ "agent-id": "queued", variant: "full" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const label = page.getByText("Waiting for an available agent");
+      await expect.element(label).toBeInTheDocument();
+
+      const labelElement = label.element() as HTMLElement;
+      // The full copy is visible, not ellipsized...
+      expect(labelElement.scrollWidth).toBeLessThanOrEqual(
+        labelElement.clientWidth + 1
+      );
+      // ...and the label stays within the trigger card.
+      const card = labelElement.closest(".rounded-sheet")!;
+      const labelRect = labelElement.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      expect(labelRect.right).toBeLessThanOrEqual(cardRect.right);
+      expect(labelRect.left).toBeGreaterThanOrEqual(cardRect.left);
+    });
+
     it("returns to the regular flow when admitted from the queue", async () => {
       setupWebComponent({
         "agent-id": "queue_admit",

@@ -7,7 +7,6 @@ import { useTextContents } from "../contexts/text-contents";
 import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useConversationMode } from "../contexts/conversation-mode";
 
-
 function userCurrentLabel(compact: boolean) {
   const { status, isSpeaking, isWaitingForAgent } = useConversation();
   const textOnly = useIsConversationTextOnly();
@@ -21,18 +20,45 @@ function userCurrentLabel(compact: boolean) {
     // short form; spacious ones the full reassurance, wrapped.
     if (isWaitingForAgent.value)
       return compact
-        ? {label: text.queue_waiting_status_short.value, updateImmediately: true, wrap: false}
-        : {label: text.queue_waiting_status.value, updateImmediately: true, wrap: true};
+        ? {
+            label: text.queue_waiting_status_short.value,
+            updateImmediately: true,
+            wrap: false,
+          }
+        : {
+            label: text.queue_waiting_status.value,
+            updateImmediately: true,
+            wrap: true,
+          };
 
-    if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true, wrap: false};
+    if (status.value !== "connected")
+      return {
+        label: text.connecting_status.value,
+        updateImmediately: true,
+        wrap: false,
+      };
 
-    if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value, wrap: false};
+    if (textOnly.value || isTextMode.value)
+      return {
+        label: text.chatting_status.value,
+        updateImmediately: isSpeaking.value,
+        wrap: false,
+      };
 
-    if (isSpeaking.value) return {label: text.speaking_status.value, updateImmediately: isSpeaking.value, wrap: false};
+    if (isSpeaking.value)
+      return {
+        label: text.speaking_status.value,
+        updateImmediately: isSpeaking.value,
+        wrap: false,
+      };
 
-    return {label: text.listening_status.value, updateImmediately: isSpeaking.value, wrap: false};
-  }
-  return useComputed(compute)
+    return {
+      label: text.listening_status.value,
+      updateImmediately: isSpeaking.value,
+      wrap: false,
+    };
+  };
+  return useComputed(compute);
 }
 
 interface StatusLabelProps extends HTMLAttributes<HTMLDivElement> {
@@ -74,7 +100,10 @@ export function StatusLabel({
         <div
           className={clsx(
             "animate-text transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2",
-            wrap ? "whitespace-normal max-w-60 text-center" : "whitespace-nowrap"
+            // truncate degrades gracefully when a surface caps the label's
+            // width (e.g. long custom copy in the trigger): ellipsis instead
+            // of spilling past the card edge.
+            wrap ? "whitespace-normal max-w-60 text-center" : "truncate"
           )}
         >
           {label}
