@@ -48,6 +48,7 @@ export function Sheet({ open }: SheetProps) {
     conversationIndex,
     isAgentTyping,
     isExternalAgentMode,
+    isWaitingForAgent,
   } = useConversation();
   const firstMessage = useFirstMessage();
   const { currentContent, currentConfig } = useSheetContent();
@@ -67,7 +68,10 @@ export function Sheet({ open }: SheetProps) {
           ? firstMessage.value
           : undefined,
       firstMessageConversationIndex: conversationIndex.peek(),
-      showTypingIndicator: isExternalAgentMode.value && isAgentTyping.value,
+      showTypingIndicator:
+        isExternalAgentMode.value &&
+        isAgentTyping.value &&
+        !isWaitingForAgent.value,
     });
   });
   const showTranscript = useComputed(

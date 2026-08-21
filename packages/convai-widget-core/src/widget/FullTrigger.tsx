@@ -26,17 +26,20 @@ export function FullTrigger({
     >
       <div className="flex items-center p-1 gap-2 min-w-60">
         <Avatar />
-        <div className="relative text-sm max-w-64">
+        <div className="grid items-center text-sm max-w-64">
           <span
             className={clsx(
-              "block transition-[transform,opacity] duration-200",
+              "col-start-1 row-start-1 transition-[transform,opacity] duration-200",
               !isDisconnected.value && "opacity-0 scale-90"
             )}
           >
             {text.main_label}
           </span>
           <InOutTransition active={!isDisconnected.value}>
-            <StatusLabel className="absolute top-1/2 -translate-y-1/2 transition-[transform,opacity] duration-200 data-hidden:opacity-0 data-hidden:scale-90" />
+            <StatusLabel
+              compact
+              className="col-start-1 row-start-1 justify-self-start max-w-full transition-[transform,opacity] duration-200 data-hidden:opacity-0 data-hidden:scale-90"
+            />
           </InOutTransition>
         </div>
       </div>

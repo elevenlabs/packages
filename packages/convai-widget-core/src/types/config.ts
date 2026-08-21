@@ -129,6 +129,9 @@ export const DefaultTextContents = {
   speaking_status: "Talk to interrupt",
   connecting_status: "Connecting",
   chatting_status: "Chatting with AI Agent",
+  queue_waiting_status:
+    "All agents are busy right now. We'll connect you automatically as soon as one is available.",
+  queue_waiting_status_short: "Waiting for an available agent",
 
   input_label: "Text message input",
   input_placeholder: "Send a message...",
@@ -139,6 +142,7 @@ export const DefaultTextContents = {
   agent_ended_conversation: "The agent ended the conversation",
   conversation_id: "ID",
   error_occurred: "An error occurred",
+  queue_timed_out: "All agents are still busy. Please try again later.",
   copy_id: "Copy ID",
   initiate_feedback: "How was this conversation?",
   request_follow_up_feedback: "Tell us more",

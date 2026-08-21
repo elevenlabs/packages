@@ -21,9 +21,16 @@ export interface ButtonGroupProps {
 }
 
 export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
-  const { sendUserMessage, startSession, isDisconnected, status } =
-    useConversation();
-  const disabled = status.value !== "connected" && !isDisconnected.value;
+  const {
+    sendUserMessage,
+    startSession,
+    isDisconnected,
+    status,
+    isWaitingForAgent,
+  } = useConversation();
+  const disabled =
+    (status.value !== "connected" && !isDisconnected.value) ||
+    isWaitingForAgent.value;
 
   if (buttons.length === 0) return null;
 

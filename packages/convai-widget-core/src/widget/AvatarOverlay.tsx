@@ -57,7 +57,7 @@ export function AvatarOverlay({
           </div>
         </InOutTransition>
         <InOutTransition active={showStatusLabel}>
-          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 translate-y-full w-max transition-[opacity,transform] data-hidden:opacity-0 data-hidden:scale-75">
             <StatusLabel />
           </div>
         </InOutTransition>

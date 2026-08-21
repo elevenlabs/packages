@@ -7,38 +7,68 @@ import { useTextContents } from "../contexts/text-contents";
 import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useConversationMode } from "../contexts/conversation-mode";
 
-
-function userCurrentLabel() {
-  const { status, isSpeaking } = useConversation();
+function userCurrentLabel(compact: boolean) {
+  const { status, isSpeaking, isWaitingForAgent } = useConversation();
   const textOnly = useIsConversationTextOnly();
   const { isTextMode } = useConversationMode();
   const text = useTextContents();
 
   const compute = () => {
-    if (status.value !== "connected") return {label: text.connecting_status.value, updateImmediately: true};
+    // While queued the transport is connected but no agent is present yet,
+    // so the waiting copy wins over the connected statuses.
+    if (isWaitingForAgent.value)
+      return {
+        label: compact
+          ? text.queue_waiting_status_short.value
+          : text.queue_waiting_status.value,
+        updateImmediately: true,
+      };
 
-    if (textOnly.value || isTextMode.value) return {label: text.chatting_status.value, updateImmediately: isSpeaking.value};
+    if (status.value !== "connected")
+      return {
+        label: text.connecting_status.value,
+        updateImmediately: true,
+      };
 
-    if (isSpeaking.value) return {label: text.speaking_status.value, updateImmediately: isSpeaking.value};
+    if (textOnly.value || isTextMode.value)
+      return {
+        label: text.chatting_status.value,
+        updateImmediately: isSpeaking.value,
+      };
 
-    return {label: text.listening_status.value, updateImmediately: isSpeaking.value};
-  }
-  return useComputed(compute)
+    if (isSpeaking.value)
+      return {
+        label: text.speaking_status.value,
+        updateImmediately: isSpeaking.value,
+      };
+
+    return {
+      label: text.listening_status.value,
+      updateImmediately: isSpeaking.value,
+    };
+  };
+  return useComputed(compute);
+}
+
+interface StatusLabelProps extends HTMLAttributes<HTMLDivElement> {
+  /** Render single-line copy for cramped surfaces (header pill, trigger). */
+  compact?: boolean;
 }
 
 export function StatusLabel({
   className,
+  compact = false,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  const currentLabel = userCurrentLabel();
-  const [label, setLabel] = useState(currentLabel.peek().label);
+}: StatusLabelProps) {
+  const currentLabel = userCurrentLabel(compact);
+  const [{ label }, setLabel] = useState(() => currentLabel.peek());
   useSignalEffect(() => {
-    const label = currentLabel.value;
-    if (label.updateImmediately) {
-      setLabel(label.label);
+    const next = currentLabel.value;
+    if (next.updateImmediately) {
+      setLabel(next);
     } else {
       const timeout = setTimeout(() => {
-        setLabel(label.label);
+        setLabel(next);
       }, 500);
       return () => clearTimeout(timeout);
     }
@@ -53,7 +83,12 @@ export function StatusLabel({
       {...props}
     >
       <InOutTransition key={label} initial={false} active={true}>
-        <div className="animate-text whitespace-nowrap transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2">
+        <div
+          className={clsx(
+            "animate-text transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2",
+            compact ? "truncate" : "whitespace-normal max-w-60 text-center"
+          )}
+        >
           {label}
         </div>
       </InOutTransition>

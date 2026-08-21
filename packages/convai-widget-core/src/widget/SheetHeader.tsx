@@ -51,7 +51,10 @@ export function SheetHeader({
             <div className="relative w-8 h-8" />
           )}
           <InOutTransition active={showStatusLabel}>
-            <StatusLabel className="transition-opacity data-hidden:opacity-0" />
+            <StatusLabel
+              compact
+              className="transition-opacity data-hidden:opacity-0"
+            />
           </InOutTransition>
         </div>
         <div className="absolute flex flex-row items-center gap-2 ms-auto end-3">

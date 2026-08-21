@@ -296,6 +296,206 @@ describe("elevenlabs-convai", () => {
     }
   );
 
+  describe("concurrency wait queue", () => {
+    it("shows the waiting status and blocks sending while queued", async () => {
+      setupWebComponent({
+        "agent-id": "queued",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .toBeInTheDocument();
+
+      // The typing indicator stays hidden while queued.
+      await expect
+        .element(page.getByText("Agent is typing ..."))
+        .not.toBeInTheDocument();
+
+      // Sending is blocked while held in the queue.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Queued message");
+      await expect
+        .element(page.getByRole("button", { name: "Send", exact: true }))
+        .toBeDisabled();
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("Queued message"))
+        .not.toBeInTheDocument();
+
+      // Hanging up while queued goes through the regular disconnect flow.
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await endButton.click();
+      await expect
+        .element(page.getByText("You ended the conversation"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .not.toBeInTheDocument();
+
+      // No residual gating: a new conversation can start from the textarea.
+      await textInput.fill("New text message");
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("New text message"))
+        .toBeInTheDocument();
+    });
+
+    it("disables rich-content buttons and drops bridged sends while queued", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "queued",
+        transcript: "true",
+        "text-input": "true",
+        "allow-events": "true",
+        "default-expanded": "true",
+      });
+
+      // Start via the textarea so the conversation is text-only and rich
+      // content renders.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Hello");
+      await userEvent.keyboard("{Enter}");
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .toBeInTheDocument();
+
+      // Rich-content buttons received while queued render disabled.
+      await expect
+        .element(page.getByRole("button", { name: "Quick reply" }))
+        .toBeDisabled();
+
+      // Programmatic sends via the event bridge are dropped while queued.
+      widget.dispatchEvent(
+        new CustomEvent("elevenlabs-agent:user-message", {
+          detail: { message: "Bridged message" },
+        })
+      );
+      await expect
+        .element(page.getByText("Bridged message"))
+        .not.toBeInTheDocument();
+    });
+
+    it("shows the full waiting message on the avatar overlay", async () => {
+      // The expanded sheet without a transcript shows the avatar overlay,
+      // which renders the full waiting copy.
+      setupWebComponent({ "agent-id": "queued_overlay" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("All agents are busy right now"))
+        .toBeInTheDocument();
+    });
+
+    it("keeps the waiting status inside the full trigger", async () => {
+      // Regression: the long waiting copy must size the trigger, not get
+      // clipped at the card edge.
+      setupWebComponent({ "agent-id": "queued", variant: "full" });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      const label = page.getByText("Waiting for an available agent");
+      await expect.element(label).toBeInTheDocument();
+
+      const labelElement = label.element() as HTMLElement;
+      // The full copy is visible, not ellipsized...
+      expect(labelElement.scrollWidth).toBeLessThanOrEqual(
+        labelElement.clientWidth + 1
+      );
+      // ...and the label stays within the trigger card.
+      const card = labelElement.closest(".rounded-sheet")!;
+      const labelRect = labelElement.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      expect(labelRect.right).toBeLessThanOrEqual(cardRect.right);
+      expect(labelRect.left).toBeGreaterThanOrEqual(cardRect.left);
+    });
+
+    it("returns to the regular flow when admitted from the queue", async () => {
+      setupWebComponent({
+        "agent-id": "queue_admit",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .toBeInTheDocument();
+
+      // Admitted: the waiting status clears and the agent responds.
+      await expect
+        .element(page.getByText("Queue cleared response"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .not.toBeInTheDocument();
+
+      // Sending works again.
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+      await textInput.fill("Hello after queue");
+      await userEvent.keyboard("{Enter}");
+      await expect
+        .element(page.getByText("Hello after queue"))
+        .toBeInTheDocument();
+    });
+
+    it("shows a friendly message when the queue wait times out", async () => {
+      setupWebComponent({
+        "agent-id": "queue_timeout",
+        transcript: "true",
+        "text-input": "true",
+      });
+
+      const startButton = page.getByRole("button", { name: "Start a call" });
+      await startButton.click();
+      const acceptButton = page.getByRole("button", { name: "Accept" });
+      await acceptButton.click();
+
+      await expect
+        .element(page.getByText("Waiting for an available agent"))
+        .toBeInTheDocument();
+
+      // Friendly copy instead of the raw close reason or error styling.
+      await expect
+        .element(
+          page.getByText("All agents are still busy. Please try again later.")
+        )
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("An error occurred"))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("too many concurrent connections"))
+        .not.toBeInTheDocument();
+      await expect.element(startButton).toBeInTheDocument();
+    });
+  });
+
   describe("expansion events", () => {
     it.each(["document", "widget"])(
       "should expand and collapse widget when elevenlabs-agent:expand event is dispatched (%s)",

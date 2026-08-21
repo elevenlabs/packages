@@ -215,6 +215,24 @@ function ErrorMessage({
   );
 }
 
+function QueueTimeoutMessage() {
+  const text = useTextContents();
+  const { lastId } = useConversation();
+  const config = useWidgetConfig();
+
+  return (
+    <div className="px-8 text-xs text-base-subtle text-center transition-opacity duration-200 data-hidden:opacity-0">
+      {text.queue_timed_out}
+      <br />
+      {lastId.value && config.value.show_conversation_id && (
+        <span className="break-all">
+          {text.conversation_id}: {lastId.value}
+        </span>
+      )}
+    </div>
+  );
+}
+
 interface ModeToggleMessageProps {
   entry: Extract<DisplayTranscriptEntry, { type: "mode_toggle" }>;
 }
@@ -301,6 +319,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "error") {
     return <ErrorMessage entry={entry} />;
+  }
+  if (entry.type === "queue_timeout") {
+    return <QueueTimeoutMessage />;
   }
   if (entry.type === "typing_indicator") {
     return <TypingIndicatorMessage />;
