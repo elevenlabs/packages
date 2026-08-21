@@ -263,6 +263,15 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  external_agent: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -332,7 +341,8 @@ export const Worker = setupWorker(
         agentId !== "tool_call" &&
         agentId !== "stream_consolidation" &&
         agentId !== "file_upload" &&
-        agentId !== "no_file_upload"
+        agentId !== "no_file_upload" &&
+        agentId !== "external_agent"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -523,6 +533,42 @@ export const Worker = setupWorker(
             JSON.stringify({
               type: "agent_chat_response_part",
               text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+        });
+      }
+      if (agentId === "external_agent") {
+        // Simulates a human agent takeover: the first user message triggers
+        // "external agent connected + typing", the second one triggers a
+        // handback via external_agent_disconnected with no other frames.
+        let takenOver = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+
+          if (!takenOver) {
+            takenOver = true;
+            client.send(
+              JSON.stringify({
+                type: "external_agent_connected",
+                external_agent_connected_event: {},
+              })
+            );
+            await new Promise(resolve => setTimeout(resolve, 0));
+            client.send(
+              JSON.stringify({
+                type: "agent_typing",
+                agent_typing_event: { is_typing: true },
+              })
+            );
+            return;
+          }
+
+          client.send(
+            JSON.stringify({
+              type: "external_agent_disconnected",
+              external_agent_disconnected_event: {},
             })
           );
         });

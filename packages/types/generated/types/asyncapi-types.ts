@@ -193,7 +193,8 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "internal_turn_probability"
   | "internal_tentative_agent_response"
   | "agent_typing"
-  | "external_agent_connected";
+  | "external_agent_connected"
+  | "external_agent_disconnected";
 
 export interface SourceInfo {
   source?: string;
@@ -576,6 +577,11 @@ export interface ExternalAgentConnected {
   external_agent_connected_event?: Record<string, any>;
 }
 
+export interface ExternalAgentDisconnected {
+  type: "external_agent_disconnected";
+  external_agent_disconnected_event?: Record<string, any>;
+}
+
 export interface ErrorMessage {
   type: "error";
   error_event: ErrorEvent;
@@ -737,6 +743,11 @@ export interface AgentTypingClientEvent {
 export interface ExternalAgentConnectedClientEvent {
   type: "external_agent_connected";
   external_agent_connected_event?: Record<string, any>;
+}
+
+export interface ExternalAgentDisconnectedClientEvent {
+  type: "external_agent_disconnected";
+  external_agent_disconnected_event?: Record<string, any>;
 }
 
 export interface ErrorClientEvent {
