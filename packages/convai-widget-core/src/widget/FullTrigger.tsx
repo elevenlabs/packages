@@ -26,8 +26,6 @@ export function FullTrigger({
     >
       <div className="flex items-center p-1 gap-2 min-w-60">
         <Avatar />
-        {/* Both labels share one grid cell so the wider one sizes the trigger
-            and long status copy is not clipped */}
         <div className="grid items-center text-sm max-w-64">
           <span
             className={clsx(

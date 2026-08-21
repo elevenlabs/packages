@@ -114,7 +114,6 @@ export function SheetActions({
   const canSend = useComputed(() => {
     const hasText = !!userMessage.value.trim();
     const hasReadyFile = pendingFile.value?.status === "ready";
-    // The orchestrator discards client messages while the caller is queued.
     return (
       (hasText || hasReadyFile) &&
       !isUploading.value &&

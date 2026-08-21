@@ -215,7 +215,6 @@ function ErrorMessage({
   );
 }
 
-// Not styled as an error: the caller did nothing wrong, all agents were busy.
 function QueueTimeoutMessage() {
   const text = useTextContents();
   const { lastId } = useConversation();
