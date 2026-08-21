@@ -284,6 +284,45 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  text_and_voice: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    supports_text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Welcome message",
+  },
+  text_and_voice_rich_content: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    supports_text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Welcome message",
+    first_message_rich_content: {
+      component: "buttons",
+      props: {
+        buttons: [
+          { type: "message", label: "Track my order", message: "Track" },
+        ],
+      },
+    },
+  },
+  text_and_voice_audio_tags: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    supports_text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    strip_audio_tags: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "[happy] Hello there! [excited] How can I help you today?",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
@@ -347,8 +386,11 @@ export const Worker = setupWorker(
           },
         })
       );
+      // `text_and_voice` is a voice-capable agent that the widget switches to
+      // text mode when the user types, so it follows the text chat script.
+      const isTextChat = config.text_only || agentId === "text_and_voice";
       if (
-        config.text_only &&
+        isTextChat &&
         agentId !== "end_call_test" &&
         agentId !== "tool_call" &&
         agentId !== "stream_consolidation" &&
@@ -371,7 +413,7 @@ export const Worker = setupWorker(
         );
         await new Promise(resolve => setTimeout(resolve, 1000));
         client.close();
-      } else if (!config.text_only) {
+      } else if (!isTextChat) {
         client.send(
           JSON.stringify({
             type: "user_transcript",
