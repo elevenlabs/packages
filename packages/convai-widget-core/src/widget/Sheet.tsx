@@ -74,8 +74,8 @@ export function Sheet({ open }: SheetProps) {
       isDisconnected.value &&
       config.value.supports_text_only &&
       textInputEnabled.value &&
-      !transcript.value.some(
-        entry => entry.type === "message" && !entry.isText
+      transcript.value.every(
+        entry => entry.type !== "message" || entry.isText
       );
 
     return showFirstMessage ? message : undefined;
