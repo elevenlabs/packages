@@ -31,7 +31,8 @@ export function ExpandableTriggerActions({
 }: ExpandableTriggerActionsProps) {
   const conversationTextOnly = useIsConversationTextOnly();
   const { showCall, showMessage } = useTriggerEntryPoints();
-  const variant = useWidgetConfig().value.variant;
+  const config = useWidgetConfig();
+  const variant = config.value.variant;
   const isTiny = variant === "tiny";
   const { isDisconnected, startSession } = useConversation();
   const callDisabled = useCallButtonDisabled();
@@ -75,6 +76,9 @@ export function ExpandableTriggerActions({
 
   const collapsedDisconnected = !expanded.value && isDisconnected.value;
   const collapsedConnected = !expanded.value && !isDisconnected.value;
+  const showTriggerLanguageSelector =
+    collapsedDisconnected &&
+    (config.value.show_language_selector_on_trigger ?? true);
 
   return (
     <>
@@ -130,7 +134,7 @@ export function ExpandableTriggerActions({
           {!isTiny && !showCall.value ? text.start_chat : undefined}
         </Button>
       </SizeTransition>
-      <TriggerLanguageSelect visible={collapsedDisconnected} />
+      <TriggerLanguageSelect visible={showTriggerLanguageSelector} />
 
       {/* Collapse/expand affordance for the connected or expanded states. */}
       <SizeTransition

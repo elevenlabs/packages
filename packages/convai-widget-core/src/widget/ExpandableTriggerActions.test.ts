@@ -119,6 +119,38 @@ describe("Trigger entry points", () => {
       }
     );
 
+    it.each(Variants)(
+      "$0 hides the language picker on the launcher when disabled",
+      async variant => {
+        setupWebComponent({
+          "agent-id": "localized",
+          variant,
+          "text-input": "true",
+          "show-language-selector-on-trigger": "false",
+        });
+
+        await expect
+          .element(page.getByRole("combobox", { name: "Change language" }))
+          .not.toBeInTheDocument();
+      }
+    );
+
+    it("shows the language picker in the sheet when hidden on the launcher", async () => {
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+        "text-input": "true",
+        "show-language-selector-on-trigger": "false",
+      });
+
+      await page.getByRole("button", { name: "Message" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+
+      await expect
+        .element(page.getByRole("combobox", { name: "Change language" }))
+        .toBeVisible();
+    });
+
     it("opens the dropdown without expanding the widget", async () => {
       setupWebComponent({
         "agent-id": "localized",

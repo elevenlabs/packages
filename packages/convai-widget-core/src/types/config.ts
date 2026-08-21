@@ -84,6 +84,7 @@ export interface WidgetConfig {
     max_files_per_conversation?: number;
   };
   show_resize_button?: boolean;
+  show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: {
     component: string;
     props: unknown;
