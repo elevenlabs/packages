@@ -194,18 +194,12 @@ function useConversationSetup() {
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
     const queueStatus = signal<string | null>(null);
-    // Only the statuses that hold a caller back are listed, so no queue,
-    // admission, and any status this build does not know about all mean "not
-    // held" — a status added on the backend renders like the pre-queue flow
-    // instead of locking the UI.
+    // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
     const isHeldInQueue = computed(
-      () =>
-        queueStatus.value === "waiting" || queueStatus.value === "timed_out"
+      () => queueStatus.value === "waiting" || queueStatus.value === "timed_out"
     );
-    // While queued the transport is connected but the orchestrator discards
-    // client messages. "timed_out" counts as held: the server sends it as a
-    // heads-up just before closing the connection, so it still renders as
-    // waiting until the disconnect actually lands.
+    // "timed_out" still counts as held: the server sends it just before
+    // closing, so the UI keeps showing waiting until the disconnect lands.
     const isWaitingForAgent = computed(
       () => isHeldInQueue.value && !isDisconnected.value
     );
@@ -455,9 +449,9 @@ function useConversationSetup() {
               setAgentTyping(false);
               isExternalAgentMode.value = false;
             },
-            // The SDK forwards server events it does not handle (such as
-            // queue_status) to onDebug, alongside other debug payloads, so
-            // the event shape has to be narrowed here.
+            // The SDK forwards unhandled server events to onDebug.
+            // TODO: drop this narrowing once the SDK handles queue_status
+            // explicitly (planned after the queue protocol is finalized).
             onDebug: (props: unknown) => {
               const event = props as {
                 type?: string;
@@ -471,8 +465,8 @@ function useConversationSetup() {
               }
             },
             onDisconnect: details => {
-              // The server closes with an error after a queue timeout; show
-              // friendly copy instead of the raw close reason in that case.
+              // A queue timeout closes with an error; show friendly copy
+              // instead of the raw close reason.
               const queueTimedOut =
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
@@ -530,7 +524,7 @@ function useConversationSetup() {
           return id;
         } catch (e) {
           // A queue timeout can close the connection before startSession
-          // resolves; it gets the same friendly treatment as in onDisconnect.
+          // resolves.
           if (queueStatus.peek() === "timed_out") {
             transcript.value = [
               ...transcript.value,

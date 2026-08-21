@@ -44,8 +44,7 @@ export const AGENTS = {
   fail: BASIC_CONFIG,
   // Held in the concurrency wait queue and never admitted.
   queued: BASIC_CONFIG,
-  // Same, but with the sheet expanded and no transcript, so the avatar
-  // overlay (the spacious waiting-copy surface) is what renders.
+  // Expanded with no transcript so the avatar overlay renders the waiting copy.
   queued_overlay: {
     ...BASIC_CONFIG,
     text_input_enabled: true,

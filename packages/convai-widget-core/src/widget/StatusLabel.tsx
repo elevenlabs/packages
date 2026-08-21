@@ -14,48 +14,37 @@ function userCurrentLabel(compact: boolean) {
   const text = useTextContents();
 
   const compute = () => {
-    // The waiting copy wins over the connected states: while held in the
-    // concurrency wait queue the transport is connected but no agent is
-    // listening or speaking yet. Compact surfaces (single-line pills) get the
-    // short form; spacious ones the full reassurance, wrapped.
+    // While queued the transport is connected but no agent is present yet,
+    // so the waiting copy wins over the connected statuses.
     if (isWaitingForAgent.value)
-      return compact
-        ? {
-            label: text.queue_waiting_status_short.value,
-            updateImmediately: true,
-            wrap: false,
-          }
-        : {
-            label: text.queue_waiting_status.value,
-            updateImmediately: true,
-            wrap: true,
-          };
+      return {
+        label: compact
+          ? text.queue_waiting_status_short.value
+          : text.queue_waiting_status.value,
+        updateImmediately: true,
+      };
 
     if (status.value !== "connected")
       return {
         label: text.connecting_status.value,
         updateImmediately: true,
-        wrap: false,
       };
 
     if (textOnly.value || isTextMode.value)
       return {
         label: text.chatting_status.value,
         updateImmediately: isSpeaking.value,
-        wrap: false,
       };
 
     if (isSpeaking.value)
       return {
         label: text.speaking_status.value,
         updateImmediately: isSpeaking.value,
-        wrap: false,
       };
 
     return {
       label: text.listening_status.value,
       updateImmediately: isSpeaking.value,
-      wrap: false,
     };
   };
   return useComputed(compute);
@@ -72,17 +61,14 @@ export function StatusLabel({
   ...props
 }: StatusLabelProps) {
   const currentLabel = userCurrentLabel(compact);
-  const [{ label, wrap }, setLabel] = useState(() => {
-    const { label, wrap } = currentLabel.peek();
-    return { label, wrap };
-  });
+  const [{ label }, setLabel] = useState(() => currentLabel.peek());
   useSignalEffect(() => {
     const next = currentLabel.value;
     if (next.updateImmediately) {
-      setLabel({ label: next.label, wrap: next.wrap });
+      setLabel(next);
     } else {
       const timeout = setTimeout(() => {
-        setLabel({ label: next.label, wrap: next.wrap });
+        setLabel(next);
       }, 500);
       return () => clearTimeout(timeout);
     }
@@ -100,10 +86,7 @@ export function StatusLabel({
         <div
           className={clsx(
             "animate-text transition-[opacity,transform] ease-out duration-200 data-hidden:opacity-0 transform data-hidden:translate-y-2",
-            // truncate degrades gracefully when a surface caps the label's
-            // width (e.g. long custom copy in the trigger): ellipsis instead
-            // of spilling past the card edge.
-            wrap ? "whitespace-normal max-w-60 text-center" : "truncate"
+            compact ? "truncate" : "whitespace-normal max-w-60 text-center"
           )}
         >
           {label}

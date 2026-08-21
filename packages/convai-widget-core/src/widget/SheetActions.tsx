@@ -114,8 +114,7 @@ export function SheetActions({
   const canSend = useComputed(() => {
     const hasText = !!userMessage.value.trim();
     const hasReadyFile = pendingFile.value?.status === "ready";
-    // While held in the concurrency wait queue the orchestrator discards
-    // client messages, so sending would only pollute the local transcript.
+    // The orchestrator discards client messages while the caller is queued.
     return (
       (hasText || hasReadyFile) &&
       !isUploading.value &&

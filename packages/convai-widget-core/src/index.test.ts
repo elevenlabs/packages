@@ -318,8 +318,7 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Agent is typing ..."))
         .not.toBeInTheDocument();
 
-      // Sending is blocked: the orchestrator discards client messages while
-      // held in the queue, so they would only pollute the local transcript.
+      // Sending is blocked while held in the queue.
       const textInput = page.getByRole("textbox", {
         name: "Text message input",
       });
@@ -351,9 +350,8 @@ describe("elevenlabs-convai", () => {
     });
 
     it("shows the full waiting message on the avatar overlay", async () => {
-      // An expanded sheet without a transcript shows the avatar overlay,
-      // which has room for the full reassurance copy instead of the short
-      // pill form.
+      // The expanded sheet without a transcript shows the avatar overlay,
+      // which renders the full waiting copy.
       setupWebComponent({ "agent-id": "queued_overlay" });
 
       const startButton = page.getByRole("button", { name: "Start a call" });
@@ -367,9 +365,8 @@ describe("elevenlabs-convai", () => {
     });
 
     it("keeps the waiting status inside the full trigger", async () => {
-      // The trigger sizes itself from the labels' shared grid cell; with an
-      // absolutely positioned status label the long waiting copy would not
-      // affect layout and would get clipped at the card edge mid-word.
+      // Regression: the long waiting copy must size the trigger, not get
+      // clipped at the card edge.
       setupWebComponent({ "agent-id": "queued", variant: "full" });
 
       const startButton = page.getByRole("button", { name: "Start a call" });
@@ -444,8 +441,7 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Waiting for an available agent"))
         .toBeInTheDocument();
 
-      // The server closes after the timeout; the caller gets friendly copy
-      // instead of the raw close reason or error styling.
+      // Friendly copy instead of the raw close reason or error styling.
       await expect
         .element(
           page.getByText("All agents are still busy. Please try again later.")

@@ -215,9 +215,7 @@ function ErrorMessage({
   );
 }
 
-// Rendered when the session ended because the concurrency wait-queue hold
-// timed out. Deliberately not styled as an error: the caller did nothing
-// wrong, all agents were simply busy.
+// Not styled as an error: the caller did nothing wrong, all agents were busy.
 function QueueTimeoutMessage() {
   const text = useTextContents();
   const { lastId } = useConversation();
