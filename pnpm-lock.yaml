@@ -7,11 +7,6 @@ settings:
 overrides:
   '@asyncapi/parser': ^3.6.0
 
-patchedDependencies:
-  expo-modules-jsi@57.0.4:
-    hash: bf03b31f5809542429ed598504e471400e92c91a92f0e884784ff86455971213
-    path: patches/expo-modules-jsi@57.0.4.patch
-
 importers:
 
   .:
@@ -7541,8 +7536,8 @@ packages:
       react-native-worklets:
         optional: true
 
-  expo-modules-jsi@57.0.4:
-    resolution: {integrity: sha512-vt7FyqUqqFXiRVnBqYD7y+GSPTgeua5Ocoy0+SYt+RSHkZEA2Fyop7If3g1TYDzQObYybPRo7TG2Rle1XLaWFw==}
+  expo-modules-jsi@57.0.5:
+    resolution: {integrity: sha512-NQF7MUF0j3rQHV8KJqETYA1SrJr3USvQ/AWEhODo+unMRFBDP9BKpn8+aNGGmx6fa2XLnqC2qulVw4DT6Gp13Q==}
     peerDependencies:
       react-native: '*'
 
@@ -22052,12 +22047,12 @@ snapshots:
   expo-modules-core@57.0.10(react-native@0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3):
     dependencies:
       '@expo/expo-modules-macros-plugin': 0.6.1
-      expo-modules-jsi: 57.0.4(patch_hash=bf03b31f5809542429ed598504e471400e92c91a92f0e884784ff86455971213)(react-native@0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))
+      expo-modules-jsi: 57.0.5(react-native@0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))
       invariant: 2.2.4
       react: 19.2.3
       react-native: 0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3)
 
-  expo-modules-jsi@57.0.4(patch_hash=bf03b31f5809542429ed598504e471400e92c91a92f0e884784ff86455971213)(react-native@0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3)):
+  expo-modules-jsi@57.0.5(react-native@0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3)):
     dependencies:
       react-native: 0.86.2(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3)
 

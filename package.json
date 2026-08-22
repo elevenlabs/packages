@@ -36,9 +36,6 @@
     ],
     "overrides": {
       "@asyncapi/parser": "^3.6.0"
-    },
-    "patchedDependencies": {
-      "expo-modules-jsi@57.0.4": "patches/expo-modules-jsi@57.0.4.patch"
     }
   },
   "packageManager": "pnpm@10.28.1"
