@@ -1,5 +1,63 @@
 # @elevenlabs/convai-widget-core
 
+## 0.17.0
+
+### Minor Changes
+
+- b60d460: Draw rich content alongside the first message, and echo button taps back to the
+  server.
+
+  A `first_message_rich_content` entry on the widget config is painted with the
+  first message before any connection exists, so a text-only widget shows its
+  buttons on a cold start. Tapping one starts the conversation with that button's
+  message, the same way typing into the input does — previously a button was
+  disabled until connected, which left a first-message button waiting for the
+  session it would itself begin.
+
+  A row the customer has already answered is retired rather than left sitting in
+  the transcript. Whether a component does this is per-component, so display
+  components can later stay and merely de-emphasise instead of disappearing.
+
+  `sendUserMessage` accepts an optional attribution (`richContentId`) that rides
+  the `user_message` event as `rich_content_id`; the widget sends it automatically
+  when a button is tapped, on both the mid-conversation and conversation-starting
+  paths. It names the row the button belonged to rather than the button itself —
+  given the row, the message text says which button was pressed. Purely additive:
+  servers that predate the field ignore it, and the message text alone remains
+  what the agent acts on.
+
+- d4313cc: Support concurrency wait-queue (`queue_status`) server events: show a waiting status while all agents are busy, hide the typing indicator and block text/attachment sending while queued, and render a friendly non-error message when the queue wait times out.
+- be9cb0c: Add support for the `external_agent_disconnected` client event. The client SDK exposes a new `onExternalAgentDisconnected` callback, and the widget leaves external-agent mode (and clears the typing indicator) when the external human agent disconnects and the AI agent resumes control.
+- cc0c20c: Add a `show_language_selector_on_trigger` widget config option (and matching `show-language-selector-on-trigger` embed attribute). Default `true` keeps the language dropdown on the collapsed launcher. Set to `false` to hide it there; the expanded sheet header still shows it.
+
+### Patch Changes
+
+- ba87df2: Show the agent's first message in text mode for agents that support both text and
+  voice, not just text-only ones. Text mode drops the server-sent first message —
+  it belongs to a turn the user's opening message immediately interrupts — and the
+  local re-render that compensates was gated to text-only widgets, so Text & Voice
+  agents showed no welcome message at all, including via `override-first-message`,
+  which feeds the same suppressed path. It now renders for any agent that supports
+  text mode with the text input enabled, as a preview before connecting and through
+  a text conversation; voice conversations still use the server-sent copy, so there
+  is never a duplicate. Because a voice-capable agent writes `first_message` for
+  TTS, the local copy honours `strip_audio_tags` the way voice bubbles do, so tags
+  like `[happy]` don't leak into the text bubble.
+
+  First-message rich content follows the same rule, so a greeting that offers
+  buttons no longer renders without them before the conversation starts.
+
+  Side effect: the open-but-disconnected sheet now has a non-empty transcript, so
+  the orb shrinks to the corner avatar, the call button moves from the orb into the
+  action row, and the resize button appears — the same layout previously reached on
+  the user's first message.
+
+- Updated dependencies [b60d460]
+- Updated dependencies [be9cb0c]
+- Updated dependencies [dce9815]
+- Updated dependencies [79a9d4f]
+  - @elevenlabs/client@1.22.0
+
 ## 0.16.4
 
 ### Patch Changes

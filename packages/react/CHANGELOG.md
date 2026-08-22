@@ -1,5 +1,19 @@
 # @elevenlabs/react
 
+## 1.14.0
+
+### Minor Changes
+
+- be9cb0c: Add support for the `external_agent_disconnected` client event. The client SDK exposes a new `onExternalAgentDisconnected` callback, and the widget leaves external-agent mode (and clears the typing indicator) when the external human agent disconnects and the AI agent resumes control.
+
+### Patch Changes
+
+- Updated dependencies [b60d460]
+- Updated dependencies [be9cb0c]
+- Updated dependencies [dce9815]
+- Updated dependencies [79a9d4f]
+  - @elevenlabs/client@1.22.0
+
 ## 1.13.0
 
 ### Minor Changes
