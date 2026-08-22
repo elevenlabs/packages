@@ -1,5 +1,52 @@
 # @elevenlabs/client
 
+## 1.22.0
+
+### Minor Changes
+
+- b60d460: Draw rich content alongside the first message, and echo button taps back to the
+  server.
+
+  A `first_message_rich_content` entry on the widget config is painted with the
+  first message before any connection exists, so a text-only widget shows its
+  buttons on a cold start. Tapping one starts the conversation with that button's
+  message, the same way typing into the input does — previously a button was
+  disabled until connected, which left a first-message button waiting for the
+  session it would itself begin.
+
+  A row the customer has already answered is retired rather than left sitting in
+  the transcript. Whether a component does this is per-component, so display
+  components can later stay and merely de-emphasise instead of disappearing.
+
+  `sendUserMessage` accepts an optional attribution (`richContentId`) that rides
+  the `user_message` event as `rich_content_id`; the widget sends it automatically
+  when a button is tapped, on both the mid-conversation and conversation-starting
+  paths. It names the row the button belonged to rather than the button itself —
+  given the row, the message text says which button was pressed. Purely additive:
+  servers that predate the field ignore it, and the message text alone remains
+  what the agent acts on.
+
+- be9cb0c: Add support for the `external_agent_disconnected` client event. The client SDK exposes a new `onExternalAgentDisconnected` callback, and the widget leaves external-agent mode (and clears the typing indicator) when the external human agent disconnects and the AI agent resumes control.
+- dce9815: Add an `onMCPToolApprovalRequest` handler option, which decides MCP tool calls that arrive in the `awaiting_approval` state and sends the approval result for you. Each `tool_call_id` is answered at most once; a handler that rejects or resolves to a non-boolean is reported through `onError` and denied, and a decision that arrives after the call left `awaiting_approval` or the session ended is dropped rather than sent. The handler receives an `AbortSignal` so approval UI can dismiss itself when that happens.
+
+### Patch Changes
+
+- 79a9d4f: Fail WebRTC session setup when the conversation initiation payload cannot be
+  published, instead of resolving onto a session the server never initialized.
+
+  `WebRTCConnection.create()` sent `conversation_initiation_client_data` through
+  the same best-effort path as ordinary messages, which returns early when the
+  room is no longer connected and swallows a `publishData()` rejection. Setup
+  could therefore succeed, and `onConnect` fire, while the room and microphone
+  stayed live for a conversation that was never initialized. The mandatory
+  initiation send now surfaces those failures so the existing `create()` error
+  path disconnects the room and reports the failure to the caller. Mid-session
+  sends remain best effort.
+
+- Updated dependencies [b60d460]
+- Updated dependencies [be9cb0c]
+  - @elevenlabs/types@0.22.0
+
 ## 1.21.0
 
 ### Minor Changes
