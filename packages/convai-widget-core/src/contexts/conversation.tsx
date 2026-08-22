@@ -88,6 +88,10 @@ export type TranscriptEntry =
       type: "mode_toggle";
       mode: ConversationMode;
       conversationIndex: number;
+    }
+  | {
+      type: "queue_timeout";
+      conversationIndex: number;
     };
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
@@ -189,6 +193,16 @@ function useConversationSetup() {
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
+    const queueStatus = signal<string | null>(null);
+    // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
+    const isHeldInQueue = computed(
+      () => queueStatus.value === "waiting" || queueStatus.value === "timed_out"
+    );
+    // "timed_out" still counts as held: the server sends it just before
+    // closing, so the UI keeps showing waiting until the disconnect lands.
+    const isWaitingForAgent = computed(
+      () => isHeldInQueue.value && !isDisconnected.value
+    );
 
     const setAgentTyping = (typing: boolean, durationMs?: number | null) => {
       clearTypingTimer();
@@ -214,6 +228,8 @@ function useConversationSetup() {
       transcript,
       isAgentTyping,
       isExternalAgentMode,
+      queueStatus,
+      isWaitingForAgent,
       startSession: async (
         element: HTMLElement,
         initialMessage?: string,
@@ -259,6 +275,7 @@ function useConversationSetup() {
         }
 
         conversationTextOnly.value = processedConfig.textOnly ?? false;
+        queueStatus.value = null;
         transcript.value = [
           ...firstMessageEntries(),
           ...(initialMessage
@@ -428,7 +445,31 @@ function useConversationSetup() {
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
             },
+            onExternalAgentDisconnected: () => {
+              setAgentTyping(false);
+              isExternalAgentMode.value = false;
+            },
+            // The SDK forwards unhandled server events to onDebug.
+            // TODO: drop this narrowing once the SDK handles queue_status
+            // explicitly (planned after the queue protocol is finalized).
+            onDebug: (props: unknown) => {
+              const event = props as {
+                type?: string;
+                queue_status_event?: { status?: unknown };
+              };
+              if (
+                event?.type === "queue_status" &&
+                typeof event.queue_status_event?.status === "string"
+              ) {
+                queueStatus.value = event.queue_status_event.status;
+              }
+            },
             onDisconnect: details => {
+              // A queue timeout closes with an error; show friendly copy
+              // instead of the raw close reason.
+              const queueTimedOut =
+                details.reason === "error" &&
+                queueStatus.peek() === "timed_out";
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               streamingMessageIndexRef.current = null;
@@ -438,20 +479,25 @@ function useConversationSetup() {
               isExternalAgentMode.value = false;
               transcript.value = [
                 ...transcript.peek(),
-                details.reason === "error"
+                queueTimedOut
                   ? {
-                      type: "error",
-                      message: details.message,
+                      type: "queue_timeout",
                       conversationIndex: conversationIndex.peek(),
                     }
-                  : {
-                      type: "disconnection",
-                      role: details.reason === "user" ? "user" : "agent",
-                      conversationIndex: conversationIndex.peek(),
-                    },
+                  : details.reason === "error"
+                    ? {
+                        type: "error",
+                        message: details.message,
+                        conversationIndex: conversationIndex.peek(),
+                      }
+                    : {
+                        type: "disconnection",
+                        role: details.reason === "user" ? "user" : "agent",
+                        conversationIndex: conversationIndex.peek(),
+                      },
               ];
               conversationIndex.value++;
-              if (details.reason === "error") {
+              if (details.reason === "error" && !queueTimedOut) {
                 error.value = details.message;
                 console.error(
                   "[ConversationalAI] Disconnected due to an error:",
@@ -477,21 +523,33 @@ function useConversationSetup() {
           error.value = null;
           return id;
         } catch (e) {
-          let message = "Could not start a conversation.";
-          if (e instanceof CloseEvent) {
-            message = e.reason || message;
-          } else if (e instanceof Error) {
-            message = e.message || message;
+          // A queue timeout can close the connection before startSession
+          // resolves.
+          if (queueStatus.peek() === "timed_out") {
+            transcript.value = [
+              ...transcript.value,
+              {
+                type: "queue_timeout",
+                conversationIndex: conversationIndex.peek(),
+              },
+            ];
+          } else {
+            let message = "Could not start a conversation.";
+            if (e instanceof CloseEvent) {
+              message = e.reason || message;
+            } else if (e instanceof Error) {
+              message = e.message || message;
+            }
+            error.value = message;
+            transcript.value = [
+              ...transcript.value,
+              {
+                type: "error",
+                message,
+                conversationIndex: conversationIndex.peek(),
+              },
+            ];
           }
-          error.value = message;
-          transcript.value = [
-            ...transcript.value,
-            {
-              type: "error",
-              message,
-              conversationIndex: conversationIndex.peek(),
-            },
-          ];
         } finally {
           lockRef.current = null;
         }
@@ -517,6 +575,8 @@ function useConversationSetup() {
         conversationRef.current?.sendFeedback(like);
       },
       sendUserMessage: (text: string, options?: SendUserMessageOptions) => {
+        // The orchestrator discards messages sent while held in the queue.
+        if (isWaitingForAgent.peek()) return;
         conversationRef.current?.sendUserMessage(text, options);
         transcript.value = [
           ...transcript.value,
@@ -533,6 +593,7 @@ function useConversationSetup() {
         text?: string;
         file: TranscriptFileInput & { fileId: string };
       }) => {
+        if (isWaitingForAgent.peek()) return;
         const trimmed = input.text?.trim() ?? "";
         const { fileId, ...fileInput } = input.file;
         conversationRef.current?.sendMultimodalMessage({

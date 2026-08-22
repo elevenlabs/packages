@@ -18,6 +18,7 @@ export type {
   ConversationInitiationMetadataEvent,
   ErrorClientEvent,
   ExternalAgentConnectedClientEvent,
+  ExternalAgentDisconnectedClientEvent,
   FinalTranscriptMessage,
   FinalTranscriptWithTimestampsMessage,
   GuardrailTriggeredClientEvent,

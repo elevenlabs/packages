@@ -258,6 +258,8 @@ function MockConversationProvider({
       transcript: mockTranscript,
       isAgentTyping: signal(false),
       isExternalAgentMode: signal(false),
+      queueStatus: signal<string | null>(null),
+      isWaitingForAgent: signal(false),
       startSession: async () => "",
       endSession: async () => {},
       getInputVolume: () => 0,
