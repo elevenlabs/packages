@@ -817,6 +817,14 @@ export abstract class BaseConversation {
   public abstract setVolume(options: { volume: number }): void;
   public abstract setMicMuted(isMuted: boolean): void;
   /**
+   * Puts the conversation on hold, or takes it off hold again. A held
+   * conversation keeps its connection, its id and its context, but the agent
+   * is neither heard nor spoken to until the hold is released.
+   */
+  public abstract setOnHold(isOnHold: boolean): void;
+  /** Whether the conversation is currently on hold. */
+  public abstract isOnHold(): boolean;
+  /**
    * Returns byte frequency data (0-255) for the input audio, focused on the
    * human voice range (100-8000 Hz).
    */
