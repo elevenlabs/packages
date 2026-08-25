@@ -410,6 +410,134 @@ describe("WebRTCConnection", () => {
     }
   );
 
+  it("publishes a track from the configured inputDeviceId instead of the default mic", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const newMockTrack = {
+      mediaStreamTrack: { id: "selected-device-track", kind: "audio" },
+    };
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValue(
+      newMockTrack
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      inputDeviceId: "selected-mic-id",
+    });
+
+    // The selected device must drive the published track, not the default mic.
+    expect(createLocalAudioTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceId: { exact: "selected-mic-id" },
+      })
+    );
+    expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalledWith(
+      newMockTrack,
+      expect.objectContaining({ source: "microphone" })
+    );
+    // And the default-mic path must not have run.
+    const micCalls = (
+      (globalThis as Record<string, unknown>).__mockCalls__ as typeof mockCalls
+    ).setMicrophoneEnabled;
+    expect(micCalls).not.toContain(true);
+
+    connection.close();
+  });
+
+  it("falls back to setMicrophoneEnabled when no inputDeviceId is configured", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    expect(createLocalAudioTrack).not.toHaveBeenCalled();
+    const micCalls = (
+      (globalThis as Record<string, unknown>).__mockCalls__ as typeof mockCalls
+    ).setMicrophoneEnabled;
+    expect(micCalls).toContain(true);
+
+    connection.close();
+  });
+
+  it("keeps the previous mic published when setAudioInputDevice re-acquire fails", async () => {
+    const mockRoom = new Room() as any;
+
+    // Existing published mic track stays alive when the new capture fails.
+    const oldMockTrack = {
+      mediaStreamTrack: { id: "old-track", kind: "audio" },
+      stop: vi.fn(() => Promise.resolve()),
+    };
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValue({ track: oldMockTrack });
+
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    // Re-acquire the new device fails. The old track must NOT be stopped or
+    // unpublished, so the call keeps working audio.
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("device unavailable")
+    );
+
+    await expect(
+      connection.setAudioInputDevice("missing-device-id")
+    ).rejects.toThrow("device unavailable");
+
+    expect(oldMockTrack.stop).not.toHaveBeenCalled();
+    expect(mockRoom.localParticipant.unpublishTrack).not.toHaveBeenCalled();
+
+    connection.close();
+  });
+
   it("properly reports sent messages", async () => {
     const connection = await WebRTCConnection.create({
       conversationToken: "test-token",
