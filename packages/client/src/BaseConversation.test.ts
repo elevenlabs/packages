@@ -417,6 +417,80 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("sendMultimodalMessage", () => {
+    function conversationSending() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      return {
+        sendMessage,
+        conversation: TestConversation.create({}, connection),
+      };
+    }
+
+    it("dual-sends file and files when fileId is set", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendMultimodalMessage({
+        text: "What is this?",
+        fileId: "file_a",
+      });
+
+      expect(JSON.parse(JSON.stringify(sendMessage.mock.calls[0][0]))).toEqual({
+        type: "multimodal_message",
+        text: { type: "user_message", text: "What is this?" },
+        file: { type: "file_input", file_id: "file_a" },
+        files: [{ type: "file_input", file_id: "file_a" }],
+      });
+    });
+
+    it("dual-sends file and files when fileIds is set", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendMultimodalMessage({ fileIds: ["file_a", "file_b"] });
+
+      expect(JSON.parse(JSON.stringify(sendMessage.mock.calls[0][0]))).toEqual({
+        type: "multimodal_message",
+        file: { type: "file_input", file_id: "file_a" },
+        files: [
+          { type: "file_input", file_id: "file_a" },
+          { type: "file_input", file_id: "file_b" },
+        ],
+      });
+    });
+
+    it("prefers fileIds when both fileId and fileIds are set", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendMultimodalMessage({
+        fileId: "ignored",
+        fileIds: ["file_a", "file_b"],
+      });
+
+      expect(JSON.parse(JSON.stringify(sendMessage.mock.calls[0][0]))).toEqual({
+        type: "multimodal_message",
+        file: { type: "file_input", file_id: "file_a" },
+        files: [
+          { type: "file_input", file_id: "file_a" },
+          { type: "file_input", file_id: "file_b" },
+        ],
+      });
+    });
+
+    it("omits file fields for text-only messages", () => {
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendMultimodalMessage({ text: "Hello" });
+
+      expect(JSON.parse(JSON.stringify(sendMessage.mock.calls[0][0]))).toEqual({
+        type: "multimodal_message",
+        text: { type: "user_message", text: "Hello" },
+      });
+    });
+  });
+
   describe("ping events", () => {
     it("replies with a pong and forwards the payload to onPing", async () => {
       const onPing = vi.fn();

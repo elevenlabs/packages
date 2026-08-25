@@ -107,7 +107,9 @@ export type PartialOptions = SessionConfig &
 
 export type MultimodalMessageInput = {
   text?: string;
+  /** @deprecated Use `fileIds`. */
   fileId?: string;
+  fileIds?: string[];
 };
 
 /**
@@ -873,14 +875,22 @@ export abstract class BaseConversation {
   }
 
   public sendMultimodalMessage(options: MultimodalMessageInput) {
+    const fileIds = options.fileIds?.length
+      ? options.fileIds
+      : options.fileId
+        ? [options.fileId]
+        : [];
+    const files = fileIds.map(file_id => ({
+      type: "file_input" as const,
+      file_id,
+    }));
     this.connection.sendMessage({
       type: "multimodal_message",
       text: options.text
         ? { type: "user_message" as const, text: options.text }
         : undefined,
-      file: options.fileId
-        ? { type: "file_input" as const, file_id: options.fileId }
-        : undefined,
+      file: files[0],
+      files: files.length ? files : undefined,
     });
   }
 
