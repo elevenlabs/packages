@@ -28,7 +28,7 @@
     "@config-plugins/react-native-webrtc": "^15.0.2",
     "@elevenlabs/react-native": "workspace:*",
     "@expo/dom-webview": "~57.0.1",
-    "@expo/log-box": "~57.0.2",
+    "@expo/log-box": "~57.0.3",
     "@expo/metro-runtime": "~57.0.9",
     "@livekit/react-native": "^2.12.0",
     "@livekit/react-native-expo-plugin": "^1.0.2",
@@ -36,10 +36,10 @@
     "expo": "~57.0.12",
     "expo-dev-client": "~57.0.11",
     "expo-image-picker": "~57.0.9",
-    "expo-splash-screen": "~57.0.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-native": "0.86.2",
+    "expo-splash-screen": "~57.0.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-native": "0.87.0",
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
