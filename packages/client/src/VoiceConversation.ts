@@ -5,6 +5,7 @@ import type {
   PlaybackListener,
 } from "./OutputController.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
+import type { Mode } from "./types.js";
 import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
 import {
   BaseConversation,
@@ -93,6 +94,11 @@ export class VoiceConversation extends BaseConversation {
    */
   private micMutedOutsideHold = false;
   private holdActivityTimer: ReturnType<typeof setInterval> | null = null;
+  /**
+   * The mode a hold kept quiet about, so it can be reported once the hold is
+   * released and the agent is audible again.
+   */
+  private modeSuppressedByHold: Mode | null = null;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     if (event.data.type === "process") {
@@ -145,12 +151,23 @@ export class VoiceConversation extends BaseConversation {
 
       this.currentEventId = event.audio_event.event_id;
       this.updateCanSendFeedback();
-      // Audio that arrives during a hold is silenced rather than played, so
-      // reporting "speaking" would describe something the user cannot hear.
-      if (!this.onHold) {
-        this.updateMode("speaking");
-      }
+      this.updateMode("speaking");
     }
+  }
+
+  /**
+   * A held conversation plays nothing the user can hear, so "speaking" would
+   * describe silence. The mode has three sources - the agent audio events
+   * above, the playback worklet's own progress events, and a transport that
+   * tracks the active speaker itself - so the hold is applied here, where all
+   * three arrive, rather than at each of them.
+   */
+  protected override updateMode(mode: Mode) {
+    if (this.onHold) {
+      this.modeSuppressedByHold = mode === "speaking" ? mode : null;
+      if (mode === "speaking") return;
+    }
+    super.updateMode(mode);
   }
 
   private static readonly FREQUENCY_BIN_COUNT = 1024;
@@ -218,6 +235,8 @@ export class VoiceConversation extends BaseConversation {
       }
     } else {
       this.clearHoldActivityTimer();
+      const modeSuppressed = this.modeSuppressedByHold;
+      this.modeSuppressedByHold = null;
       // Audio the agent sent while nobody was listening is still queued in
       // the output; drop it so playback resumes from what the agent says next
       // rather than from the middle of what it said during the hold. Same
@@ -227,6 +246,16 @@ export class VoiceConversation extends BaseConversation {
       this.output.setVolume(this.volume);
       this.output.interrupt(HOLD_FADE_MS);
       this.applyMicMuted(this.micMutedOutsideHold);
+
+      // Local playback was just flushed, and the worklet reports the drain
+      // itself, so there is nothing to restore where one is running. A
+      // transport that plays the agent's track itself was never interrupted,
+      // though: if the agent was still speaking when the hold was released it
+      // is audible again, and the transport will not say so a second time.
+      // A session that has already ended has nothing left to be audible.
+      if (modeSuppressed && !this.playbackEventTarget && this.isOpen()) {
+        this.updateMode(modeSuppressed);
+      }
     }
   }
 

@@ -3,9 +3,14 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { VoiceConversation } from "./VoiceConversation.js";
 import type { Options, PartialOptions } from "./BaseConversation.js";
 import type { InputController } from "./InputController.js";
-import type { OutputController } from "./OutputController.js";
+import type {
+  OutputController,
+  PlaybackEventTarget,
+  PlaybackStateEvent,
+} from "./OutputController.js";
 import type { BaseConnection } from "./utils/BaseConnection.js";
 import type { IncomingSocketEvent } from "./utils/events.js";
+import type { Mode } from "./types.js";
 
 const HOLD_ACTIVITY_INTERVAL_MS = 1000;
 
@@ -36,6 +41,25 @@ function createOutput() {
   };
 }
 
+function createPlaybackEventTarget() {
+  const listeners = new Set<(event: PlaybackStateEvent) => void>();
+  return {
+    addListener: vi.fn((listener: (event: PlaybackStateEvent) => void) => {
+      listeners.add(listener);
+    }),
+    removeListener: vi.fn((listener: (event: PlaybackStateEvent) => void) => {
+      listeners.delete(listener);
+    }),
+    /** What the output worklet posts as it starts and finishes a buffer. */
+    emitProgress(finished: boolean) {
+      const event = {
+        data: { type: "process", finished },
+      } as PlaybackStateEvent;
+      for (const listener of listeners) listener(event);
+    },
+  };
+}
+
 function createConnection() {
   return {
     conversationId: "test-conversation-id",
@@ -53,7 +77,10 @@ class TestVoiceConversation extends VoiceConversation {
     partialOptions: Partial<PartialOptions> = {},
     connection: ReturnType<typeof createConnection> = createConnection(),
     input: ReturnType<typeof createInput> = createInput(),
-    output: ReturnType<typeof createOutput> = createOutput()
+    output: ReturnType<typeof createOutput> = createOutput(),
+    playbackEventTarget: ReturnType<
+      typeof createPlaybackEventTarget
+    > | null = null
   ) {
     const options = super.getFullOptions({
       agentId: "test-agent-id",
@@ -64,19 +91,35 @@ class TestVoiceConversation extends VoiceConversation {
       options,
       connection as unknown as BaseConnection,
       input,
-      output
+      output,
+      playbackEventTarget
     );
     conversation.markConnected();
-    return { conversation, connection, input, output, options };
+    return {
+      conversation,
+      connection,
+      input,
+      output,
+      playbackEventTarget,
+      options,
+    };
   }
 
   private constructor(
     options: Options,
     connection: BaseConnection,
     input: InputController,
-    output: OutputController
+    output: OutputController,
+    playbackEventTarget: PlaybackEventTarget | null
   ) {
-    super(options, connection, input, output, null, async () => {});
+    super(
+      options,
+      connection,
+      input,
+      output,
+      playbackEventTarget,
+      async () => {}
+    );
   }
 
   public receiveMessage(event: IncomingSocketEvent) {
@@ -92,6 +135,13 @@ function audioEvent(eventId: number): IncomingSocketEvent {
       event_id: eventId,
     },
   } as IncomingSocketEvent;
+}
+
+/** The mode callback BaseConversation registers on the connection. */
+function connectionModeListener(
+  connection: ReturnType<typeof createConnection>
+) {
+  return connection.onModeChange.mock.calls[0]?.[0] as (mode: Mode) => void;
 }
 
 function userActivityCount(connection: ReturnType<typeof createConnection>) {
@@ -252,5 +302,122 @@ describe("VoiceConversation hold", () => {
     conversation.setOnHold(false);
     await conversation.receiveMessage(audioEvent(3));
     expect(onModeChange).toHaveBeenLastCalledWith({ mode: "speaking" });
+  });
+
+  it("does not report the agent as speaking for playback progress during a hold", () => {
+    const onModeChange = vi.fn();
+    const playback = createPlaybackEventTarget();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      createConnection(),
+      createInput(),
+      createOutput(),
+      playback
+    );
+
+    playback.emitProgress(false);
+    expect(onModeChange).toHaveBeenLastCalledWith({ mode: "speaking" });
+
+    conversation.setOnHold(true);
+    expect(onModeChange).toHaveBeenLastCalledWith({ mode: "listening" });
+
+    onModeChange.mockClear();
+    // Audio that keeps arriving is played at volume zero, so the worklet
+    // still reports progress while the hold is on.
+    playback.emitProgress(true);
+    playback.emitProgress(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("does not report the agent as speaking when the transport says so during a hold", () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    conversation.setOnHold(true);
+    onModeChange.mockClear();
+
+    reportMode("speaking");
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("reports the agent as speaking again when a hold over a live track is released", () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    conversation.setOnHold(true);
+    reportMode("speaking");
+    onModeChange.mockClear();
+
+    // A transport that plays the agent's track itself was never interrupted,
+    // and it will not report the same utterance a second time.
+    conversation.setOnHold(false);
+    expect(onModeChange).toHaveBeenCalledWith({ mode: "speaking" });
+  });
+
+  it("does not report a stale speaking when the agent stopped during the hold", () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    conversation.setOnHold(true);
+    reportMode("speaking");
+    reportMode("listening");
+    onModeChange.mockClear();
+
+    conversation.setOnHold(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("does not report speaking when a hold is released after the session ended", async () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    conversation.setOnHold(true);
+    reportMode("speaking");
+    await conversation.endSession();
+    onModeChange.mockClear();
+
+    conversation.setOnHold(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("does not report a stale speaking when local playback was flushed on release", () => {
+    const onModeChange = vi.fn();
+    const playback = createPlaybackEventTarget();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      createConnection(),
+      createInput(),
+      createOutput(),
+      playback
+    );
+
+    conversation.setOnHold(true);
+    playback.emitProgress(false);
+    onModeChange.mockClear();
+
+    // The release flushes what was queued, and the worklet reports the drain
+    // itself, so nothing here should announce speech that was just dropped.
+    conversation.setOnHold(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 });
