@@ -806,6 +806,11 @@ components:
           $ref: "#/components/schemas/MultimodalMessageFileData"
           nullable: true
           description: The file component of the multimodal message
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/MultimodalMessageFileData"
+          description: The file components of the multimodal message
 
     # ===== SERVER MESSAGE PAYLOADS =====
 

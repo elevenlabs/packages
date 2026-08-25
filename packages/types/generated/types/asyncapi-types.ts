@@ -215,6 +215,7 @@ export interface MultimodalMessage {
   type: "multimodal_message";
   text?: ReservedText;
   file?: File;
+  files?: File[];
 }
 
 export interface ReservedText {
@@ -809,6 +810,7 @@ export interface MultimodalMessageClientToOrchestratorEvent {
   type: "multimodal_message";
   text?: ReservedText;
   file?: File;
+  files?: File[];
 }
 
 export interface InputAudioChunk {
