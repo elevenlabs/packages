@@ -683,6 +683,12 @@ export class WebRTCConnection extends BaseConnection {
         );
       }
 
+      // Publish muted rather than muting afterwards, so a muted session never
+      // sends audio from the new device.
+      if (this._isMuted) {
+        await audioTrack.mute();
+      }
+
       await this.room.localParticipant.publishTrack(audioTrack, {
         name: "microphone",
         source: Track.Source.Microphone,
@@ -700,7 +706,13 @@ export class WebRTCConnection extends BaseConnection {
         // The old track is already gone, so recover onto the default device
         // rather than leaving the session without a microphone.
         try {
-          await this.room.localParticipant.setMicrophoneEnabled(true);
+          await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+          const recoveredTrack = this.room.localParticipant.getTrackPublication(
+            Track.Source.Microphone
+          )?.track;
+          if (recoveredTrack) {
+            this.setupInputAnalyser(recoveredTrack.mediaStreamTrack);
+          }
         } catch (recoveryError) {
           console.error(
             "Failed to recover microphone after device switch error:",
