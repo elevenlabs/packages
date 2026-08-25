@@ -16,6 +16,7 @@ import {
   createLocalAudioTrack,
 } from "livekit-client";
 import type {
+  LocalAudioTrack,
   RemoteAudioTrack,
   Participant,
   TrackPublication,
@@ -312,12 +313,8 @@ export class WebRTCConnection extends BaseConnection {
       // The server may wait for the client to publish audio before fully
       // establishing the subscriber peer connection, matching the behaviour
       // of @livekit/components-react's useLiveKitRoom hook.
-      //
-      // When an `inputDeviceId` is configured, publish a track captured from
-      // that device directly. Falling back to `setMicrophoneEnabled(true)`
-      // would publish the browser's default microphone and ignore the
-      // selected device, leaving the agent on the wrong (or silent) track
-      // until a post-connect `changeInputDevice` republish.
+      // `setMicrophoneEnabled` cannot take a device, so a configured
+      // `inputDeviceId` publishes its own track instead.
       const micEnabled = config.textOnly
         ? Promise.resolve()
         : new Promise<void>((resolve, reject) => {
@@ -673,27 +670,14 @@ export class WebRTCConnection extends BaseConnection {
       );
     }
 
-    // Acquire the new track before tearing down the old one. The previous
-    // implementation stopped and unpublished the live mic track before
-    // calling createLocalAudioTrack, so a failed re-acquire (device unplugged
-    // mid-call, permission revoked, etc.) left the participant with no
-    // microphone at all. Creating first means a capture failure surfaces
-    // while the existing track is still published and the call can continue.
-    const audioTrack = await createLocalAudioTrack({
-      deviceId: { exact: deviceId },
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-      channelCount: { ideal: 1 },
-    });
+    // Acquire the new track before releasing the old one, so a failed capture
+    // leaves the live microphone published.
+    const audioTrack = await this.createMicrophoneTrack(deviceId);
 
     try {
-      // Stop and unpublish the previous microphone track only after the new
-      // one is ready.
       const currentMicTrackPublication =
         this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
       if (currentMicTrackPublication?.track) {
-        await currentMicTrackPublication.track.stop();
         await this.room.localParticipant.unpublishTrack(
           currentMicTrackPublication.track
         );
@@ -703,47 +687,61 @@ export class WebRTCConnection extends BaseConnection {
         name: "microphone",
         source: Track.Source.Microphone,
       });
-
-      this.setupInputAnalyser(audioTrack.mediaStreamTrack);
     } catch (error) {
-      // We already hold a fresh local track; release it so the device is not
-      // left captured, then rethrow. The previously published track (if any)
-      // is still live because the swap failed before unpublish completed.
       console.error("Failed to change input device:", error);
-      try {
+
+      const publication = this.room.localParticipant.getTrackPublication(
+        Track.Source.Microphone
+      );
+      if (publication?.track !== audioTrack) {
         audioTrack.stop();
-      } catch (stopError) {
-        console.error(
-          "Failed to stop new track after switch error:",
-          stopError
-        );
       }
+      if (!publication?.track) {
+        // The old track is already gone, so recover onto the default device
+        // rather than leaving the session without a microphone.
+        try {
+          await this.room.localParticipant.setMicrophoneEnabled(true);
+        } catch (recoveryError) {
+          console.error(
+            "Failed to recover microphone after device switch error:",
+            recoveryError
+          );
+        }
+      }
+
       throw error;
     }
+
+    this.setupInputAnalyser(audioTrack.mediaStreamTrack);
   }
 
-  /**
-   * Publishes the local microphone track, using `inputDeviceId` when provided
-   * so the agent receives audio from the selected device instead of the
-   * browser default. Used during `create()` to avoid a post-connect
-   * republish.
-   */
   private async enableMicrophone(inputDeviceId?: string): Promise<void> {
     if (!inputDeviceId) {
       await this.room.localParticipant.setMicrophoneEnabled(true);
       return;
     }
 
-    const audioTrack = await createLocalAudioTrack({
-      deviceId: { exact: inputDeviceId },
+    const audioTrack = await this.createMicrophoneTrack(inputDeviceId);
+    try {
+      await this.room.localParticipant.publishTrack(audioTrack, {
+        name: "microphone",
+        source: Track.Source.Microphone,
+      });
+    } catch (error) {
+      // An unpublished track is unknown to the room, so disconnecting would
+      // leave the device captured.
+      audioTrack.stop();
+      throw error;
+    }
+  }
+
+  private createMicrophoneTrack(deviceId: string): Promise<LocalAudioTrack> {
+    return createLocalAudioTrack({
+      deviceId: { exact: deviceId },
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
       channelCount: { ideal: 1 },
-    });
-    await this.room.localParticipant.publishTrack(audioTrack, {
-      name: "microphone",
-      source: Track.Source.Microphone,
     });
   }
 }
