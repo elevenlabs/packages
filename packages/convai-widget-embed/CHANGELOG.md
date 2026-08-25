@@ -1,5 +1,15 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.17.0
+
+### Minor Changes
+
+- cc0c20c: Add a `show_language_selector_on_trigger` widget config option (and matching `show-language-selector-on-trigger` embed attribute). Default `true` keeps the language dropdown on the collapsed launcher. Set to `false` to hide it there; the expanded sheet header still shows it.
+
+### Patch Changes
+
+- d4313cc: Support concurrency wait-queue (`queue_status`) server events: show a waiting status while all agents are busy, hide the typing indicator and block text/attachment sending while queued, and render a friendly non-error message when the queue wait times out.
+
 ## 0.16.4
 
 ## 0.16.3
