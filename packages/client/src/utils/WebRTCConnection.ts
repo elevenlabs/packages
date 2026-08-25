@@ -16,6 +16,7 @@ import {
   createLocalAudioTrack,
 } from "livekit-client";
 import type {
+  LocalAudioTrack,
   RemoteAudioTrack,
   Participant,
   TrackPublication,
@@ -48,7 +49,8 @@ function convertWssToHttps(origin: string): string {
 }
 
 export type WebRTCConnectionConfig = SessionConfig &
-  Pick<AudioWorkletConfig, "workletPaths"> & {
+  Pick<AudioWorkletConfig, "workletPaths"> &
+  InputDeviceConfig & {
     onDebug?: (info: unknown) => void;
   };
 
@@ -311,12 +313,14 @@ export class WebRTCConnection extends BaseConnection {
       // The server may wait for the client to publish audio before fully
       // establishing the subscriber peer connection, matching the behaviour
       // of @livekit/components-react's useLiveKitRoom hook.
+      // `setMicrophoneEnabled` cannot take a device, so a configured
+      // `inputDeviceId` publishes its own track instead.
       const micEnabled = config.textOnly
         ? Promise.resolve()
         : new Promise<void>((resolve, reject) => {
             room.once(RoomEvent.SignalConnected, () => {
-              room.localParticipant
-                .setMicrophoneEnabled(true)
+              connection
+                .enableMicrophone(config.inputDeviceId)
                 .then(() => resolve())
                 .catch(reject);
             });
@@ -666,50 +670,90 @@ export class WebRTCConnection extends BaseConnection {
       );
     }
 
+    // Acquire the new track before releasing the old one, so a failed capture
+    // leaves the live microphone published.
+    const audioTrack = await this.createMicrophoneTrack(deviceId);
+
     try {
-      // Get the current microphone track publication
       const currentMicTrackPublication =
         this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
-
-      // Stop the current microphone track if it exists
       if (currentMicTrackPublication?.track) {
-        await currentMicTrackPublication.track.stop();
         await this.room.localParticipant.unpublishTrack(
           currentMicTrackPublication.track
         );
       }
 
-      // Create new audio track with the specified device
-      const audioTrack = await createLocalAudioTrack({
-        deviceId: { exact: deviceId },
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        channelCount: { ideal: 1 },
-      });
+      // Publish muted rather than muting afterwards, so a muted session never
+      // sends audio from the new device.
+      if (this._isMuted) {
+        await audioTrack.mute();
+      }
 
-      // Publish the new microphone track
       await this.room.localParticipant.publishTrack(audioTrack, {
         name: "microphone",
         source: Track.Source.Microphone,
       });
-
-      // Reconnect the input analyser to the new track
-      this.setupInputAnalyser(audioTrack.mediaStreamTrack);
     } catch (error) {
       console.error("Failed to change input device:", error);
 
-      // Try to re-enable default microphone on failure
-      try {
-        await this.room.localParticipant.setMicrophoneEnabled(true);
-      } catch (recoveryError) {
-        console.error(
-          "Failed to recover microphone after device switch error:",
-          recoveryError
-        );
+      const publication = this.room.localParticipant.getTrackPublication(
+        Track.Source.Microphone
+      );
+      if (publication?.track !== audioTrack) {
+        audioTrack.stop();
+      }
+      if (!publication?.track) {
+        // The old track is already gone, so recover onto the default device
+        // rather than leaving the session without a microphone.
+        try {
+          await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+          const recoveredTrack = this.room.localParticipant.getTrackPublication(
+            Track.Source.Microphone
+          )?.track;
+          if (recoveredTrack) {
+            this.setupInputAnalyser(recoveredTrack.mediaStreamTrack);
+          }
+        } catch (recoveryError) {
+          console.error(
+            "Failed to recover microphone after device switch error:",
+            recoveryError
+          );
+        }
       }
 
       throw error;
     }
+
+    this.setupInputAnalyser(audioTrack.mediaStreamTrack);
+  }
+
+  private async enableMicrophone(inputDeviceId?: string): Promise<void> {
+    if (!inputDeviceId) {
+      await this.room.localParticipant.setMicrophoneEnabled(true);
+      return;
+    }
+
+    const audioTrack = await this.createMicrophoneTrack(inputDeviceId);
+    try {
+      await this.room.localParticipant.publishTrack(audioTrack, {
+        name: "microphone",
+        source: Track.Source.Microphone,
+      });
+    } catch (error) {
+      // An unpublished track is unknown to the room, so disconnecting would
+      // leave the device captured.
+      audioTrack.stop();
+      throw error;
+    }
+  }
+
+  private createMicrophoneTrack(deviceId: string): Promise<LocalAudioTrack> {
+    return createLocalAudioTrack({
+      deviceId: { exact: deviceId },
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: { ideal: 1 },
+    });
   }
 }
