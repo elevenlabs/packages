@@ -24,6 +24,7 @@ export type DisplayTranscriptEntry =
       eventId?: number;
       toolStatus?: ToolCallStatusType;
       fileInput?: TranscriptFileInput | null;
+      fileInputs?: TranscriptFileInput[] | null;
     }
   | {
       type: "disconnection";
