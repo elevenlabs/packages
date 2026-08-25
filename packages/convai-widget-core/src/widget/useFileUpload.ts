@@ -131,7 +131,9 @@ export function useFileUpload({
 
   const isUploading = useMemo(
     () =>
-      computed(() => pendingFiles.value.some(file => file.status === "uploading")),
+      computed(() =>
+        pendingFiles.value.some(file => file.status === "uploading")
+      ),
     [pendingFiles]
   );
 
@@ -237,8 +239,9 @@ export function useFileUpload({
       }
     });
     pendingFiles.value = [];
-    sentFileCount.value += current.filter(pending => pending.status === "ready")
-      .length;
+    sentFileCount.value += current.filter(
+      pending => pending.status === "ready"
+    ).length;
   }, [pendingFiles, sentFileCount]);
 
   return {
