@@ -1,5 +1,16 @@
 # @elevenlabs/client
 
+## 1.23.0
+
+### Minor Changes
+
+- f94ef6d: Add `fileIds` to `sendMultimodalMessage` and dual-send `file` + `files` on the wire.
+
+### Patch Changes
+
+- Updated dependencies [f94ef6d]
+  - @elevenlabs/types@0.22.1
+
 ## 1.22.0
 
 ### Minor Changes

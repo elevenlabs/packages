@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.22.1
+
+### Patch Changes
+
+- f94ef6d: Add `fileIds` to `sendMultimodalMessage` and dual-send `file` + `files` on the wire.
+
 ## 0.22.0
 
 ### Minor Changes
