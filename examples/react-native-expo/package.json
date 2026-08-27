@@ -37,9 +37,9 @@
     "expo-dev-client": "~57.0.14",
     "expo-image-picker": "~57.0.12",
     "expo-splash-screen": "~57.0.7",
-    "react": "19.2.3",
+    "react": "19.2.8",
     "react-dom": "19.2.3",
-    "react-native": "0.86.2",
+    "react-native": "0.87.0",
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
