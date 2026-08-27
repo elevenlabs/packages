@@ -291,7 +291,15 @@ export class WebRTCConnection extends BaseConnection {
       );
     }
 
-    const room = new Room();
+    // livekit-client defaults `singlePeerConnection` to true, which bundles the
+    // publisher offer in the JoinRequest and moves the microphone request
+    // earlier in the connection sequence. Callers that need the dual peer
+    // connection path can opt back into it. Left undefined so the LiveKit
+    // default applies unless the caller says otherwise.
+    const singlePeerConnection = config.webRtc?.singlePeerConnection;
+    const room = new Room(
+      singlePeerConnection === undefined ? undefined : { singlePeerConnection }
+    );
 
     try {
       // Create connection instance first to set up event listeners
