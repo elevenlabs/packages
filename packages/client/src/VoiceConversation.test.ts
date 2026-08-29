@@ -400,6 +400,68 @@ describe("VoiceConversation hold", () => {
     expect(onModeChange).not.toHaveBeenCalled();
   });
 
+  it("reports the agent as speaking again when it was already speaking before the hold", () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    // The agent is mid-utterance when the hold starts. Over a live track that
+    // utterance is silenced rather than stopped, and the transport only speaks
+    // up when the active speaker *changes*, so it will not announce the same
+    // one again when the hold ends.
+    reportMode("speaking");
+    conversation.setOnHold(true);
+    expect(onModeChange).toHaveBeenLastCalledWith({ mode: "listening" });
+    onModeChange.mockClear();
+
+    conversation.setOnHold(false);
+    expect(onModeChange).toHaveBeenCalledWith({ mode: "speaking" });
+  });
+
+  it("does not report a stale speaking when an utterance from before the hold ended during it", () => {
+    const onModeChange = vi.fn();
+    const connection = createConnection();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      connection
+    );
+    const reportMode = connectionModeListener(connection);
+
+    reportMode("speaking");
+    conversation.setOnHold(true);
+    reportMode("listening");
+    onModeChange.mockClear();
+
+    conversation.setOnHold(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("does not replay speaking from before the hold when local playback was flushed", () => {
+    const onModeChange = vi.fn();
+    const playback = createPlaybackEventTarget();
+    const { conversation } = TestVoiceConversation.createTest(
+      { onModeChange },
+      createConnection(),
+      createInput(),
+      createOutput(),
+      playback
+    );
+
+    // Local playback really is interrupted, and the release flushes what was
+    // queued behind it, so an utterance from before the hold is gone rather
+    // than silenced and there is nothing to come back to.
+    playback.emitProgress(false);
+    conversation.setOnHold(true);
+    onModeChange.mockClear();
+
+    conversation.setOnHold(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
   it("does not report a stale speaking when local playback was flushed on release", () => {
     const onModeChange = vi.fn();
     const playback = createPlaybackEventTarget();

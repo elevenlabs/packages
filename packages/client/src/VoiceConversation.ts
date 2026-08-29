@@ -218,6 +218,7 @@ export class VoiceConversation extends BaseConversation {
 
     if (isOnHold) {
       this.micMutedOutsideHold = this.input.isMuted();
+      const speakingWhenHeld = this.mode === "speaking";
       // Stop the current utterance, then silence the output. Order matters:
       // interrupt() restores the output's own volume once its fade completes,
       // so the zero has to be the value it restores to.
@@ -225,6 +226,12 @@ export class VoiceConversation extends BaseConversation {
       this.output.setVolume(0);
       this.applyMicMuted(true);
       this.updateMode("listening");
+      // That "listening" is the hold announcing itself, not the agent falling
+      // quiet, so it must not count as the agent having stopped. An utterance
+      // already in progress is only silenced where the transport owns
+      // playback, and it is never announced a second time, so the hold has to
+      // remember it the same way it remembers one that arrives later.
+      this.modeSuppressedByHold = speakingWhenHeld ? "speaking" : null;
 
       // There is nothing to keep quiet once the session is gone, and an
       // interval started then would outlive the conversation itself.
