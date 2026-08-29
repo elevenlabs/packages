@@ -1,5 +1,5 @@
 ---
-"@elevenlabs/client": patch
+"@elevenlabs/client": minor
 "@elevenlabs/react-native": patch
 ---
 
