@@ -125,12 +125,21 @@ type MCPApproval = {
   controller: AbortController;
 };
 
+/**
+ * What a client tool handler may return.
+ *
+ * Everything reaches the agent as a string: an object or array is serialised
+ * with `JSON.stringify`, anything else goes through `String`, and returning
+ * nothing sends the default "Client tool execution successful." result. The
+ * type covers what that coercion handles, so a handler does not have to
+ * serialise on the caller's side to satisfy it.
+ */
+export type ClientToolResult = string | number | boolean | object | void;
+
 export type ClientToolsConfig = {
   clientTools: Record<
     string,
-    (
-      parameters: any
-    ) => Promise<string | number | void> | string | number | void
+    (parameters: any) => Promise<ClientToolResult> | ClientToolResult
   >;
 };
 
