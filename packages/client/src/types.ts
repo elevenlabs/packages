@@ -12,6 +12,7 @@ import type {
   AsrInitiationMetadataEvent,
   Interruption,
   AgentResponseCorrection,
+  AgentResponseAttachment,
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
   ContextUsageClientEvent,
@@ -72,6 +73,8 @@ export type DisconnectionDetails =
       reason: "user";
     };
 
+export type MessageAttachment = AgentResponseAttachment;
+
 export interface MessagePayload {
   message: string;
   event_id?: number;
@@ -80,6 +83,11 @@ export interface MessagePayload {
    */
   source: "user" | "ai";
   role: Role;
+  /**
+   * Files attached to an agent message, e.g. relayed from a human agent
+   * reply. Only present on agent messages.
+   */
+  attachments?: MessageAttachment[];
 }
 
 /**
