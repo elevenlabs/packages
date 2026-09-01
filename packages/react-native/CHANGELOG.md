@@ -1,5 +1,17 @@
 # @elevenlabs/react-native
 
+## Unreleased
+
+### Patch Changes
+
+- Fix iOS silent microphone on second (and subsequent) sequential WebRTC
+  sessions. After `stopAudioSession()` ends a call, iOS's RTCAudioSession
+  input capture unit can stall when `startAudioSession()` fires for the next
+  session — the track is live and unmuted but its audio energy is zero.
+  The setup strategy now applies an automatic mute → unmute microcycle after
+  `createConnection()` on iOS voice sessions, which forces the RTCAudioSession
+  to restart the capture unit before the conversation goes live. ([#991](https://github.com/elevenlabs/packages/issues/991))
+
 ## 1.2.25
 
 ### Patch Changes
