@@ -194,6 +194,30 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  streamed_first_reply: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+  },
+  streamed_first_message: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+  },
+  streamed_first_message_with_final: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+  },
   audio_tags_strip: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -329,6 +353,50 @@ function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
 }
 
+async function sendStreamedAgentResponse(
+  client: { send(data: string): void },
+  message: string,
+  eventId: number,
+  includeFinalResponse = true
+) {
+  client.send(
+    JSON.stringify({
+      type: "agent_chat_response_part",
+      text_response_part: { text: "", type: "start", event_id: eventId },
+    })
+  );
+  await new Promise(resolve => setTimeout(resolve, 0));
+  client.send(
+    JSON.stringify({
+      type: "agent_chat_response_part",
+      text_response_part: {
+        text: message,
+        type: "delta",
+        event_id: eventId,
+      },
+    })
+  );
+  await new Promise(resolve => setTimeout(resolve, 0));
+  if (includeFinalResponse) {
+    client.send(
+      JSON.stringify({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: message,
+          event_id: eventId,
+        },
+      })
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  client.send(
+    JSON.stringify({
+      type: "agent_chat_response_part",
+      text_response_part: { text: "", type: "stop", event_id: eventId },
+    })
+  );
+}
+
 export const Worker = setupWorker(
   http.get<{ agentId: string }>(
     `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
@@ -377,15 +445,27 @@ export const Worker = setupWorker(
         })
       );
       await new Promise(resolve => setTimeout(resolve, 0));
-      client.send(
-        JSON.stringify({
-          type: "agent_response",
-          agent_response_event: {
-            agent_response: config.first_message,
-            event_id: 1,
-          },
-        })
-      );
+      if (
+        agentId === "streamed_first_message" ||
+        agentId === "streamed_first_message_with_final"
+      ) {
+        await sendStreamedAgentResponse(
+          client,
+          config.first_message ?? "",
+          1,
+          agentId === "streamed_first_message_with_final"
+        );
+      } else if (agentId !== "streamed_first_reply") {
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response: config.first_message,
+              event_id: 1,
+            },
+          })
+        );
+      }
       // `text_and_voice` is a voice-capable agent that the widget switches to
       // text mode when the user types, so it follows the text chat script.
       const isTextChat = config.text_only || agentId === "text_and_voice";
@@ -394,6 +474,9 @@ export const Worker = setupWorker(
         agentId !== "end_call_test" &&
         agentId !== "tool_call" &&
         agentId !== "stream_consolidation" &&
+        agentId !== "streamed_first_reply" &&
+        agentId !== "streamed_first_message" &&
+        agentId !== "streamed_first_message_with_final" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload" &&
         agentId !== "external_agent"
@@ -661,6 +744,27 @@ export const Worker = setupWorker(
               text_response_part: { text: "", type: "stop", event_id: 2 },
             })
           );
+        });
+      }
+      if (
+        agentId === "streamed_first_reply" ||
+        agentId === "streamed_first_message" ||
+        agentId === "streamed_first_message_with_final"
+      ) {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+          const message =
+            agentId === "streamed_first_reply"
+              ? "First streamed reply"
+              : agentId === "streamed_first_message"
+                ? (config.first_message ?? "")
+                : "Production streamed reply";
+
+          await sendStreamedAgentResponse(client, message, 2);
         });
       }
       if (agentId === "external_agent") {
