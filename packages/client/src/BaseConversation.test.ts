@@ -4,6 +4,7 @@ import {
   BaseConversation,
   Options,
   PartialOptions,
+  type ClientToolsConfig,
 } from "./BaseConversation.js";
 import type { BaseConnection } from "./utils/BaseConnection.js";
 
@@ -1402,6 +1403,98 @@ describe("BaseConversation", () => {
         tool_call_id: "call-2",
         is_approved: false,
       });
+    });
+  });
+
+  describe("client tool results", () => {
+    function toolCall(toolCallId = "call-1", toolName = "lookup") {
+      return {
+        type: "client_tool_call",
+        client_tool_call: {
+          tool_name: toolName,
+          tool_call_id: toolCallId,
+          parameters: { query: "refunds" },
+          event_id: 1,
+        },
+      } as Parameters<TestConversation["receiveMessage"]>[0];
+    }
+
+    function createWithTool(handler: ClientToolsConfig["clientTools"][string]) {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(
+        { clientTools: { lookup: handler } },
+        connection
+      );
+      return { conversation, sendMessage };
+    }
+
+    function resultOf(sendMessage: ReturnType<typeof vi.fn>) {
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      return sendMessage.mock.calls[0][0];
+    }
+
+    it("serialises an object result", async () => {
+      const { conversation, sendMessage } = createWithTool(async () => ({
+        status: "ok",
+        count: 2,
+      }));
+
+      await conversation.receiveMessage(toolCall());
+
+      expect(resultOf(sendMessage)).toEqual({
+        type: "client_tool_result",
+        tool_call_id: "call-1",
+        result: JSON.stringify({ status: "ok", count: 2 }),
+        is_error: false,
+      });
+    });
+
+    it("serialises an array result", async () => {
+      const { conversation, sendMessage } = createWithTool(() => [1, "two"]);
+
+      await conversation.receiveMessage(toolCall());
+
+      expect(resultOf(sendMessage).result).toEqual(JSON.stringify([1, "two"]));
+    });
+
+    it("sends a boolean result as its string form", async () => {
+      // `false` is not nullish, so the default result does not apply to it and
+      // it has to survive as "false" rather than becoming the success message.
+      const { conversation, sendMessage } = createWithTool(() => false);
+
+      await conversation.receiveMessage(toolCall());
+
+      expect(resultOf(sendMessage).result).toEqual("false");
+    });
+
+    it("falls back to the default result when a tool returns nothing", async () => {
+      const { conversation, sendMessage } = createWithTool(() => {});
+
+      await conversation.receiveMessage(toolCall());
+
+      expect(resultOf(sendMessage).result).toEqual(
+        "Client tool execution successful."
+      );
+    });
+
+    it("accepts every result the coercion handles, at the type level", () => {
+      // Compile-time only: each of these was rejected before the return type
+      // was widened, although the runtime has always handled them.
+      const handlers: ClientToolsConfig["clientTools"] = {
+        object: () => ({ ok: true }),
+        array: () => [1, 2, 3],
+        promisedObject: async () => ({ ok: true }),
+        boolean: () => true,
+        string: () => "text",
+        number: () => 1,
+        nothing: () => {},
+      };
+
+      expect(Object.keys(handlers)).toHaveLength(7);
     });
   });
 });
