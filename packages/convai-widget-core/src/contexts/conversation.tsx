@@ -20,7 +20,12 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
-import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import {
+  useFirstMessage,
+  useFirstMessageRichContent,
+  useWidgetConfig,
+} from "./widget-config";
+import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
 
@@ -94,6 +99,24 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
+function firstMessageRichContentEntries(
+  richContent: FirstMessageRichContent | null
+): TranscriptEntry[] {
+  if (!richContent) {
+    return [];
+  }
+  return [
+    {
+      type: "rich_content",
+      component: richContent.component,
+      props: richContent.props,
+      eventId: 1,
+      richContentId: "first_message",
+      conversationIndex: 0,
+    },
+  ];
+}
+
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -142,6 +165,7 @@ function useConversationSetup() {
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
+  const firstMessageRichContent = useFirstMessageRichContent();
   const terms = useTerms();
   const config = useSessionConfig();
 
@@ -162,7 +186,7 @@ function useConversationSetup() {
     };
   }, []);
 
-  return useMemo(() => {
+  const conversation = useMemo(() => {
     const status = signal<Status>("disconnected");
     const isDisconnected = computed(() => status.value === "disconnected");
 
@@ -173,20 +197,8 @@ function useConversationSetup() {
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
 
-    const firstMessageEntries = (): TranscriptEntry[] => {
-      const richContent = widgetConfig.peek().first_message_rich_content;
-      if (!richContent) return [];
-      return [
-        {
-          type: "rich_content",
-          component: richContent.component,
-          props: richContent.props,
-          eventId: 1,
-          richContentId: "first_message",
-          conversationIndex: 0,
-        },
-      ];
-    };
+    const firstMessageEntries = (): TranscriptEntry[] =>
+      firstMessageRichContentEntries(firstMessageRichContent.peek());
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const conversationIndex = signal(0);
@@ -632,6 +644,26 @@ function useConversationSetup() {
       },
     };
   }, [config]);
+
+  useSignalEffect(() => {
+    const richContent = firstMessageRichContent.value;
+    if (conversation.status.value !== "disconnected") {
+      return;
+    }
+    const isGreetingOnly = conversation.transcript
+      .peek()
+      .every(
+        entry =>
+          entry.type === "rich_content" &&
+          entry.richContentId === "first_message"
+      );
+    if (!isGreetingOnly) {
+      return;
+    }
+    conversation.transcript.value = firstMessageRichContentEntries(richContent);
+  });
+
+  return conversation;
 }
 
 async function getOrCreateUserId(): Promise<string> {
