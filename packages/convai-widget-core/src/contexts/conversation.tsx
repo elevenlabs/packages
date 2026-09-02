@@ -29,6 +29,8 @@ import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
 
+const FIRST_MESSAGE_EVENT_ID = 1;
+
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
 export const ConversationContext = createContext<ConversationSetup | null>(
@@ -320,12 +322,11 @@ function useConversationSetup() {
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
-                !receivedFirstMessageRef.current
+                event_id === FIRST_MESSAGE_EVENT_ID
               ) {
                 receivedFirstMessageRef.current = true;
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+                // The configured first message is already rendered locally in
+                // text mode, so ignore the server copy.
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
@@ -369,9 +370,9 @@ function useConversationSetup() {
                 conversationTextOnly.peek() === true &&
                 !receivedFirstMessageRef.current
               ) {
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+                // Ignore the opening frame of the configured first-message
+                // stream, then allow the actual reply stream through.
+                receivedFirstMessageRef.current = true;
                 return;
               }
               setAgentTyping(false);

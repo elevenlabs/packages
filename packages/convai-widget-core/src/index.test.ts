@@ -166,6 +166,64 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("renders the first streamed reply when the configured first message is interrupted", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_reply",
+      variant: "compact",
+    });
+
+    await expect.element(page.getByText("Agent response")).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("First streamed reply"))
+      .toBeInTheDocument();
+  });
+
+  it("renders a reply that matches the streamed configured first message", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect.poll(() => firstMessage.elements().length).toBe(2);
+  });
+
+  it("handles a streamed configured first message with a final response", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message_with_final",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Production streamed reply"))
+      .toBeInTheDocument();
+    expect(firstMessage.elements()).toHaveLength(1);
+  });
+
   it.each(Variants)(
     "$0 expandable variant should go through a happy path (text-only)",
     async variant => {
