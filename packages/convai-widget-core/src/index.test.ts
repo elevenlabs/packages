@@ -214,6 +214,10 @@ describe("elevenlabs-convai", () => {
   );
 
   describe("first message for voice-capable agents", () => {
+    afterEach(() => {
+      localStorage.removeItem("xi:convai-widget-last-used-language");
+    });
+
     it("shows the first message before a text conversation starts", async () => {
       setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
 
@@ -236,6 +240,29 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByRole("button", { name: "Track my order" }))
         .toBeInTheDocument();
+    });
+
+    it("updates first message buttons when the language changes", async () => {
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+        "text-input": "true",
+        "default-expanded": "true",
+      });
+
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .toBeInTheDocument();
+
+      await page.getByRole("combobox", { name: "Change language" }).click();
+      await page.getByRole("option", { name: "Español" }).click();
+
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .not.toBeInTheDocument();
     });
 
     it("keeps a single first message when the user starts a text chat", async () => {
@@ -1108,6 +1135,9 @@ describe("elevenlabs-convai", () => {
         name: "Change language",
       });
       await expect.element(langButton).toHaveTextContent("Español");
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
     });
   });
 

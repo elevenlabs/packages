@@ -66,12 +66,32 @@ export const AGENTS = {
     terms_html: "<p>Default Terms in English</p>",
     terms_key: "terms_default",
     supported_language_overrides: ["es", "fr"],
+    first_message_rich_content: {
+      component: "buttons",
+      props: {
+        buttons: [
+          { type: "message", label: "Track my order", message: "Track" },
+        ],
+      },
+    },
     language_presets: {
       es: {
         text_contents: {
           start_chat: "Iniciar una llamada",
         },
         first_message: "¡Hola! ¿Cómo puedo ayudarte?",
+        first_message_rich_content: {
+          component: "buttons",
+          props: {
+            buttons: [
+              {
+                type: "message",
+                label: "Rastrear mi pedido",
+                message: "Rastrear",
+              },
+            ],
+          },
+        },
         terms_html: "<p>Términos en Español</p>",
         terms_key: "terms_es",
       },
@@ -80,6 +100,18 @@ export const AGENTS = {
           start_chat: "Commencer un appel",
         },
         first_message: "Bonjour! Comment puis-je vous aider?",
+        first_message_rich_content: {
+          component: "buttons",
+          props: {
+            buttons: [
+              {
+                type: "message",
+                label: "Suivre ma commande",
+                message: "Suivre",
+              },
+            ],
+          },
+        },
         terms_html: "<p>Termes en Français</p>",
         terms_key: "terms_fr",
       },
