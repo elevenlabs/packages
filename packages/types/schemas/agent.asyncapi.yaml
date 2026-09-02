@@ -781,6 +781,7 @@ components:
           description: "Behavior when a mocked tool is called but no mock response matches. Defaults to 'raise_error' for safety. Options: 'raise_error' fails the tool call, 'call_real_tool' executes the actual tool"
 
     MultimodalMessageFileData:
+      title: File
       type: object
       required: [type, file_id]
       properties:
@@ -1039,6 +1040,20 @@ components:
         event_id:
           type: integer
 
+    AgentResponseAttachment:
+      title: AgentResponseAttachment
+      type: object
+      required: [url, name]
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+        mime_type:
+          anyOf:
+            - type: string
+            - type: "null"
+
     AgentResponseData:
       type: object
       required: [agent_response, event_id]
@@ -1047,6 +1062,11 @@ components:
           type: string
         event_id:
           type: integer
+        attachments:
+          type: array
+          description: Files attached to the agent response, e.g. relayed from a human agent reply
+          items:
+            $ref: "#/components/schemas/AgentResponseAttachment"
 
     AgentResponseCorrectionData:
       type: object

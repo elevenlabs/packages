@@ -198,6 +198,62 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("agent_response events", () => {
+    it("forwards attachments to onMessage when present", async () => {
+      const onMessage = vi.fn();
+      const conversation = TestConversation.create({ onMessage });
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Here is the file you asked for.",
+          event_id: 3,
+          attachments: [
+            {
+              url: "https://example.com/invoice.pdf",
+              name: "invoice.pdf",
+              mime_type: "application/pdf",
+            },
+          ],
+        },
+      });
+
+      expect(onMessage).toHaveBeenCalledWith({
+        source: "ai",
+        role: "agent",
+        message: "Here is the file you asked for.",
+        event_id: 3,
+        attachments: [
+          {
+            url: "https://example.com/invoice.pdf",
+            name: "invoice.pdf",
+            mime_type: "application/pdf",
+          },
+        ],
+      });
+    });
+
+    it("leaves attachments undefined when the event has none", async () => {
+      const onMessage = vi.fn();
+      const conversation = TestConversation.create({ onMessage });
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Hello there",
+          event_id: 4,
+        },
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Hello there",
+          attachments: undefined,
+        })
+      );
+    });
+  });
+
   describe("agent_response_correction events", () => {
     it("calls onAgentResponseCorrection with the correction payload", async () => {
       const onAgentResponseCorrection = vi.fn();
