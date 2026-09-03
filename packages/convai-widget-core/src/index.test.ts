@@ -166,6 +166,64 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("renders the first streamed reply when the configured first message is interrupted", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_reply",
+      variant: "compact",
+    });
+
+    await expect.element(page.getByText("Agent response")).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("First streamed reply"))
+      .toBeInTheDocument();
+  });
+
+  it("renders a reply that matches the streamed configured first message", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect.poll(() => firstMessage.elements().length).toBe(2);
+  });
+
+  it("handles a streamed configured first message with a final response", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message_with_final",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Production streamed reply"))
+      .toBeInTheDocument();
+    expect(firstMessage.elements()).toHaveLength(1);
+  });
+
   it.each(Variants)(
     "$0 expandable variant should go through a happy path (text-only)",
     async variant => {
@@ -214,6 +272,10 @@ describe("elevenlabs-convai", () => {
   );
 
   describe("first message for voice-capable agents", () => {
+    afterEach(() => {
+      localStorage.removeItem("xi:convai-widget-last-used-language");
+    });
+
     it("shows the first message before a text conversation starts", async () => {
       setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
 
@@ -236,6 +298,29 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByRole("button", { name: "Track my order" }))
         .toBeInTheDocument();
+    });
+
+    it("updates first message buttons when the language changes", async () => {
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+        "text-input": "true",
+        "default-expanded": "true",
+      });
+
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .toBeInTheDocument();
+
+      await page.getByRole("combobox", { name: "Change language" }).click();
+      await page.getByRole("option", { name: "Español" }).click();
+
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .not.toBeInTheDocument();
     });
 
     it("keeps a single first message when the user starts a text chat", async () => {
@@ -1108,6 +1193,9 @@ describe("elevenlabs-convai", () => {
         name: "Change language",
       });
       await expect.element(langButton).toHaveTextContent("Español");
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
     });
   });
 

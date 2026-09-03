@@ -20,9 +20,16 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
-import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import {
+  useFirstMessage,
+  useFirstMessageRichContent,
+  useWidgetConfig,
+} from "./widget-config";
+import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
+
+const FIRST_MESSAGE_EVENT_ID = 1;
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -94,6 +101,24 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
+function firstMessageRichContentEntries(
+  richContent: FirstMessageRichContent | null
+): TranscriptEntry[] {
+  if (!richContent) {
+    return [];
+  }
+  return [
+    {
+      type: "rich_content",
+      component: richContent.component,
+      props: richContent.props,
+      eventId: 1,
+      richContentId: "first_message",
+      conversationIndex: 0,
+    },
+  ];
+}
+
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -142,6 +167,7 @@ function useConversationSetup() {
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
+  const firstMessageRichContent = useFirstMessageRichContent();
   const terms = useTerms();
   const config = useSessionConfig();
 
@@ -162,7 +188,7 @@ function useConversationSetup() {
     };
   }, []);
 
-  return useMemo(() => {
+  const conversation = useMemo(() => {
     const status = signal<Status>("disconnected");
     const isDisconnected = computed(() => status.value === "disconnected");
 
@@ -173,20 +199,8 @@ function useConversationSetup() {
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
 
-    const firstMessageEntries = (): TranscriptEntry[] => {
-      const richContent = widgetConfig.peek().first_message_rich_content;
-      if (!richContent) return [];
-      return [
-        {
-          type: "rich_content",
-          component: richContent.component,
-          props: richContent.props,
-          eventId: 1,
-          richContentId: "first_message",
-          conversationIndex: 0,
-        },
-      ];
-    };
+    const firstMessageEntries = (): TranscriptEntry[] =>
+      firstMessageRichContentEntries(firstMessageRichContent.peek());
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const conversationIndex = signal(0);
@@ -308,12 +322,11 @@ function useConversationSetup() {
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
-                !receivedFirstMessageRef.current
+                event_id === FIRST_MESSAGE_EVENT_ID
               ) {
                 receivedFirstMessageRef.current = true;
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+                // The configured first message is already rendered locally in
+                // text mode, so ignore the server copy.
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
@@ -357,9 +370,9 @@ function useConversationSetup() {
                 conversationTextOnly.peek() === true &&
                 !receivedFirstMessageRef.current
               ) {
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+                // Ignore the opening frame of the configured first-message
+                // stream, then allow the actual reply stream through.
+                receivedFirstMessageRef.current = true;
                 return;
               }
               setAgentTyping(false);
@@ -632,6 +645,26 @@ function useConversationSetup() {
       },
     };
   }, [config]);
+
+  useSignalEffect(() => {
+    const richContent = firstMessageRichContent.value;
+    if (conversation.status.value !== "disconnected") {
+      return;
+    }
+    const isGreetingOnly = conversation.transcript
+      .peek()
+      .every(
+        entry =>
+          entry.type === "rich_content" &&
+          entry.richContentId === "first_message"
+      );
+    if (!isGreetingOnly) {
+      return;
+    }
+    conversation.transcript.value = firstMessageRichContentEntries(richContent);
+  });
+
+  return conversation;
 }
 
 async function getOrCreateUserId(): Promise<string> {
