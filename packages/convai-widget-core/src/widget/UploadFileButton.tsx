@@ -27,10 +27,8 @@ export function UploadFileButton({
   const handleFileChange = useCallback(
     (e: Event) => {
       const input = e.target as HTMLInputElement;
-      const file = input.files?.[0];
-      if (file) {
-        onFileSelect(file);
-      }
+      const selected = input.files ? Array.from(input.files) : [];
+      selected.forEach(file => onFileSelect(file));
       input.value = "";
     },
     [onFileSelect]
@@ -52,6 +50,7 @@ export function UploadFileButton({
         ref={fileInputRef}
         type="file"
         accept={ACCEPTED_FILE_EXTENSIONS.join(",")}
+        multiple
         className="hidden"
         onChange={handleFileChange}
       />

@@ -57,6 +57,7 @@ export type TranscriptEntry =
       conversationIndex: number;
       eventId?: number;
       fileInput?: TranscriptFileInput | null;
+      fileInputs?: TranscriptFileInput[] | null;
     }
   | {
       type: "agent_tool_request";
@@ -604,14 +605,15 @@ function useConversationSetup() {
       },
       sendMultimodalMessage: (input: {
         text?: string;
-        file: TranscriptFileInput & { fileId: string };
+        files: Array<TranscriptFileInput & { fileId: string }>;
       }) => {
         if (isWaitingForAgent.peek()) return;
         const trimmed = input.text?.trim() ?? "";
-        const { fileId, ...fileInput } = input.file;
+        const fileIds = input.files.map(file => file.fileId);
+        const fileInputs = input.files.map(({ fileId: _fileId, ...fileInput }) => fileInput);
         conversationRef.current?.sendMultimodalMessage({
           text: trimmed || undefined,
-          fileId,
+          fileIds,
         });
         transcript.value = [
           ...transcript.value,
@@ -621,7 +623,8 @@ function useConversationSetup() {
             message: trimmed,
             isText: true,
             conversationIndex: conversationIndex.peek(),
-            fileInput,
+            fileInput: fileInputs[0] ?? null,
+            fileInputs,
           },
         ];
       },
