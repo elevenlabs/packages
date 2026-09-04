@@ -166,6 +166,87 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("does not duplicate a message finalized after the next tool segment starts", async () => {
+    setupWebComponent({
+      "agent-id": "tool_call_late_final",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Record vulnerability");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const message = page.getByText("Recording that for you now…", {
+      exact: true,
+    });
+    await expect.element(message).toBeInTheDocument();
+    expect(message.elements()).toHaveLength(1);
+  });
+
+  it("does not duplicate an agent response streamed before a tool call", async () => {
+    setupWebComponent({
+      "agent-id": "response_before_stream_tool",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Record a bug");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(
+        page.getByText(
+          "The bug has been recorded successfully. Is there anything else you would like me to help you with?"
+        )
+      )
+      .toBeInTheDocument();
+
+    const preToolMessage = page.getByText("Recording that for you now…", {
+      exact: true,
+    });
+    await expect.element(preToolMessage).toBeInTheDocument();
+    expect(preToolMessage.elements()).toHaveLength(1);
+  });
+
+  it("renders a final agent message received after a tool stream stops", async () => {
+    setupWebComponent({
+      "agent-id": "final_message_after_tool",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Yes");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("The agent ended the conversation"))
+      .toBeInTheDocument();
+
+    const finalMessage = page.getByText(
+      "Thank you for your feedback. Have a great day!",
+      { exact: true }
+    );
+    await expect.element(finalMessage).toBeInTheDocument();
+    expect(finalMessage.elements()).toHaveLength(1);
+
+    const completed = page.getByText("Completed", { exact: true });
+    await expect.element(completed).toBeInTheDocument();
+    expect(completed.elements()).toHaveLength(1);
+  });
+
   it("renders the first streamed reply when the configured first message is interrupted", async () => {
     setupWebComponent({
       "agent-id": "streamed_first_reply",

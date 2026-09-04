@@ -217,6 +217,36 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  tool_call_late_final: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  final_message_after_tool: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Before you go, was this conversation helpful today?",
+  },
+  response_before_stream_tool: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   stream_consolidation: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -505,6 +535,9 @@ export const Worker = setupWorker(
         isTextChat &&
         agentId !== "end_call_test" &&
         agentId !== "tool_call" &&
+        agentId !== "tool_call_late_final" &&
+        agentId !== "final_message_after_tool" &&
+        agentId !== "response_before_stream_tool" &&
         agentId !== "stream_consolidation" &&
         agentId !== "streamed_first_reply" &&
         agentId !== "streamed_first_message" &&
@@ -651,6 +684,226 @@ export const Worker = setupWorker(
           );
           await new Promise(resolve => setTimeout(resolve, 50));
           client.close(1000);
+        });
+      }
+      if (agentId === "final_message_after_tool") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "feedback_1",
+                event_id: 2,
+                tool_name: "capture_feedback",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "feedback_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response:
+                  "Thank you for your feedback. Have a great day!",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 100));
+          client.close(1000);
+        });
+      }
+      if (agentId === "response_before_stream_tool") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Recording that for you now…",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Recording that for you now…",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "record_1",
+                event_id: 2,
+                tool_name: "capture_vulnerability",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "record_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "The bug has been recorded successfully. Is there anything else you would like me to help you with?",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response:
+                  "The bug has been recorded successfully. Is there anything else you would like me to help you with?",
+                event_id: 2,
+              },
+            })
+          );
+        });
+      }
+      if (agentId === "tool_call_late_final") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Recording that for you now…",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 3 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "tool_late_final",
+                event_id: 3,
+                tool_name: "capture_vulnerability",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Recording that for you now…",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "tool_late_final",
+                event_id: 3,
+                is_error: false,
+              },
+            })
+          );
         });
       }
       if (agentId === "tool_call") {
