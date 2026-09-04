@@ -52,6 +52,11 @@ export type WebRTCConnectionConfig = SessionConfig &
   Pick<AudioWorkletConfig, "workletPaths"> &
   InputDeviceConfig & {
     onDebug?: (info: unknown) => void;
+    /**
+     * Receives errors that surface outside a caller-visible promise, such as a
+     * rejection inside an async room event handler.
+     */
+    onError?: (message: string, context?: unknown) => void;
   };
 
 /** @deprecated Use {@link WebRTCConnectionConfig} instead. */
@@ -223,6 +228,7 @@ export class WebRTCConnection extends BaseConnection {
     outputFormat: FormatConfig,
     config: {
       onDebug?: (info: unknown) => void;
+      onError?: (message: string, context?: unknown) => void;
       workletPaths?: AudioWorkletConfig["workletPaths"];
     } = {}
   ) {
@@ -451,44 +457,52 @@ export class WebRTCConnection extends BaseConnection {
 
     this.room.on(
       RoomEvent.TrackSubscribed,
-      async (
-        track: Track,
-        _publication: TrackPublication,
-        participant: Participant
-      ) => {
-        if (
-          track.kind === Track.Kind.Audio &&
-          participant.identity.includes("agent")
-        ) {
-          const remoteAudioTrack = track as RemoteAudioTrack;
+      this.forwardHandlerErrors(
+        "Failed to attach subscribed audio track",
+        async (
+          track: Track,
+          _publication: TrackPublication,
+          participant: Participant
+        ) => {
+          if (
+            track.kind === Track.Kind.Audio &&
+            participant.identity.includes("agent")
+          ) {
+            const remoteAudioTrack = track as RemoteAudioTrack;
 
-          if (this.audioAdapter) {
-            // Delegate playback to the platform-specific adapter
-            await this.audioAdapter.attachRemoteTrack(
-              remoteAudioTrack,
-              this.outputDeviceId
-            );
+            if (this.audioAdapter) {
+              // Delegate playback to the platform-specific adapter
+              await this.audioAdapter.attachRemoteTrack(
+                remoteAudioTrack,
+                this.outputDeviceId
+              );
 
-            // Set up output volume analysis and audio capture
-            await this.setupAudioCapture(remoteAudioTrack);
+              // Set up output volume analysis and audio capture
+              await this.setupAudioCapture(remoteAudioTrack);
 
-            this.onDebug?.({ type: "audio_element_ready" });
+              this.onDebug?.({ type: "audio_element_ready" });
+            }
           }
         }
-      }
+      )
     );
 
     this.room.on(
       RoomEvent.ActiveSpeakersChanged,
-      async (speakers: Participant[]) => {
-        if (speakers.length > 0) {
-          this.updateMode(
-            speakers[0].identity.startsWith("agent") ? "speaking" : "listening"
-          );
-        } else {
-          this.updateMode("listening");
+      this.forwardHandlerErrors(
+        "Failed to handle active speaker change",
+        async (speakers: Participant[]) => {
+          if (speakers.length > 0) {
+            this.updateMode(
+              speakers[0].identity.startsWith("agent")
+                ? "speaking"
+                : "listening"
+            );
+          } else {
+            this.updateMode("listening");
+          }
         }
-      }
+      )
     );
 
     this.room.on(
