@@ -1,5 +1,19 @@
 # @elevenlabs/convai-widget-core
 
+## 0.18.0
+
+### Minor Changes
+
+- 51c5e99: Greeting buttons now follow the active language, and update when the visitor switches language before a conversation starts.
+
+### Patch Changes
+
+- 55062f3: Fix the agent's first reply being dropped from the transcript in text chat when the agent has a first message configured.
+- cda2efc: Prevent late agent responses around tool calls from rendering twice or disappearing from the transcript.
+- Updated dependencies [afd2170]
+- Updated dependencies [aad288c]
+  - @elevenlabs/client@1.24.0
+
 ## 0.17.1
 
 ### Patch Changes
