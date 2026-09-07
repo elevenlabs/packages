@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.25.0
+
+### Minor Changes
+
+- de2f863: Re-export the `MessageAttachment` type from the package entry point so consumers can `import type { MessageAttachment } from "@elevenlabs/client"` instead of deriving it from the `onMessage` callback signature.
+
 ## 1.24.0
 
 ### Minor Changes
