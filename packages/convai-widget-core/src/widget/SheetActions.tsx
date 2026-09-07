@@ -72,12 +72,12 @@ export function SheetActions({
   // conversation's id, which would cause uploads to target the wrong endpoint.
   const conversationId = status.value === "connected" ? lastId.value : null;
   const {
-    pendingFile,
+    pendingFiles,
     isUploading,
     hasReachedLimit,
     addFile,
     removeFile,
-    markFileAsSent,
+    markFilesAsSent,
   } = useFileUpload({ conversationId, maxFiles: maxFiles.value });
 
   // File upload is only exposed alongside the text input — without a
@@ -88,7 +88,6 @@ export function SheetActions({
   );
   const uploadEnabled = useComputed(
     () =>
-      !pendingFile.value &&
       !hasReachedLimit.value &&
       status.value === "connected" &&
       !isWaitingForAgent.value
@@ -113,10 +112,12 @@ export function SheetActions({
 
   const canSend = useComputed(() => {
     const hasText = !!userMessage.value.trim();
-    const hasReadyFile = pendingFile.value?.status === "ready";
+    const readyFiles = pendingFiles.value.filter(file => file.status === "ready");
+    const hasError = pendingFiles.value.some(file => file.status === "error");
     return (
-      (hasText || hasReadyFile) &&
+      (hasText || readyFiles.length > 0) &&
       !isUploading.value &&
+      !hasError &&
       !isWaitingForAgent.value
     );
   });
@@ -131,20 +132,23 @@ export function SheetActions({
       if (!canSend.peek()) return;
 
       const message = userMessage.value.trim();
-      const pending = pendingFile.value;
+      const readyFiles = pendingFiles.value.filter(
+        (file): file is Extract<typeof file, { status: "ready" }> =>
+          file.status === "ready"
+      );
 
-      if (pending?.status === "ready" && !isDisconnected.value) {
+      if (readyFiles.length > 0 && !isDisconnected.value) {
         scrollPinned.value = true;
         sendMultimodalMessage({
           text: message || undefined,
-          file: {
+          files: readyFiles.map(pending => ({
             fileId: pending.fileId,
             fileName: pending.file.name,
             mimeType: pending.file.type,
             previewUrl: pending.previewUrl,
-          },
+          })),
         });
-        markFileAsSent();
+        markFilesAsSent();
         userMessage.value = "";
         return;
       }
@@ -166,8 +170,8 @@ export function SheetActions({
       startSession,
       sendUserMessage,
       sendMultimodalMessage,
-      pendingFile,
-      markFileAsSent,
+      pendingFiles,
+      markFilesAsSent,
       canSend,
     ]
   );
@@ -188,12 +192,15 @@ export function SheetActions({
               isFocused.value && "ring-2 ring-accent"
             )}
           >
-            {pendingFile.value && (
-              <div className="px-3 pt-3">
-                <PendingFilePreview
-                  pendingFile={pendingFile.value}
-                  onRemove={removeFile}
-                />
+            {pendingFiles.value.length > 0 && (
+              <div className="px-3 pt-3 flex flex-wrap gap-2">
+                {pendingFiles.value.map(pendingFile => (
+                  <PendingFilePreview
+                    key={`${pendingFile.file.name}-${pendingFile.file.size}`}
+                    pendingFile={pendingFile}
+                    onRemove={() => removeFile(pendingFile.file)}
+                  />
+                ))}
               </div>
             )}
             <SheetTextarea
