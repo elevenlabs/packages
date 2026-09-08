@@ -1,5 +1,6 @@
 import {
   Conversation,
+  MessageAttachment,
   Mode,
   Role,
   SendUserMessageOptions,
@@ -103,6 +104,8 @@ export type TranscriptEntry =
       conversationIndex: number;
       eventId?: number;
       fileInput?: TranscriptFileInput | null;
+      /** Files sent with an agent message, e.g. relayed from a human agent. */
+      attachments?: MessageAttachment[];
     }
   | {
       type: "agent_tool_request";
@@ -368,7 +371,7 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ role, message, event_id }) => {
+            onMessage: ({ role, message, event_id, attachments }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -420,6 +423,7 @@ function useConversationSetup() {
                     isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
+                    attachments,
                   };
                   transcript.value = updatedTranscript;
                   streamState.pending.delete(agentMessageKey);
@@ -440,6 +444,7 @@ function useConversationSetup() {
                   isText: conversationTextOnly.peek() === true,
                   conversationIndex: conversationIndex.peek(),
                   eventId: event_id,
+                  attachments,
                 },
               ];
               if (agentMessageKey) {

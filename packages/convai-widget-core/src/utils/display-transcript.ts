@@ -1,4 +1,4 @@
-import type { Role } from "@elevenlabs/client";
+import type { MessageAttachment, Role } from "@elevenlabs/client";
 import type {
   TranscriptEntry,
   TranscriptFileInput,
@@ -24,6 +24,7 @@ export type DisplayTranscriptEntry =
       eventId?: number;
       toolStatus?: ToolCallStatusType;
       fileInput?: TranscriptFileInput | null;
+      attachments?: MessageAttachment[];
     }
   | {
       type: "disconnection";
@@ -137,11 +138,13 @@ export function buildDisplayTranscript(
       continue;
     }
 
-    // Skip empty agent messages unless they have a tool status to display
+    // Skip empty agent messages unless they carry attachments or a tool status
+    // to display. Human-agent replies that are only files arrive with no text.
     if (
       entry.type === "message" &&
       entry.role === "agent" &&
       !entry.message &&
+      !entry.attachments?.length &&
       !(
         config.showAgentStatus &&
         entry.eventId != null &&
@@ -166,7 +169,12 @@ export function buildDisplayTranscript(
       prev.role === entry.role &&
       !prev.message.trim()
     ) {
-      result[result.length - 1] = entry;
+      // An attachment-only placeholder has no text but still carries files,
+      // so keep them when the text message folds over it.
+      result[result.length - 1] =
+        prev.attachments?.length && !entry.attachments?.length
+          ? { ...entry, attachments: prev.attachments }
+          : entry;
       continue;
     }
 

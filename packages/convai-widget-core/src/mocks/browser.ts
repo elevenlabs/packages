@@ -370,6 +370,15 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  agent_attachments: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   text_and_voice: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -459,7 +468,27 @@ async function sendStreamedAgentResponse(
   );
 }
 
+const ATTACHMENT_HOST = "https://files.convai.test";
+
+function attachmentImage(label: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200">
+  <rect width="320" height="200" fill="#1f2937"/>
+  <text x="160" y="108" fill="#f9fafb" font-family="sans-serif" font-size="28" text-anchor="middle">${label}</text>
+</svg>`;
+}
+
 export const Worker = setupWorker(
+  http.get(`${ATTACHMENT_HOST}/:fileName`, ({ params }) => {
+    const fileName = String(params.fileName);
+    if (!fileName.endsWith(".svg")) {
+      return new HttpResponse("mock file", {
+        headers: { "Content-Type": "application/octet-stream" },
+      });
+    }
+    return new HttpResponse(attachmentImage(fileName.replace(".svg", "")), {
+      headers: { "Content-Type": "image/svg+xml" },
+    });
+  }),
   http.get<{ agentId: string }>(
     `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
     ({ params }) => {
@@ -544,7 +573,8 @@ export const Worker = setupWorker(
         agentId !== "streamed_first_message_with_final" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload" &&
-        agentId !== "external_agent"
+        agentId !== "external_agent" &&
+        agentId !== "agent_attachments"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -1050,6 +1080,57 @@ export const Worker = setupWorker(
                 : "Production streamed reply";
 
           await sendStreamedAgentResponse(client, message, 2);
+        });
+      }
+      if (agentId === "agent_attachments") {
+        // Human-agent replies relay files: the first turn pairs text with an
+        // image and a PDF, the second is attachment-only with no text at all.
+        let replies = 0;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+
+          replies++;
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event:
+                replies === 1
+                  ? {
+                      agent_response: "Here is the receipt you asked for.",
+                      event_id: replies + 1,
+                      attachments: [
+                        {
+                          url: `${ATTACHMENT_HOST}/receipt.svg`,
+                          name: "receipt.svg",
+                          mime_type: "image/svg+xml",
+                        },
+                        {
+                          url: `${ATTACHMENT_HOST}/invoice.pdf`,
+                          name: "invoice.pdf",
+                          mime_type: "application/pdf",
+                        },
+                      ],
+                    }
+                  : {
+                      agent_response: "",
+                      event_id: replies + 1,
+                      attachments: [
+                        {
+                          url: `${ATTACHMENT_HOST}/diagram.svg`,
+                          name: "diagram.svg",
+                          mime_type: "image/svg+xml",
+                        },
+                        {
+                          url: "http://insecure.example.com/leak.png",
+                          name: "leak.png",
+                          mime_type: "image/png",
+                        },
+                      ],
+                    },
+            })
+          );
         });
       }
       if (agentId === "external_agent") {

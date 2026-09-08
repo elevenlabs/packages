@@ -14,6 +14,8 @@ export type {
   MCPToolApprovalRequest,
   MCPToolApprovalRequestContext,
   Callbacks,
+  MessagePayload,
+  MessageAttachment,
   Status,
   AudioWorkletConfig,
   MultimodalMessageInput,

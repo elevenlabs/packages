@@ -41,6 +41,9 @@ function AgentMessageBubble({
   const displayMessage = shouldStripAudioTags
     ? stripAudioTags(entry.message)
     : entry.message;
+  const attachments = entry.attachments?.filter(attachment =>
+    isHttpsUrl(attachment.url)
+  );
 
   return (
     <div className="pr-8">
@@ -52,6 +55,24 @@ function AgentMessageBubble({
           {displayMessage}
         </WidgetStreamdown>
       )}
+      {!!attachments?.length && (
+        <div
+          className={clsx(
+            "flex flex-col items-start gap-1.5",
+            displayMessage && "mt-2"
+          )}
+        >
+          {attachments.map((attachment, index) => (
+            <FileAttachment
+              key={`${index}-${attachment.url}`}
+              fileName={attachment.name}
+              mimeType={attachment.mime_type ?? ""}
+              previewUrl={attachment.url}
+              href={attachment.url}
+            />
+          ))}
+        </div>
+      )}
       {entry.toolStatus && (
         <div className={displayMessage ? "mt-2" : undefined}>
           <ToolCallMessage status={entry.toolStatus} />
@@ -59,6 +80,14 @@ function AgentMessageBubble({
       )}
     </div>
   );
+}
+
+function isHttpsUrl(url: string): boolean {
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function UserMessageBubble({
@@ -111,33 +140,68 @@ function UserMessageBubble({
   );
 }
 
+/**
+ * Renders one file bubble. `href` marks the file as remotely hosted (an agent
+ * attachment rather than the user's own pending upload), so it opens in a new
+ * tab and gets interactive styling instead of the user bubble's accent fill.
+ */
 function FileAttachment({
   fileName,
   mimeType,
   previewUrl,
+  href,
 }: {
   fileName: string;
   mimeType: string;
   previewUrl: string | null;
+  href?: string;
 }) {
   const isImage = isImageMimeType(mimeType);
 
   if (isImage && previewUrl) {
-    return (
+    const image = (
+      <img
+        src={previewUrl}
+        alt={fileName}
+        className="max-w-[180px] rounded-input object-cover"
+      />
+    );
+
+    return href ? (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-bubble border border-base-border shadow-sm p-1 focus-ring"
+      >
+        {image}
+      </a>
+    ) : (
       <div className="rounded-bubble border border-base-border shadow-sm p-1">
-        <img
-          src={previewUrl}
-          alt={fileName}
-          className="max-w-[180px] rounded-input object-cover"
-        />
+        {image}
       </div>
     );
   }
 
-  return (
-    <div className="flex items-center gap-2 px-3 py-2.5 rounded-bubble bg-accent text-accent-primary">
+  const content = (
+    <>
       <FileDocIcon />
       <span className="truncate text-sm">{fileName}</span>
+    </>
+  );
+
+  return href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-3 py-2.5 rounded-bubble border border-base-border bg-base text-base-primary hover:bg-base-hover active:bg-base-active transition-colors duration-200 focus-ring"
+    >
+      {content}
+    </a>
+  ) : (
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-bubble bg-accent text-accent-primary">
+      {content}
     </div>
   );
 }
