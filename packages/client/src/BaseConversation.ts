@@ -52,6 +52,7 @@ export type {
   Mode,
   Status,
   Callbacks,
+  MessagePayload,
   MessageAttachment,
   MCPToolApprovalRequest,
   MCPToolApprovalRequestContext,
