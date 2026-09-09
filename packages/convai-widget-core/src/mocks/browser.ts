@@ -237,6 +237,46 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "Before you go, was this conversation helpful today?",
   },
+  messages_around_tool_call: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  refined_final_after_tool_segment: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  empty_tool_segment_between_messages: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
+  empty_tool_segment_before_reply: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   response_before_stream_tool: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -538,6 +578,10 @@ export const Worker = setupWorker(
         agentId !== "tool_call_late_final" &&
         agentId !== "final_message_after_tool" &&
         agentId !== "response_before_stream_tool" &&
+        agentId !== "empty_tool_segment_before_reply" &&
+        agentId !== "messages_around_tool_call" &&
+        agentId !== "empty_tool_segment_between_messages" &&
+        agentId !== "refined_final_after_tool_segment" &&
         agentId !== "stream_consolidation" &&
         agentId !== "streamed_first_reply" &&
         agentId !== "streamed_first_message" &&
@@ -740,6 +784,317 @@ export const Worker = setupWorker(
           );
           await new Promise(resolve => setTimeout(resolve, 100));
           client.close(1000);
+        });
+      }
+      if (agentId === "refined_final_after_tool_segment") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "availability_2",
+                event_id: 2,
+                tool_name: "check_availability",
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "availability_2",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Tomorrow at 10am",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Tomorrow at 10am is available.",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+        });
+      }
+      if (agentId === "empty_tool_segment_between_messages") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          const sendPart = (text: string, type: "start" | "delta" | "stop") => {
+            client.send(
+              JSON.stringify({
+                type: "agent_chat_response_part",
+                text_response_part: { text, type, event_id: 2 },
+              })
+            );
+          };
+          const sendResponse = (agent_response: string) => {
+            client.send(
+              JSON.stringify({
+                type: "agent_response",
+                agent_response_event: { agent_response, event_id: 2 },
+              })
+            );
+          };
+
+          sendPart("", "start");
+          sendPart("Logging your complaint now…", "delta");
+          sendPart("", "stop");
+          await new Promise(resolve => setTimeout(resolve, 0));
+
+          sendPart("", "start");
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "complaint_1",
+                event_id: 2,
+                tool_name: "log_complaint",
+              },
+            })
+          );
+          sendPart("", "stop");
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "complaint_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+
+          sendPart("", "start");
+          sendPart(
+            "Is there anything else I can help you with today?",
+            "delta"
+          );
+          sendPart("", "stop");
+          await new Promise(resolve => setTimeout(resolve, 0));
+
+          sendResponse("Logging your complaint now…");
+          sendResponse("Is there anything else I can help you with today?");
+        });
+      }
+      if (agentId === "messages_around_tool_call") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Let me check that for you.",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "availability_1",
+                event_id: 2,
+                tool_name: "check_availability",
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "availability_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Tomorrow at 10am is available.",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Let me check that for you.",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Tomorrow at 10am is available.",
+                event_id: 2,
+              },
+            })
+          );
+        });
+      }
+      if (agentId === "empty_tool_segment_before_reply") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "complaint_log_1",
+                event_id: 2,
+                tool_name: "check_availability",
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "complaint_log_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "start", event_id: 2 },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: {
+                text: "Tomorrow at 10am is available.",
+                type: "delta",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_chat_response_part",
+              text_response_part: { text: "", type: "stop", event_id: 2 },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Tomorrow at 10am is available.",
+                event_id: 2,
+              },
+            })
+          );
         });
       }
       if (agentId === "response_before_stream_tool") {

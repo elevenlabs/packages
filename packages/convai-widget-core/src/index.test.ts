@@ -190,6 +190,108 @@ describe("elevenlabs-convai", () => {
     expect(message.elements()).toHaveLength(1);
   });
 
+  it("does not duplicate the reply that follows an empty tool segment", async () => {
+    setupWebComponent({
+      "agent-id": "empty_tool_segment_before_reply",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const reply = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(reply).toBeInTheDocument();
+    expect(reply.elements()).toHaveLength(1);
+  });
+
+  it("finalizes a refined reply into the streamed slot after a tool segment", async () => {
+    setupWebComponent({
+      "agent-id": "refined_final_after_tool_segment",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    const reply = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(reply).toBeInTheDocument();
+    expect(reply.elements()).toHaveLength(1);
+    await expect
+      .element(page.getByText("Tomorrow at 10am", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
+  it("does not duplicate the reply when a tool segment splits two messages", async () => {
+    setupWebComponent({
+      "agent-id": "empty_tool_segment_between_messages",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("yes pls");
+    await userEvent.keyboard("{Enter}");
+
+    const preTool = page.getByText("Logging your complaint now…", {
+      exact: true,
+    });
+    const reply = page.getByText(
+      "Is there anything else I can help you with today?",
+      { exact: true }
+    );
+    await expect.element(preTool).toBeInTheDocument();
+    await expect.element(reply).toBeInTheDocument();
+    expect(preTool.elements()).toHaveLength(1);
+    expect(reply.elements()).toHaveLength(1);
+  });
+
+  it("keeps both replies around a tool call finalized once each", async () => {
+    setupWebComponent({
+      "agent-id": "messages_around_tool_call",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const preTool = page.getByText("Let me check that for you.", {
+      exact: true,
+    });
+    const postTool = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(preTool).toBeInTheDocument();
+    await expect.element(postTool).toBeInTheDocument();
+    expect(preTool.elements()).toHaveLength(1);
+    expect(postTool.elements()).toHaveLength(1);
+  });
+
   it("does not duplicate an agent response streamed before a tool call", async () => {
     setupWebComponent({
       "agent-id": "response_before_stream_tool",

@@ -32,49 +32,73 @@ import { useShadowHost } from "./shadow-host";
 const FIRST_MESSAGE_EVENT_ID = 1;
 
 type AgentEventId = number | undefined;
-type AgentMessageKey = string;
 
-type AgentMessagePointer = {
+type AgentStream = {
+  kind: "stream";
   index: number;
   eventId: AgentEventId;
 };
 
-type AgentStream = AgentMessagePointer & {
-  kind: "stream";
-  key: AgentMessageKey;
-};
-
 type IgnoredAgentStream = {
   kind: "ignored";
-  key: AgentMessageKey;
   eventId: AgentEventId;
 };
 
+type AgentResponsePointer = {
+  index: number;
+  eventId: AgentEventId;
+  message: string;
+};
+
 type AgentStreamState = {
-  pending: Map<AgentMessageKey, AgentStream>;
+  pending: AgentStream[];
   active: AgentStream | IgnoredAgentStream | null;
-  unmatchedResponses: Map<AgentMessageKey, AgentMessagePointer>;
-  streamOccurrences: Map<AgentEventId, number>;
-  responseOccurrences: Map<AgentEventId, number>;
+  unmatchedResponse: AgentResponsePointer | null;
+  ignoredResponse: { eventId: AgentEventId; message: string } | null;
 };
 
 function createAgentStreamState(): AgentStreamState {
   return {
-    pending: new Map(),
+    pending: [],
     active: null,
-    unmatchedResponses: new Map(),
-    streamOccurrences: new Map(),
-    responseOccurrences: new Map(),
+    unmatchedResponse: null,
+    ignoredResponse: null,
   };
 }
 
-function nextAgentMessageKey(
-  occurrences: Map<AgentEventId, number>,
-  eventId: AgentEventId
-): AgentMessageKey {
-  const occurrence = occurrences.get(eventId) ?? 0;
-  occurrences.set(eventId, occurrence + 1);
-  return `${eventId ?? "unknown"}-${occurrence}`;
+function findPendingStream(
+  transcript: TranscriptEntry[],
+  state: AgentStreamState,
+  eventId: AgentEventId,
+  message: string
+): AgentStream | undefined {
+  const candidates = state.pending.filter(stream => {
+    if (stream.eventId !== eventId) return false;
+    const entry = transcript[stream.index];
+    return (
+      entry?.type === "message" &&
+      entry.role === "agent" &&
+      entry.eventId === eventId
+    );
+  });
+  const textAt = (stream: AgentStream) => {
+    const entry = transcript[stream.index];
+    return entry?.type === "message" ? entry.message : "";
+  };
+  const streamed = candidates.filter(stream => textAt(stream).trim()).reverse();
+  const active = state.active;
+  const activeStreamed =
+    active?.kind === "stream" && candidates.includes(active) && textAt(active)
+      ? active
+      : undefined;
+
+  return (
+    candidates.find(stream => textAt(stream) === message) ??
+    streamed.find(stream => message.startsWith(textAt(stream))) ??
+    activeStreamed ??
+    candidates.find(stream => !textAt(stream).trim()) ??
+    candidates[0]
+  );
 }
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
@@ -384,34 +408,28 @@ function useConversationSetup() {
                 setAgentTyping(false);
               }
 
-              let agentMessageKey: AgentMessageKey | null = null;
               if (role === "agent") {
                 const currentTranscript = transcript.peek();
                 const streamState = agentStreamStateRef.current;
-                agentMessageKey = nextAgentMessageKey(
-                  streamState.responseOccurrences,
-                  event_id
-                );
+
+                const ignoredResponse = streamState.ignoredResponse;
                 if (
-                  streamState.active &&
-                  streamState.active.kind === "ignored" &&
-                  streamState.active.key === agentMessageKey
+                  ignoredResponse &&
+                  ignoredResponse.eventId === event_id &&
+                  ignoredResponse.message === message
                 ) {
+                  streamState.ignoredResponse = null;
                   return;
                 }
-                const streamingMessage =
-                  streamState.pending.get(agentMessageKey);
-                const streamingEntry =
-                  streamingMessage == null
-                    ? undefined
-                    : currentTranscript[streamingMessage.index];
 
-                if (
-                  streamingMessage &&
-                  streamingEntry?.type === "message" &&
-                  streamingEntry.role === "agent" &&
-                  streamingEntry.eventId === event_id
-                ) {
+                const streamingMessage = findPendingStream(
+                  currentTranscript,
+                  streamState,
+                  event_id,
+                  message
+                );
+
+                if (streamingMessage) {
                   const updatedTranscript = [...currentTranscript];
                   updatedTranscript[streamingMessage.index] = {
                     type: "message",
@@ -422,7 +440,9 @@ function useConversationSetup() {
                     eventId: event_id,
                   };
                   transcript.value = updatedTranscript;
-                  streamState.pending.delete(agentMessageKey);
+                  streamState.pending = streamState.pending.filter(
+                    stream => stream !== streamingMessage
+                  );
                   if (streamState.active === streamingMessage) {
                     streamState.active = null;
                   }
@@ -442,14 +462,12 @@ function useConversationSetup() {
                   eventId: event_id,
                 },
               ];
-              if (agentMessageKey) {
-                agentStreamStateRef.current.unmatchedResponses.set(
-                  agentMessageKey,
-                  {
-                    index: currentTranscript.length,
-                    eventId: event_id,
-                  }
-                );
+              if (role === "agent") {
+                agentStreamStateRef.current.unmatchedResponse = {
+                  index: currentTranscript.length,
+                  eventId: event_id,
+                  message,
+                };
               }
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
@@ -468,39 +486,35 @@ function useConversationSetup() {
               if (type === "start") {
                 const currentTranscript = transcript.peek();
                 const streamState = agentStreamStateRef.current;
-                const messageKey = nextAgentMessageKey(
-                  streamState.streamOccurrences,
-                  event_id
-                );
-                const unmatchedResponse =
-                  streamState.unmatchedResponses.get(messageKey);
+                const unmatchedResponse = streamState.unmatchedResponse;
                 const unmatchedEntry =
                   unmatchedResponse == null
                     ? undefined
                     : currentTranscript[unmatchedResponse.index];
                 if (
-                  unmatchedResponse?.index === currentTranscript.length - 1 &&
+                  unmatchedResponse &&
                   unmatchedResponse.eventId === event_id &&
+                  unmatchedResponse.index === currentTranscript.length - 1 &&
                   unmatchedEntry?.type === "message" &&
                   unmatchedEntry.role === "agent" &&
                   unmatchedEntry.message.trim() !== ""
                 ) {
-                  streamState.active = {
-                    kind: "ignored",
-                    key: messageKey,
+                  streamState.unmatchedResponse = null;
+                  streamState.active = { kind: "ignored", eventId: event_id };
+                  streamState.ignoredResponse = {
                     eventId: event_id,
+                    message: unmatchedResponse.message,
                   };
-                  streamState.unmatchedResponses.delete(messageKey);
                   return;
                 }
 
                 const stream: AgentStream = {
                   kind: "stream",
-                  key: messageKey,
                   index: currentTranscript.length,
                   eventId: event_id,
                 };
-                streamState.pending.set(messageKey, stream);
+                streamState.ignoredResponse = null;
+                streamState.pending.push(stream);
                 streamState.active = stream;
                 transcript.value = [
                   ...currentTranscript,
