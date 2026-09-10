@@ -376,6 +376,14 @@ const codeBlock = true;
     first_message:
       "[happy] See [Evil link](https://evil.com/blocked) for details.",
   },
+  voice_chat_stream: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+    first_message: "Hello there!",
+  },
   file_upload: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -1385,6 +1393,24 @@ export const Worker = setupWorker(
             })
           );
         });
+      }
+      if (agentId === "voice_chat_stream") {
+        // Chat parts with no `agent_response`, so nothing was ever spoken.
+        await sendStreamedAgentResponse(
+          client,
+          "This draft was never spoken.",
+          2,
+          false
+        );
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response: "How can I help you today?",
+              event_id: 4,
+            },
+          })
+        );
       }
       if (
         agentId === "streamed_first_reply" ||
