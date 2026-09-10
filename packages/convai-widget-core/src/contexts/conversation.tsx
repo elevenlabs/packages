@@ -471,11 +471,10 @@ function useConversationSetup() {
               }
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                !receivedFirstMessageRef.current
-              ) {
+              // Voice conversations render `agent_response` transcripts only.
+              if (conversationTextOnly.peek() !== true) return;
+
+              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
                 // Ignore the opening frame of the configured first-message
                 // stream, then allow the actual reply stream through.
                 receivedFirstMessageRef.current = true;
