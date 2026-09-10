@@ -296,6 +296,15 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  markdown_stream_consolidation: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   streamed_first_reply: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -583,6 +592,7 @@ export const Worker = setupWorker(
         agentId !== "empty_tool_segment_between_messages" &&
         agentId !== "refined_final_after_tool_segment" &&
         agentId !== "stream_consolidation" &&
+        agentId !== "markdown_stream_consolidation" &&
         agentId !== "streamed_first_reply" &&
         agentId !== "streamed_first_message" &&
         agentId !== "streamed_first_message_with_final" &&
@@ -1344,7 +1354,19 @@ export const Worker = setupWorker(
           );
         });
       }
-      if (agentId === "stream_consolidation") {
+      if (
+        agentId === "stream_consolidation" ||
+        agentId === "markdown_stream_consolidation"
+      ) {
+        // The final text is what the backend's stripping leaves behind, down
+        // to the space the removed `##` leaves in front of the heading.
+        const [streamedText, finalText] =
+          agentId === "markdown_stream_consolidation"
+            ? [
+                "## Heading\n\nHere is **bold** text.",
+                " Heading\n\nHere is bold text.",
+              ]
+            : ["partial", "full"];
         let hasStreamed = false;
         client.addEventListener("message", async event => {
           const data =
@@ -1364,7 +1386,7 @@ export const Worker = setupWorker(
             JSON.stringify({
               type: "agent_chat_response_part",
               text_response_part: {
-                text: "partial",
+                text: streamedText,
                 type: "delta",
                 event_id: 2,
               },
@@ -1374,7 +1396,10 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_response",
-              agent_response_event: { agent_response: "full", event_id: 2 },
+              agent_response_event: {
+                agent_response: finalText,
+                event_id: 2,
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));

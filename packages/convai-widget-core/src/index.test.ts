@@ -166,6 +166,31 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("keeps the streamed formatting when the final response has it stripped", async () => {
+    setupWebComponent({
+      "agent-id": "markdown_stream_consolidation",
+      variant: "compact",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("go");
+    await userEvent.keyboard("{Enter}");
+
+    const paragraph = page.getByText("Here is bold text.", { exact: true });
+    await expect.element(paragraph).toBeInTheDocument();
+    expect(paragraph.elements()).toHaveLength(1);
+
+    await expect
+      .element(page.getByRole("heading", { name: "Heading" }))
+      .toBeInTheDocument();
+
+    const boldText = page.getByText("bold", { exact: true });
+    await expect.element(boldText).toBeInTheDocument();
+    await expect.element(boldText).toHaveClass("font-medium");
+  });
+
   it("does not duplicate a message finalized after the next tool segment starts", async () => {
     setupWebComponent({
       "agent-id": "tool_call_late_final",

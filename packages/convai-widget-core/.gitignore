@@ -1,1 +1,5 @@
 dist/
+
+# Vitest browser-mode failure artifacts
+.vitest-attachments/
+src/__screenshots__/
