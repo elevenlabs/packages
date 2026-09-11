@@ -23,6 +23,16 @@ export interface ScribeMicrophoneConfig {
   workletPaths?: {
     scribeAudioProcessor?: string;
   };
+  /**
+   * How long to wait, in milliseconds, for the audio pipeline to finish
+   * starting after microphone permission has been granted. Setup that exceeds
+   * this rejects instead of hanging, releasing the microphone on the way out.
+   * Defaults to 10000. Set to 0 or a non-finite value to wait indefinitely.
+   *
+   * This bounds only the work that follows `getUserMedia`. Waiting for the
+   * user to answer the permission prompt is unbounded by design.
+   */
+  setupTimeoutMs?: number;
 }
 
 export interface ScribeMicrophoneResult {
