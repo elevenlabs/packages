@@ -925,6 +925,14 @@ describe("Volume Control", () => {
       conversation.setVolume({ volume: 0.5 });
     }).toThrow("setVolume is not supported in text conversations");
 
+    // As should holding one: there is no audio to stop and no microphone to
+    // mute, so a text conversation is never on hold.
+    expect(() => {
+      // @ts-expect-error setOnHold doesn't take arguments for text conversations
+      conversation.setOnHold(true);
+    }).toThrow("setOnHold is not supported in text conversations");
+    expect(conversation.isOnHold()).toBe(false);
+
     await conversation.endSession();
     server.close();
   });
