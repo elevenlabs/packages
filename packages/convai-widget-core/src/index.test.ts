@@ -166,6 +166,24 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("ignores streamed chat parts outside text-only conversations", async () => {
+    setupWebComponent({
+      "agent-id": "voice_chat_stream",
+      transcript: "true",
+      variant: "compact",
+    });
+
+    const startButton = page.getByRole("button", { name: "Start a call" });
+    await startButton.click();
+
+    await expect
+      .element(page.getByText("How can I help you today?"))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("This draft was never spoken."))
+      .not.toBeInTheDocument();
+  });
+
   it("does not duplicate a message finalized after the next tool segment starts", async () => {
     setupWebComponent({
       "agent-id": "tool_call_late_final",

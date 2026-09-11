@@ -66,12 +66,23 @@ function createAgentStreamState(): AgentStreamState {
   };
 }
 
+// TODO: drop once the backend stops stripping `*` and `##+` out of
+// `agent_response` but not `agent_chat_response_part`.
+function stripSpokenMarkdown(text: string): string {
+  return text.replace(/\*+/g, "").replace(/#{2,}/g, "");
+}
+
+function isSameAgentText(streamed: string, final: string): boolean {
+  return stripSpokenMarkdown(streamed) === stripSpokenMarkdown(final);
+}
+
 function findPendingStream(
   transcript: TranscriptEntry[],
   state: AgentStreamState,
   eventId: AgentEventId,
   message: string
 ): AgentStream | undefined {
+  const strippedMessage = stripSpokenMarkdown(message);
   const candidates = state.pending.filter(stream => {
     if (stream.eventId !== eventId) return false;
     const entry = transcript[stream.index];
@@ -93,8 +104,10 @@ function findPendingStream(
       : undefined;
 
   return (
-    candidates.find(stream => textAt(stream) === message) ??
-    streamed.find(stream => message.startsWith(textAt(stream))) ??
+    candidates.find(stream => isSameAgentText(textAt(stream), message)) ??
+    streamed.find(stream =>
+      strippedMessage.startsWith(stripSpokenMarkdown(textAt(stream)))
+    ) ??
     activeStreamed ??
     candidates.find(stream => !textAt(stream).trim()) ??
     candidates[0]
@@ -430,11 +443,20 @@ function useConversationSetup() {
                 );
 
                 if (streamingMessage) {
+                  const streamedEntry =
+                    currentTranscript[streamingMessage.index];
+                  const streamedText =
+                    streamedEntry?.type === "message"
+                      ? streamedEntry.message
+                      : "";
                   const updatedTranscript = [...currentTranscript];
                   updatedTranscript[streamingMessage.index] = {
                     type: "message",
                     role: "agent",
-                    message,
+                    // Only the streamed copy still carries the formatting.
+                    message: isSameAgentText(streamedText, message)
+                      ? streamedText
+                      : message,
                     isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
@@ -471,11 +493,10 @@ function useConversationSetup() {
               }
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                !receivedFirstMessageRef.current
-              ) {
+              // Voice conversations render `agent_response` transcripts only.
+              if (conversationTextOnly.peek() !== true) return;
+
+              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
                 // Ignore the opening frame of the configured first-message
                 // stream, then allow the actual reply stream through.
                 receivedFirstMessageRef.current = true;
