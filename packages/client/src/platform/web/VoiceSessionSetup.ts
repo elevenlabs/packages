@@ -59,6 +59,7 @@ async function setupWebSocketIO(
       ...connection.outputFormat,
       outputDeviceId: options.outputDeviceId,
       workletPaths: options.workletPaths,
+      libsampleratePath: options.libsampleratePath,
       audioContext: audioContext ?? undefined,
     }),
   ]);
