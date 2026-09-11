@@ -43,6 +43,7 @@ export const CustomAttributeList = [
   "text-contents",
   "default-expanded",
   "always-expanded",
+  "auto-start-text",
   "dismissible",
   "strip-audio-tags",
   "user-id",

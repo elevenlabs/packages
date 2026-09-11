@@ -428,6 +428,18 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "Welcome message",
   },
+  server_greeting: {
+    ...BASIC_CONFIG,
+    text_only: false,
+    supports_text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    // No local preview; the greeting only exists server-side, like an agent
+    // whose first message comes out of a workflow.
+    first_message: "",
+  },
   text_and_voice_rich_content: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -570,7 +582,12 @@ export const Worker = setupWorker(
           JSON.stringify({
             type: "agent_response",
             agent_response_event: {
-              agent_response: config.first_message,
+              // `server_greeting` has no first_message in its config; the
+              // greeting is produced server-side once the session starts.
+              agent_response:
+                agentId === "server_greeting"
+                  ? "Personalized welcome"
+                  : config.first_message,
               event_id: 1,
             },
           })
