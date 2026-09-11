@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { debounce } from "./debounce.js";
+import { throttle } from "./throttle.js";
 
-describe("debounce", () => {
+describe("throttle", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -10,9 +10,9 @@ describe("debounce", () => {
   it("invokes the wrapped function immediately on the leading edge", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000);
+    const throttled = throttle(fn, 2000);
 
-    debounced("a", 1);
+    throttled("a", 1);
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith("a", 1);
@@ -21,13 +21,13 @@ describe("debounce", () => {
   it("suppresses further calls within the wait window", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000);
+    const throttled = throttle(fn, 2000);
 
-    debounced();
+    throttled();
     vi.advanceTimersByTime(500);
-    debounced();
+    throttled();
     vi.advanceTimersByTime(1000);
-    debounced();
+    throttled();
 
     expect(fn).toHaveBeenCalledTimes(1);
   });
@@ -35,11 +35,11 @@ describe("debounce", () => {
   it("fires again once the wait window has elapsed", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000);
+    const throttled = throttle(fn, 2000);
 
-    debounced();
+    throttled();
     vi.advanceTimersByTime(2000);
-    debounced();
+    throttled();
 
     expect(fn).toHaveBeenCalledTimes(2);
   });
@@ -47,15 +47,15 @@ describe("debounce", () => {
   it("resets the leading-edge window when cancelled", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000);
+    const throttled = throttle(fn, 2000);
 
-    debounced();
+    throttled();
     expect(fn).toHaveBeenCalledTimes(1);
 
-    debounced.cancel();
+    throttled.cancel();
     // Without advancing the timer, the next call fires immediately because the
     // pending window was cleared.
-    debounced();
+    throttled();
 
     expect(fn).toHaveBeenCalledTimes(2);
   });
@@ -63,10 +63,10 @@ describe("debounce", () => {
   it("supports a trailing invocation with the latest arguments", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000, { leading: false, trailing: true });
+    const throttled = throttle(fn, 2000, { leading: false, trailing: true });
 
-    debounced("first");
-    debounced("second");
+    throttled("first");
+    throttled("second");
     expect(fn).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(2000);
@@ -78,10 +78,10 @@ describe("debounce", () => {
   it("does not fire a trailing invocation after cancel", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
-    const debounced = debounce(fn, 2000, { leading: false, trailing: true });
+    const throttled = throttle(fn, 2000, { leading: false, trailing: true });
 
-    debounced("pending");
-    debounced.cancel();
+    throttled("pending");
+    throttled.cancel();
     vi.advanceTimersByTime(2000);
 
     expect(fn).not.toHaveBeenCalled();

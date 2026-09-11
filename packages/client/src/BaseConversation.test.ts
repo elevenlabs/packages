@@ -574,7 +574,7 @@ describe("BaseConversation", () => {
       expect(sendMessage).toHaveBeenCalledWith({ type: "user_activity" });
     });
 
-    it("coalesces rapid calls within the debounce window into one message", () => {
+    it("coalesces rapid calls within the throttle window into one message", () => {
       vi.useFakeTimers();
       const { sendMessage, conversation } = conversationSending();
 
@@ -587,7 +587,7 @@ describe("BaseConversation", () => {
       expect(sendMessage).toHaveBeenCalledTimes(1);
     });
 
-    it("sends again once the debounce window has elapsed", () => {
+    it("sends again once the throttle window has elapsed", () => {
       vi.useFakeTimers();
       const { sendMessage, conversation } = conversationSending();
 
@@ -600,7 +600,7 @@ describe("BaseConversation", () => {
       expect(sendMessage).toHaveBeenCalledTimes(2);
     });
 
-    it("cancels the debounce window when the session ends", async () => {
+    it("cancels the throttle window when the session ends", async () => {
       vi.useFakeTimers();
       const { sendMessage, conversation } = conversationSending();
       conversation.connect();

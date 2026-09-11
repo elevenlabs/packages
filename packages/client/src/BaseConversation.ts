@@ -7,7 +7,7 @@ import type {
   FormatConfig,
 } from "./utils/BaseConnection.js";
 import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
-import { debounce, type DebouncedFunction } from "./utils/debounce.js";
+import { throttle, type ThrottledFunction } from "./utils/throttle.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -45,7 +45,7 @@ const END_CALL_DETAILS: DisconnectionDetails = {
   context: { type: "end_call", reason: "Agent ended the call" },
 };
 
-const USER_ACTIVITY_DEBOUNCE_MS = 2000;
+const USER_ACTIVITY_THROTTLE_MS = 1000;
 
 export type {
   Role,
@@ -174,13 +174,13 @@ export abstract class BaseConversation {
    */
   private readonly mcpApprovals = new Map<string, MCPApproval>();
 
-  private readonly debouncedUserActivity: DebouncedFunction<[]> = debounce(
+  private readonly throttledUserActivity: ThrottledFunction<[]> = throttle(
     () => {
       this.connection.sendMessage({
         type: "user_activity",
       });
     },
-    USER_ACTIVITY_DEBOUNCE_MS
+    USER_ACTIVITY_THROTTLE_MS
   );
 
   protected static getFullOptions(partialOptions: PartialOptions): Options {
@@ -254,7 +254,7 @@ export abstract class BaseConversation {
   };
 
   protected async handleEndSession() {
-    this.debouncedUserActivity.cancel();
+    this.throttledUserActivity.cancel();
     this.connection.close();
   }
 
@@ -876,7 +876,7 @@ export abstract class BaseConversation {
   }
 
   public sendUserActivity() {
-    this.debouncedUserActivity();
+    this.throttledUserActivity();
   }
 
   public sendMCPToolApprovalResult(toolCallId: string, isApproved: boolean) {
