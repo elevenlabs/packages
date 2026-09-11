@@ -17,7 +17,8 @@
     "clean": "tsc --build tsconfig.build.json --clean && rm -rf ./dist",
     "check-types": "tsc --noEmit --skipLibCheck",
     "lint:es": "pnpm exec eslint .",
-    "lint:prettier": "prettier \"src/**/*.ts\" --check"
+    "lint:prettier": "prettier \"src/**/*.ts\" --check",
+    "test": "vitest"
   },
   "keywords": [
     "elevenlabs",
@@ -42,7 +43,8 @@
   "devDependencies": {
     "@types/react": "^19.2.18",
     "eslint": "^10.3.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^4.1.5"
   },
   "repository": {
     "type": "git",

@@ -59,6 +59,10 @@ async function reactNativeSessionSetup(
       try {
         await originalDetach();
       } finally {
+        // Awaited, not fire-and-forget: the conversation only reports
+        // "disconnected" once detach settles, and the platform still owns the
+        // microphone until the audio session has stopped. Returning early
+        // would let the next startSession() race this teardown.
         await AudioSession.stopAudioSession();
       }
     },
