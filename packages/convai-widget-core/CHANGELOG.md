@@ -1,5 +1,15 @@
 # @elevenlabs/convai-widget-core
 
+## 0.18.2
+
+### Patch Changes
+
+- 9618be8: Fix the reply after a tool call (including tool calls made by procedures) rendering twice by matching a canonical agent response to the stream segment it belongs to instead of the arrival order of segments in the turn.
+- c7c5bdc: Keep markdown formatting in streamed agent replies and ignore streamed chat
+  parts in voice conversations. The backend strips `*` and `##+` out of
+  `agent_response` but not out of `agent_chat_response_part`, so a formatted reply
+  no longer loses its emphasis and headings when the final response arrives.
+
 ## 0.18.1
 
 ### Patch Changes
