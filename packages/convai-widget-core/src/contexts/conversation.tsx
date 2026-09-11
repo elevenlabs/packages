@@ -31,6 +31,10 @@ import { useShadowHost } from "./shadow-host";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
+interface StartSessionOptions {
+  textOnly?: boolean;
+}
+
 type AgentEventId = number | undefined;
 
 type AgentStream = {
@@ -334,7 +338,8 @@ function useConversationSetup() {
       startSession: async (
         element: HTMLElement,
         initialMessage?: string,
-        initialMessageOptions?: SendUserMessageOptions
+        initialMessageOptions?: SendUserMessageOptions,
+        options?: StartSessionOptions
       ) => {
         await terms.requestTerms();
 
@@ -352,9 +357,13 @@ function useConversationSetup() {
           processedConfig.userId = await getOrCreateUserId();
         }
 
-        // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode.
-        if (initialMessage && widgetConfig.value.supports_text_only) {
+        // If the user started the conversation with a text message (or the
+        // caller asked for a text session), and the agent supports it, switch
+        // to text-only mode.
+        if (
+          (initialMessage || options?.textOnly) &&
+          widgetConfig.value.supports_text_only
+        ) {
           processedConfig.textOnly = true;
           if (!widgetConfig.value.text_only) {
             processedConfig.overrides ??= {};
