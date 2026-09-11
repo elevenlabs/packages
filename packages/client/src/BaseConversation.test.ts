@@ -547,6 +547,76 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("sendUserActivity", () => {
+    function conversationSending() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      return {
+        sendMessage,
+        conversation: TestConversation.create({}, connection),
+      };
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("sends a user_activity message immediately on the first call", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenCalledWith({ type: "user_activity" });
+    });
+
+    it("coalesces rapid calls within the throttle window into one message", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+      vi.advanceTimersByTime(500);
+      conversation.sendUserActivity();
+      vi.advanceTimersByTime(500);
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends again once the throttle window has elapsed", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(2000);
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+    });
+
+    it("cancels the throttle window when the session ends", async () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+      conversation.connect();
+
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+
+      await conversation.endSession();
+
+      // Ending the session cancels the leading-edge window, so the next call
+      // fires immediately instead of being suppressed by a lingering timer.
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("ping events", () => {
     it("replies with a pong and forwards the payload to onPing", async () => {
       const onPing = vi.fn();
