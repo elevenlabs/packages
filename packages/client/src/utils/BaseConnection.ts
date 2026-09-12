@@ -28,6 +28,8 @@ export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 export type OnOutgoingMessageCallback = (event: any) => void;
 
 export type BaseSessionConfig = {
+  /** Cancels shared web preflight and WebRTC connection startup. */
+  signal?: AbortSignal;
   origin?: string;
   authorization?: string;
   livekitUrl?: string;
@@ -203,7 +205,7 @@ export abstract class BaseConnection {
     if (this.onDebug) this.onDebug(info);
   }
 
-  public abstract close(): void;
+  public abstract close(): void | Promise<void>;
   public abstract sendMessage(message: OutgoingSocketEvent): void;
 
   public onMessage(callback: OnMessageCallback) {

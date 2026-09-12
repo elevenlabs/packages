@@ -20,7 +20,8 @@ export type ConversationContextValue = {
   /** Stable ref to the active conversation — use in callbacks to avoid re-renders. */
   conversationRef: RefObject<Conversation | null>;
   startSession: (options?: HookOptions) => void;
-  endSession: () => void;
+  /** Cancels a pending WebRTC start or ends the active session, then resolves after teardown. */
+  endSession: () => Promise<void>;
   /**
    * For sub-providers — register callback handlers to be composed into the
    * next `Conversation.startSession()` call. Returns an unsubscribe function.
