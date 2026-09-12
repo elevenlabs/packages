@@ -15,7 +15,8 @@ const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
 export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
-  endSession: () => void;
+  /** Cancels a pending WebRTC start or ends the active session, then resolves after teardown. */
+  endSession: () => Promise<void>;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   uploadFile: (file: Blob) => Promise<UploadFileResult>;

@@ -17,6 +17,12 @@ export type {
 } from "./platform/VoiceSessionSetup.js";
 export { createConnection } from "./utils/ConnectionFactory.js";
 export {
+  createSessionAbortError,
+  isSessionAbortError,
+  registerSessionCleanup,
+  waitForSessionCleanup,
+} from "./utils/cancellation.js";
+export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
 } from "./utils/volumeProvider.js";

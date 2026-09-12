@@ -255,7 +255,7 @@ export abstract class BaseConversation {
 
   protected async handleEndSession() {
     this.throttledUserActivity.cancel();
-    this.connection.close();
+    await this.connection.close();
   }
 
   protected updateMode(mode: Mode) {
