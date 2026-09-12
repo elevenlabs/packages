@@ -11,6 +11,8 @@ import {
   parseLocation,
   getOriginForLocation,
   getLivekitUrlForLocation,
+  isSessionAbortError,
+  waitForSessionCleanup,
 } from "@elevenlabs/client/internal";
 
 import { type HookOptions } from "./types.js";
@@ -51,6 +53,12 @@ export type ConversationProviderProps = React.PropsWithChildren<
   HookOptions & ConversationInputControlProps
 >;
 
+type PendingSession = {
+  promise: Promise<Conversation>;
+  controller: AbortController;
+  teardown: () => Promise<void>;
+};
+
 export function ConversationProvider({
   children,
   isMuted,
@@ -60,7 +68,7 @@ export function ConversationProvider({
   /** The active conversation instance, if any. */
   const conversationRef = useRef<Conversation | null>(null);
   /** In-flight startSession promise, used to prevent duplicate connections. */
-  const lockRef = useRef<Promise<Conversation> | null>(null);
+  const lockRef = useRef<PendingSession | null>(null);
   /** Monotonic id used to ignore stale async handlers from older starts. */
   const startSessionIdRef = useRef(0);
   /** Signals that endSession was called while a connection was still pending. */
@@ -136,6 +144,19 @@ export function ConversationProvider({
       );
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
+
+      const controller = new AbortController();
+      const externalSignal = sessionOptions.signal;
+      const forwardExternalAbort = () =>
+        controller.abort(externalSignal?.reason);
+      if (externalSignal?.aborted) {
+        forwardExternalAbort();
+      } else {
+        externalSignal?.addEventListener("abort", forwardExternalAbort, {
+          once: true,
+        });
+      }
+      sessionOptions.signal = controller.signal;
 
       const isStaleStartSession = () =>
         startSessionId !== startSessionIdRef.current;
@@ -240,18 +261,44 @@ export function ConversationProvider({
         ...providerLifecycleOptions,
       };
 
-      lockRef.current = Conversation.startSession(startSessionOptions);
+      const startPromise = Conversation.startSession(startSessionOptions);
+      let teardownPromise: Promise<void> | null = null;
+      const pendingSession: PendingSession = {
+        promise: startPromise,
+        controller,
+        teardown: () => {
+          teardownPromise ??= startPromise
+            .then(
+              conv =>
+                conv
+                  .endSession()
+                  .catch(error => console.warn("Error ending session:", error)),
+              () => {}
+            )
+            .then(() => waitForSessionCleanup(controller.signal))
+            .finally(() => {
+              if (lockRef.current === pendingSession) {
+                lockRef.current = null;
+              }
+            });
+          return teardownPromise;
+        },
+      };
+      lockRef.current = pendingSession;
 
-      lockRef.current.then(
+      void startPromise.then(
+        () =>
+          externalSignal?.removeEventListener("abort", forwardExternalAbort),
+        () => externalSignal?.removeEventListener("abort", forwardExternalAbort)
+      );
+
+      startPromise.then(
         conv => {
           if (isStaleStartSession()) {
             return;
           }
-          if (shouldEndRef.current) {
-            conv
-              .endSession()
-              .catch(error => console.warn("Error ending session:", error));
-            lockRef.current = null;
+          if (shouldEndRef.current || controller.signal.aborted) {
+            void pendingSession.teardown();
             return;
           }
           if (conversationRef.current !== conv) {
@@ -259,7 +306,9 @@ export function ConversationProvider({
             conversationRef.current = conv;
             setConversation(conv);
           }
-          lockRef.current = null;
+          if (lockRef.current === pendingSession) {
+            lockRef.current = null;
+          }
         },
         (error: unknown) => {
           if (isStaleStartSession()) {
@@ -267,8 +316,11 @@ export function ConversationProvider({
           }
           conversationRef.current = null;
           setConversation(null);
-          lockRef.current = null;
-          if (shouldEndRef.current) {
+          void pendingSession.teardown();
+          // The start promise is the race arbiter. Suppress only an intentional
+          // cancellation; if an active failure settled first, preserve it even
+          // when endSession() was called before this reaction ran.
+          if (controller.signal.aborted && isSessionAbortError(error)) {
             return;
           }
           // The client SDK calls onStatusChange("disconnected") before
@@ -284,7 +336,7 @@ export function ConversationProvider({
     [stableCallbacks, listenerMap, clientToolsRegistry, clientToolsRef]
   );
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback((): Promise<void> => {
     shouldEndRef.current = true;
     const pendingConnection = lockRef.current;
     const conv = conversationRef.current;
@@ -292,18 +344,15 @@ export function ConversationProvider({
     setConversation(null);
 
     if (pendingConnection) {
-      pendingConnection.then(
-        c =>
-          c
-            .endSession()
-            .catch(error => console.warn("Error ending session:", error)),
-        () => {}
-      );
-    } else {
+      pendingConnection.controller.abort();
+      return pendingConnection.teardown();
+    }
+    return (
       conv
         ?.endSession()
-        .catch(error => console.warn("Error ending session:", error));
-    }
+        .catch(error => console.warn("Error ending session:", error)) ??
+      Promise.resolve()
+    );
   }, []);
 
   // Cleanup on unmount
@@ -311,12 +360,10 @@ export function ConversationProvider({
     return () => {
       shouldEndRef.current = true;
       if (lockRef.current) {
-        lockRef.current.then(
-          conv => conv.endSession().catch(() => {}),
-          () => {}
-        );
+        lockRef.current.controller.abort();
+        void lockRef.current.teardown();
       } else {
-        conversationRef.current?.endSession().catch(() => {});
+        void conversationRef.current?.endSession().catch(() => {});
       }
     };
   }, []);

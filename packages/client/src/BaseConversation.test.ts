@@ -7,6 +7,16 @@ import {
 } from "./BaseConversation.js";
 import type { BaseConnection } from "./utils/BaseConnection.js";
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 const noopConnection = {
   conversationId: "test-conversation-id",
   onMessage: () => {},
@@ -904,6 +914,29 @@ describe("BaseConversation", () => {
 
       expect(onStatusChange).toHaveBeenCalledWith({ status: "disconnected" });
       expect(onDisconnect).toHaveBeenCalledWith({ reason: "user" });
+    });
+
+    it("does not finish endSession until asynchronous connection teardown settles", async () => {
+      const teardown = createDeferred<void>();
+      const close = vi.fn(() => teardown.promise);
+      const conversation = TestConversation.create({}, {
+        ...noopConnection,
+        close,
+      } as unknown as BaseConnection);
+      conversation.connect();
+
+      let ended = false;
+      const endPromise = conversation.endSession().then(() => {
+        ended = true;
+      });
+      await Promise.resolve();
+
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(ended).toBe(false);
+
+      teardown.resolve();
+      await endPromise;
+      expect(ended).toBe(true);
     });
   });
 
