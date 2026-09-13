@@ -567,6 +567,36 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("auto-start-text", () => {
+    it("starts a text session on open and shows the server-sent greeting", async () => {
+      setupWebComponent({
+        "agent-id": "server_greeting",
+        variant: "compact",
+        "auto-start-text": "true",
+      });
+
+      // No user interaction: the panel is expanded by default, the session
+      // starts on its own, and the greeting arrives over the wire.
+      await expect
+        .element(page.getByText("Personalized welcome"))
+        .toBeInTheDocument();
+    });
+
+    it("does not start a session without the attribute", async () => {
+      setupWebComponent({
+        "agent-id": "server_greeting",
+        variant: "compact",
+      });
+
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Personalized welcome"))
+        .not.toBeInTheDocument();
+    });
+  });
+
   it.each(Variants)(
     "$0 variant should show last message when agent calls end_call",
     async variant => {

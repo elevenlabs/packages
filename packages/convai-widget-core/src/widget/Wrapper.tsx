@@ -1,5 +1,8 @@
 import { memo } from "preact/compat";
+import { useRef } from "preact/hooks";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import { useAttribute } from "../contexts/attributes";
+import { parseBoolAttribute } from "../types/attributes";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
 import { Root } from "../contexts/root-portal";
@@ -48,8 +51,10 @@ export const Wrapper = memo(function Wrapper() {
   const expanded = useSignal(config.peek().default_expanded);
   const hidden = useSignal(false);
   const sawError = useSignal(false);
-  const { error, isDisconnected } = useConversation();
+  const { error, isDisconnected, startSession } = useConversation();
   const terms = useTerms();
+  const autoStartText = useAttribute("auto-start-text");
+  const autoStartedText = useRef(false);
   const { variant } = useWidgetSize();
   const expandable = useComputed(
     () => config.value.transcript_enabled || config.value.text_input_enabled
@@ -74,6 +79,25 @@ export const Wrapper = memo(function Wrapper() {
       } else {
         sawError.value = false;
       }
+    }
+  });
+
+  // Start a text session as soon as the panel opens so the agent can produce
+  // the first message server-side (e.g. from a workflow that gathers context
+  // via tools) instead of waiting for the user to write something. Once per
+  // mount: a session the user ended must not restart on its own.
+  useSignalEffect(() => {
+    const host = shadowHost.value;
+    if (
+      host &&
+      parseBoolAttribute(autoStartText.value) &&
+      expanded.value &&
+      config.value.supports_text_only &&
+      !autoStartedText.current &&
+      isDisconnected.peek()
+    ) {
+      autoStartedText.current = true;
+      void startSession(host, undefined, undefined, { textOnly: true });
     }
   });
 
