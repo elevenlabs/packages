@@ -57,6 +57,8 @@ type PendingSession = {
   promise: Promise<Conversation>;
   controller: AbortController;
   teardown: () => Promise<void>;
+  failed: boolean;
+  retry: { options?: HookOptions } | null;
 };
 
 export function ConversationProvider({
@@ -102,11 +104,18 @@ export function ConversationProvider({
   );
 
   const startSession = useCallback(
-    (options?: HookOptions) => {
+    function startSession(options?: HookOptions) {
       if (conversationRef.current) {
         return;
       }
       if (lockRef.current) {
+        if (
+          lockRef.current.failed &&
+          !shouldEndRef.current &&
+          !lockRef.current.controller.signal.aborted
+        ) {
+          lockRef.current.retry = { options };
+        }
         return;
       }
 
@@ -125,6 +134,10 @@ export function ConversationProvider({
       // Strip raw callbacks from defaults — stableCallbacks provides
       // ref-backed versions that won't go stale across renders.
       const defaultConfig = { ...defaults };
+      const sessionConfig: HookOptions = { ...options };
+      const externalSignal = options?.signal ?? defaults?.signal;
+      delete defaultConfig.signal;
+      delete sessionConfig.signal;
       for (const key of CALLBACK_KEYS) {
         delete (defaultConfig as Record<string, unknown>)[key];
       }
@@ -134,7 +147,7 @@ export function ConversationProvider({
         defaultConfig,
         stableCallbacks,
         listenerMap.compose(),
-        options ?? {},
+        sessionConfig,
         { origin }
       );
 
@@ -146,9 +159,23 @@ export function ConversationProvider({
       sessionOptions.clientTools = clientTools;
 
       const controller = new AbortController();
-      const externalSignal = sessionOptions.signal;
-      const forwardExternalAbort = () =>
+      const isStaleStartSession = () =>
+        startSessionId !== startSessionIdRef.current;
+      const forwardExternalAbort = () => {
+        if (
+          isStaleStartSession() ||
+          controller.signal.aborted ||
+          (conversationRef.current && !lockRef.current)
+        ) {
+          return;
+        }
+        shouldEndRef.current = true;
         controller.abort(externalSignal?.reason);
+        if (conversationRef.current) {
+          conversationRef.current = null;
+          setConversation(null);
+        }
+      };
       if (externalSignal?.aborted) {
         forwardExternalAbort();
       } else {
@@ -158,22 +185,27 @@ export function ConversationProvider({
       }
       sessionOptions.signal = controller.signal;
 
-      const isStaleStartSession = () =>
-        startSessionId !== startSessionIdRef.current;
-
-      // A superseded session can outlive its replacement's start: its async
-      // teardown keeps emitting events (final "disconnected", teardown
-      // onDisconnect, errors) that would otherwise reach the listener map
-      // and clobber sub-provider state now reflecting the newer session
-      // (e.g. ConversationModeProvider resets mode on onDisconnect). Drop
-      // every callback once this start is stale.
+      // A superseded or cancelled start can keep emitting events during
+      // teardown. Only terminal lifecycle callbacks and feedback reset may
+      // update this session after cancellation; a newer session drops all.
+      const reportActiveError = sessionOptions.onError;
       for (const key of CALLBACK_KEYS) {
         const callback = sessionOptions[key];
         if (typeof callback === "function") {
           (sessionOptions as Record<string, unknown>)[key] = (
             ...args: never[]
           ) => {
-            if (!isStaleStartSession()) {
+            const isFeedbackReset =
+              key === "onCanSendFeedbackChange" &&
+              (args[0] as { canSendFeedback?: boolean } | undefined)
+                ?.canSendFeedback === false;
+            if (
+              !isStaleStartSession() &&
+              (!controller.signal.aborted ||
+                key === "onStatusChange" ||
+                key === "onDisconnect" ||
+                isFeedbackReset)
+            ) {
               (callback as (...a: never[]) => void)(...args);
             }
           };
@@ -222,6 +254,12 @@ export function ConversationProvider({
           return;
         }
         if (
+          controller.signal.aborted &&
+          (props.status === "connecting" || props.status === "connected")
+        ) {
+          return;
+        }
+        if (
           props.status === "disconnecting" &&
           thisSessionConv !== null &&
           conversationRef.current === thisSessionConv
@@ -266,6 +304,8 @@ export function ConversationProvider({
       const pendingSession: PendingSession = {
         promise: startPromise,
         controller,
+        failed: false,
+        retry: null,
         teardown: () => {
           teardownPromise ??= startPromise
             .then(
@@ -279,6 +319,22 @@ export function ConversationProvider({
             .finally(() => {
               if (lockRef.current === pendingSession) {
                 lockRef.current = null;
+                const retry = pendingSession.retry;
+                pendingSession.retry = null;
+                const retrySignal =
+                  retry?.options?.signal ?? defaultOptionsRef.current.signal;
+                if (
+                  retry &&
+                  !shouldEndRef.current &&
+                  !controller.signal.aborted &&
+                  !retrySignal?.aborted
+                ) {
+                  try {
+                    startSession(retry.options);
+                  } catch (error) {
+                    console.warn("Error restarting session:", error);
+                  }
+                }
               }
             });
           return teardownPromise;
@@ -323,13 +379,14 @@ export function ConversationProvider({
           if (controller.signal.aborted && isSessionAbortError(error)) {
             return;
           }
+          pendingSession.failed = true;
           // The client SDK calls onStatusChange("disconnected") before
           // rejecting, but never calls onError — surface the failure here
           // so listeners (e.g. ConversationStatusProvider) transition to
           // the "error" state with a meaningful message.
           const message =
             error instanceof Error ? error.message : "Session failed to start";
-          sessionOptions.onError?.(message, error);
+          reportActiveError?.(message, error);
         }
       );
     },

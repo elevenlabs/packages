@@ -58,6 +58,29 @@ function Conversation() {
 }
 ```
 
+## Cancelling and retrying startup
+
+Pass `signal` to `ConversationProvider` or `startSession()` to cancel pending startup. A per-session signal overrides a provider default. Once `onConnect` fires, the startup signal no longer closes that conversation; use `await endSession()` to finish teardown before starting a replacement.
+
+Calling `startSession()` synchronously from `onError` queues that request until failed-start cleanup completes. The SDK does not impose a retry limit or backoff, so callers should decide which errors to retry and bound persistent failures. For example, inside a component using `useConversationControls()`:
+
+```tsx
+const remainingRetries = useRef(2);
+const { startSession } = useConversationControls();
+const startWithRetry = () =>
+  startSession({
+    onConnect: () => {
+      remainingRetries.current = 2;
+    },
+    onError: () => {
+      if (remainingRetries.current > 0) {
+        remainingRetries.current -= 1;
+        setTimeout(startWithRetry, 1000);
+      }
+    },
+  });
+```
+
 ## Documentation
 
 For the full API reference including connection types, client tools, conversation overrides, and more, see the [React SDK documentation](https://elevenlabs.io/docs/eleven-agents/libraries/react).
