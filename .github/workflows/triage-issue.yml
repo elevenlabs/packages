@@ -1,0 +1,24 @@
+name: Trigger Cursor on Issue Creation
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to triage
+        required: true
+        type: number
+
+jobs:
+  trigger-cursor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Webhook to Cursor
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+        run: |
+          curl -X POST "${{ secrets.ISSUE_TRIAGE_CURSOR_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: ${{ secrets.ISSUE_TRIAGE_CURSOR_WEBHOOK_AUTHORIZATION_HEADER }}" \
+            -d "{\"issue_number\": $ISSUE_NUMBER}"
