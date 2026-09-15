@@ -105,6 +105,11 @@ export function ConversationProvider({
 
   const startSession = useCallback(
     function startSession(options?: HookOptions) {
+      const defaults = defaultOptionsRef.current;
+      const externalSignal = options?.signal ?? defaults?.signal;
+      if (externalSignal?.aborted) {
+        return;
+      }
       if (conversationRef.current) {
         return;
       }
@@ -122,7 +127,6 @@ export function ConversationProvider({
       shouldEndRef.current = false;
       const startSessionId = ++startSessionIdRef.current;
 
-      const defaults = defaultOptionsRef.current;
       const resolvedServerLocation = parseLocation(
         options?.serverLocation || defaults?.serverLocation
       );
@@ -135,7 +139,6 @@ export function ConversationProvider({
       // ref-backed versions that won't go stale across renders.
       const defaultConfig = { ...defaults };
       const sessionConfig: HookOptions = { ...options };
-      const externalSignal = options?.signal ?? defaults?.signal;
       delete defaultConfig.signal;
       delete sessionConfig.signal;
       for (const key of CALLBACK_KEYS) {

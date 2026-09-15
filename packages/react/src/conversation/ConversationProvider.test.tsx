@@ -260,6 +260,30 @@ describe("ConversationProvider", () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  it("does not take the start lock for an already-aborted signal", async () => {
+    const externalController = new AbortController();
+    externalController.abort();
+    const conversation = mockStartSessionWithLifecycle();
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.startSession({ signal: externalController.signal });
+      result.current.startSession();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    const [[options]] = vi.mocked(Conversation.startSession).mock.calls;
+    expect(options.signal?.aborted).toBe(false);
+    expect(conversation.endSession).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(conversation);
+  });
+
   it("treats onConnect as the end of startup-signal cancellation", async () => {
     const externalController = new AbortController();
     const conversation = createMockConversation();
