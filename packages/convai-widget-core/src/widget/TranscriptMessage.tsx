@@ -67,7 +67,7 @@ function UserMessageBubble({
   entry: Extract<DisplayTranscriptEntry, { type: "message" }>;
 }) {
   const { previewUrl } = useAvatarConfig();
-  const fileInput = entry.fileInput;
+  const fileInputs = entry.fileInputs ?? [];
 
   return (
     <div
@@ -86,13 +86,14 @@ function UserMessageBubble({
         />
       )}
       <div className="flex flex-col items-end gap-1.5 min-w-0">
-        {fileInput && (
+        {fileInputs.map(fileInput => (
           <FileAttachment
+            key={fileInput.id}
             fileName={fileInput.fileName}
             mimeType={fileInput.mimeType}
             previewUrl={fileInput.previewUrl}
           />
-        )}
+        ))}
         {entry.message && (
           <div
             dir="auto"
