@@ -7,7 +7,3 @@ packages:
 # This mitigates supply chain attacks where malicious versions are typically
 # detected and removed within hours. See https://pnpm.io/supply-chain-security
 minimumReleaseAge: 10080 # 7 days
-# expo-modules-jsi@57.0.5 includes the dateFromMilliseconds fix (expo/expo#49039).
-# Published 2026-08-20T10:47:33Z; remove this exclude after 2026-08-27T10:47:33Z.
-minimumReleaseAgeExclude:
-  - "expo-modules-jsi"

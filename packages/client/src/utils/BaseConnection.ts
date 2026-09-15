@@ -38,6 +38,14 @@ export type BaseSessionConfig = {
      * Defaults to "all".
      */
     iceTransportPolicy?: "all" | "relay";
+    /**
+     * Whether to negotiate over a single peer connection (LiveKit's v1 join
+     * protocol, which bundles the publisher offer in the JoinRequest). Set to
+     * false to force the dual peer connection path, e.g. on platforms that
+     * reject the microphone request at the point v1 issues it. Defaults to
+     * livekit-client's own default, currently true.
+     */
+    singlePeerConnection?: boolean;
   };
   overrides?: {
     agent?: {

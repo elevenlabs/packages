@@ -198,6 +198,62 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("agent_response events", () => {
+    it("forwards attachments to onMessage when present", async () => {
+      const onMessage = vi.fn();
+      const conversation = TestConversation.create({ onMessage });
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Here is the file you asked for.",
+          event_id: 3,
+          attachments: [
+            {
+              url: "https://example.com/invoice.pdf",
+              name: "invoice.pdf",
+              mime_type: "application/pdf",
+            },
+          ],
+        },
+      });
+
+      expect(onMessage).toHaveBeenCalledWith({
+        source: "ai",
+        role: "agent",
+        message: "Here is the file you asked for.",
+        event_id: 3,
+        attachments: [
+          {
+            url: "https://example.com/invoice.pdf",
+            name: "invoice.pdf",
+            mime_type: "application/pdf",
+          },
+        ],
+      });
+    });
+
+    it("leaves attachments undefined when the event has none", async () => {
+      const onMessage = vi.fn();
+      const conversation = TestConversation.create({ onMessage });
+
+      await conversation.receiveMessage({
+        type: "agent_response",
+        agent_response_event: {
+          agent_response: "Hello there",
+          event_id: 4,
+        },
+      });
+
+      expect(onMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Hello there",
+          attachments: undefined,
+        })
+      );
+    });
+  });
+
   describe("agent_response_correction events", () => {
     it("calls onAgentResponseCorrection with the correction payload", async () => {
       const onAgentResponseCorrection = vi.fn();
@@ -488,6 +544,76 @@ describe("BaseConversation", () => {
         type: "multimodal_message",
         text: { type: "user_message", text: "Hello" },
       });
+    });
+  });
+
+  describe("sendUserActivity", () => {
+    function conversationSending() {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      return {
+        sendMessage,
+        conversation: TestConversation.create({}, connection),
+      };
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("sends a user_activity message immediately on the first call", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenCalledWith({ type: "user_activity" });
+    });
+
+    it("coalesces rapid calls within the throttle window into one message", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+      vi.advanceTimersByTime(500);
+      conversation.sendUserActivity();
+      vi.advanceTimersByTime(500);
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("sends again once the throttle window has elapsed", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(2000);
+      conversation.sendUserActivity();
+
+      expect(sendMessage).toHaveBeenCalledTimes(2);
+    });
+
+    it("cancels the throttle window when the session ends", async () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+      conversation.connect();
+
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+
+      await conversation.endSession();
+
+      // Ending the session cancels the leading-edge window, so the next call
+      // fires immediately instead of being suppressed by a lingering timer.
+      conversation.sendUserActivity();
+      expect(sendMessage).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -166,6 +166,265 @@ describe("elevenlabs-convai", () => {
       .not.toBeInTheDocument();
   });
 
+  it("ignores streamed chat parts outside text-only conversations", async () => {
+    setupWebComponent({
+      "agent-id": "voice_chat_stream",
+      transcript: "true",
+      variant: "compact",
+    });
+
+    const startButton = page.getByRole("button", { name: "Start a call" });
+    await startButton.click();
+
+    await expect
+      .element(page.getByText("How can I help you today?"))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("This draft was never spoken."))
+      .not.toBeInTheDocument();
+  });
+
+  it("does not duplicate a message finalized after the next tool segment starts", async () => {
+    setupWebComponent({
+      "agent-id": "tool_call_late_final",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Record vulnerability");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const message = page.getByText("Recording that for you now…", {
+      exact: true,
+    });
+    await expect.element(message).toBeInTheDocument();
+    expect(message.elements()).toHaveLength(1);
+  });
+
+  it("does not duplicate the reply that follows an empty tool segment", async () => {
+    setupWebComponent({
+      "agent-id": "empty_tool_segment_before_reply",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const reply = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(reply).toBeInTheDocument();
+    expect(reply.elements()).toHaveLength(1);
+  });
+
+  it("finalizes a refined reply into the streamed slot after a tool segment", async () => {
+    setupWebComponent({
+      "agent-id": "refined_final_after_tool_segment",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    const reply = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(reply).toBeInTheDocument();
+    expect(reply.elements()).toHaveLength(1);
+    await expect
+      .element(page.getByText("Tomorrow at 10am", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
+  it("does not duplicate the reply when a tool segment splits two messages", async () => {
+    setupWebComponent({
+      "agent-id": "empty_tool_segment_between_messages",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("yes pls");
+    await userEvent.keyboard("{Enter}");
+
+    const preTool = page.getByText("Logging your complaint now…", {
+      exact: true,
+    });
+    const reply = page.getByText(
+      "Is there anything else I can help you with today?",
+      { exact: true }
+    );
+    await expect.element(preTool).toBeInTheDocument();
+    await expect.element(reply).toBeInTheDocument();
+    expect(preTool.elements()).toHaveLength(1);
+    expect(reply.elements()).toHaveLength(1);
+  });
+
+  it("keeps both replies around a tool call finalized once each", async () => {
+    setupWebComponent({
+      "agent-id": "messages_around_tool_call",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("When are you available?");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Completed", { exact: true }))
+      .toBeInTheDocument();
+
+    const preTool = page.getByText("Let me check that for you.", {
+      exact: true,
+    });
+    const postTool = page.getByText("Tomorrow at 10am is available.", {
+      exact: true,
+    });
+    await expect.element(preTool).toBeInTheDocument();
+    await expect.element(postTool).toBeInTheDocument();
+    expect(preTool.elements()).toHaveLength(1);
+    expect(postTool.elements()).toHaveLength(1);
+  });
+
+  it("does not duplicate an agent response streamed before a tool call", async () => {
+    setupWebComponent({
+      "agent-id": "response_before_stream_tool",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Record a bug");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(
+        page.getByText(
+          "The bug has been recorded successfully. Is there anything else you would like me to help you with?"
+        )
+      )
+      .toBeInTheDocument();
+
+    const preToolMessage = page.getByText("Recording that for you now…", {
+      exact: true,
+    });
+    await expect.element(preToolMessage).toBeInTheDocument();
+    expect(preToolMessage.elements()).toHaveLength(1);
+  });
+
+  it("renders a final agent message received after a tool stream stops", async () => {
+    setupWebComponent({
+      "agent-id": "final_message_after_tool",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Yes");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("The agent ended the conversation"))
+      .toBeInTheDocument();
+
+    const finalMessage = page.getByText(
+      "Thank you for your feedback. Have a great day!",
+      { exact: true }
+    );
+    await expect.element(finalMessage).toBeInTheDocument();
+    expect(finalMessage.elements()).toHaveLength(1);
+
+    const completed = page.getByText("Completed", { exact: true });
+    await expect.element(completed).toBeInTheDocument();
+    expect(completed.elements()).toHaveLength(1);
+  });
+
+  it("renders the first streamed reply when the configured first message is interrupted", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_reply",
+      variant: "compact",
+    });
+
+    await expect.element(page.getByText("Agent response")).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("First streamed reply"))
+      .toBeInTheDocument();
+  });
+
+  it("renders a reply that matches the streamed configured first message", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect.poll(() => firstMessage.elements().length).toBe(2);
+  });
+
+  it("handles a streamed configured first message with a final response", async () => {
+    setupWebComponent({
+      "agent-id": "streamed_first_message_with_final",
+      variant: "compact",
+    });
+
+    const firstMessage = page.getByText("Agent response");
+    await expect.element(firstMessage).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Hello");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("Production streamed reply"))
+      .toBeInTheDocument();
+    expect(firstMessage.elements()).toHaveLength(1);
+  });
+
   it.each(Variants)(
     "$0 expandable variant should go through a happy path (text-only)",
     async variant => {
@@ -214,6 +473,10 @@ describe("elevenlabs-convai", () => {
   );
 
   describe("first message for voice-capable agents", () => {
+    afterEach(() => {
+      localStorage.removeItem("xi:convai-widget-last-used-language");
+    });
+
     it("shows the first message before a text conversation starts", async () => {
       setupWebComponent({ "agent-id": "text_and_voice", variant: "compact" });
 
@@ -236,6 +499,29 @@ describe("elevenlabs-convai", () => {
       await expect
         .element(page.getByRole("button", { name: "Track my order" }))
         .toBeInTheDocument();
+    });
+
+    it("updates first message buttons when the language changes", async () => {
+      setupWebComponent({
+        "agent-id": "localized",
+        variant: "compact",
+        "text-input": "true",
+        "default-expanded": "true",
+      });
+
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .toBeInTheDocument();
+
+      await page.getByRole("combobox", { name: "Change language" }).click();
+      await page.getByRole("option", { name: "Español" }).click();
+
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Track my order" }))
+        .not.toBeInTheDocument();
     });
 
     it("keeps a single first message when the user starts a text chat", async () => {
@@ -1108,6 +1394,9 @@ describe("elevenlabs-convai", () => {
         name: "Change language",
       });
       await expect.element(langButton).toHaveTextContent("Español");
+      await expect
+        .element(page.getByRole("button", { name: "Rastrear mi pedido" }))
+        .toBeInTheDocument();
     });
   });
 

@@ -7,6 +7,7 @@ import type {
   FormatConfig,
 } from "./utils/BaseConnection.js";
 import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
+import { throttle, type ThrottledFunction } from "./utils/throttle.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -44,11 +45,14 @@ const END_CALL_DETAILS: DisconnectionDetails = {
   context: { type: "end_call", reason: "Agent ended the call" },
 };
 
+const USER_ACTIVITY_THROTTLE_MS = 1000;
+
 export type {
   Role,
   Mode,
   Status,
   Callbacks,
+  MessageAttachment,
   MCPToolApprovalRequest,
   MCPToolApprovalRequestContext,
   MCPToolApprovalHandler,
@@ -170,6 +174,15 @@ export abstract class BaseConversation {
    */
   private readonly mcpApprovals = new Map<string, MCPApproval>();
 
+  private readonly throttledUserActivity: ThrottledFunction<[]> = throttle(
+    () => {
+      this.connection.sendMessage({
+        type: "user_activity",
+      });
+    },
+    USER_ACTIVITY_THROTTLE_MS
+  );
+
   protected static getFullOptions(partialOptions: PartialOptions): Options {
     const textOnly = isTextOnly(partialOptions);
     return {
@@ -241,6 +254,7 @@ export abstract class BaseConversation {
   };
 
   protected async handleEndSession() {
+    this.throttledUserActivity.cancel();
     this.connection.close();
   }
 
@@ -293,6 +307,7 @@ export abstract class BaseConversation {
         role: "agent",
         message: event.agent_response_event.agent_response,
         event_id: event.agent_response_event.event_id,
+        attachments: event.agent_response_event.attachments,
       });
     }
   }
@@ -861,9 +876,7 @@ export abstract class BaseConversation {
   }
 
   public sendUserActivity() {
-    this.connection.sendMessage({
-      type: "user_activity",
-    });
+    this.throttledUserActivity();
   }
 
   public sendMCPToolApprovalResult(toolCallId: string, isApproved: boolean) {

@@ -1,5 +1,31 @@
 # @elevenlabs/react
 
+## 1.15.2
+
+### Patch Changes
+
+- Updated dependencies [de2f863]
+  - @elevenlabs/client@1.25.0
+
+## 1.15.1
+
+### Patch Changes
+
+- Updated dependencies [afd2170]
+- Updated dependencies [aad288c]
+  - @elevenlabs/client@1.24.0
+
+## 1.15.0
+
+### Minor Changes
+
+- f94ef6d: Add `fileIds` to `sendMultimodalMessage` and dual-send `file` + `files` on the wire.
+
+### Patch Changes
+
+- Updated dependencies [f94ef6d]
+  - @elevenlabs/client@1.23.0
+
 ## 1.14.0
 
 ### Minor Changes

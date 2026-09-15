@@ -36,14 +36,21 @@ function getMaxSizeBytes(mimeType: string): number {
 }
 
 export type PendingFile =
-  | { status: "uploading"; file: File; previewUrl: string | null }
   | {
+      id: string;
+      status: "uploading";
+      file: File;
+      previewUrl: string | null;
+    }
+  | {
+      id: string;
       status: "ready";
       file: File;
       fileId: string;
       previewUrl: string | null;
     }
   | {
+      id: string;
       status: "error";
       file: File;
       error: string;
@@ -151,7 +158,7 @@ export function useFileUpload({
 
       pendingFiles.value = [
         ...pendingFiles.peek(),
-        { file, status: "uploading", previewUrl },
+        { id: crypto.randomUUID(), file, status: "uploading", previewUrl },
       ];
 
       const controller = new AbortController();
@@ -183,6 +190,7 @@ export function useFileUpload({
           if (index >= 0) {
             const next = [...current];
             next[index] = {
+              id: current[index].id,
               status: "ready",
               file,
               previewUrl: current[index].previewUrl,
@@ -201,6 +209,7 @@ export function useFileUpload({
           if (index >= 0) {
             const next = [...current];
             next[index] = {
+              id: current[index].id,
               status: "error",
               file,
               previewUrl: current[index].previewUrl,

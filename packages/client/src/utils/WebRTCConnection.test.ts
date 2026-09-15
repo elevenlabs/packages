@@ -165,6 +165,97 @@ describe("WebRTCConnection", () => {
     connection.close();
   });
 
+  describe("webRtc.singlePeerConnection", () => {
+    // Options the Room constructor was last called with, if any.
+    function lastRoomOptions(): { singlePeerConnection?: boolean } | undefined {
+      return (Room as unknown as ReturnType<typeof vi.fn>).mock.calls.at(
+        -1
+      )?.[0];
+    }
+
+    // Returns a room mock whose connect sequence resolves, so create() runs to
+    // completion and we can inspect how the Room itself was constructed.
+    function mockConnectingRoom() {
+      const mockRoom = new Room() as any;
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      return mockRoom;
+    }
+
+    it("forces the dual peer connection path when set to false", async () => {
+      mockConnectingRoom();
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        webRtc: { singlePeerConnection: false },
+      });
+
+      expect(Room).toHaveBeenLastCalledWith({ singlePeerConnection: false });
+
+      connection.close();
+    });
+
+    it("passes the option through when set to true", async () => {
+      mockConnectingRoom();
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        webRtc: { singlePeerConnection: true },
+      });
+
+      expect(Room).toHaveBeenLastCalledWith({ singlePeerConnection: true });
+
+      connection.close();
+    });
+
+    // The back-compat control: an unset option must leave livekit-client's own
+    // default in place rather than pinning it from here. Asserts that no mode
+    // was pinned rather than the exact call arity, since `new Room()` and
+    // `new Room(undefined)` are the same thing to LiveKit.
+    it("leaves the LiveKit default alone when the option is omitted", async () => {
+      mockConnectingRoom();
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      expect(lastRoomOptions()?.singlePeerConnection).toBeUndefined();
+
+      connection.close();
+    });
+
+    // The two webRtc options are independent: setting the sibling must not
+    // start pinning the peer connection mode.
+    it("does not pin the peer connection mode when only iceTransportPolicy is set", async () => {
+      mockConnectingRoom();
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        webRtc: { iceTransportPolicy: "relay" },
+      });
+
+      expect(lastRoomOptions()?.singlePeerConnection).toBeUndefined();
+
+      connection.close();
+    });
+  });
+
   it("reconnects input analyser after unmuting", async () => {
     const mockRoom = new Room() as any;
 

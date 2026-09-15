@@ -1,5 +1,17 @@
 # @elevenlabs/types
 
+## 0.23.0
+
+### Minor Changes
+
+- afd2170: Forward the optional `attachments` field (url, name, mime_type) from the `agent_response` client event into the `onMessage` payload, so consumers can render files attached to agent messages, e.g. relayed from a human agent reply.
+
+## 0.22.1
+
+### Patch Changes
+
+- f94ef6d: Add `fileIds` to `sendMultimodalMessage` and dual-send `file` + `files` on the wire.
+
 ## 0.22.0
 
 ### Minor Changes

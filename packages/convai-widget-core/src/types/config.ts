@@ -28,6 +28,11 @@ export type FeedbackMode = "none" | "during" | "end";
 export type FeedbackType = "rating";
 export type SyntaxHighlightTheme = "light" | "dark";
 
+export type FirstMessageRichContent = {
+  component: string;
+  props: unknown;
+};
+
 export interface AllowlistItem {
   hostname: string;
 }
@@ -63,6 +68,7 @@ export interface WidgetConfig {
       {
         text_contents?: Partial<TextContents>;
         first_message?: string;
+        first_message_rich_content?: FirstMessageRichContent | null;
         terms_html?: string | null;
         terms_text?: string | null;
         terms_key?: string;
@@ -85,10 +91,7 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   show_language_selector_on_trigger?: boolean;
-  first_message_rich_content?: {
-    component: string;
-    props: unknown;
-  } | null;
+  first_message_rich_content?: FirstMessageRichContent | null;
 }
 
 export type AvatarConfig =

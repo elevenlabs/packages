@@ -20,9 +20,99 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTerms } from "./terms";
-import { useFirstMessage, useWidgetConfig } from "./widget-config";
+import {
+  useFirstMessage,
+  useFirstMessageRichContent,
+  useWidgetConfig,
+} from "./widget-config";
+import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
+
+const FIRST_MESSAGE_EVENT_ID = 1;
+
+type AgentEventId = number | undefined;
+
+type AgentStream = {
+  kind: "stream";
+  index: number;
+  eventId: AgentEventId;
+};
+
+type IgnoredAgentStream = {
+  kind: "ignored";
+  eventId: AgentEventId;
+};
+
+type AgentResponsePointer = {
+  index: number;
+  eventId: AgentEventId;
+  message: string;
+};
+
+type AgentStreamState = {
+  pending: AgentStream[];
+  active: AgentStream | IgnoredAgentStream | null;
+  unmatchedResponse: AgentResponsePointer | null;
+  ignoredResponse: { eventId: AgentEventId; message: string } | null;
+};
+
+function createAgentStreamState(): AgentStreamState {
+  return {
+    pending: [],
+    active: null,
+    unmatchedResponse: null,
+    ignoredResponse: null,
+  };
+}
+
+// TODO: drop once the backend stops stripping `*` and `##+` out of
+// `agent_response` but not `agent_chat_response_part`.
+function stripSpokenMarkdown(text: string): string {
+  return text.replace(/\*+/g, "").replace(/#{2,}/g, "");
+}
+
+function isSameAgentText(streamed: string, final: string): boolean {
+  return stripSpokenMarkdown(streamed) === stripSpokenMarkdown(final);
+}
+
+function findPendingStream(
+  transcript: TranscriptEntry[],
+  state: AgentStreamState,
+  eventId: AgentEventId,
+  message: string
+): AgentStream | undefined {
+  const strippedMessage = stripSpokenMarkdown(message);
+  const candidates = state.pending.filter(stream => {
+    if (stream.eventId !== eventId) return false;
+    const entry = transcript[stream.index];
+    return (
+      entry?.type === "message" &&
+      entry.role === "agent" &&
+      entry.eventId === eventId
+    );
+  });
+  const textAt = (stream: AgentStream) => {
+    const entry = transcript[stream.index];
+    return entry?.type === "message" ? entry.message : "";
+  };
+  const streamed = candidates.filter(stream => textAt(stream).trim()).reverse();
+  const active = state.active;
+  const activeStreamed =
+    active?.kind === "stream" && candidates.includes(active) && textAt(active)
+      ? active
+      : undefined;
+
+  return (
+    candidates.find(stream => isSameAgentText(textAt(stream), message)) ??
+    streamed.find(stream =>
+      strippedMessage.startsWith(stripSpokenMarkdown(textAt(stream)))
+    ) ??
+    activeStreamed ??
+    candidates.find(stream => !textAt(stream).trim()) ??
+    candidates[0]
+  );
+}
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
@@ -36,6 +126,7 @@ interface ConversationProviderProps {
 
 /** File metadata stored alongside a user message in the local transcript. */
 export type TranscriptFileInput = {
+  id: string;
   fileName: string;
   mimeType: string;
   previewUrl: string | null;
@@ -49,7 +140,6 @@ export type TranscriptEntry =
       isText: boolean;
       conversationIndex: number;
       eventId?: number;
-      fileInput?: TranscriptFileInput | null;
       fileInputs?: TranscriptFileInput[] | null;
     }
   | {
@@ -95,6 +185,24 @@ export type TranscriptEntry =
       conversationIndex: number;
     };
 
+function firstMessageRichContentEntries(
+  richContent: FirstMessageRichContent | null
+): TranscriptEntry[] {
+  if (!richContent) {
+    return [];
+  }
+  return [
+    {
+      type: "rich_content",
+      component: richContent.component,
+      props: richContent.props,
+      eventId: 1,
+      richContentId: "first_message",
+      conversationIndex: 0,
+    },
+  ];
+}
+
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -136,13 +244,14 @@ function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const receivedFirstMessageRef = useRef(false);
-  const streamingMessageIndexRef = useRef<number | null>(null);
-  const isReceivingStreamRef = useRef(false);
+  // Keep stopped streams pending for late final responses.
+  const agentStreamStateRef = useRef(createAgentStreamState());
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shadowHost = useShadowHost();
 
   const widgetConfig = useWidgetConfig();
   const firstMessage = useFirstMessage();
+  const firstMessageRichContent = useFirstMessageRichContent();
   const terms = useTerms();
   const config = useSessionConfig();
 
@@ -163,7 +272,7 @@ function useConversationSetup() {
     };
   }, []);
 
-  return useMemo(() => {
+  const conversation = useMemo(() => {
     const status = signal<Status>("disconnected");
     const isDisconnected = computed(() => status.value === "disconnected");
 
@@ -174,20 +283,8 @@ function useConversationSetup() {
     const lastId = signal<string | null>(null);
     const canSendFeedback = signal(false);
 
-    const firstMessageEntries = (): TranscriptEntry[] => {
-      const richContent = widgetConfig.peek().first_message_rich_content;
-      if (!richContent) return [];
-      return [
-        {
-          type: "rich_content",
-          component: richContent.component,
-          props: richContent.props,
-          eventId: 1,
-          richContentId: "first_message",
-          conversationIndex: 0,
-        },
-      ];
-    };
+    const firstMessageEntries = (): TranscriptEntry[] =>
+      firstMessageRichContentEntries(firstMessageRichContent.peek());
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const conversationIndex = signal(0);
@@ -214,6 +311,10 @@ function useConversationSetup() {
           isAgentTyping.value = false;
         }, durationMs);
       }
+    };
+
+    const resetAgentStreamState = () => {
+      agentStreamStateRef.current = createAgentStreamState();
     };
 
     return {
@@ -277,6 +378,7 @@ function useConversationSetup() {
 
         conversationTextOnly.value = processedConfig.textOnly ?? false;
         queueStatus.value = null;
+        resetAgentStreamState();
         transcript.value = [
           ...firstMessageEntries(),
           ...(initialMessage
@@ -309,39 +411,71 @@ function useConversationSetup() {
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
-                !receivedFirstMessageRef.current
+                event_id === FIRST_MESSAGE_EVENT_ID
               ) {
                 receivedFirstMessageRef.current = true;
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+                // The configured first message is already rendered locally in
+                // text mode, so ignore the server copy.
                 return;
               } else if (role === "agent") {
                 receivedFirstMessageRef.current = true;
                 setAgentTyping(false);
               }
 
-              if (role === "agent" && isReceivingStreamRef.current) {
-                const streamingIndex = streamingMessageIndexRef.current;
-                if (streamingIndex !== null) {
-                  const currentTranscript = transcript.peek();
+              if (role === "agent") {
+                const currentTranscript = transcript.peek();
+                const streamState = agentStreamStateRef.current;
+
+                const ignoredResponse = streamState.ignoredResponse;
+                if (
+                  ignoredResponse &&
+                  ignoredResponse.eventId === event_id &&
+                  ignoredResponse.message === message
+                ) {
+                  streamState.ignoredResponse = null;
+                  return;
+                }
+
+                const streamingMessage = findPendingStream(
+                  currentTranscript,
+                  streamState,
+                  event_id,
+                  message
+                );
+
+                if (streamingMessage) {
+                  const streamedEntry =
+                    currentTranscript[streamingMessage.index];
+                  const streamedText =
+                    streamedEntry?.type === "message"
+                      ? streamedEntry.message
+                      : "";
                   const updatedTranscript = [...currentTranscript];
-                  updatedTranscript[streamingIndex] = {
+                  updatedTranscript[streamingMessage.index] = {
                     type: "message",
                     role: "agent",
-                    message,
+                    // Only the streamed copy still carries the formatting.
+                    message: isSameAgentText(streamedText, message)
+                      ? streamedText
+                      : message,
                     isText: conversationTextOnly.peek() === true,
                     conversationIndex: conversationIndex.peek(),
                     eventId: event_id,
                   };
                   transcript.value = updatedTranscript;
+                  streamState.pending = streamState.pending.filter(
+                    stream => stream !== streamingMessage
+                  );
+                  if (streamState.active === streamingMessage) {
+                    streamState.active = null;
+                  }
+                  return;
                 }
-                isReceivingStreamRef.current = false;
-                return;
               }
 
+              const currentTranscript = transcript.peek();
               transcript.value = [
-                ...transcript.peek(),
+                ...currentTranscript,
                 {
                   type: "message",
                   role,
@@ -351,24 +485,59 @@ function useConversationSetup() {
                   eventId: event_id,
                 },
               ];
+              if (role === "agent") {
+                agentStreamStateRef.current.unmatchedResponse = {
+                  index: currentTranscript.length,
+                  eventId: event_id,
+                  message,
+                };
+              }
             },
             onAgentChatResponsePart: ({ text, type, event_id }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                !receivedFirstMessageRef.current
-              ) {
-                // Text mode is always started by the user sending a text message.
-                // We need to ignore the first agent message as it is immediately
-                // interrupted by the user input.
+              // Voice conversations render `agent_response` transcripts only.
+              if (conversationTextOnly.peek() !== true) return;
+
+              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
+                // Ignore the opening frame of the configured first-message
+                // stream, then allow the actual reply stream through.
+                receivedFirstMessageRef.current = true;
                 return;
               }
               setAgentTyping(false);
 
               if (type === "start") {
-                isReceivingStreamRef.current = true;
                 const currentTranscript = transcript.peek();
-                streamingMessageIndexRef.current = currentTranscript.length;
+                const streamState = agentStreamStateRef.current;
+                const unmatchedResponse = streamState.unmatchedResponse;
+                const unmatchedEntry =
+                  unmatchedResponse == null
+                    ? undefined
+                    : currentTranscript[unmatchedResponse.index];
+                if (
+                  unmatchedResponse &&
+                  unmatchedResponse.eventId === event_id &&
+                  unmatchedResponse.index === currentTranscript.length - 1 &&
+                  unmatchedEntry?.type === "message" &&
+                  unmatchedEntry.role === "agent" &&
+                  unmatchedEntry.message.trim() !== ""
+                ) {
+                  streamState.unmatchedResponse = null;
+                  streamState.active = { kind: "ignored", eventId: event_id };
+                  streamState.ignoredResponse = {
+                    eventId: event_id,
+                    message: unmatchedResponse.message,
+                  };
+                  return;
+                }
+
+                const stream: AgentStream = {
+                  kind: "stream",
+                  index: currentTranscript.length,
+                  eventId: event_id,
+                };
+                streamState.ignoredResponse = null;
+                streamState.pending.push(stream);
+                streamState.active = stream;
                 transcript.value = [
                   ...currentTranscript,
                   {
@@ -381,13 +550,22 @@ function useConversationSetup() {
                   },
                 ];
               } else if (type === "delta") {
-                const streamingIndex = streamingMessageIndexRef.current;
-                if (streamingIndex !== null && text) {
+                const activeStream = agentStreamStateRef.current.active;
+                if (
+                  activeStream &&
+                  activeStream.kind === "stream" &&
+                  activeStream.eventId === event_id &&
+                  text
+                ) {
                   const currentTranscript = transcript.peek();
-                  const entry = currentTranscript[streamingIndex];
-                  if (entry.type === "message") {
+                  const entry = currentTranscript[activeStream.index];
+                  if (
+                    entry?.type === "message" &&
+                    entry.role === "agent" &&
+                    entry.eventId === event_id
+                  ) {
                     const updatedTranscript = [...currentTranscript];
-                    updatedTranscript[streamingIndex] = {
+                    updatedTranscript[activeStream.index] = {
                       ...entry,
                       message: entry.message + text,
                     };
@@ -395,7 +573,10 @@ function useConversationSetup() {
                   }
                 }
               } else if (type === "stop") {
-                streamingMessageIndexRef.current = null;
+                const streamState = agentStreamStateRef.current;
+                if (streamState.active?.eventId === event_id) {
+                  streamState.active = null;
+                }
               }
             },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
@@ -473,8 +654,7 @@ function useConversationSetup() {
                 queueStatus.peek() === "timed_out";
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
-              streamingMessageIndexRef.current = null;
-              isReceivingStreamRef.current = false;
+              resetAgentStreamState();
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
@@ -597,7 +777,9 @@ function useConversationSetup() {
         if (isWaitingForAgent.peek()) return;
         const trimmed = input.text?.trim() ?? "";
         const fileIds = input.files.map(file => file.fileId);
-        const fileInputs = input.files.map(({ fileId: _fileId, ...fileInput }) => fileInput);
+        const fileInputs = input.files.map(
+          ({ fileId: _fileId, ...fileInput }) => fileInput
+        );
         conversationRef.current?.sendMultimodalMessage({
           text: trimmed || undefined,
           fileIds,
@@ -610,7 +792,6 @@ function useConversationSetup() {
             message: trimmed,
             isText: true,
             conversationIndex: conversationIndex.peek(),
-            fileInput: fileInputs[0] ?? null,
             fileInputs,
           },
         ];
@@ -635,6 +816,26 @@ function useConversationSetup() {
       },
     };
   }, [config]);
+
+  useSignalEffect(() => {
+    const richContent = firstMessageRichContent.value;
+    if (conversation.status.value !== "disconnected") {
+      return;
+    }
+    const isGreetingOnly = conversation.transcript
+      .peek()
+      .every(
+        entry =>
+          entry.type === "rich_content" &&
+          entry.richContentId === "first_message"
+      );
+    if (!isGreetingOnly) {
+      return;
+    }
+    conversation.transcript.value = firstMessageRichContentEntries(richContent);
+  });
+
+  return conversation;
 }
 
 async function getOrCreateUserId(): Promise<string> {

@@ -274,6 +274,13 @@ export interface AgentResponse {
 export interface AgentResponseEvent {
   agent_response: string;
   event_id: number;
+  attachments?: AgentResponseAttachment[];
+}
+
+export interface AgentResponseAttachment {
+  url: string;
+  name: string;
+  mime_type?: string | null;
 }
 
 export interface AgentResponseCorrection {

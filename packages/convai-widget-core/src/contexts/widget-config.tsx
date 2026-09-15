@@ -274,6 +274,18 @@ export function useFirstMessage() {
   });
 }
 
+export function useFirstMessageRichContent() {
+  const config = useWidgetConfig();
+  const { language } = useLanguageConfig();
+  return useComputed(
+    () =>
+      config.value.language_presets?.[language.value.languageCode]
+        ?.first_message_rich_content ??
+      config.value.first_message_rich_content ??
+      null
+  );
+}
+
 export function useTextInputEnabled() {
   const config = useWidgetConfig();
   return useComputed(() => config.value.text_input_enabled ?? false);

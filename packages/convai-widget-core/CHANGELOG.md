@@ -1,5 +1,43 @@
 # @elevenlabs/convai-widget-core
 
+## 0.18.2
+
+### Patch Changes
+
+- 9618be8: Fix the reply after a tool call (including tool calls made by procedures) rendering twice by matching a canonical agent response to the stream segment it belongs to instead of the arrival order of segments in the turn.
+- c7c5bdc: Keep markdown formatting in streamed agent replies and ignore streamed chat
+  parts in voice conversations. The backend strips `*` and `##+` out of
+  `agent_response` but not out of `agent_chat_response_part`, so a formatted reply
+  no longer loses its emphasis and headings when the final response arrives.
+
+## 0.18.1
+
+### Patch Changes
+
+- Updated dependencies [de2f863]
+  - @elevenlabs/client@1.25.0
+
+## 0.18.0
+
+### Minor Changes
+
+- 51c5e99: Greeting buttons now follow the active language, and update when the visitor switches language before a conversation starts.
+
+### Patch Changes
+
+- 55062f3: Fix the agent's first reply being dropped from the transcript in text chat when the agent has a first message configured.
+- cda2efc: Prevent late agent responses around tool calls from rendering twice or disappearing from the transcript.
+- Updated dependencies [afd2170]
+- Updated dependencies [aad288c]
+  - @elevenlabs/client@1.24.0
+
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [f94ef6d]
+  - @elevenlabs/client@1.23.0
+
 ## 0.17.0
 
 ### Minor Changes

@@ -23,7 +23,6 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
       eventId?: number;
       toolStatus?: ToolCallStatusType;
-      fileInput?: TranscriptFileInput | null;
       fileInputs?: TranscriptFileInput[] | null;
     }
   | {

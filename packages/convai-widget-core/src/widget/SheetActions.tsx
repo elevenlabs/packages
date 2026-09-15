@@ -112,7 +112,9 @@ export function SheetActions({
 
   const canSend = useComputed(() => {
     const hasText = !!userMessage.value.trim();
-    const readyFiles = pendingFiles.value.filter(file => file.status === "ready");
+    const readyFiles = pendingFiles.value.filter(
+      file => file.status === "ready"
+    );
     const hasError = pendingFiles.value.some(file => file.status === "error");
     return (
       (hasText || readyFiles.length > 0) &&
@@ -142,6 +144,7 @@ export function SheetActions({
         sendMultimodalMessage({
           text: message || undefined,
           files: readyFiles.map(pending => ({
+            id: pending.id,
             fileId: pending.fileId,
             fileName: pending.file.name,
             mimeType: pending.file.type,
@@ -196,7 +199,7 @@ export function SheetActions({
               <div className="px-3 pt-3 flex flex-wrap gap-2">
                 {pendingFiles.value.map(pendingFile => (
                   <PendingFilePreview
-                    key={`${pendingFile.file.name}-${pendingFile.file.size}`}
+                    key={pendingFile.id}
                     pendingFile={pendingFile}
                     onRemove={() => removeFile(pendingFile.file)}
                   />

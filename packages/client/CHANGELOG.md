@@ -1,5 +1,34 @@
 # @elevenlabs/client
 
+## 1.25.0
+
+### Minor Changes
+
+- de2f863: Re-export the `MessageAttachment` type from the package entry point so consumers can `import type { MessageAttachment } from "@elevenlabs/client"` instead of deriving it from the `onMessage` callback signature.
+
+## 1.24.0
+
+### Minor Changes
+
+- afd2170: Forward the optional `attachments` field (url, name, mime_type) from the `agent_response` client event into the `onMessage` payload, so consumers can render files attached to agent messages, e.g. relayed from a human agent reply.
+- aad288c: Add an optional `webRtc.singlePeerConnection` session option for WebRTC connections. Set it to `false` to force LiveKit's dual peer connection path, which restores the microphone request timing used before livekit-client began defaulting to the v1 join protocol. Leaving it unset keeps livekit-client's own default.
+
+### Patch Changes
+
+- Updated dependencies [afd2170]
+  - @elevenlabs/types@0.23.0
+
+## 1.23.0
+
+### Minor Changes
+
+- f94ef6d: Add `fileIds` to `sendMultimodalMessage` and dual-send `file` + `files` on the wire.
+
+### Patch Changes
+
+- Updated dependencies [f94ef6d]
+  - @elevenlabs/types@0.22.1
+
 ## 1.22.0
 
 ### Minor Changes
