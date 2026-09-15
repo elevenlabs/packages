@@ -5,6 +5,34 @@ const mockCalls = {
   setMicrophoneEnabled: [] as boolean[],
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function captureUnhandledRejections() {
+  const reasons: unknown[] = [];
+  const listener = (reason: unknown) => reasons.push(reason);
+  const processEvents = (
+    globalThis as typeof globalThis & {
+      process: {
+        on: (event: "unhandledRejection", callback: typeof listener) => void;
+        off: (event: "unhandledRejection", callback: typeof listener) => void;
+      };
+    }
+  ).process;
+  processEvents.on("unhandledRejection", listener);
+  return {
+    reasons,
+    stop: () => processEvents.off("unhandledRejection", listener),
+  };
+}
+
 vi.mock("livekit-client", () => {
   const mockLocalParticipant = {
     setMicrophoneEnabled: vi.fn((enabled: boolean) => {
@@ -26,7 +54,7 @@ vi.mock("livekit-client", () => {
 
   const mockRoom = {
     connect: vi.fn(() => Promise.resolve()),
-    disconnect: vi.fn(),
+    disconnect: vi.fn(() => Promise.resolve()),
     on: vi.fn(),
     once: vi.fn(),
     off: vi.fn(),
@@ -66,6 +94,7 @@ import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 import { NO_VOLUME } from "./volumeProvider.js";
 import type { PongEvent } from "./events.js";
+import { waitForSessionCleanup } from "./cancellation.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -501,6 +530,364 @@ describe("WebRTCConnection", () => {
     }
   );
 
+  it("cancels startup and cleans up while connect and microphone setup remain pending", async () => {
+    const mockRoom = new Room() as any;
+    const { promise: connectPromise, reject: rejectConnect } =
+      createDeferred<void>();
+    const { promise: microphonePromise, reject: rejectMicrophone } =
+      createDeferred<void>();
+    let signalConnected: (() => void) | undefined;
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockReturnValue(
+      connectPromise
+    );
+    (
+      mockRoom.localParticipant.setMicrophoneEnabled as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce(microphonePromise);
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          signalConnected = callback;
+        }
+      }
+    );
+
+    const controller = new AbortController();
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      signal: controller.signal,
+    });
+
+    signalConnected?.();
+    await Promise.resolve();
+    expect(mockRoom.localParticipant.setMicrophoneEnabled).toHaveBeenCalledWith(
+      true
+    );
+
+    const unhandled = captureUnhandledRejections();
+    controller.abort();
+
+    await expect(startPromise).rejects.toMatchObject({ name: "AbortError" });
+    expect(mockRoom.disconnect).toHaveBeenCalledTimes(1);
+
+    let cleanupSettled = false;
+    const cleanupPromise = waitForSessionCleanup(controller.signal).then(() => {
+      cleanupSettled = true;
+    });
+    await Promise.resolve();
+    expect(cleanupSettled).toBe(false);
+
+    rejectConnect(new Error("late connect failure"));
+    rejectMicrophone(new Error("late microphone failure"));
+    await cleanupPromise;
+    expect(cleanupSettled).toBe(true);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(unhandled.reasons).toEqual([]);
+    unhandled.stop();
+  });
+
+  it("ignores a late SignalConnected callback after cancellation", async () => {
+    const mockRoom = new Room() as any;
+    const { promise: connectPromise, resolve: resolveConnect } =
+      createDeferred<void>();
+    let signalConnected: (() => void) | undefined;
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockReturnValue(
+      connectPromise
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          signalConnected = callback;
+        }
+      }
+    );
+
+    const controller = new AbortController();
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      signal: controller.signal,
+    });
+
+    controller.abort();
+    await expect(startPromise).rejects.toMatchObject({ name: "AbortError" });
+
+    const cleanupPromise = waitForSessionCleanup(controller.signal);
+    resolveConnect();
+    await cleanupPromise;
+    expect(mockRoom.off).toHaveBeenCalledWith(
+      "signalConnected",
+      signalConnected
+    );
+    signalConnected?.();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(
+      mockRoom.localParticipant.setMicrophoneEnabled
+    ).not.toHaveBeenCalled();
+    // The first disconnect begins cancellation. A late successful connect is
+    // disconnected again so the stale Room cannot become usable afterward.
+    expect(mockRoom.disconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it("installs the SignalConnected listener before room.connect can emit it", async () => {
+    const mockRoom = new Room() as any;
+    const connect = createDeferred<void>();
+    const microphone = createDeferred<void>();
+    let signalConnected: (() => void) | undefined;
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          signalConnected = callback;
+        }
+      }
+    );
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      expect(signalConnected).toBeTypeOf("function");
+      signalConnected?.();
+      return connect.promise;
+    });
+    (
+      mockRoom.localParticipant.setMicrophoneEnabled as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce(microphone.promise);
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      }
+    );
+
+    let startSettled = false;
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    }).then(connection => {
+      startSettled = true;
+      return connection;
+    });
+    await Promise.resolve();
+    expect(mockRoom.localParticipant.setMicrophoneEnabled).toHaveBeenCalledWith(
+      true
+    );
+
+    connect.resolve();
+    await Promise.resolve();
+    expect(startSettled).toBe(false);
+
+    microphone.resolve();
+    const connection = await startPromise;
+    expect(startSettled).toBe(true);
+    connection.close();
+  });
+
+  it("rejects on microphone failure without waiting for room.connect", async () => {
+    const mockRoom = new Room() as any;
+    const { promise: connectPromise, resolve: resolveConnect } =
+      createDeferred<void>();
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockReturnValue(
+      connectPromise
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    const publicationError = new Error(
+      "publication of local track timed out, no response from server"
+    );
+    (
+      mockRoom.localParticipant.setMicrophoneEnabled as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(publicationError);
+
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    await expect(startPromise).rejects.toBe(publicationError);
+    expect(mockRoom.disconnect).toHaveBeenCalledTimes(1);
+    resolveConnect();
+  });
+
+  it("rejects on connect failure while observing a later microphone failure", async () => {
+    const mockRoom = new Room() as any;
+    const { promise: connectPromise, reject: rejectConnect } =
+      createDeferred<void>();
+    const { promise: microphonePromise, reject: rejectMicrophone } =
+      createDeferred<void>();
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockReturnValue(
+      connectPromise
+    );
+    (
+      mockRoom.localParticipant.setMicrophoneEnabled as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce(microphonePromise);
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    const connectError = new Error("room connection failed");
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+    await Promise.resolve();
+
+    const unhandled = captureUnhandledRejections();
+    rejectConnect(connectError);
+    await expect(startPromise).rejects.toBe(connectError);
+    expect(mockRoom.disconnect).toHaveBeenCalledTimes(1);
+
+    rejectMicrophone(new Error("late microphone failure"));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(unhandled.reasons).toEqual([]);
+    unhandled.stop();
+  });
+
+  it("cancels while the required initialization message remains pending", async () => {
+    const mockRoom = new Room() as any;
+    const initialization = createDeferred<void>();
+    const cleanup = vi.fn();
+    setWebRTCAudioAdapterFactory(() => ({
+      attachRemoteTrack: vi.fn(() => Promise.resolve()),
+      setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
+      setupOutputAnalysis: vi.fn(() =>
+        Promise.resolve({ volumeProvider: NO_VOLUME })
+      ),
+      setVolume: vi.fn(),
+      setOutputDevice: vi.fn(() => Promise.resolve()),
+      cleanup,
+    }));
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce({
+      track: { mediaStreamTrack: { id: "startup-track", kind: "audio" } },
+    });
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (
+      mockRoom.localParticipant.publishData as ReturnType<typeof vi.fn>
+    ).mockReturnValueOnce(initialization.promise);
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    try {
+      const controller = new AbortController();
+      const startPromise = WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        signal: controller.signal,
+      });
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.publishData).toHaveBeenCalledTimes(1)
+      );
+
+      const unhandled = captureUnhandledRejections();
+      controller.abort();
+      await expect(startPromise).rejects.toMatchObject({ name: "AbortError" });
+      expect(mockRoom.disconnect).toHaveBeenCalledTimes(1);
+      expect(cleanup).toHaveBeenCalledTimes(1);
+
+      initialization.reject(new Error("late initialization failure"));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(unhandled.reasons).toEqual([]);
+      unhandled.stop();
+    } finally {
+      setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+    }
+  });
+
+  it("removes the Connected waiter when cancellation interrupts it", async () => {
+    const mockRoom = new Room() as any;
+    const connectedHandlers: Array<() => void> = [];
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") connectedHandlers.push(callback);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const controller = new AbortController();
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(connectedHandlers).toHaveLength(2));
+
+    controller.abort();
+    await expect(startPromise).rejects.toMatchObject({ name: "AbortError" });
+
+    expect(mockRoom.off).toHaveBeenCalledWith(
+      "connected",
+      connectedHandlers[1]
+    );
+  });
+
+  it("stops a microphone track acquired after startup cancellation", async () => {
+    const mockRoom = new Room() as any;
+    const { promise: connectPromise, resolve: resolveConnect } =
+      createDeferred<void>();
+    const { promise: trackPromise, resolve: resolveTrack } =
+      createDeferred<any>();
+    let signalConnected: (() => void) | undefined;
+    (mockRoom.connect as ReturnType<typeof vi.fn>).mockReturnValue(
+      connectPromise
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          signalConnected = callback;
+        }
+      }
+    );
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      trackPromise
+    );
+    const lateTrack = {
+      mediaStreamTrack: { id: "late-track", kind: "audio" },
+      stop: vi.fn(),
+    };
+
+    const controller = new AbortController();
+    const startPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      inputDeviceId: "selected-mic-id",
+      signal: controller.signal,
+    });
+    signalConnected?.();
+    await Promise.resolve();
+    expect(createLocalAudioTrack).toHaveBeenCalled();
+
+    controller.abort();
+    await expect(startPromise).rejects.toMatchObject({ name: "AbortError" });
+
+    resolveTrack(lateTrack);
+    resolveConnect();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(lateTrack.stop).toHaveBeenCalledTimes(1);
+    expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
+  });
+
   it("publishes a track from the configured inputDeviceId instead of the default mic", async () => {
     const mockRoom = new Room() as any;
     (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
@@ -798,6 +1185,152 @@ describe("WebRTCConnection", () => {
     ).rejects.toThrow("publish failed");
 
     expect(newMockTrack.stop).toHaveBeenCalled();
+  });
+
+  it("preserves the publication error if stopping the unpublished track throws", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const publicationError = new Error("publish failed");
+    const track = {
+      mediaStreamTrack: { id: "selected-device-track", kind: "audio" },
+      stop: vi.fn(() => {
+        throw new Error("stop failed");
+      }),
+    };
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValue(
+      track
+    );
+    (
+      mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(publicationError);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(
+      WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        inputDeviceId: "selected-mic-id",
+      })
+    ).rejects.toBe(publicationError);
+
+    expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      "Error stopping unpublished local track:",
+      expect.any(Error)
+    );
+    warn.mockRestore();
+  });
+
+  it("continues stopping local tracks when one track throws", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const firstStop = vi.fn(() => {
+      throw new Error("first stop failed");
+    });
+    const secondStop = vi.fn();
+    const previousPublications =
+      mockRoom.localParticipant.audioTrackPublications;
+    mockRoom.localParticipant.audioTrackPublications = new Map([
+      ["first", { track: { stop: firstStop } }],
+      ["second", { track: { stop: secondStop } }],
+    ]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+
+    connection.close();
+
+    expect(firstStop).toHaveBeenCalledTimes(1);
+    expect(secondStop).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      "Error stopping local track:",
+      expect.any(Error)
+    );
+    mockRoom.localParticipant.audioTrackPublications = previousPublications;
+    warn.mockRestore();
+  });
+
+  it("observes a rejecting Room disconnect during close", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+    (mockRoom.disconnect as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("disconnect failed")
+    );
+    const unhandled = captureUnhandledRejections();
+
+    await expect(connection.close()).resolves.toBeUndefined();
+
+    expect(unhandled.reasons).toEqual([]);
+    unhandled.stop();
+  });
+
+  it("keeps close pending until Room disconnect settles and reuses the teardown promise", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") queueMicrotask(callback);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+    });
+    const disconnect = createDeferred<void>();
+    (mockRoom.disconnect as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      disconnect.promise
+    );
+
+    let closed = false;
+    const firstClose = connection.close().then(() => {
+      closed = true;
+    });
+    const secondClose = connection.close();
+    await Promise.resolve();
+
+    expect(closed).toBe(false);
+    expect(mockRoom.disconnect).toHaveBeenCalledTimes(1);
+
+    disconnect.resolve();
+    await Promise.all([firstClose, secondClose]);
+    expect(closed).toBe(true);
   });
 
   it("publishes the new device muted when the session is muted", async () => {
@@ -1131,6 +1664,57 @@ describe("WebRTCConnection", () => {
       connection.close();
     } finally {
       // Restore the default web adapter for any later test in this file.
+      setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+    }
+  });
+
+  it("cleans up a remote track that finishes attaching after close", async () => {
+    const mockRoom = new Room() as any;
+    const handlers = new Map<string, (...args: any[]) => unknown>();
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: (...args: any[]) => unknown) => {
+        handlers.set(event, callback);
+        if (event === "connected") queueMicrotask(callback as () => void);
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") queueMicrotask(callback);
+      }
+    );
+    const attached = createDeferred<void>();
+    const cleanup = vi.fn();
+    const setupOutputAnalysis = vi.fn(() =>
+      Promise.resolve({ volumeProvider: NO_VOLUME })
+    );
+    setWebRTCAudioAdapterFactory(() => ({
+      attachRemoteTrack: vi.fn(() => attached.promise),
+      setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
+      setupOutputAnalysis,
+      setVolume: vi.fn(),
+      setOutputDevice: vi.fn(() => Promise.resolve()),
+      cleanup,
+    }));
+
+    try {
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      const trackSubscribed = handlers.get("trackSubscribed");
+      const subscription = trackSubscribed?.(
+        { kind: "audio", mediaStreamTrack: { id: "late-track" } },
+        {},
+        { identity: "agent-abc" }
+      ) as Promise<void>;
+
+      await connection.close();
+      attached.resolve();
+      await subscription;
+
+      expect(cleanup).toHaveBeenCalledTimes(2);
+      expect(setupOutputAnalysis).not.toHaveBeenCalled();
+    } finally {
       setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
     }
   });

@@ -3,16 +3,28 @@ import React, { useContext } from "react";
 import { renderHook, act } from "@testing-library/react";
 import {
   Conversation,
+  type Options,
   type Callbacks,
   type ConversationLifecycleOptions,
 } from "@elevenlabs/client";
-import { CALLBACK_KEYS } from "@elevenlabs/client/internal";
+import {
+  CALLBACK_KEYS,
+  createSessionAbortError,
+  registerSessionCleanup,
+} from "@elevenlabs/client/internal";
 import { ConversationProvider } from "./ConversationProvider.js";
 import {
   ConversationContext,
   useRawConversation,
   type ConversationContextValue,
 } from "./ConversationContext.js";
+
+declare const AbortController: {
+  new (): {
+    readonly signal: NonNullable<Options["signal"]>;
+    abort(reason?: unknown): void;
+  };
+};
 
 /** Test helper — accesses the full context value (conversation + lifecycle methods). */
 function useTestContext(): ConversationContextValue {
@@ -121,32 +133,260 @@ describe("ConversationProvider", () => {
     expect(mockConversation.endSession).toHaveBeenCalled();
   });
 
-  it("cancels session if endSession is called during connection", async () => {
-    const mockConversation = createMockConversation();
-    const { promise, resolve: resolveStartSession } =
-      Promise.withResolvers<typeof mockConversation>();
-    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+  it("preserves callbacks during an already-connected session's teardown", async () => {
+    const end = Promise.withResolvers<void>();
+    const conversation = mockStartSessionWithLifecycle();
+    vi.mocked(conversation.endSession).mockReturnValue(end.promise);
+    const onMessage = vi.fn();
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onMessage }),
+    });
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    let teardown!: Promise<void>;
+    act(() => {
+      teardown = result.current.endSession();
+    });
+    const [[options]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      options.onMessage?.({
+        source: "ai",
+        role: "agent",
+        message: "final message",
+      });
+    });
+    expect(onMessage).toHaveBeenCalledExactlyOnceWith({
+      source: "ai",
+      role: "agent",
+      message: "final message",
+    });
+
+    await act(async () => {
+      end.resolve();
+      await teardown;
+    });
+  });
+
+  it("cancels session immediately if endSession is called during connection", async () => {
+    const onError = vi.fn();
+    const cleanup = vi.fn();
+    let startSignal: Options["signal"];
+    vi.mocked(Conversation.startSession).mockImplementation(options => {
+      startSignal = options.signal;
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener(
+          "abort",
+          () => {
+            cleanup();
+            reject(createSessionAbortError());
+          },
+          { once: true }
+        );
+      });
+    });
 
     const { result } = renderHook(() => useTestContext(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper({ onError }),
     });
 
     act(() => {
       result.current.startSession();
     });
 
+    let teardown: Promise<void> | undefined;
     act(() => {
-      result.current.endSession();
+      teardown = result.current.endSession();
     });
 
     await act(async () => {
-      resolveStartSession(mockConversation);
+      await teardown;
     });
 
-    // Conversation should have been ended immediately
-    expect(mockConversation.endSession).toHaveBeenCalled();
-    // And not set as the active conversation
+    expect(startSignal?.aborted).toBe(true);
+    expect(cleanup).toHaveBeenCalledTimes(1);
     expect(result.current.conversation).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("forwards caller cancellation without reporting an error", async () => {
+    const onError = vi.fn();
+    const abortListeners = new Set<() => void>();
+    const externalSignalState = {
+      aborted: false,
+      reason: undefined,
+      addEventListener: vi.fn((_event: string, listener: () => void) => {
+        abortListeners.add(listener);
+      }),
+      removeEventListener: vi.fn((_event: string, listener: () => void) => {
+        abortListeners.delete(listener);
+      }),
+    };
+    const externalSignal = externalSignalState as unknown as NonNullable<
+      Options["signal"]
+    >;
+    let sdkSignal: Options["signal"];
+    vi.mocked(Conversation.startSession).mockImplementation(options => {
+      sdkSignal = options.signal;
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener(
+          "abort",
+          () => reject(createSessionAbortError()),
+          { once: true }
+        );
+      });
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+    act(() => {
+      result.current.startSession({ signal: externalSignal });
+    });
+
+    expect(sdkSignal).not.toBe(externalSignal);
+    expect(sdkSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      externalSignalState.aborted = true;
+      for (const listener of abortListeners) listener();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(sdkSignal?.aborted).toBe(true);
+    expect(result.current.conversation).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("does not take the start lock for an already-aborted signal", async () => {
+    const externalController = new AbortController();
+    externalController.abort();
+    const conversation = mockStartSessionWithLifecycle();
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+    act(() => {
+      result.current.startSession({ signal: externalController.signal });
+      result.current.startSession();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    const [[options]] = vi.mocked(Conversation.startSession).mock.calls;
+    expect(options.signal?.aborted).toBe(false);
+    expect(conversation.endSession).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(conversation);
+  });
+
+  it("treats onConnect as the end of startup-signal cancellation", async () => {
+    const externalController = new AbortController();
+    const conversation = createMockConversation();
+    let sdkSignal: Options["signal"];
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      sdkSignal = options.signal;
+      driveConnectedSessionLifecycle(
+        options as MockStartSessionOptions,
+        conversation
+      );
+      return conversation;
+    });
+
+    const onConnect = vi.fn(() => externalController.abort());
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ signal: externalController.signal, onConnect }),
+    });
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(onConnect).toHaveBeenCalledTimes(1);
+    expect(sdkSignal?.aborted).toBe(false);
+    expect(conversation.endSession).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(conversation);
+  });
+
+  it("uses the per-session signal when defaults also provide a signal", async () => {
+    const defaultController = new AbortController();
+    const sessionController = new AbortController();
+    let sdkSignal: Options["signal"];
+    vi.mocked(Conversation.startSession).mockImplementation(options => {
+      sdkSignal = options.signal;
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener(
+          "abort",
+          () => reject(createSessionAbortError()),
+          { once: true }
+        );
+      });
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ signal: defaultController.signal }),
+    });
+    act(() => {
+      result.current.startSession({ signal: sessionController.signal });
+    });
+
+    defaultController.abort();
+    expect(sdkSignal?.aborted).toBe(false);
+    await act(async () => {
+      sessionController.abort();
+    });
+    expect(sdkSignal?.aborted).toBe(true);
+  });
+
+  it("fences startup callbacks when onConversationCreated aborts", async () => {
+    const externalController = new AbortController();
+    const onConnect = vi.fn();
+    const onStatusChange = vi.fn();
+    const onCanSendFeedbackChange = vi.fn();
+    const onMessage = vi.fn();
+    const onConversationCreated = vi.fn(() => externalController.abort());
+    const start = Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(start.promise);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({
+        signal: externalController.signal,
+        onConnect,
+        onStatusChange,
+        onCanSendFeedbackChange,
+        onMessage,
+        onConversationCreated,
+      }),
+    });
+    act(() => result.current.startSession());
+    const [[options]] = vi.mocked(Conversation.startSession).mock.calls;
+    const earlyConversation = createMockConversation("early-id");
+    act(() => {
+      options.onConversationCreated?.(earlyConversation);
+      options.onStatusChange?.({ status: "connected" });
+      options.onCanSendFeedbackChange?.({ canSendFeedback: true });
+      options.onMessage?.({ source: "ai", role: "agent", message: "late" });
+      options.onConnect?.({ conversationId: "early-id" });
+      options.onCanSendFeedbackChange?.({ canSendFeedback: false });
+    });
+
+    expect(onConversationCreated).toHaveBeenCalledWith(earlyConversation);
+    expect(onConnect).not.toHaveBeenCalled();
+    expect(onStatusChange).not.toHaveBeenCalledWith({ status: "connected" });
+    expect(onCanSendFeedbackChange).toHaveBeenCalledExactlyOnceWith({
+      canSendFeedback: false,
+    });
+    expect(onMessage).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBeNull();
+
+    await act(async () => {
+      start.resolve(earlyConversation);
+      await start.promise;
+    });
+    expect(earlyConversation.endSession).toHaveBeenCalledTimes(1);
   });
 
   it("ignores startSession if a session is already active", async () => {
@@ -197,12 +437,18 @@ describe("ConversationProvider", () => {
   });
 
   it("allows new connection after cancelled session", async () => {
-    const mockConversation1 = createMockConversation("first-id");
     const mockConversation2 = createMockConversation("second-id");
-
-    const { promise: firstPromise, resolve: resolveFirst } =
-      Promise.withResolvers<typeof mockConversation1>();
-    vi.mocked(Conversation.startSession).mockReturnValue(firstPromise);
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener(
+          "abort",
+          () => reject(new Error("cancelled")),
+          {
+            once: true,
+          }
+        );
+      });
+    });
 
     const { result } = renderHook(() => useTestContext(), {
       wrapper: createWrapper(),
@@ -212,15 +458,9 @@ describe("ConversationProvider", () => {
       result.current.startSession();
     });
 
-    act(() => {
-      result.current.endSession();
-    });
-
     await act(async () => {
-      resolveFirst(mockConversation1);
+      await result.current.endSession();
     });
-
-    expect(mockConversation1.endSession).toHaveBeenCalled();
 
     // Now start a new session
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation2);
@@ -231,6 +471,53 @@ describe("ConversationProvider", () => {
 
     expect(result.current.conversation).toBe(mockConversation2);
     expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not allow replacement until cancelled-start cleanup completes", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return new Promise((_resolve, reject) => {
+        options.signal?.addEventListener(
+          "abort",
+          () => reject(createSessionAbortError()),
+          { once: true }
+        );
+      });
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+    act(() => result.current.startSession());
+
+    let teardown!: Promise<void>;
+    act(() => {
+      teardown = result.current.endSession();
+      result.current.startSession();
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    let teardownSettled = false;
+    void teardown.then(() => {
+      teardownSettled = true;
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(teardownSettled).toBe(false);
+
+    const replacement = createMockConversation("replacement-id");
+    vi.mocked(Conversation.startSession).mockResolvedValue(replacement);
+    cleanup.resolve();
+    await act(async () => {
+      await teardown;
+      result.current.startSession();
+    });
+
+    expect(teardownSettled).toBe(true);
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(result.current.conversation).toBe(replacement);
   });
 
   it("ends session on unmount", async () => {
@@ -248,6 +535,31 @@ describe("ConversationProvider", () => {
     unmount();
 
     expect(mockConversation.endSession).toHaveBeenCalled();
+  });
+
+  it("synchronously cancels a pending start on unmount", async () => {
+    const onError = vi.fn();
+    let startSignal: Options["signal"];
+    const start = Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockImplementation(options => {
+      startSignal = options.signal;
+      options.signal?.addEventListener(
+        "abort",
+        () => start.reject(createSessionAbortError()),
+        { once: true }
+      );
+      return start.promise;
+    });
+
+    const { result, unmount } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+    act(() => result.current.startSession());
+
+    unmount();
+    expect(startSignal?.aborted).toBe(true);
+    await start.promise.catch(() => {});
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it("calls both prop and startSession callbacks when both are provided", async () => {
@@ -653,7 +965,185 @@ describe("ConversationProvider", () => {
     expect(result.current.conversation).toBe(mockConversation);
   });
 
-  it("does not call onError when endSession is called before startSession rejects", async () => {
+  it("preserves a synchronous onError retry until failed-start cleanup completes", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    const failure = new Error("publication timed out");
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(failure);
+    });
+    const replacement = createMockConversation("retry-id");
+    let retry = () => {};
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError: () => retry() }),
+    });
+    retry = () => result.current.startSession();
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    vi.mocked(Conversation.startSession).mockResolvedValue(replacement);
+    await act(async () => {
+      cleanup.resolve();
+      await cleanup.promise;
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(result.current.conversation).toBe(replacement);
+  });
+
+  it("uses the latest retry options while failed-start cleanup is pending", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(new Error("publication timed out"));
+    });
+    let retry = () => {};
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError: () => retry() }),
+    });
+    retry = () => result.current.startSession({ agentId: "stale" });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    act(() => result.current.startSession({ agentId: "fresh" }));
+
+    vi.mocked(Conversation.startSession).mockResolvedValue(
+      createMockConversation("retry-id")
+    );
+    await act(async () => {
+      cleanup.resolve();
+      await cleanup.promise;
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(Conversation.startSession).mock.calls[1][0].agentId).toBe(
+      "fresh"
+    );
+  });
+
+  it("drops a queued failed-start retry when endSession is called", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(new Error("publication timed out"));
+    });
+    let retry = () => {};
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError: () => retry() }),
+    });
+    retry = () => result.current.startSession();
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    let teardown!: Promise<void>;
+    act(() => {
+      teardown = result.current.endSession();
+    });
+    await act(async () => {
+      cleanup.resolve();
+      await teardown;
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops a queued failed-start retry on unmount", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(new Error("publication timed out"));
+    });
+    let retry = () => {};
+    const { result, unmount } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError: () => retry() }),
+    });
+    retry = () => result.current.startSession();
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    unmount();
+    await act(async () => {
+      cleanup.resolve();
+      await cleanup.promise;
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops a queued retry when its external signal aborts during cleanup", async () => {
+    const externalController = new AbortController();
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(new Error("publication timed out"));
+    });
+    let retry = () => {};
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({
+        signal: externalController.signal,
+        onError: () => retry(),
+      }),
+    });
+    retry = () => result.current.startSession();
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+
+    externalController.abort();
+    vi.mocked(Conversation.startSession).mockResolvedValue(
+      createMockConversation("unwanted-retry")
+    );
+    await act(async () => {
+      cleanup.resolve();
+      await cleanup.promise;
+    });
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("handles a synchronous error while starting a queued retry", async () => {
+    const cleanup = Promise.withResolvers<void>();
+    vi.mocked(Conversation.startSession).mockImplementationOnce(options => {
+      registerSessionCleanup(options.signal, cleanup.promise);
+      return Promise.reject(new Error("publication timed out"));
+    });
+    let retry = () => {};
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError: () => retry() }),
+    });
+    retry = () =>
+      result.current.startSession({
+        clientTools: { duplicate: async () => "ok" },
+      });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+    result.current.clientToolsRegistry.set("duplicate", async () => "ok");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await act(async () => {
+        cleanup.resolve();
+        await cleanup.promise;
+      });
+      expect(warn).toHaveBeenCalledWith(
+        "Error restarting session:",
+        expect.objectContaining({
+          message: expect.stringContaining("duplicate"),
+        })
+      );
+      expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does not call onError when cancellation wins the pending-start race", async () => {
     const onError = vi.fn();
     const { promise, reject: rejectStartSession } =
       Promise.withResolvers<Conversation>();
@@ -673,11 +1163,88 @@ describe("ConversationProvider", () => {
     });
 
     await act(async () => {
-      rejectStartSession(new Error("connection failed"));
+      rejectStartSession(createSessionAbortError());
     });
 
     // onError should NOT fire — the user intentionally disconnected
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("reports the original active failure once when it settles before cancellation", async () => {
+    const onError = vi.fn();
+    const { promise, reject } = Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+    const publicationError = new Error(
+      "publication of local track timed out, no response from server"
+    );
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+    act(() => result.current.startSession());
+
+    act(() => {
+      reject(publicationError);
+      void result.current.endSession();
+    });
+    await act(async () => {
+      await promise.catch(() => {});
+    });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(
+      publicationError.message,
+      publicationError
+    );
+  });
+
+  it("reports a real failure that settles before an external abort", async () => {
+    const externalController = new AbortController();
+    const onError = vi.fn();
+    const { promise, reject } = Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+    const publicationError = new Error("publication timed out");
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ signal: externalController.signal, onError }),
+    });
+    act(() => result.current.startSession());
+    act(() => {
+      reject(publicationError);
+      externalController.abort();
+    });
+    await act(async () => {
+      await promise.catch(() => {});
+    });
+
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      publicationError.message,
+      publicationError
+    );
+  });
+
+  it("reports an unbranded AbortError that settles before teardown", async () => {
+    const onError = vi.fn();
+    const { promise, reject } = Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+    const deviceError = new Error("Could not start audio source");
+    deviceError.name = "AbortError";
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onError }),
+    });
+    act(() => result.current.startSession());
+
+    act(() => {
+      reject(deviceError);
+      void result.current.endSession();
+    });
+    await act(async () => {
+      await promise.catch(() => {});
+    });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(deviceError.message, deviceError);
   });
 
   it("passes stable callbacks that always call the latest prop value", async () => {
