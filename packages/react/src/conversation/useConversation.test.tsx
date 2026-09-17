@@ -3,11 +3,22 @@ import { it, expect, describe, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import {
   Conversation,
+  type Options,
   type Callbacks,
   type ConversationLifecycleOptions,
 } from "@elevenlabs/client";
-import { useConversation } from "./useConversation.js";
+import {
+  useConversation,
+  type UseConversationOptions,
+} from "./useConversation.js";
 import { ConversationProvider } from "./ConversationProvider.js";
+
+declare const AbortController: {
+  new (): {
+    readonly signal: NonNullable<Options["signal"]>;
+    abort(reason?: unknown): void;
+  };
+};
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
@@ -324,6 +335,32 @@ describe("useConversation", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
     expect(opts.agentId).toBe("session-agent-id");
+  });
+
+  it("does not reuse a hook-level signal for later starts", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    vi.mocked(Conversation.startSession).mockResolvedValue(
+      createMockConversation()
+    );
+
+    // The type rejects a hook-level signal; untyped callers can still pass one.
+    const hookOptions = {
+      agentId: "hook-agent-id",
+      signal: controller.signal,
+    } as UseConversationOptions;
+    const { result } = renderHook(() => useConversation(hookOptions), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(1);
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    expect(opts.agentId).toBe("hook-agent-id");
+    expect(opts.signal).not.toBe(controller.signal);
   });
 
   it("does not forward callback hook options as session config", async () => {
