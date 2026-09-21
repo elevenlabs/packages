@@ -244,7 +244,6 @@ describe("BaseConversation", () => {
         agent_response_event: {
           agent_response: "Hello there",
           event_id: 4,
-          response_id: "response-4",
         },
       });
 
@@ -254,6 +253,7 @@ describe("BaseConversation", () => {
           attachments: undefined,
         })
       );
+      expect(onMessage.mock.calls[0]?.[0]).not.toHaveProperty("response_id");
     });
   });
 

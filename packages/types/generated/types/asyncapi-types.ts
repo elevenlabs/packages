@@ -274,7 +274,7 @@ export interface AgentResponse {
 export interface AgentResponseEvent {
   agent_response: string;
   event_id: number;
-  response_id: string;
+  response_id?: string;
   attachments?: AgentResponseAttachment[];
 }
 
@@ -293,7 +293,7 @@ export interface AgentResponseCorrectionEvent {
   original_agent_response: string;
   corrected_agent_response: string;
   event_id: number;
-  response_id: string;
+  response_id?: string;
 }
 
 export interface AgentChatResponsePart {
@@ -305,7 +305,7 @@ export interface TextResponsePart {
   text: string;
   type: TextResponsePartType;
   event_id: number;
-  response_id: string;
+  response_id?: string;
 }
 
 export type TextResponsePartType = "start" | "delta" | "stop";

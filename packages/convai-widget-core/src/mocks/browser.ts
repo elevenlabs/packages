@@ -1164,7 +1164,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "start",
                 event_id: 2,
-                response_id: "availability-tool",
               },
             })
           );
@@ -1185,7 +1184,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "stop",
                 event_id: 2,
-                response_id: "availability-tool",
               },
             })
           );
@@ -1208,7 +1206,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "start",
                 event_id: 2,
-                response_id: "availability-reply",
               },
             })
           );
@@ -1219,7 +1216,6 @@ export const Worker = setupWorker(
                 text: "Tomorrow at 10am is available.",
                 type: "delta",
                 event_id: 2,
-                response_id: "availability-reply",
               },
             })
           );
@@ -1230,7 +1226,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "stop",
                 event_id: 2,
-                response_id: "availability-reply",
               },
             })
           );
@@ -1241,7 +1236,6 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Tomorrow at 10am is available.",
                 event_id: 2,
-                response_id: "availability-reply",
               },
             })
           );
@@ -1457,7 +1451,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "start",
                 event_id: 2,
-                response_id: "late-final-preamble",
               },
             })
           );
@@ -1469,7 +1462,6 @@ export const Worker = setupWorker(
                 text: "Recording that for you now…",
                 type: "delta",
                 event_id: 2,
-                response_id: "late-final-preamble",
               },
             })
           );
@@ -1480,7 +1472,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "stop",
                 event_id: 2,
-                response_id: "late-final-preamble",
               },
             })
           );
@@ -1492,7 +1483,6 @@ export const Worker = setupWorker(
                 text: "",
                 type: "start",
                 event_id: 3,
-                response_id: "late-final-tool",
               },
             })
           );
@@ -1513,7 +1503,6 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Recording that for you now…",
                 event_id: 2,
-                response_id: "late-final-preamble",
               },
             })
           );

@@ -185,6 +185,7 @@ describe("elevenlabs-convai", () => {
   });
 
   it("does not duplicate a message finalized after the next tool segment starts", async () => {
+    // This mock omits response_id to exercise the legacy fallback.
     setupWebComponent({
       "agent-id": "tool_call_late_final",
       variant: "compact",
@@ -209,6 +210,7 @@ describe("elevenlabs-convai", () => {
   });
 
   it("does not duplicate the reply that follows an empty tool segment", async () => {
+    // This mock omits response_id to exercise the legacy fallback.
     setupWebComponent({
       "agent-id": "empty_tool_segment_before_reply",
       variant: "compact",

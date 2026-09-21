@@ -33,6 +33,23 @@ const FIRST_MESSAGE_EVENT_ID = 1;
 
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
 
+// Compatibility path for orchestrators released before response_id support.
+type LegacyAgentStream = {
+  index: number;
+  eventId: number;
+};
+
+type LegacyAgentResponseState = {
+  pending: LegacyAgentStream[];
+  active: LegacyAgentStream | { eventId: number } | null;
+  unmatchedResponse: {
+    index: number;
+    eventId: number;
+    message: string;
+  } | null;
+  ignoredResponse: { eventId: number; message: string } | null;
+};
+
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
 interface ConversationProviderProps {
@@ -202,6 +219,163 @@ function appendAgentDelta(
   return updatedTranscript;
 }
 
+function createLegacyAgentResponseState(): LegacyAgentResponseState {
+  return {
+    pending: [],
+    active: null,
+    unmatchedResponse: null,
+    ignoredResponse: null,
+  };
+}
+
+function findPendingLegacyStream(
+  transcript: TranscriptEntry[],
+  state: LegacyAgentResponseState,
+  eventId: number,
+  message: string
+): LegacyAgentStream | undefined {
+  const strippedMessage = stripSpokenMarkdown(message);
+  const candidates = state.pending.filter(stream => {
+    const entry = transcript[stream.index];
+    return (
+      stream.eventId === eventId &&
+      entry?.type === "message" &&
+      entry.role === "agent" &&
+      entry.eventId === eventId
+    );
+  });
+  const textAt = (stream: LegacyAgentStream) => {
+    const entry = transcript[stream.index];
+    return entry?.type === "message" ? entry.message : "";
+  };
+  const streamed = candidates.filter(stream => textAt(stream).trim()).reverse();
+  const active =
+    state.active && "index" in state.active ? state.active : undefined;
+
+  return (
+    candidates.find(stream => isSameAgentText(textAt(stream), message)) ??
+    streamed.find(stream =>
+      strippedMessage.startsWith(stripSpokenMarkdown(textAt(stream)))
+    ) ??
+    (active && candidates.includes(active) && textAt(active)
+      ? active
+      : undefined) ??
+    candidates.find(stream => !textAt(stream).trim()) ??
+    candidates[0]
+  );
+}
+
+function finalizeLegacyAgentResponse(
+  transcript: TranscriptEntry[],
+  state: LegacyAgentResponseState,
+  message: string,
+  eventId: number,
+  isText: boolean,
+  conversationIndex: number
+): TranscriptEntry[] {
+  const ignored = state.ignoredResponse;
+  if (ignored && ignored.eventId === eventId && ignored.message === message) {
+    state.ignoredResponse = null;
+    return transcript;
+  }
+
+  const stream = findPendingLegacyStream(transcript, state, eventId, message);
+  if (stream) {
+    const existingEntry = transcript[stream.index];
+    const streamedText =
+      existingEntry?.type === "message" ? existingEntry.message : "";
+    const updatedTranscript = [...transcript];
+    updatedTranscript[stream.index] = {
+      type: "message",
+      role: "agent",
+      message: isSameAgentText(streamedText, message) ? streamedText : message,
+      isText,
+      conversationIndex,
+      eventId,
+    };
+    state.pending = state.pending.filter(candidate => candidate !== stream);
+    if (state.active === stream) state.active = null;
+    return updatedTranscript;
+  }
+
+  const index = transcript.length;
+  state.unmatchedResponse = { index, eventId, message };
+  return [
+    ...transcript,
+    {
+      type: "message",
+      role: "agent",
+      message,
+      isText,
+      conversationIndex,
+      eventId,
+    },
+  ];
+}
+
+function startLegacyAgentStream(
+  transcript: TranscriptEntry[],
+  state: LegacyAgentResponseState,
+  eventId: number,
+  isText: boolean,
+  conversationIndex: number
+): TranscriptEntry[] {
+  const unmatched = state.unmatchedResponse;
+  const unmatchedEntry =
+    unmatched == null ? undefined : transcript[unmatched.index];
+  if (
+    unmatched &&
+    unmatched.eventId === eventId &&
+    unmatched.index === transcript.length - 1 &&
+    unmatchedEntry?.type === "message" &&
+    unmatchedEntry.role === "agent" &&
+    unmatchedEntry.message.trim()
+  ) {
+    state.unmatchedResponse = null;
+    state.active = { eventId };
+    state.ignoredResponse = { eventId, message: unmatched.message };
+    return transcript;
+  }
+
+  const stream = { index: transcript.length, eventId };
+  state.ignoredResponse = null;
+  state.pending.push(stream);
+  state.active = stream;
+  return [
+    ...transcript,
+    {
+      type: "message",
+      role: "agent",
+      message: "",
+      isText,
+      conversationIndex,
+      eventId,
+    },
+  ];
+}
+
+function appendLegacyAgentDelta(
+  transcript: TranscriptEntry[],
+  state: LegacyAgentResponseState,
+  eventId: number,
+  text: string
+): TranscriptEntry[] {
+  const active = state.active;
+  if (!active || !("index" in active) || active.eventId !== eventId || !text) {
+    return transcript;
+  }
+
+  const entry = transcript[active.index];
+  if (entry?.type !== "message" || entry.role !== "agent") return transcript;
+
+  const updatedTranscript = [...transcript];
+  updatedTranscript[active.index] = {
+    ...entry,
+    message: entry.message + text,
+  };
+  return updatedTranscript;
+}
+
 function firstMessageRichContentEntries(
   richContent: FirstMessageRichContent | null
 ): TranscriptEntry[] {
@@ -262,6 +436,7 @@ function useConversationSetup() {
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const receivedFirstMessageRef = useRef(false);
   const agentResponseStateRef = useRef<AgentResponseState>(new Map());
+  const legacyAgentResponseStateRef = useRef(createLegacyAgentResponseState());
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shadowHost = useShadowHost();
 
@@ -331,6 +506,7 @@ function useConversationSetup() {
 
     const resetAgentResponseState = () => {
       agentResponseStateRef.current = new Map();
+      legacyAgentResponseStateRef.current = createLegacyAgentResponseState();
     };
 
     return {
@@ -422,8 +598,7 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: props => {
-              const { role, message, event_id } = props;
+            onMessage: ({ role, message, event_id, response_id }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -441,15 +616,29 @@ function useConversationSetup() {
 
               if (role === "agent") {
                 const currentTranscript = transcript.peek();
+                const isText = conversationTextOnly.peek() === true;
+                const currentConversationIndex = conversationIndex.peek();
+                if (response_id == null) {
+                  transcript.value = finalizeLegacyAgentResponse(
+                    currentTranscript,
+                    legacyAgentResponseStateRef.current,
+                    message,
+                    event_id,
+                    isText,
+                    currentConversationIndex
+                  );
+                  return;
+                }
+
                 const responseState = agentResponseStateRef.current;
                 transcript.value = finalizeAgentResponse(
                   currentTranscript,
                   responseState,
-                  props.response_id,
+                  response_id,
                   message,
                   event_id,
-                  conversationTextOnly.peek() === true,
-                  conversationIndex.peek()
+                  isText,
+                  currentConversationIndex
                 );
                 return;
               }
@@ -484,16 +673,50 @@ function useConversationSetup() {
               }
               setAgentTyping(false);
 
-              const responseState = agentResponseStateRef.current;
               const currentTranscript = transcript.peek();
+              const isText = conversationTextOnly.peek() === true;
+              const currentConversationIndex = conversationIndex.peek();
+              if (response_id == null) {
+                const legacyState = legacyAgentResponseStateRef.current;
+                if (type === "start") {
+                  const updatedTranscript = startLegacyAgentStream(
+                    currentTranscript,
+                    legacyState,
+                    event_id,
+                    isText,
+                    currentConversationIndex
+                  );
+                  if (updatedTranscript !== currentTranscript) {
+                    transcript.value = updatedTranscript;
+                  }
+                } else if (type === "delta") {
+                  const updatedTranscript = appendLegacyAgentDelta(
+                    currentTranscript,
+                    legacyState,
+                    event_id,
+                    text
+                  );
+                  if (updatedTranscript !== currentTranscript) {
+                    transcript.value = updatedTranscript;
+                  }
+                } else if (
+                  type === "stop" &&
+                  legacyState.active?.eventId === event_id
+                ) {
+                  legacyState.active = null;
+                }
+                return;
+              }
+
+              const responseState = agentResponseStateRef.current;
               if (type === "start") {
                 const updatedTranscript = startAgentStream(
                   currentTranscript,
                   responseState,
                   response_id,
                   event_id,
-                  conversationTextOnly.peek() === true,
-                  conversationIndex.peek()
+                  isText,
+                  currentConversationIndex
                 );
                 if (updatedTranscript !== currentTranscript) {
                   transcript.value = updatedTranscript;
