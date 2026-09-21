@@ -1,5 +1,6 @@
 import {
   Conversation,
+  MessageAttachment,
   Mode,
   Role,
   SendUserMessageOptions,
@@ -73,6 +74,7 @@ export type TranscriptEntry =
       eventId?: number;
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
+      attachments?: MessageAttachment[];
     }
   | {
       type: "agent_tool_request";
@@ -138,7 +140,8 @@ function finalizeAgentResponse(
   message: string,
   eventId: number,
   isText: boolean,
-  conversationIndex: number
+  conversationIndex: number,
+  attachments?: MessageAttachment[]
 ): TranscriptEntry[] {
   const tracked = state.get(responseId);
   if (tracked) {
@@ -151,6 +154,7 @@ function finalizeAgentResponse(
           ? existingEntry.message
           : message,
         eventId,
+        attachments,
       };
       tracked.isStreaming = false;
       return updatedTranscript;
@@ -169,6 +173,7 @@ function finalizeAgentResponse(
       conversationIndex,
       eventId,
       responseId,
+      attachments,
     },
   ];
 }
@@ -271,7 +276,8 @@ function finalizeLegacyAgentResponse(
   message: string,
   eventId: number,
   isText: boolean,
-  conversationIndex: number
+  conversationIndex: number,
+  attachments?: MessageAttachment[]
 ): TranscriptEntry[] {
   const ignored = state.ignoredResponse;
   if (ignored && ignored.eventId === eventId && ignored.message === message) {
@@ -292,6 +298,7 @@ function finalizeLegacyAgentResponse(
       isText,
       conversationIndex,
       eventId,
+      attachments,
     };
     state.pending = state.pending.filter(candidate => candidate !== stream);
     if (state.active === stream) state.active = null;
@@ -309,6 +316,7 @@ function finalizeLegacyAgentResponse(
       isText,
       conversationIndex,
       eventId,
+      attachments,
     },
   ];
 }
@@ -598,7 +606,13 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onMessage: ({ role, message, event_id, response_id }) => {
+            onMessage: ({
+              role,
+              message,
+              event_id,
+              response_id,
+              attachments,
+            }) => {
               if (
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
@@ -625,7 +639,8 @@ function useConversationSetup() {
                     message,
                     event_id,
                     isText,
-                    currentConversationIndex
+                    currentConversationIndex,
+                    attachments
                   );
                   return;
                 }
@@ -638,7 +653,8 @@ function useConversationSetup() {
                   message,
                   event_id,
                   isText,
-                  currentConversationIndex
+                  currentConversationIndex,
+                  attachments
                 );
                 return;
               }
@@ -653,6 +669,7 @@ function useConversationSetup() {
                   isText: conversationTextOnly.peek() === true,
                   conversationIndex: conversationIndex.peek(),
                   eventId: event_id,
+                  attachments,
                 },
               ];
             },

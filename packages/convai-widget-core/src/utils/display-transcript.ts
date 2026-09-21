@@ -1,4 +1,4 @@
-import type { Role } from "@elevenlabs/client";
+import type { MessageAttachment, Role } from "@elevenlabs/client";
 import type {
   TranscriptEntry,
   TranscriptFileInput,
@@ -24,6 +24,7 @@ export type DisplayTranscriptEntry =
       eventId?: number;
       toolStatus?: ToolCallStatusType;
       fileInput?: TranscriptFileInput | null;
+      attachments?: MessageAttachment[];
     }
   | {
       type: "disconnection";
@@ -137,11 +138,13 @@ export function buildDisplayTranscript(
       continue;
     }
 
-    // Skip empty agent messages unless they have a tool status to display
+    // Skip empty agent messages unless they carry attachments or a tool status
+    // to display.
     if (
       entry.type === "message" &&
       entry.role === "agent" &&
       !entry.message &&
+      !entry.attachments?.length &&
       !(
         config.showAgentStatus &&
         entry.eventId != null &&
@@ -155,8 +158,10 @@ export function buildDisplayTranscript(
       continue;
 
     // Fold an empty agent placeholder into the following same-turn message.
-    // Two non-empty entries sharing an eventId are always distinct messages
-    // (e.g. pre-tool and post-tool replies), so they stay separate bubbles.
+    // Two entries sharing an eventId are otherwise distinct messages (e.g.
+    // pre-tool and post-tool replies), so they stay separate bubbles. A
+    // streaming placeholder never carries files, so an entry with attachments
+    // is a real message even when it has no text.
     const prev = result[result.length - 1];
     if (
       entry.type === "message" &&
@@ -164,7 +169,8 @@ export function buildDisplayTranscript(
       prev?.type === "message" &&
       prev.eventId === entry.eventId &&
       prev.role === entry.role &&
-      !prev.message.trim()
+      !prev.message.trim() &&
+      !prev.attachments?.length
     ) {
       result[result.length - 1] = entry;
       continue;
