@@ -589,7 +589,7 @@ components:
           description: The committed transcript text the edit instruction was applied to. Use it to correlate the edit with its committed transcript, since edits may arrive out of commit order.
         edited_text:
           type: string
-          description: The edited transcript text. Equal to text when the instruction changed nothing.
+          description: The edited transcript text. If no edits were made it will be identical to the `text` field.
 
     # Base error structure - used as anchor for all error payloads
     ScribeErrorBase: &ScribeErrorBase
