@@ -139,7 +139,7 @@ export function buildDisplayTranscript(
     }
 
     // Skip empty agent messages unless they carry attachments or a tool status
-    // to display. Human-agent replies that are only files arrive with no text.
+    // to display.
     if (
       entry.type === "message" &&
       entry.role === "agent" &&
@@ -169,12 +169,11 @@ export function buildDisplayTranscript(
       prev.role === entry.role &&
       !prev.message.trim()
     ) {
-      // An attachment-only placeholder has no text but still carries files,
-      // so keep them when the text message folds over it.
-      result[result.length - 1] =
-        prev.attachments?.length && !entry.attachments?.length
-          ? { ...entry, attachments: prev.attachments }
-          : entry;
+      // The placeholder has no text but may still carry attachments.
+      result[result.length - 1] = {
+        ...entry,
+        attachments: entry.attachments ?? prev.attachments,
+      };
       continue;
     }
 

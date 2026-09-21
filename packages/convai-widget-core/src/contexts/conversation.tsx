@@ -74,7 +74,6 @@ export type TranscriptEntry =
       eventId?: number;
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
-      /** Files sent with an agent message, e.g. relayed from a human agent. */
       attachments?: MessageAttachment[];
     }
   | {
