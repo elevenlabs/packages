@@ -1062,6 +1062,9 @@ components:
           type: string
         event_id:
           type: integer
+        response_id:
+          type: string
+          description: Stable identifier for this agent response across resends
         attachments:
           type: array
           description: Files attached to the agent response, e.g. relayed from a human agent reply
@@ -1078,6 +1081,9 @@ components:
           type: string
         event_id:
           type: integer
+        response_id:
+          type: string
+          description: Identifier of the agent response being corrected
 
     AgentChatResponsePartType:
       type: string
@@ -1099,6 +1105,9 @@ components:
         event_id:
           type: integer
           description: Event ID of this chat response part
+        response_id:
+          type: string
+          description: Stable identifier shared by all parts of this agent response
 
     AgentReasoningResponsePartType:
       type: string
@@ -1164,7 +1173,7 @@ components:
           description: Which component to display, for example item_card
         props:
           type: object
-          description:  Component-specific properties; the shape of this object is defined by the component
+          description: Component-specific properties; the shape of this object is defined by the component
         event_id:
           type: integer
 
