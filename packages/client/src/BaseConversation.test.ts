@@ -208,6 +208,7 @@ describe("BaseConversation", () => {
         agent_response_event: {
           agent_response: "Here is the file you asked for.",
           event_id: 3,
+          response_id: "response-3",
           attachments: [
             {
               url: "https://example.com/invoice.pdf",
@@ -223,6 +224,7 @@ describe("BaseConversation", () => {
         role: "agent",
         message: "Here is the file you asked for.",
         event_id: 3,
+        response_id: "response-3",
         attachments: [
           {
             url: "https://example.com/invoice.pdf",
@@ -242,6 +244,7 @@ describe("BaseConversation", () => {
         agent_response_event: {
           agent_response: "Hello there",
           event_id: 4,
+          response_id: "response-4",
         },
       });
 
@@ -269,6 +272,7 @@ describe("BaseConversation", () => {
           original_agent_response: "The weather is sunny and warm.",
           corrected_agent_response: "The weather is sunny",
           event_id: 42,
+          response_id: "response-42",
         },
       });
 
@@ -276,6 +280,7 @@ describe("BaseConversation", () => {
         original_agent_response: "The weather is sunny and warm.",
         corrected_agent_response: "The weather is sunny",
         event_id: 42,
+        response_id: "response-42",
       });
       expect(onDebug).not.toHaveBeenCalled();
     });
@@ -1007,6 +1012,7 @@ describe("BaseConversation", () => {
         agent_response_event: {
           agent_response: "Hello there",
           event_id: 7,
+          response_id: "response-7",
         },
       });
       conversation.sendFeedback(true);

@@ -338,6 +338,54 @@ describe("elevenlabs-convai", () => {
     expect(preToolMessage.elements()).toHaveLength(1);
   });
 
+  it("does not duplicate a pre-tool response resent after the tool call", async () => {
+    setupWebComponent({
+      "agent-id": "tool_call_response_resend",
+      variant: "compact",
+      "show-agent-status": "true",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("What are your Wednesday hours?");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .element(page.getByText("The agent ended the conversation"))
+      .toBeInTheDocument();
+
+    const replyText =
+      "I don't have specific Wednesday hours to check against - the website is the most reliable spot to confirm that.";
+    await expect
+      .poll(() => page.getByText(replyText, { exact: true }).elements().length)
+      .toBe(1);
+
+    const postToolReply = page.getByText(
+      "I've noted that down. In the meantime, the website will have the full weekly schedule for you.",
+      { exact: true }
+    );
+    await expect.element(postToolReply).toBeInTheDocument();
+    expect(postToolReply.elements()).toHaveLength(1);
+  });
+
+  it("keeps separate responses with identical text", async () => {
+    setupWebComponent({
+      "agent-id": "same_text_distinct_responses",
+      variant: "compact",
+    });
+
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    await textInput.fill("Repeat yourself");
+    await userEvent.keyboard("{Enter}");
+
+    await expect
+      .poll(() => page.getByText("Okay.", { exact: true }).elements().length)
+      .toBe(2);
+  });
+
   it("renders a final agent message received after a tool stream stops", async () => {
     setupWebComponent({
       "agent-id": "final_message_after_tool",

@@ -75,20 +75,32 @@ export type DisconnectionDetails =
 
 export type MessageAttachment = AgentResponseAttachment;
 
-export interface MessagePayload {
+type BaseMessagePayload = {
   message: string;
-  event_id?: number;
-  /**
-   * @deprecated use {@link role} instead.
-   */
-  source: "user" | "ai";
-  role: Role;
   /**
    * Files attached to an agent message, e.g. relayed from a human agent
    * reply. Only present on agent messages.
    */
   attachments?: MessageAttachment[];
-}
+};
+
+export type MessagePayload = BaseMessagePayload &
+  (
+    | {
+        /** @deprecated use {@link role} instead. */
+        source: "ai";
+        role: "agent";
+        event_id: number;
+        /** Stable identifier for this response across streamed parts and resends. */
+        response_id: string;
+      }
+    | {
+        /** @deprecated use {@link role} instead. */
+        source: "user";
+        role: "user";
+        event_id?: number;
+      }
+  );
 
 /**
  * An MCP tool call in the one state that can be answered with an approval

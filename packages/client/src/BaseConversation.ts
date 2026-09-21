@@ -307,6 +307,7 @@ export abstract class BaseConversation {
         role: "agent",
         message: event.agent_response_event.agent_response,
         event_id: event.agent_response_event.event_id,
+        response_id: event.agent_response_event.response_id,
         attachments: event.agent_response_event.attachments,
       });
     }
