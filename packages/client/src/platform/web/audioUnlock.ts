@@ -1,4 +1,4 @@
-import { isIosDevice } from "./compatibility.js";
+import { isIosDevice, isWebKitBrowser } from "./compatibility.js";
 
 const STASH_TTL_MS = 30_000;
 const UNLOCK_EVENTS = ["touchstart", "touchend", "click"] as const;
@@ -36,7 +36,7 @@ function clearStashDiscardTimer(): void {
 
 /** Unlock iOS audio during a user gesture. No-op on non-iOS. */
 export function unlockIosAudioForSession(): void {
-  if (!isIosDevice() || stashedAudioContext) {
+  if (!(isIosDevice() || isWebKitBrowser()) || stashedAudioContext) {
     return;
   }
 
@@ -53,7 +53,7 @@ export function unlockIosAudioForSession(): void {
  */
 export function installIosAudioUnlockListener(): void {
   if (
-    !isIosDevice() ||
+    !(isIosDevice() || isWebKitBrowser()) ||
     unlockListenerInstalled ||
     typeof document === "undefined"
   ) {
