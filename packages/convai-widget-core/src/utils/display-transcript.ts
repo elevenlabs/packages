@@ -169,11 +169,10 @@ export function buildDisplayTranscript(
       prev.role === entry.role &&
       !prev.message.trim()
     ) {
-      // The placeholder has no text but may still carry attachments.
-      result[result.length - 1] = {
-        ...entry,
-        attachments: entry.attachments ?? prev.attachments,
-      };
+      // The placeholder has no text but may still carry attachments, so keep
+      // them unless the message folding over it brings its own.
+      const attachments = entry.attachments ?? prev.attachments;
+      result[result.length - 1] = { ...entry, attachments };
       continue;
     }
 
