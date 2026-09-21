@@ -929,6 +929,12 @@ export interface DetectedEntity {
   end_char: number;
 }
 
+export interface EditedTranscript {
+  message_type: "edited_transcript";
+  text: string;
+  edited_text: string;
+}
+
 export interface Error {
   message_type: MessageType;
   error: string;
@@ -1054,6 +1060,12 @@ export interface CommittedTranscriptEntitiesMessage {
   message_type: "committed_transcript_entities";
   text: string;
   entities: DetectedEntity[];
+}
+
+export interface EditedTranscriptMessage {
+  message_type: "edited_transcript";
+  text: string;
+  edited_text: string;
 }
 
 export interface ScribeErrorMessage {
