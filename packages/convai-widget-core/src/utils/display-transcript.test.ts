@@ -1,3 +1,4 @@
+import type { MessageAttachment } from "@elevenlabs/client";
 import { describe, expect, it } from "vitest";
 import type { TranscriptEntry } from "../contexts/conversation";
 import {
@@ -10,7 +11,12 @@ import {
 function msg(
   role: "agent" | "user",
   message: string,
-  opts: { eventId?: number; isText?: boolean; conversationIndex?: number } = {}
+  opts: {
+    eventId?: number;
+    isText?: boolean;
+    conversationIndex?: number;
+    attachments?: MessageAttachment[];
+  } = {}
 ): Extract<TranscriptEntry, { type: "message" }> {
   return {
     type: "message",
@@ -19,6 +25,15 @@ function msg(
     isText: opts.isText ?? true,
     conversationIndex: opts.conversationIndex ?? 0,
     eventId: opts.eventId,
+    attachments: opts.attachments,
+  };
+}
+
+function file(name: string): MessageAttachment {
+  return {
+    url: `https://files.example.com/${name}`,
+    name,
+    mime_type: "application/pdf",
   };
 }
 
@@ -148,6 +163,44 @@ describe("buildDisplayTranscript", () => {
       expect(result).toHaveLength(expected.length);
       expected.forEach((exp, i) => {
         expect(result[i]).toMatchObject(exp);
+      });
+    });
+  });
+
+  describe("attachments", () => {
+    it("keeps an agent message that has no text but carries files", () => {
+      const result = build([
+        msg("agent", "", { attachments: [file("a.pdf")] }),
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ attachments: [file("a.pdf")] });
+    });
+
+    it("does not fold a file-carrying reply into a later same-turn reply", () => {
+      const result = build([
+        msg("agent", "", { eventId: 2, attachments: [file("receipt.pdf")] }),
+        msg("agent", "Anything else?", { eventId: 2 }),
+      ]);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        message: "",
+        attachments: [file("receipt.pdf")],
+      });
+      expect(result[1]).toMatchObject({ message: "Anything else?" });
+    });
+
+    it("still folds a genuine empty placeholder into its final message", () => {
+      const result = build([
+        msg("agent", "", { eventId: 2 }),
+        msg("agent", "Done", { eventId: 2, attachments: [file("b.pdf")] }),
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        message: "Done",
+        attachments: [file("b.pdf")],
       });
     });
   });

@@ -192,6 +192,7 @@ describe("Conversation", () => {
           agent_response_event: {
             agent_response: AGENT_RESPONSE,
             event_id: AGENT_RESPONSE_EVENT_ID,
+            response_id: "agent-response-1",
           },
         })
       );
@@ -200,6 +201,7 @@ describe("Conversation", () => {
         role: "agent",
         message: AGENT_RESPONSE,
         event_id: AGENT_RESPONSE_EVENT_ID,
+        response_id: "agent-response-1",
       });
 
       // User transcription
@@ -1079,6 +1081,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text: "",
           type: "start",
           event_id: STREAM_EVENT_ID,
+          response_id: "response-1",
         },
       })
     );
@@ -1092,6 +1095,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text: AGENT_CHAT_RESPONSE_CHUNK_1,
           type: "delta",
           event_id: STREAM_EVENT_ID,
+          response_id: "response-1",
         },
       })
     );
@@ -1104,6 +1108,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text: AGENT_CHAT_RESPONSE_CHUNK_2,
           type: "delta",
           event_id: STREAM_EVENT_ID,
+          response_id: "response-1",
         },
       })
     );
@@ -1116,6 +1121,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text: AGENT_CHAT_RESPONSE_CHUNK_3,
           type: "delta",
           event_id: STREAM_EVENT_ID,
+          response_id: "response-1",
         },
       })
     );
@@ -1129,6 +1135,7 @@ describe("Agent Chat Response Part Streaming", () => {
           text: "",
           type: "stop",
           event_id: STREAM_EVENT_ID,
+          response_id: "response-1",
         },
       })
     );
@@ -1170,26 +1177,31 @@ describe("Agent Chat Response Part Streaming", () => {
       text: "",
       type: "start",
       event_id: STREAM_EVENT_ID,
+      response_id: "response-1",
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(2, {
       text: AGENT_CHAT_RESPONSE_CHUNK_1,
       type: "delta",
       event_id: STREAM_EVENT_ID,
+      response_id: "response-1",
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(3, {
       text: AGENT_CHAT_RESPONSE_CHUNK_2,
       type: "delta",
       event_id: STREAM_EVENT_ID,
+      response_id: "response-1",
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(4, {
       text: AGENT_CHAT_RESPONSE_CHUNK_3,
       type: "delta",
       event_id: STREAM_EVENT_ID,
+      response_id: "response-1",
     });
     expect(onAgentChatResponsePart).toHaveBeenNthCalledWith(5, {
       text: "",
       type: "stop",
       event_id: STREAM_EVENT_ID,
+      response_id: "response-1",
     });
 
     await conversation.endSession();
@@ -1240,6 +1252,7 @@ describe("Agent Chat Response Part Streaming", () => {
             text: "",
             type: "start",
             event_id: STREAM_EVENT_ID,
+            response_id: "response-ignored",
           },
         })
       );
@@ -1255,6 +1268,7 @@ describe("Agent Chat Response Part Streaming", () => {
             text: "Hello",
             type: "delta",
             event_id: STREAM_EVENT_ID,
+            response_id: "response-ignored",
           },
         })
       );
@@ -1270,6 +1284,7 @@ describe("Agent Chat Response Part Streaming", () => {
             text: "",
             type: "stop",
             event_id: STREAM_EVENT_ID,
+            response_id: "response-ignored",
           },
         })
       );

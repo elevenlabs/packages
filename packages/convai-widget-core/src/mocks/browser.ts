@@ -287,6 +287,26 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  // AWF-314: a response is resent around a webhook tool call.
+  tool_call_response_resend: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    show_agent_status: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "How can I help you today?",
+  },
+  same_text_distinct_responses: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   stream_consolidation: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -418,6 +438,15 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  agent_attachments: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   text_and_voice: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -467,12 +496,18 @@ async function sendStreamedAgentResponse(
   client: { send(data: string): void },
   message: string,
   eventId: number,
+  responseId: string,
   includeFinalResponse = true
 ) {
   client.send(
     JSON.stringify({
       type: "agent_chat_response_part",
-      text_response_part: { text: "", type: "start", event_id: eventId },
+      text_response_part: {
+        text: "",
+        type: "start",
+        event_id: eventId,
+        response_id: responseId,
+      },
     })
   );
   await new Promise(resolve => setTimeout(resolve, 0));
@@ -483,6 +518,7 @@ async function sendStreamedAgentResponse(
         text: message,
         type: "delta",
         event_id: eventId,
+        response_id: responseId,
       },
     })
   );
@@ -494,6 +530,7 @@ async function sendStreamedAgentResponse(
         agent_response_event: {
           agent_response: message,
           event_id: eventId,
+          response_id: responseId,
         },
       })
     );
@@ -502,12 +539,37 @@ async function sendStreamedAgentResponse(
   client.send(
     JSON.stringify({
       type: "agent_chat_response_part",
-      text_response_part: { text: "", type: "stop", event_id: eventId },
+      text_response_part: {
+        text: "",
+        type: "stop",
+        event_id: eventId,
+        response_id: responseId,
+      },
     })
   );
 }
 
+const ATTACHMENT_HOST = "https://files.convai.test";
+
+function attachmentImage(label: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200">
+  <rect width="320" height="200" fill="#1f2937"/>
+  <text x="160" y="108" fill="#f9fafb" font-family="sans-serif" font-size="28" text-anchor="middle">${label}</text>
+</svg>`;
+}
+
 export const Worker = setupWorker(
+  http.get(`${ATTACHMENT_HOST}/:fileName`, ({ params }) => {
+    const fileName = String(params.fileName);
+    if (!fileName.endsWith(".svg")) {
+      return new HttpResponse("mock file", {
+        headers: { "Content-Type": "application/octet-stream" },
+      });
+    }
+    return new HttpResponse(attachmentImage(fileName.replace(".svg", "")), {
+      headers: { "Content-Type": "image/svg+xml" },
+    });
+  }),
   http.get<{ agentId: string }>(
     `${import.meta.env.VITE_SERVER_URL_US}/v1/convai/agents/:agentId/widget`,
     ({ params }) => {
@@ -563,6 +625,7 @@ export const Worker = setupWorker(
           client,
           config.first_message ?? "",
           1,
+          "first-message",
           agentId === "streamed_first_message_with_final"
         );
       } else if (agentId !== "streamed_first_reply") {
@@ -572,6 +635,7 @@ export const Worker = setupWorker(
             agent_response_event: {
               agent_response: config.first_message,
               event_id: 1,
+              response_id: "first-message",
             },
           })
         );
@@ -586,6 +650,8 @@ export const Worker = setupWorker(
         agentId !== "tool_call_late_final" &&
         agentId !== "final_message_after_tool" &&
         agentId !== "response_before_stream_tool" &&
+        agentId !== "tool_call_response_resend" &&
+        agentId !== "same_text_distinct_responses" &&
         agentId !== "empty_tool_segment_before_reply" &&
         agentId !== "messages_around_tool_call" &&
         agentId !== "empty_tool_segment_between_messages" &&
@@ -596,7 +662,8 @@ export const Worker = setupWorker(
         agentId !== "streamed_first_message_with_final" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload" &&
-        agentId !== "external_agent"
+        agentId !== "external_agent" &&
+        agentId !== "agent_attachments"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -608,6 +675,7 @@ export const Worker = setupWorker(
             agent_response_event: {
               agent_response: agentResponse,
               event_id: 2,
+              response_id: "default-response",
             },
           })
         );
@@ -686,6 +754,7 @@ export const Worker = setupWorker(
             agent_response_event: {
               agent_response: "Queue cleared response",
               event_id: 4,
+              response_id: "queue-response",
             },
           })
         );
@@ -710,6 +779,7 @@ export const Worker = setupWorker(
                 text: "",
                 type: "start",
                 event_id: 10,
+                response_id: "end-call",
               },
             })
           );
@@ -720,6 +790,7 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Goodbye! Have a great day!",
                 event_id: 10,
+                response_id: "end-call",
               },
             })
           );
@@ -731,6 +802,7 @@ export const Worker = setupWorker(
                 text: "",
                 type: "stop",
                 event_id: 10,
+                response_id: "end-call",
               },
             })
           );
@@ -749,7 +821,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "feedback-tool",
+              },
             })
           );
           client.send(
@@ -776,7 +853,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "feedback-tool",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -787,6 +869,7 @@ export const Worker = setupWorker(
                 agent_response:
                   "Thank you for your feedback. Have a great day!",
                 event_id: 2,
+                response_id: "feedback-final",
               },
             })
           );
@@ -805,7 +888,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "availability-tool",
+              },
             })
           );
           client.send(
@@ -821,7 +909,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "availability-tool",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 50));
@@ -838,7 +931,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "availability-reply",
+              },
             })
           );
           client.send(
@@ -848,6 +946,7 @@ export const Worker = setupWorker(
                 text: "Tomorrow at 10am",
                 type: "delta",
                 event_id: 2,
+                response_id: "availability-reply",
               },
             })
           );
@@ -858,13 +957,19 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Tomorrow at 10am is available.",
                 event_id: 2,
+                response_id: "availability-reply",
               },
             })
           );
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "availability-reply",
+              },
             })
           );
         });
@@ -877,29 +982,46 @@ export const Worker = setupWorker(
           if (data?.type !== "user_message" || hasReplied) return;
           hasReplied = true;
 
-          const sendPart = (text: string, type: "start" | "delta" | "stop") => {
+          const sendPart = (
+            responseId: string,
+            text: string,
+            type: "start" | "delta" | "stop"
+          ) => {
             client.send(
               JSON.stringify({
                 type: "agent_chat_response_part",
-                text_response_part: { text, type, event_id: 2 },
+                text_response_part: {
+                  text,
+                  type,
+                  event_id: 2,
+                  response_id: responseId,
+                },
               })
             );
           };
-          const sendResponse = (agent_response: string) => {
+          const sendResponse = (responseId: string, agent_response: string) => {
             client.send(
               JSON.stringify({
                 type: "agent_response",
-                agent_response_event: { agent_response, event_id: 2 },
+                agent_response_event: {
+                  agent_response,
+                  event_id: 2,
+                  response_id: responseId,
+                },
               })
             );
           };
 
-          sendPart("", "start");
-          sendPart("Logging your complaint now…", "delta");
-          sendPart("", "stop");
+          sendPart("complaint-preamble", "", "start");
+          sendPart(
+            "complaint-preamble",
+            "Logging your complaint now…",
+            "delta"
+          );
+          sendPart("complaint-preamble", "", "stop");
           await new Promise(resolve => setTimeout(resolve, 0));
 
-          sendPart("", "start");
+          sendPart("complaint-tool", "", "start");
           client.send(
             JSON.stringify({
               type: "agent_tool_request",
@@ -910,7 +1032,7 @@ export const Worker = setupWorker(
               },
             })
           );
-          sendPart("", "stop");
+          sendPart("complaint-tool", "", "stop");
           await new Promise(resolve => setTimeout(resolve, 50));
           client.send(
             JSON.stringify({
@@ -923,16 +1045,20 @@ export const Worker = setupWorker(
             })
           );
 
-          sendPart("", "start");
+          sendPart("complaint-reply", "", "start");
           sendPart(
+            "complaint-reply",
             "Is there anything else I can help you with today?",
             "delta"
           );
-          sendPart("", "stop");
+          sendPart("complaint-reply", "", "stop");
           await new Promise(resolve => setTimeout(resolve, 0));
 
-          sendResponse("Logging your complaint now…");
-          sendResponse("Is there anything else I can help you with today?");
+          sendResponse("complaint-preamble", "Logging your complaint now…");
+          sendResponse(
+            "complaint-reply",
+            "Is there anything else I can help you with today?"
+          );
         });
       }
       if (agentId === "messages_around_tool_call") {
@@ -946,7 +1072,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "availability-preamble",
+              },
             })
           );
           client.send(
@@ -956,6 +1087,7 @@ export const Worker = setupWorker(
                 text: "Let me check that for you.",
                 type: "delta",
                 event_id: 2,
+                response_id: "availability-preamble",
               },
             })
           );
@@ -972,7 +1104,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "availability-preamble",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 50));
@@ -989,7 +1126,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "availability-reply",
+              },
             })
           );
           client.send(
@@ -999,13 +1141,19 @@ export const Worker = setupWorker(
                 text: "Tomorrow at 10am is available.",
                 type: "delta",
                 event_id: 2,
+                response_id: "availability-reply",
               },
             })
           );
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "availability-reply",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1015,6 +1163,7 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Let me check that for you.",
                 event_id: 2,
+                response_id: "availability-preamble",
               },
             })
           );
@@ -1024,6 +1173,7 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Tomorrow at 10am is available.",
                 event_id: 2,
+                response_id: "availability-reply",
               },
             })
           );
@@ -1040,7 +1190,11 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+              },
             })
           );
           client.send(
@@ -1056,7 +1210,11 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 50));
@@ -1074,7 +1232,11 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+              },
             })
           );
           client.send(
@@ -1090,7 +1252,11 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1119,13 +1285,19 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Recording that for you now…",
                 event_id: 2,
+                response_id: "record-preamble",
               },
             })
           );
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "record-preamble",
+              },
             })
           );
           client.send(
@@ -1135,13 +1307,19 @@ export const Worker = setupWorker(
                 text: "Recording that for you now…",
                 type: "delta",
                 event_id: 2,
+                response_id: "record-preamble",
               },
             })
           );
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "record-preamble",
+              },
             })
           );
           client.send(
@@ -1168,7 +1346,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "record-reply",
+              },
             })
           );
           client.send(
@@ -1178,13 +1361,19 @@ export const Worker = setupWorker(
                 text: "The bug has been recorded successfully. Is there anything else you would like me to help you with?",
                 type: "delta",
                 event_id: 2,
+                response_id: "record-reply",
               },
             })
           );
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "record-reply",
+              },
             })
           );
           client.send(
@@ -1194,9 +1383,87 @@ export const Worker = setupWorker(
                 agent_response:
                   "The bug has been recorded successfully. Is there anything else you would like me to help you with?",
                 event_id: 2,
+                response_id: "record-reply",
               },
             })
           );
+        });
+      }
+      if (agentId === "tool_call_response_resend") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          const preToolReply =
+            "I don't have specific Wednesday hours to check against - the website is the most reliable spot to confirm that.";
+          const preToolResponseId = "pre-tool-response";
+          await sendStreamedAgentResponse(
+            client,
+            preToolReply,
+            2,
+            preToolResponseId
+          );
+
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_request",
+              agent_tool_request: {
+                tool_call_id: "npdc_chatbot_testing_1",
+                event_id: 2,
+                tool_name: "NPDC_CHATBOT_TESTING",
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+          client.send(
+            JSON.stringify({
+              type: "agent_tool_response",
+              agent_tool_response: {
+                tool_call_id: "npdc_chatbot_testing_1",
+                event_id: 2,
+                is_error: false,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+
+          // The pre-tool final is delivered again after the tool completes.
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: preToolReply,
+                event_id: 2,
+                response_id: preToolResponseId,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 0));
+
+          await sendStreamedAgentResponse(
+            client,
+            "I've noted that down. In the meantime, the website will have the full weekly schedule for you.",
+            2,
+            "post-tool-response"
+          );
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.close(1000);
+        });
+      }
+      if (agentId === "same_text_distinct_responses") {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+
+          const reply = "Okay.";
+          await sendStreamedAgentResponse(client, reply, 2, "response-a");
+          await sendStreamedAgentResponse(client, reply, 2, "response-b");
         });
       }
       if (agentId === "tool_call_late_final") {
@@ -1210,7 +1477,11 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1227,14 +1498,22 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+              },
             })
           );
 
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 3 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 3,
+              },
             })
           );
           client.send(
@@ -1275,7 +1554,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "tool-preamble",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1285,6 +1569,7 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Running the tool now.",
                 event_id: 2,
+                response_id: "tool-preamble",
               },
             })
           );
@@ -1301,7 +1586,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "tool-preamble",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 100));
@@ -1320,7 +1610,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "tool-reply",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1331,6 +1626,7 @@ export const Worker = setupWorker(
                 text: "Tool completed successfully",
                 type: "delta",
                 event_id: 2,
+                response_id: "tool-reply",
               },
             })
           );
@@ -1338,7 +1634,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "tool-reply",
+              },
             })
           );
           client.send(
@@ -1347,6 +1648,7 @@ export const Worker = setupWorker(
               agent_response_event: {
                 agent_response: "Tool completed successfully",
                 event_id: 2,
+                response_id: "tool-reply",
               },
             })
           );
@@ -1364,7 +1666,12 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "start", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "start",
+                event_id: 2,
+                response_id: "stream-consolidation",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -1375,6 +1682,7 @@ export const Worker = setupWorker(
                 text: "partial",
                 type: "delta",
                 event_id: 2,
+                response_id: "stream-consolidation",
               },
             })
           );
@@ -1382,14 +1690,23 @@ export const Worker = setupWorker(
           client.send(
             JSON.stringify({
               type: "agent_response",
-              agent_response_event: { agent_response: "full", event_id: 2 },
+              agent_response_event: {
+                agent_response: "full",
+                event_id: 2,
+                response_id: "stream-consolidation",
+              },
             })
           );
           await new Promise(resolve => setTimeout(resolve, 0));
           client.send(
             JSON.stringify({
               type: "agent_chat_response_part",
-              text_response_part: { text: "", type: "stop", event_id: 2 },
+              text_response_part: {
+                text: "",
+                type: "stop",
+                event_id: 2,
+                response_id: "stream-consolidation",
+              },
             })
           );
         });
@@ -1400,6 +1717,7 @@ export const Worker = setupWorker(
           client,
           "This draft was never spoken.",
           2,
+          "voice-draft",
           false
         );
         client.send(
@@ -1408,6 +1726,7 @@ export const Worker = setupWorker(
             agent_response_event: {
               agent_response: "How can I help you today?",
               event_id: 4,
+              response_id: "voice-final",
             },
           })
         );
@@ -1430,7 +1749,58 @@ export const Worker = setupWorker(
                 ? (config.first_message ?? "")
                 : "Production streamed reply";
 
-          await sendStreamedAgentResponse(client, message, 2);
+          await sendStreamedAgentResponse(client, message, 2, "streamed-reply");
+        });
+      }
+      if (agentId === "agent_attachments") {
+        // Human-agent replies relay files: the first turn pairs text with an
+        // image and a PDF, the second is attachment-only with no text at all.
+        let replies = 0;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+
+          replies++;
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event:
+                replies === 1
+                  ? {
+                      agent_response: "Here is the receipt you asked for.",
+                      event_id: replies + 1,
+                      attachments: [
+                        {
+                          url: `${ATTACHMENT_HOST}/receipt.svg`,
+                          name: "receipt.svg",
+                          mime_type: "image/svg+xml",
+                        },
+                        {
+                          url: `${ATTACHMENT_HOST}/invoice.pdf`,
+                          name: "invoice.pdf",
+                          mime_type: "application/pdf",
+                        },
+                      ],
+                    }
+                  : {
+                      agent_response: "",
+                      event_id: replies + 1,
+                      attachments: [
+                        {
+                          url: `${ATTACHMENT_HOST}/diagram.svg`,
+                          name: "diagram.svg",
+                          mime_type: "image/svg+xml",
+                        },
+                        {
+                          url: "http://insecure.example.com/leak.png",
+                          name: "leak.png",
+                          mime_type: "image/png",
+                        },
+                      ],
+                    },
+            })
+          );
         });
       }
       if (agentId === "external_agent") {

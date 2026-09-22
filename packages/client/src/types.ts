@@ -77,7 +77,9 @@ export type MessageAttachment = AgentResponseAttachment;
 
 export interface MessagePayload {
   message: string;
-  event_id?: number;
+  event_id: number;
+  /** Stable identifier for an agent response across streamed parts and resends. */
+  response_id?: string;
   /**
    * @deprecated use {@link role} instead.
    */
