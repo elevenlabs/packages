@@ -20,6 +20,7 @@ const ICON_MAP = {
   maximize: MaximizeIcon,
   minimize: MinimizeIcon,
   loader: LoaderIcon,
+  stop: StopIcon,
   x: XIcon,
 };
 
@@ -495,6 +496,23 @@ function LoaderIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
       {...props}
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+function StopIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      {...props}
+    >
+      <rect x="5" y="5" width="14" height="14" rx="2" />
     </svg>
   );
 }
