@@ -9,6 +9,7 @@ import type {
   PartialTranscriptMessage,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
+  EditedTranscriptMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -67,6 +68,8 @@ export interface TranscriptSegment {
   languageCode?: string;
   /** Word-level timestamps (only present when includeTimestamps is enabled) */
   words?: WordTimestamp[];
+  /** Edited transcript text (only present when transcriptEdit is set and the edit has arrived) */
+  editedText?: string;
 }
 
 export interface ScribeCallbacks {
@@ -78,6 +81,8 @@ export interface ScribeCallbacks {
     language_code?: string;
     words?: WordTimestamp[];
   }) => void;
+  /** Called with the edited version of a committed transcript (only when transcriptEdit is set) */
+  onEditedTranscript?: (data: { text: string; edited_text: string }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
@@ -131,6 +136,15 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   noVerbatim?: boolean;
 
   /**
+   * Natural-language instruction applied to each committed transcript (max 2000
+   * characters). The edited text is delivered through `onEditedTranscript` and attached
+   * to the matching committed segment as `editedText`. Cannot be combined with entity
+   * detection. Adds a 30% premium to the base transcription cost, billed for at least 10
+   * seconds of audio per committed transcript.
+   */
+  transcriptEdit?: string;
+
+  /**
    * Whether the session may be logged by ElevenLabs. Set to `false` to use zero
    * retention mode, which makes history features unavailable for the session.
    * Zero retention mode may only be used by enterprise customers.
@@ -178,6 +192,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onPartialTranscript,
     onCommittedTranscript,
     onCommittedTranscriptWithTimestamps,
+    onEditedTranscript,
     onError,
     onAuthError,
     onQuotaExceededError,
@@ -220,6 +235,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     // Keyterms and verbatim control
     keyterms: defaultKeyterms,
     noVerbatim: defaultNoVerbatim,
+    transcriptEdit: defaultTranscriptEdit,
 
     // Logging
     enableLogging: defaultEnableLogging,
@@ -305,6 +321,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             keyterms: runtimeOptions.keyterms || defaultKeyterms,
             noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
+            transcriptEdit:
+              runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
             microphone,
             includeTimestamps,
             includeLanguageDetection,
@@ -330,6 +348,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             languageCode: runtimeOptions.languageCode || defaultLanguageCode,
             keyterms: runtimeOptions.keyterms || defaultKeyterms,
             noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
+            transcriptEdit:
+              runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
             includeTimestamps,
             includeLanguageDetection,
             enableLogging,
@@ -387,6 +407,20 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             onCommittedTranscriptWithTimestamps?.(message);
           }
         );
+
+        connection.on(RealtimeEvents.EDITED_TRANSCRIPT, (data: unknown) => {
+          const message = data as EditedTranscriptMessage;
+          // Edits run asynchronously and may arrive out of commit order, so the
+          // committed segment is matched on its text.
+          setCommittedTranscripts(prev =>
+            prev.map(segment =>
+              segment.text === message.text && segment.editedText === undefined
+                ? { ...segment, editedText: message.edited_text }
+                : segment
+            )
+          );
+          onEditedTranscript?.(message);
+        });
 
         connection.on(RealtimeEvents.ERROR, (err: unknown) => {
           const message = err as ScribeErrorMessage;
@@ -527,11 +561,13 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultIncludeLanguageDetection,
       defaultKeyterms,
       defaultNoVerbatim,
+      defaultTranscriptEdit,
       defaultEnableLogging,
       onSessionStarted,
       onPartialTranscript,
       onCommittedTranscript,
       onCommittedTranscriptWithTimestamps,
+      onEditedTranscript,
       onError,
       onAuthError,
       onQuotaExceededError,

@@ -27,6 +27,7 @@ export type {
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
   CommittedTranscriptEntitiesMessage,
+  EditedTranscriptMessage,
   DetectedEntity,
   TranscriptCharacter,
   ScribeErrorMessage,

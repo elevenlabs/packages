@@ -112,6 +112,90 @@ describe("useScribe", () => {
     );
   });
 
+  it("passes transcriptEdit through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({
+        transcriptEdit: "Write all dates in ISO 8601 format (YYYY-MM-DD)",
+      })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcriptEdit: "Write all dates in ISO 8601 format (YYYY-MM-DD)",
+      })
+    );
+  });
+
+  describe("transcript editing", () => {
+    function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
+      return vi
+        .mocked(connection.on)
+        .mock.calls.find(([registered]) => registered === event)?.[1] as
+        | ((data: unknown) => void)
+        | undefined;
+    }
+
+    it("attaches edited_transcript to the matching committed segment", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const onEditedTranscript = vi.fn();
+      const { result } = renderHook(() =>
+        useScribe({
+          transcriptEdit: "Write all dates in ISO 8601 format (YYYY-MM-DD)",
+          onEditedTranscript,
+        })
+      );
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const committed = {
+        message_type: "committed_transcript",
+        text: "our next meeting is on the twelfth of July twenty twenty-six",
+      };
+      const edited = {
+        message_type: "edited_transcript",
+        text: committed.text,
+        edited_text: "our next meeting is on 2026-07-12",
+      };
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT
+        )?.(committed);
+      });
+      expect(
+        result.current.committedTranscripts[0]?.editedText
+      ).toBeUndefined();
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.EDITED_TRANSCRIPT)?.(edited);
+      });
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
+      expect(result.current.committedTranscripts[0]?.editedText).toBe(
+        edited.edited_text
+      );
+      expect(onEditedTranscript).toHaveBeenCalledWith(edited);
+    });
+  });
+
   describe("close handling", () => {
     const SESSION = {
       token: "test-token",
