@@ -116,6 +116,7 @@ export const DefaultTextContents = {
   send_message: "Send",
   new_call: "New call",
   end_call: "End",
+  end_chat: "End chat",
   mute_microphone: "Mute microphone",
   text_mode: "Switch to text mode",
   voice_mode: "Switch to voice mode",
