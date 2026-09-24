@@ -115,6 +115,12 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   minSpeechDurationMs?: number;
   minSilenceDurationMs?: number;
   languageCode?: string;
+  /**
+   * Additional ISO-639-1 or ISO-639-3 language codes that may be present in the audio.
+   * Providing them makes language identification more reliable by only focusing on a
+   * certain set of languages.
+   */
+  secondaryLanguages?: string[];
 
   // Microphone options (for automatic microphone mode)
   microphone?: MicrophoneOptions["microphone"];
@@ -143,6 +149,15 @@ export interface ScribeHookOptions extends ScribeCallbacks {
    * seconds of audio per committed transcript.
    */
   transcriptEdit?: string;
+
+  /**
+   * Enable background speech filtering to reduce false activations from nearby
+   * conversations and ambient noise. When enabled without an explicit `vadThreshold`,
+   * the server applies a lower default threshold. Cannot be combined with
+   * `includeTimestamps`.
+   * @default false
+   */
+  filterBackgroundAudio?: boolean;
 
   /**
    * Whether the session may be logged by ElevenLabs. Set to `false` to use zero
@@ -219,6 +234,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     minSpeechDurationMs: defaultMinSpeechDurationMs,
     minSilenceDurationMs: defaultMinSilenceDurationMs,
     languageCode: defaultLanguageCode,
+    secondaryLanguages: defaultSecondaryLanguages,
 
     // Mode options
     microphone: defaultMicrophone,
@@ -236,6 +252,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     keyterms: defaultKeyterms,
     noVerbatim: defaultNoVerbatim,
     transcriptEdit: defaultTranscriptEdit,
+    filterBackgroundAudio: defaultFilterBackgroundAudio,
 
     // Logging
     enableLogging: defaultEnableLogging,
@@ -301,58 +318,47 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         const enableLogging =
           runtimeOptions.enableLogging ?? defaultEnableLogging;
 
+        // Shared by both modes, so an option is forwarded to the client once
+        // instead of having to be repeated per mode.
+        const sessionOptions = {
+          token,
+          modelId,
+          baseUri: runtimeOptions.baseUri || defaultBaseUri,
+          commitStrategy:
+            runtimeOptions.commitStrategy || defaultCommitStrategy,
+          vadSilenceThresholdSecs:
+            runtimeOptions.vadSilenceThresholdSecs ||
+            defaultVadSilenceThresholdSecs,
+          vadThreshold: runtimeOptions.vadThreshold || defaultVadThreshold,
+          minSpeechDurationMs:
+            runtimeOptions.minSpeechDurationMs || defaultMinSpeechDurationMs,
+          minSilenceDurationMs:
+            runtimeOptions.minSilenceDurationMs || defaultMinSilenceDurationMs,
+          languageCode: runtimeOptions.languageCode || defaultLanguageCode,
+          secondaryLanguages:
+            runtimeOptions.secondaryLanguages ?? defaultSecondaryLanguages,
+          keyterms: runtimeOptions.keyterms || defaultKeyterms,
+          noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
+          transcriptEdit:
+            runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
+          filterBackgroundAudio:
+            runtimeOptions.filterBackgroundAudio ??
+            defaultFilterBackgroundAudio,
+          includeTimestamps,
+          includeLanguageDetection,
+          enableLogging,
+        };
+
         if (microphone) {
           // Microphone mode
           connection = Scribe.connect({
-            token,
-            modelId,
-            baseUri: runtimeOptions.baseUri || defaultBaseUri,
-            commitStrategy:
-              runtimeOptions.commitStrategy || defaultCommitStrategy,
-            vadSilenceThresholdSecs:
-              runtimeOptions.vadSilenceThresholdSecs ||
-              defaultVadSilenceThresholdSecs,
-            vadThreshold: runtimeOptions.vadThreshold || defaultVadThreshold,
-            minSpeechDurationMs:
-              runtimeOptions.minSpeechDurationMs || defaultMinSpeechDurationMs,
-            minSilenceDurationMs:
-              runtimeOptions.minSilenceDurationMs ||
-              defaultMinSilenceDurationMs,
-            languageCode: runtimeOptions.languageCode || defaultLanguageCode,
-            keyterms: runtimeOptions.keyterms || defaultKeyterms,
-            noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
-            transcriptEdit:
-              runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
+            ...sessionOptions,
             microphone,
-            includeTimestamps,
-            includeLanguageDetection,
-            enableLogging,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
           connection = Scribe.connect({
-            token,
-            modelId,
-            baseUri: runtimeOptions.baseUri || defaultBaseUri,
-            commitStrategy:
-              runtimeOptions.commitStrategy || defaultCommitStrategy,
-            vadSilenceThresholdSecs:
-              runtimeOptions.vadSilenceThresholdSecs ||
-              defaultVadSilenceThresholdSecs,
-            vadThreshold: runtimeOptions.vadThreshold || defaultVadThreshold,
-            minSpeechDurationMs:
-              runtimeOptions.minSpeechDurationMs || defaultMinSpeechDurationMs,
-            minSilenceDurationMs:
-              runtimeOptions.minSilenceDurationMs ||
-              defaultMinSilenceDurationMs,
-            languageCode: runtimeOptions.languageCode || defaultLanguageCode,
-            keyterms: runtimeOptions.keyterms || defaultKeyterms,
-            noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
-            transcriptEdit:
-              runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
-            includeTimestamps,
-            includeLanguageDetection,
-            enableLogging,
+            ...sessionOptions,
             audioFormat,
             sampleRate,
           } as AudioOptions);
@@ -554,6 +560,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultMinSpeechDurationMs,
       defaultMinSilenceDurationMs,
       defaultLanguageCode,
+      defaultSecondaryLanguages,
       defaultMicrophone,
       defaultAudioFormat,
       defaultSampleRate,
@@ -562,6 +569,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultKeyterms,
       defaultNoVerbatim,
       defaultTranscriptEdit,
+      defaultFilterBackgroundAudio,
       defaultEnableLogging,
       onSessionStarted,
       onPartialTranscript,
