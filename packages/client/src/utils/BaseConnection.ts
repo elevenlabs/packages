@@ -46,6 +46,41 @@ export type BaseSessionConfig = {
      * livekit-client's own default, currently true.
      */
     singlePeerConnection?: boolean;
+    /**
+     * @elevenlabs/react-native only. Ignored on other platforms.
+     */
+    reactNative?: {
+      /**
+       * Overrides the native AudioSession routing @elevenlabs/react-native
+       * applies before the connection starts.
+       */
+      audioSession?: {
+        android?: {
+          /**
+           * The automatic output routing order, most preferred first. Entries
+           * are moved to the front of the default order rather than filtering
+           * it, so ["speaker"] prefers the speaker but still falls back to the
+           * remaining outputs. Must not contain duplicates. Omit it, or pass an
+           * empty list, for the default order: bluetooth, then headset, then
+           * speaker, then earpiece, which routes to a connected Bluetooth or
+           * wired headset instead of always using the speaker.
+           */
+          preferredOutputList?: (
+            | "speaker"
+            | "earpiece"
+            | "headset"
+            | "bluetooth"
+          )[];
+        };
+        ios?: {
+          /**
+           * The output to prefer when no headset or Bluetooth device is
+           * connected. Defaults to "speaker".
+           */
+          defaultOutput?: "speaker" | "earpiece";
+        };
+      };
+    };
   };
   overrides?: {
     agent?: {
