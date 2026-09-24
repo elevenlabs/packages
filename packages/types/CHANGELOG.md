@@ -1,5 +1,20 @@
 # @elevenlabs/types
 
+## 0.24.0
+
+### Minor Changes
+
+- 33a5042: Add the `transcriptEdit` option to `Scribe.connect()` and dispatch the new `edited_transcript` server message:
+  - `transcriptEdit`: a natural-language instruction applied to each committed transcript (max 2000 characters), sent as the `transcript_edit` query param. Cannot be combined with `entityDetection`.
+  - `edited_transcript` (`RealtimeEvents.EDITED_TRANSCRIPT`), carrying the committed `text` and its `edited_text` (`EditedTranscriptMessage`). `edited_text` equals `text` when the instruction changed nothing.
+  - `useScribe()` accepts the same `transcriptEdit` option, exposes an `onEditedTranscript` callback and attaches the edited text to the matching entry in `committedTranscripts` as `editedText`.
+
+### Patch Changes
+
+- e2d1ac7: Expose stable response IDs for agent messages and use them to prevent a reply
+  from rendering twice when it is resent during a turn, while retaining
+  compatibility with older orchestrators.
+
 ## 0.23.0
 
 ### Minor Changes

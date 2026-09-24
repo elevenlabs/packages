@@ -1,5 +1,19 @@
 # @elevenlabs/convai-widget-core
 
+## 0.18.3
+
+### Patch Changes
+
+- 32358cc: Render `attachments` from agent messages in the widget transcript. Files with an https url show as an inline image when their mime type is an image, and as a download link otherwise. Attachment-only replies, which arrive with no text, now render instead of being dropped.
+- e2d1ac7: Expose stable response IDs for agent messages and use them to prevent a reply
+  from rendering twice when it is resent during a turn, while retaining
+  compatibility with older orchestrators.
+- a1a183d: Replace the crossed-out phone icon with a stop button and End chat tooltip for text-only conversations, align attachments on the left, and keep conversation controls right-aligned.
+- Updated dependencies [32358cc]
+- Updated dependencies [e2d1ac7]
+- Updated dependencies [33a5042]
+  - @elevenlabs/client@1.26.0
+
 ## 0.18.2
 
 ### Patch Changes
