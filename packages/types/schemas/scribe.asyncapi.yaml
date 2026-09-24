@@ -48,6 +48,7 @@ channels:
           - $ref: "#/components/messages/CommittedTranscript"
           - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
           - $ref: "#/components/messages/CommittedTranscriptEntities"
+          - $ref: "#/components/messages/EditedTranscript"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
           - $ref: "#/components/messages/QuotaExceededError"
@@ -138,6 +139,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CommittedTranscriptEntitiesPayload"
+
+    EditedTranscript:
+      name: EditedTranscriptMessage
+      title: Edited Transcript
+      summary: Edited version of a committed transcript. Only sent when the transcriptEdit option is set.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/EditedTranscriptPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -262,6 +271,7 @@ components:
         - committed_transcript
         - committed_transcript_with_timestamps
         - committed_transcript_entities
+        - edited_transcript
         - error
         - auth_error
         - invalid_request
@@ -566,6 +576,20 @@ components:
           description: Detected entities. Empty when none were found.
           items:
             $ref: "#/components/schemas/DetectedEntity"
+
+    EditedTranscriptPayload:
+      type: object
+      required: [message_type, text, edited_text]
+      properties:
+        message_type:
+          type: string
+          const: edited_transcript
+        text:
+          type: string
+          description: The committed transcript text the edit instruction was applied to. Use it to correlate the edit with its committed transcript, since edits may arrive out of commit order.
+        edited_text:
+          type: string
+          description: The edited transcript text. If no edits were made it will be identical to the `text` field.
 
     # Base error structure - used as anchor for all error payloads
     ScribeErrorBase: &ScribeErrorBase

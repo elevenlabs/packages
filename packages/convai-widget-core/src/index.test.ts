@@ -509,6 +509,15 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Chatting with AI agent"))
         .toBeInTheDocument();
 
+      const endChatButton = page.getByRole("button", {
+        name: "End chat",
+        exact: true,
+      });
+      await expect.element(endChatButton).toBeVisible();
+      await expect
+        .element(page.getByRole("tooltip", { name: "End chat" }))
+        .toBeInTheDocument();
+
       // Received another agent message
       await expect
         .element(page.getByText("Another agent response"))
@@ -1584,7 +1593,10 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Completed", { exact: true }))
         .toBeInTheDocument();
 
-      const endButton = page.getByRole("button", { name: "End", exact: true });
+      const endButton = page.getByRole("button", {
+        name: "End chat",
+        exact: true,
+      });
       await endButton.click();
 
       // Completed status remains visible for historical messages.

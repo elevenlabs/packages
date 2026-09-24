@@ -202,8 +202,8 @@ export function SheetActions({
               canSend={canSend}
               onSendMessage={handleSendMessage}
             />
-            <div className="absolute bottom-0 left-0 right-0 flex gap-1.5 items-center justify-end px-3 pb-3 pt-2 pointer-events-none">
-              <div className="pointer-events-auto flex gap-1.5 items-center">
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-end px-3 pb-3 pt-2 pointer-events-none">
+              <div className="pointer-events-none flex w-full items-center">
                 <SheetButtons
                   canSend={canSend}
                   onSendMessage={handleSendMessage}
@@ -217,7 +217,7 @@ export function SheetActions({
           </div>
         )}
         {!textInputEnabled.value && (
-          <div className="w-full flex gap-1.5 items-center justify-end">
+          <div className="w-full flex items-center justify-end">
             <SheetButtons
               canSend={canSend}
               onSendMessage={handleSendMessage}
@@ -331,7 +331,7 @@ function SheetButtons({
   const text = useTextContents();
   const textOnly = useIsConversationTextOnly();
   const textInputEnabled = useTextInputEnabled();
-  const { isDisconnected } = useConversation();
+  const { endSession, isDisconnected } = useConversation();
   const callDisabled = useCallButtonDisabled();
   const { isTextMode } = useConversationMode();
 
@@ -344,24 +344,45 @@ function SheetButtons({
 
   return (
     <>
-      <SizeTransition visible={showMuteButton.value}>
-        <TriggerMuteButton className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
-      </SizeTransition>
       <SizeTransition visible={showUploadButton.value}>
         <UploadFileButton
           iconOnly
           disabled={!uploadEnabled.value}
           onFileSelect={onFileSelect}
-          className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+          className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />
       </SizeTransition>
-      <SizeTransition visible={showCallButton.value}>
-        <CallButton
-          iconOnly
-          isDisconnected={isDisconnected.value}
-          disabled={callDisabled.value}
-          className="bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
-        />
+      <div className="grow" />
+      <SizeTransition visible={showMuteButton.value} className="pr-1.5">
+        <TriggerMuteButton className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
+      </SizeTransition>
+      <SizeTransition visible={showCallButton.value} className="pr-1.5">
+        {textOnly.value ? (
+          <div className="group relative pointer-events-auto">
+            <div
+              id="end-chat-tooltip"
+              role="tooltip"
+              className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-button bg-accent px-3 py-1.5 text-sm text-accent-primary whitespace-nowrap opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100"
+            >
+              {text.end_chat}
+            </div>
+            <Button
+              variant="secondary"
+              icon="stop"
+              onClick={endSession}
+              disabled={callDisabled.value}
+              aria-label={text.end_chat}
+              aria-describedby="end-chat-tooltip"
+            />
+          </div>
+        ) : (
+          <CallButton
+            iconOnly
+            isDisconnected={isDisconnected.value}
+            disabled={callDisabled.value}
+            className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+          />
+        )}
       </SizeTransition>
       {textInputEnabled.value && (
         <Button
@@ -370,6 +391,7 @@ function SheetButtons({
           variant="primary"
           disabled={!canSend.value}
           aria-label={text.send_message.value}
+          className="pointer-events-auto"
         />
       )}
     </>

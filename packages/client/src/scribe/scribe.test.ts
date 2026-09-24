@@ -305,6 +305,23 @@ describe("Scribe", () => {
       ]);
     });
 
+    it("builds URI with transcript_edit when transcriptEdit is set", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        transcriptEdit: "Write all numbers as digits",
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).get("transcript_edit")).toBe(
+        "Write all numbers as digits"
+      );
+    });
+
     it.each([
       { filterBackgroundAudio: false, expected: "false" },
       { filterBackgroundAudio: true, expected: "true" },
@@ -341,6 +358,7 @@ describe("Scribe", () => {
       expect(resolved.has("filter_background_audio")).toBe(false);
       expect(resolved.has("secondary_languages")).toBe(false);
       expect(resolved.has("entity_detection")).toBe(false);
+      expect(resolved.has("transcript_edit")).toBe(false);
     });
 
     it("builds URI with keyterms as repeated query params", () => {
@@ -732,6 +750,46 @@ describe("Scribe", () => {
       await sleep(100);
       expect(onCommittedTranscriptEntities).toHaveBeenCalledTimes(1);
       expect(onCommittedTranscriptEntities).toHaveBeenCalledWith(payload);
+
+      connection.close();
+      server.close();
+    });
+
+    it("handles edited_transcript event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onEditedTranscript = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        transcriptEdit: "Write all numbers as digits",
+      });
+
+      connection.on(RealtimeEvents.EDITED_TRANSCRIPT, onEditedTranscript);
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      const payload = {
+        message_type: "edited_transcript",
+        text: "our office is open from nine to five",
+        edited_text: "our office is open from 9 to 5",
+      };
+      client.send(JSON.stringify(payload));
+
+      await sleep(100);
+      expect(onEditedTranscript).toHaveBeenCalledTimes(1);
+      expect(onEditedTranscript).toHaveBeenCalledWith(payload);
 
       connection.close();
       server.close();
