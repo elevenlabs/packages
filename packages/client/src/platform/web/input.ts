@@ -115,6 +115,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
         inputStream,
         source,
         permissions,
+        sampleRate,
+        format,
         onError
       );
     } catch (error) {
@@ -146,6 +148,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     private inputStream: MediaStream,
     private mediaStreamSource: MediaStreamAudioSourceNode,
     private permissions: PermissionStatus,
+    private readonly configuredSampleRate: number,
+    private readonly configuredFormat: FormatConfig["format"],
     private onError: (
       message: string,
       context?: unknown
@@ -221,13 +225,28 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       }
       this.settingInput = true;
 
+      // sampleRate and format cannot be changed on an existing input (would
+      // require recreating the AudioContext), so a caller asking for a value
+      // other than the one this input was created with gets a clear error
+      // instead of a silently mismatched format. Re-passing the same value
+      // back, which callers routinely do alongside an inputDeviceId change,
+      // stays a no-op. preferHeadphonesForIosDevices is a best-effort
+      // selection hint rather than a format guarantee, so it stays a silent
+      // no-op regardless, same as inputChunkDurationMs. All are only applied
+      // during MediaDeviceInput.create().
+      if (
+        (config?.sampleRate !== undefined &&
+          config.sampleRate !== this.configuredSampleRate) ||
+        (config?.format !== undefined &&
+          config.format !== this.configuredFormat)
+      ) {
+        throw new Error(
+          "Input device does not support changing sampleRate or format after the connection is created"
+        );
+      }
+
       // Extract inputDeviceId from config
       const inputDeviceId = config?.inputDeviceId;
-
-      // Note: sampleRate, format, inputChunkDurationMs, and
-      // preferHeadphonesForIosDevices cannot be changed on an existing input
-      // (would require recreating the AudioContext). These options are only used
-      // during initial MediaDeviceInput.create()
 
       // Create new constraints with the specified device or use default
       const options: MediaTrackConstraints = {
