@@ -193,14 +193,41 @@ export abstract class BaseConnection {
   protected onMessageCallback: OnMessageCallback | null = null;
   protected onModeChangeCallback: ((mode: Mode) => void) | null = null;
   protected onDebug?: (info: unknown) => void;
+  protected onError?: (message: string, context?: unknown) => void;
   protected onOutgoingMessageCallback: OnOutgoingMessageCallback | null = null;
 
-  constructor(config: { onDebug?: (info: unknown) => void } = {}) {
+  constructor(
+    config: {
+      onDebug?: (info: unknown) => void;
+      onError?: (message: string, context?: unknown) => void;
+    } = {}
+  ) {
     this.onDebug = config.onDebug;
+    this.onError = config.onError;
   }
 
   protected debug(info: unknown) {
     if (this.onDebug) this.onDebug(info);
+  }
+
+  protected reportError(message: string, context?: unknown) {
+    if (this.onError) this.onError(message, context);
+  }
+
+  /**
+   * Wraps an async event handler so that a rejection reaches `onError` instead
+   * of becoming an unhandled rejection. Emitters discard the promise a handler
+   * returns, so without this the failure is invisible to the caller.
+   */
+  protected forwardHandlerErrors<A extends unknown[]>(
+    message: string,
+    handler: (...args: A) => Promise<void>
+  ): (...args: A) => void {
+    return (...args: A) => {
+      handler(...args).catch((error: unknown) => {
+        this.reportError(message, error);
+      });
+    };
   }
 
   public abstract close(): void;

@@ -1239,4 +1239,127 @@ describe("WebRTCConnection", () => {
       connection.close();
     });
   });
+
+  describe("async event handler errors", () => {
+    // Emitters discard the promise a handler returns, so a rejection inside an
+    // async room handler used to surface only as an unhandled rejection: the
+    // agent's audio silently never attached and the caller was told nothing.
+    async function createWithHandlers(
+      attachRemoteTrack: () => Promise<void>,
+      onError: (message: string, context?: unknown) => void
+    ) {
+      const eventHandlers = new Map<string, (...args: unknown[]) => void>();
+      const mockRoom = new Room() as any;
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          eventHandlers.set(event, callback);
+          if (event === "connected") queueMicrotask(() => callback());
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") queueMicrotask(callback);
+        }
+      );
+
+      setWebRTCAudioAdapterFactory(
+        () =>
+          ({
+            attachRemoteTrack,
+            setOutputDevice: vi.fn(),
+            cleanup: vi.fn(),
+          }) as any
+      );
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        onError,
+      });
+
+      return { connection, eventHandlers };
+    }
+
+    const agentAudioTrack = [
+      { kind: "audio" },
+      {},
+      { identity: "agent-1" },
+    ] as const;
+
+    it("forwards a rejection from an async TrackSubscribed handler to onError", async () => {
+      const onError = vi.fn();
+      const failure = new Error("attach failed");
+      const { connection, eventHandlers } = await createWithHandlers(
+        () => Promise.reject(failure),
+        onError
+      );
+
+      eventHandlers.get("trackSubscribed")?.(...agentAudioTrack);
+      await vi.waitFor(() => expect(onError).toHaveBeenCalled());
+
+      expect(onError).toHaveBeenCalledWith(
+        "Failed to attach subscribed audio track",
+        failure
+      );
+
+      connection.close();
+    });
+
+    it("does not leave the rejection unhandled", async () => {
+      const unhandled: unknown[] = [];
+      const capture = (event: PromiseRejectionEvent | unknown) =>
+        unhandled.push(event);
+      process.on("unhandledRejection", capture);
+
+      try {
+        const { connection, eventHandlers } = await createWithHandlers(
+          () => Promise.reject(new Error("attach failed")),
+          vi.fn()
+        );
+
+        eventHandlers.get("trackSubscribed")?.(...agentAudioTrack);
+        // Give the rejection a chance to go unhandled before asserting.
+        await new Promise(resolve => setTimeout(resolve, 20));
+
+        expect(unhandled).toEqual([]);
+        connection.close();
+      } finally {
+        process.off("unhandledRejection", capture);
+      }
+    });
+
+    it("stays silent when the handler resolves", async () => {
+      const onError = vi.fn();
+      const { connection, eventHandlers } = await createWithHandlers(
+        () => Promise.resolve(),
+        onError
+      );
+
+      eventHandlers.get("trackSubscribed")?.(...agentAudioTrack);
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(onError).not.toHaveBeenCalled();
+
+      connection.close();
+    });
+
+    it("forwards a rejection from ActiveSpeakersChanged to onError", async () => {
+      const onError = vi.fn();
+      const { connection, eventHandlers } = await createWithHandlers(
+        () => Promise.resolve(),
+        onError
+      );
+
+      // updateMode throws for a participant whose identity is not a string.
+      eventHandlers.get("activeSpeakersChanged")?.([{ identity: undefined }]);
+      await vi.waitFor(() => expect(onError).toHaveBeenCalled());
+
+      expect(onError.mock.calls[0][0]).toBe(
+        "Failed to handle active speaker change"
+      );
+
+      connection.close();
+    });
+  });
 });
