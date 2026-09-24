@@ -15,7 +15,8 @@ const EMPTY_FREQUENCY_DATA = new Uint8Array(0);
 
 export type ConversationControlsValue = {
   startSession: (options?: HookOptions) => void;
-  endSession: () => void;
+  /** Cancels a pending start or ends the active session, then resolves after teardown or its 10s cleanup bound. */
+  endSession: () => Promise<void>;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
   uploadFile: (file: Blob) => Promise<UploadFileResult>;

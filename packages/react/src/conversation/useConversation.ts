@@ -11,9 +11,9 @@ import {
   useRegisterCallbacks,
 } from "./ConversationContext.js";
 import { useStableCallbacks } from "./useStableCallbacks.js";
-import type { HookOptions } from "./types.js";
+import type { HookDefaultOptions, HookOptions } from "./types.js";
 
-export type UseConversationOptions = HookOptions & {
+export type UseConversationOptions = HookDefaultOptions & {
   micMuted?: boolean;
   volume?: number;
 };
@@ -55,7 +55,10 @@ export function useConversation(props: UseConversationOptions = {}) {
       // per-session overrides, and may capture render-local state. This asymmetry
       // (hook callbacks are ref-stable; startSession callbacks are one-shot) is
       // intentional and relied on by the public API.
-      const sessionConfig = { ...hookOptionsRef.current };
+      const sessionConfig: HookOptions = { ...hookOptionsRef.current };
+      // Untyped callers can still pass a hook-level signal. Drop it so a spent
+      // signal is never reused; only one passed to startSession() applies.
+      delete sessionConfig.signal;
       for (const key of CALLBACK_KEYS) {
         delete (sessionConfig as Record<string, unknown>)[key];
       }

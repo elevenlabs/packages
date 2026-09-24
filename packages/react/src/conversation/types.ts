@@ -66,3 +66,14 @@ export type HookOptions = Partial<
       serverLocation?: Location | string;
     }
 >;
+
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+/**
+ * Options that apply to every start. `signal` is excluded because an
+ * `AbortSignal` is one-shot: a reused signal that was aborted once would make
+ * every later start a no-op. Pass it to `startSession()` instead.
+ */
+export type HookDefaultOptions = DistributiveOmit<HookOptions, "signal">;

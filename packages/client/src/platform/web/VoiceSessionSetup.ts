@@ -18,6 +18,11 @@ import {
   discardStashedAudioContext,
   takeUnlockedAudioContext,
 } from "./audioUnlock.js";
+import {
+  observeWithCancellation,
+  registerSessionCleanup,
+  throwIfSessionAborted,
+} from "../../utils/cancellation.js";
 
 function detectPlatform(): "android" | "ios" | "default" {
   if (isAndroidDevice()) return "android";
@@ -91,22 +96,51 @@ export async function webSessionSetup(
   let unlockedAudioContext: AudioContext | null = null;
 
   try {
+    throwIfSessionAborted(options.signal);
     if (useWakeLock) {
-      wakeLock = await requestWakeLock();
+      const wakeLockRequest = requestWakeLock();
+      wakeLockRequest.then(
+        async lock => {
+          if (options.signal?.aborted) {
+            await lock?.release().catch(() => {});
+          }
+        },
+        () => {}
+      );
+      wakeLock = await observeWithCancellation(wakeLockRequest, options.signal);
     }
 
     // Some browsers won't allow calling getSupportedConstraints or
     // enumerateDevices before getting approval for microphone access.
-    preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
+    const preliminaryInputRequest = navigator.mediaDevices.getUserMedia({
       audio: true,
     });
+    preliminaryInputRequest.then(
+      stream => {
+        if (options.signal?.aborted) {
+          for (const track of stream.getTracks()) {
+            try {
+              track.stop();
+            } catch (_error) {}
+          }
+        }
+      },
+      () => {}
+    );
+    preliminaryInputStream = await observeWithCancellation(
+      preliminaryInputRequest,
+      options.signal
+    );
 
     const platform = detectPlatform();
-    await applyDelay(resolveDelay(options.connectionDelay, platform));
+    await observeWithCancellation(
+      applyDelay(resolveDelay(options.connectionDelay, platform)),
+      options.signal
+    );
 
     const connection = await createConnection(options);
 
-    let result: VoiceSessionSetupResult;
+    let result: VoiceSessionSetupResult | null = null;
     try {
       if (connection instanceof WebSocketConnection) {
         unlockedAudioContext = takeUnlockedAudioContext();
@@ -126,10 +160,36 @@ export async function webSessionSetup(
         discardStashedAudioContext();
         result = setupWebRTCSession(connection);
       }
+      throwIfSessionAborted(options.signal);
     } catch (ioError) {
       await unlockedAudioContext?.close().catch(() => {});
       unlockedAudioContext = null;
-      connection.close();
+      const detachCleanup = Promise.resolve()
+        .then(() => result?.detach())
+        .catch(() => {});
+      const connectionCleanup = Promise.resolve()
+        .then(() => connection.close())
+        .catch(() => {});
+      const inputCleanup = Promise.resolve()
+        .then(() => result?.input.close())
+        .catch(() => {});
+      const outputCleanup = Promise.resolve()
+        .then(() => result?.output.close())
+        .catch(() => {});
+      const ioCleanup = Promise.all([
+        detachCleanup,
+        connectionCleanup,
+        inputCleanup,
+        outputCleanup,
+      ]);
+      if (options.signal?.aborted) {
+        // Reject promptly, but keep teardown visible to cleanup waiters so a
+        // replacement session cannot race it for the microphone and
+        // AudioContext.
+        registerSessionCleanup(options.signal, ioCleanup);
+      } else {
+        await ioCleanup;
+      }
       throw ioError;
     }
 

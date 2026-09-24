@@ -58,6 +58,51 @@ function Conversation() {
 }
 ```
 
+## Cancelling and retrying startup
+
+Pass a fresh `signal` to each `startSession()` call to cancel that startup attempt. `ConversationProvider` and `useConversation` do not accept a default `signal`, because an aborted signal would block every later start. Once `onConnect` fires, the signal no longer applies to the connected conversation; use `await endSession()` to end it. Teardown waits for pending cleanup, bounded at 10 seconds, while late resources remain observed and are closed when they arrive.
+
+A `startSession()` call made synchronously from a failed start's `onError` is queued until teardown releases the provider lock. The SDK does not decide which errors are retryable or choose retry limits, credentials, or backoff. Those policies belong to the caller:
+
+```tsx
+function StartupControls({
+  shouldRetry,
+}: {
+  shouldRetry: (message: string) => boolean;
+}) {
+  const { startSession, endSession } = useConversationControls();
+  const retriesLeft = useRef(2);
+  const currentController = useRef<AbortController | null>(null);
+
+  const start = () => {
+    const controller = new AbortController();
+    currentController.current = controller;
+
+    startSession({
+      signal: controller.signal,
+      onConnect: () => {
+        retriesLeft.current = 2;
+      },
+      onError: message => {
+        if (!shouldRetry(message) || retriesLeft.current === 0) return;
+        retriesLeft.current -= 1;
+        start();
+      },
+    });
+  };
+
+  return (
+    <>
+      <button onClick={start}>Start</button>
+      <button onClick={() => currentController.current?.abort()}>
+        Cancel startup
+      </button>
+      <button onClick={() => void endSession()}>End session</button>
+    </>
+  );
+}
+```
+
 ## Documentation
 
 For the full API reference including connection types, client tools, conversation overrides, and more, see the [React SDK documentation](https://elevenlabs.io/docs/eleven-agents/libraries/react).
