@@ -74,6 +74,88 @@ describe("useScribe", () => {
     );
   });
 
+  it("passes secondaryLanguages through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ languageCode: "da", secondaryLanguages: ["en"] })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        microphone: {},
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        languageCode: "da",
+        secondaryLanguages: ["en"],
+      })
+    );
+  });
+
+  it("passes secondaryLanguages given to connect() through to the client", async () => {
+    const { result } = renderHook(() => useScribe({ languageCode: "da" }));
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        secondaryLanguages: ["en", "sv"],
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secondaryLanguages: ["en", "sv"],
+      })
+    );
+  });
+
+  it("lets connect() replace the hook-level secondaryLanguages", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ secondaryLanguages: ["en"] })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        microphone: {},
+        secondaryLanguages: [],
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secondaryLanguages: [],
+      })
+    );
+  });
+
+  it("passes filterBackgroundAudio through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ filterBackgroundAudio: true })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        microphone: {},
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filterBackgroundAudio: true,
+      })
+    );
+  });
+
   it("passes enableLogging through to the client", async () => {
     const { result } = renderHook(() => useScribe({ enableLogging: false }));
 
