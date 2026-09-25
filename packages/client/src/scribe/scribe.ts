@@ -148,6 +148,7 @@ export interface AudioOptions extends BaseOptions {
   audioFormat: AudioFormat;
   sampleRate: number;
   microphone?: never;
+  previousText?: never;
 }
 
 /**
@@ -171,6 +172,12 @@ export interface MicrophoneOptions extends BaseOptions {
       scribeAudioProcessor?: string;
     };
   };
+  /**
+   * Text preceding the audio, such as existing document content, used as context
+   * for casing, punctuation and sentence continuation. Sent with the first
+   * microphone audio chunk.
+   */
+  previousText?: string;
   audioFormat?: never;
   sampleRate?: never;
 }
@@ -369,10 +376,12 @@ export class ScribeRealtime {
   ): Promise<void> {
     try {
       const setup = getScribeMicrophoneSetup();
+      let previousText = options.previousText;
       const result = await setup(options.microphone ?? {}, base64Audio => {
         // A frame can arrive after close(); send() throws on a closed socket.
         if (connection._closed) return;
-        connection.send({ audioBase64: base64Audio });
+        connection.send({ audioBase64: base64Audio, previousText });
+        previousText = undefined;
       });
 
       connection._mediaStreamTrack = result.mediaStreamTrack;
