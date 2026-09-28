@@ -82,7 +82,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <SizeTransition visible={!!children} dep={children}>
           <span
             className={cn(
-              "block whitespace-nowrap max-w-64 truncate",
+              "block",
+              truncate ? "whitespace-nowrap max-w-64 truncate" : "text-start",
               variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
           >
@@ -93,7 +94,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     const classes = cn(
-      "h-9 flex px-2.5 text-sm items-center transition-[colors,opacity] justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
+      "flex px-2.5 text-sm items-center transition-[colors,opacity] justify-center rounded-button duration-200 focus-ring overflow-hidden select-none",
+      truncate ? "h-9" : "min-h-9 py-2",
       VARIANT_CLASSES[variant],
       iconOnly && "min-w-9",
       className

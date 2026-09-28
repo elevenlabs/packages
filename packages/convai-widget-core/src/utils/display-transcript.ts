@@ -57,6 +57,7 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
       eventId: number;
       richContentId: string;
+      isAnswered: boolean;
     };
 
 export interface DisplayTranscriptConfig {
@@ -70,6 +71,8 @@ export interface DisplayTranscriptConfig {
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
 }
+
+const PERSISTING_COMPONENTS = new Set(["carousel"]);
 
 export function buildDisplayTranscript(
   entries: TranscriptEntry[],
@@ -131,10 +134,11 @@ export function buildDisplayTranscript(
       continue;
     }
 
-    if (
-      entry.type === "rich_content" &&
-      (!config.showRichContent || entryIndex < lastUserEntryIndex)
-    ) {
+    if (entry.type === "rich_content") {
+      if (!config.showRichContent) continue;
+      const isAnswered = entryIndex < lastUserEntryIndex;
+      if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
+      result.push({ ...entry, isAnswered });
       continue;
     }
 

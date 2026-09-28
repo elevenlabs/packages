@@ -67,16 +67,23 @@ function toolRes(
 
 function richContent(
   id = "buttons_1",
-  opts: { eventId?: number } = {}
+  opts: { eventId?: number; component?: string } = {}
 ): Extract<TranscriptEntry, { type: "rich_content" }> {
   return {
     type: "rich_content",
-    component: "buttons",
+    component: opts.component ?? "buttons",
     props: { buttons: [{ label: id, message: id }] },
     conversationIndex: 0,
     eventId: opts.eventId ?? 2,
     richContentId: `rc_${id}`,
   };
+}
+
+function carousel(
+  id = "carousel_1",
+  opts: { eventId?: number } = {}
+): Extract<TranscriptEntry, { type: "rich_content" }> {
+  return richContent(id, { ...opts, component: "carousel" });
 }
 
 /** Default config — no status, transcript enabled */
@@ -657,6 +664,31 @@ describe("buildDisplayTranscript", () => {
 
     // A user turn after a row means the customer has moved on. Agent turns do
     // not count: the tool flow puts a short agent follow-up after every row.
+    it("keeps a carousel's content and drops its controls once answered", () => {
+      const answered = build([carousel("a"), msg("user", "the first one")]);
+      expect(answered[0]).toMatchObject({
+        type: "rich_content",
+        isAnswered: true,
+      });
+
+      const unanswered = build([msg("user", "show me"), carousel("a")]);
+      expect(unanswered[1]).toMatchObject({
+        type: "rich_content",
+        isAnswered: false,
+      });
+    });
+
+    it("retires the replies of a turn and keeps its carousel", () => {
+      const result = build([
+        carousel("a", { eventId: 2 }),
+        richContent("b", { eventId: 2 }),
+        msg("user", "the first one"),
+      ]);
+
+      expect(richContentEntries(result)).toHaveLength(1);
+      expect(result[0]).toMatchObject({ component: "carousel" });
+    });
+
     it("drops a row once a user message follows it", () => {
       const result = build([
         msg("agent", "Two options", { eventId: 2 }),
@@ -666,6 +698,15 @@ describe("buildDisplayTranscript", () => {
 
       expect(richContentEntries(result)).toHaveLength(0);
       expect(result).toHaveLength(2);
+    });
+
+    it("drops a component this build cannot draw once answered", () => {
+      const result = build([
+        richContent("a", { component: "unknown_component" }),
+        msg("user", "the first one"),
+      ]);
+
+      expect(richContentEntries(result)).toHaveLength(0);
     });
 
     it("keeps a row live under agent follow-ups", () => {
@@ -693,7 +734,7 @@ describe("buildDisplayTranscript", () => {
     it("draws no component during a voice conversation", () => {
       // The customer is speaking, so tap targets are noise — and a spoken first
       // message is a transcript entry rather than a locally prepended one, so a
-      // seeded row would otherwise sit above the greeting.
+      // seeded row would otherwise sit above the first message.
       const result = build(
         [richContent("a"), msg("agent", "Hello!", { eventId: 1 })],
         { showRichContent: false }

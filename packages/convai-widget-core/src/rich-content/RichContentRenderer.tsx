@@ -1,17 +1,23 @@
 import { ComponentChildren } from "preact";
 import { useTextContents } from "../contexts/text-contents";
 import { ButtonGroupProps, ButtonGroup } from "./ButtonGroup";
-import { parseButtonGroupProps } from "./validate";
+import { Carousel, CarouselProps } from "./Carousel";
+import { parseButtonGroupProps, parseCarouselProps } from "./validate";
 
 interface RichContentRendererProps {
   component: string;
   props: unknown;
   richContentId?: string;
+  isAnswered?: boolean;
 }
 
 interface RichContentComponentEntry {
   parseProps: (raw: unknown) => unknown | null;
-  render: (props: unknown, richContentId?: string) => ComponentChildren;
+  render: (
+    props: unknown,
+    richContentId?: string,
+    isAnswered?: boolean
+  ) => ComponentChildren;
 }
 
 const RICH_CONTENT_COMPONENTS: Record<string, RichContentComponentEntry> = {
@@ -24,17 +30,28 @@ const RICH_CONTENT_COMPONENTS: Record<string, RichContentComponentEntry> = {
       />
     ),
   },
+  carousel: {
+    parseProps: parseCarouselProps,
+    render: (props, richContentId, isAnswered) => (
+      <Carousel
+        {...(props as CarouselProps)}
+        richContentId={richContentId}
+        isAnswered={isAnswered}
+      />
+    ),
+  },
 };
 
 export function RichContentRenderer({
   component,
   props,
   richContentId,
+  isAnswered,
 }: RichContentRendererProps) {
   const entry = RICH_CONTENT_COMPONENTS[component];
   const parsed = entry?.parseProps(props);
   if (entry && parsed) {
-    return entry.render(parsed, richContentId);
+    return entry.render(parsed, richContentId, isAnswered);
   }
 
   return <RichContentUnavailable />;
