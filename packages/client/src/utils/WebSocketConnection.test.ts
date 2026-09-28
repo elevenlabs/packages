@@ -215,6 +215,24 @@ describe("WebSocketConnection", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it("delivers the handshake conversation_initiation_metadata to onMessage", async () => {
+    const connection = await createConnection();
+    const onMessage = vi.fn();
+
+    connection.onMessage(onMessage);
+    await Promise.resolve();
+
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onMessage.mock.calls[0][0]).toEqual({
+      type: "conversation_initiation_metadata",
+      conversation_initiation_metadata_event: {
+        conversation_id: "test-conv-id",
+        agent_output_audio_format: "pcm_16000",
+        user_input_audio_format: "pcm_16000",
+      },
+    });
+  });
+
   it("properly reports sent messages", async () => {
     const connection = await createConnection();
     const listener = vi.fn();

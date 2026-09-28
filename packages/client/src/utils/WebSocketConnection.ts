@@ -39,12 +39,16 @@ export class WebSocketConnection
     private readonly socket: WebSocket,
     conversationId: string,
     inputFormat: FormatConfig,
-    outputFormat: FormatConfig
+    outputFormat: FormatConfig,
+    initiationEvent: ConfigEvent
   ) {
     super();
     this.conversationId = conversationId;
     this.inputFormat = inputFormat;
     this.outputFormat = outputFormat;
+    // create() consumes the handshake event before any onMessage subscriber
+    // exists; queue it so it is delivered like every other incoming event.
+    this.queue.push(initiationEvent);
 
     this.socket.addEventListener("error", event => {
       // In case the error event is followed by a close event, we want the
@@ -223,7 +227,11 @@ export class WebSocketConnection
         socket,
         conversation_id,
         inputFormat,
-        outputFormat
+        outputFormat,
+        {
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: conversationConfig,
+        }
       );
     } catch (error) {
       socket?.close();
