@@ -46,7 +46,7 @@ async function setupWebSocketIO(
   connection: WebSocketConnection,
   audioContext: AudioContext | null
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
-  const [input, output] = await Promise.all([
+  const [inputResult, outputResult] = await Promise.allSettled([
     MediaDeviceInput.create({
       ...connection.inputFormat,
       preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
@@ -63,6 +63,22 @@ async function setupWebSocketIO(
     }),
   ]);
 
+  if (inputResult.status === "rejected" || outputResult.status === "rejected") {
+    // One side failed. Release the other one, otherwise its microphone
+    // stream, AudioContext or audio element outlives the failed session.
+    const created = [inputResult, outputResult].flatMap(result =>
+      result.status === "fulfilled" ? [result.value] : []
+    );
+    await Promise.all(created.map(controller => controller.close())).catch(
+      () => {}
+    );
+    throw inputResult.status === "rejected"
+      ? inputResult.reason
+      : (outputResult as PromiseRejectedResult).reason;
+  }
+
+  const input = inputResult.value;
+  const output = outputResult.value;
   const detachInput = attachInputToConnection(input, connection);
   const detachOutput = attachConnectionToOutput(connection, output);
 
