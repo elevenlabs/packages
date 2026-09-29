@@ -518,14 +518,19 @@ export class WebRTCConnection extends BaseConnection {
       } catch (error) {
         console.warn("Error stopping local tracks:", error);
       }
+    }
 
-      // Delegate all audio cleanup to the adapter
-      this.audioAdapter?.cleanup();
-      this.inputAnalyser = undefined;
-      this.outputAnalyser = undefined;
-      this.inputVolumeProvider = NO_VOLUME;
-      this.outputVolumeProvider = NO_VOLUME;
+    // The room can already be gone when the session ends (the room's
+    // disconnect handlers clear `isConnected` before they end the session),
+    // so the audio resources are released whether or not it is still connected.
+    // Delegate all audio cleanup to the adapter
+    this.audioAdapter?.cleanup();
+    this.inputAnalyser = undefined;
+    this.outputAnalyser = undefined;
+    this.inputVolumeProvider = NO_VOLUME;
+    this.outputVolumeProvider = NO_VOLUME;
 
+    if (this.isConnected) {
       this.room.disconnect();
     }
   }
