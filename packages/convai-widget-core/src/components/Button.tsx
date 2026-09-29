@@ -79,11 +79,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             name={icon}
           />
         )}
-        <SizeTransition visible={!!children} dep={children}>
+        <SizeTransition visible={!!children} dep={children} shrink={!truncate}>
           <span
             className={cn(
               "block",
-              truncate ? "whitespace-nowrap max-w-64 truncate" : "text-start",
+              truncate
+                ? "whitespace-nowrap max-w-64 truncate"
+                : "text-start wrap-break-word",
               variant === "md-button" ? "pl-1.5" : "px-1.5"
             )}
           >
