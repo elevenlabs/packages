@@ -369,6 +369,7 @@ function RichContentMessage({
         component={entry.component}
         props={entry.props}
         richContentId={entry.richContentId}
+        isAnswered={entry.isAnswered}
       />
     </div>
   );

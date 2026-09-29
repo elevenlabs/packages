@@ -1,7 +1,9 @@
 import * as z from "zod/mini";
 import type { ButtonGroupProps, RichContentButton } from "./ButtonGroup";
+import type { CarouselItem, CarouselProps } from "./Carousel";
 
 const MAX_BUTTONS = 3;
+const MAX_CAROUSEL_ITEMS = 5;
 const MAX_TEXT_LENGTH = 500;
 const MAX_URL_LENGTH = 2048;
 
@@ -23,6 +25,10 @@ const Link = z.pipe(
   ),
   z.string().check(z.maxLength(MAX_URL_LENGTH), z.regex(/^https:\/\//i))
 );
+
+// Drop a malformed optional field instead of rejecting its parent.
+const Optional = <T extends z.ZodMiniType>(schema: T) =>
+  z.catch(z.nullish(schema), undefined);
 
 const MessageButton = z.pipe(
   z.object({
@@ -47,6 +53,17 @@ const LinkButton = z.object({
 
 const Button = z.union([MessageButton, LinkButton]);
 
+function parseButtons(raw: unknown[]): RichContentButton[] {
+  const buttons: RichContentButton[] = [];
+  for (const item of raw) {
+    if (buttons.length >= MAX_BUTTONS) break;
+
+    const button = z.safeParse(Button, item);
+    if (button.success) buttons.push(button.data);
+  }
+  return buttons;
+}
+
 export function parseButtonGroupProps(value: unknown): ButtonGroupProps | null {
   const parsed = z.safeParse(
     z.object({ buttons: z.array(z.unknown()) }),
@@ -54,13 +71,42 @@ export function parseButtonGroupProps(value: unknown): ButtonGroupProps | null {
   );
   if (!parsed.success) return null;
 
-  const buttons: RichContentButton[] = [];
-  for (const item of parsed.data.buttons) {
-    if (buttons.length >= MAX_BUTTONS) break;
+  const buttons = parseButtons(parsed.data.buttons);
+  return buttons.length > 0 ? { buttons } : null;
+}
 
-    const button = z.safeParse(Button, item);
-    if (button.success) buttons.push(button.data);
+const CarouselItemSchema = z.pipe(
+  z.object({
+    title: Text,
+    subtitle: Optional(Text),
+    description: Optional(Text),
+    image_url: Optional(Link),
+    buttons: z.catch(z.nullish(z.array(z.unknown())), undefined),
+  }),
+  z.transform((item): CarouselItem => {
+    const card: CarouselItem = { title: item.title };
+    if (item.subtitle) card.subtitle = item.subtitle;
+    if (item.description) card.description = item.description;
+    if (item.image_url) card.imageUrl = item.image_url;
+
+    const buttons = parseButtons(item.buttons ?? []);
+    if (buttons.length > 0) card.buttons = buttons;
+
+    return card;
+  })
+);
+
+export function parseCarouselProps(value: unknown): CarouselProps | null {
+  const parsed = z.safeParse(z.object({ items: z.array(z.unknown()) }), value);
+  if (!parsed.success) return null;
+
+  const items: CarouselItem[] = [];
+  for (const raw of parsed.data.items) {
+    if (items.length >= MAX_CAROUSEL_ITEMS) break;
+
+    const item = z.safeParse(CarouselItemSchema, raw);
+    if (item.success) items.push(item.data);
   }
 
-  return buttons.length > 0 ? { buttons } : null;
+  return items.length > 0 ? { items } : null;
 }
