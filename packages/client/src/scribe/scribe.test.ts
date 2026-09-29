@@ -1440,6 +1440,52 @@ describe("Scribe", () => {
       server.close();
     });
 
+    it("sends previousText with the first microphone audio chunk only", async () => {
+      let capturedOnAudioData: ((base64: string) => void) | null = null;
+      setScribeMicrophoneSetup(
+        vi.fn((_config, onAudioData) => {
+          capturedOnAudioData = onAudioData;
+          return Promise.resolve({
+            mediaStreamTrack: { enabled: true } as MediaStreamTrack,
+            cleanup: vi.fn(),
+          });
+        })
+      );
+
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      onTestFinished(() => server.close());
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        microphone: {},
+        previousText: "The quick brown fox",
+      });
+      onTestFinished(() => connection.close());
+
+      const client = await clientPromise;
+      const onMessage = vi.fn();
+      client.on("message", onMessage);
+      await sleep(100);
+
+      capturedOnAudioData!("Zmlyc3Q=");
+      capturedOnAudioData!("c2Vjb25k");
+      await sleep(50);
+
+      const [first, second] = onMessage.mock.calls.map(([message]) =>
+        JSON.parse(message as string)
+      );
+      expect(first.previous_text).toBe("The quick brown fox");
+      expect(second).not.toHaveProperty("previous_text");
+    });
+
     it("closes the connection when microphone setup fails", async () => {
       setScribeMicrophoneSetup(
         vi.fn(() => Promise.reject(new Error("Permission denied")))
