@@ -31,10 +31,7 @@ interface SizeTransitionProps extends PropsWithoutRef<
    * A dependency used to detect when the size of the children changes.
    */
   dep?: any;
-  /**
-   * Whether the children may shrink below their natural width, so that text
-   * wraps inside the available space instead of overflowing it.
-   */
+  /** Whether the children may shrink so that long text wraps. */
   shrink?: boolean;
 }
 
@@ -58,7 +55,10 @@ function Reduced({
   ...rest
 }: SizeTransitionProps) {
   return visible ? (
-    <div className={clsx(grow && "grow", className)} {...rest} />
+    <div
+      className={clsx(shrink && "min-w-0", grow && "grow", className)}
+      {...rest}
+    />
   ) : null;
 }
 
