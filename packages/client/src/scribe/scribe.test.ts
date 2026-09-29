@@ -1785,6 +1785,54 @@ describe("Scribe", () => {
   });
 });
 
+describe("Scribe listener errors", () => {
+  it("keeps calling later listeners and does not report a parse failure when a listener throws", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    onTestFinished(() => consoleError.mockRestore());
+
+    const connection = Scribe.connect({
+      token: TEST_TOKEN,
+      modelId: TEST_MODEL_ID,
+      audioFormat: AudioFormat.PCM_16000,
+      sampleRate: 16000,
+    });
+    const throwingListener = vi.fn(() => {
+      throw new Error("listener failure");
+    });
+    const laterListener = vi.fn();
+    const onError = vi.fn();
+    connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, throwingListener);
+    connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, laterListener);
+    connection.on(RealtimeEvents.ERROR, onError);
+
+    const client = await clientPromise;
+    await sleep(100);
+    const payload = {
+      message_type: "committed_transcript",
+      text: COMMITTED_TRANSCRIPT_TEXT,
+    };
+    client.send(JSON.stringify(payload));
+    await sleep(100);
+
+    expect(throwingListener).toHaveBeenCalledTimes(1);
+    expect(laterListener).toHaveBeenCalledWith(payload);
+    expect(onError).not.toHaveBeenCalled();
+
+    connection.close();
+    server.close();
+  });
+});
+
 async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
