@@ -31,7 +31,7 @@ export function Carousel({
               src={item.imageUrl}
               alt={item.title}
               loading="lazy"
-              className="h-44 w-full rounded-input bg-base-active object-cover"
+              className="aspect-[4/5] w-full rounded-input bg-base-active object-cover"
             />
           )}
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -46,7 +46,7 @@ export function Carousel({
             {item.description && (
               <span
                 dir="auto"
-                className="line-clamp-3 text-xs text-base-subtle whitespace-pre-line wrap-break-word"
+                className="text-xs text-base-subtle whitespace-pre-line wrap-break-word"
               >
                 {item.description}
               </span>

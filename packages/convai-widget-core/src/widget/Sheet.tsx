@@ -87,12 +87,21 @@ export function Sheet({ open }: SheetProps) {
     const localMessage = localFirstMessage.value;
     const transcriptEnabled =
       isTextOnly || (config.value.transcript_enabled ?? false);
-    return buildDisplayTranscript(transcript.value, {
+    // DEMO ONLY (never push): show rich content in voice calls when the
+    // transcript is visible, but keep first-message quick replies tied to the
+    // first message they belong to.
+    const showsFirstMessage = isTextOnly || localMessage !== undefined;
+    const entries = showsFirstMessage
+      ? transcript.value
+      : transcript.value.filter(
+          entry =>
+            entry.type !== "rich_content" ||
+            entry.richContentId !== "first_message"
+        );
+    return buildDisplayTranscript(entries, {
       showAgentStatus: config.value.show_agent_status ?? false,
       transcriptEnabled,
-      // DEMO ONLY (never push): show rich content in voice calls when the
-      // transcript is visible.
-      showRichContent: transcriptEnabled || localMessage !== undefined,
+      showRichContent: transcriptEnabled || showsFirstMessage,
       firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
       showTypingIndicator:
