@@ -11,8 +11,9 @@ import { clsx } from "clsx";
 import { useCSSTransition } from "../utils/useCssTransition";
 import { useReducedMotion } from "../utils/useReducedMotion";
 
-interface SizeTransitionProps
-  extends PropsWithoutRef<HTMLAttributes<HTMLSpanElement>> {
+interface SizeTransitionProps extends PropsWithoutRef<
+  HTMLAttributes<HTMLSpanElement>
+> {
   /**
    * Whether the children should be shown.
    *
@@ -30,6 +31,8 @@ interface SizeTransitionProps
    * A dependency used to detect when the size of the children changes.
    */
   dep?: any;
+  /** Whether the children may shrink so that long text wraps. */
+  shrink?: boolean;
 }
 
 /**
@@ -48,10 +51,14 @@ function Reduced({
   className,
   grow,
   dep,
+  shrink,
   ...rest
 }: SizeTransitionProps) {
   return visible ? (
-    <div className={clsx(grow && "grow", className)} {...rest} />
+    <div
+      className={clsx(shrink && "min-w-0", grow && "grow", className)}
+      {...rest}
+    />
   ) : null;
 }
 
@@ -61,6 +68,7 @@ function Animated({
   className,
   grow,
   dep,
+  shrink,
   ...rest
 }: SizeTransitionProps) {
   const [retain, setRetain] = useState(visible);
@@ -137,7 +145,8 @@ function Animated({
     <div
       ref={refCallback}
       className={clsx(
-        "relative inline-flex shrink-0 justify-center items-center transition-[opacity,width,height,transform,flex-grow] duration-200 min-w-0",
+        "relative inline-flex justify-center items-center transition-[opacity,width,height,transform,flex-grow] duration-200 min-w-0",
+        !shrink && "shrink-0",
         !visible && "opacity-0 scale-75",
         visible && grow && "grow",
         visible && retain && !transitioning.value && "z-1"
@@ -147,7 +156,8 @@ function Animated({
       <div
         ref={setWrapper}
         className={clsx(
-          "shrink-0 min-h-min min-w-min transition-opacity duration-200",
+          "min-h-min transition-opacity duration-200",
+          shrink ? "min-w-0" : "shrink-0 min-w-min",
           grow && "grow",
           className
         )}

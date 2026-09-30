@@ -1,5 +1,27 @@
 # @elevenlabs/react
 
+## 1.16.0
+
+### Minor Changes
+
+- 33a5042: Add the `transcriptEdit` option to `Scribe.connect()` and dispatch the new `edited_transcript` server message:
+  - `transcriptEdit`: a natural-language instruction applied to each committed transcript (max 2000 characters), sent as the `transcript_edit` query param. Cannot be combined with `entityDetection`.
+  - `edited_transcript` (`RealtimeEvents.EDITED_TRANSCRIPT`), carrying the committed `text` and its `edited_text` (`EditedTranscriptMessage`). `edited_text` equals `text` when the instruction changed nothing.
+  - `useScribe()` accepts the same `transcriptEdit` option, exposes an `onEditedTranscript` callback and attaches the edited text to the matching entry in `committedTranscripts` as `editedText`.
+
+### Patch Changes
+
+- eaab81f: Fix `useScribe` dropping the `secondaryLanguages` option, so a session that sets it now sends `secondary_languages` on the realtime WebSocket URL instead of only `language_code`. The option was added to `Scribe.connect()` but never forwarded by the hook, which passed a fixed subset of the client options.
+
+  `filterBackgroundAudio` was missing for the same reason and is now forwarded too. Both are accepted as hook options and as `connect()` options, like the options around them.
+
+  The two `Scribe.connect()` calls behind the hook's microphone and manual-audio modes now share one options object, so a client option only has to be forwarded once.
+
+- Updated dependencies [32358cc]
+- Updated dependencies [e2d1ac7]
+- Updated dependencies [33a5042]
+  - @elevenlabs/client@1.26.0
+
 ## 1.15.2
 
 ### Patch Changes

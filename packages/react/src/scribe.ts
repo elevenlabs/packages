@@ -124,6 +124,12 @@ export interface ScribeHookOptions extends ScribeCallbacks {
 
   // Microphone options (for automatic microphone mode)
   microphone?: MicrophoneOptions["microphone"];
+  /**
+   * Text preceding the audio, such as existing document content, used as context
+   * for casing, punctuation and sentence continuation. Sent with the first
+   * microphone audio chunk.
+   */
+  previousText?: string;
 
   // Manual audio options
   audioFormat?: AudioFormat;
@@ -238,6 +244,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
     // Mode options
     microphone: defaultMicrophone,
+    previousText: defaultPreviousText,
     audioFormat: defaultAudioFormat,
     sampleRate: defaultSampleRate,
 
@@ -354,6 +361,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           connection = Scribe.connect({
             ...sessionOptions,
             microphone,
+            previousText: runtimeOptions.previousText ?? defaultPreviousText,
           } as MicrophoneOptions);
         } else if (audioFormat && sampleRate) {
           // Manual audio mode
@@ -562,6 +570,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultLanguageCode,
       defaultSecondaryLanguages,
       defaultMicrophone,
+      defaultPreviousText,
       defaultAudioFormat,
       defaultSampleRate,
       defaultIncludeTimestamps,

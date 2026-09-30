@@ -156,6 +156,26 @@ describe("useScribe", () => {
     );
   });
 
+  it("passes previousText through to the client in microphone mode", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ previousText: "The quick brown fox" })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        microphone: {},
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        previousText: "The quick brown fox",
+      })
+    );
+  });
+
   it("passes enableLogging through to the client", async () => {
     const { result } = renderHook(() => useScribe({ enableLogging: false }));
 

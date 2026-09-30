@@ -38,13 +38,20 @@ export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
     <div className="flex flex-wrap gap-2">
       {buttons.map((button, index) =>
         button.type === "link" ? (
-          <Button key={index} as="a" variant="outline" href={button.link}>
+          <Button
+            key={index}
+            as="a"
+            variant="outline"
+            href={button.link}
+            truncate={false}
+          >
             {button.label}
           </Button>
         ) : (
           <Button
             key={index}
             variant="outline"
+            truncate={false}
             disabled={disabled}
             onClick={e => {
               const attribution = { richContentId };

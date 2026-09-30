@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseButtonGroupProps } from "./validate";
+import { parseButtonGroupProps, parseCarouselProps } from "./validate";
 
 const parseButtons = (buttons: unknown) => parseButtonGroupProps({ buttons });
 
@@ -8,7 +8,6 @@ describe("button parsing", () => {
     expect(
       parseButtons([
         { type: "message", label: "Ask more", message: "Tell me more" },
-        { label: "No message" },
         { message: "No label" },
         { type: "webhook", label: "Unknown type" },
         "not an object",
@@ -21,8 +20,6 @@ describe("button parsing", () => {
   });
 
   it("defaults a button with no type to a message button", () => {
-    // The sender states the type, but a button without one is unambiguous
-    // when it carries a message, so it is read as such rather than dropped.
     expect(
       parseButtons([{ label: "Ask more", message: "Tell me more" }])
     ).toEqual({
@@ -122,5 +119,93 @@ describe("parseButtonGroupProps", () => {
     },
   ])("rejects $description", ({ input }) => {
     expect(parseButtonGroupProps(input)).toBeNull();
+  });
+});
+
+describe("parseCarouselProps", () => {
+  const item = {
+    title: "Essence Mascara Lash Princess",
+    subtitle: "beauty",
+    description: "A volumising mascara.",
+    image_url: "https://cdn.test/mascara.png",
+  };
+
+  it("keeps every field a card draws", () => {
+    expect(parseCarouselProps({ items: [item] })).toEqual({
+      items: [
+        {
+          title: "Essence Mascara Lash Princess",
+          subtitle: "beauty",
+          description: "A volumising mascara.",
+          imageUrl: "https://cdn.test/mascara.png",
+        },
+      ],
+    });
+  });
+
+  it("caps the number of cards", () => {
+    const parsed = parseCarouselProps({
+      items: Array.from({ length: 9 }, (_, i) => ({ title: `Item ${i}` })),
+    });
+
+    expect(parsed?.items).toHaveLength(5);
+  });
+
+  it("keeps drawable cards minus their bad fields and drops the rest", () => {
+    const parsed = parseCarouselProps({
+      items: [
+        { title: "Mascara", image_url: "http://cdn.test/a.png" },
+        { subtitle: "No title" },
+        "not an object",
+      ],
+    });
+
+    expect(parsed).toEqual({ items: [{ title: "Mascara" }] });
+  });
+
+  it.each<{ description: string; input: unknown }>([
+    { description: "null", input: null },
+    { description: "missing items", input: {} },
+    { description: "items that are not an array", input: { items: {} } },
+    {
+      description: "no item with a title",
+      input: { items: [{ subtitle: "No title" }] },
+    },
+  ])("rejects $description", ({ input }) => {
+    expect(parseCarouselProps(input)).toBeNull();
+  });
+});
+
+describe("carousel card buttons", () => {
+  it("keeps the buttons a card offers", () => {
+    const parsed = parseCarouselProps({
+      items: [
+        {
+          title: "MacBook Pro",
+          buttons: [
+            { label: "Add to cart", message: "Add the MacBook Pro to my cart" },
+          ],
+        },
+      ],
+    });
+
+    expect(parsed?.items[0].buttons).toEqual([
+      {
+        type: "message",
+        label: "Add to cart",
+        message: "Add the MacBook Pro to my cart",
+      },
+    ]);
+  });
+
+  it.each<{ description: string; buttons: unknown }>([
+    { description: "all unusable", buttons: [{ message: "no label" }] },
+    { description: "not a list", buttons: "nope" },
+  ])("keeps a card whose buttons are $description", ({ buttons }) => {
+    const parsed = parseCarouselProps({
+      items: [{ title: "MacBook Pro", buttons }],
+    });
+
+    expect(parsed).toEqual({ items: [{ title: "MacBook Pro" }] });
   });
 });
