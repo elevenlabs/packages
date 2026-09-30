@@ -85,11 +85,14 @@ export function Sheet({ open }: SheetProps) {
   const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
     const localMessage = localFirstMessage.value;
+    const transcriptEnabled =
+      isTextOnly || (config.value.transcript_enabled ?? false);
     return buildDisplayTranscript(transcript.value, {
       showAgentStatus: config.value.show_agent_status ?? false,
-      transcriptEnabled:
-        isTextOnly || (config.value.transcript_enabled ?? false),
-      showRichContent: isTextOnly || localMessage !== undefined,
+      transcriptEnabled,
+      // DEMO ONLY (never push): show rich content in voice calls when the
+      // transcript is visible.
+      showRichContent: transcriptEnabled || localMessage !== undefined,
       firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
       showTypingIndicator:
