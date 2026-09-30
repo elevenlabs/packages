@@ -82,6 +82,8 @@ export type BaseSessionConfig = {
   textOnly?: boolean;
   userId?: string;
   environment?: string;
+  /** If set, the ElevenLabs agent workflow will start at this node id instead of the default entry node. */
+  startingWorkflowNodeId?: string;
 };
 
 export type ConnectionType = "websocket" | "webrtc";

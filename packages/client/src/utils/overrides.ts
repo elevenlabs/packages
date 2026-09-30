@@ -59,5 +59,9 @@ export function constructOverrides(
     };
   }
 
+  if (config.startingWorkflowNodeId) {
+    overridesEvent.starting_workflow_node_id = config.startingWorkflowNodeId;
+  }
+
   return overridesEvent;
 }
