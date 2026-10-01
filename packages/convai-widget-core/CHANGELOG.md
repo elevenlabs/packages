@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.19.0
+
+### Minor Changes
+
+- d31b44a: Add carousel rich content to the widget, with scrollable item cards that can include an image, subtitle, description, and actions. Carousels remain in the transcript after a reply while their actions are removed.
+
+### Patch Changes
+
+- Updated dependencies [7f316ec]
+- Updated dependencies [050aeea]
+  - @elevenlabs/client@1.27.0
+
 ## 0.18.3
 
 ### Patch Changes
