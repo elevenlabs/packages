@@ -85,11 +85,23 @@ export function Sheet({ open }: SheetProps) {
   const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
     const localMessage = localFirstMessage.value;
-    return buildDisplayTranscript(transcript.value, {
+    const transcriptEnabled =
+      isTextOnly || (config.value.transcript_enabled ?? false);
+    // Show rich content in voice calls when the transcript is visible, but
+    // keep first-message quick replies tied to the first message they belong
+    // to.
+    const showsFirstMessage = isTextOnly || localMessage !== undefined;
+    const entries = showsFirstMessage
+      ? transcript.value
+      : transcript.value.filter(
+          entry =>
+            entry.type !== "rich_content" ||
+            entry.richContentId !== "first_message"
+        );
+    return buildDisplayTranscript(entries, {
       showAgentStatus: config.value.show_agent_status ?? false,
-      transcriptEnabled:
-        isTextOnly || (config.value.transcript_enabled ?? false),
-      showRichContent: isTextOnly || localMessage !== undefined,
+      transcriptEnabled,
+      showRichContent: transcriptEnabled || showsFirstMessage,
       firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
       showTypingIndicator:
