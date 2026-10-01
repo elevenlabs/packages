@@ -1,5 +1,17 @@
 # @elevenlabs/react
 
+## 1.17.0
+
+### Minor Changes
+
+- 050aeea: Add a `previousText` option to `Scribe.connect()` and `useScribe()` in microphone mode. It is sent with the first microphone audio chunk to give the model context, such as existing document text, for casing, punctuation and sentence continuation.
+
+### Patch Changes
+
+- Updated dependencies [7f316ec]
+- Updated dependencies [050aeea]
+  - @elevenlabs/client@1.27.0
+
 ## 1.16.0
 
 ### Minor Changes
