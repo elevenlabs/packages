@@ -485,6 +485,11 @@ components:
             filter_background_audio:
               type: boolean
               description: Whether background speech filtering is enabled to reduce false activations from nearby conversations and ambient noise.
+            keepalive_interval_ms:
+              anyOf:
+                - type: integer
+                - type: "null"
+              description: Keepalive interval in milliseconds, or null when keepalives are disabled.
 
     PartialTranscriptPayload:
       type: object

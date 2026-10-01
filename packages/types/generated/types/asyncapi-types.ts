@@ -856,6 +856,7 @@ export interface Config {
   no_verbatim?: boolean;
   entity_detection?: string[];
   filter_background_audio?: boolean;
+  keepalive_interval_ms?: number | null;
 }
 
 export type ConfigAudioFormat =
