@@ -1,8 +1,27 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebSocketConnection } from "./WebSocketConnection.js";
+import { isSessionAbortError } from "./cancellation.js";
 import type { PongEvent } from "./events.js";
 
 type EventHandler = (event: any) => void;
+
+function captureUnhandledRejections() {
+  const reasons: unknown[] = [];
+  const listener = (reason: unknown) => reasons.push(reason);
+  const processEvents = (
+    globalThis as typeof globalThis & {
+      process: {
+        on: (event: "unhandledRejection", callback: typeof listener) => void;
+        off: (event: "unhandledRejection", callback: typeof listener) => void;
+      };
+    }
+  ).process;
+  processEvents.on("unhandledRejection", listener);
+  return {
+    reasons,
+    stop: () => processEvents.off("unhandledRejection", listener),
+  };
+}
 
 describe("WebSocketConnection", () => {
   let listeners: Map<string, EventHandler[]>;
@@ -228,5 +247,42 @@ describe("WebSocketConnection", () => {
     connection.close();
 
     expect(listener).toHaveBeenCalledWith(message);
+  });
+
+  it("cancels a pending WebSocket handshake and closes a socket that opens late", async () => {
+    const controller = new AbortController();
+    const startPromise = WebSocketConnection.create({
+      agentId: "test-agent",
+      connectionType: "websocket",
+      signal: controller.signal,
+    });
+
+    const unhandled = captureUnhandledRejections();
+    try {
+      controller.abort();
+
+      const error = await startPromise.then(
+        () => {
+          throw new Error("expected startup to reject");
+        },
+        reason => reason
+      );
+      expect(isSessionAbortError(error)).toBe(true);
+      expect(error).toMatchObject({ name: "AbortError" });
+      expect(mockSocket.close).toHaveBeenCalled();
+
+      const closeCount = mockSocket.close.mock.calls.length;
+      const listenerCount = mockSocket.addEventListener.mock.calls.length;
+      emit("open", {});
+
+      expect(mockSocket.close.mock.calls.length).toBeGreaterThan(closeCount);
+      expect(mockSocket.send).not.toHaveBeenCalled();
+      expect(mockSocket.addEventListener).toHaveBeenCalledTimes(listenerCount);
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(unhandled.reasons).toEqual([]);
+    } finally {
+      unhandled.stop();
+    }
   });
 });
