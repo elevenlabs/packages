@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./compatibility.js", () => ({
   isIosDevice: vi.fn(() => true),
+  isWebKitBrowser: vi.fn(() => false),
 }));
 
-import { isIosDevice } from "./compatibility.js";
+import { isIosDevice, isWebKitBrowser } from "./compatibility.js";
 import {
   discardStashedAudioContext,
   installIosAudioUnlockListener,
@@ -15,6 +16,7 @@ import {
 describe("unlockIosAudioForSession", () => {
   beforeEach(() => {
     vi.mocked(isIosDevice).mockReturnValue(true);
+    vi.mocked(isWebKitBrowser).mockReturnValue(false);
     vi.stubGlobal(
       "AudioContext",
       vi.fn(function MockAudioContext(this: {
@@ -50,6 +52,15 @@ describe("unlockIosAudioForSession", () => {
     expect(takeUnlockedAudioContext()).toBeNull();
   });
 
+  it("stashes an AudioContext on desktop Safari", () => {
+    vi.mocked(isIosDevice).mockReturnValue(false);
+    vi.mocked(isWebKitBrowser).mockReturnValue(true);
+
+    unlockIosAudioForSession();
+
+    expect(takeUnlockedAudioContext()).not.toBeNull();
+  });
+
   it("stashes an AudioContext on iOS until taken", () => {
     unlockIosAudioForSession();
     const ctx = takeUnlockedAudioContext();
@@ -78,6 +89,7 @@ describe("unlockIosAudioForSession", () => {
 describe("installIosAudioUnlockListener", () => {
   beforeEach(() => {
     vi.mocked(isIosDevice).mockReturnValue(true);
+    vi.mocked(isWebKitBrowser).mockReturnValue(false);
   });
 
   afterEach(() => {
