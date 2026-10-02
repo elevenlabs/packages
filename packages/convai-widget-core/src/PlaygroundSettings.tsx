@@ -20,6 +20,7 @@ export function usePlaygroundSettings() {
   const [textOnly, setTextOnly] = useState(false);
   const [alwaysExpanded, setAlwaysExpanded] = useState(false);
   const [dismissible, setDismissible] = useState(false);
+  const [endConfirmation, setEndConfirmation] = useState(false);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [showResizeButton, setShowResizeButton] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
@@ -68,6 +69,8 @@ export function usePlaygroundSettings() {
     setAllowEvents,
     dismissible,
     setDismissible,
+    endConfirmation,
+    setEndConfirmation,
     showAgentStatus,
     setShowAgentStatus,
     showResizeButton,
@@ -172,6 +175,14 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setDismissible(e.currentTarget.checked)}
         />{" "}
         Dismissible
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.endConfirmation}
+          onChange={e => state.setEndConfirmation(e.currentTarget.checked)}
+        />{" "}
+        End confirmation
       </label>
       <label>
         <input

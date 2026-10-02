@@ -24,6 +24,8 @@ import { useWidgetSize } from "../contexts/widget-size";
 import { SheetActions } from "./SheetActions";
 import { AvatarOverlay } from "./AvatarOverlay";
 import { stripAudioTags } from "../utils/stripAudioTags";
+import { useEndConfirmation } from "../contexts/end-confirmation";
+import { EndConfirmationDialog } from "./EndConfirmationDialog";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -56,6 +58,7 @@ export function Sheet({ open }: SheetProps) {
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
+  const { confirmationShown } = useEndConfirmation();
 
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
@@ -177,6 +180,9 @@ export function Sheet({ open }: SheetProps) {
           isDisconnected={isDisconnected}
           onStartSession={startSession}
         />
+        <InOutTransition active={confirmationShown}>
+          <EndConfirmationDialog overlay />
+        </InOutTransition>
       </div>
     </InOutTransition>
   );

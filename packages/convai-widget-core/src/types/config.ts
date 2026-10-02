@@ -90,6 +90,7 @@ export interface WidgetConfig {
     max_files_per_conversation?: number;
   };
   show_resize_button?: boolean;
+  end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
 }
@@ -128,6 +129,14 @@ export const DefaultTextContents = {
   copied: "Copied!",
   accept_terms: "Accept",
   dismiss_terms: "Cancel",
+  end_chat_confirmation_title: "End this chat?",
+  end_chat_confirmation_description:
+    "You won't be able to send more messages in this conversation. You can start a new one at any time.",
+  end_call_confirmation_title: "End this call?",
+  end_call_confirmation_description:
+    "The agent will stop listening. You can start a new call at any time.",
+  end_call_confirm: "End call",
+  cancel_end_confirmation: "Cancel",
 
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",
