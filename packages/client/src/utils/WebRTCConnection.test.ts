@@ -1135,6 +1135,57 @@ describe("WebRTCConnection", () => {
     }
   });
 
+  it("releases the audio resources when the room disconnects before close()", async () => {
+    const mockRoom = new Room() as any;
+    const handlers = new Map<string, (...args: any[]) => unknown>();
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: (...args: any[]) => unknown) => {
+        handlers.set(event, callback);
+        if (event === "connected") {
+          queueMicrotask(callback as () => void);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (
+      mockRoom.localParticipant.getTrackPublication as ReturnType<typeof vi.fn>
+    ).mockReturnValue(undefined);
+
+    const cleanup = vi.fn();
+    setWebRTCAudioAdapterFactory(() => ({
+      attachRemoteTrack: vi.fn(() => Promise.resolve()),
+      setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
+      setupOutputAnalysis: vi.fn(() =>
+        Promise.resolve({ volumeProvider: NO_VOLUME })
+      ),
+      setVolume: vi.fn(),
+      setOutputDevice: vi.fn(() => Promise.resolve()),
+      cleanup,
+    }));
+
+    try {
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+
+      // The room drops (network loss, server-side removal) and the session
+      // then closes the connection as part of ending itself.
+      handlers.get("disconnected")?.("connection lost");
+      connection.close();
+
+      expect(cleanup).toHaveBeenCalledTimes(1);
+    } finally {
+      setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+    }
+  });
+
   describe("conversation initiation payload", () => {
     let mockRoom: any;
 
