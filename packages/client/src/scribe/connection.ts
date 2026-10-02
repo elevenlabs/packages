@@ -108,9 +108,15 @@ class EventEmitter {
   emit(event: string, ...args: unknown[]): void {
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
-      eventListeners.forEach(listener => {
-        listener(...args);
-      });
+      // Iterate a copy so listeners added during dispatch wait for the next
+      // event, and keep a throwing listener from starving the rest.
+      for (const listener of [...eventListeners]) {
+        try {
+          listener(...args);
+        } catch (error) {
+          console.error(`Error in "${event}" listener:`, error);
+        }
+      }
     }
   }
 }
