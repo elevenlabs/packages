@@ -26,6 +26,7 @@ import {
 } from "../contexts/widget-config";
 import { cn } from "../utils/cn";
 import { CallButton } from "./CallButton";
+import { useEndConfirmation } from "../contexts/end-confirmation";
 import { TriggerMuteButton } from "./TriggerMuteButton";
 import { useConversationMode } from "../contexts/conversation-mode";
 import { useSheetContent } from "../contexts/sheet-content";
@@ -331,7 +332,8 @@ function SheetButtons({
   const text = useTextContents();
   const textOnly = useIsConversationTextOnly();
   const textInputEnabled = useTextInputEnabled();
-  const { endSession, isDisconnected } = useConversation();
+  const { isDisconnected } = useConversation();
+  const { requestEndSession } = useEndConfirmation();
   const callDisabled = useCallButtonDisabled();
   const { isTextMode } = useConversationMode();
 
@@ -369,7 +371,7 @@ function SheetButtons({
             <Button
               variant="secondary"
               icon="stop"
-              onClick={endSession}
+              onClick={requestEndSession}
               disabled={callDisabled.value}
               aria-label={text.end_chat}
               aria-describedby="end-chat-tooltip"
