@@ -447,6 +447,48 @@ describe("Conversation", () => {
 
     server.close();
   });
+
+  it("invokes onConversationMetadata for WebSocket sessions", async () => {
+    const server = new Server("wss://api.elevenlabs.io/text/metadata");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => {
+        resolve(socket);
+      });
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const onConversationMetadata = vi.fn();
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/text/metadata",
+      connectionDelay: { default: 0 },
+      textOnly: true,
+      onConversationMetadata,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+
+    const conversation = await conversationPromise;
+    await vi.waitFor(() =>
+      expect(onConversationMetadata).toHaveBeenCalledTimes(1)
+    );
+    expect(onConversationMetadata).toHaveBeenCalledWith({
+      conversation_id: CONVERSATION_ID,
+      agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+    });
+
+    await conversation.endSession();
+    server.close();
+  });
 });
 
 describe("Connection Types", () => {
