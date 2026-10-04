@@ -3,6 +3,7 @@ import type { Mode } from "../BaseConversation.js";
 import type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
+  ConversationConfigOverrideTtsModelId,
 } from "@elevenlabs/types";
 import type { DisconnectionDetails } from "../types.js";
 
@@ -54,6 +55,7 @@ export type BaseSessionConfig = {
       language?: Language;
     };
     tts?: {
+      modelId?: ConversationConfigOverrideTtsModelId;
       voiceId?: string;
       speed?: number;
       stability?: number;

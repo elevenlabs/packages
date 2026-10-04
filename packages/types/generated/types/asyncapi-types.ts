@@ -157,11 +157,20 @@ export interface ConversationConfigOverrideAsr {
 }
 
 export interface ConversationConfigOverrideTts {
+  model_id?: ConversationConfigOverrideTtsModelId;
   voice_id?: string;
   stability?: number;
   speed?: number;
   similarity_boost?: number;
 }
+
+export type ConversationConfigOverrideTtsModelId =
+  | "eleven_turbo_v2"
+  | "eleven_turbo_v2_5"
+  | "eleven_flash_v2"
+  | "eleven_flash_v2_5"
+  | "eleven_multilingual_v2"
+  | "eleven_v3_conversational";
 
 export interface ConversationConfigOverrideConversation {
   text_only?: boolean;
