@@ -1520,15 +1520,16 @@ components:
       description: Text-to-speech configuration overrides
       properties:
         model_id:
-          type: string
-          enum:
-            - eleven_turbo_v2
-            - eleven_turbo_v2_5
-            - eleven_flash_v2
-            - eleven_flash_v2_5
-            - eleven_multilingual_v2
-            - eleven_v3_conversational
-          nullable: true
+          anyOf:
+            - type: string
+              enum:
+                - eleven_turbo_v2
+                - eleven_turbo_v2_5
+                - eleven_flash_v2
+                - eleven_flash_v2_5
+                - eleven_multilingual_v2
+                - eleven_v3_conversational
+            - type: "null"
           description: The model to use for TTS
         voice_id:
           type: string

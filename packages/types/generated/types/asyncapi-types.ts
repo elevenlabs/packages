@@ -157,14 +157,14 @@ export interface ConversationConfigOverrideAsr {
 }
 
 export interface ConversationConfigOverrideTts {
-  model_id?: ConversationConfigOverrideTtsModelId;
+  model_id?: ConversationConfigOverrideTtsModelIdAnyOf_0 | null;
   voice_id?: string;
   stability?: number;
   speed?: number;
   similarity_boost?: number;
 }
 
-export type ConversationConfigOverrideTtsModelId =
+export type ConversationConfigOverrideTtsModelIdAnyOf_0 =
   | "eleven_turbo_v2"
   | "eleven_turbo_v2_5"
   | "eleven_flash_v2"
