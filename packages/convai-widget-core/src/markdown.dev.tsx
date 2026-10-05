@@ -481,9 +481,7 @@ function MarkdownPlayground() {
                 }
               >
                 <option value="text">Text — markdown</option>
-                <option value="voice">
-                  Voice — markdown + styled audio tags
-                </option>
+                <option value="voice">Voice — markdown + styled audio tags</option>
               </select>
             </div>
             {renderMode === "voice" && (

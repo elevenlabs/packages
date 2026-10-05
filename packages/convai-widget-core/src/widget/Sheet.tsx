@@ -60,10 +60,8 @@ export function Sheet({ open }: SheetProps) {
   const { setMode } = useConversationMode();
   const firstMessage = useFirstMessage();
 
-  // Reconnect a stored persistent conversation when the sheet is opened,
-  // including on page load. Only the open transition triggers it, so an
-  // inactivity disconnect while the sheet stays open does not reconnect in a
-  // loop.
+  // Only the open transition triggers a resume, so an inactivity disconnect
+  // while the sheet stays open does not reconnect in a loop.
   const openSignal = useSignalish(open);
   const wasOpenRef = useRef(false);
   useSignalEffect(() => {

@@ -417,56 +417,29 @@ type ConversationHistoryRow = Parameters<
   NonNullable<Callbacks["onConversationHistory"]>
 >[0]["rows"][number];
 
-/**
- * Inserts replayed rows in transcript order without duplicating what is
- * already shown. A row is known either by its stored index, or because the
- * same message was seen live in this page and is now tagged with the index.
- */
-export function mergeConversationHistory(
-  transcript: TranscriptEntry[],
+function historyEntries(
   rows: ConversationHistoryRow[],
   conversationIndex: number
 ): TranscriptEntry[] {
-  const merged = [...transcript];
-  let insertAt = 0;
-  for (const row of rows) {
-    const knownAt = merged.findIndex(
-      entry => entry.type === "message" && entry.historyIndex === row.index
-    );
-    if (knownAt !== -1) {
-      insertAt = knownAt + 1;
-      continue;
-    }
-    const liveAt = merged.findIndex(
-      entry =>
-        entry.type === "message" &&
-        entry.historyIndex == null &&
-        entry.role === row.role &&
-        entry.message === row.text
-    );
-    if (liveAt !== -1) {
-      const entry = merged[liveAt];
-      if (entry.type === "message") {
-        merged[liveAt] = { ...entry, historyIndex: row.index };
-      }
-      insertAt = liveAt + 1;
-      continue;
-    }
-    merged.splice(insertAt, 0, {
-      type: "message",
-      role: row.role,
-      message: row.text,
-      isText: true,
-      conversationIndex,
-      historyIndex: row.index,
-    });
-    insertAt++;
-  }
-  return merged;
+  return rows.map(row => ({
+    type: "message",
+    role: row.role,
+    message: row.text,
+    isText: true,
+    conversationIndex,
+    historyIndex: row.index,
+  }));
 }
 
-function isRejectedByServer(error: unknown): boolean {
-  return error instanceof SessionConnectionError && error.closeCode === 3000;
+// The orchestrator closes with this code when it refuses the connection
+// parameters, including an invalid or expired persistent session token.
+const PERSISTENT_TOKEN_REJECTED_CLOSE_CODE = 3000;
+
+function isPersistentTokenRejected(error: unknown): boolean {
+  return (
+    error instanceof SessionConnectionError &&
+    error.closeCode === PERSISTENT_TOKEN_REJECTED_CLOSE_CODE
+  );
 }
 
 type ConnectOptions = {
@@ -637,6 +610,18 @@ function useConversationSetup() {
       if (resume) {
         processedConfig.persistentSession = { token: resume.token };
       }
+      // Persistent sessions are text only and websocket only, so a voice
+      // call never becomes one and a persistent text chat never rides the
+      // WebRTC data channel an agent with use_rtc would otherwise pick.
+      if (!processedConfig.textOnly) {
+        delete processedConfig.persistentSession;
+      } else if (
+        processedConfig.persistentSession &&
+        "agentId" in processedConfig &&
+        processedConfig.agentId
+      ) {
+        processedConfig.connectionType = "websocket";
+      }
 
       const eventTarget = shadowHost.value ?? element;
       if (eventTarget) {
@@ -700,11 +685,12 @@ function useConversationSetup() {
           onConversationHistory: ({ rows }) => {
             if (!rows.length) return;
             setAgentTyping(false);
-            transcript.value = mergeConversationHistory(
-              transcript.peek(),
-              rows,
-              conversationIndex.peek()
-            );
+            // Replayed rows predate everything this segment has added, such
+            // as the message that triggered the resume.
+            transcript.value = [
+              ...historyEntries(rows, conversationIndex.peek()),
+              ...transcript.peek(),
+            ];
           },
           onMessage: ({
             role,
@@ -978,8 +964,20 @@ function useConversationSetup() {
         error.value = null;
         return id;
       } catch (e) {
-        if (resume && storageKey && isRejectedByServer(e)) {
-          clearStoredPersistentSession(storageKey);
+        if (resume && isPersistentTokenRejected(e)) {
+          if (storageKey) {
+            clearStoredPersistentSession(storageKey);
+          }
+          if (initialMessage) {
+            // The user's message must not be lost to a stale token; start a
+            // fresh conversation with it instead.
+            lockRef.current = null;
+            return connect(element, {
+              initialMessage,
+              initialMessageOptions,
+              resume: null,
+            });
+          }
         }
         if (resume && !initialMessage) {
           // An automatic resume that fails must not greet the user with an
@@ -1042,7 +1040,6 @@ function useConversationSetup() {
       isWaitingForAgent,
       hasReplayedHistory,
       hasStoredSession: () => readStoredSession() !== null,
-      /** Reconnects to the stored persistent conversation, if there is one. */
       resumeSession: () => {
         const resume = readStoredSession();
         return resume ? connect(null, { resume }) : Promise.resolve(undefined);

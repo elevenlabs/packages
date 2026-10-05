@@ -14,13 +14,15 @@ export function persistentSessionStorageKey(
     return null;
   }
   const agentId =
-    (config as { agentId?: string }).agentId ??
-    agentIdFromSignedUrl((config as { signedUrl?: string }).signedUrl);
+    "agentId" in config && config.agentId
+      ? config.agentId
+      : "signedUrl" in config && config.signedUrl
+        ? agentIdFromSignedUrl(config.signedUrl)
+        : null;
   return agentId ? `${STORAGE_KEY_PREFIX}${agentId}` : null;
 }
 
-function agentIdFromSignedUrl(signedUrl: string | undefined): string | null {
-  if (!signedUrl) return null;
+function agentIdFromSignedUrl(signedUrl: string): string | null {
   try {
     return new URL(signedUrl).searchParams.get("agent_id");
   } catch {

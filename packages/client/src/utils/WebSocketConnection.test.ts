@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebSocketConnection } from "./WebSocketConnection.js";
 import type { PongEvent } from "./events.js";
+import type { SessionConfig } from "./BaseConnection.js";
 
 type EventHandler = (event: any) => void;
 
@@ -38,22 +39,27 @@ describe("WebSocketConnection", () => {
     }
   }
 
-  async function createConnection(): Promise<WebSocketConnection> {
-    const promise = WebSocketConnection.create({
+  const defaultMetadata = {
+    conversation_id: "test-conv-id",
+    agent_output_audio_format: "pcm_16000",
+    user_input_audio_format: "pcm_16000",
+  };
+
+  async function createConnection(
+    config: SessionConfig = {
       agentId: "test-agent",
       connectionType: "websocket",
-    });
+    },
+    metadata: Record<string, unknown> = defaultMetadata
+  ): Promise<WebSocketConnection> {
+    const promise = WebSocketConnection.create(config);
 
     // Simulate the WebSocket handshake: open → config message
     emit("open", {});
     emit("message", {
       data: JSON.stringify({
         type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: {
-          conversation_id: "test-conv-id",
-          agent_output_audio_format: "pcm_16000",
-          user_input_audio_format: "pcm_16000",
-        },
+        conversation_initiation_metadata_event: metadata,
       }),
     });
 
@@ -120,23 +126,11 @@ describe("WebSocketConnection", () => {
     });
 
     it("starts a new persistent session with is_persistent only", async () => {
-      const promise = WebSocketConnection.create({
+      await createConnection({
         agentId: "test-agent",
         connectionType: "websocket",
         persistentSession: true,
       });
-      emit("open", {});
-      emit("message", {
-        data: JSON.stringify({
-          type: "conversation_initiation_metadata",
-          conversation_initiation_metadata_event: {
-            conversation_id: "test-conv-id",
-            agent_output_audio_format: "pcm_16000",
-            user_input_audio_format: "pcm_16000",
-          },
-        }),
-      });
-      await promise;
 
       const params = connectedUrl().searchParams;
       expect(params.get("is_persistent")).toBe("true");
@@ -144,23 +138,11 @@ describe("WebSocketConnection", () => {
     });
 
     it("resumes with the encoded token alongside is_persistent", async () => {
-      const promise = WebSocketConnection.create({
+      await createConnection({
         agentId: "test-agent",
         connectionType: "websocket",
         persistentSession: { token: "tok/with+chars" },
       });
-      emit("open", {});
-      emit("message", {
-        data: JSON.stringify({
-          type: "conversation_initiation_metadata",
-          conversation_initiation_metadata_event: {
-            conversation_id: "test-conv-id",
-            agent_output_audio_format: "pcm_16000",
-            user_input_audio_format: "pcm_16000",
-          },
-        }),
-      });
-      await promise;
 
       const params = connectedUrl().searchParams;
       expect(params.get("is_persistent")).toBe("true");
@@ -168,22 +150,10 @@ describe("WebSocketConnection", () => {
     });
 
     it("appends the params to a signed URL", async () => {
-      const promise = WebSocketConnection.create({
+      await createConnection({
         signedUrl: "wss://api.elevenlabs.io/v1/convai/conversation?token=abc",
         persistentSession: { token: "resume-me" },
       });
-      emit("open", {});
-      emit("message", {
-        data: JSON.stringify({
-          type: "conversation_initiation_metadata",
-          conversation_initiation_metadata_event: {
-            conversation_id: "test-conv-id",
-            agent_output_audio_format: "pcm_16000",
-            user_input_audio_format: "pcm_16000",
-          },
-        }),
-      });
-      await promise;
 
       const params = connectedUrl().searchParams;
       expect(params.get("token")).toBe("abc");
@@ -193,24 +163,11 @@ describe("WebSocketConnection", () => {
   });
 
   it("re-emits the initiation metadata to message subscribers", async () => {
-    const promise = WebSocketConnection.create({
-      agentId: "test-agent",
-      connectionType: "websocket",
-      persistentSession: true,
-    });
-    emit("open", {});
-    emit("message", {
-      data: JSON.stringify({
-        type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: {
-          conversation_id: "test-conv-id",
-          agent_output_audio_format: "pcm_16000",
-          user_input_audio_format: "pcm_16000",
-          persistent_session_token: "fresh-token",
-        },
-      }),
-    });
-    const connection = await promise;
+    const metadata = {
+      ...defaultMetadata,
+      persistent_session_token: "fresh-token",
+    };
+    const connection = await createConnection(undefined, metadata);
 
     const onMessage = vi.fn();
     connection.onMessage(onMessage);
@@ -219,12 +176,7 @@ describe("WebSocketConnection", () => {
     expect(onMessage).toHaveBeenCalledTimes(1);
     expect(onMessage.mock.calls[0][0]).toEqual({
       type: "conversation_initiation_metadata",
-      conversation_initiation_metadata_event: {
-        conversation_id: "test-conv-id",
-        agent_output_audio_format: "pcm_16000",
-        user_input_audio_format: "pcm_16000",
-        persistent_session_token: "fresh-token",
-      },
+      conversation_initiation_metadata_event: metadata,
     });
   });
 
