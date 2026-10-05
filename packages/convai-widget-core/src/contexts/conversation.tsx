@@ -431,14 +431,13 @@ function historyEntries(
   }));
 }
 
-// The orchestrator closes with this code when it refuses the connection
-// parameters, including an invalid or expired persistent session token.
-const PERSISTENT_TOKEN_REJECTED_CLOSE_CODE = 3000;
+// Close code the orchestrator uses when it refuses the connection parameters.
+const ORCHESTRATOR_REJECTED_PARAMS_CLOSE_CODE = 3000;
 
 function isPersistentTokenRejected(error: unknown): boolean {
   return (
     error instanceof SessionConnectionError &&
-    error.closeCode === PERSISTENT_TOKEN_REJECTED_CLOSE_CODE
+    error.closeCode === ORCHESTRATOR_REJECTED_PARAMS_CLOSE_CODE
   );
 }
 
@@ -610,9 +609,8 @@ function useConversationSetup() {
       if (resume) {
         processedConfig.persistentSession = { token: resume.token };
       }
-      // Persistent sessions are text only and websocket only, so a voice
-      // call never becomes one and a persistent text chat never rides the
-      // WebRTC data channel an agent with use_rtc would otherwise pick.
+      // Persistent sessions are websocket only; an agent with use_rtc would
+      // otherwise route this text chat over the WebRTC data channel.
       if (!processedConfig.textOnly) {
         delete processedConfig.persistentSession;
       } else if (
@@ -969,8 +967,8 @@ function useConversationSetup() {
             clearStoredPersistentSession(storageKey);
           }
           if (initialMessage) {
-            // The user's message must not be lost to a stale token; start a
-            // fresh conversation with it instead.
+            // Clear the rejected promise first, otherwise the retry awaits it
+            // at the top of connect and rethrows.
             lockRef.current = null;
             return connect(element, {
               initialMessage,
