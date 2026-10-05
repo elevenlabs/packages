@@ -97,6 +97,41 @@ describe("End confirmation", () => {
       .toBeInTheDocument();
   });
 
+  it("should dismiss when the agent ends the session", async () => {
+    setupWebComponent({
+      "agent-id": "text_only",
+      "end-confirmation": "true",
+      "default-expanded": "true",
+      transcript: "true",
+      "text-input": "true",
+    });
+    const sendMessage = async () => {
+      await page
+        .getByRole("textbox", { name: "Text message input" })
+        .fill("Text message");
+      await userEvent.keyboard("{Enter}");
+    };
+
+    await sendMessage();
+    await page.getByRole("button", { name: "Accept" }).click();
+    await page.getByRole("button", { name: "End chat", exact: true }).click();
+    await expect.element(dialog()).toBeVisible();
+
+    await expect
+      .element(page.getByText("The agent ended the conversation"))
+      .toBeInTheDocument();
+    await expect.element(dialog()).not.toBeInTheDocument();
+
+    // A new session must not resurface the stale request
+    await sendMessage();
+    await expect
+      .element(
+        page.getByRole("button", { name: "End chat", exact: true }).first()
+      )
+      .toBeInTheDocument();
+    expect(dialog().elements()).toHaveLength(0);
+  });
+
   it("should use custom text contents", async () => {
     await startCall({
       "text-contents": JSON.stringify({

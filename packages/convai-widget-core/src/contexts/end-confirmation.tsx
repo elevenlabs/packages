@@ -1,4 +1,4 @@
-import { ReadonlySignal, useSignal, useSignalEffect } from "@preact/signals";
+import { ReadonlySignal, useComputed, useSignal } from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
@@ -21,37 +21,34 @@ export function EndConfirmationProvider({
   children,
 }: EndConfirmationProviderProps) {
   const config = useWidgetConfig();
-  const { endSession, isDisconnected } = useConversation();
-  const confirmationShown = useSignal(false);
+  const { endSession, isDisconnected, conversationIndex } = useConversation();
+  const requestedFor = useSignal<number | null>(null);
+  const confirmationShown = useComputed(
+    () =>
+      requestedFor.value === conversationIndex.value && !isDisconnected.value
+  );
 
   const value = useMemo(
     () => ({
       confirmationShown,
       requestEndSession: () => {
         if (config.peek().end_confirmation_enabled) {
-          confirmationShown.value = true;
+          requestedFor.value = conversationIndex.peek();
         } else {
           endSession();
         }
       },
       confirmEnd: () => {
         if (!confirmationShown.peek()) return;
-        confirmationShown.value = false;
+        requestedFor.value = null;
         endSession();
       },
       cancelEnd: () => {
-        confirmationShown.value = false;
+        requestedFor.value = null;
       },
     }),
-    [config, confirmationShown, endSession]
+    [config, confirmationShown, requestedFor, conversationIndex, endSession]
   );
-
-  // Close if the session ends some other way (agent, timeout, error)
-  useSignalEffect(() => {
-    if (isDisconnected.value) {
-      confirmationShown.value = false;
-    }
-  });
 
   return (
     <EndConfirmationContext.Provider value={value}>
