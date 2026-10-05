@@ -49,6 +49,9 @@ export function InOutTransition(props: InOutTransitionProps) {
   return <Comp {...props} />;
 }
 
+// Longer than any transition used by InOutTransition children
+const EXIT_FALLBACK_MS = 500;
+
 function Reduced({ active, ...props }: InOutTransitionProps) {
   return getSignalish(active) ? <Slot data-shown={true} {...props} /> : null;
 }
@@ -63,8 +66,14 @@ function Animated({
 
   useSignalEffect(() => {
     if (active.value) {
-      visible.value = active.value;
+      visible.value = true;
+      return;
     }
+    // transitionend never fires if the exit transition doesn't start
+    const id = setTimeout(() => {
+      visible.value = false;
+    }, EXIT_FALLBACK_MS);
+    return () => clearTimeout(id);
   });
 
   const { handlers } = useCSSTransition({
