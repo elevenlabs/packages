@@ -32,6 +32,7 @@ export function SessionConfigProvider({
   const overrideVoiceId = useAttribute("override-voice-id");
   const overrideTextOnly = useAttribute("override-text-only");
   const userId = useAttribute("user-id");
+  const persistentSession = useAttribute("persistent-session");
   const overrides = useComputed<SessionConfig["overrides"]>(() => ({
     agent: {
       prompt: {
@@ -113,6 +114,8 @@ export function SessionConfigProvider({
     const cloudBaseConfig = {
       ...baseConfig,
       environment: environment.value || undefined,
+      persistentSession:
+        parseBoolAttribute(persistentSession.value) || undefined,
     };
 
     if (agentId.value) {

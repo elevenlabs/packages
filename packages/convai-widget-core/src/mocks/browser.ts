@@ -438,6 +438,17 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  // Resumable text chat: every connection mints a token, a resumed connection
+  // replays the stored rows plus one delivered while nobody was connected.
+  persistent_session: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Hello from the agent",
+  },
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -487,6 +498,14 @@ const codeBlock = true;
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
 } as const satisfies Record<string, WidgetConfig>;
+
+type PersistentRow = { role: "user" | "agent"; text: string };
+type PersistentConversation = { conversationId: string; rows: PersistentRow[] };
+const persistentConversations = new Map<string, PersistentConversation>();
+let persistentTokenCounter = 0;
+
+export const PERSISTENT_COLD_ROW_TEXT =
+  "A human agent replied while you were away";
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
@@ -605,7 +624,36 @@ export const Worker = setupWorker(
         "agent_id"
       ) as keyof typeof AGENTS;
       const config = AGENTS[agentId];
-      const conversationId = Math.random().toString(36).substring(7);
+      let conversationId = Math.random().toString(36).substring(7);
+
+      const isPersistent =
+        client.url.searchParams.get("is_persistent") === "true";
+      const resumeToken = client.url.searchParams.get(
+        "persistent_session_token"
+      );
+      let persistentConversation: PersistentConversation | undefined;
+      let resumedConversation: PersistentConversation | undefined;
+      let persistentSessionToken: string | undefined;
+      if (isPersistent) {
+        if (resumeToken) {
+          resumedConversation = persistentConversations.get(resumeToken);
+          if (!resumedConversation) {
+            client.close(3000, "Invalid or expired persistent session token.");
+            return;
+          }
+          conversationId = resumedConversation.conversationId;
+        }
+        persistentConversation = resumedConversation ?? {
+          conversationId,
+          rows: [],
+        };
+        persistentSessionToken = `persistent-token-${++persistentTokenCounter}`;
+        persistentConversations.set(
+          persistentSessionToken,
+          persistentConversation
+        );
+      }
+
       client.send(
         JSON.stringify({
           type: "conversation_initiation_metadata",
@@ -613,10 +661,34 @@ export const Worker = setupWorker(
             conversation_id: conversationId,
             agent_output_audio_format: "pcm_16000",
             user_input_audio_format: "pcm_16000",
+            ...(persistentSessionToken
+              ? { persistent_session_token: persistentSessionToken }
+              : {}),
           },
         })
       );
       await new Promise(resolve => setTimeout(resolve, 0));
+      if (resumedConversation) {
+        resumedConversation.rows.push({
+          role: "agent",
+          text: PERSISTENT_COLD_ROW_TEXT,
+        });
+        client.send(
+          JSON.stringify({
+            type: "conversation_history",
+            conversation_history_event: {
+              conversation_id: conversationId,
+              rows: resumedConversation.rows.map((row, index) => ({
+                index,
+                role: row.role,
+                text: row.text,
+                time_in_call_secs: index,
+              })),
+              truncated: false,
+            },
+          })
+        );
+      }
       if (
         agentId === "streamed_first_message" ||
         agentId === "streamed_first_message_with_final"
@@ -628,7 +700,11 @@ export const Worker = setupWorker(
           "first-message",
           agentId === "streamed_first_message_with_final"
         );
-      } else if (agentId !== "streamed_first_reply") {
+      } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
+        persistentConversation?.rows.push({
+          role: "agent",
+          text: config.first_message ?? "",
+        });
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -663,6 +739,7 @@ export const Worker = setupWorker(
         agentId !== "file_upload" &&
         agentId !== "no_file_upload" &&
         agentId !== "external_agent" &&
+        agentId !== "persistent_session" &&
         agentId !== "agent_attachments"
       ) {
         const agentResponse =
@@ -1801,6 +1878,31 @@ export const Worker = setupWorker(
                     },
             })
           );
+        });
+      }
+      if (agentId === "persistent_session" && persistentConversation) {
+        const conversation = persistentConversation;
+        // Event ids restart on every segment, like the backend does today, so
+        // the first reply after a resume carries the first-message event id.
+        let eventId = resumedConversation ? 1 : 2;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          const reply = `You said: ${data.text}`;
+          conversation.rows.push({ role: "user", text: data.text });
+          conversation.rows.push({ role: "agent", text: reply });
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: reply,
+                event_id: eventId,
+                response_id: `reply-${eventId}`,
+              },
+            })
+          );
+          eventId++;
         });
       }
       if (agentId === "external_agent") {

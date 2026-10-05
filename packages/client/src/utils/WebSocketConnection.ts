@@ -3,6 +3,7 @@ import {
   type SessionConfig,
   type FormatConfig,
   parseFormat,
+  resolvePersistentSession,
 } from "./BaseConnection.js";
 import { sourceInfo } from "../sourceInfo.js";
 import {
@@ -134,6 +135,14 @@ export class WebSocketConnection
           url += `&environment=${encodeURIComponent(config.environment)}`;
         }
 
+        const persistentSession = resolvePersistentSession(config);
+        if (persistentSession.enabled) {
+          url += "&is_persistent=true";
+          if (persistentSession.token) {
+            url += `&persistent_session_token=${encodeURIComponent(persistentSession.token)}`;
+          }
+        }
+
         protocols = [MAIN_PROTOCOL];
         if (config.authorization) {
           protocols.push(`bearer.${config.authorization}`);
@@ -219,12 +228,19 @@ export class WebSocketConnection
       const inputFormat = parseFormat(user_input_audio_format ?? "pcm_16000");
       const outputFormat = parseFormat(agent_output_audio_format);
 
-      return new WebSocketConnection(
+      const connection = new WebSocketConnection(
         socket,
         conversation_id,
         inputFormat,
         outputFormat
       );
+      // The handshake above consumed the metadata message before the
+      // connection's own listener existed, so re-emit it for subscribers.
+      connection.handleMessage({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: conversationConfig,
+      });
+      return connection;
     } catch (error) {
       socket?.close();
       throw error;

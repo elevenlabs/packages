@@ -732,6 +732,57 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("conversation_history events", () => {
+    const historyEvent = {
+      type: "conversation_history" as const,
+      conversation_history_event: {
+        conversation_id: "conv-1",
+        rows: [
+          {
+            index: 0,
+            role: "agent" as const,
+            text: "Hi",
+            time_in_call_secs: 0,
+          },
+          {
+            index: 1,
+            role: "user" as const,
+            text: "Where is my parcel?",
+            time_in_call_secs: 4,
+          },
+        ],
+        truncated: false,
+      },
+    };
+
+    it("calls onConversationHistory with the replayed rows", async () => {
+      const onConversationHistory = vi.fn();
+      const onMessage = vi.fn();
+      const onDebug = vi.fn();
+      const conversation = TestConversation.create({
+        onConversationHistory,
+        onMessage,
+        onDebug,
+      });
+
+      await conversation.receiveMessage(historyEvent);
+
+      expect(onConversationHistory).toHaveBeenCalledWith(
+        historyEvent.conversation_history_event
+      );
+      expect(onMessage).not.toHaveBeenCalled();
+      expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it("does not throw when no callback is provided", async () => {
+      const conversation = TestConversation.create({});
+
+      await expect(
+        conversation.receiveMessage(historyEvent)
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",

@@ -1,4 +1,5 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import { useRef } from "preact/hooks";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -17,7 +18,8 @@ import { Placement } from "../types/config";
 import { Transcript } from "./Transcript";
 import { FeedbackPage } from "./FeedbackPage";
 import { FeedbackActions } from "./FeedbackActions";
-import { Signalish } from "../utils/signalish";
+import { Signalish, useSignalish } from "../utils/signalish";
+import { useConversationMode } from "../contexts/conversation-mode";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
@@ -46,13 +48,34 @@ export function Sheet({ open }: SheetProps) {
   const {
     isDisconnected,
     startSession,
+    resumeSession,
+    hasStoredSession,
+    hasReplayedHistory,
     transcript,
     conversationIndex,
     isAgentTyping,
     isExternalAgentMode,
     isWaitingForAgent,
   } = useConversation();
+  const { setMode } = useConversationMode();
   const firstMessage = useFirstMessage();
+
+  // Reconnect a stored persistent conversation when the sheet is opened,
+  // including on page load. Only the open transition triggers it, so an
+  // inactivity disconnect while the sheet stays open does not reconnect in a
+  // loop.
+  const openSignal = useSignalish(open);
+  const wasOpenRef = useRef(false);
+  useSignalEffect(() => {
+    const isOpen = openSignal.value;
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+    if (!isOpen || wasOpen || !isDisconnected.peek() || !hasStoredSession()) {
+      return;
+    }
+    setMode("text");
+    void resumeSession();
+  });
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
@@ -60,6 +83,8 @@ export function Sheet({ open }: SheetProps) {
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
     if (!raw) return undefined;
+    // A replayed transcript already contains the greeting as a stored row.
+    if (hasReplayedHistory.value) return undefined;
 
     // Voice-capable agents write first_message for TTS, so strip its audio tags
     // the way voice bubbles do. Text-only widgets keep them, which the
@@ -75,9 +100,7 @@ export function Sheet({ open }: SheetProps) {
       isDisconnected.value &&
       config.value.supports_text_only &&
       textInputEnabled.value &&
-      transcript.value.every(
-        entry => entry.type !== "message" || entry.isText
-      );
+      transcript.value.every(entry => entry.type !== "message" || entry.isText);
 
     return showFirstMessage ? message : undefined;
   });

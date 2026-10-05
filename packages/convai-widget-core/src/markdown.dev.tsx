@@ -272,6 +272,10 @@ function MockConversationProvider({
       sendUserActivity: () => {},
       sendContextualUpdate: () => {},
       addModeToggleEntry: () => {},
+      hasReplayedHistory: signal(false),
+      hasStoredSession: () => false,
+      resumeSession: async () => undefined,
+      disconnectSession: async () => {},
     }),
     [mockTranscript]
   );
@@ -477,7 +481,9 @@ function MarkdownPlayground() {
                 }
               >
                 <option value="text">Text — markdown</option>
-                <option value="voice">Voice — markdown + styled audio tags</option>
+                <option value="voice">
+                  Voice — markdown + styled audio tags
+                </option>
               </select>
             </div>
             {renderMode === "voice" && (

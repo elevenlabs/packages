@@ -11,6 +11,7 @@ import type {
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ContextUsageClientEvent,
+  ConversationHistoryClientEvent,
   ConversationMetadata,
   ErrorMessage,
   ExternalAgentConnectedClientEvent,
@@ -47,6 +48,7 @@ export type AgentToolResponseEvent = AgentToolResponseClientEvent;
 export type AgentToolResponseFullPayloadEvent =
   AgentToolResponseFullPayloadClientEvent;
 export type ConversationMetadataEvent = ConversationMetadata;
+export type ConversationHistoryEvent = ConversationHistoryClientEvent;
 export type AsrInitiationMetadataEvent = AsrMetadataEvent;
 export type MCPConnectionStatusEvent = McpConnectionStatusClientEvent;
 export type AgentChatResponsePartEvent = AgentChatResponsePartClientEvent;
@@ -78,6 +80,7 @@ export type IncomingSocketEvent =
   | AgentToolResponseEvent
   | AgentToolResponseFullPayloadEvent
   | ConversationMetadataEvent
+  | ConversationHistoryEvent
   | AsrInitiationMetadataEvent
   | MCPConnectionStatusEvent
   | AgentChatResponsePartEvent

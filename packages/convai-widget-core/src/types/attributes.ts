@@ -61,6 +61,7 @@ export const CustomAttributeList = [
   "show-resize-button",
   "show-language-selector-on-trigger",
   "environment",
+  "persistent-session",
 ] as const;
 
 export type CustomAttributes = {

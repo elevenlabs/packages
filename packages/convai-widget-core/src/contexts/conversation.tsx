@@ -1,10 +1,12 @@
 import {
+  Callbacks,
   Conversation,
   MessageAttachment,
   Mode,
   Role,
   SendUserMessageOptions,
   SessionConfig,
+  SessionConnectionError,
   Status,
 } from "@elevenlabs/client";
 import {
@@ -29,6 +31,13 @@ import {
 import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
+import {
+  clearStoredPersistentSession,
+  persistentSessionStorageKey,
+  readStoredPersistentSession,
+  storePersistentSession,
+  type StoredPersistentSession,
+} from "../utils/persistentSession";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -75,6 +84,8 @@ export type TranscriptEntry =
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
       attachments?: MessageAttachment[];
+      /** Position in the stored transcript for rows replayed on resume. */
+      historyIndex?: number;
     }
   | {
       type: "agent_tool_request";
@@ -402,6 +413,68 @@ function firstMessageRichContentEntries(
   ];
 }
 
+type ConversationHistoryRow = Parameters<
+  NonNullable<Callbacks["onConversationHistory"]>
+>[0]["rows"][number];
+
+/**
+ * Inserts replayed rows in transcript order without duplicating what is
+ * already shown. A row is known either by its stored index, or because the
+ * same message was seen live in this page and is now tagged with the index.
+ */
+export function mergeConversationHistory(
+  transcript: TranscriptEntry[],
+  rows: ConversationHistoryRow[],
+  conversationIndex: number
+): TranscriptEntry[] {
+  const merged = [...transcript];
+  let insertAt = 0;
+  for (const row of rows) {
+    const knownAt = merged.findIndex(
+      entry => entry.type === "message" && entry.historyIndex === row.index
+    );
+    if (knownAt !== -1) {
+      insertAt = knownAt + 1;
+      continue;
+    }
+    const liveAt = merged.findIndex(
+      entry =>
+        entry.type === "message" &&
+        entry.historyIndex == null &&
+        entry.role === row.role &&
+        entry.message === row.text
+    );
+    if (liveAt !== -1) {
+      const entry = merged[liveAt];
+      if (entry.type === "message") {
+        merged[liveAt] = { ...entry, historyIndex: row.index };
+      }
+      insertAt = liveAt + 1;
+      continue;
+    }
+    merged.splice(insertAt, 0, {
+      type: "message",
+      role: row.role,
+      message: row.text,
+      isText: true,
+      conversationIndex,
+      historyIndex: row.index,
+    });
+    insertAt++;
+  }
+  return merged;
+}
+
+function isRejectedByServer(error: unknown): boolean {
+  return error instanceof SessionConnectionError && error.closeCode === 3000;
+}
+
+type ConnectOptions = {
+  initialMessage?: string;
+  initialMessageOptions?: SendUserMessageOptions;
+  resume?: StoredPersistentSession | null;
+};
+
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -411,7 +484,7 @@ export function ConversationProvider({ children }: ConversationProviderProps) {
       value.transcript.value;
       const id = setTimeout(
         () => {
-          value.endSession();
+          value.disconnectSession();
         },
         10 * 60 * 1000 // 10 minutes
       );
@@ -443,6 +516,8 @@ function useConversationSetup() {
   const conversationRef = useRef<Conversation | null>(null);
   const lockRef = useRef<Promise<Conversation> | null>(null);
   const receivedFirstMessageRef = useRef(false);
+  const resumedSessionRef = useRef(false);
+  const storageKeyRef = useRef<string | null>(null);
   const agentResponseStateRef = useRef<AgentResponseState>(new Map());
   const legacyAgentResponseStateRef = useRef(createLegacyAgentResponseState());
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -517,6 +592,439 @@ function useConversationSetup() {
       legacyAgentResponseStateRef.current = createLegacyAgentResponseState();
     };
 
+    const hasReplayedHistory = computed(() =>
+      transcript.value.some(
+        entry => entry.type === "message" && entry.historyIndex != null
+      )
+    );
+
+    const readStoredSession = (): StoredPersistentSession | null => {
+      const key = persistentSessionStorageKey(config.peek());
+      return key ? readStoredPersistentSession(key) : null;
+    };
+
+    const connect = async (
+      element: HTMLElement | null,
+      { initialMessage, initialMessageOptions, resume }: ConnectOptions
+    ): Promise<string | undefined> => {
+      await terms.requestTerms();
+
+      if (conversationRef.current?.isOpen()) {
+        return conversationRef.current.getId();
+      }
+
+      if (lockRef.current) {
+        const conversation = await lockRef.current;
+        return conversation.getId();
+      }
+
+      let processedConfig = structuredClone(config.peek());
+      if (!processedConfig.userId) {
+        processedConfig.userId = await getOrCreateUserId();
+      }
+
+      // If the user started the conversation with a text message, and the
+      // agent supports it, switch to text-only mode. Persistent sessions are
+      // text only, so a resume does the same.
+      if ((initialMessage && widgetConfig.value.supports_text_only) || resume) {
+        processedConfig.textOnly = true;
+        if (!widgetConfig.value.text_only) {
+          processedConfig.overrides ??= {};
+          processedConfig.overrides.conversation ??= {};
+          processedConfig.overrides.conversation.textOnly = true;
+        }
+      }
+      if (resume) {
+        processedConfig.persistentSession = { token: resume.token };
+      }
+
+      const eventTarget = shadowHost.value ?? element;
+      if (eventTarget) {
+        try {
+          processedConfig = triggerCallEvent(eventTarget, processedConfig);
+        } catch (error) {
+          console.error(
+            "[ConversationalAI] Error triggering call event:",
+            error
+          );
+        }
+      }
+
+      const storageKey = persistentSessionStorageKey(processedConfig);
+      storageKeyRef.current = storageKey;
+      conversationTextOnly.value = processedConfig.textOnly ?? false;
+      queueStatus.value = null;
+      resetAgentResponseState();
+      resumedSessionRef.current = !!resume;
+      // The replayed transcript already holds the greeting, so nothing
+      // about the first message should be filtered or rendered locally.
+      receivedFirstMessageRef.current = !!resume;
+      transcript.value = [
+        ...(resume ? [] : firstMessageEntries()),
+        ...(initialMessage
+          ? [
+              {
+                type: "message",
+                role: "user",
+                message: initialMessage,
+                isText: true,
+                conversationIndex: conversationIndex.peek(),
+              } satisfies TranscriptEntry,
+            ]
+          : []),
+      ];
+
+      try {
+        lockRef.current = Conversation.startSession({
+          ...processedConfig,
+          onModeChange: props => {
+            mode.value = props.mode;
+          },
+          onStatusChange: props => {
+            status.value = props.status;
+          },
+          onCanSendFeedbackChange: props => {
+            canSendFeedback.value = props.canSendFeedback;
+          },
+          onConversationMetadata: ({
+            conversation_id,
+            persistent_session_token,
+          }) => {
+            if (storageKey && persistent_session_token) {
+              storePersistentSession(storageKey, {
+                conversationId: conversation_id,
+                token: persistent_session_token,
+              });
+            }
+          },
+          onConversationHistory: ({ rows }) => {
+            if (!rows.length) return;
+            setAgentTyping(false);
+            transcript.value = mergeConversationHistory(
+              transcript.peek(),
+              rows,
+              conversationIndex.peek()
+            );
+          },
+          onMessage: ({
+            role,
+            message,
+            event_id,
+            response_id,
+            attachments,
+          }) => {
+            if (
+              !resumedSessionRef.current &&
+              firstMessage.peek() &&
+              conversationTextOnly.peek() === true &&
+              role === "agent" &&
+              event_id === FIRST_MESSAGE_EVENT_ID
+            ) {
+              receivedFirstMessageRef.current = true;
+              // The configured first message is already rendered locally in
+              // text mode, so ignore the server copy.
+              return;
+            } else if (role === "agent") {
+              receivedFirstMessageRef.current = true;
+              setAgentTyping(false);
+            }
+
+            if (role === "agent") {
+              const currentTranscript = transcript.peek();
+              const isText = conversationTextOnly.peek() === true;
+              const currentConversationIndex = conversationIndex.peek();
+              if (response_id == null) {
+                transcript.value = finalizeLegacyAgentResponse(
+                  currentTranscript,
+                  legacyAgentResponseStateRef.current,
+                  message,
+                  event_id,
+                  isText,
+                  currentConversationIndex,
+                  attachments
+                );
+                return;
+              }
+
+              const responseState = agentResponseStateRef.current;
+              transcript.value = finalizeAgentResponse(
+                currentTranscript,
+                responseState,
+                response_id,
+                message,
+                event_id,
+                isText,
+                currentConversationIndex,
+                attachments
+              );
+              return;
+            }
+
+            const currentTranscript = transcript.peek();
+            transcript.value = [
+              ...currentTranscript,
+              {
+                type: "message",
+                role,
+                message,
+                isText: conversationTextOnly.peek() === true,
+                conversationIndex: conversationIndex.peek(),
+                eventId: event_id,
+                attachments,
+              },
+            ];
+          },
+          onAgentChatResponsePart: ({ text, type, event_id, response_id }) => {
+            // Voice conversations render `agent_response` transcripts only.
+            if (conversationTextOnly.peek() !== true) return;
+
+            if (firstMessage.peek() && !receivedFirstMessageRef.current) {
+              // Ignore the opening frame of the configured first-message
+              // stream, then allow the actual reply stream through.
+              receivedFirstMessageRef.current = true;
+              return;
+            }
+            setAgentTyping(false);
+
+            const currentTranscript = transcript.peek();
+            const isText = conversationTextOnly.peek() === true;
+            const currentConversationIndex = conversationIndex.peek();
+            if (response_id == null) {
+              const legacyState = legacyAgentResponseStateRef.current;
+              if (type === "start") {
+                const updatedTranscript = startLegacyAgentStream(
+                  currentTranscript,
+                  legacyState,
+                  event_id,
+                  isText,
+                  currentConversationIndex
+                );
+                if (updatedTranscript !== currentTranscript) {
+                  transcript.value = updatedTranscript;
+                }
+              } else if (type === "delta") {
+                const updatedTranscript = appendLegacyAgentDelta(
+                  currentTranscript,
+                  legacyState,
+                  event_id,
+                  text
+                );
+                if (updatedTranscript !== currentTranscript) {
+                  transcript.value = updatedTranscript;
+                }
+              } else if (
+                type === "stop" &&
+                legacyState.active?.eventId === event_id
+              ) {
+                legacyState.active = null;
+              }
+              return;
+            }
+
+            const responseState = agentResponseStateRef.current;
+            if (type === "start") {
+              const updatedTranscript = startAgentStream(
+                currentTranscript,
+                responseState,
+                response_id,
+                event_id,
+                isText,
+                currentConversationIndex
+              );
+              if (updatedTranscript !== currentTranscript) {
+                transcript.value = updatedTranscript;
+              }
+            } else if (type === "delta") {
+              const updatedTranscript = appendAgentDelta(
+                currentTranscript,
+                responseState,
+                response_id,
+                text
+              );
+              if (updatedTranscript !== currentTranscript) {
+                transcript.value = updatedTranscript;
+              }
+            } else if (type === "stop") {
+              const tracked = responseState.get(response_id);
+              if (tracked) tracked.isStreaming = false;
+            }
+          },
+          onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
+            transcript.value = [
+              ...transcript.peek(),
+              {
+                type: "agent_tool_request",
+                toolName: tool_name,
+                toolCallId: tool_call_id,
+                eventId: event_id,
+                conversationIndex: conversationIndex.peek(),
+              },
+            ];
+          },
+          onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
+            transcript.value = [
+              ...transcript.peek(),
+              {
+                type: "agent_tool_response",
+                toolCallId: tool_call_id,
+                eventId: event_id,
+                isError: is_error,
+                conversationIndex: conversationIndex.peek(),
+              },
+            ];
+          },
+          onRichContent: ({ component, props, event_id, rich_content_id }) => {
+            transcript.value = [
+              ...transcript.peek(),
+              {
+                type: "rich_content",
+                component,
+                props,
+                eventId: event_id,
+                richContentId: rich_content_id,
+                conversationIndex: conversationIndex.peek(),
+              },
+            ];
+          },
+          onAgentTyping: ({ is_typing, duration_ms }) => {
+            setAgentTyping(is_typing, duration_ms);
+          },
+          onExternalAgentConnected: () => {
+            isExternalAgentMode.value = true;
+          },
+          onExternalAgentDisconnected: () => {
+            setAgentTyping(false);
+            isExternalAgentMode.value = false;
+          },
+          // The SDK forwards unhandled server events to onDebug.
+          // TODO: drop this narrowing once the SDK handles queue_status
+          // explicitly (planned after the queue protocol is finalized).
+          onDebug: (props: unknown) => {
+            const event = props as {
+              type?: string;
+              queue_status_event?: { status?: unknown };
+            };
+            if (
+              event?.type === "queue_status" &&
+              typeof event.queue_status_event?.status === "string"
+            ) {
+              queueStatus.value = event.queue_status_event.status;
+            }
+          },
+          onDisconnect: details => {
+            // A queue timeout closes with an error; show friendly copy
+            // instead of the raw close reason.
+            const queueTimedOut =
+              details.reason === "error" && queueStatus.peek() === "timed_out";
+            // Only the agent hanging up ends the conversation for good. Any
+            // other close, including the inactivity timer, keeps it resumable.
+            if (
+              storageKey &&
+              details.reason === "agent" &&
+              details.context?.type === "end_call"
+            ) {
+              clearStoredPersistentSession(storageKey);
+            }
+            receivedFirstMessageRef.current = false;
+            resumedSessionRef.current = false;
+            conversationTextOnly.value = null;
+            resetAgentResponseState();
+            clearTypingTimer();
+            isAgentTyping.value = false;
+            isExternalAgentMode.value = false;
+            transcript.value = [
+              ...transcript.peek(),
+              queueTimedOut
+                ? {
+                    type: "queue_timeout",
+                    conversationIndex: conversationIndex.peek(),
+                  }
+                : details.reason === "error"
+                  ? {
+                      type: "error",
+                      message: details.message,
+                      conversationIndex: conversationIndex.peek(),
+                    }
+                  : {
+                      type: "disconnection",
+                      role: details.reason === "user" ? "user" : "agent",
+                      conversationIndex: conversationIndex.peek(),
+                    },
+            ];
+            conversationIndex.value++;
+            if (details.reason === "error" && !queueTimedOut) {
+              error.value = details.message;
+              console.error(
+                "[ConversationalAI] Disconnected due to an error:",
+                details.message
+              );
+            }
+          },
+        });
+
+        conversationRef.current = await lockRef.current;
+        if (initialMessage) {
+          const instance = conversationRef.current;
+          // TODO: Remove the delay once BE can handle it
+          setTimeout(
+            () =>
+              instance.sendUserMessage(initialMessage, initialMessageOptions),
+            100
+          );
+        }
+
+        const id = conversationRef.current.getId();
+        lastId.value = id;
+        error.value = null;
+        return id;
+      } catch (e) {
+        if (resume && storageKey && isRejectedByServer(e)) {
+          clearStoredPersistentSession(storageKey);
+        }
+        if (resume && !initialMessage) {
+          // An automatic resume that fails must not greet the user with an
+          // error; fall back to the fresh widget instead.
+          console.warn(
+            "[ConversationalAI] Could not resume the stored conversation:",
+            e
+          );
+          conversationTextOnly.value = null;
+          transcript.value = firstMessageEntries();
+          return undefined;
+        }
+        // A queue timeout can close the connection before startSession
+        // resolves.
+        if (queueStatus.peek() === "timed_out") {
+          transcript.value = [
+            ...transcript.value,
+            {
+              type: "queue_timeout",
+              conversationIndex: conversationIndex.peek(),
+            },
+          ];
+        } else {
+          let message = "Could not start a conversation.";
+          if (e instanceof CloseEvent) {
+            message = e.reason || message;
+          } else if (e instanceof Error) {
+            message = e.message || message;
+          }
+          error.value = message;
+          transcript.value = [
+            ...transcript.value,
+            {
+              type: "error",
+              message,
+              conversationIndex: conversationIndex.peek(),
+            },
+          ];
+        }
+        return undefined;
+      } finally {
+        lockRef.current = null;
+      }
+    };
+
     return {
       status,
       isSpeaking,
@@ -532,384 +1040,39 @@ function useConversationSetup() {
       isExternalAgentMode,
       queueStatus,
       isWaitingForAgent,
-      startSession: async (
+      hasReplayedHistory,
+      hasStoredSession: () => readStoredSession() !== null,
+      /** Reconnects to the stored persistent conversation, if there is one. */
+      resumeSession: () => {
+        const resume = readStoredSession();
+        return resume ? connect(null, { resume }) : Promise.resolve(undefined);
+      },
+      startSession: (
         element: HTMLElement,
         initialMessage?: string,
         initialMessageOptions?: SendUserMessageOptions
-      ) => {
-        await terms.requestTerms();
-
-        if (conversationRef.current?.isOpen()) {
-          return conversationRef.current.getId();
-        }
-
-        if (lockRef.current) {
-          const conversation = await lockRef.current;
-          return conversation.getId();
-        }
-
-        let processedConfig = structuredClone(config.peek());
-        if (!processedConfig.userId) {
-          processedConfig.userId = await getOrCreateUserId();
-        }
-
-        // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode.
-        if (initialMessage && widgetConfig.value.supports_text_only) {
-          processedConfig.textOnly = true;
-          if (!widgetConfig.value.text_only) {
-            processedConfig.overrides ??= {};
-            processedConfig.overrides.conversation ??= {};
-            processedConfig.overrides.conversation.textOnly = true;
-          }
-        }
-
-        try {
-          processedConfig = triggerCallEvent(
-            shadowHost.value ?? element,
-            processedConfig
-          );
-        } catch (error) {
-          console.error(
-            "[ConversationalAI] Error triggering call event:",
-            error
-          );
-        }
-
-        conversationTextOnly.value = processedConfig.textOnly ?? false;
-        queueStatus.value = null;
-        resetAgentResponseState();
-        transcript.value = [
-          ...firstMessageEntries(),
-          ...(initialMessage
-            ? [
-                {
-                  type: "message",
-                  role: "user",
-                  message: initialMessage,
-                  isText: true,
-                  conversationIndex: conversationIndex.peek(),
-                } satisfies TranscriptEntry,
-              ]
-            : []),
-        ];
-
-        try {
-          lockRef.current = Conversation.startSession({
-            ...processedConfig,
-            onModeChange: props => {
-              mode.value = props.mode;
-            },
-            onStatusChange: props => {
-              status.value = props.status;
-            },
-            onCanSendFeedbackChange: props => {
-              canSendFeedback.value = props.canSendFeedback;
-            },
-            onMessage: ({
-              role,
-              message,
-              event_id,
-              response_id,
-              attachments,
-            }) => {
-              if (
-                firstMessage.peek() &&
-                conversationTextOnly.peek() === true &&
-                role === "agent" &&
-                event_id === FIRST_MESSAGE_EVENT_ID
-              ) {
-                receivedFirstMessageRef.current = true;
-                // The configured first message is already rendered locally in
-                // text mode, so ignore the server copy.
-                return;
-              } else if (role === "agent") {
-                receivedFirstMessageRef.current = true;
-                setAgentTyping(false);
-              }
-
-              if (role === "agent") {
-                const currentTranscript = transcript.peek();
-                const isText = conversationTextOnly.peek() === true;
-                const currentConversationIndex = conversationIndex.peek();
-                if (response_id == null) {
-                  transcript.value = finalizeLegacyAgentResponse(
-                    currentTranscript,
-                    legacyAgentResponseStateRef.current,
-                    message,
-                    event_id,
-                    isText,
-                    currentConversationIndex,
-                    attachments
-                  );
-                  return;
-                }
-
-                const responseState = agentResponseStateRef.current;
-                transcript.value = finalizeAgentResponse(
-                  currentTranscript,
-                  responseState,
-                  response_id,
-                  message,
-                  event_id,
-                  isText,
-                  currentConversationIndex,
-                  attachments
-                );
-                return;
-              }
-
-              const currentTranscript = transcript.peek();
-              transcript.value = [
-                ...currentTranscript,
-                {
-                  type: "message",
-                  role,
-                  message,
-                  isText: conversationTextOnly.peek() === true,
-                  conversationIndex: conversationIndex.peek(),
-                  eventId: event_id,
-                  attachments,
-                },
-              ];
-            },
-            onAgentChatResponsePart: ({
-              text,
-              type,
-              event_id,
-              response_id,
-            }) => {
-              // Voice conversations render `agent_response` transcripts only.
-              if (conversationTextOnly.peek() !== true) return;
-
-              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
-                // Ignore the opening frame of the configured first-message
-                // stream, then allow the actual reply stream through.
-                receivedFirstMessageRef.current = true;
-                return;
-              }
-              setAgentTyping(false);
-
-              const currentTranscript = transcript.peek();
-              const isText = conversationTextOnly.peek() === true;
-              const currentConversationIndex = conversationIndex.peek();
-              if (response_id == null) {
-                const legacyState = legacyAgentResponseStateRef.current;
-                if (type === "start") {
-                  const updatedTranscript = startLegacyAgentStream(
-                    currentTranscript,
-                    legacyState,
-                    event_id,
-                    isText,
-                    currentConversationIndex
-                  );
-                  if (updatedTranscript !== currentTranscript) {
-                    transcript.value = updatedTranscript;
-                  }
-                } else if (type === "delta") {
-                  const updatedTranscript = appendLegacyAgentDelta(
-                    currentTranscript,
-                    legacyState,
-                    event_id,
-                    text
-                  );
-                  if (updatedTranscript !== currentTranscript) {
-                    transcript.value = updatedTranscript;
-                  }
-                } else if (
-                  type === "stop" &&
-                  legacyState.active?.eventId === event_id
-                ) {
-                  legacyState.active = null;
-                }
-                return;
-              }
-
-              const responseState = agentResponseStateRef.current;
-              if (type === "start") {
-                const updatedTranscript = startAgentStream(
-                  currentTranscript,
-                  responseState,
-                  response_id,
-                  event_id,
-                  isText,
-                  currentConversationIndex
-                );
-                if (updatedTranscript !== currentTranscript) {
-                  transcript.value = updatedTranscript;
-                }
-              } else if (type === "delta") {
-                const updatedTranscript = appendAgentDelta(
-                  currentTranscript,
-                  responseState,
-                  response_id,
-                  text
-                );
-                if (updatedTranscript !== currentTranscript) {
-                  transcript.value = updatedTranscript;
-                }
-              } else if (type === "stop") {
-                const tracked = responseState.get(response_id);
-                if (tracked) tracked.isStreaming = false;
-              }
-            },
-            onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "agent_tool_request",
-                  toolName: tool_name,
-                  toolCallId: tool_call_id,
-                  eventId: event_id,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
-            },
-            onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "agent_tool_response",
-                  toolCallId: tool_call_id,
-                  eventId: event_id,
-                  isError: is_error,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
-            },
-            onRichContent: ({
-              component,
-              props,
-              event_id,
-              rich_content_id,
-            }) => {
-              transcript.value = [
-                ...transcript.peek(),
-                {
-                  type: "rich_content",
-                  component,
-                  props,
-                  eventId: event_id,
-                  richContentId: rich_content_id,
-                  conversationIndex: conversationIndex.peek(),
-                },
-              ];
-            },
-            onAgentTyping: ({ is_typing, duration_ms }) => {
-              setAgentTyping(is_typing, duration_ms);
-            },
-            onExternalAgentConnected: () => {
-              isExternalAgentMode.value = true;
-            },
-            onExternalAgentDisconnected: () => {
-              setAgentTyping(false);
-              isExternalAgentMode.value = false;
-            },
-            // The SDK forwards unhandled server events to onDebug.
-            // TODO: drop this narrowing once the SDK handles queue_status
-            // explicitly (planned after the queue protocol is finalized).
-            onDebug: (props: unknown) => {
-              const event = props as {
-                type?: string;
-                queue_status_event?: { status?: unknown };
-              };
-              if (
-                event?.type === "queue_status" &&
-                typeof event.queue_status_event?.status === "string"
-              ) {
-                queueStatus.value = event.queue_status_event.status;
-              }
-            },
-            onDisconnect: details => {
-              // A queue timeout closes with an error; show friendly copy
-              // instead of the raw close reason.
-              const queueTimedOut =
-                details.reason === "error" &&
-                queueStatus.peek() === "timed_out";
-              receivedFirstMessageRef.current = false;
-              conversationTextOnly.value = null;
-              resetAgentResponseState();
-              clearTypingTimer();
-              isAgentTyping.value = false;
-              isExternalAgentMode.value = false;
-              transcript.value = [
-                ...transcript.peek(),
-                queueTimedOut
-                  ? {
-                      type: "queue_timeout",
-                      conversationIndex: conversationIndex.peek(),
-                    }
-                  : details.reason === "error"
-                    ? {
-                        type: "error",
-                        message: details.message,
-                        conversationIndex: conversationIndex.peek(),
-                      }
-                    : {
-                        type: "disconnection",
-                        role: details.reason === "user" ? "user" : "agent",
-                        conversationIndex: conversationIndex.peek(),
-                      },
-              ];
-              conversationIndex.value++;
-              if (details.reason === "error" && !queueTimedOut) {
-                error.value = details.message;
-                console.error(
-                  "[ConversationalAI] Disconnected due to an error:",
-                  details.message
-                );
-              }
-            },
-          });
-
-          conversationRef.current = await lockRef.current;
-          if (initialMessage) {
-            const instance = conversationRef.current;
-            // TODO: Remove the delay once BE can handle it
-            setTimeout(
-              () =>
-                instance.sendUserMessage(initialMessage, initialMessageOptions),
-              100
-            );
-          }
-
-          const id = conversationRef.current.getId();
-          lastId.value = id;
-          error.value = null;
-          return id;
-        } catch (e) {
-          // A queue timeout can close the connection before startSession
-          // resolves.
-          if (queueStatus.peek() === "timed_out") {
-            transcript.value = [
-              ...transcript.value,
-              {
-                type: "queue_timeout",
-                conversationIndex: conversationIndex.peek(),
-              },
-            ];
-          } else {
-            let message = "Could not start a conversation.";
-            if (e instanceof CloseEvent) {
-              message = e.reason || message;
-            } else if (e instanceof Error) {
-              message = e.message || message;
-            }
-            error.value = message;
-            transcript.value = [
-              ...transcript.value,
-              {
-                type: "error",
-                message,
-                conversationIndex: conversationIndex.peek(),
-              },
-            ];
-          }
-        } finally {
-          lockRef.current = null;
-        }
-      },
+      ) =>
+        connect(element, {
+          initialMessage,
+          initialMessageOptions,
+          // A message typed after a disconnect continues the stored text
+          // conversation instead of opening a second one. Starting a voice
+          // call is a new conversation, so it never resumes.
+          resume: initialMessage ? readStoredSession() : null,
+        }),
+      /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
+        const storageKey =
+          storageKeyRef.current ?? persistentSessionStorageKey(config.peek());
+        if (storageKey) {
+          clearStoredPersistentSession(storageKey);
+        }
+        const conversation = conversationRef.current;
+        conversationRef.current = null;
+        await conversation?.endSession();
+      },
+      /** Closes the connection but keeps a persistent session resumable. */
+      disconnectSession: async () => {
         const conversation = conversationRef.current;
         conversationRef.current = null;
         await conversation?.endSession();
