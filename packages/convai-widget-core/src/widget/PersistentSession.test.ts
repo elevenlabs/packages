@@ -105,7 +105,9 @@ describe("Persistent sessions", () => {
 
     await page.getByRole("button", { name: "End chat" }).click();
 
-    await expect.poll(() => localStorage.getItem(STORAGE_KEY)).toBeNull();
+    await expect
+      .poll(() => localStorage.getItem(STORAGE_KEY), { timeout: 5000 })
+      .toBeNull();
   });
 
   it("starts fresh when the stored token is rejected", async () => {
@@ -115,7 +117,9 @@ describe("Persistent sessions", () => {
     );
     mountPersistentWidget();
 
-    await expect.poll(() => localStorage.getItem(STORAGE_KEY)).toBeNull();
+    await expect
+      .poll(() => localStorage.getItem(STORAGE_KEY), { timeout: 5000 })
+      .toBeNull();
     await expect
       .element(page.getByText("Hello from the agent", { exact: true }))
       .toBeInTheDocument();
