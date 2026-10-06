@@ -20,6 +20,7 @@ export function constructOverrides(
         language: config.overrides.agent?.language,
       },
       tts: {
+        model_id: config.overrides.tts?.modelId,
         voice_id: config.overrides.tts?.voiceId,
         speed: config.overrides.tts?.speed,
         stability: config.overrides.tts?.stability,
