@@ -343,6 +343,21 @@ describe("Scribe", () => {
       }
     );
 
+    it("builds URI with keepalive_interval_ms when keepaliveIntervalMs is set", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        keepaliveIntervalMs: 2000,
+      });
+      onTestFinished(() => connection.close());
+
+      expect((await query).get("keepalive_interval_ms")).toBe("2000");
+    });
+
     it("omits filter_background_audio and secondary_languages when not specified", async () => {
       const query = connectionQuery();
 
@@ -359,6 +374,7 @@ describe("Scribe", () => {
       expect(resolved.has("secondary_languages")).toBe(false);
       expect(resolved.has("entity_detection")).toBe(false);
       expect(resolved.has("transcript_edit")).toBe(false);
+      expect(resolved.has("keepalive_interval_ms")).toBe(false);
     });
 
     it("builds URI with keyterms as repeated query params", () => {

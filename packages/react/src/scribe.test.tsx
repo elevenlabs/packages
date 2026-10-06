@@ -237,6 +237,25 @@ describe("useScribe", () => {
     );
   });
 
+  it("passes keepaliveIntervalMs through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ keepaliveIntervalMs: 2000 })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({ keepaliveIntervalMs: 2000 })
+    );
+  });
+
   describe("transcript editing", () => {
     function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
       return vi

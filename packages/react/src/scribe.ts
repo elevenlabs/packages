@@ -166,6 +166,15 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   filterBackgroundAudio?: boolean;
 
   /**
+   * Opt-in keepalive interval in milliseconds (500-10000). While the streamed audio
+   * contains no speech, the server sends a partial transcript about this often so
+   * clients with a read timeout don't drop the connection during long pauses. Audio
+   * must keep streaming (silence is fine); keepalives are not sent if audio stops.
+   * Disabled by default.
+   */
+  keepaliveIntervalMs?: number;
+
+  /**
    * Whether the session may be logged by ElevenLabs. Set to `false` to use zero
    * retention mode, which makes history features unavailable for the session.
    * Zero retention mode may only be used by enterprise customers.
@@ -260,6 +269,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     noVerbatim: defaultNoVerbatim,
     transcriptEdit: defaultTranscriptEdit,
     filterBackgroundAudio: defaultFilterBackgroundAudio,
+    keepaliveIntervalMs: defaultKeepaliveIntervalMs,
 
     // Logging
     enableLogging: defaultEnableLogging,
@@ -351,6 +361,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           filterBackgroundAudio:
             runtimeOptions.filterBackgroundAudio ??
             defaultFilterBackgroundAudio,
+          keepaliveIntervalMs:
+            runtimeOptions.keepaliveIntervalMs ?? defaultKeepaliveIntervalMs,
           includeTimestamps,
           includeLanguageDetection,
           enableLogging,
@@ -579,6 +591,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultNoVerbatim,
       defaultTranscriptEdit,
       defaultFilterBackgroundAudio,
+      defaultKeepaliveIntervalMs,
       defaultEnableLogging,
       onSessionStarted,
       onPartialTranscript,
