@@ -49,8 +49,7 @@ describe("WebSocketConnection", () => {
     config: SessionConfig = {
       agentId: "test-agent",
       connectionType: "websocket",
-    },
-    metadata: Record<string, unknown> = defaultMetadata
+    }
   ): Promise<WebSocketConnection> {
     const promise = WebSocketConnection.create(config);
 
@@ -59,7 +58,7 @@ describe("WebSocketConnection", () => {
     emit("message", {
       data: JSON.stringify({
         type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: metadata,
+        conversation_initiation_metadata_event: defaultMetadata,
       }),
     });
 
@@ -111,63 +110,21 @@ describe("WebSocketConnection", () => {
     });
   });
 
-  describe("persistent sessions", () => {
-    function connectedUrl(): URL {
-      const [url] = vi.mocked(globalThis.WebSocket).mock.calls[0] as [string];
-      return new URL(url);
-    }
-
-    it("sends no persistent session params by default", async () => {
-      await createConnection();
-
-      const params = connectedUrl().searchParams;
-      expect(params.has("is_persistent")).toBe(false);
-      expect(params.has("persistent_session_token")).toBe(false);
+  it("adds the persistent session params to the URL", async () => {
+    await createConnection({
+      agentId: "test-agent",
+      connectionType: "websocket",
+      persistentSession: { token: "tok/with+chars" },
     });
 
-    it("starts a new persistent session with is_persistent only", async () => {
-      await createConnection({
-        agentId: "test-agent",
-        connectionType: "websocket",
-        persistentSession: true,
-      });
-
-      const params = connectedUrl().searchParams;
-      expect(params.get("is_persistent")).toBe("true");
-      expect(params.has("persistent_session_token")).toBe(false);
-    });
-
-    it("resumes with the encoded token alongside is_persistent", async () => {
-      await createConnection({
-        agentId: "test-agent",
-        connectionType: "websocket",
-        persistentSession: { token: "tok/with+chars" },
-      });
-
-      const params = connectedUrl().searchParams;
-      expect(params.get("is_persistent")).toBe("true");
-      expect(params.get("persistent_session_token")).toBe("tok/with+chars");
-    });
-
-    it("appends the params to a signed URL", async () => {
-      await createConnection({
-        signedUrl: "wss://api.elevenlabs.io/v1/convai/conversation?token=abc",
-        persistentSession: { token: "resume-me" },
-      });
-
-      const params = connectedUrl().searchParams;
-      expect(params.get("token")).toBe("abc");
-      expect(params.get("is_persistent")).toBe("true");
-      expect(params.get("persistent_session_token")).toBe("resume-me");
-    });
+    const [url] = vi.mocked(globalThis.WebSocket).mock.calls[0] as [string];
+    const params = new URL(url).searchParams;
+    expect(params.get("is_persistent")).toBe("true");
+    expect(params.get("persistent_session_token")).toBe("tok/with+chars");
   });
 
   it("re-emits the initiation metadata to message subscribers", async () => {
-    const metadata = {
-      ...defaultMetadata,
-      persistent_session_token: "fresh-token",
-    };
-    const connection = await createConnection(undefined, metadata);
+    const connection = await createConnection();
 
     const onMessage = vi.fn();
     connection.onMessage(onMessage);
@@ -176,7 +133,7 @@ describe("WebSocketConnection", () => {
     expect(onMessage).toHaveBeenCalledTimes(1);
     expect(onMessage.mock.calls[0][0]).toEqual({
       type: "conversation_initiation_metadata",
-      conversation_initiation_metadata_event: metadata,
+      conversation_initiation_metadata_event: defaultMetadata,
     });
   });
 

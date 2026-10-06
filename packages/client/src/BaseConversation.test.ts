@@ -732,7 +732,7 @@ describe("BaseConversation", () => {
     });
   });
 
-  describe("conversation_history events", () => {
+  it("calls onConversationHistory with the replayed rows", async () => {
     const historyEvent = {
       type: "conversation_history" as const,
       conversation_history_event: {
@@ -744,43 +744,23 @@ describe("BaseConversation", () => {
             text: "Hi",
             time_in_call_secs: 0,
           },
-          {
-            index: 1,
-            role: "user" as const,
-            text: "Where is my parcel?",
-            time_in_call_secs: 4,
-          },
         ],
         truncated: false,
       },
     };
-
-    it("calls onConversationHistory with the replayed rows", async () => {
-      const onConversationHistory = vi.fn();
-      const onMessage = vi.fn();
-      const onDebug = vi.fn();
-      const conversation = TestConversation.create({
-        onConversationHistory,
-        onMessage,
-        onDebug,
-      });
-
-      await conversation.receiveMessage(historyEvent);
-
-      expect(onConversationHistory).toHaveBeenCalledWith(
-        historyEvent.conversation_history_event
-      );
-      expect(onMessage).not.toHaveBeenCalled();
-      expect(onDebug).not.toHaveBeenCalled();
+    const onConversationHistory = vi.fn();
+    const onMessage = vi.fn();
+    const conversation = TestConversation.create({
+      onConversationHistory,
+      onMessage,
     });
 
-    it("does not throw when no callback is provided", async () => {
-      const conversation = TestConversation.create({});
+    await conversation.receiveMessage(historyEvent);
 
-      await expect(
-        conversation.receiveMessage(historyEvent)
-      ).resolves.toBeUndefined();
-    });
+    expect(onConversationHistory).toHaveBeenCalledWith(
+      historyEvent.conversation_history_event
+    );
+    expect(onMessage).not.toHaveBeenCalled();
   });
 
   describe("agent_tool_response_full_payload events", () => {

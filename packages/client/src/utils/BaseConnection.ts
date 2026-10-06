@@ -83,9 +83,9 @@ export type BaseSessionConfig = {
   userId?: string;
   environment?: string;
   /**
-   * Text-only, websocket-only. `true` starts a new persistent conversation;
-   * the `persistent_session_token` from an earlier `onConversationMetadata`
-   * resumes one. Every connection returns a fresh token.
+   * Text-only, websocket-only. `true` starts a resumable conversation and
+   * `{ token }` resumes one with the `persistent_session_token` received in
+   * `onConversationMetadata`.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.

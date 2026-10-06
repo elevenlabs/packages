@@ -2,61 +2,35 @@ import type { SessionConfig } from "@elevenlabs/client";
 
 const STORAGE_KEY_PREFIX = "elevenlabs_convai_persistent_session_";
 
-export type StoredPersistentSession = {
-  conversationId: string;
-  token: string;
-};
-
-export function persistentSessionStorageKey(
-  config: SessionConfig
-): string | null {
-  if (!config.persistentSession) {
-    return null;
-  }
-  const agentId =
-    "agentId" in config && config.agentId
-      ? config.agentId
-      : "signedUrl" in config && config.signedUrl
-        ? agentIdFromSignedUrl(config.signedUrl)
-        : null;
-  return agentId ? `${STORAGE_KEY_PREFIX}${agentId}` : null;
-}
-
-function agentIdFromSignedUrl(signedUrl: string): string | null {
+function storageKey(config: SessionConfig): string | null {
+  if (!config.persistentSession) return null;
   try {
-    return new URL(signedUrl).searchParams.get("agent_id");
+    const agentId =
+      config.agentId ??
+      (config.signedUrl
+        ? new URL(config.signedUrl).searchParams.get("agent_id")
+        : null);
+    return agentId ? STORAGE_KEY_PREFIX + agentId : null;
   } catch {
     return null;
   }
 }
 
 export function readStoredPersistentSession(
-  key: string
-): StoredPersistentSession | null {
+  config: SessionConfig
+): string | null {
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      typeof (parsed as StoredPersistentSession).conversationId === "string" &&
-      typeof (parsed as StoredPersistentSession).token === "string"
-    ) {
-      return parsed as StoredPersistentSession;
-    }
+    const key = storageKey(config);
+    return key ? localStorage.getItem(key) : null;
   } catch {
-    // Unavailable or corrupt storage just means there is nothing to resume.
+    return null;
   }
-  return null;
 }
 
-export function storePersistentSession(
-  key: string,
-  session: StoredPersistentSession
-): void {
+export function storePersistentSession(config: SessionConfig, token: string) {
   try {
-    localStorage.setItem(key, JSON.stringify(session));
+    const key = storageKey(config);
+    if (key) localStorage.setItem(key, token);
   } catch (error) {
     console.warn(
       "[ConversationalAI] Could not store the persistent session:",
@@ -65,9 +39,10 @@ export function storePersistentSession(
   }
 }
 
-export function clearStoredPersistentSession(key: string): void {
+export function clearStoredPersistentSession(config: SessionConfig) {
   try {
-    localStorage.removeItem(key);
+    const key = storageKey(config);
+    if (key) localStorage.removeItem(key);
   } catch {
     // Nothing to clear when storage is unavailable.
   }

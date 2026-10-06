@@ -167,11 +167,8 @@ export type Callbacks = {
     props: ConversationMetadata["conversation_initiation_metadata_event"]
   ) => void;
   /**
-   * Called once, right after `onConversationMetadata`, when a persistent
-   * session is resumed and the server replays stored transcript rows the
-   * client has not seen. Rows are not re-emitted through `onMessage`; render
-   * them as the opening transcript. Each row carries its stable `index` in
-   * the stored transcript, which the server may resend on a later resume.
+   * Called with the stored transcript rows the server replays when a
+   * persistent session is resumed. Rows are not re-emitted through `onMessage`.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.
