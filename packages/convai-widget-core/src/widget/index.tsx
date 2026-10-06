@@ -18,6 +18,7 @@ import { ShadowHostProvider } from "../contexts/shadow-host";
 import { WidgetSizeProvider } from "../contexts/widget-size";
 import { ConversationModeProvider } from "../contexts/conversation-mode";
 import { EventBridge } from "./EventBridge";
+import { EndConfirmationProvider } from "../contexts/end-confirmation";
 
 export function ConvAIWidget(attributes: CustomAttributes) {
   return (
@@ -38,9 +39,11 @@ export function ConvAIWidget(attributes: CustomAttributes) {
                                 <SheetContentProvider>
                                   <FeedbackProvider>
                                     <Style />
-                                    <EventBridge>
-                                      <Wrapper />
-                                    </EventBridge>
+                                    <EndConfirmationProvider>
+                                      <EventBridge>
+                                        <Wrapper />
+                                      </EventBridge>
+                                    </EndConfirmationProvider>
                                   </FeedbackProvider>
                                 </SheetContentProvider>
                               </AvatarConfigProvider>

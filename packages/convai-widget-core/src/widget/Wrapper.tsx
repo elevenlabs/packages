@@ -10,6 +10,8 @@ import { useConversation } from "../contexts/conversation";
 import { InOutTransition } from "../components/InOutTransition";
 import { useTerms } from "../contexts/terms";
 import { TermsModal } from "./TermsModal";
+import { useEndConfirmation } from "../contexts/end-confirmation";
+import { EndConfirmationDialog } from "./EndConfirmationDialog";
 import { ErrorModal } from "./ErrorModal";
 import { PoweredBy } from "./PoweredBy";
 import { useWidgetSize } from "../contexts/widget-size";
@@ -50,6 +52,7 @@ export const Wrapper = memo(function Wrapper() {
   const sawError = useSignal(false);
   const { error, isDisconnected } = useConversation();
   const terms = useTerms();
+  const { confirmationShown, cancelEnd } = useEndConfirmation();
   const { variant } = useWidgetSize();
   const expandable = useComputed(
     () => config.value.transcript_enabled || config.value.text_input_enabled
@@ -74,6 +77,13 @@ export const Wrapper = memo(function Wrapper() {
       } else {
         sawError.value = false;
       }
+    }
+  });
+
+  // Collapsing the sheet dismisses a confirmation shown on top of it
+  useSignalEffect(() => {
+    if (!expanded.value) {
+      cancelEnd();
     }
   });
 
@@ -112,12 +122,20 @@ export const Wrapper = memo(function Wrapper() {
     if (!terms.termsAccepted.value && terms.termsShown.value) {
       return "terms";
     }
+    const sheetVisible =
+      config.value.always_expanded || (expandable.value && expanded.value);
+    if (confirmationShown.value && !sheetVisible) {
+      return "end-confirmation";
+    }
     return "conversation";
   });
 
   const isError = useComputed(() => state.value === "error");
   const isTerms = useComputed(() => state.value === "terms");
   const isConversation = useComputed(() => state.value === "conversation");
+  const isEndConfirmation = useComputed(
+    () => state.value === "end-confirmation"
+  );
 
   const handleDismiss = () => {
     hidden.value = true;
@@ -130,6 +148,9 @@ export const Wrapper = memo(function Wrapper() {
   const showConversation = useComputed(() => isConversation.value && !hidden.value);
   const showTerms = useComputed(() => isTerms.value && !hidden.value);
   const showError = useComputed(() => isError.value && !hidden.value);
+  const showEndConfirmation = useComputed(
+    () => isEndConfirmation.value && !hidden.value
+  );
   const showPoweredBy = useComputed(() => !hidden.value);
 
   // Only show dismiss button if dismissible is enabled AND call is not active
@@ -159,6 +180,11 @@ export const Wrapper = memo(function Wrapper() {
       <InOutTransition initial={false} active={showTerms}>
         <Root className={className} style={HIDDEN_STYLE}>
           <TermsModal />
+        </Root>
+      </InOutTransition>
+      <InOutTransition initial={false} active={showEndConfirmation}>
+        <Root className={className} style={HIDDEN_STYLE}>
+          <EndConfirmationDialog />
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={showError}>
