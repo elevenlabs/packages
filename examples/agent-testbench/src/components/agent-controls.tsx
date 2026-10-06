@@ -38,16 +38,19 @@ export function AgentControls({ onStart }: { onStart: () => void }) {
     setSidebarOpen(true);
   }, [setSidebarOpen]);
 
+  // "error" means the last session failed to start — a new one can be started.
+  const isIdle = status.status === "disconnected" || status.status === "error";
+
   return (
     <>
       <section className="flex flex-row gap-2 my-4">
         <ButtonGroup>
-          <Button disabled={status.status !== "disconnected"} onClick={onStart}>
+          <Button disabled={!isIdle} onClick={onStart}>
             Start
           </Button>
           <Button
             title="Configure before starting"
-            disabled={status.status !== "disconnected"}
+            disabled={!isIdle}
             onClick={handleConfigure}
           >
             {status.status === "connecting" ? (
