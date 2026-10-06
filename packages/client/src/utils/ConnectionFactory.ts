@@ -39,25 +39,6 @@ function determineConnectionType(config: SessionConfig): ConnectionType {
     );
   }
 
-  if (config.persistentSession) {
-    if (hasOrchestratorConfig) {
-      throw new Error(
-        "Persistent sessions are not supported for self-hosted orchestrator sessions."
-      );
-    }
-    if (
-      (config.connectionType as ConnectionType) === "webrtc" ||
-      ("conversationToken" in config && config.conversationToken)
-    ) {
-      throw new Error(
-        "Persistent sessions only support websocket connections. Remove connectionType or set it to 'websocket'."
-      );
-    }
-    if (!config.connectionType) {
-      return "websocket";
-    }
-  }
-
   // If connectionType is explicitly specified, use it
   if (config.connectionType) {
     return config.connectionType;

@@ -28,34 +28,4 @@ describe("createConnection", () => {
       } as unknown as SessionConfig)
     ).rejects.toThrow("cannot be combined");
   });
-
-  describe("persistent sessions", () => {
-    it("rejects persistentSession combined with webrtc", async () => {
-      await expect(
-        createConnection({
-          agentId: "agent",
-          connectionType: "webrtc",
-          persistentSession: true,
-        } as unknown as SessionConfig)
-      ).rejects.toThrow("only support websocket");
-    });
-
-    it("rejects persistentSession combined with a conversation token", async () => {
-      await expect(
-        createConnection({
-          conversationToken: "token",
-          persistentSession: { token: "resume" },
-        } as unknown as SessionConfig)
-      ).rejects.toThrow("only support websocket");
-    });
-
-    it("rejects persistentSession for self-hosted orchestrators", async () => {
-      await expect(
-        createConnection({
-          orchestrator,
-          persistentSession: true,
-        } as unknown as SessionConfig)
-      ).rejects.toThrow("not supported for self-hosted");
-    });
-  });
 });

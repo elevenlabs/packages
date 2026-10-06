@@ -83,36 +83,15 @@ export type BaseSessionConfig = {
   userId?: string;
   environment?: string;
   /**
-   * Keeps the conversation resumable after the client disconnects. Text-only
-   * and WebSocket-only; the agent's workspace must have persistent sessions
-   * enabled. Pass `true` to start a new persistent conversation, or the
-   * `persistent_session_token` from an earlier session's
-   * `onConversationMetadata` to resume that conversation. Every connection
-   * receives a fresh token, so always store the latest one.
+   * Text-only, websocket-only. `true` starts a new persistent conversation;
+   * the `persistent_session_token` from an earlier `onConversationMetadata`
+   * resumes one. Every connection returns a fresh token.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.
    */
   persistentSession?: boolean | { token: string };
 };
-
-export type PersistentSessionParams = {
-  enabled: boolean;
-  token?: string;
-};
-
-export function resolvePersistentSession(
-  config: Pick<BaseSessionConfig, "persistentSession">
-): PersistentSessionParams {
-  const { persistentSession } = config;
-  if (!persistentSession) {
-    return { enabled: false };
-  }
-  if (persistentSession === true) {
-    return { enabled: true };
-  }
-  return { enabled: true, token: persistentSession.token || undefined };
-}
 
 export type ConnectionType = "websocket" | "webrtc";
 

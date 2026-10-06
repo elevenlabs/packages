@@ -3,7 +3,6 @@ import {
   type SessionConfig,
   type FormatConfig,
   parseFormat,
-  resolvePersistentSession,
 } from "./BaseConnection.js";
 import { sourceInfo } from "../sourceInfo.js";
 import {
@@ -135,11 +134,14 @@ export class WebSocketConnection
           url += `&environment=${encodeURIComponent(config.environment)}`;
         }
 
-        const persistentSession = resolvePersistentSession(config);
-        if (persistentSession.enabled) {
+        if (config.persistentSession) {
           url += "&is_persistent=true";
-          if (persistentSession.token) {
-            url += `&persistent_session_token=${encodeURIComponent(persistentSession.token)}`;
+          const token =
+            typeof config.persistentSession === "object"
+              ? config.persistentSession.token
+              : undefined;
+          if (token) {
+            url += `&persistent_session_token=${encodeURIComponent(token)}`;
           }
         }
 
