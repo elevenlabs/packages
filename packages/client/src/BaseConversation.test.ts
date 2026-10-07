@@ -40,6 +40,10 @@ class TestConversation extends BaseConversation {
 
   public setVolume(): void {}
   public setMicMuted(): void {}
+  public setOnHold(): void {}
+  public isOnHold(): boolean {
+    return false;
+  }
   public getInputByteFrequencyData(): Uint8Array {
     return new Uint8Array(0);
   }

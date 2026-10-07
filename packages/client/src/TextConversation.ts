@@ -16,6 +16,14 @@ export class TextConversation extends BaseConversation {
     throw new Error("setMicMuted is not supported in text conversations");
   }
 
+  public setOnHold(): void {
+    throw new Error("setOnHold is not supported in text conversations");
+  }
+
+  public isOnHold(): boolean {
+    return false;
+  }
+
   public getInputByteFrequencyData(): Uint8Array {
     return EMPTY_FREQUENCY_DATA;
   }
