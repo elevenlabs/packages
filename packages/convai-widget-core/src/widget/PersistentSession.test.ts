@@ -194,6 +194,9 @@ describe("Persistent sessions", () => {
 
     expect(localStorage.getItem(DISABLED_STORAGE_KEY)).toBeNull();
     expect(page.getByText("Could not", { exact: false }).all()).toHaveLength(0);
+    expect(
+      page.getByText("Where is my parcel?", { exact: true }).all()
+    ).toHaveLength(1);
     assertConversationNotEnded();
   });
 });

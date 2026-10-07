@@ -123,6 +123,19 @@ describe("WebSocketConnection", () => {
     expect(params.get("persistent_session_token")).toBe("tok/with+chars");
   });
 
+  it("sends is_persistent without a token for a new persistent session", async () => {
+    await createConnection({
+      agentId: "test-agent",
+      connectionType: "websocket",
+      persistentSession: true,
+    });
+
+    const [url] = vi.mocked(globalThis.WebSocket).mock.calls[0] as [string];
+    const params = new URL(url).searchParams;
+    expect(params.get("is_persistent")).toBe("true");
+    expect(params.has("persistent_session_token")).toBe(false);
+  });
+
   it("re-emits the initiation metadata to message subscribers", async () => {
     const connection = await createConnection();
 

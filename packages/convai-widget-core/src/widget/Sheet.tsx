@@ -59,10 +59,8 @@ export function Sheet({ open }: SheetProps) {
   } = useConversation();
   const firstMessage = useFirstMessage();
 
-  // Opening the sheet resumes a stored conversation, as does the page coming
-  // back to the foreground or online after a background drop. The disconnected
-  // state is peeked so an inactivity disconnect while the sheet stays open
-  // does not reconnect in a loop.
+  // isDisconnected is peeked so an inactivity disconnect while the sheet stays
+  // open does not reconnect in a loop.
   const openSignal = useSignalish(open);
   useSignalEffect(() => {
     if (openSignal.value && isDisconnected.peek()) {

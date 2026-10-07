@@ -1,5 +1,6 @@
 import {
   Conversation,
+  DisconnectionDetails,
   MessageAttachment,
   Mode,
   Role,
@@ -37,6 +38,10 @@ import {
 } from "../utils/persistentSession";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
+// The orchestrator closes with this code when it refuses the connection
+// parameters: an expired or unknown resume token, or a workspace without
+// persistent sessions.
+const PERSISTENT_SESSION_REFUSED_CLOSE_CODE = 3000;
 
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
 
@@ -408,10 +413,19 @@ function firstMessageRichContentEntries(
   ];
 }
 
-// The orchestrator closes with 3000 when it refuses the connection parameters:
-// an expired or unknown resume token, or a workspace without persistent sessions.
 function isPersistentSessionRefused(error: unknown): boolean {
-  return error instanceof SessionConnectionError && error.closeCode === 3000;
+  return (
+    error instanceof SessionConnectionError &&
+    error.closeCode === PERSISTENT_SESSION_REFUSED_CLOSE_CODE
+  );
+}
+
+function isFinalDisconnect(details: DisconnectionDetails): boolean {
+  return (
+    (details.reason === "agent" && details.context?.type === "end_call") ||
+    (details.reason === "error" &&
+      details.closeCode === PERSISTENT_SESSION_REFUSED_CLOSE_CODE)
+  );
 }
 
 export function ConversationProvider({ children }: ConversationProviderProps) {
@@ -915,14 +929,9 @@ function useConversationSetup() {
               const queueTimedOut =
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
-              // The agent hanging up or the server refusing the session ends
-              // the conversation for good. Any other close, including the
-              // inactivity timer, keeps it resumable.
-              if (
-                (details.reason === "agent" &&
-                  details.context?.type === "end_call") ||
-                (details.reason === "error" && details.closeCode === 3000)
-              ) {
+              // Any other close, including the inactivity timer, keeps the
+              // conversation resumable.
+              if (isFinalDisconnect(details)) {
                 clearSession(processedConfig);
               }
               receivedFirstMessageRef.current = false;
@@ -934,7 +943,7 @@ function useConversationSetup() {
               // A close with the token still stored is a pause, not an end:
               // the transcript stays and the next message or the page coming
               // back to the foreground continues the conversation.
-              if (readStoredPersistentSession(processedConfig)) {
+              if (hasStoredSession.peek()) {
                 if (details.reason === "error") {
                   console.warn(
                     "[ConversationalAI] Connection lost, the conversation can be resumed:",
@@ -1018,7 +1027,19 @@ function useConversationSetup() {
             );
             isResumedSession.value = false;
             conversationTextOnly.value = null;
-            transcript.value = firstMessageEntries();
+            if (keepTranscript) {
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "disconnection",
+                  role: "agent",
+                  conversationIndex: conversationIndex.peek(),
+                },
+              ];
+              conversationIndex.value++;
+            } else {
+              transcript.value = firstMessageEntries();
+            }
             return;
           }
           // A queue timeout can close the connection before startSession

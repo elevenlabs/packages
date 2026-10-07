@@ -90,7 +90,7 @@ export type BaseSessionConfig = {
    * @experimental This API is experimental and may change without following
    * semver guarantees.
    */
-  persistentSession?: boolean | { token: string };
+  persistentSession?: true | { token: string };
 };
 
 export type ConnectionType = "websocket" | "webrtc";

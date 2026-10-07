@@ -31,6 +31,16 @@ const BASIC_CONFIG: WidgetConfig = {
   use_rtc: false,
 };
 
+const PERSISTENT_SESSION_AGENT: WidgetConfig = {
+  ...BASIC_CONFIG,
+  text_only: true,
+  transcript_enabled: true,
+  text_input_enabled: true,
+  terms_html: undefined,
+  default_expanded: true,
+  first_message: "Hello from the agent",
+};
+
 export const AGENTS = {
   basic: BASIC_CONFIG,
   text_only: {
@@ -448,25 +458,9 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
-  persistent_session: {
-    ...BASIC_CONFIG,
-    text_only: true,
-    transcript_enabled: true,
-    text_input_enabled: true,
-    terms_html: undefined,
-    default_expanded: true,
-    first_message: "Hello from the agent",
-  },
+  persistent_session: PERSISTENT_SESSION_AGENT,
   // A workspace without the persistent sessions flag.
-  persistent_session_disabled: {
-    ...BASIC_CONFIG,
-    text_only: true,
-    transcript_enabled: true,
-    text_input_enabled: true,
-    terms_html: undefined,
-    default_expanded: true,
-    first_message: "Hello from the agent",
-  },
+  persistent_session_disabled: PERSISTENT_SESSION_AGENT,
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,

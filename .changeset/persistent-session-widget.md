@@ -3,4 +3,4 @@
 "@elevenlabs/convai-widget-embed": minor
 ---
 
-Add the `persistent-session` attribute. Text conversations continue after a page reload or a dropped socket: the widget stores the resume token per agent, reconnects when the sheet opens, and forgets the conversation when the chat is ended.
+Add the `persistent-session` attribute. Text conversations survive a dropped socket or a page reload: the widget stores the resume token per agent, keeps the transcript, resumes when the sheet opens, the page returns to the foreground, or the next message is sent, and closes the connection cleanly while the page is hidden. "End chat" forgets the conversation, and a workspace without persistent sessions falls back to a plain conversation.
