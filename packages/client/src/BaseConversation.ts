@@ -212,7 +212,9 @@ export abstract class BaseConversation {
           textOnly,
         },
       },
-    };
+      // TypeScript cannot correlate `overrides` with the session config
+      // variant it was spread from.
+    } as Options;
   }
 
   protected constructor(
@@ -916,6 +918,11 @@ export abstract class BaseConversation {
       // Without this guard the file body would leave the customer network for the ElevenLabs cloud.
       throw new Error(
         "uploadFile is not supported for self-hosted orchestrator sessions."
+      );
+    }
+    if (this.options.connectionType === "websocket-realtime") {
+      throw new Error(
+        "uploadFile is not supported by websocket-realtime connections."
       );
     }
     return uploadFile({

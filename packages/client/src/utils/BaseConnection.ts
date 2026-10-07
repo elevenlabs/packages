@@ -84,7 +84,7 @@ export type BaseSessionConfig = {
   environment?: string;
 };
 
-export type ConnectionType = "websocket" | "webrtc";
+export type ConnectionType = "websocket" | "webrtc" | "websocket-realtime";
 
 /**
  * @experimental
@@ -134,7 +134,7 @@ export type OrchestratorConfig = {
 
 export type PublicSessionConfig = BaseSessionConfig & {
   agentId: string;
-  connectionType?: ConnectionType;
+  connectionType?: "websocket" | "webrtc";
   signedUrl?: never;
   conversationToken?: never;
   orchestrator?: never;
@@ -174,12 +174,104 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
   environment?: never;
 };
 
+/**
+ * @experimental
+ */
+export type RealtimeAudioFormat = "pcm_24000" | "ulaw_8000";
+
+/**
+ * A client tool the model may call, declared with a JSON Schema. Realtime
+ * sessions have no saved agent to read tool definitions from, so every client
+ * tool must be declared here as well as registered in `clientTools`.
+ * @experimental
+ */
+export type RealtimeFunctionTool = {
+  name: string;
+  description?: string;
+  /** JSON Schema for the tool's arguments. */
+  parameters?: Record<string, unknown>;
+};
+
+/**
+ * Only semantic VAD is accepted by the Realtime endpoint; pass `null` to
+ * `turnDetection` for manual turn-taking.
+ * @experimental
+ */
+export type RealtimeTurnDetection = {
+  type: "semantic_vad";
+  eagerness?: "low" | "medium" | "high" | "auto";
+  createResponse?: boolean;
+  /** Whether user speech interrupts the agent. Defaults to true. */
+  interruptResponse?: boolean;
+};
+
+/**
+ * Configuration sent to the Realtime endpoint in `session.update`. The
+ * endpoint builds a throwaway agent from these values alone.
+ * @experimental
+ */
+export type RealtimeSessionOptions = {
+  instructions?: string;
+  voice?: string;
+  /** Defaults to "pcm_24000". */
+  inputAudioFormat?: RealtimeAudioFormat;
+  /** Defaults to "pcm_24000". */
+  outputAudioFormat?: RealtimeAudioFormat;
+  turnDetection?: RealtimeTurnDetection | null;
+  tools?: RealtimeFunctionTool[];
+  temperature?: number;
+  maxOutputTokens?: number | "inf";
+};
+
+/**
+ * Connects to the OpenAI-compatible `/v1/convai/realtime` endpoint instead of
+ * a saved agent. Features tied to a saved agent (overrides, dynamic
+ * variables, knowledge base, server tools, workflows, first message, ...) are
+ * not available and are rejected when configured.
+ * @experimental
+ */
+export type RealtimeSessionConfig = {
+  connectionType: "websocket-realtime";
+  /**
+   * Short-lived client secret minted by your backend through
+   * `POST /v1/convai/realtime/client_secrets`.
+   */
+  clientSecret: string;
+  realtime?: RealtimeSessionOptions;
+  origin?: string;
+  textOnly?: boolean;
+  /** Only `conversation.textOnly` is supported. */
+  overrides?: {
+    agent?: never;
+    tts?: never;
+    asr?: never;
+    conversation?: {
+      textOnly?: boolean;
+    };
+  };
+  useWakeLock?: boolean;
+  connectionDelay?: DelayConfig;
+  agentId?: never;
+  signedUrl?: never;
+  conversationToken?: never;
+  orchestrator?: never;
+  authorization?: never;
+  livekitUrl?: never;
+  webRtc?: never;
+  customLlmExtraBody?: never;
+  dynamicVariables?: never;
+  toolMockConfig?: never;
+  userId?: never;
+  environment?: never;
+};
+
 // Union type for all possible session configurations
 export type SessionConfig =
   | PublicSessionConfig
   | PrivateWebSocketSessionConfig
   | PrivateWebRTCSessionConfig
-  | OrchestratorSessionConfig;
+  | OrchestratorSessionConfig
+  | RealtimeSessionConfig;
 
 export abstract class BaseConnection {
   public abstract readonly conversationId: string;
