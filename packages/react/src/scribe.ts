@@ -208,28 +208,6 @@ export interface UseScribeReturn {
 
 export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   const {
-    // Callbacks
-    onSessionStarted,
-    onPartialTranscript,
-    onCommittedTranscript,
-    onCommittedTranscriptWithTimestamps,
-    onEditedTranscript,
-    onError,
-    onAuthError,
-    onQuotaExceededError,
-    onCommitThrottledError,
-    onTranscriberError,
-    onUnacceptedTermsError,
-    onRateLimitedError,
-    onInputError,
-    onQueueOverflowError,
-    onResourceExhaustedError,
-    onSessionTimeLimitExceededError,
-    onChunkSizeExceededError,
-    onInsufficientAudioActivityError,
-    onConnect,
-    onDisconnect,
-
     // Connection options
     token: defaultToken,
     modelId: defaultModelId,
@@ -266,6 +244,14 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   } = options;
 
   const connectionRef = useRef<RealtimeConnection | null>(null);
+
+  // Callbacks are read through a ref so a session always calls the latest
+  // ones, and so passing new callback functions on each render does not change
+  // the identity of `connect` (which would re-run the `autoConnect` effect).
+  const callbacksRef = useRef(options);
+  useEffect(() => {
+    callbacksRef.current = options;
+  });
 
   const [status, setStatus] = useState<ScribeStatus>("disconnected");
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -317,7 +303,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           defaultIncludeTimestamps ??
           !!(
             runtimeOptions.onCommittedTranscriptWithTimestamps ||
-            onCommittedTranscriptWithTimestamps
+            callbacksRef.current.onCommittedTranscriptWithTimestamps
           );
         const includeLanguageDetection =
           runtimeOptions.includeLanguageDetection ??
@@ -381,14 +367,14 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         // Set up event listeners
         connection.on(RealtimeEvents.SESSION_STARTED, () => {
           setStatus("connected");
-          onSessionStarted?.();
+          callbacksRef.current.onSessionStarted?.();
         });
 
         connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: unknown) => {
           const message = data as PartialTranscriptMessage;
           setPartialTranscript(message.text);
           setStatus("transcribing");
-          onPartialTranscript?.(message);
+          callbacksRef.current.onPartialTranscript?.(message);
         });
 
         connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: unknown) => {
@@ -401,7 +387,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           };
           setCommittedTranscripts(prev => [...prev, segment]);
           setPartialTranscript("");
-          onCommittedTranscript?.(message);
+          callbacksRef.current.onCommittedTranscript?.(message);
         });
 
         connection.on(
@@ -418,7 +404,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             };
             setCommittedTranscripts(prev => [...prev, segment]);
             setPartialTranscript("");
-            onCommittedTranscriptWithTimestamps?.(message);
+            callbacksRef.current.onCommittedTranscriptWithTimestamps?.(message);
           }
         );
 
@@ -433,77 +419,77 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
                 : segment
             )
           );
-          onEditedTranscript?.(message);
+          callbacksRef.current.onEditedTranscript?.(message);
         });
 
         connection.on(RealtimeEvents.ERROR, (err: unknown) => {
           const message = err as ScribeErrorMessage;
           setError(message.error);
           setStatus("error");
-          onError?.(new Error(message.error));
+          callbacksRef.current.onError?.(new Error(message.error));
         });
 
         connection.on(RealtimeEvents.AUTH_ERROR, (data: unknown) => {
           const message = data as ScribeAuthErrorMessage;
           setError(message.error);
           setStatus("error");
-          onAuthError?.(message);
+          callbacksRef.current.onAuthError?.(message);
         });
 
         connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data: unknown) => {
           const message = data as ScribeQuotaExceededErrorMessage;
           setError(message.error);
           setStatus("error");
-          onQuotaExceededError?.(message);
+          callbacksRef.current.onQuotaExceededError?.(message);
         });
 
         connection.on(RealtimeEvents.COMMIT_THROTTLED, (data: unknown) => {
           const message = data as ScribeCommitThrottledErrorMessage;
           setError(message.error);
           setStatus("error");
-          onCommitThrottledError?.(message);
+          callbacksRef.current.onCommitThrottledError?.(message);
         });
 
         connection.on(RealtimeEvents.TRANSCRIBER_ERROR, (data: unknown) => {
           const message = data as ScribeTranscriberErrorMessage;
           setError(message.error);
           setStatus("error");
-          onTranscriberError?.(message);
+          callbacksRef.current.onTranscriberError?.(message);
         });
 
         connection.on(RealtimeEvents.UNACCEPTED_TERMS, (data: unknown) => {
           const message = data as ScribeUnacceptedTermsErrorMessage;
           setError(message.error);
           setStatus("error");
-          onUnacceptedTermsError?.(message);
+          callbacksRef.current.onUnacceptedTermsError?.(message);
         });
 
         connection.on(RealtimeEvents.RATE_LIMITED, (data: unknown) => {
           const message = data as ScribeRateLimitedErrorMessage;
           setError(message.error);
           setStatus("error");
-          onRateLimitedError?.(message);
+          callbacksRef.current.onRateLimitedError?.(message);
         });
 
         connection.on(RealtimeEvents.INPUT_ERROR, (data: unknown) => {
           const message = data as ScribeInputErrorMessage;
           setError(message.error);
           setStatus("error");
-          onInputError?.(message);
+          callbacksRef.current.onInputError?.(message);
         });
 
         connection.on(RealtimeEvents.QUEUE_OVERFLOW, (data: unknown) => {
           const message = data as ScribeQueueOverflowErrorMessage;
           setError(message.error);
           setStatus("error");
-          onQueueOverflowError?.(message);
+          callbacksRef.current.onQueueOverflowError?.(message);
         });
 
         connection.on(RealtimeEvents.RESOURCE_EXHAUSTED, (data: unknown) => {
           const message = data as ScribeResourceExhaustedErrorMessage;
           setError(message.error);
           setStatus("error");
-          onResourceExhaustedError?.(message);
+          callbacksRef.current.onResourceExhaustedError?.(message);
         });
 
         connection.on(
@@ -512,7 +498,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             const message = data as ScribeSessionTimeLimitExceededErrorMessage;
             setError(message.error);
             setStatus("error");
-            onSessionTimeLimitExceededError?.(message);
+            callbacksRef.current.onSessionTimeLimitExceededError?.(message);
           }
         );
 
@@ -520,7 +506,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           const message = data as ScribeChunkSizeExceededErrorMessage;
           setError(message.error);
           setStatus("error");
-          onChunkSizeExceededError?.(message);
+          callbacksRef.current.onChunkSizeExceededError?.(message);
         });
 
         connection.on(
@@ -529,12 +515,12 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             const message = data as ScribeInsufficientAudioActivityErrorMessage;
             setError(message.error);
             setStatus("error");
-            onInsufficientAudioActivityError?.(message);
+            callbacksRef.current.onInsufficientAudioActivityError?.(message);
           }
         );
 
         connection.on(RealtimeEvents.OPEN, () => {
-          onConnect?.();
+          callbacksRef.current.onConnect?.();
         });
 
         connection.on(RealtimeEvents.CLOSE, () => {
@@ -548,7 +534,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           setStatus("disconnected");
           setIsMuted(false);
           connectionRef.current = null;
-          onDisconnect?.();
+          callbacksRef.current.onDisconnect?.();
         });
       } catch (err) {
         const errorMessage =
@@ -580,26 +566,6 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultTranscriptEdit,
       defaultFilterBackgroundAudio,
       defaultEnableLogging,
-      onSessionStarted,
-      onPartialTranscript,
-      onCommittedTranscript,
-      onCommittedTranscriptWithTimestamps,
-      onEditedTranscript,
-      onError,
-      onAuthError,
-      onQuotaExceededError,
-      onCommitThrottledError,
-      onTranscriberError,
-      onUnacceptedTermsError,
-      onRateLimitedError,
-      onInputError,
-      onQueueOverflowError,
-      onResourceExhaustedError,
-      onSessionTimeLimitExceededError,
-      onChunkSizeExceededError,
-      onInsufficientAudioActivityError,
-      onConnect,
-      onDisconnect,
     ]
   );
 
