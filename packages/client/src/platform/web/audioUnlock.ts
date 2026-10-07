@@ -34,9 +34,21 @@ function clearStashDiscardTimer(): void {
   discardTimer = null;
 }
 
-/** Unlock iOS audio during a user gesture. No-op on non-iOS. */
+/**
+ * Web Audio can be missing on iOS even in modern WebKit: Lockdown Mode removes
+ * `AudioContext` entirely. There is nothing to unlock there, and constructing
+ * one would throw on every gesture.
+ */
+function isWebAudioAvailable(): boolean {
+  return typeof AudioContext !== "undefined";
+}
+
+/**
+ * Unlock iOS audio during a user gesture. No-op on non-iOS or without Web
+ * Audio.
+ */
 export function unlockIosAudioForSession(): void {
-  if (!isIosDevice() || stashedAudioContext) {
+  if (!isIosDevice() || !isWebAudioAvailable() || stashedAudioContext) {
     return;
   }
 
@@ -54,6 +66,7 @@ export function unlockIosAudioForSession(): void {
 export function installIosAudioUnlockListener(): void {
   if (
     !isIosDevice() ||
+    !isWebAudioAvailable() ||
     unlockListenerInstalled ||
     typeof document === "undefined"
   ) {

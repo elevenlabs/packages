@@ -66,6 +66,13 @@ describe("unlockIosAudioForSession", () => {
     expect(takeUnlockedAudioContext()).toBeNull();
   });
 
+  it("is a no-op when Web Audio is unavailable (iOS Lockdown Mode)", () => {
+    vi.stubGlobal("AudioContext", undefined);
+
+    expect(() => unlockIosAudioForSession()).not.toThrow();
+    expect(takeUnlockedAudioContext()).toBeNull();
+  });
+
   it("discardStashedAudioContext clears an untaken stash", () => {
     unlockIosAudioForSession();
 
@@ -84,9 +91,21 @@ describe("installIosAudioUnlockListener", () => {
     vi.unstubAllGlobals();
   });
 
+  // Must run before the registering test: installation is once per module.
+  it("does not register listeners when Web Audio is unavailable", () => {
+    const addEventListener = vi.fn();
+    vi.stubGlobal("document", { addEventListener });
+    vi.stubGlobal("AudioContext", undefined);
+
+    installIosAudioUnlockListener();
+
+    expect(addEventListener).not.toHaveBeenCalled();
+  });
+
   it("registers capture-phase gesture listeners on iOS", () => {
     const addEventListener = vi.fn();
     vi.stubGlobal("document", { addEventListener });
+    vi.stubGlobal("AudioContext", vi.fn());
 
     installIosAudioUnlockListener();
 
