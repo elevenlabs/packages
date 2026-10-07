@@ -447,6 +447,16 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "Hello from the agent",
   },
+  // A workspace without the persistent sessions flag.
+  persistent_session_disabled: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Hello from the agent",
+  },
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -503,6 +513,10 @@ type PersistentConversation = {
 };
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
+
+export function persistentConversationIdFor(token: string | null) {
+  return token ? persistentConversations.get(token)?.conversationId : undefined;
+}
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
@@ -623,6 +637,16 @@ export const Worker = setupWorker(
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
 
+      if (
+        agentId === "persistent_session_disabled" &&
+        client.url.searchParams.get("is_persistent") === "true"
+      ) {
+        client.close(
+          3000,
+          "Persistent sessions are not enabled for this workspace."
+        );
+        return;
+      }
       const resumeToken = client.url.searchParams.get(
         "persistent_session_token"
       );
@@ -727,6 +751,7 @@ export const Worker = setupWorker(
         agentId !== "no_file_upload" &&
         agentId !== "external_agent" &&
         agentId !== "persistent_session" &&
+        agentId !== "persistent_session_disabled" &&
         agentId !== "agent_attachments"
       ) {
         const agentResponse =
@@ -1867,8 +1892,11 @@ export const Worker = setupWorker(
           );
         });
       }
-      if (agentId === "persistent_session" && persistentConversation) {
-        const { rows } = persistentConversation;
+      if (
+        agentId === "persistent_session" ||
+        agentId === "persistent_session_disabled"
+      ) {
+        const rows = persistentConversation?.rows;
         // Event ids restart on every segment, like the backend does today, so
         // the first reply after a resume carries the first-message event id.
         let eventId = resumedConversation ? 1 : 2;
@@ -1876,8 +1904,13 @@ export const Worker = setupWorker(
           const data =
             typeof event.data === "string" ? JSON.parse(event.data) : null;
           if (data?.type !== "user_message") return;
+          if (data.text === "drop the connection") {
+            // Abnormal closure, as when a backgrounded WebView loses its socket.
+            client.close(1006);
+            return;
+          }
           const reply = `You said: ${data.text}`;
-          rows.push(
+          rows?.push(
             { role: "user", text: data.text },
             { role: "agent", text: reply }
           );

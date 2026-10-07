@@ -408,9 +408,9 @@ function firstMessageRichContentEntries(
   ];
 }
 
-// The orchestrator closes with 3000 when it refuses the connection parameters,
-// which includes an expired or unknown resume token.
-function isPersistentTokenRejected(error: unknown): boolean {
+// The orchestrator closes with 3000 when it refuses the connection parameters:
+// an expired or unknown resume token, or a workspace without persistent sessions.
+function isPersistentSessionRefused(error: unknown): boolean {
   return error instanceof SessionConnectionError && error.closeCode === 3000;
 }
 
@@ -532,6 +532,23 @@ function useConversationSetup() {
     // Stays set after a disconnect so the replayed transcript keeps hiding
     // the locally rendered greeting until the next fresh start.
     const isResumedSession = signal(false);
+    const isResuming = signal(false);
+    // Mirrors the stored token so the UI can react to it; localStorage is not
+    // reactive on its own.
+    const hasStoredSession = signal(
+      !!readStoredPersistentSession(config.peek())
+    );
+    const storeSession = (sessionConfig: SessionConfig, token: string) => {
+      storePersistentSession(sessionConfig, token);
+      hasStoredSession.value = true;
+    };
+    const clearSession = (sessionConfig: SessionConfig) => {
+      clearStoredPersistentSession(sessionConfig);
+      hasStoredSession.value = false;
+    };
+    // Set once the workspace refuses persistent sessions, so later starts in
+    // this widget instance skip the refused handshake.
+    let persistenceUnavailable = false;
 
     const value = {
       status,
@@ -549,6 +566,8 @@ function useConversationSetup() {
       queueStatus,
       isWaitingForAgent,
       isResumedSession,
+      isResuming,
+      hasStoredSession,
       startSession: async (
         element: HTMLElement | null,
         initialMessage?: string,
@@ -594,7 +613,7 @@ function useConversationSetup() {
         if (resume) {
           processedConfig.persistentSession = { token: resume };
         }
-        if (!processedConfig.textOnly) {
+        if (!processedConfig.textOnly || persistenceUnavailable) {
           delete processedConfig.persistentSession;
         } else if (
           processedConfig.persistentSession &&
@@ -617,14 +636,33 @@ function useConversationSetup() {
           );
         }
 
+        // The transcript still holds this conversation when the socket dropped
+        // mid-chat; only a reload starts from the replayed history.
+        const keepTranscript =
+          !!resume &&
+          transcript
+            .peek()
+            .some(
+              entry =>
+                entry.type === "message" &&
+                entry.conversationIndex === conversationIndex.peek()
+            );
+
         conversationTextOnly.value = processedConfig.textOnly ?? false;
         queueStatus.value = null;
         resetAgentResponseState();
-        isResumedSession.value = !!resume;
-        // A replayed transcript already holds the greeting.
+        isResuming.value = !!resume;
+        // A kept transcript renders its greeting as before; a replayed one
+        // holds the greeting as a stored row.
+        if (!keepTranscript) isResumedSession.value = !!resume;
+        // No greeting is sent on resume.
         receivedFirstMessageRef.current = !!resume;
         transcript.value = [
-          ...(resume ? [] : firstMessageEntries()),
+          ...(keepTranscript
+            ? transcript.peek()
+            : resume
+              ? []
+              : firstMessageEntries()),
           ...(initialMessage
             ? [
                 {
@@ -652,13 +690,11 @@ function useConversationSetup() {
             },
             onConversationMetadata: ({ persistent_session_token }) => {
               if (persistent_session_token) {
-                storePersistentSession(
-                  processedConfig,
-                  persistent_session_token
-                );
+                storeSession(processedConfig, persistent_session_token);
               }
             },
             onConversationHistory: ({ rows }) => {
+              if (keepTranscript) return;
               // Replayed rows predate everything this segment has added, such
               // as the message that triggered the resume.
               transcript.value = [
@@ -681,8 +717,10 @@ function useConversationSetup() {
               response_id,
               attachments,
             }) => {
+              // Event ids restart on resume and no greeting is sent, so the
+              // first reply of a resumed segment carries this id.
               if (
-                !isResumedSession.peek() &&
+                !resume &&
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
@@ -895,13 +933,15 @@ function useConversationSetup() {
               const queueTimedOut =
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
-              // Only the agent hanging up ends the conversation for good. Any
-              // other close, including the inactivity timer, keeps it resumable.
+              // The agent hanging up or the server refusing the session ends
+              // the conversation for good. Any other close, including the
+              // inactivity timer, keeps it resumable.
               if (
-                details.reason === "agent" &&
-                details.context?.type === "end_call"
+                (details.reason === "agent" &&
+                  details.context?.type === "end_call") ||
+                (details.reason === "error" && details.closeCode === 3000)
               ) {
-                clearStoredPersistentSession(processedConfig);
+                clearSession(processedConfig);
               }
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
@@ -909,6 +949,18 @@ function useConversationSetup() {
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
+              // A close with the token still stored is a pause, not an end:
+              // the transcript stays and the next message or the page coming
+              // back to the foreground continues the conversation.
+              if (readStoredPersistentSession(processedConfig)) {
+                if (details.reason === "error") {
+                  console.warn(
+                    "[ConversationalAI] Connection lost, the conversation can be resumed:",
+                    details.message
+                  );
+                }
+                return;
+              }
               transcript.value = [
                 ...transcript.peek(),
                 queueTimedOut
@@ -955,9 +1007,16 @@ function useConversationSetup() {
           error.value = null;
           return id;
         } catch (e) {
-          if (resume && isPersistentTokenRejected(e)) {
-            clearStoredPersistentSession(processedConfig);
-            if (initialMessage) {
+          if (
+            processedConfig.persistentSession &&
+            isPersistentSessionRefused(e)
+          ) {
+            if (resume) {
+              clearSession(processedConfig);
+            } else {
+              persistenceUnavailable = true;
+            }
+            if (initialMessage || !resume) {
               // Clear the rejected promise first, otherwise the retry awaits it
               // at the top of startSession and rethrows.
               lockRef.current = null;
@@ -1009,6 +1068,7 @@ function useConversationSetup() {
           }
         } finally {
           lockRef.current = null;
+          isResuming.value = false;
         }
       },
       resumeSession: async () => {
@@ -1019,7 +1079,7 @@ function useConversationSetup() {
       },
       /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
-        clearStoredPersistentSession(config.peek());
+        clearSession(config.peek());
         await value.disconnectSession();
       },
       /** Closes the connection but keeps a persistent session resumable. */
@@ -1102,6 +1162,31 @@ function useConversationSetup() {
     };
     return value;
   }, [config]);
+
+  // iOS kills a backgrounded WebView's socket without a close frame, which
+  // stalls the next connect for about ten seconds. Closing cleanly while
+  // hidden avoids that; the debounce skips brief hides like an app switcher.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onVisibilityChange = () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      if (
+        document.visibilityState !== "hidden" ||
+        conversation.conversationTextOnly.peek() !== true ||
+        conversation.isDisconnected.peek() ||
+        !conversation.hasStoredSession.peek()
+      ) {
+        return;
+      }
+      timer = setTimeout(() => void conversation.disconnectSession(), 2000);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [conversation]);
 
   useSignalEffect(() => {
     const richContent = firstMessageRichContent.value;

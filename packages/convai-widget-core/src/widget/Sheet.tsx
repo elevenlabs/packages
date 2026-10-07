@@ -1,4 +1,5 @@
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import { useEffect } from "preact/compat";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -56,7 +57,8 @@ export function Sheet({ open }: SheetProps) {
   } = useConversation();
   const firstMessage = useFirstMessage();
 
-  // Only opening the sheet resumes a stored conversation. The disconnected
+  // Opening the sheet resumes a stored conversation, as does the page coming
+  // back to the foreground or online after a background drop. The disconnected
   // state is peeked so an inactivity disconnect while the sheet stays open
   // does not reconnect in a loop.
   const openSignal = useSignalish(open);
@@ -65,6 +67,25 @@ export function Sheet({ open }: SheetProps) {
       void resumeSession();
     }
   });
+  useEffect(() => {
+    const onForeground = () => {
+      if (
+        document.visibilityState === "visible" &&
+        openSignal.peek() &&
+        isDisconnected.peek()
+      ) {
+        void resumeSession();
+      }
+    };
+    document.addEventListener("visibilitychange", onForeground);
+    window.addEventListener("pageshow", onForeground);
+    window.addEventListener("online", onForeground);
+    return () => {
+      document.removeEventListener("visibilitychange", onForeground);
+      window.removeEventListener("pageshow", onForeground);
+      window.removeEventListener("online", onForeground);
+    };
+  }, [openSignal, isDisconnected, resumeSession]);
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();

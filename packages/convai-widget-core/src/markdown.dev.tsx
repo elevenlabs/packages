@@ -273,6 +273,8 @@ function MockConversationProvider({
       sendContextualUpdate: () => {},
       addModeToggleEntry: () => {},
       isResumedSession: signal(false),
+      isResuming: signal(false),
+      hasStoredSession: signal(false),
       resumeSession: async () => {},
       disconnectSession: async () => {},
     }),

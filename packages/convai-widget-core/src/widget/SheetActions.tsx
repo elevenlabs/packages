@@ -246,8 +246,12 @@ function SheetTextarea({
 }) {
   const text = useTextContents();
   const textOnly = useIsConversationTextOnly();
-  const { isDisconnected, conversationIndex, sendUserActivity } =
-    useConversation();
+  const {
+    isDisconnected,
+    conversationIndex,
+    hasStoredSession,
+    sendUserActivity,
+  } = useConversation();
   const { pendingInputFocus } = useSheetContent();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -303,7 +307,9 @@ function SheetTextarea({
       onBlur={handleBlur}
       placeholder={
         textOnly.value
-          ? isDisconnected.value && conversationIndex.value > 0
+          ? isDisconnected.value &&
+            conversationIndex.value > 0 &&
+            !hasStoredSession.value
             ? text.input_placeholder_new_conversation.value
             : text.input_placeholder_text_only.value
           : text.input_placeholder.value
