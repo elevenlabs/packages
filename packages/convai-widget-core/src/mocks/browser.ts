@@ -459,7 +459,7 @@ const codeBlock = true;
     first_message: "",
   },
   persistent_session: PERSISTENT_SESSION_AGENT,
-  // A workspace without the persistent sessions flag.
+  // Same config as persistent_session; the socket handler refuses by agent id.
   persistent_session_disabled: PERSISTENT_SESSION_AGENT,
   agent_attachments: {
     ...BASIC_CONFIG,

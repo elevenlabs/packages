@@ -38,9 +38,8 @@ import {
 } from "../utils/persistentSession";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
-// The orchestrator closes with this code when it refuses the connection
-// parameters: an expired or unknown resume token, or a workspace without
-// persistent sessions.
+// Sent by the orchestrator for an expired or unknown resume token, or a
+// workspace without persistent sessions.
 const PERSISTENT_SESSION_REFUSED_CLOSE_CODE = 3000;
 
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
@@ -929,8 +928,6 @@ function useConversationSetup() {
               const queueTimedOut =
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
-              // Any other close, including the inactivity timer, keeps the
-              // conversation resumable.
               if (isFinalDisconnect(details)) {
                 clearSession(processedConfig);
               }
@@ -1020,7 +1017,7 @@ function useConversationSetup() {
           }
           if (resume && !initialMessage) {
             // An automatic resume that fails must not greet the user with an
-            // error; fall back to the fresh widget instead.
+            // error.
             console.warn(
               "[ConversationalAI] Could not resume the stored conversation:",
               e
