@@ -55,7 +55,6 @@ channels:
           - $ref: "#/components/messages/AgentReasoningResponsePart"
           - $ref: "#/components/messages/Interruption"
           - $ref: "#/components/messages/ConversationMetadata"
-          - $ref: "#/components/messages/ConversationHistory"
           - $ref: "#/components/messages/ClientToolCallMessage"
           - $ref: "#/components/messages/RichContentMessage"
           - $ref: "#/components/messages/AgentToolRequestMessage"
@@ -248,14 +247,6 @@ components:
       payload:
         $ref: "#/components/schemas/ConversationMetadataPayload"
 
-    ConversationHistory:
-      name: ConversationHistoryClientEvent
-      title: Conversation History
-      summary: Stored transcript rows replayed when a persistent session is resumed, sent once right after the conversation metadata
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/ConversationHistoryPayload"
-
     ClientToolCallMessage:
       name: ClientToolCallClientEvent
       title: Client Tool Call
@@ -416,7 +407,6 @@ components:
         - user_transcript
         - tentative_user_transcript
         - conversation_initiation_metadata
-        - conversation_history
         - client_tool_call
         - rich_content
         - agent_tool_request
@@ -915,16 +905,6 @@ components:
         conversation_initiation_metadata_event:
           $ref: "#/components/schemas/ConversationMetadataData"
 
-    ConversationHistoryPayload:
-      type: object
-      required: [conversation_history_event, type]
-      properties:
-        type:
-          type: string
-          const: conversation_history
-        conversation_history_event:
-          $ref: "#/components/schemas/ConversationHistoryData"
-
     ClientToolCallPayload:
       type: object
       required: [client_tool_call, type]
@@ -1172,35 +1152,6 @@ components:
           type: string
           nullable: true
           description: Token that resumes this conversation in a later session. Only sent for persistent sessions; a resumed session receives a new token.
-
-    ConversationHistoryData:
-      type: object
-      required: [conversation_id, rows]
-      properties:
-        conversation_id:
-          type: string
-        rows:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationHistoryRow"
-        truncated:
-          type: boolean
-          description: Oldest rows were dropped to fit the event size budget
-
-    ConversationHistoryRow:
-      type: object
-      required: [index, role, text, time_in_call_secs]
-      properties:
-        index:
-          type: integer
-          description: Position in the stored transcript, stable across resumes
-        role:
-          type: string
-          enum: [user, agent]
-        text:
-          type: string
-        time_in_call_secs:
-          type: integer
 
     ClientToolCallData:
       type: object

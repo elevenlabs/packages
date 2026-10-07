@@ -3,4 +3,4 @@
 "@elevenlabs/convai-widget-embed": minor
 ---
 
-Add the `persistent-session` attribute. Text conversations survive a page reload: the widget stores the resume token per agent, reconnects when the sheet opens, renders the replayed history, and forgets the conversation when the chat is ended.
+Add the `persistent-session` attribute. Text conversations continue after a page reload or a dropped socket: the widget stores the resume token per agent, reconnects when the sheet opens, and forgets the conversation when the chat is ended.

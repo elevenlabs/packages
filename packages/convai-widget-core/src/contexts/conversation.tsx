@@ -529,8 +529,8 @@ function useConversationSetup() {
       legacyAgentResponseStateRef.current = createLegacyAgentResponseState();
     };
 
-    // Stays set after a disconnect so the replayed transcript keeps hiding
-    // the locally rendered greeting until the next fresh start.
+    // Stays set after a disconnect so a transcript resumed after a reload keeps
+    // hiding the locally rendered greeting until the next fresh start.
     const isResumedSession = signal(false);
     const isResuming = signal(false);
     // Mirrors the stored token so the UI can react to it; localStorage is not
@@ -637,7 +637,8 @@ function useConversationSetup() {
         }
 
         // The transcript still holds this conversation when the socket dropped
-        // mid-chat; only a reload starts from the replayed history.
+        // mid-chat. After a reload it starts empty: the conversation is
+        // mid-flight and the server sends no greeting on resume.
         const keepTranscript =
           !!resume &&
           transcript
@@ -652,10 +653,8 @@ function useConversationSetup() {
         queueStatus.value = null;
         resetAgentResponseState();
         isResuming.value = !!resume;
-        // A kept transcript renders its greeting as before; a replayed one
-        // holds the greeting as a stored row.
+        // A kept transcript renders its greeting as before.
         if (!keepTranscript) isResumedSession.value = !!resume;
-        // No greeting is sent on resume.
         receivedFirstMessageRef.current = !!resume;
         transcript.value = [
           ...(keepTranscript
@@ -692,23 +691,6 @@ function useConversationSetup() {
               if (persistent_session_token) {
                 storeSession(processedConfig, persistent_session_token);
               }
-            },
-            onConversationHistory: ({ rows }) => {
-              if (keepTranscript) return;
-              // Replayed rows predate everything this segment has added, such
-              // as the message that triggered the resume.
-              transcript.value = [
-                ...rows.map(
-                  (row): TranscriptEntry => ({
-                    type: "message",
-                    role: row.role,
-                    message: row.text,
-                    isText: true,
-                    conversationIndex: conversationIndex.peek(),
-                  })
-                ),
-                ...transcript.peek(),
-              ];
             },
             onMessage: ({
               role,

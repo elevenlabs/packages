@@ -69,36 +69,38 @@ describe("Persistent sessions", () => {
     Reflect.deleteProperty(document, "visibilityState");
   });
 
-  it("replays the stored conversation after a reload", async () => {
+  it("continues the stored conversation after a reload", async () => {
     const firstMount = mountPersistentWidget();
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     await sendMessage("Where is my parcel?");
-    expect(localStorage.getItem(STORAGE_KEY)).toMatch(/^persistent-token-/);
+    const tokenBeforeReload = localStorage.getItem(STORAGE_KEY);
+    expect(tokenBeforeReload).toMatch(/^persistent-token-/);
+    const conversationId = storedConversationId();
 
     // Simulate a page reload: the widget is recreated with no in-memory state
     // and only localStorage carried over.
     firstMount.remove();
     mountPersistentWidget();
 
+    // Every connect rotates the token, so a new one proves the resume landed.
     await expect
-      .element(page.getByText("You said: Where is my parcel?"))
-      .toBeInTheDocument();
-    await assertRenderedInOrder([
-      "Hello from the agent",
-      "Where is my parcel?",
-      "You said: Where is my parcel?",
-    ]);
-    // The greeting comes from the replayed transcript only, never a local copy.
+      .poll(() => localStorage.getItem(STORAGE_KEY), { timeout: 5000 })
+      .not.toBe(tokenBeforeReload);
+    expect(storedConversationId()).toBe(conversationId);
+    // The conversation is mid-flight: no greeting and no earlier messages.
     expect(
       page.getByText("Hello from the agent", { exact: true }).all()
-    ).toHaveLength(1);
+    ).toHaveLength(0);
+    expect(
+      page.getByText("Where is my parcel?", { exact: true }).all()
+    ).toHaveLength(0);
 
     await sendMessage("Thanks");
-    await assertRenderedInOrder([
-      "You said: Where is my parcel?",
-      "Thanks",
-      "You said: Thanks",
-    ]);
+    expect(storedConversationId()).toBe(conversationId);
+    assertConversationNotEnded();
+    expect(
+      page.getByText("Hello from the agent", { exact: true }).all()
+    ).toHaveLength(0);
   });
 
   it("forgets the conversation when the user ends the chat", async () => {

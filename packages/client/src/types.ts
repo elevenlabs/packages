@@ -16,7 +16,6 @@ import type {
   AgentChatResponsePartClientEvent,
   AgentReasoningResponsePartClientEvent,
   ContextUsageClientEvent,
-  ConversationHistoryClientEvent,
   Ping,
   RichContentClientEvent,
 } from "@elevenlabs/types";
@@ -166,16 +165,6 @@ export type Callbacks = {
   onConversationMetadata?: (
     props: ConversationMetadata["conversation_initiation_metadata_event"]
   ) => void;
-  /**
-   * Called with the stored transcript rows the server replays when a
-   * persistent session is resumed. Rows are not re-emitted through `onMessage`.
-   *
-   * @experimental This API is experimental and may change without following
-   * semver guarantees.
-   */
-  onConversationHistory?: (
-    props: ConversationHistoryClientEvent["conversation_history_event"]
-  ) => void;
   onAsrInitiationMetadata?: (
     props: AsrInitiationMetadataEvent["asr_initiation_metadata_event"]
   ) => void;
@@ -262,7 +251,6 @@ export const CALLBACK_KEYS = [
   "onAgentToolRequest",
   "onAgentToolResponse",
   "onConversationMetadata",
-  "onConversationHistory",
   "onAsrInitiationMetadata",
   "onInterruption",
   "onAgentResponseCorrection",
