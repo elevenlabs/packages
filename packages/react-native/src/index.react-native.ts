@@ -30,7 +30,11 @@ registerGlobals();
 async function reactNativeSessionSetup(
   options: Options
 ): Promise<VoiceSessionSetupResult> {
-  if (options.connectionType === "websocket" || options.signedUrl) {
+  if (
+    options.connectionType === "websocket" ||
+    options.connectionType === "websocket-realtime" ||
+    options.signedUrl
+  ) {
     throw new Error(
       "WebSocket connections are not supported on React Native. " +
         "Only WebRTC connections are available. " +

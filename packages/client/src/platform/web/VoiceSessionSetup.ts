@@ -8,6 +8,7 @@ import {
 import { MediaDeviceOutput } from "./output.js";
 import { MediaDeviceInput } from "./input.js";
 import { WebSocketConnection } from "../../utils/WebSocketConnection.js";
+import { WebSocketRealtimeConnection } from "../../utils/WebSocketRealtimeConnection.js";
 import { WebRTCConnection } from "../../utils/WebRTCConnection.js";
 import { attachInputToConnection } from "../../utils/attachInputToConnection.js";
 import { attachConnectionToOutput } from "../../utils/attachConnectionToOutput.js";
@@ -43,7 +44,7 @@ async function requestWakeLock(): Promise<WakeLockSentinel | null> {
  */
 async function setupWebSocketIO(
   options: Options,
-  connection: WebSocketConnection,
+  connection: WebSocketConnection | WebSocketRealtimeConnection,
   audioContext: AudioContext | null
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
   const [input, output] = await Promise.all([
@@ -109,7 +110,10 @@ export async function webSessionSetup(
 
     let result: VoiceSessionSetupResult;
     try {
-      if (connection instanceof WebSocketConnection) {
+      if (
+        connection instanceof WebSocketConnection ||
+        connection instanceof WebSocketRealtimeConnection
+      ) {
         unlockedAudioContext = takeUnlockedAudioContext();
         result = {
           connection,

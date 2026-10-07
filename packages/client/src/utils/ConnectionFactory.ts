@@ -2,9 +2,11 @@ import type {
   BaseConnection,
   SessionConfig,
   ConnectionType,
+  RealtimeSessionConfig,
 } from "./BaseConnection.js";
 import { WebSocketConnection } from "./WebSocketConnection.js";
 import { WebRTCConnection } from "./WebRTCConnection.js";
+import { WebSocketRealtimeConnection } from "./WebSocketRealtimeConnection.js";
 
 function determineConnectionType(config: SessionConfig): ConnectionType {
   const hasSignedUrl = "signedUrl" in config && config.signedUrl;
@@ -72,6 +74,10 @@ export async function createConnection(
       return WebSocketConnection.create(config);
     case "webrtc":
       return WebRTCConnection.create(config);
+    case "websocket-realtime":
+      return WebSocketRealtimeConnection.create(
+        config as RealtimeSessionConfig
+      );
     default:
       throw new Error(`Unknown connection type: ${connectionType}`);
   }

@@ -54,10 +54,17 @@ export type {
   OrchestratorConfig,
   OrchestratorSessionConfig,
   PostCallWebhookConfig,
+  RealtimeSessionConfig,
+  RealtimeSessionOptions,
+  RealtimeAudioFormat,
+  RealtimeFunctionTool,
+  RealtimeTurnDetection,
 } from "./utils/BaseConnection.js";
 export { createConnection } from "./utils/ConnectionFactory.js";
 export { WebSocketConnection } from "./utils/WebSocketConnection.js";
 export { WebRTCConnection } from "./utils/WebRTCConnection.js";
+export { WebSocketRealtimeConnection } from "./utils/WebSocketRealtimeConnection.js";
+export { RealtimeUnsupportedFeatureError } from "./utils/realtimeProtocol.js";
 export type { VolumeProvider } from "./utils/volumeProvider.js";
 export { postOverallFeedback } from "./utils/postOverallFeedback.js";
 export { SessionConnectionError } from "./utils/errors.js";
