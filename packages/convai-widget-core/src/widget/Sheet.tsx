@@ -25,6 +25,8 @@ import { useWidgetSize } from "../contexts/widget-size";
 import { SheetActions } from "./SheetActions";
 import { AvatarOverlay } from "./AvatarOverlay";
 import { stripAudioTags } from "../utils/stripAudioTags";
+import { useEndConfirmation } from "../contexts/end-confirmation";
+import { EndConfirmationDialog } from "./EndConfirmationDialog";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -89,6 +91,7 @@ export function Sheet({ open }: SheetProps) {
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
+  const { confirmationShown } = useEndConfirmation();
 
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
@@ -121,11 +124,12 @@ export function Sheet({ open }: SheetProps) {
   const filteredTranscript = useComputed<DisplayTranscriptEntry[]>(() => {
     const isTextOnly = textOnly.value || isConversationTextOnly.value;
     const localMessage = localFirstMessage.value;
+    const transcriptEnabled =
+      isTextOnly || (config.value.transcript_enabled ?? false);
     return buildDisplayTranscript(transcript.value, {
       showAgentStatus: config.value.show_agent_status ?? false,
-      transcriptEnabled:
-        isTextOnly || (config.value.transcript_enabled ?? false),
-      showRichContent: isTextOnly || localMessage !== undefined,
+      transcriptEnabled,
+      showRichContent: transcriptEnabled || localMessage !== undefined,
       firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
       showTypingIndicator:
@@ -213,6 +217,9 @@ export function Sheet({ open }: SheetProps) {
           isDisconnected={isDisconnected}
           onStartSession={startSession}
         />
+        <InOutTransition active={confirmationShown}>
+          <EndConfirmationDialog overlay />
+        </InOutTransition>
       </div>
     </InOutTransition>
   );

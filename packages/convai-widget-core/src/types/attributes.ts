@@ -59,6 +59,7 @@ export const CustomAttributeList = [
   "show-agent-status",
   "show-conversation-id",
   "show-resize-button",
+  "end-confirmation",
   "show-language-selector-on-trigger",
   "environment",
   "persistent-session",

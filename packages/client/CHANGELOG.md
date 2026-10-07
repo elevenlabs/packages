@@ -1,5 +1,15 @@
 # @elevenlabs/client
 
+## 1.27.0
+
+### Minor Changes
+
+- 050aeea: Add a `previousText` option to `Scribe.connect()` and `useScribe()` in microphone mode. It is sent with the first microphone audio chunk to give the model context, such as existing document text, for casing, punctuation and sentence continuation.
+
+### Patch Changes
+
+- 7f316ec: Pass `libsampleratePath` to `MediaDeviceOutput` so output resampling uses the custom libsamplerate bundle path, matching `MediaDeviceInput`.
+
 ## 1.26.0
 
 ### Minor Changes

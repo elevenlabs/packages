@@ -36,6 +36,7 @@ function Playground() {
       "always-expanded": JSON.stringify(state.alwaysExpanded),
       "allow-events": JSON.stringify(state.allowEvents),
       dismissible: JSON.stringify(state.dismissible),
+      "end-confirmation": JSON.stringify(state.endConfirmation),
       "show-agent-status": JSON.stringify(state.showAgentStatus),
       "show-resize-button": JSON.stringify(state.showResizeButton),
       "show-language-selector-on-trigger": JSON.stringify(
@@ -67,6 +68,7 @@ function Playground() {
     state.alwaysExpanded,
     state.allowEvents,
     state.dismissible,
+    state.endConfirmation,
     state.showAgentStatus,
     state.showResizeButton,
     state.showLanguageSelectorOnTrigger,

@@ -65,6 +65,7 @@ import {
 import { Status, Mode } from "@elevenlabs/client";
 
 import { FeedbackProvider } from "./contexts/feedback";
+import { EndConfirmationProvider } from "./contexts/end-confirmation";
 import { ShadowHostProvider } from "./contexts/shadow-host";
 
 import { Wrapper } from "./widget/Wrapper";
@@ -315,17 +316,19 @@ function WidgetSandbox({
                       <AvatarConfigProvider>
                         <SheetContentProvider>
                           <FeedbackProvider>
-                            <div className="dev-host">
-                              <Style />
-                              <Wrapper />
-                              {theme === "dark" && (
-                                <style>{`
+                            <EndConfirmationProvider>
+                              <div className="dev-host">
+                                <Style />
+                                <Wrapper />
+                                {theme === "dark" && (
+                                  <style>{`
                                 .dev-host {
                                   scrollbar-color: #4b5563 transparent !important;
                                 }
                               `}</style>
-                              )}
-                            </div>
+                                )}
+                              </div>
+                            </EndConfirmationProvider>
                           </FeedbackProvider>
                         </SheetContentProvider>
                       </AvatarConfigProvider>

@@ -429,6 +429,16 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  // Text chat that stays connected until the user ends it.
+  text_only_persistent: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
   external_agent: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -726,6 +736,7 @@ export const Worker = setupWorker(
         agentId !== "streamed_first_message_with_final" &&
         agentId !== "file_upload" &&
         agentId !== "no_file_upload" &&
+        agentId !== "text_only_persistent" &&
         agentId !== "external_agent" &&
         agentId !== "persistent_session" &&
         agentId !== "persistent_session_disabled" &&
