@@ -82,6 +82,15 @@ export type BaseSessionConfig = {
   textOnly?: boolean;
   userId?: string;
   environment?: string;
+  /**
+   * Text-only, websocket-only. `true` starts a resumable conversation and
+   * `{ token }` resumes one with the `persistent_session_token` received in
+   * `onConversationMetadata`.
+   *
+   * @experimental This API is experimental and may change without following
+   * semver guarantees.
+   */
+  persistentSession?: true | { token: string };
 };
 
 export type ConnectionType = "websocket" | "webrtc";
@@ -172,6 +181,7 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
   authorization?: never;
   origin?: never;
   environment?: never;
+  persistentSession?: never;
 };
 
 // Union type for all possible session configurations

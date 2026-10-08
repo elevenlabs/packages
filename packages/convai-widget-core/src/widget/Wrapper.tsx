@@ -47,10 +47,14 @@ const HIDDEN_STYLE = {
 
 export const Wrapper = memo(function Wrapper() {
   const config = useWidgetConfig();
-  const expanded = useSignal(config.peek().default_expanded);
+  const { error, isDisconnected, hasStoredSession } = useConversation();
+  // A stored persistent session means the visitor left mid-conversation, so
+  // reopen the chat on load instead of making them click the trigger again.
+  const expanded = useSignal(
+    config.peek().default_expanded || hasStoredSession.peek()
+  );
   const hidden = useSignal(false);
   const sawError = useSignal(false);
-  const { error, isDisconnected } = useConversation();
   const terms = useTerms();
   const { confirmationShown, cancelEnd } = useEndConfirmation();
   const { variant } = useWidgetSize();

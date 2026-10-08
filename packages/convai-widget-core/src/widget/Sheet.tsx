@@ -1,4 +1,5 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
+import { useEffect } from "preact/compat";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -17,7 +18,7 @@ import { Placement } from "../types/config";
 import { Transcript } from "./Transcript";
 import { FeedbackPage } from "./FeedbackPage";
 import { FeedbackActions } from "./FeedbackActions";
-import { Signalish } from "../utils/signalish";
+import { Signalish, useSignalish } from "../utils/signalish";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
@@ -48,6 +49,8 @@ export function Sheet({ open }: SheetProps) {
   const {
     isDisconnected,
     startSession,
+    resumeSession,
+    isResumedSession,
     transcript,
     conversationIndex,
     isAgentTyping,
@@ -55,6 +58,34 @@ export function Sheet({ open }: SheetProps) {
     isWaitingForAgent,
   } = useConversation();
   const firstMessage = useFirstMessage();
+
+  // isDisconnected is peeked so an inactivity disconnect while the sheet stays
+  // open does not reconnect in a loop.
+  const openSignal = useSignalish(open);
+  useSignalEffect(() => {
+    if (openSignal.value && isDisconnected.peek()) {
+      void resumeSession();
+    }
+  });
+  useEffect(() => {
+    const onForeground = () => {
+      if (
+        document.visibilityState === "visible" &&
+        openSignal.peek() &&
+        isDisconnected.peek()
+      ) {
+        void resumeSession();
+      }
+    };
+    document.addEventListener("visibilitychange", onForeground);
+    window.addEventListener("pageshow", onForeground);
+    window.addEventListener("online", onForeground);
+    return () => {
+      document.removeEventListener("visibilitychange", onForeground);
+      window.removeEventListener("pageshow", onForeground);
+      window.removeEventListener("online", onForeground);
+    };
+  }, [openSignal, isDisconnected, resumeSession]);
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
@@ -63,6 +94,8 @@ export function Sheet({ open }: SheetProps) {
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
     if (!raw) return undefined;
+    // A replayed transcript already contains the greeting as a stored row.
+    if (isResumedSession.value) return undefined;
 
     // Voice-capable agents write first_message for TTS, so strip its audio tags
     // the way voice bubbles do. Text-only widgets keep them, which the
