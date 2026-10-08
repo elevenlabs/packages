@@ -3,11 +3,7 @@ import { ConfigSidebar } from "./config-sidebar/config-sidebar";
 import { LogTable } from "./log-table";
 import { AgentControls } from "./agent-controls";
 import { Page } from "./page";
-import {
-  BaseSessionConfig,
-  ConnectionType,
-  PartialOptions,
-} from "@elevenlabs/client";
+import { BaseSessionConfig, PartialOptions } from "@elevenlabs/client";
 import { useCallback, useState } from "react";
 import { spyOnMethods } from "@/lib/utils";
 import { useConversationControls } from "@elevenlabs/react";
@@ -17,7 +13,7 @@ type AgentPageProps = {
   agent: { agentId: string; name: string };
 };
 
-const EVENT_METHOD_NAMES = [
+export const EVENT_METHOD_NAMES = [
   "onConnect",
   "onDisconnect",
   "onError",
@@ -47,7 +43,9 @@ const EVENT_METHOD_NAMES = [
 
 export function AgentPage({ agent }: AgentPageProps) {
   const [sessionConfig, setSessionConfig] = useState<
-    BaseSessionConfig & { connectionType?: ConnectionType }
+    BaseSessionConfig & {
+      connectionType?: "websocket" | "webrtc";
+    }
   >({});
   const { startSession } = useConversationControls();
   const { appendLogEntry, clearLog } = useLogControls();

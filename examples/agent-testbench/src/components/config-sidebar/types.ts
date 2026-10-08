@@ -1,9 +1,13 @@
-import type { BaseSessionConfig, ConnectionType } from "@elevenlabs/client";
+import type { BaseSessionConfig } from "@elevenlabs/client";
 
 export type BaseConfigProps = {
-  value: BaseSessionConfig & { connectionType?: ConnectionType };
+  value: BaseSessionConfig & {
+    connectionType?: "websocket" | "webrtc";
+  };
   onChange: (
-    connectionType: BaseSessionConfig & { connectionType?: ConnectionType }
+    connectionType: BaseSessionConfig & {
+      connectionType?: "websocket" | "webrtc";
+    }
   ) => void;
   disabled: boolean;
 };

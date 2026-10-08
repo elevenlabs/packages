@@ -51,20 +51,36 @@ function AgentsPage() {
   return (
     <Page title={user ? `${user.firstName ?? user.userId}'s Agents` : "Agents"}>
       {error && <p>{error}</p>}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild className="self-center">
-          <Button variant="outline">Select Agent</Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          {agents.map(agent => (
-            <DropdownMenuItem key={agent.agentId} asChild>
-              <Link to={`/agents/$agentId`} params={{ agentId: agent.agentId }}>
-                {agent.name}
-              </Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <section className="flex flex-row items-center justify-center gap-4">
+        <AgentDropdown agents={agents} />
+        <span className="text-muted-foreground">or</span>
+        <Button variant="outline" asChild>
+          <Link to="/realtime">Configure Realtime Agent</Link>
+        </Button>
+      </section>
     </Page>
+  );
+}
+
+function AgentDropdown({
+  agents,
+}: {
+  agents: ElevenLabs.AgentSummaryResponseModel[];
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">Select Agent</Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {agents.map(agent => (
+          <DropdownMenuItem key={agent.agentId} asChild>
+            <Link to={`/agents/$agentId`} params={{ agentId: agent.agentId }}>
+              {agent.name}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -1,4 +1,3 @@
-import { ConnectionType } from "@elevenlabs/client";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "../ui/field";
 import { SidebarGroup } from "../ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -13,12 +12,14 @@ function ConnectionTypeField({ value, onChange, disabled }: BaseConfigProps) {
       <FieldLabel>Connection Type</FieldLabel>
       <Tabs
         defaultValue={value.connectionType ?? "webrtc"}
-        onValueChange={newConnectionType =>
-          onChange({
-            ...value,
-            connectionType: newConnectionType as ConnectionType,
-          })
-        }
+        onValueChange={newConnectionType => {
+          if (
+            newConnectionType === "websocket" ||
+            newConnectionType === "webrtc"
+          ) {
+            onChange({ ...value, connectionType: newConnectionType });
+          }
+        }}
       >
         <TabsList>
           <TabsTrigger disabled={disabled} value="webrtc">
