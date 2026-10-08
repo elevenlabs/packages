@@ -180,9 +180,7 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
 export type RealtimeAudioFormat = "pcm_24000" | "ulaw_8000";
 
 /**
- * A client tool the model may call, declared with a JSON Schema. Realtime
- * sessions have no saved agent to read tool definitions from, so every client
- * tool must be declared here as well as registered in `clientTools`.
+ * A client tool the model may call; it must also be registered in `clientTools`.
  * @experimental
  */
 export type RealtimeFunctionTool = {
@@ -193,30 +191,31 @@ export type RealtimeFunctionTool = {
 };
 
 /**
- * Only semantic VAD is accepted by the Realtime endpoint; pass `null` to
- * `turnDetection` for manual turn-taking.
  * @experimental
  */
 export type RealtimeTurnDetection = {
   type: "semantic_vad";
   eagerness?: "low" | "medium" | "high" | "auto";
   createResponse?: boolean;
-  /** Whether user speech interrupts the agent. Defaults to true. */
+  /**
+   * Whether user speech interrupts the agent.
+   * @default true
+   */
   interruptResponse?: boolean;
 };
 
 /**
- * Configuration sent to the Realtime endpoint in `session.update`. The
- * endpoint builds a throwaway agent from these values alone.
+ * Configuration sent to the Realtime endpoint in `session.update`.
  * @experimental
  */
 export type RealtimeSessionOptions = {
   instructions?: string;
   voice?: string;
-  /** Defaults to "pcm_24000". */
+  /** @default "pcm_24000" */
   inputAudioFormat?: RealtimeAudioFormat;
-  /** Defaults to "pcm_24000". */
+  /** @default "pcm_24000" */
   outputAudioFormat?: RealtimeAudioFormat;
+  /** `null` disables turn detection for manual turn-taking. */
   turnDetection?: RealtimeTurnDetection | null;
   tools?: RealtimeFunctionTool[];
   temperature?: number;
@@ -224,23 +223,16 @@ export type RealtimeSessionOptions = {
 };
 
 /**
- * Connects to the OpenAI-compatible `/v1/convai/realtime` endpoint instead of
- * a saved agent. Features tied to a saved agent (overrides, dynamic
- * variables, knowledge base, server tools, workflows, first message, ...) are
- * not available and are rejected when configured.
+ * Connects to the OpenAI-compatible `/v1/convai/realtime` endpoint instead of a saved agent.
  * @experimental
  */
 export type RealtimeSessionConfig = {
   connectionType: "websocket-realtime";
-  /**
-   * Short-lived client secret minted by your backend through
-   * `POST /v1/convai/realtime/client_secrets`.
-   */
+  /** Short-lived secret minted by your backend via `POST /v1/convai/realtime/client_secrets`. */
   clientSecret: string;
   realtime?: RealtimeSessionOptions;
   origin?: string;
   textOnly?: boolean;
-  /** Only `conversation.textOnly` is supported. */
   overrides?: {
     agent?: never;
     tts?: never;

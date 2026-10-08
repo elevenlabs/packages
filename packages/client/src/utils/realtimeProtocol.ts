@@ -1,14 +1,12 @@
 import type { FormatConfig } from "./BaseConnection.js";
 import type { IncomingSocketEvent, OutgoingSocketEvent } from "./events.js";
 
-/** An event received from the Realtime endpoint. */
 export type RealtimeServerEvent = {
   type: string;
   event_id?: string;
   [key: string]: any;
 };
 
-/** An event sent to the Realtime endpoint. */
 export type RealtimeClientEvent = {
   type: string;
   event_id?: string;
@@ -39,7 +37,6 @@ type ResponseState = {
 
 export type RealtimeProtocolTranslatorOptions = {
   outputFormat: FormatConfig;
-  /** Mirrors `turnDetection.interruptResponse`. */
   interruptOnSpeech: boolean;
   emit: (event: IncomingSocketEvent) => void;
   send: (event: RealtimeClientEvent) => void;
@@ -50,21 +47,7 @@ export type RealtimeProtocolTranslatorOptions = {
 const SPEECH_STARTED_VAD_SCORE = 1;
 const SPEECH_STOPPED_VAD_SCORE = 0;
 
-/**
- * Rebuilds the native conversation event stream from the Realtime wire
- * protocol, and encodes native outgoing events as Realtime client events.
- *
- * The Realtime protocol has no notion of the native integer event ids that
- * drive interruption handling, so they are assigned here: one per response,
- * user transcript and interruption, strictly increasing. An interruption id
- * is always greater than the interrupted response's id and smaller than the
- * next response's id, which is what `VoiceConversation` relies on to drop
- * stale audio.
- *
- * Playback position is not reported by the server. It is estimated from the
- * amount of audio received and the wall-clock time since it started arriving,
- * assuming the output plays audio back-to-back as soon as it is received.
- */
+/** Translates between the Realtime wire protocol and the native conversation event stream. */
 export class RealtimeProtocolTranslator {
   private lastEventId = 0;
   private internalEventCount = 0;
@@ -138,11 +121,7 @@ export class RealtimeProtocolTranslator {
     }
   }
 
-  /**
-   * @throws {RealtimeUnsupportedFeatureError} for native events that have no
-   * Realtime equivalent, so callers learn about the gap instead of the event
-   * being dropped.
-   */
+  /** @throws {RealtimeUnsupportedFeatureError} for native events with no Realtime equivalent. */
   public handleOutgoingEvent(message: OutgoingSocketEvent) {
     if (!("type" in message)) {
       this.options.send({
@@ -178,8 +157,7 @@ export class RealtimeProtocolTranslator {
             output: String(message.result ?? ""),
           },
         });
-        // The model only continues once every call from the response has an
-        // output; asking earlier would reply without the missing results.
+        // The model only continues once every call from the response has an output.
         if (
           this.pendingToolCalls.delete(message.tool_call_id) &&
           this.pendingToolCalls.size === 0
@@ -196,6 +174,7 @@ export class RealtimeProtocolTranslator {
     }
   }
 
+  // `VoiceConversation` drops stale audio by requiring interruption ids to sit between response ids.
   private nextEventId() {
     return ++this.lastEventId;
   }
@@ -233,6 +212,7 @@ export class RealtimeProtocolTranslator {
     const state = this.ensureResponse(event.response_id);
     if (state.interrupted) return;
 
+    // The server never reports playback position, so assume back-to-back playback on receipt.
     const now = this.now();
     const durationMs = this.audioDurationMs(event.delta);
     const startAt = Math.max(now, this.playbackEndsAt);
@@ -325,15 +305,11 @@ export class RealtimeProtocolTranslator {
     this.releaseResponse(state);
   }
 
-  /**
-   * Stops local playback of the agent's latest response, if it is still
-   * playing, and truncates the server-side item to what the user heard.
-   */
+  /** Stops playback of the latest response and truncates its server-side item to what was heard. */
   private interrupt() {
     const now = this.now();
 
-    // A response that has not produced audio yet is cancelled by the server;
-    // drop anything it still sends before the cancellation lands.
+    // Drop what a not-yet-audible response sends before the server-side cancellation lands.
     if (this.activeResponseId) {
       const active = this.responses.get(this.activeResponseId);
       if (active && active.audioReceivedMs === 0) active.interrupted = true;
@@ -402,8 +378,7 @@ export class RealtimeProtocolTranslator {
   private handleError(event: RealtimeServerEvent) {
     const error = event.error ?? {};
     if (error.event_id && this.internalEventIds.has(error.event_id)) {
-      // Raised by a request the SDK made on its own (truncation, retrieval,
-      // cancellation); the conversation itself is unaffected.
+      // Errors from SDK-initiated requests don't affect the conversation.
       this.options.debug?.({ type: "realtime_internal_error", error });
       return;
     }

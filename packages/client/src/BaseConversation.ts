@@ -212,8 +212,7 @@ export abstract class BaseConversation {
           textOnly,
         },
       },
-      // TypeScript cannot correlate `overrides` with the session config
-      // variant it was spread from.
+      // TypeScript cannot correlate `overrides` with the variant it was spread from.
     } as Options;
   }
 

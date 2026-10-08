@@ -39,11 +39,7 @@ const SUPPORTED_AUDIO_FORMATS: readonly RealtimeAudioFormat[] = [
   "ulaw_8000",
 ];
 
-/**
- * Throws for options the Realtime endpoint cannot honor. Each of them would
- * otherwise be silently dropped, since the endpoint never loads a saved agent
- * and never receives conversation initiation data.
- */
+/** Throws for options the Realtime endpoint would otherwise silently drop. */
 export function assertRealtimeConfigSupported(
   config: RealtimeSessionConfig
 ): void {
@@ -142,10 +138,6 @@ export function toNativeAudioFormat(format: FormatConfig): NativeAudioFormat {
   return `${format.format}_${format.sampleRate}` as NativeAudioFormat;
 }
 
-/**
- * Translates SDK session options into the Realtime `session.update` payload.
- * Fields left undefined are omitted so the server keeps its defaults.
- */
 export function constructRealtimeSessionUpdate(
   config: RealtimeSessionConfig
 ): RealtimeSessionUpdateEvent {

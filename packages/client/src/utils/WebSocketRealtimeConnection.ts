@@ -37,8 +37,7 @@ type EffectiveSession = {
 };
 
 /**
- * Speaks the OpenAI-compatible Realtime protocol to `/v1/convai/realtime`
- * and exposes it to conversations as the native event stream.
+ * Speaks the OpenAI-compatible Realtime protocol and exposes it as the native event stream.
  * @experimental
  */
 export class WebSocketRealtimeConnection
@@ -69,8 +68,7 @@ export class WebSocketRealtimeConnection
       debug: info => this.debug(info),
     });
 
-    // The Realtime endpoint never sends initiation metadata, but
-    // conversations and `onConversationMetadata` consumers expect it first.
+    // Synthesized, since the Realtime endpoint never sends initiation metadata.
     this.handleMessage({
       type: "conversation_initiation_metadata",
       conversation_initiation_metadata_event: {
@@ -198,11 +196,7 @@ export class WebSocketRealtimeConnection
   }
 }
 
-/**
- * Waits for `session.created`, applies the SDK's session configuration and
- * resolves with the configuration the server reports back in
- * `session.updated`, which is the one actually in effect.
- */
+/** Resolves with the session configuration in effect, as reported by `session.updated`. */
 function performHandshake(
   socket: WebSocket,
   config: RealtimeSessionConfig
@@ -212,8 +206,6 @@ function performHandshake(
 
   return new Promise<EffectiveSession>((resolve, reject) => {
     let sessionId: string | null = null;
-    // Handshake listeners stay attached for the socket's lifetime, as on the
-    // native WebSocket connection; once settled they are no-ops.
     let settled = false;
     const fail = (error: unknown) => {
       if (settled) return;
@@ -280,9 +272,7 @@ function performHandshake(
     });
 
     socket.addEventListener("error", () => {
-      // In case the error event is followed by a close event, we want the
-      // latter to be the one that rejects the promise as it contains more
-      // useful information.
+      // Deferred so a following close event, which carries more detail, rejects first.
       setTimeout(
         () =>
           fail(
