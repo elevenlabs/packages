@@ -171,6 +171,16 @@ export interface MicrophoneOptions extends BaseOptions {
     workletPaths?: {
       scribeAudioProcessor?: string;
     };
+    /**
+     * How long to wait, in milliseconds, for the audio pipeline to finish
+     * starting after microphone permission has been granted. Setup that
+     * exceeds this rejects instead of hanging, releasing the microphone on
+     * the way out. Defaults to 10000. Set to 0 to wait indefinitely.
+     *
+     * This bounds only the work that follows the permission prompt, never
+     * the wait for the user to answer it.
+     */
+    setupTimeoutMs?: number;
   };
   /**
    * Text preceding the audio, such as existing document content, used as context
