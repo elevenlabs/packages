@@ -511,7 +511,10 @@ const codeBlock = true;
   },
 } as const satisfies Record<string, WidgetConfig>;
 
-type PersistentConversation = { conversationId: string };
+type PersistentConversation = {
+  conversationId: string;
+  rows: { role: "user" | "agent"; text: string }[];
+};
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
 
@@ -660,7 +663,7 @@ export const Worker = setupWorker(
       }
       const persistentConversation =
         client.url.searchParams.get("is_persistent") === "true"
-          ? (resumedConversation ?? { conversationId })
+          ? (resumedConversation ?? { conversationId, rows: [] })
           : undefined;
       const persistentSessionToken = persistentConversation
         ? `persistent-token-${persistentConversations.size + 1}`
@@ -685,6 +688,22 @@ export const Worker = setupWorker(
         })
       );
       await new Promise(resolve => setTimeout(resolve, 0));
+      if (resumedConversation) {
+        client.send(
+          JSON.stringify({
+            type: "conversation_history",
+            conversation_history_event: {
+              conversation_id: resumedConversation.conversationId,
+              rows: resumedConversation.rows.map((row, index) => ({
+                index,
+                ...row,
+                time_in_call_secs: index,
+              })),
+              truncated: false,
+            },
+          })
+        );
+      }
       if (
         agentId === "streamed_first_message" ||
         agentId === "streamed_first_message_with_final"
@@ -697,6 +716,10 @@ export const Worker = setupWorker(
           agentId === "streamed_first_message_with_final"
         );
       } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
+        persistentConversation?.rows.push({
+          role: "agent",
+          text: config.first_message ?? "",
+        });
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -1878,6 +1901,7 @@ export const Worker = setupWorker(
         agentId === "persistent_session" ||
         agentId === "persistent_session_disabled"
       ) {
+        const rows = persistentConversation?.rows;
         // Event ids restart on every segment, like the backend does today, so
         // the first reply after a resume carries the first-message event id.
         let eventId = resumedConversation ? 1 : 2;
@@ -1891,6 +1915,10 @@ export const Worker = setupWorker(
             return;
           }
           const reply = `You said: ${data.text}`;
+          rows?.push(
+            { role: "user", text: data.text },
+            { role: "agent", text: reply }
+          );
           client.send(
             JSON.stringify({
               type: "agent_response",

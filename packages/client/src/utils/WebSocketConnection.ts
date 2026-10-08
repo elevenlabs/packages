@@ -135,7 +135,7 @@ export class WebSocketConnection
         }
 
         if (config.persistentSession) {
-          url += "&is_persistent=true";
+          url += "&is_persistent=true&replay_history=true";
           const token =
             typeof config.persistentSession === "object"
               ? config.persistentSession.token

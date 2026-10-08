@@ -69,37 +69,70 @@ describe("Persistent sessions", () => {
     Reflect.deleteProperty(document, "visibilityState");
   });
 
-  it("continues the stored conversation after a reload", async () => {
+  it("replays the stored conversation after a reload", async () => {
     const firstMount = mountPersistentWidget();
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     await sendMessage("Where is my parcel?");
-    const tokenBeforeReload = localStorage.getItem(STORAGE_KEY);
-    expect(tokenBeforeReload).toMatch(/^persistent-token-/);
-    const conversationId = storedConversationId();
+    expect(localStorage.getItem(STORAGE_KEY)).toMatch(/^persistent-token-/);
 
     // Simulate a page reload: the widget is recreated with no in-memory state
     // and only localStorage carried over.
     firstMount.remove();
     mountPersistentWidget();
 
-    // Every connect rotates the token, so a new one proves the resume landed.
     await expect
-      .poll(() => localStorage.getItem(STORAGE_KEY), { timeout: 5000 })
-      .not.toBe(tokenBeforeReload);
-    expect(storedConversationId()).toBe(conversationId);
-    // The conversation is mid-flight: no greeting and no earlier messages.
+      .element(page.getByText("You said: Where is my parcel?"))
+      .toBeInTheDocument();
+    await assertRenderedInOrder([
+      "Hello from the agent",
+      "Where is my parcel?",
+      "You said: Where is my parcel?",
+    ]);
+    // The greeting comes from the replayed transcript only, never a local copy.
     expect(
       page.getByText("Hello from the agent", { exact: true }).all()
-    ).toHaveLength(0);
-    expect(
-      page.getByText("Where is my parcel?", { exact: true }).all()
-    ).toHaveLength(0);
+    ).toHaveLength(1);
 
     await sendMessage("Thanks");
-    expect(storedConversationId()).toBe(conversationId);
-    assertConversationNotEnded();
+    await assertRenderedInOrder([
+      "You said: Where is my parcel?",
+      "Thanks",
+      "You said: Thanks",
+    ]);
+  });
+
+  it("reopens the chat after a reload when a conversation is in progress", async () => {
+    const collapsedWidget = {
+      "agent-id": "persistent_session",
+      "persistent-session": "true",
+      variant: "compact",
+      "default-expanded": "false",
+    } as const;
+    const firstMount = setupWebComponent(collapsedWidget);
+    await page.getByRole("button", { name: "Message" }).click();
+    await sendMessage("Where is my parcel?");
+
+    firstMount.remove();
+    setupWebComponent(collapsedWidget);
+
+    await expect
+      .element(page.getByText("You said: Where is my parcel?"))
+      .toBeInTheDocument();
+  });
+
+  it("stays collapsed when there is no conversation to resume", async () => {
+    setupWebComponent({
+      "agent-id": "persistent_session",
+      "persistent-session": "true",
+      variant: "compact",
+      "default-expanded": "false",
+    });
+
+    await expect
+      .element(page.getByRole("button", { name: "Message" }))
+      .toBeInTheDocument();
     expect(
-      page.getByText("Hello from the agent", { exact: true }).all()
+      page.getByRole("textbox", { name: "Text message input" }).all()
     ).toHaveLength(0);
   });
 

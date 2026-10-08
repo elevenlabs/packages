@@ -94,8 +94,7 @@ export function Sheet({ open }: SheetProps) {
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
     if (!raw) return undefined;
-    // A conversation resumed after a reload is mid-flight, so there is no
-    // greeting to render.
+    // A replayed transcript already contains the greeting as a stored row.
     if (isResumedSession.value) return undefined;
 
     // Voice-capable agents write first_message for TTS, so strip its audio tags

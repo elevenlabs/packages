@@ -178,6 +178,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "user_transcript"
   | "tentative_user_transcript"
   | "conversation_initiation_metadata"
+  | "conversation_history"
   | "client_tool_call"
   | "rich_content"
   | "agent_tool_request"
@@ -370,6 +371,26 @@ export type ConversationInitiationMetadataEventUserInputAudioFormat =
   | "pcm_44100"
   | "pcm_48000"
   | "ulaw_8000";
+
+export interface ConversationHistory {
+  type: "conversation_history";
+  conversation_history_event: ConversationHistoryEvent;
+}
+
+export interface ConversationHistoryEvent {
+  conversation_id: string;
+  rows: ConversationHistoryEventRowsItem[];
+  truncated?: boolean;
+}
+
+export interface ConversationHistoryEventRowsItem {
+  index: number;
+  role: ConversationHistoryEventRowsItemRole;
+  text: string;
+  time_in_call_secs: number;
+}
+
+export type ConversationHistoryEventRowsItemRole = "user" | "agent";
 
 export interface ClientToolCallMessage {
   type: "client_tool_call";
@@ -674,6 +695,11 @@ export interface AgentChatResponsePartClientEvent {
 export interface AgentReasoningResponsePartClientEvent {
   type: "agent_reasoning_response_part";
   reasoning_response_part: ReasoningResponsePart;
+}
+
+export interface ConversationHistoryClientEvent {
+  type: "conversation_history";
+  conversation_history_event: ConversationHistoryEvent;
 }
 
 export interface ClientToolCallClientEvent {
