@@ -309,6 +309,26 @@ describe("ConversationProvider", () => {
     expect(sessionCalls).toEqual(["session"]);
   });
 
+  it("does not pass a livekitUrl to websocket-realtime sessions", async () => {
+    vi.mocked(Conversation.startSession).mockResolvedValue(
+      createMockConversation()
+    );
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        connectionType: "websocket-realtime",
+        clientSecret: "secret",
+      });
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    expect(opts).not.toHaveProperty("livekitUrl");
+  });
+
   it("clears conversation when onDisconnect fires (external disconnect)", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);

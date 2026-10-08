@@ -121,8 +121,13 @@ export function ConversationProvider({
         delete (defaultConfig as Record<string, unknown>)[key];
       }
 
+      const connectionType =
+        options?.connectionType ?? defaults?.connectionType;
+
       const sessionOptions = mergeOptions<Options>(
-        { livekitUrl: calculatedLivekitUrl },
+        connectionType === "websocket-realtime"
+          ? {}
+          : { livekitUrl: calculatedLivekitUrl },
         defaultConfig,
         stableCallbacks,
         listenerMap.compose(),
