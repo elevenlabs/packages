@@ -42,24 +42,6 @@ const FIRST_MESSAGE_EVENT_ID = 1;
 // workspace without persistent sessions.
 const PERSISTENT_SESSION_REFUSED_CLOSE_CODE = 3000;
 
-// Persistent session fields the backend sends but keeps out of the public
-// schema (SkipJsonSchema), so the SDK types do not carry them yet.
-type PersistentSessionMetadata = { persistent_session_token?: string | null };
-type ConversationHistoryEvent = {
-  type: "conversation_history";
-  conversation_history_event: { rows: { role: Role; text: string }[] };
-};
-
-function isConversationHistoryEvent(
-  event: unknown
-): event is ConversationHistoryEvent {
-  return (
-    typeof event === "object" &&
-    event !== null &&
-    (event as { type?: unknown }).type === "conversation_history"
-  );
-}
-
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
 
 // Compatibility path for orchestrators released before response_id support.
@@ -719,19 +701,17 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
-            onConversationMetadata: metadata => {
-              const { persistent_session_token } =
-                metadata as PersistentSessionMetadata;
+            onConversationMetadata: ({ persistent_session_token }) => {
               if (persistent_session_token) {
                 storeSession(processedConfig, persistent_session_token);
               }
             },
-            onIncomingEvent: event => {
-              if (!isConversationHistoryEvent(event) || keepTranscript) return;
+            onConversationHistory: ({ rows }) => {
+              if (keepTranscript) return;
               // Replayed rows predate everything this segment has added, such
               // as the message that triggered the resume.
               transcript.value = [
-                ...event.conversation_history_event.rows.map(
+                ...rows.map(
                   (row): TranscriptEntry => ({
                     type: "message",
                     role: row.role,
