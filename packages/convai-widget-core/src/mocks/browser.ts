@@ -461,6 +461,11 @@ const codeBlock = true;
   persistent_session: PERSISTENT_SESSION_AGENT,
   // Same config as persistent_session; the socket handler refuses by agent id.
   persistent_session_disabled: PERSISTENT_SESSION_AGENT,
+  persistent_session_voice: {
+    ...PERSISTENT_SESSION_AGENT,
+    text_only: false,
+    supports_text_only: true,
+  },
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -733,7 +738,10 @@ export const Worker = setupWorker(
       }
       // `text_and_voice` is a voice-capable agent that the widget switches to
       // text mode when the user types, so it follows the text chat script.
-      const isTextChat = config.text_only || agentId === "text_and_voice";
+      const isTextChat =
+        config.text_only ||
+        agentId === "text_and_voice" ||
+        agentId === "persistent_session_voice";
       if (
         isTextChat &&
         agentId !== "end_call_test" &&
@@ -757,6 +765,7 @@ export const Worker = setupWorker(
         agentId !== "external_agent" &&
         agentId !== "persistent_session" &&
         agentId !== "persistent_session_disabled" &&
+        agentId !== "persistent_session_voice" &&
         agentId !== "agent_attachments"
       ) {
         const agentResponse =
@@ -1899,7 +1908,8 @@ export const Worker = setupWorker(
       }
       if (
         agentId === "persistent_session" ||
-        agentId === "persistent_session_disabled"
+        agentId === "persistent_session_disabled" ||
+        agentId === "persistent_session_voice"
       ) {
         const rows = persistentConversation?.rows;
         // Event ids restart on every segment, like the backend does today, so
@@ -1931,6 +1941,12 @@ export const Worker = setupWorker(
           );
           eventId++;
         });
+        if (agentId === "persistent_session_voice" && !persistentConversation) {
+          // The voice call hangs up on its own so a test can check how the
+          // widget treats that close.
+          await new Promise(resolve => setTimeout(resolve, 500));
+          client.close();
+        }
       }
       if (agentId === "external_agent") {
         // Simulates a human agent takeover: the first user message triggers

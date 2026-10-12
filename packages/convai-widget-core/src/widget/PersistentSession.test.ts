@@ -6,6 +6,8 @@ import { setupWebComponent } from "../mocks/web-component";
 const STORAGE_KEY = "elevenlabs_convai_persistent_session_persistent_session";
 const DISABLED_STORAGE_KEY =
   "elevenlabs_convai_persistent_session_persistent_session_disabled";
+const VOICE_STORAGE_KEY =
+  "elevenlabs_convai_persistent_session_persistent_session_voice";
 
 function mountPersistentWidget(
   agentId:
@@ -66,6 +68,7 @@ describe("Persistent sessions", () => {
   afterEach(() => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(DISABLED_STORAGE_KEY);
+    localStorage.removeItem(VOICE_STORAGE_KEY);
     Reflect.deleteProperty(document, "visibilityState");
   });
 
@@ -219,6 +222,36 @@ describe("Persistent sessions", () => {
     expect(
       page.getByText("Where is my parcel?", { exact: true }).all()
     ).toHaveLength(1);
+  });
+
+  it("forgets the paused conversation when a voice call starts", async () => {
+    setupWebComponent({
+      "agent-id": "persistent_session_voice",
+      "persistent-session": "true",
+      variant: "compact",
+    });
+    await sendMessage("Where is my parcel?");
+
+    await typeMessage("drop the connection");
+    await expect
+      .element(page.getByRole("button", { name: "End chat" }), {
+        timeout: 5000,
+      })
+      .not.toBeInTheDocument();
+    expect(localStorage.getItem(VOICE_STORAGE_KEY)).not.toBeNull();
+
+    await page.getByRole("button", { name: "Start a call" }).click();
+
+    await expect
+      .poll(() => localStorage.getItem(VOICE_STORAGE_KEY), { timeout: 5000 })
+      .toBeNull();
+    // The mock hangs up the call. With no token stored that is an end, not a
+    // pause.
+    await expect
+      .element(page.getByText("The agent ended the conversation"), {
+        timeout: 5000,
+      })
+      .toBeInTheDocument();
   });
 
   it("retries without persistence when the workspace refuses it", async () => {

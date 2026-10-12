@@ -636,6 +636,11 @@ function useConversationSetup() {
           // otherwise route this text chat over the WebRTC data channel.
           processedConfig.connectionType = "websocket";
         }
+        if (!processedConfig.persistentSession && hasStoredSession.peek()) {
+          // A voice call cannot continue the paused text conversation, so
+          // starting one abandons it.
+          clearSession(config.peek());
+        }
 
         try {
           processedConfig = triggerCallEvent(
