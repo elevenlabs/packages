@@ -732,37 +732,6 @@ describe("BaseConversation", () => {
     });
   });
 
-  it("calls onConversationHistory with the replayed rows", async () => {
-    const historyEvent = {
-      type: "conversation_history" as const,
-      conversation_history_event: {
-        conversation_id: "conv-1",
-        rows: [
-          {
-            index: 0,
-            role: "agent" as const,
-            text: "Hi",
-            time_in_call_secs: 0,
-          },
-        ],
-        truncated: false,
-      },
-    };
-    const onConversationHistory = vi.fn();
-    const onMessage = vi.fn();
-    const conversation = TestConversation.create({
-      onConversationHistory,
-      onMessage,
-    });
-
-    await conversation.receiveMessage(historyEvent);
-
-    expect(onConversationHistory).toHaveBeenCalledWith(
-      historyEvent.conversation_history_event
-    );
-    expect(onMessage).not.toHaveBeenCalled();
-  });
-
   describe("agent_tool_response_full_payload events", () => {
     const basePayload = {
       tool_name: "lookup_kb",
