@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.19.1
+
+### Patch Changes
+
+- de709b7: Show first message quick replies below the first message in voice calls, and tighten rich content spacing and button padding.
+
 ## 0.19.0
 
 ### Minor Changes
