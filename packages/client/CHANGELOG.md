@@ -1,5 +1,16 @@
 # @elevenlabs/client
 
+## 1.28.0
+
+### Minor Changes
+
+- bac5c96: Add the experimental `persistentSession` session option for resumable text conversations over WebSocket, and the `onConversationHistory` callback for the transcript rows the server replays on resume. WebSocket sessions now also emit `onConversationMetadata`.
+
+### Patch Changes
+
+- Updated dependencies [bac5c96]
+  - @elevenlabs/types@0.25.0
+
 ## 1.27.0
 
 ### Minor Changes
