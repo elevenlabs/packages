@@ -29,8 +29,10 @@ import {
 import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
-
-const FIRST_MESSAGE_EVENT_ID = 1;
+import {
+  FIRST_MESSAGE_EVENT_ID,
+  FIRST_MESSAGE_RICH_CONTENT_ID,
+} from "../utils/display-transcript";
 
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
 
@@ -396,7 +398,7 @@ function firstMessageRichContentEntries(
       component: richContent.component,
       props: richContent.props,
       eventId: 1,
-      richContentId: "first_message",
+      richContentId: FIRST_MESSAGE_RICH_CONTENT_ID,
       conversationIndex: 0,
     },
   ];
@@ -998,7 +1000,7 @@ function useConversationSetup() {
       .every(
         entry =>
           entry.type === "rich_content" &&
-          entry.richContentId === "first_message"
+          entry.richContentId === FIRST_MESSAGE_RICH_CONTENT_ID
       );
     if (!isGreetingOnly) {
       return;

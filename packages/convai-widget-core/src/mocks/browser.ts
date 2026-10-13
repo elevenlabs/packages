@@ -485,6 +485,23 @@ const codeBlock = true;
       },
     },
   },
+  // Voice-only, so the first message only shows once the server sends it.
+  voice_rich_content: {
+    ...BASIC_CONFIG,
+    supports_text_only: false,
+    transcript_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "Welcome message",
+    first_message_rich_content: {
+      component: "buttons",
+      props: {
+        buttons: [
+          { type: "message", label: "Track my order", message: "Track" },
+        ],
+      },
+    },
+  },
   text_and_voice_audio_tags: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -692,7 +709,7 @@ export const Worker = setupWorker(
         );
         await new Promise(resolve => setTimeout(resolve, 1000));
         client.close();
-      } else if (!isTextChat) {
+      } else if (!isTextChat && agentId !== "voice_rich_content") {
         client.send(
           JSON.stringify({
             type: "user_transcript",

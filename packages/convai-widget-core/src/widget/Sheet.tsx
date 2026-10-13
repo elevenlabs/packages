@@ -96,6 +96,7 @@ export function Sheet({ open }: SheetProps) {
       showRichContent: transcriptEnabled || localMessage !== undefined,
       firstMessage: localMessage,
       firstMessageConversationIndex: conversationIndex.peek(),
+      deferFirstMessageRichContent: !!firstMessage.value && !localMessage,
       showTypingIndicator:
         isExternalAgentMode.value &&
         isAgentTyping.value &&

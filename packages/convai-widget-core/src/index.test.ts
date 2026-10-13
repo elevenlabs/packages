@@ -626,6 +626,26 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("first message rich content in a voice call", () => {
+    it("shows the buttons below the first message", async () => {
+      setupWebComponent({ "agent-id": "voice_rich_content", variant: "full" });
+
+      const button = page.getByRole("button", { name: "Track my order" });
+      // The buttons belong to the first message, so they wait for it.
+      await expect.element(button).not.toBeInTheDocument();
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+
+      const welcome = page.getByText("Welcome message");
+      await expect.element(welcome).toBeInTheDocument();
+      await expect.element(button).toBeInTheDocument();
+      expect(
+        welcome.element().compareDocumentPosition(button.element()) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+  });
+
   it.each(Variants)(
     "$0 variant should show last message when agent calls end_call",
     async variant => {

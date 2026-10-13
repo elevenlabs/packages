@@ -11,6 +11,12 @@ export const ToolCallStatus = {
   ERROR: "error",
 } as const;
 
+/** Event ID the server gives the agent's configured first message. */
+export const FIRST_MESSAGE_EVENT_ID = 1;
+
+/** Rich content ID of the quick replies configured for the first message. */
+export const FIRST_MESSAGE_RICH_CONTENT_ID = "first_message";
+
 export type ToolCallStatusType =
   (typeof ToolCallStatus)[keyof typeof ToolCallStatus];
 
@@ -70,6 +76,12 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
+  /**
+   * If true, the first message arrives from the server rather than being
+   * prepended locally, so its rich content is held back until that message
+   * shows and then placed right after it.
+   */
+  deferFirstMessageRichContent?: boolean;
 }
 
 const PERSISTING_COMPONENTS = new Set(["carousel"]);
@@ -125,6 +137,22 @@ export function buildDisplayTranscript(
     }
   });
 
+  // The first message's rich content is seeded before the session starts, so
+  // a first message streamed in later would otherwise land below it.
+  let deferredFirstMessageRichContent: DisplayTranscriptEntry | null = null;
+  const releaseDeferredRichContent = (entry: TranscriptEntry) => {
+    if (
+      deferredFirstMessageRichContent &&
+      entry.type === "message" &&
+      entry.role === "agent" &&
+      entry.eventId === FIRST_MESSAGE_EVENT_ID &&
+      entry.message
+    ) {
+      result.push(deferredFirstMessageRichContent);
+      deferredFirstMessageRichContent = null;
+    }
+  };
+
   for (const [entryIndex, entry] of entries.entries()) {
     // Skip tool entries (consumed into status)
     if (
@@ -138,6 +166,13 @@ export function buildDisplayTranscript(
       if (!config.showRichContent) continue;
       const isAnswered = entryIndex < lastUserEntryIndex;
       if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
+      if (
+        config.deferFirstMessageRichContent &&
+        entry.richContentId === FIRST_MESSAGE_RICH_CONTENT_ID
+      ) {
+        deferredFirstMessageRichContent = { ...entry, isAnswered };
+        continue;
+      }
       result.push({ ...entry, isAnswered });
       continue;
     }
@@ -177,10 +212,12 @@ export function buildDisplayTranscript(
       !prev.attachments?.length
     ) {
       result[result.length - 1] = entry;
+      releaseDeferredRichContent(entry);
       continue;
     }
 
     result.push(entry);
+    releaseDeferredRichContent(entry);
   }
 
   // Attach tool status to the first agent bubble of each turn only — a turn can
