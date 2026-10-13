@@ -70,6 +70,8 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
+  /** Move the first message rich content below the first agent message. */
+  deferFirstMessageRichContent?: boolean;
 }
 
 const PERSISTING_COMPONENTS = new Set(["carousel"]);
@@ -181,6 +183,22 @@ export function buildDisplayTranscript(
     }
 
     result.push(entry);
+  }
+
+  if (config.deferFirstMessageRichContent) {
+    const richContentIndex = result.findIndex(
+      entry =>
+        entry.type === "rich_content" && entry.richContentId === "first_message"
+    );
+    if (richContentIndex !== -1) {
+      const [richContent] = result.splice(richContentIndex, 1);
+      const firstMessageIndex = result.findIndex(
+        entry => entry.type === "message" && entry.role === "agent"
+      );
+      if (firstMessageIndex !== -1) {
+        result.splice(firstMessageIndex + 1, 0, richContent);
+      }
+    }
   }
 
   // Attach tool status to the first agent bubble of each turn only — a turn can
