@@ -485,7 +485,6 @@ const codeBlock = true;
       },
     },
   },
-  // Voice-only, so the first message only shows once the server sends it.
   voice_rich_content: {
     ...BASIC_CONFIG,
     supports_text_only: false,

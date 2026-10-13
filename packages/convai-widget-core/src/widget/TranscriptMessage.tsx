@@ -363,8 +363,6 @@ function RichContentMessage({
 }: {
   entry: Extract<DisplayTranscriptEntry, { type: "rich_content" }>;
 }) {
-  // Halve the transcript gap so the content reads as part of the agent message
-  // above it.
   return (
     <div className="pe-8 -mt-3">
       <RichContentRenderer

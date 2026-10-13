@@ -780,47 +780,6 @@ describe("buildDisplayTranscript", () => {
 
       expect(result).toHaveLength(0);
     });
-
-    it("places the row below a first message folded into its placeholder", () => {
-      const result = build(
-        [
-          firstMessageRow(),
-          msg("agent", "", { eventId: 1 }),
-          msg("agent", "Hello!", { eventId: 1 }),
-        ],
-        { deferFirstMessageRichContent: true }
-      );
-
-      expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({ message: "Hello!" });
-      expect(result[1]).toMatchObject({ richContentId: "first_message" });
-    });
-
-    it("leaves later rows where they arrived", () => {
-      const result = build(
-        [
-          firstMessageRow(),
-          msg("agent", "Hello!", { eventId: 1 }),
-          msg("agent", "Two options", { eventId: 2 }),
-          richContent("a"),
-        ],
-        { deferFirstMessageRichContent: true }
-      );
-
-      expect(result).toHaveLength(4);
-      expect(result[0]).toMatchObject({ message: "Hello!" });
-      expect(result[1]).toMatchObject({ richContentId: "first_message" });
-      expect(result[2]).toMatchObject({ message: "Two options" });
-      expect(result[3]).toMatchObject({ richContentId: "rc_a" });
-    });
-
-    it("keeps the row below a locally prepended first message", () => {
-      const result = build([firstMessageRow()], { firstMessage: "Hello!" });
-
-      expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({ message: "Hello!" });
-      expect(result[1]).toMatchObject({ richContentId: "first_message" });
-    });
   });
 
   describe("rich content", () => {
