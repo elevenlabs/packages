@@ -17,7 +17,7 @@ import { Placement } from "../types/config";
 import { Transcript } from "./Transcript";
 import { FeedbackPage } from "./FeedbackPage";
 import { FeedbackActions } from "./FeedbackActions";
-import { Signalish } from "../utils/signalish";
+import { Signalish, useSignalish } from "../utils/signalish";
 import { SheetHeader } from "./SheetHeader";
 import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
@@ -26,6 +26,7 @@ import { AvatarOverlay } from "./AvatarOverlay";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { useEndConfirmation } from "../contexts/end-confirmation";
 import { EndConfirmationDialog } from "./EndConfirmationDialog";
+import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLifecycle";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -48,6 +49,7 @@ export function Sheet({ open }: SheetProps) {
   const {
     isDisconnected,
     startSession,
+    isResumedSession,
     transcript,
     conversationIndex,
     isAgentTyping,
@@ -55,6 +57,9 @@ export function Sheet({ open }: SheetProps) {
     isWaitingForAgent,
   } = useConversation();
   const firstMessage = useFirstMessage();
+
+  const openSignal = useSignalish(open);
+  usePersistentSessionLifecycle(openSignal);
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();
@@ -63,6 +68,8 @@ export function Sheet({ open }: SheetProps) {
   const localFirstMessage = useComputed(() => {
     const raw = firstMessage.value;
     if (!raw) return undefined;
+    // A replayed transcript already contains the greeting as a stored row.
+    if (isResumedSession.value) return undefined;
 
     // Voice-capable agents write first_message for TTS, so strip its audio tags
     // the way voice bubbles do. Text-only widgets keep them, which the

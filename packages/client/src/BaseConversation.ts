@@ -31,6 +31,7 @@ import type {
   AgentToolResponseEvent,
   AgentToolResponseFullPayloadEvent,
   ConversationMetadataEvent,
+  ConversationHistoryEvent,
   AsrInitiationMetadataEvent,
   MCPConnectionStatusEvent,
   ErrorMessageEvent,
@@ -577,6 +578,12 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleConversationHistory(event: ConversationHistoryEvent) {
+    if (this.options.onConversationHistory) {
+      this.options.onConversationHistory(event.conversation_history_event);
+    }
+  }
+
   protected handleAsrInitiationMetadata(event: AsrInitiationMetadataEvent) {
     if (this.options.onAsrInitiationMetadata) {
       this.options.onAsrInitiationMetadata(event.asr_initiation_metadata_event);
@@ -759,6 +766,11 @@ export abstract class BaseConversation {
 
       case "conversation_initiation_metadata": {
         this.handleConversationMetadata(parsedEvent);
+        return;
+      }
+
+      case "conversation_history": {
+        this.handleConversationHistory(parsedEvent);
         return;
       }
 

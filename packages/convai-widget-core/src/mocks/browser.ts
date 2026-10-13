@@ -31,6 +31,16 @@ const BASIC_CONFIG: WidgetConfig = {
   use_rtc: false,
 };
 
+const PERSISTENT_SESSION_AGENT: WidgetConfig = {
+  ...BASIC_CONFIG,
+  text_only: true,
+  transcript_enabled: true,
+  text_input_enabled: true,
+  terms_html: undefined,
+  default_expanded: true,
+  first_message: "Hello from the agent",
+};
+
 export const AGENTS = {
   basic: BASIC_CONFIG,
   text_only: {
@@ -448,6 +458,14 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "",
   },
+  persistent_session: PERSISTENT_SESSION_AGENT,
+  // Same config as persistent_session; the socket handler refuses by agent id.
+  persistent_session_disabled: PERSISTENT_SESSION_AGENT,
+  persistent_session_voice: {
+    ...PERSISTENT_SESSION_AGENT,
+    text_only: false,
+    supports_text_only: true,
+  },
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -513,6 +531,17 @@ const codeBlock = true;
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
 } as const satisfies Record<string, WidgetConfig>;
+
+type PersistentConversation = {
+  conversationId: string;
+  rows: { role: "user" | "agent"; text: string }[];
+};
+// Keyed by resume token; every connection mints a new one.
+const persistentConversations = new Map<string, PersistentConversation>();
+
+export function persistentConversationIdFor(token: string | null) {
+  return token ? persistentConversations.get(token)?.conversationId : undefined;
+}
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
@@ -632,17 +661,135 @@ export const Worker = setupWorker(
       ) as keyof typeof AGENTS;
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
+
+      if (
+        agentId === "persistent_session_disabled" &&
+        client.url.searchParams.get("is_persistent") === "true"
+      ) {
+        client.close(
+          3000,
+          "Persistent sessions are not enabled for this workspace."
+        );
+        return;
+      }
+      const resumeToken = client.url.searchParams.get(
+        "persistent_session_token"
+      );
+      const resumedConversation = resumeToken
+        ? persistentConversations.get(resumeToken)
+        : undefined;
+      if (resumeToken && !resumedConversation) {
+        // Held like the handshake below, so a test can type during the resume.
+        await new Promise(resolve => setTimeout(resolve, 300));
+        client.close(3000, "Invalid or expired persistent session token.");
+        return;
+      }
+      const persistentConversation =
+        client.url.searchParams.get("is_persistent") === "true"
+          ? (resumedConversation ?? { conversationId, rows: [] })
+          : undefined;
+      const persistentSessionToken = persistentConversation
+        ? `persistent-token-${persistentConversations.size + 1}`
+        : undefined;
+      if (persistentConversation && persistentSessionToken) {
+        persistentConversations.set(
+          persistentSessionToken,
+          persistentConversation
+        );
+      }
+
+      if (resumedConversation) {
+        // Holds the handshake long enough for a test to type during a resume.
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
       client.send(
         JSON.stringify({
           type: "conversation_initiation_metadata",
           conversation_initiation_metadata_event: {
-            conversation_id: conversationId,
+            conversation_id:
+              persistentConversation?.conversationId ?? conversationId,
             agent_output_audio_format: "pcm_16000",
             user_input_audio_format: "pcm_16000",
+            persistent_session_token: persistentSessionToken,
           },
         })
       );
+      // The widget sends a typed message 100ms after the handshake, so reply
+      // listeners go on before the awaited setup below can push past that.
+      if (
+        agentId === "streamed_first_reply" ||
+        agentId === "streamed_first_message" ||
+        agentId === "streamed_first_message_with_final"
+      ) {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+          const message =
+            agentId === "streamed_first_reply"
+              ? "First streamed reply"
+              : agentId === "streamed_first_message"
+                ? (config.first_message ?? "")
+                : "Production streamed reply";
+
+          await sendStreamedAgentResponse(client, message, 2, "streamed-reply");
+        });
+      }
+      if (
+        agentId === "persistent_session" ||
+        agentId === "persistent_session_disabled" ||
+        agentId === "persistent_session_voice"
+      ) {
+        const rows = persistentConversation?.rows;
+        // Event ids restart on every segment, like the backend does today, so
+        // the first reply after a resume carries the first-message event id.
+        let eventId = resumedConversation ? 1 : 2;
+        client.addEventListener("message", event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          if (data.text === "drop the connection") {
+            // Abnormal closure, as when a backgrounded WebView loses its socket.
+            client.close(1006);
+            return;
+          }
+          const reply = `You said: ${data.text}`;
+          rows?.push(
+            { role: "user", text: data.text },
+            { role: "agent", text: reply }
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: reply,
+                event_id: eventId,
+                response_id: `reply-${eventId}`,
+              },
+            })
+          );
+          eventId++;
+        });
+      }
       await new Promise(resolve => setTimeout(resolve, 0));
+      if (resumedConversation) {
+        client.send(
+          JSON.stringify({
+            type: "conversation_history",
+            conversation_history_event: {
+              conversation_id: resumedConversation.conversationId,
+              rows: resumedConversation.rows.map((row, index) => ({
+                index,
+                ...row,
+                timestamp_unix_secs: 1_700_000_000 + index,
+              })),
+              truncated: false,
+            },
+          })
+        );
+      }
       if (
         agentId === "streamed_first_message" ||
         agentId === "streamed_first_message_with_final"
@@ -654,7 +801,11 @@ export const Worker = setupWorker(
           "first-message",
           agentId === "streamed_first_message_with_final"
         );
-      } else if (agentId !== "streamed_first_reply") {
+      } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
+        persistentConversation?.rows.push({
+          role: "agent",
+          text: config.first_message ?? "",
+        });
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -668,7 +819,10 @@ export const Worker = setupWorker(
       }
       // `text_and_voice` is a voice-capable agent that the widget switches to
       // text mode when the user types, so it follows the text chat script.
-      const isTextChat = config.text_only || agentId === "text_and_voice";
+      const isTextChat =
+        config.text_only ||
+        agentId === "text_and_voice" ||
+        agentId === "persistent_session_voice";
       if (
         isTextChat &&
         agentId !== "end_call_test" &&
@@ -690,6 +844,9 @@ export const Worker = setupWorker(
         agentId !== "no_file_upload" &&
         agentId !== "text_only_persistent" &&
         agentId !== "external_agent" &&
+        agentId !== "persistent_session" &&
+        agentId !== "persistent_session_disabled" &&
+        agentId !== "persistent_session_voice" &&
         agentId !== "agent_attachments"
       ) {
         const agentResponse =
@@ -1758,27 +1915,6 @@ export const Worker = setupWorker(
           })
         );
       }
-      if (
-        agentId === "streamed_first_reply" ||
-        agentId === "streamed_first_message" ||
-        agentId === "streamed_first_message_with_final"
-      ) {
-        let hasReplied = false;
-        client.addEventListener("message", async event => {
-          const data =
-            typeof event.data === "string" ? JSON.parse(event.data) : null;
-          if (data?.type !== "user_message" || hasReplied) return;
-          hasReplied = true;
-          const message =
-            agentId === "streamed_first_reply"
-              ? "First streamed reply"
-              : agentId === "streamed_first_message"
-                ? (config.first_message ?? "")
-                : "Production streamed reply";
-
-          await sendStreamedAgentResponse(client, message, 2, "streamed-reply");
-        });
-      }
       if (agentId === "agent_attachments") {
         // Human-agent replies relay files: the first turn pairs text with an
         // image and a PDF, the second is attachment-only with no text at all.
@@ -1829,6 +1965,12 @@ export const Worker = setupWorker(
             })
           );
         });
+      }
+      if (agentId === "persistent_session_voice" && !persistentConversation) {
+        // The voice call hangs up on its own so a test can check how the
+        // widget treats that close.
+        await new Promise(resolve => setTimeout(resolve, 500));
+        client.close();
       }
       if (agentId === "external_agent") {
         // Simulates a human agent takeover: the first user message triggers
