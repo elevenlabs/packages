@@ -387,7 +387,7 @@ export interface ConversationHistoryEventRowsItem {
   index: number;
   role: ConversationHistoryEventRowsItemRole;
   text: string;
-  time_in_call_secs: number;
+  timestamp_unix_secs: number;
 }
 
 export type ConversationHistoryEventRowsItemRole = "user" | "agent";

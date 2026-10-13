@@ -742,7 +742,7 @@ describe("BaseConversation", () => {
             index: 0,
             role: "agent" as const,
             text: "Hi",
-            time_in_call_secs: 0,
+            timestamp_unix_secs: 1_700_000_000,
           },
         ],
         truncated: false,

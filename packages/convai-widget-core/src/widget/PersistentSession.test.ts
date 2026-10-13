@@ -3,11 +3,10 @@ import { describe, it, beforeAll, afterAll, afterEach, expect } from "vitest";
 import { Worker, persistentConversationIdFor } from "../mocks/browser";
 import { setupWebComponent } from "../mocks/web-component";
 
-const STORAGE_KEY = "elevenlabs_convai_persistent_session_persistent_session";
-const DISABLED_STORAGE_KEY =
-  "elevenlabs_convai_persistent_session_persistent_session_disabled";
-const VOICE_STORAGE_KEY =
-  "elevenlabs_convai_persistent_session_persistent_session_voice";
+const STORAGE_KEY_PREFIX = "elevenlabs_convai_persistent_session_";
+const STORAGE_KEY = `${STORAGE_KEY_PREFIX}persistent_session`;
+const DISABLED_STORAGE_KEY = `${STORAGE_KEY_PREFIX}persistent_session_disabled`;
+const VOICE_STORAGE_KEY = `${STORAGE_KEY_PREFIX}persistent_session_voice`;
 
 function mountPersistentWidget(
   agentId:
@@ -34,6 +33,13 @@ async function sendMessage(text: string) {
 
 function storedConversationId() {
   return persistentConversationIdFor(localStorage.getItem(STORAGE_KEY));
+}
+
+function pretendMobileDevice() {
+  Object.defineProperty(navigator, "platform", {
+    configurable: true,
+    get: () => "iPhone",
+  });
 }
 
 function setVisibilityState(state: DocumentVisibilityState) {
@@ -66,10 +72,11 @@ describe("Persistent sessions", () => {
   beforeAll(() => Worker.start({ quiet: true }));
   afterAll(() => Worker.stop());
   afterEach(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(DISABLED_STORAGE_KEY);
-    localStorage.removeItem(VOICE_STORAGE_KEY);
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(STORAGE_KEY_PREFIX)) localStorage.removeItem(key);
+    }
     Reflect.deleteProperty(document, "visibilityState");
+    Reflect.deleteProperty(navigator, "platform");
   });
 
   it("replays the stored conversation after a reload", async () => {
@@ -193,7 +200,44 @@ describe("Persistent sessions", () => {
     ).toHaveLength(1);
   });
 
-  it("closes cleanly in the background and resumes in the foreground", async () => {
+  it("keeps a separate conversation per configured user id", async () => {
+    const widgetFor = (userId: string) =>
+      setupWebComponent({
+        "agent-id": "persistent_session",
+        "persistent-session": "true",
+        "user-id": userId,
+        variant: "compact",
+      });
+    const firstUser = widgetFor("user-a");
+    await sendMessage("Where is my parcel?");
+    expect(localStorage.getItem(`${STORAGE_KEY}_user-a`)).not.toBeNull();
+
+    firstUser.remove();
+    widgetFor("user-b");
+
+    await expect
+      .element(page.getByText("Hello from the agent", { exact: true }))
+      .toBeInTheDocument();
+    expect(page.getByText("You said: Where is my parcel?").all()).toHaveLength(
+      0
+    );
+    expect(localStorage.getItem(`${STORAGE_KEY}_user-b`)).toBeNull();
+  });
+
+  it("keeps the socket open in the background on desktop", async () => {
+    mountPersistentWidget();
+    await sendMessage("Where is my parcel?");
+
+    setVisibilityState("hidden");
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    await expect
+      .element(page.getByRole("button", { name: "End chat" }))
+      .toBeInTheDocument();
+  });
+
+  it("closes cleanly in the background and resumes in the foreground on mobile", async () => {
+    pretendMobileDevice();
     mountPersistentWidget();
     await sendMessage("Where is my parcel?");
     const conversationId = storedConversationId();

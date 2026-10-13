@@ -1,12 +1,10 @@
 import {
   Conversation,
-  DisconnectionDetails,
   MessageAttachment,
   Mode,
   Role,
   SendUserMessageOptions,
   SessionConfig,
-  SessionConnectionError,
   Status,
 } from "@elevenlabs/client";
 import {
@@ -32,15 +30,13 @@ import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
 import {
-  clearStoredPersistentSession,
-  readStoredPersistentSession,
-  storePersistentSession,
+  configurePersistentSession,
+  createStoredSession,
+  isFinalDisconnect,
+  isPersistentSessionRefused,
 } from "../utils/persistentSession";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
-// Sent by the orchestrator for an expired or unknown resume token, or a
-// workspace without persistent sessions.
-const PERSISTENT_SESSION_REFUSED_CLOSE_CODE = 3000;
 
 type AgentResponseState = Map<string, { index: number; isStreaming: boolean }>;
 
@@ -412,21 +408,6 @@ function firstMessageRichContentEntries(
   ];
 }
 
-function isPersistentSessionRefused(error: unknown): boolean {
-  return (
-    error instanceof SessionConnectionError &&
-    error.closeCode === PERSISTENT_SESSION_REFUSED_CLOSE_CODE
-  );
-}
-
-function isFinalDisconnect(details: DisconnectionDetails): boolean {
-  return (
-    (details.reason === "agent" && details.context?.type === "end_call") ||
-    (details.reason === "error" &&
-      details.closeCode === PERSISTENT_SESSION_REFUSED_CLOSE_CODE)
-  );
-}
-
 export function ConversationProvider({ children }: ConversationProviderProps) {
   const value = useConversationSetup();
 
@@ -546,19 +527,7 @@ function useConversationSetup() {
     // the locally rendered greeting until the next fresh start.
     const isResumedSession = signal(false);
     const isResuming = signal(false);
-    // Mirrors the stored token so the UI can react to it; localStorage is not
-    // reactive on its own.
-    const hasStoredSession = signal(
-      !!readStoredPersistentSession(config.peek())
-    );
-    const storeSession = (sessionConfig: SessionConfig, token: string) => {
-      storePersistentSession(sessionConfig, token);
-      hasStoredSession.value = true;
-    };
-    const clearSession = (sessionConfig: SessionConfig) => {
-      clearStoredPersistentSession(sessionConfig);
-      hasStoredSession.value = false;
-    };
+    const storedSession = createStoredSession(config);
     // Set once the workspace refuses persistent sessions, so later starts in
     // this widget instance skip the refused handshake.
     let persistenceUnavailable = false;
@@ -580,7 +549,7 @@ function useConversationSetup() {
       isWaitingForAgent,
       isResumedSession,
       isResuming,
-      hasStoredSession,
+      hasStoredSession: storedSession.hasStoredSession,
       startSession: async (
         element: HTMLElement | null,
         initialMessage?: string,
@@ -591,8 +560,7 @@ function useConversationSetup() {
         // conversation instead of opening a second one. Starting a voice
         // call is a new conversation, so it never resumes.
         const resume =
-          resumeToken ??
-          (initialMessage ? readStoredPersistentSession(config.peek()) : null);
+          resumeToken ?? (initialMessage ? storedSession.read() : null);
         await terms.requestTerms();
 
         if (conversationRef.current?.isOpen()) {
@@ -623,23 +591,17 @@ function useConversationSetup() {
             processedConfig.overrides.conversation.textOnly = true;
           }
         }
-        if (resume) {
-          processedConfig.persistentSession = { token: resume };
-        }
-        if (!processedConfig.textOnly || persistenceUnavailable) {
-          delete processedConfig.persistentSession;
-        } else if (
-          processedConfig.persistentSession &&
-          processedConfig.agentId
+        configurePersistentSession(processedConfig, {
+          resume,
+          unavailable: persistenceUnavailable,
+        });
+        if (
+          !processedConfig.persistentSession &&
+          storedSession.hasStoredSession.peek()
         ) {
-          // Persistent sessions are websocket only; an agent with use_rtc would
-          // otherwise route this text chat over the WebRTC data channel.
-          processedConfig.connectionType = "websocket";
-        }
-        if (!processedConfig.persistentSession && hasStoredSession.peek()) {
           // A voice call cannot continue the paused text conversation, so
           // starting one abandons it.
-          clearSession(config.peek());
+          storedSession.clear();
         }
 
         try {
@@ -708,7 +670,7 @@ function useConversationSetup() {
             },
             onConversationMetadata: ({ persistent_session_token }) => {
               if (persistent_session_token) {
-                storeSession(processedConfig, persistent_session_token);
+                storedSession.store(persistent_session_token);
               }
             },
             onConversationHistory: ({ rows }) => {
@@ -952,7 +914,7 @@ function useConversationSetup() {
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
               if (isFinalDisconnect(details)) {
-                clearSession(processedConfig);
+                storedSession.clear();
               }
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
@@ -963,7 +925,7 @@ function useConversationSetup() {
               // A close with the token still stored is a pause, not an end:
               // the transcript stays and the next message or the page coming
               // back to the foreground continues the conversation.
-              if (hasStoredSession.peek()) {
+              if (storedSession.hasStoredSession.peek()) {
                 if (details.reason === "error") {
                   console.warn(
                     "[ConversationalAI] Connection lost, the conversation can be resumed:",
@@ -1023,7 +985,7 @@ function useConversationSetup() {
             isPersistentSessionRefused(e)
           ) {
             if (resume) {
-              clearSession(processedConfig);
+              storedSession.clear();
             } else {
               persistenceUnavailable = true;
             }
@@ -1095,14 +1057,14 @@ function useConversationSetup() {
         }
       },
       resumeSession: async () => {
-        const token = readStoredPersistentSession(config.peek());
+        const token = storedSession.read();
         if (token) {
           await value.startSession(null, undefined, undefined, token);
         }
       },
       /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
-        clearSession(config.peek());
+        storedSession.clear();
         await value.disconnectSession();
       },
       /** Closes the connection but keeps a persistent session resumable. */
@@ -1185,31 +1147,6 @@ function useConversationSetup() {
     };
     return value;
   }, [config]);
-
-  // iOS kills a backgrounded WebView's socket without a close frame, which
-  // stalls the next connect for about ten seconds. Closing cleanly while
-  // hidden avoids that; the debounce skips brief hides like an app switcher.
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const onVisibilityChange = () => {
-      if (timer) clearTimeout(timer);
-      timer = null;
-      if (
-        document.visibilityState !== "hidden" ||
-        conversation.conversationTextOnly.peek() !== true ||
-        conversation.isDisconnected.peek() ||
-        !conversation.hasStoredSession.peek()
-      ) {
-        return;
-      }
-      timer = setTimeout(() => void conversation.disconnectSession(), 2000);
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => {
-      if (timer) clearTimeout(timer);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [conversation]);
 
   useSignalEffect(() => {
     const richContent = firstMessageRichContent.value;

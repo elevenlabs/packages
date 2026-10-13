@@ -1,5 +1,4 @@
-import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
-import { useEffect } from "preact/compat";
+import { useComputed, useSignal } from "@preact/signals";
 import {
   useFirstMessage,
   useIsConversationTextOnly,
@@ -27,6 +26,7 @@ import { AvatarOverlay } from "./AvatarOverlay";
 import { stripAudioTags } from "../utils/stripAudioTags";
 import { useEndConfirmation } from "../contexts/end-confirmation";
 import { EndConfirmationDialog } from "./EndConfirmationDialog";
+import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLifecycle";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -49,7 +49,6 @@ export function Sheet({ open }: SheetProps) {
   const {
     isDisconnected,
     startSession,
-    resumeSession,
     isResumedSession,
     transcript,
     conversationIndex,
@@ -59,33 +58,8 @@ export function Sheet({ open }: SheetProps) {
   } = useConversation();
   const firstMessage = useFirstMessage();
 
-  // isDisconnected is peeked so an inactivity disconnect while the sheet stays
-  // open does not reconnect in a loop.
   const openSignal = useSignalish(open);
-  useSignalEffect(() => {
-    if (openSignal.value && isDisconnected.peek()) {
-      void resumeSession();
-    }
-  });
-  useEffect(() => {
-    const onForeground = () => {
-      if (
-        document.visibilityState === "visible" &&
-        openSignal.peek() &&
-        isDisconnected.peek()
-      ) {
-        void resumeSession();
-      }
-    };
-    document.addEventListener("visibilitychange", onForeground);
-    window.addEventListener("pageshow", onForeground);
-    window.addEventListener("online", onForeground);
-    return () => {
-      document.removeEventListener("visibilitychange", onForeground);
-      window.removeEventListener("pageshow", onForeground);
-      window.removeEventListener("online", onForeground);
-    };
-  }, [openSignal, isDisconnected, resumeSession]);
+  usePersistentSessionLifecycle(openSignal);
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
   const { variant } = useWidgetSize();

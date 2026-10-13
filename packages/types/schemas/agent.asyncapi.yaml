@@ -1189,7 +1189,7 @@ components:
 
     ConversationHistoryRow:
       type: object
-      required: [index, role, text, time_in_call_secs]
+      required: [index, role, text, timestamp_unix_secs]
       properties:
         index:
           type: integer
@@ -1199,8 +1199,9 @@ components:
           enum: [user, agent]
         text:
           type: string
-        time_in_call_secs:
+        timestamp_unix_secs:
           type: integer
+          description: Unix time in seconds. Rows replayed from a live session all carry the conversation start time.
 
     ClientToolCallData:
       type: object

@@ -702,7 +702,7 @@ export const Worker = setupWorker(
               rows: resumedConversation.rows.map((row, index) => ({
                 index,
                 ...row,
-                time_in_call_secs: index,
+                timestamp_unix_secs: 1_700_000_000 + index,
               })),
               truncated: false,
             },
