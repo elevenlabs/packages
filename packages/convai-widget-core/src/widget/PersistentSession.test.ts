@@ -111,6 +111,26 @@ describe("Persistent sessions", () => {
     ]);
   });
 
+  it("delivers a message typed while the conversation is still resuming", async () => {
+    const firstMount = mountPersistentWidget();
+    await sendMessage("Where is my parcel?");
+    firstMount.remove();
+
+    mountPersistentWidget();
+    // The mock holds the resume handshake, so this lands while connecting.
+    await typeMessage("Thanks");
+
+    await expect
+      .element(page.getByText("You said: Thanks"))
+      .toBeInTheDocument();
+    expect(page.getByText("Thanks", { exact: true }).all()).toHaveLength(1);
+    await assertRenderedInOrder([
+      "You said: Where is my parcel?",
+      "Thanks",
+      "You said: Thanks",
+    ]);
+  });
+
   it("reopens the chat after a reload when a conversation is in progress", async () => {
     const collapsedWidget = {
       "agent-id": "persistent_session",

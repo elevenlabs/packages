@@ -696,6 +696,10 @@ export const Worker = setupWorker(
         );
       }
 
+      if (resumedConversation) {
+        // Holds the handshake long enough for a test to type during a resume.
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
       client.send(
         JSON.stringify({
           type: "conversation_initiation_metadata",

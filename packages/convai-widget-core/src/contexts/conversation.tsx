@@ -568,6 +568,11 @@ function useConversationSetup() {
         }
 
         if (lockRef.current) {
+          // A message typed while a connect is in flight rides on that
+          // connection instead of being dropped.
+          if (initialMessage) {
+            value.sendUserMessage(initialMessage, initialMessageOptions);
+          }
           const conversation = await lockRef.current;
           return conversation.getId();
         }
@@ -1091,7 +1096,22 @@ function useConversationSetup() {
       sendUserMessage: (text: string, options?: SendUserMessageOptions) => {
         // The orchestrator discards messages sent while held in the queue.
         if (isWaitingForAgent.peek()) return;
-        conversationRef.current?.sendUserMessage(text, options);
+        const pendingConnect = lockRef.current;
+        if (conversationRef.current?.isOpen()) {
+          conversationRef.current.sendUserMessage(text, options);
+        } else if (pendingConnect) {
+          // Typed while a resume is still connecting. A failed connect
+          // reports itself through startSession, so nothing to add here.
+          void pendingConnect
+            .then(conversation => {
+              // TODO: Remove the delay once BE can handle it
+              setTimeout(
+                () => conversation.sendUserMessage(text, options),
+                100
+              );
+            })
+            .catch(() => {});
+        }
         transcript.value = [
           ...transcript.value,
           {
