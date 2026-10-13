@@ -1110,7 +1110,11 @@ function useConversationSetup() {
                 100
               );
             })
-            .catch(() => {});
+            .catch(() => {
+              // startSession has already handled the failed resume by now, so
+              // the message starts over like one typed after a disconnect.
+              void value.startSession(null, text, options);
+            });
         }
         transcript.value = [
           ...transcript.value,

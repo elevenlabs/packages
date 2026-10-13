@@ -131,6 +131,19 @@ describe("Persistent sessions", () => {
     ]);
   });
 
+  it("starts over with a message typed while a resume is being refused", async () => {
+    localStorage.setItem(STORAGE_KEY, "expired-token");
+    mountPersistentWidget();
+    // The mock holds the refusal, so this lands while the resume is in flight.
+    await typeMessage("Hello");
+
+    await expect
+      .element(page.getByText("You said: Hello"), { timeout: 5000 })
+      .toBeInTheDocument();
+    expect(page.getByText("Hello", { exact: true }).all()).toHaveLength(1);
+    expect(localStorage.getItem(STORAGE_KEY)).toMatch(/^persistent-token-/);
+  });
+
   it("reopens the chat after a reload when a conversation is in progress", async () => {
     const collapsedWidget = {
       "agent-id": "persistent_session",

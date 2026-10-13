@@ -679,6 +679,8 @@ export const Worker = setupWorker(
         ? persistentConversations.get(resumeToken)
         : undefined;
       if (resumeToken && !resumedConversation) {
+        // Held like the handshake below, so a test can type during the resume.
+        await new Promise(resolve => setTimeout(resolve, 300));
         client.close(3000, "Invalid or expired persistent session token.");
         return;
       }
@@ -712,6 +714,65 @@ export const Worker = setupWorker(
           },
         })
       );
+      // The widget sends a typed message 100ms after the handshake, so reply
+      // listeners go on before the awaited setup below can push past that.
+      if (
+        agentId === "streamed_first_reply" ||
+        agentId === "streamed_first_message" ||
+        agentId === "streamed_first_message_with_final"
+      ) {
+        let hasReplied = false;
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message" || hasReplied) return;
+          hasReplied = true;
+          const message =
+            agentId === "streamed_first_reply"
+              ? "First streamed reply"
+              : agentId === "streamed_first_message"
+                ? (config.first_message ?? "")
+                : "Production streamed reply";
+
+          await sendStreamedAgentResponse(client, message, 2, "streamed-reply");
+        });
+      }
+      if (
+        agentId === "persistent_session" ||
+        agentId === "persistent_session_disabled" ||
+        agentId === "persistent_session_voice"
+      ) {
+        const rows = persistentConversation?.rows;
+        // Event ids restart on every segment, like the backend does today, so
+        // the first reply after a resume carries the first-message event id.
+        let eventId = resumedConversation ? 1 : 2;
+        client.addEventListener("message", event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          if (data.text === "drop the connection") {
+            // Abnormal closure, as when a backgrounded WebView loses its socket.
+            client.close(1006);
+            return;
+          }
+          const reply = `You said: ${data.text}`;
+          rows?.push(
+            { role: "user", text: data.text },
+            { role: "agent", text: reply }
+          );
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: reply,
+                event_id: eventId,
+                response_id: `reply-${eventId}`,
+              },
+            })
+          );
+          eventId++;
+        });
+      }
       await new Promise(resolve => setTimeout(resolve, 0));
       if (resumedConversation) {
         client.send(
@@ -1854,27 +1915,6 @@ export const Worker = setupWorker(
           })
         );
       }
-      if (
-        agentId === "streamed_first_reply" ||
-        agentId === "streamed_first_message" ||
-        agentId === "streamed_first_message_with_final"
-      ) {
-        let hasReplied = false;
-        client.addEventListener("message", async event => {
-          const data =
-            typeof event.data === "string" ? JSON.parse(event.data) : null;
-          if (data?.type !== "user_message" || hasReplied) return;
-          hasReplied = true;
-          const message =
-            agentId === "streamed_first_reply"
-              ? "First streamed reply"
-              : agentId === "streamed_first_message"
-                ? (config.first_message ?? "")
-                : "Production streamed reply";
-
-          await sendStreamedAgentResponse(client, message, 2, "streamed-reply");
-        });
-      }
       if (agentId === "agent_attachments") {
         // Human-agent replies relay files: the first turn pairs text with an
         // image and a PDF, the second is attachment-only with no text at all.
@@ -1926,47 +1966,11 @@ export const Worker = setupWorker(
           );
         });
       }
-      if (
-        agentId === "persistent_session" ||
-        agentId === "persistent_session_disabled" ||
-        agentId === "persistent_session_voice"
-      ) {
-        const rows = persistentConversation?.rows;
-        // Event ids restart on every segment, like the backend does today, so
-        // the first reply after a resume carries the first-message event id.
-        let eventId = resumedConversation ? 1 : 2;
-        client.addEventListener("message", event => {
-          const data =
-            typeof event.data === "string" ? JSON.parse(event.data) : null;
-          if (data?.type !== "user_message") return;
-          if (data.text === "drop the connection") {
-            // Abnormal closure, as when a backgrounded WebView loses its socket.
-            client.close(1006);
-            return;
-          }
-          const reply = `You said: ${data.text}`;
-          rows?.push(
-            { role: "user", text: data.text },
-            { role: "agent", text: reply }
-          );
-          client.send(
-            JSON.stringify({
-              type: "agent_response",
-              agent_response_event: {
-                agent_response: reply,
-                event_id: eventId,
-                response_id: `reply-${eventId}`,
-              },
-            })
-          );
-          eventId++;
-        });
-        if (agentId === "persistent_session_voice" && !persistentConversation) {
-          // The voice call hangs up on its own so a test can check how the
-          // widget treats that close.
-          await new Promise(resolve => setTimeout(resolve, 500));
-          client.close();
-        }
+      if (agentId === "persistent_session_voice" && !persistentConversation) {
+        // The voice call hangs up on its own so a test can check how the
+        // widget treats that close.
+        await new Promise(resolve => setTimeout(resolve, 500));
+        client.close();
       }
       if (agentId === "external_agent") {
         // Simulates a human agent takeover: the first user message triggers
