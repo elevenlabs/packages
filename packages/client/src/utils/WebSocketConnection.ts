@@ -14,6 +14,10 @@ import {
 import { constructOverrides } from "./overrides.js";
 import { constructEnclaveSetupConfig } from "./orchestrator.js";
 import { SessionConnectionError } from "./errors.js";
+import {
+  createSessionAbortError,
+  throwIfSessionAborted,
+} from "./cancellation.js";
 import type {
   OutputEventTarget,
   OutputListener,
@@ -34,6 +38,7 @@ export class WebSocketConnection
 
   private outputListeners: Set<OutputListener> = new Set();
   private pendingAudioEvents: OutputAudioEvent[] = [];
+  private isClosed = false;
 
   private constructor(
     private readonly socket: WebSocket,
@@ -109,7 +114,10 @@ export class WebSocketConnection
   public static async create(
     config: SessionConfig
   ): Promise<WebSocketConnection> {
+    throwIfSessionAborted(config.signal);
+
     let socket: WebSocket | null = null;
+    let startupCancelled = false;
 
     try {
       let url: string;
@@ -139,14 +147,49 @@ export class WebSocketConnection
           protocols.push(`bearer.${config.authorization}`);
         }
       }
-      socket = new WebSocket(url, protocols);
 
-      const conversationConfig = await new Promise<
-        ConfigEvent["conversation_initiation_metadata_event"]
-      >((resolve, reject) => {
-        socket!.addEventListener(
+      const handshake = await new Promise<{
+        socket: WebSocket;
+        conversationConfig: ConfigEvent["conversation_initiation_metadata_event"];
+      }>((resolve, reject) => {
+        let settled = false;
+        const settle = (callback: () => void) => {
+          if (settled) return;
+          settled = true;
+          config.signal?.removeEventListener("abort", onAbort);
+          callback();
+        };
+
+        const onAbort = () => {
+          if (settled) return;
+          startupCancelled = true;
+          socket?.close();
+          settle(() => reject(createSessionAbortError()));
+        };
+
+        config.signal?.addEventListener("abort", onAbort, { once: true });
+        if (config.signal?.aborted) {
+          onAbort();
+          return;
+        }
+
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(url, protocols);
+        } catch (error) {
+          settle(() => reject(error));
+          return;
+        }
+        socket = ws;
+
+        ws.addEventListener(
           "open",
           () => {
+            if (startupCancelled) {
+              socket?.close();
+              return;
+            }
+
             if (config.orchestrator) {
               socket?.send(
                 JSON.stringify(constructEnclaveSetupConfig(config.orchestrator))
@@ -160,38 +203,44 @@ export class WebSocketConnection
           { once: true }
         );
 
-        socket!.addEventListener("error", event => {
+        ws.addEventListener("error", event => {
           // In case the error event is followed by a close event, we want the
           // latter to be the one that rejects the promise as it contains more
           // useful information.
-          setTimeout(
-            () =>
+          setTimeout(() => {
+            if (startupCancelled) return;
+            settle(() =>
               reject(
                 new SessionConnectionError(
                   "The connection was closed due to a socket error."
                 )
-              ),
-            0
-          );
+              )
+            );
+          }, 0);
         });
 
-        socket!.addEventListener("close", (event: CloseEvent) => {
+        ws.addEventListener("close", (event: CloseEvent) => {
+          if (startupCancelled) return;
           const message =
             event.reason ||
             (event.code === 1000
               ? "Connection closed normally before session could be established."
               : "Connection closed unexpectedly before session could be established.");
-          reject(
-            new SessionConnectionError(message, {
-              closeCode: event.code,
-              closeReason: event.reason || undefined,
-            })
+          settle(() =>
+            reject(
+              new SessionConnectionError(message, {
+                closeCode: event.code,
+                closeReason: event.reason || undefined,
+              })
+            )
           );
         });
 
-        socket!.addEventListener(
+        ws.addEventListener(
           "message",
           (event: MessageEvent) => {
+            if (startupCancelled) return;
+
             const message = JSON.parse(event.data);
 
             if (!isValidSocketEvent(message)) {
@@ -199,7 +248,13 @@ export class WebSocketConnection
             }
 
             if (message.type === "conversation_initiation_metadata") {
-              resolve(message.conversation_initiation_metadata_event);
+              settle(() =>
+                resolve({
+                  socket: ws,
+                  conversationConfig:
+                    message.conversation_initiation_metadata_event,
+                })
+              );
             } else {
               console.warn(
                 "First received message is not conversation metadata."
@@ -209,6 +264,11 @@ export class WebSocketConnection
           { once: true }
         );
       });
+
+      const { socket: connectedSocket, conversationConfig } = handshake;
+      // The executor assigns this too, so a rejected handshake still closes its
+      // socket; repeating it here is what lets the catch below see a WebSocket.
+      socket = connectedSocket;
 
       const {
         conversation_id,
@@ -220,7 +280,7 @@ export class WebSocketConnection
       const outputFormat = parseFormat(agent_output_audio_format);
 
       return new WebSocketConnection(
-        socket,
+        connectedSocket,
         conversation_id,
         inputFormat,
         outputFormat
@@ -232,6 +292,10 @@ export class WebSocketConnection
   }
 
   public close() {
+    if (this.isClosed) {
+      return;
+    }
+    this.isClosed = true;
     this.pendingAudioEvents = [];
     this.socket.close(1000, "User ended conversation");
   }

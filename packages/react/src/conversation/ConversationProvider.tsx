@@ -11,9 +11,11 @@ import {
   parseLocation,
   getOriginForLocation,
   getLivekitUrlForLocation,
+  isSessionAbortError,
+  waitForSessionCleanup,
 } from "@elevenlabs/client/internal";
 
-import { type HookOptions } from "./types.js";
+import { type HookDefaultOptions, type HookOptions } from "./types.js";
 import {
   ConversationContext,
   type ConversationContextValue,
@@ -48,8 +50,16 @@ const SUB_PROVIDERS_WITHOUT_PROPS: React.ComponentType<React.PropsWithChildren>[
   ];
 
 export type ConversationProviderProps = React.PropsWithChildren<
-  HookOptions & ConversationInputControlProps
+  HookDefaultOptions & ConversationInputControlProps
 >;
+
+type PendingSession = {
+  promise: Promise<Conversation>;
+  controller: AbortController;
+  teardown: () => Promise<void>;
+  failed: boolean;
+  retry: { options?: HookOptions } | null;
+};
 
 export function ConversationProvider({
   children,
@@ -60,7 +70,7 @@ export function ConversationProvider({
   /** The active conversation instance, if any. */
   const conversationRef = useRef<Conversation | null>(null);
   /** In-flight startSession promise, used to prevent duplicate connections. */
-  const lockRef = useRef<Promise<Conversation> | null>(null);
+  const lockRef = useRef<PendingSession | null>(null);
   /** Monotonic id used to ignore stale async handlers from older starts. */
   const startSessionIdRef = useRef(0);
   /** Signals that endSession was called while a connection was still pending. */
@@ -94,18 +104,29 @@ export function ConversationProvider({
   );
 
   const startSession = useCallback(
-    (options?: HookOptions) => {
+    function startSession(options?: HookOptions) {
+      const defaults = defaultOptionsRef.current;
+      const externalSignal = options?.signal;
+      if (externalSignal?.aborted) {
+        return;
+      }
       if (conversationRef.current) {
         return;
       }
       if (lockRef.current) {
+        if (
+          lockRef.current.failed &&
+          !shouldEndRef.current &&
+          !lockRef.current.controller.signal.aborted
+        ) {
+          lockRef.current.retry = { options };
+        }
         return;
       }
 
       shouldEndRef.current = false;
       const startSessionId = ++startSessionIdRef.current;
 
-      const defaults = defaultOptionsRef.current;
       const resolvedServerLocation = parseLocation(
         options?.serverLocation || defaults?.serverLocation
       );
@@ -117,6 +138,8 @@ export function ConversationProvider({
       // Strip raw callbacks from defaults — stableCallbacks provides
       // ref-backed versions that won't go stale across renders.
       const defaultConfig = { ...defaults };
+      const sessionConfig: HookOptions = { ...options };
+      delete sessionConfig.signal;
       for (const key of CALLBACK_KEYS) {
         delete (defaultConfig as Record<string, unknown>)[key];
       }
@@ -126,7 +149,7 @@ export function ConversationProvider({
         defaultConfig,
         stableCallbacks,
         listenerMap.compose(),
-        options ?? {},
+        sessionConfig,
         { origin }
       );
 
@@ -137,22 +160,54 @@ export function ConversationProvider({
       clientToolsRef.current = clientTools;
       sessionOptions.clientTools = clientTools;
 
+      const controller = new AbortController();
       const isStaleStartSession = () =>
         startSessionId !== startSessionIdRef.current;
+      const forwardExternalAbort = () => {
+        if (
+          isStaleStartSession() ||
+          controller.signal.aborted ||
+          (conversationRef.current && !lockRef.current)
+        ) {
+          return;
+        }
+        shouldEndRef.current = true;
+        controller.abort(externalSignal?.reason);
+        if (conversationRef.current) {
+          conversationRef.current = null;
+          setConversation(null);
+        }
+      };
+      if (externalSignal?.aborted) {
+        forwardExternalAbort();
+      } else {
+        externalSignal?.addEventListener("abort", forwardExternalAbort, {
+          once: true,
+        });
+      }
+      sessionOptions.signal = controller.signal;
 
-      // A superseded session can outlive its replacement's start: its async
-      // teardown keeps emitting events (final "disconnected", teardown
-      // onDisconnect, errors) that would otherwise reach the listener map
-      // and clobber sub-provider state now reflecting the newer session
-      // (e.g. ConversationModeProvider resets mode on onDisconnect). Drop
-      // every callback once this start is stale.
+      // A superseded or cancelled start can keep emitting events during
+      // teardown. Only terminal lifecycle callbacks and feedback reset may
+      // update this session after cancellation; a newer session drops all.
+      const reportActiveError = sessionOptions.onError;
       for (const key of CALLBACK_KEYS) {
         const callback = sessionOptions[key];
         if (typeof callback === "function") {
           (sessionOptions as Record<string, unknown>)[key] = (
             ...args: never[]
           ) => {
-            if (!isStaleStartSession()) {
+            const isFeedbackReset =
+              key === "onCanSendFeedbackChange" &&
+              (args[0] as { canSendFeedback?: boolean } | undefined)
+                ?.canSendFeedback === false;
+            if (
+              !isStaleStartSession() &&
+              (!controller.signal.aborted ||
+                key === "onStatusChange" ||
+                key === "onDisconnect" ||
+                isFeedbackReset)
+            ) {
               (callback as (...a: never[]) => void)(...args);
             }
           };
@@ -183,6 +238,7 @@ export function ConversationProvider({
         if (shouldEndRef.current || isStaleStartSession()) {
           return;
         }
+        externalSignal?.removeEventListener("abort", forwardExternalAbort);
         lockRef.current = null;
         sessionOptions.onConnect?.(props);
       };
@@ -198,6 +254,12 @@ export function ConversationProvider({
         Callbacks["onStatusChange"]
       > = props => {
         if (isStaleStartSession()) {
+          return;
+        }
+        if (
+          controller.signal.aborted &&
+          (props.status === "connecting" || props.status === "connected")
+        ) {
           return;
         }
         if (
@@ -240,18 +302,62 @@ export function ConversationProvider({
         ...providerLifecycleOptions,
       };
 
-      lockRef.current = Conversation.startSession(startSessionOptions);
+      const startPromise = Conversation.startSession(startSessionOptions);
+      let teardownPromise: Promise<void> | null = null;
+      const pendingSession: PendingSession = {
+        promise: startPromise,
+        controller,
+        failed: false,
+        retry: null,
+        teardown: () => {
+          teardownPromise ??= startPromise
+            .then(
+              conv =>
+                conv
+                  .endSession()
+                  .catch(error => console.warn("Error ending session:", error)),
+              () => {}
+            )
+            .then(() =>
+              waitForSessionCleanup(controller.signal, { timeoutMs: 10_000 })
+            )
+            .finally(() => {
+              if (lockRef.current === pendingSession) {
+                lockRef.current = null;
+                const retry = pendingSession.retry;
+                pendingSession.retry = null;
+                if (
+                  retry &&
+                  !shouldEndRef.current &&
+                  !controller.signal.aborted &&
+                  !retry.options?.signal?.aborted
+                ) {
+                  try {
+                    startSession(retry.options);
+                  } catch (error) {
+                    console.warn("Error restarting session:", error);
+                  }
+                }
+              }
+            });
+          return teardownPromise;
+        },
+      };
+      lockRef.current = pendingSession;
 
-      lockRef.current.then(
+      void startPromise.then(
+        () =>
+          externalSignal?.removeEventListener("abort", forwardExternalAbort),
+        () => externalSignal?.removeEventListener("abort", forwardExternalAbort)
+      );
+
+      startPromise.then(
         conv => {
           if (isStaleStartSession()) {
             return;
           }
-          if (shouldEndRef.current) {
-            conv
-              .endSession()
-              .catch(error => console.warn("Error ending session:", error));
-            lockRef.current = null;
+          if (shouldEndRef.current || controller.signal.aborted) {
+            void pendingSession.teardown();
             return;
           }
           if (conversationRef.current !== conv) {
@@ -259,7 +365,9 @@ export function ConversationProvider({
             conversationRef.current = conv;
             setConversation(conv);
           }
-          lockRef.current = null;
+          if (lockRef.current === pendingSession) {
+            lockRef.current = null;
+          }
         },
         (error: unknown) => {
           if (isStaleStartSession()) {
@@ -267,24 +375,28 @@ export function ConversationProvider({
           }
           conversationRef.current = null;
           setConversation(null);
-          lockRef.current = null;
-          if (shouldEndRef.current) {
+          void pendingSession.teardown();
+          // The start promise is the race arbiter. Suppress only an intentional
+          // cancellation; if an active failure settled first, preserve it even
+          // when endSession() was called before this reaction ran.
+          if (controller.signal.aborted && isSessionAbortError(error)) {
             return;
           }
+          pendingSession.failed = true;
           // The client SDK calls onStatusChange("disconnected") before
           // rejecting, but never calls onError — surface the failure here
           // so listeners (e.g. ConversationStatusProvider) transition to
           // the "error" state with a meaningful message.
           const message =
             error instanceof Error ? error.message : "Session failed to start";
-          sessionOptions.onError?.(message, error);
+          reportActiveError?.(message, error);
         }
       );
     },
     [stableCallbacks, listenerMap, clientToolsRegistry, clientToolsRef]
   );
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback((): Promise<void> => {
     shouldEndRef.current = true;
     const pendingConnection = lockRef.current;
     const conv = conversationRef.current;
@@ -292,18 +404,15 @@ export function ConversationProvider({
     setConversation(null);
 
     if (pendingConnection) {
-      pendingConnection.then(
-        c =>
-          c
-            .endSession()
-            .catch(error => console.warn("Error ending session:", error)),
-        () => {}
-      );
-    } else {
+      pendingConnection.controller.abort();
+      return pendingConnection.teardown();
+    }
+    return (
       conv
         ?.endSession()
-        .catch(error => console.warn("Error ending session:", error));
-    }
+        .catch(error => console.warn("Error ending session:", error)) ??
+      Promise.resolve()
+    );
   }, []);
 
   // Cleanup on unmount
@@ -311,12 +420,10 @@ export function ConversationProvider({
     return () => {
       shouldEndRef.current = true;
       if (lockRef.current) {
-        lockRef.current.then(
-          conv => conv.endSession().catch(() => {}),
-          () => {}
-        );
+        lockRef.current.controller.abort();
+        void lockRef.current.teardown();
       } else {
-        conversationRef.current?.endSession().catch(() => {});
+        void conversationRef.current?.endSession().catch(() => {});
       }
     };
   }, []);
