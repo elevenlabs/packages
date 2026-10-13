@@ -1,6 +1,6 @@
 import { useSignalEffect } from "@preact/signals";
 import { useEffect } from "preact/compat";
-import { isMobileDevice } from "./isMobileDevice";
+import { isIosDevice } from "./isIosDevice";
 import { useConversation } from "../contexts/conversation";
 
 const BACKGROUND_CLOSE_DELAY_MS = 2000;
@@ -43,13 +43,13 @@ export function usePersistentSessionLifecycle(open: {
       }
     };
 
-    // Mobile WebViews kill a backgrounded socket without a close frame, which
+    // iOS kills a backgrounded WebView's socket without a close frame, which
     // stalls the next connect for about ten seconds. Closing cleanly while
     // hidden avoids that; the debounce skips brief hides like an app switcher.
-    // Desktop browsers keep background sockets alive, so they are left alone.
+    // Other platforms keep background sockets alive, so they are left alone.
     const closeInBackground = () => {
       if (
-        !isMobileDevice() ||
+        !isIosDevice() ||
         conversationTextOnly.peek() !== true ||
         isDisconnected.peek() ||
         !hasStoredSession.peek()

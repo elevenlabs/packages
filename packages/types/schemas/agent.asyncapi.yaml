@@ -1193,7 +1193,7 @@ components:
       properties:
         index:
           type: integer
-          description: Position in the stored transcript, stable across resumes
+          description: Zero-based position of the row in the full stored transcript, stable across resumes. May have gaps, and does not start at 0 when `truncated` is true, since dropped rows keep their numbers.
         role:
           type: string
           enum: [user, agent]

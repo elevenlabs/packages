@@ -35,7 +35,7 @@ function storedConversationId() {
   return persistentConversationIdFor(localStorage.getItem(STORAGE_KEY));
 }
 
-function pretendMobileDevice() {
+function pretendIosDevice() {
   Object.defineProperty(navigator, "platform", {
     configurable: true,
     get: () => "iPhone",
@@ -236,8 +236,8 @@ describe("Persistent sessions", () => {
       .toBeInTheDocument();
   });
 
-  it("closes cleanly in the background and resumes in the foreground on mobile", async () => {
-    pretendMobileDevice();
+  it("closes cleanly in the background and resumes in the foreground on iOS", async () => {
+    pretendIosDevice();
     mountPersistentWidget();
     await sendMessage("Where is my parcel?");
     const conversationId = storedConversationId();
