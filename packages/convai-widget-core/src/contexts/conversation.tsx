@@ -82,12 +82,7 @@ export type TranscriptEntry =
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
       attachments?: MessageAttachment[];
-      /**
-       * How much of `message` has been spoken so far, while a voice message
-       * is being revealed in step with its audio. Unset once fully revealed.
-       */
       revealedLength?: number;
-      /** Set when the agent was interrupted before finishing this message. */
       speechInterrupted?: boolean;
     }
   | {
