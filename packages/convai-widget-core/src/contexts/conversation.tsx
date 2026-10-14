@@ -35,6 +35,7 @@ import {
   isFinalDisconnect,
   isPersistentSessionRefused,
 } from "../utils/persistentSession";
+import { createSpeechReveal } from "../utils/speechReveal";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -81,6 +82,8 @@ export type TranscriptEntry =
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
       attachments?: MessageAttachment[];
+      visibleLength?: number;
+      speechInterrupted?: boolean;
     }
   | {
       type: "agent_tool_request";
@@ -492,6 +495,7 @@ function useConversationSetup() {
       firstMessageRichContentEntries(firstMessageRichContent.peek());
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
+    const speechReveal = createSpeechReveal(transcript);
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
@@ -648,6 +652,7 @@ function useConversationSetup() {
         if (!keepTranscript) isResumedSession.value = !!resume;
         // No greeting is sent on resume.
         receivedFirstMessageRef.current = !!resume;
+        speechReveal.reset();
         transcript.value = [
           ...(keepTranscript
             ? transcript.peek()
@@ -672,6 +677,7 @@ function useConversationSetup() {
             ...processedConfig,
             onModeChange: props => {
               mode.value = props.mode;
+              speechReveal.onModeChange(props.mode);
             },
             onStatusChange: props => {
               status.value = props.status;
@@ -740,22 +746,26 @@ function useConversationSetup() {
                     currentConversationIndex,
                     attachments
                   );
-                  return;
+                } else {
+                  transcript.value = finalizeAgentResponse(
+                    currentTranscript,
+                    agentResponseStateRef.current,
+                    response_id,
+                    message,
+                    event_id,
+                    isText,
+                    currentConversationIndex,
+                    attachments
+                  );
                 }
-
-                const responseState = agentResponseStateRef.current;
-                transcript.value = finalizeAgentResponse(
-                  currentTranscript,
-                  responseState,
-                  response_id,
-                  message,
-                  event_id,
-                  isText,
-                  currentConversationIndex,
-                  attachments
-                );
+                if (!isText) {
+                  speechReveal.onAgentMessage(event_id);
+                }
                 return;
               }
+
+              // The agent is done talking once the user has replied
+              speechReveal.finishAll();
 
               const currentTranscript = transcript.peek();
               transcript.value = [
@@ -851,6 +861,15 @@ function useConversationSetup() {
                 if (tracked) tracked.isStreaming = false;
               }
             },
+            onAudioAlignment: () => {
+              speechReveal.onAlignmentReceived();
+            },
+            onAudioAlignmentPlayback: ({ event_id, alignment }) => {
+              speechReveal.onAlignmentPlayback(event_id, alignment);
+            },
+            onInterruption: ({ event_id }) => {
+              speechReveal.onInterruption(event_id);
+            },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
               transcript.value = [
                 ...transcript.peek(),
@@ -930,6 +949,8 @@ function useConversationSetup() {
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               resetAgentResponseState();
+              speechReveal.finishAll();
+              speechReveal.reset();
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;

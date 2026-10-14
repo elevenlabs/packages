@@ -384,6 +384,13 @@ const codeBlock = true;
     strip_audio_tags: false,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  // Speaks a reply with aligned audio, so the transcript follows playback
+  aligned_voice: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+  },
   voice_markdown: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -551,6 +558,49 @@ export function persistentConversationIdFor(token: string | null) {
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
+}
+
+function silentAudio(durationMs: number) {
+  return btoa(String.fromCharCode(...new Uint8Array(durationMs * 32)));
+}
+
+function sendAlignedAudio(
+  client: { send(data: string): void },
+  eventId: number,
+  text: string,
+  durationMs: number
+) {
+  const chars = [...text];
+  client.send(
+    JSON.stringify({
+      type: "audio",
+      audio_event: {
+        audio_base_64: silentAudio(durationMs),
+        event_id: eventId,
+        alignment: {
+          chars,
+          char_start_times_ms: chars.map((_, index) => index * 10),
+          char_durations_ms: chars.map(() => 10),
+        },
+      },
+    })
+  );
+}
+
+function sendAlignedAgentTurn(client: { send(data: string): void }) {
+  const eventId = 4;
+  sendAlignedAudio(client, eventId, "Sure, ", 1500);
+  client.send(
+    JSON.stringify({
+      type: "agent_response",
+      agent_response_event: {
+        agent_response: "Sure, booking it now.",
+        event_id: eventId,
+        response_id: "aligned-response",
+      },
+    })
+  );
+  sendAlignedAudio(client, eventId, "booking it now.", 500);
 }
 
 async function sendStreamedAgentResponse(
@@ -883,6 +933,9 @@ export const Worker = setupWorker(
             },
           })
         );
+      }
+      if (agentId === "aligned_voice") {
+        sendAlignedAgentTurn(client);
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

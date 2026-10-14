@@ -780,6 +780,85 @@ describe("buildDisplayTranscript", () => {
 
       expect(result).toHaveLength(0);
     });
+
+    it("holds the row until a spoken first message has been said", () => {
+      const greeting = (visibleLength?: number) => ({
+        ...msg("agent", "Hello!", { eventId: 1, isText: false }),
+        visibleLength,
+      });
+      const config = { deferFirstMessageRichContent: true };
+
+      expect(build([firstMessageRow(), greeting(2)], config)).toEqual([
+        expect.objectContaining({ message: "He" }),
+      ]);
+
+      expect(build([firstMessageRow(), greeting(6)], config)).toEqual([
+        expect.objectContaining({ message: "Hello!" }),
+        expect.objectContaining({ richContentId: "first_message" }),
+      ]);
+    });
+  });
+
+  describe("voice messages being revealed with speech", () => {
+    function voice(
+      message: string,
+      visibleLength?: number,
+      opts: { speechInterrupted?: boolean } = {}
+    ) {
+      return {
+        ...msg("agent", message, { eventId: 2, isText: false }),
+        visibleLength,
+        ...opts,
+      };
+    }
+
+    it("keeps the tool status visible before anything is said", () => {
+      const result = build([voice("Let me check.", 0), toolReq(2)], {
+        showAgentStatus: true,
+      });
+      expect(result).toEqual([
+        expect.objectContaining({ message: "", toolStatus: "loading" }),
+      ]);
+    });
+
+    it("does not show an empty bubble for a later message not said yet", () => {
+      const result = build(
+        [
+          voice("Let me check.", 3),
+          toolReq(2),
+          toolRes(2),
+          voice("It is free.", 0),
+        ],
+        { showAgentStatus: true }
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Let", toolStatus: "success" }),
+      ]);
+    });
+
+    it("holds rich content until the text before it has been said", () => {
+      const input = [voice("Here are options.", 4), richContent()];
+      expect(build(input)).toEqual([
+        expect.objectContaining({ message: "Here" }),
+      ]);
+
+      const said = [voice("Here are options.", 17), richContent()];
+      expect(build(said)).toEqual([
+        expect.objectContaining({ message: "Here are options." }),
+        expect.objectContaining({ type: "rich_content" }),
+      ]);
+    });
+
+    it("shows rich content after an interrupted message", () => {
+      const result = build([
+        voice("Here are options.", 4, { speechInterrupted: true }),
+        richContent(),
+      ]);
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Here" }),
+        expect.objectContaining({ type: "rich_content" }),
+      ]);
+    });
   });
 
   describe("rich content", () => {
