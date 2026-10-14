@@ -11,7 +11,8 @@ const VOICE_STORAGE_KEY = `${STORAGE_KEY_PREFIX}persistent_session_voice`;
 function mountPersistentWidget(
   agentId:
     | "persistent_session"
-    | "persistent_session_disabled" = "persistent_session"
+    | "persistent_session_disabled"
+    | "persistent_session_terms" = "persistent_session"
 ) {
   return setupWebComponent({
     "agent-id": agentId,
@@ -24,6 +25,23 @@ async function typeMessage(text: string) {
   const textInput = page.getByRole("textbox", { name: "Text message input" });
   await textInput.fill(text);
   await userEvent.keyboard("{Enter}");
+}
+
+async function dropConnection() {
+  await typeMessage("drop the connection");
+  await expect
+    .element(page.getByRole("button", { name: "End chat" }), { timeout: 5000 })
+    .not.toBeInTheDocument();
+}
+
+function collapseWidget() {
+  document.dispatchEvent(
+    new CustomEvent("elevenlabs-agent:expand", {
+      detail: { action: "collapse" },
+      bubbles: true,
+      composed: true,
+    })
+  );
 }
 
 async function sendMessage(text: string) {
@@ -145,13 +163,7 @@ describe("Persistent sessions", () => {
   });
 
   it("does not ask for the terms again when resuming after a reload", async () => {
-    const mountWithTerms = () =>
-      setupWebComponent({
-        "agent-id": "persistent_session_terms",
-        "persistent-session": "true",
-        variant: "compact",
-      });
-    const firstMount = mountWithTerms();
+    const firstMount = mountPersistentWidget("persistent_session_terms");
     await typeMessage("Where is my parcel?");
     await expect.element(page.getByText("Test terms")).toBeInTheDocument();
     await page.getByRole("button", { name: "Accept" }).click();
@@ -160,14 +172,21 @@ describe("Persistent sessions", () => {
       .toBeInTheDocument();
 
     firstMount.remove();
-    mountWithTerms();
+    mountPersistentWidget("persistent_session_terms");
 
     await expect
       .element(page.getByText("You said: Where is my parcel?"))
       .toBeInTheDocument();
     expect(page.getByText("Test terms").all()).toHaveLength(0);
 
-    await sendMessage("Thanks");
+    // The launcher runs its own terms check before opening, so a resume must
+    // mark the terms accepted rather than only skip the prompt in startSession.
+    await dropConnection();
+    collapseWidget();
+    await page.getByRole("button", { name: "Message" }).click();
+    await expect
+      .element(page.getByRole("textbox", { name: "Text message input" }))
+      .toBeInTheDocument();
     expect(page.getByText("Test terms").all()).toHaveLength(0);
   });
 
@@ -236,12 +255,7 @@ describe("Persistent sessions", () => {
     await sendMessage("Where is my parcel?");
     const conversationId = storedConversationId();
 
-    await typeMessage("drop the connection");
-    await expect
-      .element(page.getByRole("button", { name: "End chat" }), {
-        timeout: 5000,
-      })
-      .not.toBeInTheDocument();
+    await dropConnection();
     assertConversationNotEnded();
 
     await sendMessage("Thanks");
@@ -336,12 +350,7 @@ describe("Persistent sessions", () => {
     });
     await sendMessage("Where is my parcel?");
 
-    await typeMessage("drop the connection");
-    await expect
-      .element(page.getByRole("button", { name: "End chat" }), {
-        timeout: 5000,
-      })
-      .not.toBeInTheDocument();
+    await dropConnection();
     expect(localStorage.getItem(VOICE_STORAGE_KEY)).not.toBeNull();
 
     await page.getByRole("button", { name: "Start a call" }).click();
