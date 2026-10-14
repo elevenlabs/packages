@@ -130,18 +130,17 @@ export function buildDisplayTranscript(
   const speakingEventIds = new Set<number>();
 
   for (const [entryIndex, rawEntry] of entries.entries()) {
-    // Show only what has been spoken of a voice message being revealed
     const entry =
-      rawEntry.type === "message" && rawEntry.revealedLength !== undefined
+      rawEntry.type === "message" && rawEntry.visibleLength !== undefined
         ? {
             ...rawEntry,
-            message: rawEntry.message.slice(0, rawEntry.revealedLength),
+            message: rawEntry.message.slice(0, rawEntry.visibleLength),
           }
         : rawEntry;
     if (
       rawEntry.type === "message" &&
-      rawEntry.revealedLength !== undefined &&
-      rawEntry.revealedLength < rawEntry.message.length &&
+      rawEntry.visibleLength !== undefined &&
+      rawEntry.visibleLength < rawEntry.message.length &&
       rawEntry.eventId != null &&
       !rawEntry.speechInterrupted
     ) {
@@ -158,7 +157,7 @@ export function buildDisplayTranscript(
 
     if (entry.type === "rich_content") {
       if (!config.showRichContent) continue;
-      // Wait until the agent has said what comes before the content
+      // Wait until the text before it has been said
       if (speakingEventIds.has(entry.eventId)) continue;
       const isAnswered = entryIndex < lastUserEntryIndex;
       if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
@@ -181,11 +180,10 @@ export function buildDisplayTranscript(
     )
       continue;
 
-    // A later message of the turn that is not said yet; the turn's tool
-    // status already shows on its first bubble
+    // Hide later messages of the turn until they are said
     if (
       entry.type === "message" &&
-      entry.revealedLength !== undefined &&
+      entry.visibleLength !== undefined &&
       !entry.message &&
       result.some(
         shown =>
@@ -232,7 +230,7 @@ export function buildDisplayTranscript(
       const firstMessageIndex = result.findIndex(
         entry => entry.type === "message" && entry.role === "agent"
       );
-      // Like other rich content, wait until the greeting has been said
+      // Wait until the greeting has been said
       const greetingSaid =
         richContent.type === "rich_content" &&
         !speakingEventIds.has(richContent.eventId);

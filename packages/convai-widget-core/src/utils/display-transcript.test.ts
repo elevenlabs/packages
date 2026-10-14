@@ -782,9 +782,9 @@ describe("buildDisplayTranscript", () => {
     });
 
     it("holds the row until a spoken first message has been said", () => {
-      const greeting = (revealedLength?: number) => ({
+      const greeting = (visibleLength?: number) => ({
         ...msg("agent", "Hello!", { eventId: 1, isText: false }),
-        revealedLength,
+        visibleLength,
       });
       const config = { deferFirstMessageRichContent: true };
 
@@ -802,12 +802,12 @@ describe("buildDisplayTranscript", () => {
   describe("voice messages being revealed with speech", () => {
     function voice(
       message: string,
-      revealedLength?: number,
+      visibleLength?: number,
       opts: { speechInterrupted?: boolean } = {}
     ) {
       return {
         ...msg("agent", message, { eventId: 2, isText: false }),
-        revealedLength,
+        visibleLength,
         ...opts,
       };
     }

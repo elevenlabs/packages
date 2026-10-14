@@ -1,11 +1,9 @@
 const WORD_PATTERN = /[\p{L}\p{N}]+/gu;
 
-// Characters that close the word before them, revealed along with it
+// Revealed along with the word before them
 const CLOSING_PATTERN = /[.,!?;:…*_~`'"’”)\]]/u;
 
-// How far ahead to look for a spoken word in the displayed text. Displayed
-// words that are never spoken (link URLs, unspoken audio tags) are skipped
-// over, as long as there are fewer of them than this.
+// Lets displayed words that are never spoken, like link URLs, be skipped
 const LOOKAHEAD_WORDS = 12;
 
 type Word = { text: string; start: number; end: number };
@@ -18,15 +16,7 @@ function toWords(text: string): Word[] {
   }));
 }
 
-/**
- * Returns how much of `display` has been said once `spoken` has been heard.
- *
- * `spoken` is the text from audio alignment, which can differ from the
- * displayed markdown: markdown syntax and link URLs are not spoken, and
- * numbers or symbols may be spelled out. Words are matched in order, ignoring
- * case and punctuation, and spoken words with no match nearby are ignored so
- * the reveal never runs ahead of the speech.
- */
+/** How much of `display` has been said, given the spoken alignment text. */
 export function spokenTextOffset(display: string, spoken: string): number {
   const displayWords = toWords(display);
   const spokenWords = toWords(spoken);
@@ -58,7 +48,7 @@ export function spokenTextOffset(display: string, spoken: string): number {
     while (
       offset < display.length &&
       CLOSING_PATTERN.test(display[offset]) &&
-      // Keep `[text](url)` hidden until the link can render as a whole
+      // Keep links hidden until they can render whole
       !(display[offset] === "]" && display[offset + 1] === "(")
     ) {
       offset++;

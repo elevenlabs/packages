@@ -3,8 +3,7 @@ import type { AudioAlignmentEvent, Mode } from "@elevenlabs/client";
 import type { TranscriptEntry } from "../contexts/conversation";
 import { spokenTextOffset } from "./spokenTextOffset";
 
-// After the agent stops speaking, wait this long before showing the rest of
-// a reveal that fell behind the speech, in case playback only briefly stalled
+// How long after speech stops to show the rest of a reveal that fell behind
 export const SETTLE_MS = 1000;
 // Show a message in full if none of its audio starts playing in this time
 export const PENDING_TIMEOUT_MS = 3000;
@@ -13,7 +12,7 @@ type Turn = {
   spoken: string;
   queue: { at: number; char: string }[];
   state: "pending" | "revealing" | "interrupted" | "done";
-  /** Revealed length across the turn's messages; it never shrinks */
+  /** Across the turn's messages; never shrinks */
   revealed: number;
   entryCount: number;
   /** Audio started for a message of the turn that has not arrived yet */
@@ -35,11 +34,7 @@ function isVoiceAgentMessage(
   );
 }
 
-/**
- * Reveals voice agent messages in step with their audio, using the
- * character alignment of each audio chunk as it starts playing. Until the
- * session receives any alignment, messages are shown in full.
- */
+/** Reveals voice agent messages in step with their audio as it plays. */
 export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
   let alignmentAvailable = false;
   let mode: Mode = "listening";
@@ -79,7 +74,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
     turn.pendingTimer = setTimeout(() => {
       turn.pendingTimer = undefined;
       if (turn.state !== "pending") return;
-      // Audio is still playing, possibly ahead of this turn's audio
+      // Earlier audio may still be playing
       if (mode === "speaking") {
         armPendingTimer(eventId, turn);
         return;
@@ -129,7 +124,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
     let updated: TranscriptEntry[] | null = null;
     for (const index of indices) {
       const entry = entries[index] as VoiceAgentMessage;
-      const revealedLength =
+      const visibleLength =
         remaining === undefined
           ? undefined
           : Math.min(remaining, entry.message.length);
@@ -137,11 +132,11 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
         remaining = Math.max(0, remaining - entry.message.length - 1);
       }
       if (
-        entry.revealedLength !== revealedLength ||
+        entry.visibleLength !== visibleLength ||
         entry.speechInterrupted !== speechInterrupted
       ) {
         updated ??= [...entries];
-        updated[index] = { ...entry, revealedLength, speechInterrupted };
+        updated[index] = { ...entry, visibleLength, speechInterrupted };
       }
     }
     if (updated) {
@@ -205,7 +200,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       alignmentAvailable = true;
       let turn = turns.get(eventId);
       if (!turn) {
-        // The message is already shown in full, so leave it be
+        // Already shown in full
         if (messageIndices(eventId).length > 0) {
           createTurn(eventId, "done");
           return;
@@ -214,8 +209,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
       if (turn.state === "interrupted") return;
       if (turn.state === "done") {
-        // Shown in full without a reveal; otherwise this is a later message
-        // of the turn whose audio started before it arrived
+        // Unless shown in full, a later message whose audio came first
         if (turn.entryCount === 0) return;
         turn.awaitingMessage = true;
       }
@@ -236,8 +230,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       if (!alignmentAvailable) return;
       const entryCount = messageIndices(eventId).length;
       const turn = turns.get(eventId) ?? createTurn(eventId, "pending");
-      // A new message for a turn whose earlier message was fully said, e.g.
-      // after a tool call
+      // A later message of the turn, e.g. after a tool call
       if (
         turn.state === "done" &&
         turn.entryCount > 0 &&
@@ -261,7 +254,6 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       settleTimer = mode === "listening" ? setTimeout(settle, SETTLE_MS) : null;
     },
 
-    /** Keeps only what was said of turns before the interruption. */
     onInterruption(eventId: number) {
       for (const [turnEventId, turn] of turns) {
         if (
@@ -276,7 +268,6 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
     },
 
-    /** Shows the rest of every turn that was not interrupted. */
     finishAll() {
       for (const [eventId, turn] of turns) {
         if (turn.state === "pending" || turn.state === "revealing") {
