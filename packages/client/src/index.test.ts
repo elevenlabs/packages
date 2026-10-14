@@ -449,6 +449,92 @@ describe("Conversation", () => {
   });
 });
 
+describe("Audio alignment playback", () => {
+  const ALIGNMENT = {
+    chars: ["H", "i"],
+    char_start_times_ms: [0, 50],
+    char_durations_ms: [50, 50],
+  };
+  // 100ms of silence at pcm_16000
+  const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
+
+  it("emits alignment when the aligned chunk starts playing, skipping interrupted audio", async () => {
+    const server = new Server("wss://api.elevenlabs.io/voice/alignment-test");
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const onAudioAlignment = vi.fn();
+    const onAudioAlignmentPlayback = vi.fn();
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/alignment-test",
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      onAudioAlignment,
+      onAudioAlignmentPlayback,
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+    const conversation = await conversationPromise;
+
+    const sendAudio = (eventId: number) =>
+      client.send(
+        JSON.stringify({
+          type: "audio",
+          audio_event: {
+            audio_base_64: SHORT_CHUNK,
+            event_id: eventId,
+            alignment: ALIGNMENT,
+          },
+        })
+      );
+
+    sendAudio(100);
+    // Fired on receipt, ahead of playback
+    expect(onAudioAlignment).toHaveBeenCalledWith(ALIGNMENT);
+    await vi.waitFor(() =>
+      expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
+        event_id: 100,
+        alignment: ALIGNMENT,
+      })
+    );
+
+    client.send(
+      JSON.stringify({
+        type: "interruption",
+        interruption_event: { event_id: 200 },
+      })
+    );
+    sendAudio(150);
+    await sleep(300);
+    expect(onAudioAlignment).toHaveBeenCalledTimes(2);
+    expect(onAudioAlignmentPlayback).toHaveBeenCalledTimes(1);
+
+    sendAudio(250);
+    await vi.waitFor(() =>
+      expect(onAudioAlignmentPlayback).toHaveBeenLastCalledWith({
+        event_id: 250,
+        alignment: ALIGNMENT,
+      })
+    );
+    expect(onAudioAlignmentPlayback).toHaveBeenCalledTimes(2);
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
 describe("Connection Types", () => {
   describe("ConnectionFactory", () => {
     it("throws error for unknown connection type", async () => {

@@ -5,7 +5,11 @@ import type {
   PlaybackListener,
 } from "./OutputController.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
-import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
+import type {
+  AgentAudioEvent,
+  AudioAlignmentEvent,
+  InterruptionEvent,
+} from "./utils/events.js";
 import {
   BaseConversation,
   type Options,
@@ -71,10 +75,27 @@ export class VoiceConversation extends BaseConversation {
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
 
   private handlePlaybackEvent: PlaybackListener = event => {
-    if (event.data.type === "process") {
-      this.updateMode(event.data.finished ? "listening" : "speaking");
+    switch (event.data.type) {
+      case "process":
+        this.updateMode(event.data.finished ? "listening" : "speaking");
+        break;
+      case "chunk_start":
+        this.emitAlignmentPlayback(event.data.event_id, event.data.alignment);
+        break;
     }
   };
+
+  private emitAlignmentPlayback(
+    eventId: number,
+    alignment: AudioAlignmentEvent
+  ) {
+    // Chunks queued before an interruption can still start while the
+    // output fades out; they are not heard, so skip them
+    if (eventId < this.lastInterruptTimestamp) {
+      return;
+    }
+    this.options.onAudioAlignmentPlayback?.({ event_id: eventId, alignment });
+  }
 
   protected constructor(
     options: Options,
@@ -116,6 +137,15 @@ export class VoiceConversation extends BaseConversation {
         this.options.onAudio?.(event.audio_event.audio_base_64);
         // Audio routing is handled by attachConnectionToOutput for WebSocket
         // WebRTC handles audio playback directly through LiveKit tracks
+      }
+
+      // Without a playback event target (WebRTC), the output reports no
+      // playback progress, so fall back to receipt time
+      if (!this.playbackEventTarget && event.audio_event.alignment) {
+        this.emitAlignmentPlayback(
+          event.audio_event.event_id,
+          event.audio_event.alignment
+        );
       }
 
       this.currentEventId = event.audio_event.event_id;

@@ -29,6 +29,15 @@ export type Role = "user" | "agent";
 export type AudioAlignmentEvent = AudioEventAlignment;
 
 /**
+ * Character alignment for an audio chunk, emitted when that chunk starts
+ * playing. `alignment` timings are relative to the moment of the event.
+ */
+export type AudioAlignmentPlaybackEvent = {
+  event_id: number;
+  alignment: AudioAlignmentEvent;
+};
+
+/**
  * Current mode of the conversation
  */
 export type Mode = "speaking" | "listening";
@@ -206,7 +215,20 @@ export type Callbacks = {
    */
   onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
+  /**
+   * Called as soon as an audio chunk with character alignment is received,
+   * which is usually ahead of playback. Use {@link onAudioAlignmentPlayback}
+   * to sync with what is being heard.
+   */
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
+  /**
+   * Called when an audio chunk with character alignment starts playing.
+   * Not called for chunks discarded by an interruption.
+   *
+   * On WebRTC connections audio is played by LiveKit, so this is called
+   * when the chunk is received and timing is approximate.
+   */
+  onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;
   onExternalAgentDisconnected?: () => void;
@@ -270,6 +292,7 @@ export const CALLBACK_KEYS = [
   "onAgentReasoningResponsePart",
   "onRichContent",
   "onAudioAlignment",
+  "onAudioAlignmentPlayback",
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",

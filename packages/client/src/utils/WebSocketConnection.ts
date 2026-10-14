@@ -281,9 +281,11 @@ export class WebSocketConnection
 
     // Emit audio events to output listeners
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
-      const audioEvent = {
-        audio_base_64: parsedEvent.audio_event.audio_base_64,
-      };
+      const { audio_base_64, event_id, alignment } = parsedEvent.audio_event;
+      const audioEvent: OutputAudioEvent = { audio_base_64, event_id };
+      if (alignment) {
+        audioEvent.alignment = alignment;
+      }
       if (this.outputListeners.size === 0) {
         this.pendingAudioEvents.push(audioEvent);
         return;
