@@ -144,6 +144,33 @@ describe("Persistent sessions", () => {
     expect(localStorage.getItem(STORAGE_KEY)).toMatch(/^persistent-token-/);
   });
 
+  it("does not ask for the terms again when resuming after a reload", async () => {
+    const mountWithTerms = () =>
+      setupWebComponent({
+        "agent-id": "persistent_session_terms",
+        "persistent-session": "true",
+        variant: "compact",
+      });
+    const firstMount = mountWithTerms();
+    await typeMessage("Where is my parcel?");
+    await expect.element(page.getByText("Test terms")).toBeInTheDocument();
+    await page.getByRole("button", { name: "Accept" }).click();
+    await expect
+      .element(page.getByText("You said: Where is my parcel?"))
+      .toBeInTheDocument();
+
+    firstMount.remove();
+    mountWithTerms();
+
+    await expect
+      .element(page.getByText("You said: Where is my parcel?"))
+      .toBeInTheDocument();
+    expect(page.getByText("Test terms").all()).toHaveLength(0);
+
+    await sendMessage("Thanks");
+    expect(page.getByText("Test terms").all()).toHaveLength(0);
+  });
+
   it("reopens the chat after a reload when a conversation is in progress", async () => {
     const collapsedWidget = {
       "agent-id": "persistent_session",
