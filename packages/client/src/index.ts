@@ -42,6 +42,7 @@ export type {
   PingEvent,
   ContextUsageEvent,
   AudioAlignmentEvent,
+  AudioAlignmentPlaybackEvent,
 } from "./utils/events.js";
 export type {
   SessionConfig,

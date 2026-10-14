@@ -3,6 +3,7 @@ import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import type {
+  OutputChunkMetadata,
   OutputController,
   OutputDeviceConfig,
   OutputConfig,
@@ -191,7 +192,7 @@ export class MediaDeviceOutput
     this.gain.gain.value = volume;
   }
 
-  public playAudio(chunk: ArrayBuffer): void {
+  public playAudio(chunk: ArrayBuffer, metadata?: OutputChunkMetadata): void {
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
     if (this.interruptTimeout) {
@@ -199,7 +200,7 @@ export class MediaDeviceOutput
       this.interruptTimeout = null;
     }
     this.worklet.port.postMessage({ type: "clearInterrupted" });
-    this.worklet.port.postMessage({ type: "buffer", buffer: chunk });
+    this.worklet.port.postMessage({ type: "buffer", buffer: chunk, metadata });
   }
 
   public interrupt(resetDuration = 2000): void {
