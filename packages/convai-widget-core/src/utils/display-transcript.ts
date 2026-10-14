@@ -127,7 +127,27 @@ export function buildDisplayTranscript(
     }
   });
 
-  for (const [entryIndex, entry] of entries.entries()) {
+  const speakingEventIds = new Set<number>();
+
+  for (const [entryIndex, rawEntry] of entries.entries()) {
+    // Show only what has been spoken of a voice message being revealed
+    const entry =
+      rawEntry.type === "message" && rawEntry.revealedLength !== undefined
+        ? {
+            ...rawEntry,
+            message: rawEntry.message.slice(0, rawEntry.revealedLength),
+          }
+        : rawEntry;
+    if (
+      rawEntry.type === "message" &&
+      rawEntry.revealedLength !== undefined &&
+      rawEntry.revealedLength < rawEntry.message.length &&
+      rawEntry.eventId != null &&
+      !rawEntry.speechInterrupted
+    ) {
+      speakingEventIds.add(rawEntry.eventId);
+    }
+
     // Skip tool entries (consumed into status)
     if (
       entry.type === "agent_tool_request" ||
@@ -138,6 +158,8 @@ export function buildDisplayTranscript(
 
     if (entry.type === "rich_content") {
       if (!config.showRichContent) continue;
+      // Wait until the agent has said what comes before the content
+      if (speakingEventIds.has(entry.eventId)) continue;
       const isAnswered = entryIndex < lastUserEntryIndex;
       if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
       result.push({ ...entry, isAnswered });
@@ -155,6 +177,21 @@ export function buildDisplayTranscript(
         config.showAgentStatus &&
         entry.eventId != null &&
         toolStatuses.has(entry.eventId)
+      )
+    )
+      continue;
+
+    // A later message of the turn that is not said yet; the turn's tool
+    // status already shows on its first bubble
+    if (
+      entry.type === "message" &&
+      entry.revealedLength !== undefined &&
+      !entry.message &&
+      result.some(
+        shown =>
+          shown.type === "message" &&
+          shown.role === "agent" &&
+          shown.eventId === entry.eventId
       )
     )
       continue;
@@ -195,7 +232,11 @@ export function buildDisplayTranscript(
       const firstMessageIndex = result.findIndex(
         entry => entry.type === "message" && entry.role === "agent"
       );
-      if (firstMessageIndex !== -1) {
+      // Like other rich content, wait until the greeting has been said
+      const greetingSaid =
+        richContent.type === "rich_content" &&
+        !speakingEventIds.has(richContent.eventId);
+      if (firstMessageIndex !== -1 && greetingSaid) {
         result.splice(firstMessageIndex + 1, 0, richContent);
       }
     }

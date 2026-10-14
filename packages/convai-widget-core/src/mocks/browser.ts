@@ -384,6 +384,20 @@ const codeBlock = true;
     strip_audio_tags: false,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  // Speaks a reply with aligned audio, so the transcript follows playback
+  aligned_voice: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+  },
+  // Like aligned_voice, but the user interrupts partway through the reply
+  aligned_voice_interrupted: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    default_expanded: true,
+    terms_html: undefined,
+  },
   voice_markdown: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -551,6 +565,66 @@ export function persistentConversationIdFor(token: string | null) {
 
 function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
+}
+
+/** Base64 PCM 16kHz silence lasting `durationMs`. */
+function silentAudio(durationMs: number) {
+  return btoa(String.fromCharCode(...new Uint8Array(durationMs * 32)));
+}
+
+function sendAlignedAudio(
+  client: { send(data: string): void },
+  eventId: number,
+  text: string,
+  durationMs: number
+) {
+  const chars = [...text];
+  client.send(
+    JSON.stringify({
+      type: "audio",
+      audio_event: {
+        audio_base_64: silentAudio(durationMs),
+        event_id: eventId,
+        alignment: {
+          chars,
+          char_start_times_ms: chars.map((_, index) => index * 10),
+          char_durations_ms: chars.map(() => 10),
+        },
+      },
+    })
+  );
+}
+
+/**
+ * Sends an agent turn as two aligned audio chunks: "Sure, " plays for 1.5s,
+ * then "booking it now."
+ */
+async function sendAlignedAgentTurn(
+  client: { send(data: string): void },
+  interrupt: boolean
+) {
+  const eventId = 4;
+  sendAlignedAudio(client, eventId, "Sure, ", 1500);
+  client.send(
+    JSON.stringify({
+      type: "agent_response",
+      agent_response_event: {
+        agent_response: "Sure, booking it now.",
+        event_id: eventId,
+        response_id: "aligned-response",
+      },
+    })
+  );
+  sendAlignedAudio(client, eventId, "booking it now.", 500);
+  if (interrupt) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    client.send(
+      JSON.stringify({
+        type: "interruption",
+        interruption_event: { event_id: eventId + 1 },
+      })
+    );
+  }
 }
 
 async function sendStreamedAgentResponse(
@@ -882,6 +956,15 @@ export const Worker = setupWorker(
               event_id: 3,
             },
           })
+        );
+      }
+      if (
+        agentId === "aligned_voice" ||
+        agentId === "aligned_voice_interrupted"
+      ) {
+        await sendAlignedAgentTurn(
+          client,
+          agentId === "aligned_voice_interrupted"
         );
       }
       if (agentId === "fail") {
