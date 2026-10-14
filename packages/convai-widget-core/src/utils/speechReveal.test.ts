@@ -181,6 +181,36 @@ describe("createSpeechReveal", () => {
     expect(shown()).toEqual(["Let me check.", "It is"]);
   });
 
+  it("reveals a second message of the turn whose audio started before it arrived", () => {
+    reveal.onAlignmentReceived();
+    addMessage("Let me check.");
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("Let me check. "));
+    vi.advanceTimersByTime(200);
+
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("It is available."));
+    vi.advanceTimersByTime(50);
+    addMessage("It is available.");
+    expect(shown()).toEqual(["Let me check.", "It is"]);
+
+    vi.advanceTimersByTime(100);
+    expect(shown()).toEqual(["Let me check.", "It is available."]);
+  });
+
+  it("keeps only what was said of a second message interrupted before it arrived", () => {
+    reveal.onAlignmentReceived();
+    addMessage("Let me check.");
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("Let me check. "));
+    vi.advanceTimersByTime(200);
+
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("It is available."));
+    vi.advanceTimersByTime(50);
+    reveal.onInterruption(EVENT_ID + 1);
+    addMessage("It is available.");
+    vi.advanceTimersByTime(PENDING_TIMEOUT_MS + SETTLE_MS);
+
+    expect(shown()).toEqual(["Let me check.", "It is"]);
+  });
+
   it("does not hide a message already shown in full when its audio starts", () => {
     addMessage("Hello there.");
     reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("Hello there."));
