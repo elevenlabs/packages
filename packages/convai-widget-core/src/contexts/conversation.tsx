@@ -787,10 +787,12 @@ function useConversationSetup() {
               event_id,
               response_id,
             }) => {
-              // Voice conversations render `agent_response` transcripts only.
-              if (conversationTextOnly.peek() !== true) return;
-
-              if (firstMessage.peek() && !receivedFirstMessageRef.current) {
+              const isText = conversationTextOnly.peek() === true;
+              if (
+                isText &&
+                firstMessage.peek() &&
+                !receivedFirstMessageRef.current
+              ) {
                 // Ignore the opening frame of the configured first-message
                 // stream, then allow the actual reply stream through.
                 receivedFirstMessageRef.current = true;
@@ -799,7 +801,6 @@ function useConversationSetup() {
               setAgentTyping(false);
 
               const currentTranscript = transcript.peek();
-              const isText = conversationTextOnly.peek() === true;
               const currentConversationIndex = conversationIndex.peek();
               if (response_id == null) {
                 const legacyState = legacyAgentResponseStateRef.current;
@@ -830,6 +831,8 @@ function useConversationSetup() {
                 ) {
                   legacyState.active = null;
                 }
+                if (!isText && type !== "stop")
+                  speechReveal.onAgentStream(event_id);
                 return;
               }
 
@@ -860,6 +863,8 @@ function useConversationSetup() {
                 const tracked = responseState.get(response_id);
                 if (tracked) tracked.isStreaming = false;
               }
+              if (!isText && type !== "stop")
+                speechReveal.onAgentStream(event_id);
             },
             onAudioAlignment: () => {
               speechReveal.onAlignmentReceived();

@@ -15,7 +15,7 @@ type Turn = {
   /** Across the turn's messages; never shrinks */
   revealed: number;
   entryCount: number;
-  /** Audio started for a message of the turn that has not arrived yet */
+  /** A message of the turn is still streaming or has not arrived yet */
   awaitingMessage: boolean;
   pendingTimer?: ReturnType<typeof setTimeout>;
 };
@@ -81,6 +81,21 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
       finish(eventId, turn);
     }, PENDING_TIMEOUT_MS);
+  };
+
+  const track = (eventId: number) => {
+    const entryCount = messageIndices(eventId).length;
+    const turn = turns.get(eventId) ?? createTurn(eventId, "pending");
+    // A later message of the turn, e.g. after a tool call
+    if (
+      turn.state === "done" &&
+      turn.entryCount > 0 &&
+      entryCount > turn.entryCount
+    ) {
+      turn.state = "pending";
+    }
+    turn.entryCount = entryCount;
+    return turn;
   };
 
   const finish = (eventId: number, turn: Turn) => {
@@ -233,22 +248,21 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       scheduleTick();
     },
 
+    /** Keeps streamed text hidden until it is spoken or finalized. */
+    onAgentStream(eventId: number) {
+      const turn = track(eventId);
+      turn.awaitingMessage = true;
+      apply(eventId);
+    },
+
     onAgentMessage(eventId: number) {
-      if (!alignmentAvailable) return;
-      const entryCount = messageIndices(eventId).length;
-      const turn = turns.get(eventId) ?? createTurn(eventId, "pending");
-      // A later message of the turn, e.g. after a tool call
-      if (
-        turn.state === "done" &&
-        turn.entryCount > 0 &&
-        entryCount > turn.entryCount
-      ) {
-        turn.state = "pending";
+      if (!alignmentAvailable) {
+        const streamed = turns.get(eventId);
+        if (streamed) finish(eventId, streamed);
+        return;
       }
-      if (entryCount > turn.entryCount) {
-        turn.awaitingMessage = false;
-      }
-      turn.entryCount = entryCount;
+      const turn = track(eventId);
+      turn.awaitingMessage = false;
       if (turn.state === "pending" && !turn.pendingTimer) {
         armPendingTimer(eventId, turn);
       }
@@ -277,6 +291,8 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
 
     finishAll() {
       for (const [eventId, turn] of turns) {
+        // Streamed text that was never spoken or finalized stays hidden
+        if (turn.state === "pending" && turn.awaitingMessage) continue;
         if (turn.state === "pending" || turn.state === "revealing") {
           finish(eventId, turn);
         }

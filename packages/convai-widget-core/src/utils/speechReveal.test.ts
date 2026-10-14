@@ -50,6 +50,11 @@ describe("createSpeechReveal", () => {
     reveal.onAgentMessage(eventId);
   };
 
+  const streamMessage = (message: string) => {
+    transcript.value = [...transcript.value, agentMessage(message)];
+    reveal.onAgentStream(EVENT_ID);
+  };
+
   beforeEach(() => {
     vi.useFakeTimers();
     transcript = signal<TranscriptEntry[]>([]);
@@ -86,6 +91,35 @@ describe("createSpeechReveal", () => {
 
     addMessage("Hello there.");
     expect(shown()).toEqual(["Hello"]);
+  });
+
+  it("reveals streamed text as its audio plays, before the final message", () => {
+    streamMessage("Hello there.");
+    expect(shown()).toEqual([]);
+
+    reveal.onAlignmentReceived();
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("Hello there."));
+    vi.advanceTimersByTime(50);
+    expect(shown()).toEqual(["Hello"]);
+
+    reveal.onAgentMessage(EVENT_ID);
+    vi.advanceTimersByTime(70);
+    expect(shown()).toEqual(["Hello there."]);
+  });
+
+  it("keeps streamed text hidden if it is never spoken or finalized", () => {
+    streamMessage("This draft was never spoken.");
+    reveal.finishAll();
+    vi.advanceTimersByTime(PENDING_TIMEOUT_MS);
+
+    expect(shown()).toEqual([]);
+  });
+
+  it("shows streamed text in full once finalized without alignment", () => {
+    streamMessage("Hello there.");
+    reveal.onAgentMessage(EVENT_ID);
+
+    expect(shown()).toEqual(["Hello there."]);
   });
 
   it("shows the rest of a chunk once the next one starts playing", () => {

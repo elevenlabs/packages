@@ -587,14 +587,24 @@ function sendAlignedAudio(
   );
 }
 
-function sendAlignedAgentTurn(client: { send(data: string): void }) {
+async function sendAlignedAgentTurn(client: { send(data: string): void }) {
   const eventId = 4;
+  const message = "Sure, booking it now.";
+  // Text streams ahead of the audio and the final response arrives late
+  await sendStreamedAgentResponse(
+    client,
+    message,
+    eventId,
+    "aligned-response",
+    false
+  );
   sendAlignedAudio(client, eventId, "Sure, ", 1500);
+  await new Promise(resolve => setTimeout(resolve, 1200));
   client.send(
     JSON.stringify({
       type: "agent_response",
       agent_response_event: {
-        agent_response: "Sure, booking it now.",
+        agent_response: message,
         event_id: eventId,
         response_id: "aligned-response",
       },
@@ -935,7 +945,7 @@ export const Worker = setupWorker(
         );
       }
       if (agentId === "aligned_voice") {
-        sendAlignedAgentTurn(client);
+        await sendAlignedAgentTurn(client);
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

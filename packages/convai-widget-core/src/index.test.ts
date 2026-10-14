@@ -1201,9 +1201,9 @@ describe("elevenlabs-convai", () => {
 
       await page.getByRole("button", { name: "Start a call" }).click();
 
-      // The first chunk says "Sure, " and plays for 1.5s
+      // Revealed from the streamed text, before the final response at 1.2s
       await expect
-        .element(page.getByText("Sure,", { exact: true }))
+        .element(page.getByText("Sure,", { exact: true }), { timeout: 1000 })
         .toBeInTheDocument();
       expect(page.getByText(/booking/).query()).toBeNull();
 
