@@ -466,6 +466,12 @@ const codeBlock = true;
     text_only: false,
     supports_text_only: true,
   },
+  // No terms_key, so acceptance only lives in memory and a reload would ask
+  // again.
+  persistent_session_terms: {
+    ...PERSISTENT_SESSION_AGENT,
+    terms_html: "Test terms",
+  },
   agent_attachments: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -740,7 +746,8 @@ export const Worker = setupWorker(
       if (
         agentId === "persistent_session" ||
         agentId === "persistent_session_disabled" ||
-        agentId === "persistent_session_voice"
+        agentId === "persistent_session_voice" ||
+        agentId === "persistent_session_terms"
       ) {
         const rows = persistentConversation?.rows;
         // Event ids restart on every segment, like the backend does today, so
@@ -847,6 +854,7 @@ export const Worker = setupWorker(
         agentId !== "persistent_session" &&
         agentId !== "persistent_session_disabled" &&
         agentId !== "persistent_session_voice" &&
+        agentId !== "persistent_session_terms" &&
         agentId !== "agent_attachments"
       ) {
         const agentResponse =
