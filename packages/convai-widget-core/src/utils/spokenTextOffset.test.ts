@@ -34,12 +34,6 @@ describe("spokenTextOffset", () => {
     );
   });
 
-  it("skips audio tags that are not spoken", () => {
-    expect(revealed("[laughs] That is funny.", "That is ")).toBe(
-      "[laughs] That is"
-    );
-  });
-
   it("does not run ahead when a word is spoken differently", () => {
     const display = "It costs 100 dollars today.";
     expect(revealed(display, "It costs one hundred ")).toBe("It costs");

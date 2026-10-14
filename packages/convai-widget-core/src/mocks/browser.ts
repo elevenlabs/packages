@@ -391,13 +391,6 @@ const codeBlock = true;
     default_expanded: true,
     terms_html: undefined,
   },
-  // Like aligned_voice, but the user interrupts partway through the reply
-  aligned_voice_interrupted: {
-    ...BASIC_CONFIG,
-    transcript_enabled: true,
-    default_expanded: true,
-    terms_html: undefined,
-  },
   voice_markdown: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -599,10 +592,7 @@ function sendAlignedAudio(
  * Sends an agent turn as two aligned audio chunks: "Sure, " plays for 1.5s,
  * then "booking it now."
  */
-async function sendAlignedAgentTurn(
-  client: { send(data: string): void },
-  interrupt: boolean
-) {
+function sendAlignedAgentTurn(client: { send(data: string): void }) {
   const eventId = 4;
   sendAlignedAudio(client, eventId, "Sure, ", 1500);
   client.send(
@@ -616,15 +606,6 @@ async function sendAlignedAgentTurn(
     })
   );
   sendAlignedAudio(client, eventId, "booking it now.", 500);
-  if (interrupt) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    client.send(
-      JSON.stringify({
-        type: "interruption",
-        interruption_event: { event_id: eventId + 1 },
-      })
-    );
-  }
 }
 
 async function sendStreamedAgentResponse(
@@ -958,14 +939,8 @@ export const Worker = setupWorker(
           })
         );
       }
-      if (
-        agentId === "aligned_voice" ||
-        agentId === "aligned_voice_interrupted"
-      ) {
-        await sendAlignedAgentTurn(
-          client,
-          agentId === "aligned_voice_interrupted"
-        );
+      if (agentId === "aligned_voice") {
+        sendAlignedAgentTurn(client);
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

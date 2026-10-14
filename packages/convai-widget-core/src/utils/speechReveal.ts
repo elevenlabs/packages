@@ -37,11 +37,8 @@ function isVoiceAgentMessage(
 
 /**
  * Reveals voice agent messages in step with their audio, using the
- * character alignment of each audio chunk as it starts playing.
- *
- * Messages keep their full text; this sets `revealedLength` on transcript
- * entries, which is cleared once a message is fully revealed. Until the
- * session has received any alignment, messages are shown in full as before.
+ * character alignment of each audio chunk as it starts playing. Until the
+ * session receives any alignment, messages are shown in full.
  */
 export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
   let alignmentAvailable = false;
@@ -217,10 +214,9 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
       if (turn.state === "interrupted") return;
       if (turn.state === "done") {
-        // Shown in full without being revealed
+        // Shown in full without a reveal; otherwise this is a later message
+        // of the turn whose audio started before it arrived
         if (turn.entryCount === 0) return;
-        // A later message of the turn, e.g. after a tool call, whose audio
-        // started before it arrived
         turn.awaitingMessage = true;
       }
 

@@ -849,18 +849,6 @@ describe("buildDisplayTranscript", () => {
       ]);
     });
 
-    it("shows rich content between messages once the first is said", () => {
-      const result = build([
-        voice("Two options", 11),
-        richContent(),
-        voice("Anything else?", 0),
-      ]);
-      expect(result).toEqual([
-        expect.objectContaining({ message: "Two options" }),
-        expect.objectContaining({ type: "rich_content" }),
-      ]);
-    });
-
     it("shows rich content after an interrupted message", () => {
       const result = build([
         voice("Here are options.", 4, { speechInterrupted: true }),

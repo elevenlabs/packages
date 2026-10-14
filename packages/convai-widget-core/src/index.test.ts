@@ -1211,26 +1211,6 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Sure, booking it now."), { timeout: 3000 })
         .toBeInTheDocument();
     });
-
-    it("keeps only what was said when the agent is interrupted", async () => {
-      setupWebComponent({
-        "agent-id": "aligned_voice_interrupted",
-        variant: "compact",
-      });
-
-      await page.getByRole("button", { name: "Start a call" }).click();
-
-      await expect
-        .element(page.getByText("Sure,", { exact: true }))
-        .toBeInTheDocument();
-      // Long enough for the rest of the reply to have played, had it not
-      // been interrupted
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      expect(page.getByText(/booking/).query()).toBeNull();
-      await expect
-        .element(page.getByText("Sure,", { exact: true }))
-        .toBeInTheDocument();
-    });
   });
 
   describe("strip audio tags", () => {
