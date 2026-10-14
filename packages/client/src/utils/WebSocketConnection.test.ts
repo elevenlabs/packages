@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebSocketConnection } from "./WebSocketConnection.js";
 import type { PongEvent } from "./events.js";
+import type { SessionConfig } from "./BaseConnection.js";
 
 type EventHandler = (event: any) => void;
 
@@ -38,22 +39,26 @@ describe("WebSocketConnection", () => {
     }
   }
 
-  async function createConnection(): Promise<WebSocketConnection> {
-    const promise = WebSocketConnection.create({
+  const defaultMetadata = {
+    conversation_id: "test-conv-id",
+    agent_output_audio_format: "pcm_16000",
+    user_input_audio_format: "pcm_16000",
+  };
+
+  async function createConnection(
+    config: SessionConfig = {
       agentId: "test-agent",
       connectionType: "websocket",
-    });
+    }
+  ): Promise<WebSocketConnection> {
+    const promise = WebSocketConnection.create(config);
 
     // Simulate the WebSocket handshake: open → config message
     emit("open", {});
     emit("message", {
       data: JSON.stringify({
         type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: {
-          conversation_id: "test-conv-id",
-          agent_output_audio_format: "pcm_16000",
-          user_input_audio_format: "pcm_16000",
-        },
+        conversation_initiation_metadata_event: defaultMetadata,
       }),
     });
 
@@ -102,6 +107,46 @@ describe("WebSocketConnection", () => {
       expect(first.type).toBe("enclave_setup_config");
       expect(first.agent_config_dict).toEqual({ name: "test-agent" });
       expect(second.type).toBe("conversation_initiation_client_data");
+    });
+  });
+
+  it("adds the persistent session params to the URL", async () => {
+    await createConnection({
+      agentId: "test-agent",
+      connectionType: "websocket",
+      persistentSession: { token: "tok/with+chars" },
+    });
+
+    const [url] = vi.mocked(globalThis.WebSocket).mock.calls[0] as [string];
+    const params = new URL(url).searchParams;
+    expect(params.get("is_persistent")).toBe("true");
+    expect(params.get("persistent_session_token")).toBe("tok/with+chars");
+  });
+
+  it("sends is_persistent without a token for a new persistent session", async () => {
+    await createConnection({
+      agentId: "test-agent",
+      connectionType: "websocket",
+      persistentSession: true,
+    });
+
+    const [url] = vi.mocked(globalThis.WebSocket).mock.calls[0] as [string];
+    const params = new URL(url).searchParams;
+    expect(params.get("is_persistent")).toBe("true");
+    expect(params.has("persistent_session_token")).toBe(false);
+  });
+
+  it("re-emits the initiation metadata to message subscribers", async () => {
+    const connection = await createConnection();
+
+    const onMessage = vi.fn();
+    connection.onMessage(onMessage);
+    await new Promise(resolve => queueMicrotask(() => resolve(undefined)));
+
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onMessage.mock.calls[0][0]).toEqual({
+      type: "conversation_initiation_metadata",
+      conversation_initiation_metadata_event: defaultMetadata,
     });
   });
 

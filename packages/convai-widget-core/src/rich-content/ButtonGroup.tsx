@@ -44,6 +44,7 @@ export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
             variant="outline"
             href={button.link}
             truncate={false}
+            className="min-h-8 py-1 px-1.5"
           >
             {button.label}
           </Button>
@@ -52,6 +53,7 @@ export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
             key={index}
             variant="outline"
             truncate={false}
+            className="min-h-8 py-1 px-1.5"
             disabled={disabled}
             onClick={e => {
               const attribution = { richContentId };

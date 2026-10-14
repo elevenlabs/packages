@@ -8,7 +8,8 @@ import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useConversationMode } from "../contexts/conversation-mode";
 
 function userCurrentLabel(compact: boolean) {
-  const { status, isSpeaking, isWaitingForAgent } = useConversation();
+  const { status, isSpeaking, isWaitingForAgent, isResuming } =
+    useConversation();
   const textOnly = useIsConversationTextOnly();
   const { isTextMode } = useConversationMode();
   const text = useTextContents();
@@ -26,7 +27,9 @@ function userCurrentLabel(compact: boolean) {
 
     if (status.value !== "connected")
       return {
-        label: text.connecting_status.value,
+        label: isResuming.value
+          ? text.reconnecting_status.value
+          : text.connecting_status.value,
         updateImmediately: true,
       };
 

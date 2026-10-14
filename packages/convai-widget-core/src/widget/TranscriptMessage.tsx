@@ -364,7 +364,7 @@ function RichContentMessage({
   entry: Extract<DisplayTranscriptEntry, { type: "rich_content" }>;
 }) {
   return (
-    <div className="pe-8">
+    <div className="pe-8 -mt-3">
       <RichContentRenderer
         component={entry.component}
         props={entry.props}

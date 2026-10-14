@@ -1,5 +1,16 @@
 # @elevenlabs/react
 
+## 1.18.0
+
+### Minor Changes
+
+- bac5c96: Forward the experimental `onConversationHistory` callback to `@elevenlabs/client`.
+
+### Patch Changes
+
+- Updated dependencies [bac5c96]
+  - @elevenlabs/client@1.28.0
+
 ## 1.17.0
 
 ### Minor Changes

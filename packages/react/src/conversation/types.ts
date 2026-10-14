@@ -36,6 +36,7 @@ export type HookCallbacks = Pick<
   | "onAgentToolResponse"
   | "onAgentToolRequest"
   | "onConversationMetadata"
+  | "onConversationHistory"
   | "onMCPToolCall"
   | "onMCPConnectionStatus"
   | "onAsrInitiationMetadata"

@@ -62,6 +62,7 @@ export const CustomAttributeList = [
   "end-confirmation",
   "show-language-selector-on-trigger",
   "environment",
+  "persistent-session",
 ] as const;
 
 export type CustomAttributes = {

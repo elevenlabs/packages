@@ -29,6 +29,12 @@ import {
 import type { FirstMessageRichContent } from "../types/config";
 import { ConversationMode } from "./conversation-mode";
 import { useShadowHost } from "./shadow-host";
+import {
+  configurePersistentSession,
+  createStoredSession,
+  isFinalDisconnect,
+  isPersistentSessionRefused,
+} from "../utils/persistentSession";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -411,7 +417,7 @@ export function ConversationProvider({ children }: ConversationProviderProps) {
       value.transcript.value;
       const id = setTimeout(
         () => {
-          value.endSession();
+          value.disconnectSession();
         },
         10 * 60 * 1000 // 10 minutes
       );
@@ -517,7 +523,16 @@ function useConversationSetup() {
       legacyAgentResponseStateRef.current = createLegacyAgentResponseState();
     };
 
-    return {
+    // Stays set after a disconnect so the replayed transcript keeps hiding
+    // the locally rendered greeting until the next fresh start.
+    const isResumedSession = signal(false);
+    const isResuming = signal(false);
+    const storedSession = createStoredSession(config);
+    // Set once the workspace refuses persistent sessions, so later starts in
+    // this widget instance skip the refused handshake.
+    let persistenceUnavailable = false;
+
+    const value = {
       status,
       isSpeaking,
       mode,
@@ -532,11 +547,20 @@ function useConversationSetup() {
       isExternalAgentMode,
       queueStatus,
       isWaitingForAgent,
+      isResumedSession,
+      isResuming,
+      hasStoredSession: storedSession.hasStoredSession,
       startSession: async (
-        element: HTMLElement,
+        element: HTMLElement | null,
         initialMessage?: string,
-        initialMessageOptions?: SendUserMessageOptions
-      ) => {
+        initialMessageOptions?: SendUserMessageOptions,
+        resumeToken?: string
+      ): Promise<string | undefined> => {
+        // A message typed after a disconnect continues the stored text
+        // conversation instead of opening a second one. Starting a voice
+        // call is a new conversation, so it never resumes.
+        const resume =
+          resumeToken ?? (initialMessage ? storedSession.read() : null);
         await terms.requestTerms();
 
         if (conversationRef.current?.isOpen()) {
@@ -544,6 +568,11 @@ function useConversationSetup() {
         }
 
         if (lockRef.current) {
+          // A message typed while a connect is in flight rides on that
+          // connection instead of being dropped.
+          if (initialMessage) {
+            value.sendUserMessage(initialMessage, initialMessageOptions);
+          }
           const conversation = await lockRef.current;
           return conversation.getId();
         }
@@ -554,14 +583,30 @@ function useConversationSetup() {
         }
 
         // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode.
-        if (initialMessage && widgetConfig.value.supports_text_only) {
+        // agent supports it, switch to text-only mode. Persistent sessions are
+        // text only, so a resume does the same.
+        if (
+          (initialMessage && widgetConfig.value.supports_text_only) ||
+          resume
+        ) {
           processedConfig.textOnly = true;
           if (!widgetConfig.value.text_only) {
             processedConfig.overrides ??= {};
             processedConfig.overrides.conversation ??= {};
             processedConfig.overrides.conversation.textOnly = true;
           }
+        }
+        configurePersistentSession(processedConfig, {
+          resume,
+          unavailable: persistenceUnavailable,
+        });
+        if (
+          !processedConfig.persistentSession &&
+          storedSession.hasStoredSession.peek()
+        ) {
+          // A voice call cannot continue the paused text conversation, so
+          // starting one abandons it.
+          storedSession.clear();
         }
 
         try {
@@ -576,11 +621,33 @@ function useConversationSetup() {
           );
         }
 
+        // The transcript still holds this conversation when the socket dropped
+        // mid-chat; only a reload starts from the replayed history.
+        const keepTranscript =
+          !!resume &&
+          transcript
+            .peek()
+            .some(
+              entry =>
+                entry.type === "message" &&
+                entry.conversationIndex === conversationIndex.peek()
+            );
+
         conversationTextOnly.value = processedConfig.textOnly ?? false;
         queueStatus.value = null;
         resetAgentResponseState();
+        isResuming.value = !!resume;
+        // A kept transcript renders its greeting as before; a replayed one
+        // holds the greeting as a stored row.
+        if (!keepTranscript) isResumedSession.value = !!resume;
+        // No greeting is sent on resume.
+        receivedFirstMessageRef.current = !!resume;
         transcript.value = [
-          ...firstMessageEntries(),
+          ...(keepTranscript
+            ? transcript.peek()
+            : resume
+              ? []
+              : firstMessageEntries()),
           ...(initialMessage
             ? [
                 {
@@ -606,6 +673,28 @@ function useConversationSetup() {
             onCanSendFeedbackChange: props => {
               canSendFeedback.value = props.canSendFeedback;
             },
+            onConversationMetadata: ({ persistent_session_token }) => {
+              if (persistent_session_token) {
+                storedSession.store(persistent_session_token);
+              }
+            },
+            onConversationHistory: ({ rows }) => {
+              if (keepTranscript) return;
+              // Replayed rows predate everything this segment has added, such
+              // as the message that triggered the resume.
+              transcript.value = [
+                ...rows.map(
+                  (row): TranscriptEntry => ({
+                    type: "message",
+                    role: row.role,
+                    message: row.text,
+                    isText: true,
+                    conversationIndex: conversationIndex.peek(),
+                  })
+                ),
+                ...transcript.peek(),
+              ];
+            },
             onMessage: ({
               role,
               message,
@@ -613,7 +702,10 @@ function useConversationSetup() {
               response_id,
               attachments,
             }) => {
+              // Event ids restart on resume and no greeting is sent, so the
+              // first reply of a resumed segment carries this id.
               if (
+                !resume &&
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
@@ -826,12 +918,27 @@ function useConversationSetup() {
               const queueTimedOut =
                 details.reason === "error" &&
                 queueStatus.peek() === "timed_out";
+              if (isFinalDisconnect(details)) {
+                storedSession.clear();
+              }
               receivedFirstMessageRef.current = false;
               conversationTextOnly.value = null;
               resetAgentResponseState();
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
+              // A close with the token still stored is a pause, not an end:
+              // the transcript stays and the next message or the page coming
+              // back to the foreground continues the conversation.
+              if (storedSession.hasStoredSession.peek()) {
+                if (details.reason === "error") {
+                  console.warn(
+                    "[ConversationalAI] Connection lost, the conversation can be resumed:",
+                    details.message
+                  );
+                }
+                return;
+              }
               transcript.value = [
                 ...transcript.peek(),
                 queueTimedOut
@@ -878,6 +985,50 @@ function useConversationSetup() {
           error.value = null;
           return id;
         } catch (e) {
+          if (
+            processedConfig.persistentSession &&
+            isPersistentSessionRefused(e)
+          ) {
+            if (resume) {
+              storedSession.clear();
+            } else {
+              persistenceUnavailable = true;
+            }
+            if (initialMessage || !resume) {
+              // Clear the rejected promise first, otherwise the retry awaits it
+              // at the top of startSession and rethrows.
+              lockRef.current = null;
+              return value.startSession(
+                element,
+                initialMessage,
+                initialMessageOptions
+              );
+            }
+          }
+          if (resume && !initialMessage) {
+            // An automatic resume that fails must not greet the user with an
+            // error.
+            console.warn(
+              "[ConversationalAI] Could not resume the stored conversation:",
+              e
+            );
+            isResumedSession.value = false;
+            conversationTextOnly.value = null;
+            if (keepTranscript) {
+              transcript.value = [
+                ...transcript.peek(),
+                {
+                  type: "disconnection",
+                  role: "agent",
+                  conversationIndex: conversationIndex.peek(),
+                },
+              ];
+              conversationIndex.value++;
+            } else {
+              transcript.value = firstMessageEntries();
+            }
+            return;
+          }
           // A queue timeout can close the connection before startSession
           // resolves.
           if (queueStatus.peek() === "timed_out") {
@@ -907,9 +1058,22 @@ function useConversationSetup() {
           }
         } finally {
           lockRef.current = null;
+          isResuming.value = false;
         }
       },
+      resumeSession: async () => {
+        const token = storedSession.read();
+        if (token) {
+          await value.startSession(null, undefined, undefined, token);
+        }
+      },
+      /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
+        storedSession.clear();
+        await value.disconnectSession();
+      },
+      /** Closes the connection but keeps a persistent session resumable. */
+      disconnectSession: async () => {
         const conversation = conversationRef.current;
         conversationRef.current = null;
         await conversation?.endSession();
@@ -932,7 +1096,26 @@ function useConversationSetup() {
       sendUserMessage: (text: string, options?: SendUserMessageOptions) => {
         // The orchestrator discards messages sent while held in the queue.
         if (isWaitingForAgent.peek()) return;
-        conversationRef.current?.sendUserMessage(text, options);
+        const pendingConnect = lockRef.current;
+        if (conversationRef.current?.isOpen()) {
+          conversationRef.current.sendUserMessage(text, options);
+        } else if (pendingConnect) {
+          // Typed while a resume is still connecting. A failed connect
+          // reports itself through startSession, so nothing to add here.
+          void pendingConnect
+            .then(conversation => {
+              // TODO: Remove the delay once BE can handle it
+              setTimeout(
+                () => conversation.sendUserMessage(text, options),
+                100
+              );
+            })
+            .catch(() => {
+              // startSession has already handled the failed resume by now, so
+              // the message starts over like one typed after a disconnect.
+              void value.startSession(null, text, options);
+            });
+        }
         transcript.value = [
           ...transcript.value,
           {
@@ -986,6 +1169,7 @@ function useConversationSetup() {
         ];
       },
     };
+    return value;
   }, [config]);
 
   useSignalEffect(() => {
@@ -1031,7 +1215,7 @@ async function getOrCreateUserId(): Promise<string> {
 }
 
 function triggerCallEvent(
-  element: HTMLElement,
+  element: HTMLElement | null,
   config: SessionConfig
 ): SessionConfig {
   try {
@@ -1040,7 +1224,7 @@ function triggerCallEvent(
       composed: true,
       detail: { config },
     });
-    element.dispatchEvent(event);
+    element?.dispatchEvent(event);
     return event.detail.config;
   } catch (e) {
     console.error("[ConversationalAI] Could not trigger call event:", e);

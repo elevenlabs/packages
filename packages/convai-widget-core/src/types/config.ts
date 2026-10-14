@@ -141,6 +141,7 @@ export const DefaultTextContents = {
   listening_status: "Listening",
   speaking_status: "Talk to interrupt",
   connecting_status: "Connecting",
+  reconnecting_status: "Reconnecting...",
   chatting_status: "Chatting with AI Agent",
   queue_waiting_status:
     "All agents are busy right now. We'll connect you automatically as soon as one is available.",

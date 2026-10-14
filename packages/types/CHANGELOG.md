@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.25.0
+
+### Minor Changes
+
+- bac5c96: Add the `conversation_history` server event and the `persistent_session_token` field on `conversation_initiation_metadata`.
+
 ## 0.24.0
 
 ### Minor Changes
