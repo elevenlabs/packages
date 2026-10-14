@@ -560,7 +560,6 @@ function isValidAgentId(agentId: string): agentId is keyof typeof AGENTS {
   return agentId in AGENTS;
 }
 
-/** Base64 PCM 16kHz silence lasting `durationMs`. */
 function silentAudio(durationMs: number) {
   return btoa(String.fromCharCode(...new Uint8Array(durationMs * 32)));
 }
@@ -588,10 +587,6 @@ function sendAlignedAudio(
   );
 }
 
-/**
- * Sends an agent turn as two aligned audio chunks: "Sure, " plays for 1.5s,
- * then "booking it now."
- */
 function sendAlignedAgentTurn(client: { send(data: string): void }) {
   const eventId = 4;
   sendAlignedAudio(client, eventId, "Sure, ", 1500);

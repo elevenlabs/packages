@@ -77,7 +77,7 @@ describe("createSpeechReveal", () => {
 
     vi.advanceTimersByTime(70);
     expect(shown()).toEqual(["Hello there."]);
-    expect(transcript.value[0]).toMatchObject({ revealedLength: undefined });
+    expect(transcript.value[0]).toMatchObject({ visibleLength: undefined });
   });
 
   it("catches up when the message arrives after its audio started", () => {

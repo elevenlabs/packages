@@ -82,7 +82,7 @@ export type TranscriptEntry =
       responseId?: string;
       fileInput?: TranscriptFileInput | null;
       attachments?: MessageAttachment[];
-      revealedLength?: number;
+      visibleLength?: number;
       speechInterrupted?: boolean;
     }
   | {
