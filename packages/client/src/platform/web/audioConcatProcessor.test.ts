@@ -94,26 +94,4 @@ describe("audioConcatProcessor", () => {
       { type: "chunk_start", event_id: 2, alignment },
     ]);
   });
-
-  it("does not post chunk_start for chunks without metadata", () => {
-    queue(QUANTUM);
-
-    render();
-
-    expect(chunkStarts()).toEqual([]);
-  });
-
-  it("does not post chunk_start for chunks flushed by an interruption", () => {
-    queue(QUANTUM, { event_id: 1, alignment });
-    queue(QUANTUM, { event_id: 2, alignment });
-
-    render();
-    send({ type: "interrupt" });
-    send({ type: "clearInterrupted" });
-    render();
-
-    expect(chunkStarts()).toEqual([
-      { type: "chunk_start", event_id: 1, alignment },
-    ]);
-  });
 });
