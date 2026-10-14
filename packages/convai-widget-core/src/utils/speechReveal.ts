@@ -16,6 +16,8 @@ type Turn = {
   /** Revealed length across the turn's messages; it never shrinks */
   revealed: number;
   entryCount: number;
+  /** Audio started for a message of the turn that has not arrived yet */
+  awaitingMessage: boolean;
   pendingTimer?: ReturnType<typeof setTimeout>;
 };
 
@@ -62,6 +64,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       state,
       revealed: 0,
       entryCount: 0,
+      awaitingMessage: false,
     };
     turns.set(eventId, turn);
     return turn;
@@ -92,6 +95,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
     clearPendingTimer(turn);
     turn.queue = [];
     turn.state = "done";
+    turn.awaitingMessage = false;
     apply(eventId);
   };
 
@@ -113,6 +117,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       );
       if (
         turn.state !== "interrupted" &&
+        !turn.awaitingMessage &&
         turn.revealed >= display.trimEnd().length
       ) {
         clearPendingTimer(turn);
@@ -210,7 +215,14 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
         }
         turn = createTurn(eventId, "revealing");
       }
-      if (turn.state === "done" || turn.state === "interrupted") return;
+      if (turn.state === "interrupted") return;
+      if (turn.state === "done") {
+        // Shown in full without being revealed
+        if (turn.entryCount === 0) return;
+        // A later message of the turn, e.g. after a tool call, whose audio
+        // started before it arrived
+        turn.awaitingMessage = true;
+      }
 
       clearPendingTimer(turn);
       turn.state = "revealing";
@@ -236,6 +248,9 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
         entryCount > turn.entryCount
       ) {
         turn.state = "pending";
+      }
+      if (entryCount > turn.entryCount) {
+        turn.awaitingMessage = false;
       }
       turn.entryCount = entryCount;
       if (turn.state === "pending" && !turn.pendingTimer) {
