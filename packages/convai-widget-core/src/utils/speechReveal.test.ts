@@ -88,6 +88,23 @@ describe("createSpeechReveal", () => {
     expect(shown()).toEqual(["Hello"]);
   });
 
+  it("shows the rest of a chunk once the next one starts playing", () => {
+    reveal.onAlignmentReceived();
+    addMessage("Hello there.");
+    reveal.onAlignmentPlayback(EVENT_ID, {
+      ...alignmentFor("Hello "),
+      char_start_times_ms: [0, 100, 200, 300, 400, 500],
+    });
+    vi.advanceTimersByTime(150);
+    expect(shown()).toEqual(["He"]);
+
+    reveal.onAlignmentPlayback(EVENT_ID, alignmentFor("there."));
+    expect(shown()).toEqual(["Hello"]);
+
+    vi.advanceTimersByTime(20);
+    expect(shown()).toEqual(["Hello the"]);
+  });
+
   it("keeps only what was said when interrupted", () => {
     reveal.onAlignmentReceived();
     addMessage("Hello there, friend.");

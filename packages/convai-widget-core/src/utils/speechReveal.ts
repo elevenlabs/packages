@@ -198,6 +198,13 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
 
     onAlignmentPlayback(eventId: number, alignment: AudioAlignmentEvent) {
       alignmentAvailable = true;
+      // Chunks play in order, so every earlier chunk has been heard
+      for (const [queuedEventId, queued] of turns) {
+        if (queued.queue.length === 0) continue;
+        queued.spoken += queued.queue.map(({ char }) => char).join("");
+        queued.queue = [];
+        apply(queuedEventId);
+      }
       let turn = turns.get(eventId);
       if (!turn) {
         // Already shown in full
