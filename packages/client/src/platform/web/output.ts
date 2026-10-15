@@ -13,7 +13,7 @@ import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
-import { isIosDevice } from "./compatibility.js";
+import { isIosDevice, isWebKitBrowser } from "./compatibility.js";
 
 function maybePrimeIosPlayback({
   sampleRate,
@@ -26,7 +26,7 @@ function maybePrimeIosPlayback({
   worklet: AudioWorkletNode;
   audioElement: HTMLAudioElement;
 }): void {
-  if (!isIosDevice()) {
+  if (!(isIosDevice() || isWebKitBrowser())) {
     return;
   }
 
