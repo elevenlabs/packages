@@ -561,7 +561,13 @@ function useConversationSetup() {
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        await terms.requestTerms();
+        if (resume) {
+          // The stored conversation was started behind the terms gate, so a
+          // resume does not ask again.
+          terms.acceptTerms();
+        } else {
+          await terms.requestTerms();
+        }
 
         if (conversationRef.current?.isOpen()) {
           return conversationRef.current.getId();
