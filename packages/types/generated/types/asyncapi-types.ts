@@ -158,6 +158,7 @@ export interface ConversationConfigOverrideAsr {
 
 export interface ConversationConfigOverrideTts {
   voice_id?: string;
+  model_id?: string;
   stability?: number;
   speed?: number;
   similarity_boost?: number;
