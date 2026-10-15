@@ -8,6 +8,7 @@ export type {
   Role,
   Options,
   PartialOptions,
+  ClientToolResult,
   ClientToolsConfig,
   MCPToolApprovalConfig,
   MCPToolApprovalHandler,
