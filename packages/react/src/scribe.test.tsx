@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AudioFormat, RealtimeEvents, Scribe } from "@elevenlabs/client";
 import type { RealtimeConnection } from "@elevenlabs/client";
@@ -367,6 +367,73 @@ describe("useScribe", () => {
 
       expect(onDisconnect).toHaveBeenCalledTimes(1);
       expect(result.current.status).toBe("disconnected");
+    });
+  });
+  describe("callbacks that change between renders", () => {
+    const SESSION = {
+      token: "test-token",
+      modelId: "scribe_v2_realtime",
+      microphone: {},
+    };
+
+    function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
+      return vi
+        .mocked(connection.on)
+        .mock.calls.find(([name]) => name === event)?.[1] as
+        | ((data?: unknown) => void)
+        | undefined;
+    }
+
+    it("calls the latest callback for a session that was started earlier", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const first = vi.fn();
+      const second = vi.fn();
+      const { result, rerender } = renderHook(
+        ({ onCommittedTranscript }) => useScribe({ onCommittedTranscript }),
+        { initialProps: { onCommittedTranscript: first } }
+      );
+
+      await act(async () => {
+        await result.current.connect(SESSION);
+      });
+
+      rerender({ onCommittedTranscript: second });
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT
+        )?.({ text: "hello" });
+      });
+
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledWith({ text: "hello" });
+    });
+
+    it("does not reconnect after a close when callbacks are new functions on each render", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const { result } = renderHook(() =>
+        useScribe({
+          ...SESSION,
+          autoConnect: true,
+          onDisconnect: () => {},
+        })
+      );
+
+      await waitFor(() => {
+        expect(Scribe.connect).toHaveBeenCalledTimes(1);
+      });
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.CLOSE)?.();
+      });
+
+      expect(result.current.status).toBe("disconnected");
+      expect(Scribe.connect).toHaveBeenCalledTimes(1);
     });
   });
 });
