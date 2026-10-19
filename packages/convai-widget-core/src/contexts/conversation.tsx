@@ -862,7 +862,10 @@ function useConversationSetup() {
               }
             },
             onAudioAlignment: () => {
-              speechReveal.onAlignmentReceived();
+              // WebRTC reports no playback, so its messages are shown in full
+              if (processedConfig.connectionType !== "webrtc") {
+                speechReveal.onAlignmentReceived();
+              }
             },
             onAudioAlignmentPlayback: ({ event_id, alignment }) => {
               speechReveal.onAlignmentPlayback(event_id, alignment);
