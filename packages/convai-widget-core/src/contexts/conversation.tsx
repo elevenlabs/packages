@@ -35,7 +35,7 @@ import {
   isFinalDisconnect,
   isPersistentSessionRefused,
 } from "../utils/persistentSession";
-import { createSpeechReveal } from "../utils/speechReveal";
+import { SpeechReveal } from "../utils/speechReveal";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -495,7 +495,7 @@ function useConversationSetup() {
       firstMessageRichContentEntries(firstMessageRichContent.peek());
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
-    const speechReveal = createSpeechReveal(transcript);
+    const speechReveal = new SpeechReveal(transcript);
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);

@@ -35,21 +35,116 @@ function isVoiceAgentMessage(
 }
 
 /** Reveals voice agent messages in step with their audio as it plays. */
-export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
-  let alignmentAvailable = false;
-  let mode: Mode = "listening";
-  const turns = new Map<number, Turn>();
-  let tickTimer: ReturnType<typeof setTimeout> | null = null;
-  let settleTimer: ReturnType<typeof setTimeout> | null = null;
+export class SpeechReveal {
+  private alignmentAvailable = false;
+  private mode: Mode = "listening";
+  private readonly turns = new Map<number, Turn>();
+  private tickTimer: ReturnType<typeof setTimeout> | null = null;
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const messageIndices = (eventId: number) =>
-    transcript
+  constructor(private readonly transcript: Signal<TranscriptEntry[]>) {}
+
+  onAlignmentReceived() {
+    this.alignmentAvailable = true;
+  }
+
+  onAlignmentPlayback(eventId: number, alignment: AudioAlignmentEvent) {
+    this.alignmentAvailable = true;
+    let turn = this.turns.get(eventId);
+    if (!turn) {
+      // Already shown in full
+      if (this.messageIndices(eventId).length > 0) {
+        this.createTurn(eventId, "done");
+        return;
+      }
+      turn = this.createTurn(eventId, "revealing");
+    }
+    if (turn.state === "interrupted") return;
+    if (turn.state === "done") {
+      // Unless shown in full, a later message whose audio came first
+      if (turn.entryCount === 0) return;
+      turn.awaitingMessage = true;
+    }
+
+    this.clearPendingTimer(turn);
+    turn.state = "revealing";
+    const start = Date.now();
+    alignment.chars.forEach((char, index) => {
+      turn.queue.push({
+        at: start + (alignment.char_start_times_ms[index] ?? 0),
+        char,
+      });
+    });
+    this.scheduleTick();
+  }
+
+  onAgentMessage(eventId: number) {
+    if (!this.alignmentAvailable) return;
+    const entryCount = this.messageIndices(eventId).length;
+    const turn = this.turns.get(eventId) ?? this.createTurn(eventId, "pending");
+    // A later message of the turn, e.g. after a tool call
+    if (
+      turn.state === "done" &&
+      turn.entryCount > 0 &&
+      entryCount > turn.entryCount
+    ) {
+      turn.state = "pending";
+    }
+    if (entryCount > turn.entryCount) {
+      turn.awaitingMessage = false;
+    }
+    turn.entryCount = entryCount;
+    if (turn.state === "pending" && !turn.pendingTimer) {
+      this.armPendingTimer(eventId, turn);
+    }
+    this.apply(eventId);
+  }
+
+  onModeChange(mode: Mode) {
+    this.mode = mode;
+    if (this.settleTimer) clearTimeout(this.settleTimer);
+    this.settleTimer =
+      mode === "listening" ? setTimeout(() => this.settle(), SETTLE_MS) : null;
+  }
+
+  onInterruption(eventId: number) {
+    for (const [turnEventId, turn] of this.turns) {
+      if (
+        turnEventId < eventId &&
+        (turn.state === "pending" || turn.state === "revealing")
+      ) {
+        this.clearPendingTimer(turn);
+        turn.queue = [];
+        turn.state = "interrupted";
+        this.apply(turnEventId);
+      }
+    }
+  }
+
+  finishAll() {
+    for (const [eventId, turn] of this.turns) {
+      if (turn.state === "pending" || turn.state === "revealing") {
+        this.finish(eventId, turn);
+      }
+    }
+  }
+
+  reset() {
+    this.clearTimers();
+    this.turns.clear();
+    this.alignmentAvailable = false;
+    this.mode = "listening";
+  }
+
+  private messageIndices(eventId: number) {
+    return this.transcript
       .peek()
       .flatMap((entry, index) =>
         isVoiceAgentMessage(entry, eventId) ? [index] : []
       );
+  }
 
-  const createTurn = (eventId: number, state: Turn["state"]): Turn => {
+  private createTurn(eventId: number, state: Turn["state"]): Turn {
     const turn: Turn = {
       spoken: "",
       queue: [],
@@ -58,43 +153,43 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       entryCount: 0,
       awaitingMessage: false,
     };
-    turns.set(eventId, turn);
+    this.turns.set(eventId, turn);
     return turn;
-  };
+  }
 
-  const clearPendingTimer = (turn: Turn) => {
+  private clearPendingTimer(turn: Turn) {
     if (turn.pendingTimer) {
       clearTimeout(turn.pendingTimer);
       turn.pendingTimer = undefined;
     }
-  };
+  }
 
-  const armPendingTimer = (eventId: number, turn: Turn) => {
-    clearPendingTimer(turn);
+  private armPendingTimer(eventId: number, turn: Turn) {
+    this.clearPendingTimer(turn);
     turn.pendingTimer = setTimeout(() => {
       turn.pendingTimer = undefined;
       if (turn.state !== "pending") return;
       // Earlier audio may still be playing
-      if (mode === "speaking") {
-        armPendingTimer(eventId, turn);
+      if (this.mode === "speaking") {
+        this.armPendingTimer(eventId, turn);
         return;
       }
-      finish(eventId, turn);
+      this.finish(eventId, turn);
     }, PENDING_TIMEOUT_MS);
-  };
+  }
 
-  const finish = (eventId: number, turn: Turn) => {
-    clearPendingTimer(turn);
+  private finish(eventId: number, turn: Turn) {
+    this.clearPendingTimer(turn);
     turn.queue = [];
     turn.state = "done";
     turn.awaitingMessage = false;
-    apply(eventId);
-  };
+    this.apply(eventId);
+  }
 
-  const apply = (eventId: number) => {
-    const turn = turns.get(eventId);
-    const entries = transcript.peek();
-    const indices = messageIndices(eventId);
+  private apply(eventId: number) {
+    const turn = this.turns.get(eventId);
+    const entries = this.transcript.peek();
+    const indices = this.messageIndices(eventId);
     if (!turn || indices.length === 0) return;
 
     const display = indices
@@ -112,7 +207,7 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
         !turn.awaitingMessage &&
         turn.revealed >= display.trimEnd().length
       ) {
-        clearPendingTimer(turn);
+        this.clearPendingTimer(turn);
         turn.queue = [];
         turn.state = "done";
         turn.revealed = display.length;
@@ -140,15 +235,15 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
     }
     if (updated) {
-      transcript.value = updated;
+      this.transcript.value = updated;
     }
-  };
+  }
 
-  const tick = () => {
-    tickTimer = null;
+  private tick() {
+    this.tickTimer = null;
     const now = Date.now();
     let nextAt = Infinity;
-    for (const [eventId, turn] of turns) {
+    for (const [eventId, turn] of this.turns) {
       let heard = 0;
       while (heard < turn.queue.length && turn.queue[heard].at <= now) {
         turn.spoken += turn.queue[heard].char;
@@ -156,133 +251,41 @@ export function createSpeechReveal(transcript: Signal<TranscriptEntry[]>) {
       }
       if (heard > 0) {
         turn.queue.splice(0, heard);
-        apply(eventId);
+        this.apply(eventId);
       }
       if (turn.queue.length > 0) {
         nextAt = Math.min(nextAt, turn.queue[0].at);
       }
     }
     if (nextAt !== Infinity) {
-      tickTimer = setTimeout(tick, Math.max(0, nextAt - Date.now()));
+      this.tickTimer = setTimeout(
+        () => this.tick(),
+        Math.max(0, nextAt - Date.now())
+      );
     }
-  };
+  }
 
-  const scheduleTick = () => {
-    if (tickTimer) clearTimeout(tickTimer);
-    tickTimer = setTimeout(tick, 0);
-  };
+  private scheduleTick() {
+    if (this.tickTimer) clearTimeout(this.tickTimer);
+    this.tickTimer = setTimeout(() => this.tick(), 0);
+  }
 
-  const settle = () => {
-    settleTimer = null;
-    for (const [eventId, turn] of turns) {
+  private settle() {
+    this.settleTimer = null;
+    for (const [eventId, turn] of this.turns) {
       if (turn.state === "revealing" && turn.queue.length === 0) {
-        finish(eventId, turn);
+        this.finish(eventId, turn);
       }
     }
-  };
+  }
 
-  const clearTimers = () => {
-    if (tickTimer) clearTimeout(tickTimer);
-    if (settleTimer) clearTimeout(settleTimer);
-    tickTimer = null;
-    settleTimer = null;
-    for (const turn of turns.values()) {
-      clearPendingTimer(turn);
+  private clearTimers() {
+    if (this.tickTimer) clearTimeout(this.tickTimer);
+    if (this.settleTimer) clearTimeout(this.settleTimer);
+    this.tickTimer = null;
+    this.settleTimer = null;
+    for (const turn of this.turns.values()) {
+      this.clearPendingTimer(turn);
     }
-  };
-
-  return {
-    onAlignmentReceived() {
-      alignmentAvailable = true;
-    },
-
-    onAlignmentPlayback(eventId: number, alignment: AudioAlignmentEvent) {
-      alignmentAvailable = true;
-      let turn = turns.get(eventId);
-      if (!turn) {
-        // Already shown in full
-        if (messageIndices(eventId).length > 0) {
-          createTurn(eventId, "done");
-          return;
-        }
-        turn = createTurn(eventId, "revealing");
-      }
-      if (turn.state === "interrupted") return;
-      if (turn.state === "done") {
-        // Unless shown in full, a later message whose audio came first
-        if (turn.entryCount === 0) return;
-        turn.awaitingMessage = true;
-      }
-
-      clearPendingTimer(turn);
-      turn.state = "revealing";
-      const start = Date.now();
-      alignment.chars.forEach((char, index) => {
-        turn.queue.push({
-          at: start + (alignment.char_start_times_ms[index] ?? 0),
-          char,
-        });
-      });
-      scheduleTick();
-    },
-
-    onAgentMessage(eventId: number) {
-      if (!alignmentAvailable) return;
-      const entryCount = messageIndices(eventId).length;
-      const turn = turns.get(eventId) ?? createTurn(eventId, "pending");
-      // A later message of the turn, e.g. after a tool call
-      if (
-        turn.state === "done" &&
-        turn.entryCount > 0 &&
-        entryCount > turn.entryCount
-      ) {
-        turn.state = "pending";
-      }
-      if (entryCount > turn.entryCount) {
-        turn.awaitingMessage = false;
-      }
-      turn.entryCount = entryCount;
-      if (turn.state === "pending" && !turn.pendingTimer) {
-        armPendingTimer(eventId, turn);
-      }
-      apply(eventId);
-    },
-
-    onModeChange(newMode: Mode) {
-      mode = newMode;
-      if (settleTimer) clearTimeout(settleTimer);
-      settleTimer = mode === "listening" ? setTimeout(settle, SETTLE_MS) : null;
-    },
-
-    onInterruption(eventId: number) {
-      for (const [turnEventId, turn] of turns) {
-        if (
-          turnEventId < eventId &&
-          (turn.state === "pending" || turn.state === "revealing")
-        ) {
-          clearPendingTimer(turn);
-          turn.queue = [];
-          turn.state = "interrupted";
-          apply(turnEventId);
-        }
-      }
-    },
-
-    finishAll() {
-      for (const [eventId, turn] of turns) {
-        if (turn.state === "pending" || turn.state === "revealing") {
-          finish(eventId, turn);
-        }
-      }
-    },
-
-    reset() {
-      clearTimers();
-      turns.clear();
-      alignmentAvailable = false;
-      mode = "listening";
-    },
-  };
+  }
 }
-
-export type SpeechReveal = ReturnType<typeof createSpeechReveal>;

@@ -2,12 +2,7 @@ import { signal, type Signal } from "@preact/signals";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TranscriptEntry } from "../contexts/conversation";
 import { buildDisplayTranscript } from "./display-transcript";
-import {
-  createSpeechReveal,
-  PENDING_TIMEOUT_MS,
-  SETTLE_MS,
-  type SpeechReveal,
-} from "./speechReveal";
+import { PENDING_TIMEOUT_MS, SETTLE_MS, SpeechReveal } from "./speechReveal";
 
 const EVENT_ID = 10;
 
@@ -34,7 +29,7 @@ function alignmentFor(text: string) {
   };
 }
 
-describe("createSpeechReveal", () => {
+describe("SpeechReveal", () => {
   let transcript: Signal<TranscriptEntry[]>;
   let reveal: SpeechReveal;
 
@@ -53,7 +48,7 @@ describe("createSpeechReveal", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     transcript = signal<TranscriptEntry[]>([]);
-    reveal = createSpeechReveal(transcript);
+    reveal = new SpeechReveal(transcript);
   });
 
   afterEach(() => {
