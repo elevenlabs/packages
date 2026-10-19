@@ -138,14 +138,6 @@ export class VoiceConversation extends BaseConversation {
         // WebRTC handles audio playback directly through LiveKit tracks
       }
 
-      // WebRTC reports no playback progress, so emit on receipt
-      if (!this.playbackEventTarget && event.audio_event.alignment) {
-        this.emitAlignmentPlayback(
-          event.audio_event.event_id,
-          event.audio_event.alignment
-        );
-      }
-
       this.currentEventId = event.audio_event.event_id;
       this.updateCanSendFeedback();
       this.updateMode("speaking");

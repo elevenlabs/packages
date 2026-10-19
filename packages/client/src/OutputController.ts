@@ -7,17 +7,16 @@ export type OutputDeviceConfig = {
 
 export type OutputConfig = OutputDeviceConfig;
 
-// Audio data events from connection to output device
-export type OutputAudioEvent = {
-  audio_base_64: string;
-  event_id?: number;
-  alignment?: AudioAlignmentEvent;
-};
-
 // Echoed back by the output worklet when the chunk starts playing
 export type OutputChunkMetadata = {
   event_id: number;
   alignment: AudioAlignmentEvent;
+};
+
+// Audio data events from connection to output device
+export type OutputAudioEvent = {
+  audio_base_64: string;
+  metadata?: OutputChunkMetadata;
 };
 export type OutputListener = (event: OutputAudioEvent) => void;
 

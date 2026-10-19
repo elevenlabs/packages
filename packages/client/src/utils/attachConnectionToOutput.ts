@@ -12,15 +12,7 @@ export function attachConnectionToOutput(
   }
 ): () => void {
   const listener: OutputListener = event => {
-    const chunk = base64ToArrayBuffer(event.audio_base_64);
-    if (event.alignment && event.event_id !== undefined) {
-      output.playAudio(chunk, {
-        event_id: event.event_id,
-        alignment: event.alignment,
-      });
-    } else {
-      output.playAudio(chunk);
-    }
+    output.playAudio(base64ToArrayBuffer(event.audio_base_64), event.metadata);
   };
 
   connection.addListener(listener);

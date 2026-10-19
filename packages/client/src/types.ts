@@ -214,7 +214,7 @@ export type Callbacks = {
   onGuardrailTriggered?: () => void;
   /** Called on receipt, ahead of playback; see {@link onAudioAlignmentPlayback}. */
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
-  /** Called when an aligned chunk starts playing, skipping interrupted ones; on WebRTC, on receipt. */
+  /** Called when an aligned chunk starts playing, skipping interrupted ones. Not called on WebRTC. */
   onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;

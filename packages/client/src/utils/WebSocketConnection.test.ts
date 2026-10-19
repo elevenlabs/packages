@@ -237,7 +237,6 @@ describe("WebSocketConnection", () => {
 
     expect(listener).toHaveBeenCalledWith({
       audio_base_64: "dGVzdA==",
-      event_id: 1,
     });
   });
 
