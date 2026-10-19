@@ -89,8 +89,7 @@ export class VoiceConversation extends BaseConversation {
     eventId: number,
     alignment: AudioAlignmentEvent
   ) {
-    // Chunks queued before an interruption can still start while the
-    // output fades out; they are not heard, so skip them
+    // Chunks queued before an interruption can still start during the fade-out
     if (eventId < this.lastInterruptTimestamp) {
       return;
     }
@@ -139,8 +138,7 @@ export class VoiceConversation extends BaseConversation {
         // WebRTC handles audio playback directly through LiveKit tracks
       }
 
-      // Without a playback event target (WebRTC), the output reports no
-      // playback progress, so fall back to receipt time
+      // WebRTC reports no playback progress, so emit on receipt
       if (!this.playbackEventTarget && event.audio_event.alignment) {
         this.emitAlignmentPlayback(
           event.audio_event.event_id,

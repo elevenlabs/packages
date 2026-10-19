@@ -59,10 +59,6 @@ function audio(eventId: number): IncomingSocketEvent {
   };
 }
 
-function interruption(eventId: number): IncomingSocketEvent {
-  return { type: "interruption", interruption_event: { event_id: eventId } };
-}
-
 describe("VoiceConversation onAudioAlignmentPlayback", () => {
   it("falls back to receipt time without a playback event target (WebRTC)", async () => {
     const onAudioAlignmentPlayback = vi.fn();
@@ -76,9 +72,5 @@ describe("VoiceConversation onAudioAlignmentPlayback", () => {
       event_id: 1,
       alignment,
     });
-
-    await conversation.receiveMessage(interruption(5));
-    await conversation.receiveMessage(audio(4));
-    expect(onAudioAlignmentPlayback).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Capture the inlined worklet source so the test runs the exact code that
-// ships, rather than a copy of it
+// Runs the worklet source that ships rather than a copy of it
 const { workletSource } = vi.hoisted(() => ({
   workletSource: { current: "" },
 }));

@@ -501,7 +501,6 @@ describe("Audio alignment playback", () => {
       );
 
     sendAudio(100);
-    // Fired on receipt, ahead of playback
     expect(onAudioAlignment).toHaveBeenCalledWith(ALIGNMENT);
     await vi.waitFor(() =>
       expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
