@@ -61,6 +61,7 @@ export { WebRTCConnection } from "./utils/WebRTCConnection.js";
 export type { VolumeProvider } from "./utils/volumeProvider.js";
 export { postOverallFeedback } from "./utils/postOverallFeedback.js";
 export { SessionConnectionError } from "./utils/errors.js";
+export { stripAudioTags } from "./utils/audioTags.js";
 export type { Location } from "./utils/location.js";
 export { VoiceConversation } from "./VoiceConversation.js";
 export { TextConversation } from "./TextConversation.js";

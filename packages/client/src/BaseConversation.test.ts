@@ -255,6 +255,34 @@ describe("BaseConversation", () => {
       );
       expect(onMessage.mock.calls[0]?.[0]).not.toHaveProperty("response_id");
     });
+
+    it.each([
+      [true, "Sure thing! See [the docs](https://example.com)."],
+      [false, "[laughs] Sure thing! See [the docs](https://example.com)."],
+      [undefined, "[laughs] Sure thing! See [the docs](https://example.com)."],
+    ])(
+      "strips audio tags when stripAudioTags is %s",
+      async (stripAudioTags, expected) => {
+        const onMessage = vi.fn();
+        const conversation = TestConversation.create({
+          onMessage,
+          stripAudioTags,
+        });
+
+        await conversation.receiveMessage({
+          type: "agent_response",
+          agent_response_event: {
+            agent_response:
+              "[laughs] Sure thing! See [the docs](https://example.com).",
+            event_id: 5,
+          },
+        });
+
+        expect(onMessage).toHaveBeenCalledWith(
+          expect.objectContaining({ message: expected })
+        );
+      }
+    );
   });
 
   describe("agent_response_correction events", () => {

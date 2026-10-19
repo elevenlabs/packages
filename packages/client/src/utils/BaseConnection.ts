@@ -80,6 +80,11 @@ export type BaseSessionConfig = {
   useWakeLock?: boolean;
   connectionDelay?: DelayConfig;
   textOnly?: boolean;
+  /**
+   * Remove expressive audio tags such as `[laughs]` from agent messages
+   * passed to `onMessage`. Defaults to `false`.
+   */
+  stripAudioTags?: boolean;
   userId?: string;
   environment?: string;
   /**
