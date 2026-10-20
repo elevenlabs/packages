@@ -9,7 +9,7 @@
 import { missingRegistrationError } from "../platform/diagnostics.js";
 
 export interface ScribeMicrophoneConfig {
-  deviceId?: MediaDeviceConstraint;
+  deviceId?: MediaTrackConstraints["deviceId"];
   echoCancellation?: boolean;
   noiseSuppression?: boolean;
   autoGainControl?: boolean;
