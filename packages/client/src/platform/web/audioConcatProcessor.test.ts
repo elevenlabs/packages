@@ -43,11 +43,6 @@ function createProcessor(): Processor {
 }
 
 const QUANTUM = 128;
-const alignment = {
-  chars: ["H", "i"],
-  char_start_times_ms: [0, 50],
-  char_durations_ms: [50, 50],
-};
 
 describe("audioConcatProcessor", () => {
   let processor: Processor;
@@ -56,8 +51,8 @@ describe("audioConcatProcessor", () => {
     processor.port.onmessage({ data });
   }
 
-  function queue(samples: number, metadata?: WorkletMessage) {
-    send({ type: "buffer", buffer: new Int16Array(samples).buffer, metadata });
+  function queue(samples: number, chunkId?: number) {
+    send({ type: "buffer", buffer: new Int16Array(samples).buffer, chunkId });
   }
 
   function render() {
@@ -75,22 +70,20 @@ describe("audioConcatProcessor", () => {
     send({ type: "setFormat", format: "pcm", sampleRate: 16000 });
   });
 
-  it("posts chunk_start with the chunk's metadata when it starts playing", () => {
-    queue(QUANTUM * 2, { event_id: 1, alignment });
-    queue(QUANTUM, { event_id: 2, alignment });
+  it("posts chunk_start with the chunk's id when it starts playing", () => {
+    queue(QUANTUM * 2, 1);
+    queue(QUANTUM, 2);
 
     render();
-    expect(chunkStarts()).toEqual([
-      { type: "chunk_start", event_id: 1, alignment },
-    ]);
+    expect(chunkStarts()).toEqual([{ type: "chunk_start", chunkId: 1 }]);
 
     render();
     expect(chunkStarts()).toHaveLength(1);
 
     render();
     expect(chunkStarts()).toEqual([
-      { type: "chunk_start", event_id: 1, alignment },
-      { type: "chunk_start", event_id: 2, alignment },
+      { type: "chunk_start", chunkId: 1 },
+      { type: "chunk_start", chunkId: 2 },
     ]);
   });
 });

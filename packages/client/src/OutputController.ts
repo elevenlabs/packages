@@ -7,7 +7,7 @@ export type OutputDeviceConfig = {
 
 export type OutputConfig = OutputDeviceConfig;
 
-// Echoed back by the output worklet when the chunk starts playing
+// Passed to playback listeners when the chunk starts playing
 export type OutputChunkMetadata = {
   event_id: number;
   alignment: AudioAlignmentEvent;

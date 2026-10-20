@@ -212,7 +212,6 @@ export type Callbacks = {
    */
   onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
-  /** Called on receipt, ahead of playback; see {@link onAudioAlignmentPlayback}. */
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   /** Called when an aligned chunk starts playing, skipping interrupted ones. Not called on WebRTC. */
   onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;

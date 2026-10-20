@@ -9,12 +9,17 @@ import type {
   OutputConfig,
   PlaybackEventTarget,
   PlaybackListener,
+  PlaybackStateEvent,
 } from "../../OutputController.js";
 import {
   createAnalyserVolumeProvider,
   type VolumeProvider,
 } from "./volumeProvider.js";
 import { isIosDevice } from "./compatibility.js";
+
+type WorkletMessage =
+  | { type: "process"; finished: boolean }
+  | { type: "chunk_start"; chunkId: number };
 
 function maybePrimeIosPlayback({
   sampleRate,
@@ -148,6 +153,10 @@ export class MediaDeviceOutput
 
   private volume = 1;
   private interrupted = false;
+  private readonly listeners = new Set<PlaybackListener>();
+  // Only the id goes to the audio thread
+  private readonly chunkMetadata = new Map<number, OutputChunkMetadata>();
+  private nextChunkId = 0;
   private interruptTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly volumeProvider: VolumeProvider;
 
@@ -158,6 +167,7 @@ export class MediaDeviceOutput
     private readonly worklet: AudioWorkletNode,
     private readonly audioElement: HTMLAudioElement
   ) {
+    this.worklet.port.addEventListener("message", this.handleWorkletMessage);
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
@@ -180,12 +190,34 @@ export class MediaDeviceOutput
   }
 
   public addListener(listener: PlaybackListener): void {
-    this.worklet.port.addEventListener("message", listener);
+    this.listeners.add(listener);
   }
 
   public removeListener(listener: PlaybackListener): void {
-    this.worklet.port.removeEventListener("message", listener);
+    this.listeners.delete(listener);
   }
+
+  private readonly handleWorkletMessage = (
+    event: MessageEvent<WorkletMessage>
+  ) => {
+    let playbackEvent: PlaybackStateEvent = event as PlaybackStateEvent;
+    if (event.data.type === "chunk_start") {
+      const { chunkId } = event.data;
+      const metadata = this.chunkMetadata.get(chunkId);
+      // Chunks play in order, so earlier ids are done
+      for (const id of this.chunkMetadata.keys()) {
+        if (id > chunkId) break;
+        this.chunkMetadata.delete(id);
+      }
+      if (!metadata) return;
+      playbackEvent = new MessageEvent("message", {
+        data: { type: "chunk_start", ...metadata },
+      });
+    }
+    for (const listener of this.listeners) {
+      listener(playbackEvent);
+    }
+  };
 
   public setVolume(volume: number): void {
     this.volume = volume;
@@ -200,7 +232,12 @@ export class MediaDeviceOutput
       this.interruptTimeout = null;
     }
     this.worklet.port.postMessage({ type: "clearInterrupted" });
-    this.worklet.port.postMessage({ type: "buffer", buffer: chunk, metadata });
+    let chunkId: number | undefined;
+    if (metadata) {
+      chunkId = ++this.nextChunkId;
+      this.chunkMetadata.set(chunkId, metadata);
+    }
+    this.worklet.port.postMessage({ type: "buffer", buffer: chunk, chunkId });
   }
 
   public interrupt(resetDuration = 2000): void {

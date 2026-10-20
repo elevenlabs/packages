@@ -57,7 +57,7 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
               this.format === "ulaw"
                 ? new Uint8Array(data.buffer)
                 : new Int16Array(data.buffer),
-            metadata: data.metadata,
+            chunkId: data.chunkId,
           });
           break;
         case "interrupt":
@@ -81,10 +81,10 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           finished = true;
           break;
         }
-        const { samples, metadata } = this.buffers.shift();
+        const { samples, chunkId } = this.buffers.shift();
         this.currentBuffer = samples;
-        if (metadata) {
-          this.port.postMessage({ type: "chunk_start", ...metadata });
+        if (chunkId !== undefined) {
+          this.port.postMessage({ type: "chunk_start", chunkId });
         }
         if (this.resampler) {
           this.currentBuffer = this.resampler.full(this.currentBuffer);
