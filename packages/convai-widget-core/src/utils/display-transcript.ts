@@ -127,7 +127,26 @@ export function buildDisplayTranscript(
     }
   });
 
-  for (const [entryIndex, entry] of entries.entries()) {
+  const speakingEventIds = new Set<number>();
+
+  for (const [entryIndex, rawEntry] of entries.entries()) {
+    const entry =
+      rawEntry.type === "message" && rawEntry.visibleLength !== undefined
+        ? {
+            ...rawEntry,
+            message: rawEntry.message.slice(0, rawEntry.visibleLength),
+          }
+        : rawEntry;
+    if (
+      rawEntry.type === "message" &&
+      rawEntry.visibleLength !== undefined &&
+      rawEntry.visibleLength < rawEntry.message.length &&
+      rawEntry.eventId != null &&
+      !rawEntry.speechInterrupted
+    ) {
+      speakingEventIds.add(rawEntry.eventId);
+    }
+
     // Skip tool entries (consumed into status)
     if (
       entry.type === "agent_tool_request" ||
@@ -138,6 +157,8 @@ export function buildDisplayTranscript(
 
     if (entry.type === "rich_content") {
       if (!config.showRichContent) continue;
+      // Wait until the text before it has been said
+      if (speakingEventIds.has(entry.eventId)) continue;
       const isAnswered = entryIndex < lastUserEntryIndex;
       if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
       result.push({ ...entry, isAnswered });
@@ -155,6 +176,20 @@ export function buildDisplayTranscript(
         config.showAgentStatus &&
         entry.eventId != null &&
         toolStatuses.has(entry.eventId)
+      )
+    )
+      continue;
+
+    // Hide later messages of the turn until they are said
+    if (
+      entry.type === "message" &&
+      entry.visibleLength !== undefined &&
+      !entry.message &&
+      result.some(
+        shown =>
+          shown.type === "message" &&
+          shown.role === "agent" &&
+          shown.eventId === entry.eventId
       )
     )
       continue;
@@ -195,7 +230,11 @@ export function buildDisplayTranscript(
       const firstMessageIndex = result.findIndex(
         entry => entry.type === "message" && entry.role === "agent"
       );
-      if (firstMessageIndex !== -1) {
+      // Wait until the greeting has been said
+      const greetingSaid =
+        richContent.type === "rich_content" &&
+        !speakingEventIds.has(richContent.eventId);
+      if (firstMessageIndex !== -1 && greetingSaid) {
         result.splice(firstMessageIndex + 1, 0, richContent);
       }
     }
