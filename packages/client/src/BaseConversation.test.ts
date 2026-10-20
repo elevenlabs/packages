@@ -997,6 +997,31 @@ describe("BaseConversation", () => {
         details: undefined,
       });
     });
+
+    it("surfaces fields from a flat error message without error_event", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const conversation = TestConversation.create({ onError });
+
+      const flatError = {
+        type: "error",
+        code: 1002,
+        message: "received 1002 (protocol error) custom_llm_error: boom",
+        error_type: "custom_llm_error",
+      } as unknown as Parameters<typeof conversation.receiveMessage>[0];
+
+      await conversation.receiveMessage(flatError);
+
+      expect(onError).toHaveBeenCalledWith(
+        "Server error: received 1002 (protocol error) custom_llm_error: boom",
+        {
+          errorType: "custom_llm_error",
+          code: 1002,
+          debugMessage: undefined,
+          details: undefined,
+        }
+      );
+    });
   });
 
   describe("sendFeedback", () => {
