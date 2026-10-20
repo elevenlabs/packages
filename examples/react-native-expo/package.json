@@ -1,6 +1,6 @@
 {
   "name": "elevenlabs-react-native-example",
-  "version": "1.1.35",
+  "version": "1.1.36",
   "main": "index.js",
   "private": true,
   "scripts": {

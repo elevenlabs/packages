@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.21.0
+
+### Patch Changes
+
+- a5859c5: Resuming a persistent text conversation no longer asks the user to accept the terms again. The stored conversation was started behind the terms gate, so a resume treats them as accepted.
+
 ## 0.20.0
 
 ### Minor Changes
