@@ -28,6 +28,12 @@ export type Role = "user" | "agent";
 
 export type AudioAlignmentEvent = AudioEventAlignment;
 
+/** Alignment for an audio chunk as it starts playing; timings are relative to the event. */
+export type AudioAlignmentPlaybackEvent = {
+  event_id: number;
+  alignment: AudioAlignmentEvent;
+};
+
 /**
  * Current mode of the conversation
  */
@@ -207,6 +213,8 @@ export type Callbacks = {
   onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
+  /** Called when an aligned chunk starts playing, skipping interrupted ones. Not called on WebRTC. */
+  onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;
   onExternalAgentDisconnected?: () => void;
@@ -270,6 +278,7 @@ export const CALLBACK_KEYS = [
   "onAgentReasoningResponsePart",
   "onRichContent",
   "onAudioAlignment",
+  "onAudioAlignmentPlayback",
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",

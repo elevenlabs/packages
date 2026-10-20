@@ -1,4 +1,5 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
+import type { AudioAlignmentEvent } from "./types.js";
 
 export type OutputDeviceConfig = {
   outputDeviceId?: string;
@@ -6,9 +7,16 @@ export type OutputDeviceConfig = {
 
 export type OutputConfig = OutputDeviceConfig;
 
+// Passed to playback listeners when the chunk starts playing
+export type OutputChunkMetadata = {
+  event_id: number;
+  alignment: AudioAlignmentEvent;
+};
+
 // Audio data events from connection to output device
 export type OutputAudioEvent = {
   audio_base_64: string;
+  metadata?: OutputChunkMetadata;
 };
 export type OutputListener = (event: OutputAudioEvent) => void;
 
@@ -18,10 +26,13 @@ export type OutputEventTarget = {
 };
 
 // Playback state events from output worklet
-export type PlaybackStateEvent = MessageEvent<{
-  type: "process";
-  finished: boolean;
-}>;
+export type PlaybackStateEvent = MessageEvent<
+  | {
+      type: "process";
+      finished: boolean;
+    }
+  | ({ type: "chunk_start" } & OutputChunkMetadata)
+>;
 export type PlaybackListener = (event: PlaybackStateEvent) => void;
 
 export type PlaybackEventTarget = {

@@ -27,7 +27,10 @@ import type {
   VadScore,
   RichContentClientEvent,
 } from "@elevenlabs/types";
-import type { AudioAlignmentEvent } from "../types.js";
+import type {
+  AudioAlignmentEvent,
+  AudioAlignmentPlaybackEvent,
+} from "../types.js";
 
 // Compatibility layer - incoming events
 export type UserTranscriptionEvent = UserTranscript;
@@ -61,7 +64,7 @@ export type AgentTypingEvent = AgentTypingClientEvent;
 export type ExternalAgentConnectedEvent = ExternalAgentConnectedClientEvent;
 export type ExternalAgentDisconnectedEvent =
   ExternalAgentDisconnectedClientEvent;
-export type { AudioAlignmentEvent };
+export type { AudioAlignmentEvent, AudioAlignmentPlaybackEvent };
 
 export type IncomingSocketEvent =
   | UserTranscriptionEvent

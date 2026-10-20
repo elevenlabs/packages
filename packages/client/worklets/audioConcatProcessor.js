@@ -46,11 +46,13 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           break;
         case "buffer":
           this.wasInterrupted = false;
-          this.buffers.push(
-            this.format === "ulaw"
-              ? new Uint8Array(data.buffer)
-              : new Int16Array(data.buffer)
-          );
+          this.buffers.push({
+            samples:
+              this.format === "ulaw"
+                ? new Uint8Array(data.buffer)
+                : new Int16Array(data.buffer),
+            chunkId: data.chunkId,
+          });
           break;
         case "interrupt":
           this.wasInterrupted = true;
@@ -73,7 +75,11 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           finished = true;
           break;
         }
-        this.currentBuffer = this.buffers.shift();
+        const { samples, chunkId } = this.buffers.shift();
+        this.currentBuffer = samples;
+        if (chunkId !== undefined) {
+          this.port.postMessage({ type: "chunk_start", chunkId });
+        }
         if (this.resampler) {
           this.currentBuffer = this.resampler.full(this.currentBuffer);
         }
