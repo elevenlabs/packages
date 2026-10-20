@@ -10,13 +10,10 @@ export interface CarouselItem {
 
 export interface CarouselProps {
   items: CarouselItem[];
+  richContentId?: string;
 }
 
-export function Carousel({
-  items,
-  richContentId,
-  isAnswered,
-}: CarouselProps & { richContentId?: string; isAnswered?: boolean }) {
+export function Carousel({ items, richContentId }: CarouselProps) {
   if (items.length === 0) return null;
 
   return (
@@ -52,7 +49,7 @@ export function Carousel({
               </span>
             )}
           </div>
-          {!isAnswered && item.buttons && item.buttons.length > 0 && (
+          {item.buttons && item.buttons.length > 0 && (
             <div className="mt-auto">
               <ButtonGroup
                 buttons={item.buttons}
