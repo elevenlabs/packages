@@ -1,4 +1,4 @@
-const AUDIO_TAG_PATTERN = /\[[\w\s]+\](?!\()\s*/g;
+const AUDIO_TAG_PATTERN = /\[[\w\s]+\](?!\()/g;
 
 /**
  * Removes expressive audio tags such as `[laughs]` or `[whispers]` from agent
