@@ -63,6 +63,17 @@ export type { VolumeProvider } from "./utils/volumeProvider.js";
 export { postOverallFeedback } from "./utils/postOverallFeedback.js";
 export { SessionConnectionError } from "./utils/errors.js";
 export type { Location } from "./utils/location.js";
+export type {
+  DeviceIdConstraint,
+  DeviceIdConstraintParameters,
+  BlobLike,
+  ResponseLike,
+  AbortSignalLike,
+  CloseEventLike,
+  WebSocketLike,
+  MediaStreamTrackLike,
+  AnalyserNodeLike,
+} from "./platformTypes.js";
 export { VoiceConversation } from "./VoiceConversation.js";
 export { TextConversation } from "./TextConversation.js";
 
