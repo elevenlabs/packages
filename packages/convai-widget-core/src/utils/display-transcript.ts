@@ -74,7 +74,6 @@ export interface DisplayTranscriptConfig {
 }
 
 const PERSISTING_COMPONENTS = new Set(["carousel"]);
-const SHOW_WHILE_SPEAKING = new Set(["carousel"]);
 
 export function buildDisplayTranscript(
   entries: TranscriptEntry[],
@@ -160,7 +159,7 @@ export function buildDisplayTranscript(
       // Wait until the text before it has been said
       if (
         speakingEventIds.has(entry.eventId) &&
-        !SHOW_WHILE_SPEAKING.has(entry.component)
+        !PERSISTING_COMPONENTS.has(entry.component)
       )
         continue;
       // Drop replies the user has moved past
