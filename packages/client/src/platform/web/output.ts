@@ -192,6 +192,10 @@ export class MediaDeviceOutput
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
+    this.context.addEventListener("statechange", this.resumeIfSuspended);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", this.resumeIfSuspended);
+    }
     this.volumeProvider = createAnalyserVolumeProvider(
       analyser,
       context.sampleRate
@@ -217,6 +221,20 @@ export class MediaDeviceOutput
   public removeListener(listener: PlaybackListener): void {
     this.listeners.delete(listener);
   }
+
+  // Browsers suspend the context when the tab is hidden (iOS Safari reports
+  // "interrupted" for calls and alarms). The worklet stops draining its queue
+  // until the context runs again, so resume whenever the page is visible.
+  // The SDK never calls suspend() itself, so this can't undo a deliberate one.
+  private readonly resumeIfSuspended = () => {
+    const state: string = this.context.state;
+    if (
+      (state === "suspended" || state === "interrupted") &&
+      document.visibilityState === "visible"
+    ) {
+      void this.context.resume().catch(() => {});
+    }
+  };
 
   private readonly handleWorkletMessage = (
     event: MessageEvent<WorkletMessage>
@@ -307,6 +325,10 @@ export class MediaDeviceOutput
   }
 
   public async close() {
+    this.context.removeEventListener("statechange", this.resumeIfSuspended);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", this.resumeIfSuspended);
+    }
     // Clear any pending interrupt timeout
     if (this.interruptTimeout) {
       clearTimeout(this.interruptTimeout);

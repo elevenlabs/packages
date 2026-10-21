@@ -703,6 +703,144 @@ describe("Output resampling", () => {
   });
 });
 
+describe("Output AudioContext suspension", () => {
+  // 100ms of silence at pcm_16000
+  const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
+  const ALIGNMENT = {
+    chars: ["H", "i"],
+    char_start_times_ms: [0, 50],
+    char_durations_ms: [50, 50],
+  };
+  const NativeAudioContext = globalThis.AudioContext;
+  const outputContexts: AudioContext[] = [];
+
+  beforeAll(() => {
+    // The output graph is the only one that creates a MediaStreamDestination.
+    globalThis.AudioContext = class extends NativeAudioContext {
+      override createMediaStreamDestination() {
+        outputContexts.push(this);
+        return super.createMediaStreamDestination();
+      }
+    };
+  });
+
+  afterAll(() => {
+    globalThis.AudioContext = NativeAudioContext;
+  });
+
+  afterEach(() => {
+    outputContexts.length = 0;
+    vi.restoreAllMocks();
+  });
+
+  const setVisibility = (state: DocumentVisibilityState) => {
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue(state);
+    document.dispatchEvent(new Event("visibilitychange"));
+  };
+
+  const startSession = async (name: string) => {
+    const url = `wss://api.elevenlabs.io/voice/${name}`;
+    const server = new Server(url);
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+    const onAudioAlignmentPlayback = vi.fn();
+    const conversationPromise = Conversation.startSession({
+      signedUrl: url,
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      onAudioAlignmentPlayback,
+    });
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+    const conversation = await conversationPromise;
+    const context = outputContexts[0];
+    const sendAudio = (eventId: number) =>
+      client.send(
+        JSON.stringify({
+          type: "audio",
+          audio_event: {
+            audio_base_64: SHORT_CHUNK,
+            event_id: eventId,
+            alignment: ALIGNMENT,
+          },
+        })
+      );
+    return {
+      server,
+      conversation,
+      context,
+      sendAudio,
+      onAudioAlignmentPlayback,
+    };
+  };
+
+  it("resumes the suspended output context when the tab becomes visible", async () => {
+    const {
+      server,
+      conversation,
+      context,
+      sendAudio,
+      onAudioAlignmentPlayback,
+    } = await startSession("suspend-visibility");
+
+    setVisibility("hidden");
+    await context.suspend();
+    // Hidden pages are left alone until they come back
+    await sleep(100);
+    expect(context.state).toBe("suspended");
+
+    setVisibility("visible");
+    await vi.waitFor(() => expect(context.state).toBe("running"));
+
+    sendAudio(100);
+    await vi.waitFor(() =>
+      expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
+        event_id: 100,
+        alignment: ALIGNMENT,
+      })
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("resumes the output context on statechange while the page stays visible", async () => {
+    const { server, conversation, context } = await startSession(
+      "suspend-statechange"
+    );
+
+    await context.suspend();
+    await vi.waitFor(() => expect(context.state).toBe("running"));
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("stops resuming after endSession", async () => {
+    const { server, conversation, context } = await startSession("suspend-end");
+    const resume = vi.spyOn(context, "resume");
+
+    await conversation.endSession();
+    expect(context.state).toBe("closed");
+
+    setVisibility("visible");
+    context.dispatchEvent(new Event("statechange"));
+    expect(resume).not.toHaveBeenCalled();
+    server.close();
+  });
+});
+
 describe("Connection Types", () => {
   describe("ConnectionFactory", () => {
     it("throws error for unknown connection type", async () => {
@@ -1026,6 +1164,8 @@ describe("Volume Control", () => {
           addModule: vi.fn(() => Promise.resolve()),
         },
         resume: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
         close: vi.fn(() => Promise.resolve()),
       };
     }) as unknown as typeof AudioContext;
@@ -1115,6 +1255,8 @@ describe("Volume Control", () => {
           addModule: vi.fn(() => Promise.resolve()),
         },
         resume: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
         close: vi.fn(() => Promise.resolve()),
       };
     }) as unknown as typeof AudioContext;
@@ -1237,6 +1379,8 @@ describe("Volume Control", () => {
           addModule: vi.fn(() => Promise.resolve()),
         },
         resume: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
         close: vi.fn(() => Promise.resolve()),
       };
     }) as unknown as typeof AudioContext;
