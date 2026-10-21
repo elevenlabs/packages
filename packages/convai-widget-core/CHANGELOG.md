@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.0
+
+### Minor Changes
+
+- a7409ef: Reveal voice call transcripts in step with the agent's speech, using the audio's character alignment. If the agent is interrupted, only what was said is kept. Agents that don't send alignment show messages in full, as before.
+
+### Patch Changes
+
+- a5859c5: Resuming a persistent text conversation no longer asks the user to accept the terms again. The stored conversation was started behind the terms gate, so a resume treats them as accepted.
+- Updated dependencies [dca95fb]
+  - @elevenlabs/client@1.29.0
+
 ## 0.20.0
 
 ### Minor Changes

@@ -1195,6 +1195,24 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("audio alignment", () => {
+    it("reveals voice transcripts as the agent speaks", async () => {
+      setupWebComponent({ "agent-id": "aligned_voice", variant: "compact" });
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+
+      // The first chunk says "Sure, " and plays for 1.5s
+      await expect
+        .element(page.getByText("Sure,", { exact: true }))
+        .toBeInTheDocument();
+      expect(page.getByText(/booking/).query()).toBeNull();
+
+      await expect
+        .element(page.getByText("Sure, booking it now."), { timeout: 3000 })
+        .toBeInTheDocument();
+    });
+  });
+
   describe("strip audio tags", () => {
     it("should not strip audio tags from text messages even when strip_audio_tags config is true", async () => {
       setupWebComponent({

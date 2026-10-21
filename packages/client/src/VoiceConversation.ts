@@ -5,7 +5,11 @@ import type {
   PlaybackListener,
 } from "./OutputController.js";
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
-import type { AgentAudioEvent, InterruptionEvent } from "./utils/events.js";
+import type {
+  AgentAudioEvent,
+  AudioAlignmentEvent,
+  InterruptionEvent,
+} from "./utils/events.js";
 import {
   BaseConversation,
   type Options,
@@ -71,10 +75,26 @@ export class VoiceConversation extends BaseConversation {
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
 
   private handlePlaybackEvent: PlaybackListener = event => {
-    if (event.data.type === "process") {
-      this.updateMode(event.data.finished ? "listening" : "speaking");
+    switch (event.data.type) {
+      case "process":
+        this.updateMode(event.data.finished ? "listening" : "speaking");
+        break;
+      case "chunk_start":
+        this.emitAlignmentPlayback(event.data.event_id, event.data.alignment);
+        break;
     }
   };
+
+  private emitAlignmentPlayback(
+    eventId: number,
+    alignment: AudioAlignmentEvent
+  ) {
+    // Chunks queued before an interruption can still start during the fade-out
+    if (eventId < this.lastInterruptTimestamp) {
+      return;
+    }
+    this.options.onAudioAlignmentPlayback?.({ event_id: eventId, alignment });
+  }
 
   protected constructor(
     options: Options,

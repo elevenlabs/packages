@@ -1,5 +1,11 @@
 # @elevenlabs/client
 
+## 1.29.0
+
+### Minor Changes
+
+- dca95fb: Add an `onAudioAlignmentPlayback` callback, called with `{ event_id, alignment }` when an aligned audio chunk starts playing, for syncing text with speech. It is not called on WebRTC connections.
+
 ## 1.28.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@elevenlabs/react",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "description": "ElevenLabs React Library",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -46,7 +46,7 @@
     "react-dom": "19.2.8",
     "rolldown": "^1.0.0-rc.9",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.71.1",
+    "typescript-eslint": "^8.71.2",
     "vitest": "^4.1.5"
   },
   "repository": {
