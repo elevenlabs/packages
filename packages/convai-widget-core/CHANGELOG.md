@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.1
+
+### Patch Changes
+
+- 279f134: Keep carousel card buttons clickable after the conversation moves on, so users can return to a product shown earlier.
+
 ## 0.21.0
 
 ### Minor Changes
