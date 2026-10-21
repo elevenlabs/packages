@@ -593,7 +593,7 @@ describe("buildDisplayTranscript", () => {
 
   describe("typing indicator", () => {
     it("shows while the agent owes a reply", () => {
-      const config = { showPendingReply: true };
+      const config = { showAgentReplyPending: true };
       expect(build([msg("user", "Hi"), msg("agent", "")], config)).toEqual([
         expect.objectContaining({ message: "Hi" }),
         expect.objectContaining({ type: "typing_indicator" }),
@@ -609,7 +609,7 @@ describe("buildDisplayTranscript", () => {
     it("gives way to the tool status once a tool runs", () => {
       const result = build(
         [msg("user", "Hi"), msg("agent", "", { eventId: 2 }), toolReq(2)],
-        { showAgentStatus: true, showPendingReply: true }
+        { showAgentStatus: true, showAgentReplyPending: true }
       );
       expect(result).toEqual([
         expect.objectContaining({ message: "Hi" }),

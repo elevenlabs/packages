@@ -109,7 +109,7 @@ export function Sheet({ open }: SheetProps) {
         isExternalAgentMode.value &&
         isAgentTyping.value &&
         !isWaitingForAgent.value,
-      showPendingReply:
+      showAgentReplyPending:
         isTextOnly &&
         isAwaitingReply.value &&
         !isExternalAgentMode.value &&
