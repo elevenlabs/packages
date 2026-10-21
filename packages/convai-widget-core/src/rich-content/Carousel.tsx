@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { clsx } from "clsx";
-import { useRef } from "preact/compat";
+import { useEffect, useRef } from "preact/compat";
 import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
 import { useTextContents } from "../contexts/text-contents";
@@ -21,25 +21,42 @@ export interface CarouselProps {
 
 export function Carousel({ items, richContentId }: CarouselProps) {
   const scroller = useRef<HTMLDivElement>(null);
-  const activeIndex = useSignal(0);
+  const activePage = useSignal(0);
+  const pageCount = useSignal(items.length);
 
-  const handleScroll = () => {
+  const measure = () => {
     const el = scroller.current;
     if (!el || el.children.length < 2) return;
     const [first, second] = el.children as unknown as HTMLElement[];
     const step = Math.abs(second.offsetLeft - first.offsetLeft);
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    // Folds a leftover shorter than half a card into the last page
+    const pages = Math.round(maxScroll / step) + 1;
     // Math.abs because scrollLeft is negative in RTL
     const scrolled = Math.abs(el.scrollLeft);
-    const atEnd = scrolled + el.clientWidth >= el.scrollWidth - 1;
-    activeIndex.value = atEnd ? items.length - 1 : Math.round(scrolled / step);
+    pageCount.value = pages;
+    activePage.value =
+      scrolled >= maxScroll - 1
+        ? pages - 1
+        : Math.min(Math.round(scrolled / step), pages - 1);
   };
 
-  const scrollToCard = (index: number) => {
-    const card = scroller.current?.children[index];
-    card?.scrollIntoView({
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const scrollToPage = (page: number) => {
+    const cards = scroller.current?.children;
+    if (!cards) return;
+    const isLast = page === pageCount.value - 1;
+    cards[isLast ? cards.length - 1 : page]?.scrollIntoView({
       behavior: "smooth",
       block: "nearest",
-      inline: "start",
+      inline: isLast ? "end" : "start",
     });
   };
 
@@ -50,7 +67,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
       <div className="relative">
         <div
           ref={scroller}
-          onScroll={handleScroll}
+          onScroll={measure}
           className="flex snap-x snap-mandatory gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, index) => (
@@ -98,27 +115,27 @@ export function Carousel({ items, richContentId }: CarouselProps) {
             </div>
           ))}
         </div>
-        {activeIndex.value > 0 && (
-          <CarouselEdge
+        {activePage.value > 0 && (
+          <CarouselArrow
             direction="previous"
-            onClick={() => scrollToCard(activeIndex.value - 1)}
+            onClick={() => scrollToPage(activePage.value - 1)}
           />
         )}
-        {activeIndex.value < items.length - 1 && (
-          <CarouselEdge
+        {activePage.value < pageCount.value - 1 && (
+          <CarouselArrow
             direction="next"
-            onClick={() => scrollToCard(activeIndex.value + 1)}
+            onClick={() => scrollToPage(activePage.value + 1)}
           />
         )}
       </div>
-      {items.length > 1 && (
+      {pageCount.value > 1 && (
         <div aria-hidden className="flex items-center justify-center gap-1">
-          {items.map((_, index) => (
+          {Array.from({ length: pageCount.value }, (_, index) => (
             <span
               key={index}
               className={clsx(
                 "h-1.5 rounded-full transition-[width,background-color] duration-200",
-                index === activeIndex.value
+                index === activePage.value
                   ? "w-4 bg-base-primary"
                   : "w-1.5 bg-base-border"
               )}
@@ -130,7 +147,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
   );
 }
 
-function CarouselEdge({
+function CarouselArrow({
   direction,
   onClick,
 }: {
@@ -140,27 +157,21 @@ function CarouselEdge({
   const text = useTextContents();
   const isNext = direction === "next";
   return (
-    <>
-      {/* Only the next side fades; a snapped card sits flush with the start edge */}
-      {isNext && (
-        <div className="pointer-events-none absolute inset-y-0 end-0 w-10 bg-linear-to-l from-base to-transparent rtl:bg-linear-to-r" />
+    <Button
+      variant="secondary"
+      aria-label={isNext ? text.carousel_next : text.carousel_previous}
+      onClick={onClick}
+      className={clsx(
+        "absolute top-1/2 -translate-y-1/2 h-10 w-10 px-0 rounded-full shadow-md",
+        isNext ? "-end-2" : "-start-2"
       )}
-      <Button
-        variant="secondary"
-        aria-label={isNext ? text.carousel_next : text.carousel_previous}
-        onClick={onClick}
-        className={clsx(
-          "absolute top-1/2 -translate-y-1/2 h-10 w-10 px-0 rounded-full shadow-md",
-          isNext ? "-end-2" : "-start-2"
-        )}
-      >
-        <Icon
-          name="chevron-up"
-          className={
-            isNext ? "rotate-90 rtl:-rotate-90" : "-rotate-90 rtl:rotate-90"
-          }
-        />
-      </Button>
-    </>
+    >
+      <Icon
+        name="chevron-up"
+        className={
+          isNext ? "rotate-90 rtl:-rotate-90" : "-rotate-90 rtl:rotate-90"
+        }
+      />
+    </Button>
   );
 }
