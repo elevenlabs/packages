@@ -8,6 +8,7 @@ import type {
 } from "./utils/BaseConnection.js";
 import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
 import { throttle, type ThrottledFunction } from "./utils/throttle.js";
+import { stripAudioTags } from "./utils/audioTags.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -307,7 +308,9 @@ export abstract class BaseConversation {
       this.options.onMessage({
         source: "ai",
         role: "agent",
-        message: event.agent_response_event.agent_response,
+        message: this.options.stripAudioTags
+          ? stripAudioTags(event.agent_response_event.agent_response)
+          : event.agent_response_event.agent_response,
         event_id: event.agent_response_event.event_id,
         ...(event.agent_response_event.response_id
           ? { response_id: event.agent_response_event.response_id }
@@ -319,8 +322,19 @@ export abstract class BaseConversation {
 
   protected handleAgentResponseCorrection(event: AgentResponseCorrectionEvent) {
     if (this.options.onAgentResponseCorrection) {
+      const correction = event.agent_response_correction_event;
       this.options.onAgentResponseCorrection(
-        event.agent_response_correction_event
+        this.options.stripAudioTags
+          ? {
+              ...correction,
+              original_agent_response: stripAudioTags(
+                correction.original_agent_response
+              ),
+              corrected_agent_response: stripAudioTags(
+                correction.corrected_agent_response
+              ),
+            }
+          : correction
       );
     }
   }
