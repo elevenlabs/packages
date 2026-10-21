@@ -108,6 +108,8 @@ export function Sheet({ open }: SheetProps) {
         isExternalAgentMode.value &&
         isAgentTyping.value &&
         !isWaitingForAgent.value,
+      showPendingReply:
+        isTextOnly && !isExternalAgentMode.value && !isWaitingForAgent.value,
     });
   });
   const showTranscript = useComputed(

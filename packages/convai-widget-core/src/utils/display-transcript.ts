@@ -69,6 +69,8 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
+  /** If true, show a typing indicator under a message the agent has not answered. */
+  showPendingReply?: boolean;
   /** Move the first message rich content below the first agent message. */
   deferFirstMessageRichContent?: boolean;
 }
@@ -270,8 +272,16 @@ export function buildDisplayTranscript(
     }
   }
 
-  // Append typing indicator if configured
-  if (config.showTypingIndicator) {
+  const lastShown = result[result.length - 1];
+  const lastUserEntry = entries[lastUserEntryIndex];
+  const awaitingReply =
+    config.showPendingReply &&
+    lastShown?.type === "message" &&
+    lastShown.role === "user" &&
+    !(lastUserEntry?.type === "message" && lastUserEntry.sentToExternalAgent);
+
+  // Append typing indicator if configured or the agent owes a reply
+  if (config.showTypingIndicator || awaitingReply) {
     result.push({
       type: "typing_indicator",
       conversationIndex:

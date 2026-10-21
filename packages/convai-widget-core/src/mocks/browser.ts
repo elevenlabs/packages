@@ -2034,9 +2034,10 @@ export const Worker = setupWorker(
         client.close();
       }
       if (agentId === "external_agent") {
-        // Simulates a human agent takeover: the first user message triggers
-        // "external agent connected + typing", the second one triggers a
-        // handback via external_agent_disconnected with no other frames.
+        // Simulates a human agent takeover: the first user message triggers a
+        // handoff reply, then "external agent connected + typing"; the second
+        // triggers a handback via external_agent_disconnected with no other
+        // frames.
         let takenOver = false;
         client.addEventListener("message", async event => {
           const data =
@@ -2045,6 +2046,15 @@ export const Worker = setupWorker(
 
           if (!takenOver) {
             takenOver = true;
+            client.send(
+              JSON.stringify({
+                type: "agent_response",
+                agent_response_event: {
+                  agent_response: "Connecting you to a person.",
+                  event_id: 2,
+                },
+              })
+            );
             client.send(
               JSON.stringify({
                 type: "external_agent_connected",

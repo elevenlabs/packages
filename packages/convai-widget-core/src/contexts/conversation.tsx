@@ -84,6 +84,7 @@ export type TranscriptEntry =
       attachments?: MessageAttachment[];
       visibleLength?: number;
       speechInterrupted?: boolean;
+      sentToExternalAgent?: boolean;
     }
   | {
       type: "agent_tool_request";
@@ -1154,6 +1155,7 @@ function useConversationSetup() {
             message: text,
             isText: true,
             conversationIndex: conversationIndex.peek(),
+            sentToExternalAgent: isExternalAgentMode.peek(),
           },
         ];
       },
@@ -1177,6 +1179,7 @@ function useConversationSetup() {
             isText: true,
             conversationIndex: conversationIndex.peek(),
             fileInput,
+            sentToExternalAgent: isExternalAgentMode.peek(),
           },
         ];
       },
