@@ -53,6 +53,7 @@ export function Sheet({ open }: SheetProps) {
     transcript,
     conversationIndex,
     isAgentTyping,
+    isAwaitingReply,
     isExternalAgentMode,
     isWaitingForAgent,
   } = useConversation();
@@ -109,7 +110,10 @@ export function Sheet({ open }: SheetProps) {
         isAgentTyping.value &&
         !isWaitingForAgent.value,
       showPendingReply:
-        isTextOnly && !isExternalAgentMode.value && !isWaitingForAgent.value,
+        isTextOnly &&
+        isAwaitingReply.value &&
+        !isExternalAgentMode.value &&
+        !isWaitingForAgent.value,
     });
   });
   const showTranscript = useComputed(

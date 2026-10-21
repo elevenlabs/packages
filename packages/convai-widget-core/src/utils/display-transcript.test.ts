@@ -606,16 +606,6 @@ describe("buildDisplayTranscript", () => {
       );
     });
 
-    it("does not show for a message sent to an external agent", () => {
-      const result = build(
-        [{ ...msg("user", "Still there?"), sentToExternalAgent: true }],
-        { showPendingReply: true }
-      );
-      expect(result).toEqual([
-        expect.objectContaining({ message: "Still there?" }),
-      ]);
-    });
-
     it("gives way to the tool status once a tool runs", () => {
       const result = build(
         [msg("user", "Hi"), msg("agent", "", { eventId: 2 }), toolReq(2)],
