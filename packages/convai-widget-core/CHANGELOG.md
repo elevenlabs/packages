@@ -1,5 +1,12 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.2
+
+### Patch Changes
+
+- Updated dependencies [3855a41]
+  - @elevenlabs/client@1.30.0
+
 ## 0.21.1
 
 ### Patch Changes
