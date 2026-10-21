@@ -835,6 +835,14 @@ describe("buildDisplayTranscript", () => {
       ]);
     });
 
+    it("shows a carousel while the text before it is being said", () => {
+      const result = build([voice("Here are options.", 4), carousel()]);
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Here" }),
+        expect.objectContaining({ component: "carousel" }),
+      ]);
+    });
+
     it("shows rich content after an interrupted message", () => {
       const result = build([
         voice("Here are options.", 4, { speechInterrupted: true }),
