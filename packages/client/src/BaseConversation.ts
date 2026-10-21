@@ -322,8 +322,19 @@ export abstract class BaseConversation {
 
   protected handleAgentResponseCorrection(event: AgentResponseCorrectionEvent) {
     if (this.options.onAgentResponseCorrection) {
+      const correction = event.agent_response_correction_event;
       this.options.onAgentResponseCorrection(
-        event.agent_response_correction_event
+        this.options.stripAudioTags
+          ? {
+              ...correction,
+              original_agent_response: stripAudioTags(
+                correction.original_agent_response
+              ),
+              corrected_agent_response: stripAudioTags(
+                correction.corrected_agent_response
+              ),
+            }
+          : correction
       );
     }
   }
