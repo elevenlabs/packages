@@ -57,7 +57,6 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
       eventId: number;
       richContentId: string;
-      isAnswered: boolean;
     };
 
 export interface DisplayTranscriptConfig {
@@ -159,9 +158,13 @@ export function buildDisplayTranscript(
       if (!config.showRichContent) continue;
       // Wait until the text before it has been said
       if (speakingEventIds.has(entry.eventId)) continue;
-      const isAnswered = entryIndex < lastUserEntryIndex;
-      if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
-      result.push({ ...entry, isAnswered });
+      // Drop replies the user has moved past
+      if (
+        entryIndex < lastUserEntryIndex &&
+        !PERSISTING_COMPONENTS.has(entry.component)
+      )
+        continue;
+      result.push(entry);
       continue;
     }
 

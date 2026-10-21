@@ -664,20 +664,6 @@ describe("buildDisplayTranscript", () => {
 
     // A user turn after a row means the customer has moved on. Agent turns do
     // not count: the tool flow puts a short agent follow-up after every row.
-    it("keeps a carousel's content and drops its controls once answered", () => {
-      const answered = build([carousel("a"), msg("user", "the first one")]);
-      expect(answered[0]).toMatchObject({
-        type: "rich_content",
-        isAnswered: true,
-      });
-
-      const unanswered = build([msg("user", "show me"), carousel("a")]);
-      expect(unanswered[1]).toMatchObject({
-        type: "rich_content",
-        isAnswered: false,
-      });
-    });
-
     it("retires the replies of a turn and keeps its carousel", () => {
       const result = build([
         carousel("a", { eventId: 2 }),
