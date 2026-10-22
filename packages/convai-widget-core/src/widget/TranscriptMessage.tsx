@@ -364,7 +364,7 @@ function RichContentMessage({
   entry: Extract<DisplayTranscriptEntry, { type: "rich_content" }>;
 }) {
   return (
-    <div className="pe-8 -mt-3">
+    <div className={clsx("-mt-3", entry.component !== "carousel" && "pe-8")}>
       <RichContentRenderer
         component={entry.component}
         props={entry.props}
