@@ -20,7 +20,12 @@ describe("External agent mode", () => {
 
     await textInput.fill("escalate");
     await userEvent.keyboard("{Enter}");
-    await expect.element(typingIndicator).toBeInTheDocument();
+    // The AI typing dots share this label, so wait for the human's indicator
+    await expect
+      .poll(
+        () => !page.getByRole("status").query() && !!typingIndicator.query()
+      )
+      .toBe(true);
 
     // The mock replies with `external_agent_disconnected` and nothing else, so
     // the handler under test is the only thing that can clear the indicator.
