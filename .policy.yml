@@ -8,14 +8,14 @@ policy:
 
 approval_rules:
   - name: convai-widget-core changes approved by widget team
-    description: ConvAI widget core changes require approval from kamilk-11 or kalvin807
+    description: ConvAI widget core changes require approval from kamilk-11, kalvin807, or giannagerton
     if:
       changed_files:
         paths:
           - "^packages/convai-widget-core/.*$"
     requires:
       count: 1
-      users: ["kamilk-11", "kalvin807"]
+      users: ["kamilk-11", "kalvin807", "giannagerton"]
     options: &default_options
       allow_author: false
       allow_contributor: false
@@ -34,14 +34,14 @@ approval_rules:
         mode: all-users
 
   - name: convai-widget-embed changes approved by widget team
-    description: ConvAI widget embed changes require approval from kamilk-11 or kalvin807
+    description: ConvAI widget embed changes require approval from kamilk-11, kalvin807, or giannagerton
     if:
       changed_files:
         paths:
           - "^packages/convai-widget-embed/.*$"
     requires:
       count: 1
-      users: ["kamilk-11", "kalvin807"]
+      users: ["kamilk-11", "kalvin807", "giannagerton"]
     options:
       <<: *default_options
       request_review:
