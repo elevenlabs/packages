@@ -49,15 +49,19 @@ export function Carousel({ items, richContentId }: CarouselProps) {
     return () => resizeObserver.disconnect();
   }, []);
 
+  // scrollTo instead of scrollIntoView so ancestor scrollers stay put
   const scrollToPage = (page: number) => {
-    const cards = scroller.current?.children;
-    if (!cards) return;
-    const isLast = page === pageCount.value - 1;
-    cards[isLast ? cards.length - 1 : page]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: isLast ? "end" : "start",
-    });
+    const el = scroller.current;
+    if (!el) return;
+    const [first] = el.children as unknown as HTMLElement[];
+    const card = el.children[page] as HTMLElement | undefined;
+    if (!first || !card) return;
+    const offset =
+      page === pageCount.value - 1
+        ? el.scrollWidth - el.clientWidth
+        : Math.abs(card.offsetLeft - first.offsetLeft);
+    const isRtl = getComputedStyle(el).direction === "rtl";
+    el.scrollTo({ left: isRtl ? -offset : offset, behavior: "smooth" });
   };
 
   if (items.length === 0) return null;
