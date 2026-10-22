@@ -372,7 +372,7 @@ function TypingIndicatorMessage({
         role="status"
         className="inline-flex items-center gap-1 h-10 px-3 rounded-bubble bg-base-active"
       >
-        <span className="sr-only">{text.ai_typing_indicator.value}</span>
+        <span className="sr-only">{text.typing_indicator.value}</span>
         {[0, 160, 320].map(delay => (
           <span
             key={delay}

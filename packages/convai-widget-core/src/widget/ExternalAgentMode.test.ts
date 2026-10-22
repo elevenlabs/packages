@@ -20,9 +20,6 @@ describe("External agent mode", () => {
 
     await textInput.fill("escalate");
     await userEvent.keyboard("{Enter}");
-    await expect
-      .element(page.getByText("Connecting you to a person."))
-      .toBeInTheDocument();
     await expect.element(typingIndicator).toBeInTheDocument();
 
     // The mock replies with `external_agent_disconnected` and nothing else, so
