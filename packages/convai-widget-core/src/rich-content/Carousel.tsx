@@ -66,6 +66,8 @@ export function Carousel({ items, richContentId }: CarouselProps) {
     if (!el) return;
     const offset = getSnapCenterOffsets(el)[index];
     if (offset === undefined) return;
+    // Set before scrolling settles so rapid clicks step from the target card
+    activeCard.value = index;
     const isRtl = getComputedStyle(el).direction === "rtl";
     el.scrollTo({ left: isRtl ? -offset : offset, behavior: "smooth" });
   };
