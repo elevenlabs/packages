@@ -122,12 +122,13 @@
   }
 
   .animate-typing-dot {
-    animation: TypingDot 1.2s ease-in-out infinite;
+    animation: TypingDot 1.2s ease-in-out infinite backwards;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .animate-typing-dot {
       animation: none;
+      opacity: 0.5;
     }
   }
 
