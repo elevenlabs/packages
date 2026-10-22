@@ -348,12 +348,19 @@ function ToolCallMessage({ status }: { status: ToolCallStatusType }) {
   );
 }
 
-function TypingIndicatorMessage() {
+function TypingIndicatorMessage({
+  entry,
+}: {
+  entry: Extract<DisplayTranscriptEntry, { type: "typing_indicator" }>;
+}) {
   const text = useTextContents();
+  const label = entry.isExternalAgent
+    ? text.typing_indicator
+    : text.ai_typing_indicator;
 
   return (
     <div className="pr-8">
-      <ShimmeringText text={text.typing_indicator.value} className="text-sm" />
+      <ShimmeringText text={label.value} className="text-sm" />
     </div>
   );
 }
@@ -388,7 +395,7 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
     return <QueueTimeoutMessage />;
   }
   if (entry.type === "typing_indicator") {
-    return <TypingIndicatorMessage />;
+    return <TypingIndicatorMessage entry={entry} />;
   }
   if (entry.type === "rich_content") {
     return <RichContentMessage entry={entry} />;

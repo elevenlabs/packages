@@ -16,7 +16,9 @@ describe("Upload File Button", () => {
     });
     await textInput.fill("hi");
     await userEvent.keyboard("{Enter}");
-    await expect.element(page.getByText("hi")).toBeInTheDocument();
+    await expect
+      .element(page.getByText("hi", { exact: true }))
+      .toBeInTheDocument();
   }
 
   function getHiddenFileInput(widget: HTMLElement): HTMLInputElement {

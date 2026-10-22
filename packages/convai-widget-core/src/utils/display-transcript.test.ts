@@ -596,7 +596,10 @@ describe("buildDisplayTranscript", () => {
       const config = { showAgentReplyPending: true };
       expect(build([msg("user", "Hi"), msg("agent", "")], config)).toEqual([
         expect.objectContaining({ message: "Hi" }),
-        expect.objectContaining({ type: "typing_indicator" }),
+        expect.objectContaining({
+          type: "typing_indicator",
+          isExternalAgent: false,
+        }),
       ]);
       expect(build([msg("user", "Hi"), msg("agent", "Hello")], config)).toEqual(
         [
@@ -625,6 +628,7 @@ describe("buildDisplayTranscript", () => {
       expect(result[2]).toMatchObject({
         type: "typing_indicator",
         conversationIndex: 0,
+        isExternalAgent: true,
       });
     });
 

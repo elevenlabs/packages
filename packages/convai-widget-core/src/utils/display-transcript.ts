@@ -45,6 +45,7 @@ export type DisplayTranscriptEntry =
   | {
       type: "typing_indicator";
       conversationIndex: number;
+      isExternalAgent: boolean;
     }
   | {
       type: "queue_timeout";
@@ -286,6 +287,7 @@ export function buildDisplayTranscript(
         entries[entries.length - 1]?.conversationIndex ??
         config.firstMessageConversationIndex ??
         0,
+      isExternalAgent: !!config.showTypingIndicator,
     });
   }
 
