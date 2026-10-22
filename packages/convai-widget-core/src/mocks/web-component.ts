@@ -5,6 +5,7 @@ import { CustomAttributes } from "../types/attributes";
 import { registerWidget } from "../index";
 
 const MOUNTED_COMPONENTS = new Set<HTMLElement>();
+const VITEST_DEFAULT_VIEWPORT = [414, 896] as const;
 
 export function setupWebComponent(
   attributes: CustomAttributes & { "agent-id": keyof typeof AGENTS }
@@ -25,8 +26,7 @@ beforeAll(() => {
   registerWidget();
 });
 afterEach(async () => {
-  // Vitest's default viewport, for tests that switch to desktop width
-  await page.viewport(414, 896);
+  await page.viewport(...VITEST_DEFAULT_VIEWPORT);
   MOUNTED_COMPONENTS.forEach(element => {
     element.remove();
   });

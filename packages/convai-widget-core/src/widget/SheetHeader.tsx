@@ -71,7 +71,6 @@ export function SheetHeader({
               className="h-8 w-8 transition-opacity data-hidden:opacity-0"
             />
           </InOutTransition>
-          {/* Fullscreen covers the trigger, so the sheet closes itself */}
           {onClose && fullscreenOnly.value ? (
             <Button
               variant="ghost"
