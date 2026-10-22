@@ -1046,7 +1046,6 @@ describe("elevenlabs-convai", () => {
 
   describe("mobile size", () => {
     it("should open fullscreen with a close button before a transcript exists", async () => {
-      await page.viewport(375, 812);
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
@@ -1079,7 +1078,6 @@ describe("elevenlabs-convai", () => {
     });
 
     it("should keep the resize toggle when mobile fullscreen is off", async () => {
-      await page.viewport(375, 812);
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
@@ -1472,7 +1470,6 @@ describe("elevenlabs-convai", () => {
 
     it("should dismiss expandable widget completely", async () => {
       // Fullscreen on mobile covers the trigger's dismiss button
-      await page.viewport(1024, 768);
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
@@ -1480,6 +1477,7 @@ describe("elevenlabs-convai", () => {
         transcript: "true",
         "text-input": "true",
         "default-expanded": "true",
+        "mobile-fullscreen": "false",
       });
 
       // Verify expandable elements are visible

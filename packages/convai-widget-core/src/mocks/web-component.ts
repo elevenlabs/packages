@@ -1,11 +1,9 @@
 import type { AGENTS } from "./browser";
 import { afterEach, beforeAll } from "vitest";
-import { page } from "vitest/browser";
 import { CustomAttributes } from "../types/attributes";
 import { registerWidget } from "../index";
 
 const MOUNTED_COMPONENTS = new Set<HTMLElement>();
-const VITEST_DEFAULT_VIEWPORT = [414, 896] as const;
 
 export function setupWebComponent(
   attributes: CustomAttributes & { "agent-id": keyof typeof AGENTS }
@@ -25,8 +23,7 @@ export function setupWebComponent(
 beforeAll(() => {
   registerWidget();
 });
-afterEach(async () => {
-  await page.viewport(...VITEST_DEFAULT_VIEWPORT);
+afterEach(() => {
   MOUNTED_COMPONENTS.forEach(element => {
     element.remove();
   });
