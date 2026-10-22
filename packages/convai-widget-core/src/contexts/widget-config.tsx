@@ -139,6 +139,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showAgentStatus = useAttribute("show-agent-status");
   const showConversationId = useAttribute("show-conversation-id");
   const showResizeButton = useAttribute("show-resize-button");
+  const mobileFullscreen = useAttribute("mobile-fullscreen");
   const endConfirmation = useAttribute("end-confirmation");
   const showLanguageSelectorOnTrigger = useAttribute(
     "show-language-selector-on-trigger"
@@ -197,6 +198,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(showResizeButton.value) ??
       fetchedConfig.value.show_resize_button ??
       true;
+    const patchedMobileFullscreen =
+      parseBoolAttribute(mobileFullscreen.value) ??
+      fetchedConfig.value.mobile_fullscreen ??
+      true;
     const patchedEndConfirmation =
       parseBoolAttribute(endConfirmation.value) ??
       fetchedConfig.value.end_confirmation_enabled ??
@@ -222,6 +227,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       show_agent_status: patchedShowAgentStatus,
       show_conversation_id: patchedShowConversationId,
       show_resize_button: patchedShowResizeButton,
+      mobile_fullscreen: patchedMobileFullscreen,
       end_confirmation_enabled: patchedEndConfirmation,
       show_language_selector_on_trigger: patchedShowLanguageSelectorOnTrigger,
     };

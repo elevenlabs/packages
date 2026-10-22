@@ -9,6 +9,7 @@ export type SizeVariant = "compact" | "expanded" | "fullscreen";
 
 interface WidgetSizeContextType {
   variant: Signal<SizeVariant>;
+  fullscreenOnly: Signal<boolean>;
   toggleSize: () => void;
 }
 
@@ -48,22 +49,31 @@ export function WidgetSizeProvider({
     expanded.value = !expanded.value;
   }, [expanded]);
 
+  // Always-expanded sheets can't be closed, so they keep the toggle
+  const fullscreenOnly = useComputed(
+    () =>
+      isMobile.value &&
+      !!config.value.mobile_fullscreen &&
+      !config.value.always_expanded
+  );
+
   const variant = useComputed<SizeVariant>(() => {
-    if (!isMobile.value) {
-      return expanded.value ? "expanded" : "compact";
+    if (fullscreenOnly.value) {
+      return "fullscreen";
     }
-    // Always-expanded sheets can't be closed, so they keep the toggle
-    return expanded.value || !config.value.always_expanded
-      ? "fullscreen"
-      : "compact";
+    if (!expanded.value) {
+      return "compact";
+    }
+    return isMobile.value ? "fullscreen" : "expanded";
   });
 
   const value = useMemo(
     () => ({
       variant,
+      fullscreenOnly,
       toggleSize,
     }),
-    [variant, toggleSize]
+    [variant, fullscreenOnly, toggleSize]
   );
 
   return (

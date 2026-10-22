@@ -28,7 +28,7 @@ export function SheetHeader({
   onClose,
 }: SheetHeaderProps) {
   const text = useTextContents();
-  const { toggleSize, variant } = useWidgetSize();
+  const { toggleSize, variant, fullscreenOnly } = useWidgetSize();
 
   const expandButtonLabel = useComputed(() =>
     variant.value === "compact" ? "Expand widget" : "Collapse widget"
@@ -72,7 +72,7 @@ export function SheetHeader({
             />
           </InOutTransition>
           {/* Fullscreen covers the trigger, so the sheet closes itself */}
-          {onClose && variant.value === "fullscreen" ? (
+          {onClose && fullscreenOnly.value ? (
             <Button
               variant="ghost"
               onClick={onClose}

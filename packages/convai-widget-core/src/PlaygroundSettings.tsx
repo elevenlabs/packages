@@ -23,6 +23,7 @@ export function usePlaygroundSettings() {
   const [endConfirmation, setEndConfirmation] = useState(false);
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [showResizeButton, setShowResizeButton] = useState(true);
+  const [mobileFullscreen, setMobileFullscreen] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
     useState(true);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
@@ -75,6 +76,8 @@ export function usePlaygroundSettings() {
     setShowAgentStatus,
     showResizeButton,
     setShowResizeButton,
+    mobileFullscreen,
+    setMobileFullscreen,
     showLanguageSelectorOnTrigger,
     setShowLanguageSelectorOnTrigger,
     dynamicVariablesStr,
@@ -207,6 +210,14 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setShowResizeButton(e.currentTarget.checked)}
         />{" "}
         Show resize button
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.mobileFullscreen}
+          onChange={e => state.setMobileFullscreen(e.currentTarget.checked)}
+        />{" "}
+        Mobile fullscreen
       </label>
       <label>
         <input

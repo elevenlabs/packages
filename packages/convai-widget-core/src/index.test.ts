@@ -1077,6 +1077,23 @@ describe("elevenlabs-convai", () => {
       await closeButtons.first().click();
       await expect.poll(() => closeButtons.elements().length).toBe(0);
     });
+
+    it("should keep the resize toggle when mobile fullscreen is off", async () => {
+      await page.viewport(375, 812);
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        "default-expanded": "true",
+        "mobile-fullscreen": "false",
+      });
+
+      await page.getByRole("button", { name: "Expand widget" }).click();
+      await expect
+        .element(page.getByRole("button", { name: "Collapse widget" }))
+        .toBeVisible();
+    });
   });
 
   describe("markdown rendering", () => {
