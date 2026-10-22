@@ -157,7 +157,11 @@ export function buildDisplayTranscript(
     if (entry.type === "rich_content") {
       if (!config.showRichContent) continue;
       // Wait until the text before it has been said
-      if (speakingEventIds.has(entry.eventId)) continue;
+      if (
+        speakingEventIds.has(entry.eventId) &&
+        !PERSISTING_COMPONENTS.has(entry.component)
+      )
+        continue;
       // Drop replies the user has moved past
       if (
         entryIndex < lastUserEntryIndex &&
