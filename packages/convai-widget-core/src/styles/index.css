@@ -108,6 +108,29 @@
     animation: spin 1s linear infinite;
   }
 
+  @keyframes TypingDot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.25;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 0.7;
+      transform: translateY(-3px);
+    }
+  }
+
+  .animate-typing-dot {
+    animation: TypingDot 1.2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-typing-dot {
+      animation: none;
+    }
+  }
+
   .terms h6 {
     @apply text-base-primary font-medium text-xs;
   }
