@@ -592,6 +592,34 @@ describe("buildDisplayTranscript", () => {
   });
 
   describe("typing indicator", () => {
+    it("shows while the agent owes a reply", () => {
+      const config = { showAgentReplyPending: true };
+      expect(build([msg("user", "Hi"), msg("agent", "")], config)).toEqual([
+        expect.objectContaining({ message: "Hi" }),
+        expect.objectContaining({
+          type: "typing_indicator",
+          isExternalAgent: false,
+        }),
+      ]);
+      expect(build([msg("user", "Hi"), msg("agent", "Hello")], config)).toEqual(
+        [
+          expect.objectContaining({ message: "Hi" }),
+          expect.objectContaining({ message: "Hello" }),
+        ]
+      );
+    });
+
+    it("gives way to the tool status once a tool runs", () => {
+      const result = build(
+        [msg("user", "Hi"), msg("agent", "", { eventId: 2 }), toolReq(2)],
+        { showAgentStatus: true, showAgentReplyPending: true }
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Hi" }),
+        expect.objectContaining({ role: "agent", toolStatus: "loading" }),
+      ]);
+    });
+
     it("appends typing indicator when showTypingIndicator is true", () => {
       const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
       const result = build(input, { showTypingIndicator: true });
@@ -600,6 +628,7 @@ describe("buildDisplayTranscript", () => {
       expect(result[2]).toMatchObject({
         type: "typing_indicator",
         conversationIndex: 0,
+        isExternalAgent: true,
       });
     });
 

@@ -45,6 +45,7 @@ export type DisplayTranscriptEntry =
   | {
       type: "typing_indicator";
       conversationIndex: number;
+      isExternalAgent: boolean;
     }
   | {
       type: "queue_timeout";
@@ -69,6 +70,8 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
+  /** If true, the AI agent owes a reply; show a typing indicator until it shows. */
+  showAgentReplyPending?: boolean;
   /** Move the first message rich content below the first agent message. */
   deferFirstMessageRichContent?: boolean;
 }
@@ -274,14 +277,21 @@ export function buildDisplayTranscript(
     }
   }
 
-  // Append typing indicator if configured
-  if (config.showTypingIndicator) {
+  const lastShown = result[result.length - 1];
+  const agentReplyPending =
+    config.showAgentReplyPending &&
+    lastShown?.type === "message" &&
+    lastShown.role === "user";
+
+  // Show the typing row while a human agent types or the AI agent owes a reply
+  if (config.showTypingIndicator || agentReplyPending) {
     result.push({
       type: "typing_indicator",
       conversationIndex:
         entries[entries.length - 1]?.conversationIndex ??
         config.firstMessageConversationIndex ??
         0,
+      isExternalAgent: !!config.showTypingIndicator,
     });
   }
 

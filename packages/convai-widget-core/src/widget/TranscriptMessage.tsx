@@ -348,12 +348,40 @@ function ToolCallMessage({ status }: { status: ToolCallStatusType }) {
   );
 }
 
-function TypingIndicatorMessage() {
+function TypingIndicatorMessage({
+  entry,
+}: {
+  entry: Extract<DisplayTranscriptEntry, { type: "typing_indicator" }>;
+}) {
   const text = useTextContents();
 
+  if (entry.isExternalAgent) {
+    return (
+      <div className="pr-8">
+        <ShimmeringText
+          text={text.typing_indicator.value}
+          className="text-sm"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="pr-8">
-      <ShimmeringText text={text.typing_indicator.value} className="text-sm" />
+    <div className="pr-8 origin-top-left transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:scale-75">
+      <div
+        role="status"
+        className="inline-flex items-center gap-1 h-10 px-3 rounded-bubble bg-base-active"
+      >
+        <span className="sr-only">{text.typing_indicator.value}</span>
+        {[0, 160, 320].map(delay => (
+          <span
+            key={delay}
+            aria-hidden="true"
+            className="w-[7px] h-[7px] rounded-full bg-base-primary animate-typing-dot"
+            style={{ animationDelay: `${delay}ms` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -388,7 +416,7 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
     return <QueueTimeoutMessage />;
   }
   if (entry.type === "typing_indicator") {
-    return <TypingIndicatorMessage />;
+    return <TypingIndicatorMessage entry={entry} />;
   }
   if (entry.type === "rich_content") {
     return <RichContentMessage entry={entry} />;
