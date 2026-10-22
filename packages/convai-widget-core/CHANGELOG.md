@@ -1,5 +1,13 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.3
+
+### Patch Changes
+
+- e657aea: Show animated typing dots in text chat while the agent works on its reply. They go away when the reply starts, or when a tool call's "Working..." status shows. Screen readers announce the `typing_indicator` text.
+- 2552ea9: Show a page indicator under rich-content carousels so users can tell there are more cards to scroll through, and add previous/next arrows.
+- b8aff54: Show carousels in voice calls while the agent is still speaking, instead of waiting for the text before them to be said. Buttons still wait.
+
 ## 0.21.2
 
 ### Patch Changes
