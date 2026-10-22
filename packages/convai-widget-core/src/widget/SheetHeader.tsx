@@ -15,6 +15,7 @@ interface SheetHeaderProps {
   showLanguageSelector: ReadonlySignal<boolean>;
   showConversationModeToggle: ReadonlySignal<boolean>;
   showExpandButton: ReadonlySignal<boolean>;
+  onClose?: () => void;
 }
 
 export function SheetHeader({
@@ -24,6 +25,7 @@ export function SheetHeader({
   showLanguageSelector,
   showConversationModeToggle,
   showExpandButton,
+  onClose,
 }: SheetHeaderProps) {
   const text = useTextContents();
   const { toggleSize, variant } = useWidgetSize();
@@ -69,19 +71,31 @@ export function SheetHeader({
               className="h-8 w-8 transition-opacity data-hidden:opacity-0"
             />
           </InOutTransition>
-          <InOutTransition active={showExpandButton}>
+          {/* Fullscreen covers the trigger, so the sheet closes itself */}
+          {onClose && variant.value === "fullscreen" ? (
             <Button
               variant="ghost"
-              onClick={toggleSize}
-              aria-label={expandButtonLabel}
-              className="h-8 w-8 transition-opacity data-hidden:opacity-0"
+              onClick={onClose}
+              aria-label={text.collapse}
+              className="h-8 w-8"
             >
-              <Icon
-                name={variant.value === "compact" ? "maximize" : "minimize"}
-                size="sm"
-              />
+              <Icon name="x" size="sm" />
             </Button>
-          </InOutTransition>
+          ) : (
+            <InOutTransition active={showExpandButton}>
+              <Button
+                variant="ghost"
+                onClick={toggleSize}
+                aria-label={expandButtonLabel}
+                className="h-8 w-8 transition-opacity data-hidden:opacity-0"
+              >
+                <Icon
+                  name={variant.value === "compact" ? "maximize" : "minimize"}
+                  size="sm"
+                />
+              </Button>
+            </InOutTransition>
+          )}
         </div>
       </div>
     </div>

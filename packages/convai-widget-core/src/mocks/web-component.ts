@@ -1,5 +1,6 @@
 import type { AGENTS } from "./browser";
 import { afterEach, beforeAll } from "vitest";
+import { page } from "vitest/browser";
 import { CustomAttributes } from "../types/attributes";
 import { registerWidget } from "../index";
 
@@ -23,7 +24,9 @@ export function setupWebComponent(
 beforeAll(() => {
   registerWidget();
 });
-afterEach(() => {
+afterEach(async () => {
+  // Vitest's default viewport, for tests that switch to desktop width
+  await page.viewport(414, 896);
   MOUNTED_COMPONENTS.forEach(element => {
     element.remove();
   });

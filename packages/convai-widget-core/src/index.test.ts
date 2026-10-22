@@ -1044,6 +1044,41 @@ describe("elevenlabs-convai", () => {
     );
   });
 
+  describe("mobile size", () => {
+    it("should open fullscreen with a close button before a transcript exists", async () => {
+      await page.viewport(375, 812);
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+      });
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeInTheDocument();
+
+      document.dispatchEvent(
+        new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "expand" },
+          bubbles: true,
+          composed: true,
+        })
+      );
+
+      // The sheet's close button sits before the covered trigger's
+      const closeButtons = page.getByRole("button", {
+        name: "Collapse",
+        exact: true,
+      });
+      await expect.poll(() => closeButtons.elements().length).toBe(2);
+      await expect
+        .element(page.getByRole("button", { name: "Collapse widget" }))
+        .not.toBeInTheDocument();
+
+      await closeButtons.first().click();
+      await expect.poll(() => closeButtons.elements().length).toBe(0);
+    });
+  });
+
   describe("markdown rendering", () => {
     beforeEach(() => {
       setupWebComponent({
@@ -1419,6 +1454,8 @@ describe("elevenlabs-convai", () => {
     });
 
     it("should dismiss expandable widget completely", async () => {
+      // Fullscreen on mobile covers the trigger's dismiss button
+      await page.viewport(1024, 768);
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",

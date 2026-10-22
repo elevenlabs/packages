@@ -66,6 +66,8 @@ describe("End confirmation", () => {
   });
 
   it("should dismiss when the sheet is collapsed", async () => {
+    // Fullscreen on mobile covers the trigger's collapse button
+    await page.viewport(1024, 768);
     await startCall({ transcript: "true" });
 
     await endButton().click();
