@@ -1,5 +1,12 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.4
+
+### Patch Changes
+
+- c48270b: Carousels show one dot per card and center the card you move to. On touch screens they scroll freely, with smaller cards and no arrows.
+- 8c91bbb: On screens narrower than 768px, the chat now always opens fullscreen, and the header's resize button is replaced by a close button. Add `mobile-fullscreen="false"` to the embed to keep the previous behavior, where the chat opens compact and the resize button switches to fullscreen. Widgets with `always-expanded` also keep the previous behavior, since they can't be closed.
+
 ## 0.21.3
 
 ### Patch Changes
