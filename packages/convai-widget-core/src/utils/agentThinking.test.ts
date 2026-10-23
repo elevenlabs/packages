@@ -52,6 +52,7 @@ describe("AgentThinking", () => {
   });
 
   it("stays on while a tool runs, then times out after it responds", () => {
+    thinking.onUserTurnEnded();
     thinking.onToolRequest();
     vi.advanceTimersByTime(THINKING_TIMEOUT_MS * 2);
     expect(thinking.isThinking.value).toBe(true);
@@ -62,6 +63,7 @@ describe("AgentThinking", () => {
   });
 
   it("comes back after the agent speaks while a tool is still running", () => {
+    thinking.onUserTurnEnded();
     thinking.onModeChange("speaking");
     thinking.onToolRequest();
     vi.advanceTimersByTime(SHOW_DELAY_MS);
@@ -70,5 +72,16 @@ describe("AgentThinking", () => {
     thinking.onModeChange("listening");
     vi.advanceTimersByTime(SHOW_DELAY_MS);
     expect(thinking.isThinking.value).toBe(true);
+  });
+
+  it("stays off after the user interrupts while a tool runs", () => {
+    thinking.onUserTurnEnded();
+    thinking.onModeChange("speaking");
+    thinking.onToolRequest();
+    thinking.onInterruption();
+    thinking.onModeChange("listening");
+    thinking.onToolResponse();
+    vi.advanceTimersByTime(SHOW_DELAY_MS);
+    expect(thinking.isThinking.value).toBe(false);
   });
 });

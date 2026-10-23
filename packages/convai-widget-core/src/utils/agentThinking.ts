@@ -9,6 +9,7 @@ export class AgentThinking {
   private readonly thinking = signal(false);
   readonly isThinking: ReadonlySignal<boolean> = this.thinking;
   private mode: Mode = "listening";
+  private awaitingReply = false;
   private pendingTools = 0;
   private showTimer: ReturnType<typeof setTimeout> | null = null;
   private timeoutTimer: ReturnType<typeof setTimeout> | null = null;
@@ -16,6 +17,7 @@ export class AgentThinking {
   onUserTurnEnded() {
     // Tools from an earlier turn no longer matter
     this.pendingTools = 0;
+    this.awaitingReply = true;
     this.start();
   }
 
@@ -39,17 +41,20 @@ export class AgentThinking {
   }
 
   onInterruption() {
+    // The user is talking again, so wait for the end of their turn
+    this.awaitingReply = false;
     this.clear();
   }
 
   reset() {
     this.pendingTools = 0;
+    this.awaitingReply = false;
     this.mode = "listening";
     this.clear();
   }
 
   private start() {
-    if (this.mode === "speaking") return;
+    if (!this.awaitingReply || this.mode === "speaking") return;
     if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
     this.timeoutTimer = setTimeout(() => {
       // A running tool keeps it on until the tool responds
