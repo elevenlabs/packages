@@ -500,11 +500,15 @@ function useConversationSetup() {
     const agentThinking = new AgentThinking();
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
-    const isVoiceCall = () => conversationTextOnly.peek() === false;
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
     // Whether the AI agent owes a reply to the user's last message
     const isAwaitingReply = signal(false);
+    // Voice calls only, and not while a human agent has taken over
+    const onUserTurnEnded = () => {
+      if (conversationTextOnly.peek() === false && !isExternalAgentMode.peek())
+        agentThinking.onUserTurnEnded();
+    };
     const queueStatus = signal<string | null>(null);
     // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
     const isHeldInQueue = computed(
@@ -775,7 +779,7 @@ function useConversationSetup() {
 
               // The agent is done talking once the user has replied
               speechReveal.finishAll();
-              if (isVoiceCall()) agentThinking.onUserTurnEnded();
+              onUserTurnEnded();
 
               const currentTranscript = transcript.peek();
               transcript.value = [
@@ -885,7 +889,7 @@ function useConversationSetup() {
               agentThinking.onInterruption();
             },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
-              if (isVoiceCall()) agentThinking.onToolRequest();
+              agentThinking.onToolRequest();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -898,7 +902,7 @@ function useConversationSetup() {
               ];
             },
             onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
-              if (isVoiceCall()) agentThinking.onToolResponse();
+              agentThinking.onToolResponse();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -934,6 +938,7 @@ function useConversationSetup() {
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
               isAwaitingReply.value = false;
+              agentThinking.reset();
             },
             onExternalAgentDisconnected: () => {
               setAgentTyping(false);
@@ -1173,7 +1178,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
-        if (isVoiceCall()) agentThinking.onUserTurnEnded();
+        onUserTurnEnded();
       },
       sendMultimodalMessage: (input: {
         text?: string;
@@ -1198,7 +1203,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
-        if (isVoiceCall()) agentThinking.onUserTurnEnded();
+        onUserTurnEnded();
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
