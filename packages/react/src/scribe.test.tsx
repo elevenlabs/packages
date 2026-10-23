@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AudioFormat, RealtimeEvents, Scribe } from "@elevenlabs/client";
 import type { RealtimeConnection } from "@elevenlabs/client";
 import { useScribe } from "./scribe.js";
+import type { ScribeHookOptions } from "./scribe.js";
 
 vi.mock("@elevenlabs/client", async importOriginal => {
   const actual = await importOriginal<typeof import("@elevenlabs/client")>();
@@ -21,6 +22,14 @@ function createMockConnection(): RealtimeConnection {
     send: vi.fn(),
     commit: vi.fn(),
   } as unknown as RealtimeConnection;
+}
+
+function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
+  return vi
+    .mocked(connection.on)
+    .mock.calls.find(([registered]) => registered === event)?.[1] as
+    | ((data: unknown) => void)
+    | undefined;
 }
 
 describe("useScribe", () => {
@@ -238,14 +247,6 @@ describe("useScribe", () => {
   });
 
   describe("transcript editing", () => {
-    function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
-      return vi
-        .mocked(connection.on)
-        .mock.calls.find(([registered]) => registered === event)?.[1] as
-        | ((data: unknown) => void)
-        | undefined;
-    }
-
     it("attaches edited_transcript to the matching committed segment", async () => {
       const connection = createMockConnection();
       vi.mocked(Scribe.connect).mockReturnValue(connection);
@@ -295,6 +296,96 @@ describe("useScribe", () => {
         edited.edited_text
       );
       expect(onEditedTranscript).toHaveBeenCalledWith(edited);
+    });
+  });
+
+  describe("committed segments", () => {
+    const partial = {
+      message_type: "partial_transcript",
+      text: "The quick brown",
+    };
+    const committed = {
+      message_type: "committed_transcript",
+      text: "The quick brown fox.",
+    };
+    const committedWithTimestamps = {
+      message_type: "committed_transcript_with_timestamps",
+      text: committed.text,
+      language_code: "en",
+      words: [{ text: "The", start: 0, end: 0.2, type: "word" }],
+    };
+
+    async function connectWith(options: ScribeHookOptions) {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const { result } = renderHook(() => useScribe(options));
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const receive = (event: RealtimeEvents, data: unknown) =>
+        act(() => {
+          handlerFor(connection, event)?.(data);
+        });
+
+      return { result, receive };
+    }
+
+    it("adds one segment with words when timestamps are on", async () => {
+      const onCommittedTranscript = vi.fn();
+      const onCommittedTranscriptWithTimestamps = vi.fn();
+      const { result, receive } = await connectWith({
+        onCommittedTranscript,
+        onCommittedTranscriptWithTimestamps,
+      });
+
+      receive(RealtimeEvents.PARTIAL_TRANSCRIPT, partial);
+      receive(RealtimeEvents.COMMITTED_TRANSCRIPT, committed);
+      receive(
+        RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
+        committedWithTimestamps
+      );
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
+      expect(result.current.committedTranscripts[0]?.words).toEqual(
+        committedWithTimestamps.words
+      );
+      expect(result.current.partialTranscript).toBe("");
+      expect(onCommittedTranscript).toHaveBeenCalledWith(committed);
+      expect(onCommittedTranscriptWithTimestamps).toHaveBeenCalledWith(
+        committedWithTimestamps
+      );
+    });
+
+    it("adds one segment with the language when language detection is on", async () => {
+      const { result, receive } = await connectWith({
+        includeLanguageDetection: true,
+      });
+
+      receive(RealtimeEvents.COMMITTED_TRANSCRIPT, committed);
+      receive(
+        RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
+        committedWithTimestamps
+      );
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
+      expect(result.current.committedTranscripts[0]?.languageCode).toBe("en");
+    });
+
+    it("keeps the segment of a commit whose timestamped copy never arrives", async () => {
+      const { result, receive } = await connectWith({
+        includeTimestamps: true,
+        onCommittedTranscript: () => result.current.disconnect(),
+      });
+
+      receive(RealtimeEvents.COMMITTED_TRANSCRIPT, committed);
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
     });
   });
 

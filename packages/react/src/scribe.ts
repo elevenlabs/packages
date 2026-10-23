@@ -324,6 +324,12 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           defaultIncludeLanguageDetection;
         const enableLogging =
           runtimeOptions.enableLogging ?? defaultEnableLogging;
+        // With timestamps or language detection on, the server follows each
+        // commit with a copy that carries the words and the detected language.
+        // That copy fills in the segment its commit already added.
+        const expectsTimestampedCopy =
+          includeTimestamps || includeLanguageDetection === true;
+        const awaitingTimestampedCopy: string[] = [];
 
         // Shared by both modes, so an option is forwarded to the client once
         // instead of having to be repeated per mode.
@@ -399,6 +405,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             timestamp: Date.now(),
             isFinal: true,
           };
+          if (expectsTimestampedCopy) {
+            awaitingTimestampedCopy.push(segment.id);
+          }
           setCommittedTranscripts(prev => [...prev, segment]);
           setPartialTranscript("");
           onCommittedTranscript?.(message);
@@ -408,15 +417,27 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
           (data: unknown) => {
             const message = data as CommittedTranscriptWithTimestampsMessage;
-            const segment: TranscriptSegment = {
-              id: `${Date.now()}-${Math.random()}`,
-              text: message.text,
-              timestamp: Date.now(),
-              isFinal: true,
+            const id = awaitingTimestampedCopy.shift();
+            const details = {
               languageCode: message.language_code,
               words: message.words,
             };
-            setCommittedTranscripts(prev => [...prev, segment]);
+            setCommittedTranscripts(prev =>
+              prev.some(segment => segment.id === id)
+                ? prev.map(segment =>
+                    segment.id === id ? { ...segment, ...details } : segment
+                  )
+                : [
+                    ...prev,
+                    {
+                      id: `${Date.now()}-${Math.random()}`,
+                      text: message.text,
+                      timestamp: Date.now(),
+                      isFinal: true,
+                      ...details,
+                    },
+                  ]
+            );
             setPartialTranscript("");
             onCommittedTranscriptWithTimestamps?.(message);
           }
