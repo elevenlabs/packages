@@ -90,6 +90,7 @@ export interface WidgetConfig {
     max_files_per_conversation?: number;
   };
   show_resize_button?: boolean;
+  mobile_fullscreen?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;

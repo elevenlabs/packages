@@ -68,9 +68,12 @@ export const Wrapper = memo(function Wrapper() {
       PLACEMENT_CLASSES[config.value.placement]
     )
   );
+  const sheetVisible = useComputed(
+    () => config.value.always_expanded || (expandable.value && expanded.value)
+  );
   // Powered by should always at bottom of the viewport in fullscreen mode
   const poweredByClassName = useComputed(() => (
-    variant.value === "fullscreen" ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
+    variant.value === "fullscreen" && sheetVisible.value ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
   ));
 
   useSignalEffect(() => {
@@ -126,9 +129,7 @@ export const Wrapper = memo(function Wrapper() {
     if (!terms.termsAccepted.value && terms.termsShown.value) {
       return "terms";
     }
-    const sheetVisible =
-      config.value.always_expanded || (expandable.value && expanded.value);
-    if (confirmationShown.value && !sheetVisible) {
+    if (confirmationShown.value && !sheetVisible.value) {
       return "end-confirmation";
     }
     return "conversation";
@@ -140,6 +141,10 @@ export const Wrapper = memo(function Wrapper() {
   const isEndConfirmation = useComputed(
     () => state.value === "end-confirmation"
   );
+
+  const handleClose = () => {
+    expanded.value = false;
+  };
 
   const handleDismiss = () => {
     hidden.value = true;
@@ -171,7 +176,9 @@ export const Wrapper = memo(function Wrapper() {
             <Sheet open />
           ) : (
             <>
-              {expandable.value && <Sheet open={expanded} />}
+              {expandable.value && (
+                <Sheet open={expanded} onClose={handleClose} />
+              )}
               <Trigger
                 expandable={expandable.value}
                 expanded={expanded}

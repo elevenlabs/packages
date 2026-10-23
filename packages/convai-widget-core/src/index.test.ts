@@ -1044,6 +1044,56 @@ describe("elevenlabs-convai", () => {
     );
   });
 
+  describe("mobile size", () => {
+    it("should open fullscreen with a close button before a transcript exists", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+      });
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeInTheDocument();
+
+      document.dispatchEvent(
+        new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "expand" },
+          bubbles: true,
+          composed: true,
+        })
+      );
+
+      // The sheet's close button sits before the covered trigger's
+      const closeButtons = page.getByRole("button", {
+        name: "Collapse",
+        exact: true,
+      });
+      await expect.poll(() => closeButtons.elements().length).toBe(2);
+      await expect
+        .element(page.getByRole("button", { name: "Collapse widget" }))
+        .not.toBeInTheDocument();
+
+      await closeButtons.first().click();
+      await expect.poll(() => closeButtons.elements().length).toBe(0);
+    });
+
+    it("should keep the resize toggle when mobile fullscreen is off", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        "default-expanded": "true",
+        "mobile-fullscreen": "false",
+      });
+
+      await page.getByRole("button", { name: "Expand widget" }).click();
+      await expect
+        .element(page.getByRole("button", { name: "Collapse widget" }))
+        .toBeVisible();
+    });
+  });
+
   describe("markdown rendering", () => {
     beforeEach(() => {
       setupWebComponent({
@@ -1419,6 +1469,7 @@ describe("elevenlabs-convai", () => {
     });
 
     it("should dismiss expandable widget completely", async () => {
+      // Fullscreen on mobile covers the trigger's dismiss button
       setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
@@ -1426,6 +1477,7 @@ describe("elevenlabs-convai", () => {
         transcript: "true",
         "text-input": "true",
         "default-expanded": "true",
+        "mobile-fullscreen": "false",
       });
 
       // Verify expandable elements are visible
