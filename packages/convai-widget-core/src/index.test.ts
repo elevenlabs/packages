@@ -1263,6 +1263,27 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("voice typing indicator", () => {
+    it("shows typing dots after the user's voice turn", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+
+      // The mock ends on a user transcript with no reply
+      await expect
+        .element(page.getByText("User transcript"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("status"), { timeout: 3000 })
+        .toHaveTextContent("Thinking...");
+    });
+  });
+
   describe("strip audio tags", () => {
     it("should not strip audio tags from text messages even when strip_audio_tags config is true", async () => {
       setupWebComponent({

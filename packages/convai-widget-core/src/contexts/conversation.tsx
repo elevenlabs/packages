@@ -36,6 +36,7 @@ import {
   isPersistentSessionRefused,
 } from "../utils/persistentSession";
 import { SpeechReveal } from "../utils/speechReveal";
+import { AgentThinking } from "../utils/agentThinking";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -496,12 +497,18 @@ function useConversationSetup() {
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const speechReveal = new SpeechReveal(transcript);
+    const agentThinking = new AgentThinking();
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
     // Whether the AI agent owes a reply to the user's last message
     const isAwaitingReply = signal(false);
+    // Voice calls only, and not while a human agent has taken over
+    const onUserTurnEnded = () => {
+      if (conversationTextOnly.peek() === false && !isExternalAgentMode.peek())
+        agentThinking.onUserTurnEnded();
+    };
     const queueStatus = signal<string | null>(null);
     // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
     const isHeldInQueue = computed(
@@ -551,6 +558,7 @@ function useConversationSetup() {
       transcript,
       isAgentTyping,
       isAwaitingReply,
+      isAgentThinking: agentThinking.isThinking,
       isExternalAgentMode,
       queueStatus,
       isWaitingForAgent,
@@ -682,6 +690,7 @@ function useConversationSetup() {
             onModeChange: props => {
               mode.value = props.mode;
               speechReveal.onModeChange(props.mode);
+              agentThinking.onModeChange(props.mode);
             },
             onStatusChange: props => {
               status.value = props.status;
@@ -770,6 +779,7 @@ function useConversationSetup() {
 
               // The agent is done talking once the user has replied
               speechReveal.finishAll();
+              onUserTurnEnded();
 
               const currentTranscript = transcript.peek();
               transcript.value = [
@@ -876,8 +886,10 @@ function useConversationSetup() {
             },
             onInterruption: ({ event_id }) => {
               speechReveal.onInterruption(event_id);
+              agentThinking.onInterruption();
             },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
+              agentThinking.onToolRequest();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -890,6 +902,7 @@ function useConversationSetup() {
               ];
             },
             onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
+              agentThinking.onToolResponse();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -925,6 +938,7 @@ function useConversationSetup() {
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
               isAwaitingReply.value = false;
+              agentThinking.reset();
             },
             onExternalAgentDisconnected: () => {
               setAgentTyping(false);
@@ -959,6 +973,7 @@ function useConversationSetup() {
               resetAgentResponseState();
               speechReveal.finishAll();
               speechReveal.reset();
+              agentThinking.reset();
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
@@ -1163,6 +1178,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
+        onUserTurnEnded();
       },
       sendMultimodalMessage: (input: {
         text?: string;
@@ -1187,6 +1203,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
+        onUserTurnEnded();
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();
