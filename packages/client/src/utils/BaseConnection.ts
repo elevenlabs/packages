@@ -55,6 +55,7 @@ export type BaseSessionConfig = {
     };
     tts?: {
       voiceId?: string;
+      modelId?: string;
       speed?: number;
       stability?: number;
       similarityBoost?: number;
