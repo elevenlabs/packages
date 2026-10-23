@@ -500,6 +500,8 @@ function useConversationSetup() {
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
+    // Whether the AI agent owes a reply to the user's last message
+    const isAwaitingReply = signal(false);
     const queueStatus = signal<string | null>(null);
     // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
     const isHeldInQueue = computed(
@@ -548,6 +550,7 @@ function useConversationSetup() {
       conversationTextOnly,
       transcript,
       isAgentTyping,
+      isAwaitingReply,
       isExternalAgentMode,
       queueStatus,
       isWaitingForAgent,
@@ -671,6 +674,7 @@ function useConversationSetup() {
               ]
             : []),
         ];
+        isAwaitingReply.value = !!initialMessage;
 
         try {
           lockRef.current = Conversation.startSession({
@@ -920,6 +924,7 @@ function useConversationSetup() {
             },
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
+              isAwaitingReply.value = false;
             },
             onExternalAgentDisconnected: () => {
               setAgentTyping(false);
@@ -957,6 +962,7 @@ function useConversationSetup() {
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
+              isAwaitingReply.value = false;
               // A close with the token still stored is a pause, not an end:
               // the transcript stays and the next message or the page coming
               // back to the foreground continues the conversation.
@@ -1156,6 +1162,7 @@ function useConversationSetup() {
             conversationIndex: conversationIndex.peek(),
           },
         ];
+        isAwaitingReply.value = !isExternalAgentMode.peek();
       },
       sendMultimodalMessage: (input: {
         text?: string;
@@ -1179,6 +1186,7 @@ function useConversationSetup() {
             fileInput,
           },
         ];
+        isAwaitingReply.value = !isExternalAgentMode.peek();
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();

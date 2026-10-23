@@ -274,6 +274,16 @@ describe("Persistent sessions", () => {
     ).toHaveLength(1);
   });
 
+  it("drops the typing indicator when the socket drops before a reply", async () => {
+    mountPersistentWidget();
+    await sendMessage("Where is my parcel?");
+
+    await dropConnection();
+    await expect
+      .element(page.getByText("Agent is typing ..."))
+      .not.toBeInTheDocument();
+  });
+
   it("keeps a separate conversation per configured user id", async () => {
     const widgetFor = (userId: string) =>
       setupWebComponent({

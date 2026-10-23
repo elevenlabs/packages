@@ -258,6 +258,7 @@ function MockConversationProvider({
       conversationTextOnly: signal<boolean | null>(null),
       transcript: mockTranscript,
       isAgentTyping: signal(false),
+      isAwaitingReply: signal(false),
       isExternalAgentMode: signal(false),
       queueStatus: signal<string | null>(null),
       isWaitingForAgent: signal(false),

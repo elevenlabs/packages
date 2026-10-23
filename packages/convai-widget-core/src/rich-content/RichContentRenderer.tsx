@@ -8,16 +8,11 @@ interface RichContentRendererProps {
   component: string;
   props: unknown;
   richContentId?: string;
-  isAnswered?: boolean;
 }
 
 interface RichContentComponentEntry {
   parseProps: (raw: unknown) => unknown | null;
-  render: (
-    props: unknown,
-    richContentId?: string,
-    isAnswered?: boolean
-  ) => ComponentChildren;
+  render: (props: unknown, richContentId?: string) => ComponentChildren;
 }
 
 const RICH_CONTENT_COMPONENTS: Record<string, RichContentComponentEntry> = {
@@ -32,12 +27,8 @@ const RICH_CONTENT_COMPONENTS: Record<string, RichContentComponentEntry> = {
   },
   carousel: {
     parseProps: parseCarouselProps,
-    render: (props, richContentId, isAnswered) => (
-      <Carousel
-        {...(props as CarouselProps)}
-        richContentId={richContentId}
-        isAnswered={isAnswered}
-      />
+    render: (props, richContentId) => (
+      <Carousel {...(props as CarouselProps)} richContentId={richContentId} />
     ),
   },
 };
@@ -46,12 +37,11 @@ export function RichContentRenderer({
   component,
   props,
   richContentId,
-  isAnswered,
 }: RichContentRendererProps) {
   const entry = RICH_CONTENT_COMPONENTS[component];
   const parsed = entry?.parseProps(props);
   if (entry && parsed) {
-    return entry.render(parsed, richContentId, isAnswered);
+    return entry.render(parsed, richContentId);
   }
 
   return <RichContentUnavailable />;

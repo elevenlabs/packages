@@ -45,6 +45,7 @@ export type DisplayTranscriptEntry =
   | {
       type: "typing_indicator";
       conversationIndex: number;
+      isExternalAgent: boolean;
     }
   | {
       type: "queue_timeout";
@@ -57,7 +58,6 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
       eventId: number;
       richContentId: string;
-      isAnswered: boolean;
     };
 
 export interface DisplayTranscriptConfig {
@@ -70,6 +70,8 @@ export interface DisplayTranscriptConfig {
   firstMessageConversationIndex?: number;
   /** If true, append a typing indicator entry at the end. */
   showTypingIndicator?: boolean;
+  /** If true, the AI agent owes a reply; show a typing indicator until it shows. */
+  showAgentReplyPending?: boolean;
   /** Move the first message rich content below the first agent message. */
   deferFirstMessageRichContent?: boolean;
 }
@@ -158,10 +160,18 @@ export function buildDisplayTranscript(
     if (entry.type === "rich_content") {
       if (!config.showRichContent) continue;
       // Wait until the text before it has been said
-      if (speakingEventIds.has(entry.eventId)) continue;
-      const isAnswered = entryIndex < lastUserEntryIndex;
-      if (isAnswered && !PERSISTING_COMPONENTS.has(entry.component)) continue;
-      result.push({ ...entry, isAnswered });
+      if (
+        speakingEventIds.has(entry.eventId) &&
+        !PERSISTING_COMPONENTS.has(entry.component)
+      )
+        continue;
+      // Drop replies the user has moved past
+      if (
+        entryIndex < lastUserEntryIndex &&
+        !PERSISTING_COMPONENTS.has(entry.component)
+      )
+        continue;
+      result.push(entry);
       continue;
     }
 
@@ -267,14 +277,21 @@ export function buildDisplayTranscript(
     }
   }
 
-  // Append typing indicator if configured
-  if (config.showTypingIndicator) {
+  const lastShown = result[result.length - 1];
+  const agentReplyPending =
+    config.showAgentReplyPending &&
+    lastShown?.type === "message" &&
+    lastShown.role === "user";
+
+  // Show the typing row while a human agent types or the AI agent owes a reply
+  if (config.showTypingIndicator || agentReplyPending) {
     result.push({
       type: "typing_indicator",
       conversationIndex:
         entries[entries.length - 1]?.conversationIndex ??
         config.firstMessageConversationIndex ??
         0,
+      isExternalAgent: !!config.showTypingIndicator,
     });
   }
 

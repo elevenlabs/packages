@@ -592,6 +592,34 @@ describe("buildDisplayTranscript", () => {
   });
 
   describe("typing indicator", () => {
+    it("shows while the agent owes a reply", () => {
+      const config = { showAgentReplyPending: true };
+      expect(build([msg("user", "Hi"), msg("agent", "")], config)).toEqual([
+        expect.objectContaining({ message: "Hi" }),
+        expect.objectContaining({
+          type: "typing_indicator",
+          isExternalAgent: false,
+        }),
+      ]);
+      expect(build([msg("user", "Hi"), msg("agent", "Hello")], config)).toEqual(
+        [
+          expect.objectContaining({ message: "Hi" }),
+          expect.objectContaining({ message: "Hello" }),
+        ]
+      );
+    });
+
+    it("gives way to the tool status once a tool runs", () => {
+      const result = build(
+        [msg("user", "Hi"), msg("agent", "", { eventId: 2 }), toolReq(2)],
+        { showAgentStatus: true, showAgentReplyPending: true }
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Hi" }),
+        expect.objectContaining({ role: "agent", toolStatus: "loading" }),
+      ]);
+    });
+
     it("appends typing indicator when showTypingIndicator is true", () => {
       const input = [msg("user", "hi"), msg("agent", "hello", { eventId: 1 })];
       const result = build(input, { showTypingIndicator: true });
@@ -600,6 +628,7 @@ describe("buildDisplayTranscript", () => {
       expect(result[2]).toMatchObject({
         type: "typing_indicator",
         conversationIndex: 0,
+        isExternalAgent: true,
       });
     });
 
@@ -664,20 +693,6 @@ describe("buildDisplayTranscript", () => {
 
     // A user turn after a row means the customer has moved on. Agent turns do
     // not count: the tool flow puts a short agent follow-up after every row.
-    it("keeps a carousel's content and drops its controls once answered", () => {
-      const answered = build([carousel("a"), msg("user", "the first one")]);
-      expect(answered[0]).toMatchObject({
-        type: "rich_content",
-        isAnswered: true,
-      });
-
-      const unanswered = build([msg("user", "show me"), carousel("a")]);
-      expect(unanswered[1]).toMatchObject({
-        type: "rich_content",
-        isAnswered: false,
-      });
-    });
-
     it("retires the replies of a turn and keeps its carousel", () => {
       const result = build([
         carousel("a", { eventId: 2 }),
@@ -846,6 +861,14 @@ describe("buildDisplayTranscript", () => {
       expect(build(said)).toEqual([
         expect.objectContaining({ message: "Here are options." }),
         expect.objectContaining({ type: "rich_content" }),
+      ]);
+    });
+
+    it("shows a carousel while the text before it is being said", () => {
+      const result = build([voice("Here are options.", 4), carousel()]);
+      expect(result).toEqual([
+        expect.objectContaining({ message: "Here" }),
+        expect.objectContaining({ component: "carousel" }),
       ]);
     });
 

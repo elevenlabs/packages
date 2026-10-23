@@ -255,6 +255,34 @@ describe("BaseConversation", () => {
       );
       expect(onMessage.mock.calls[0]?.[0]).not.toHaveProperty("response_id");
     });
+
+    it.each([
+      [true, "Sure thing! See [the docs](https://example.com)."],
+      [false, "[laughs] Sure thing! See [the docs](https://example.com)."],
+      [undefined, "[laughs] Sure thing! See [the docs](https://example.com)."],
+    ])(
+      "strips audio tags when stripAudioTags is %s",
+      async (stripAudioTags, expected) => {
+        const onMessage = vi.fn();
+        const conversation = TestConversation.create({
+          onMessage,
+          stripAudioTags,
+        });
+
+        await conversation.receiveMessage({
+          type: "agent_response",
+          agent_response_event: {
+            agent_response:
+              "[laughs] Sure thing! See [the docs](https://example.com).",
+            event_id: 5,
+          },
+        });
+
+        expect(onMessage).toHaveBeenCalledWith(
+          expect.objectContaining({ message: expected })
+        );
+      }
+    );
   });
 
   describe("agent_response_correction events", () => {
@@ -283,6 +311,71 @@ describe("BaseConversation", () => {
         response_id: "response-42",
       });
       expect(onDebug).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        true,
+        "Sure thing, your order ships tomorrow.",
+        "Sure thing, your order...",
+      ],
+      [
+        false,
+        "[laughs] Sure thing, your order ships tomorrow.",
+        "[laughs] Sure thing, your order...",
+      ],
+    ])(
+      "strips audio tags from both responses when stripAudioTags is %s",
+      async (stripAudioTags, expectedOriginal, expectedCorrected) => {
+        const onAgentResponseCorrection = vi.fn();
+        const conversation = TestConversation.create({
+          onAgentResponseCorrection,
+          stripAudioTags,
+        });
+
+        await conversation.receiveMessage({
+          type: "agent_response_correction",
+          agent_response_correction_event: {
+            original_agent_response:
+              "[laughs] Sure thing, your order ships tomorrow.",
+            corrected_agent_response: "[laughs] Sure thing, your order...",
+            event_id: 43,
+            response_id: "response-43",
+          },
+        });
+
+        expect(onAgentResponseCorrection).toHaveBeenCalledWith({
+          original_agent_response: expectedOriginal,
+          corrected_agent_response: expectedCorrected,
+          event_id: 43,
+          response_id: "response-43",
+        });
+      }
+    );
+
+    it("keeps an empty corrected response empty when stripping", async () => {
+      const onAgentResponseCorrection = vi.fn();
+      const conversation = TestConversation.create({
+        onAgentResponseCorrection,
+        stripAudioTags: true,
+      });
+
+      await conversation.receiveMessage({
+        type: "agent_response_correction",
+        agent_response_correction_event: {
+          original_agent_response: "[sighs] Anything else?",
+          corrected_agent_response: "",
+          event_id: 44,
+          response_id: "response-44",
+        },
+      });
+
+      expect(onAgentResponseCorrection).toHaveBeenCalledWith(
+        expect.objectContaining({
+          original_agent_response: "Anything else?",
+          corrected_agent_response: "",
+        })
+      );
     });
   });
 
