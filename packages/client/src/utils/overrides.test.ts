@@ -44,4 +44,34 @@ describe("constructOverrides", () => {
 
     expect(event.conversation_config_override?.asr?.keywords).toEqual([]);
   });
+
+  it("maps tts modelId to model_id in conversation_config_override", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: {
+        tts: {
+          voiceId: "voice_123",
+          modelId: "eleven_flash_v2_5",
+        },
+      },
+    });
+
+    expect(event.conversation_config_override?.tts).toMatchObject({
+      voice_id: "voice_123",
+      model_id: "eleven_flash_v2_5",
+    });
+  });
+
+  it("leaves tts model_id undefined when modelId is not provided", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: {
+        tts: {
+          voiceId: "voice_123",
+        },
+      },
+    });
+
+    expect(event.conversation_config_override?.tts?.model_id).toBeUndefined();
+  });
 });

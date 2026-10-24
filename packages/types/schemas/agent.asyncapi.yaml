@@ -1577,6 +1577,10 @@ components:
           type: string
           nullable: true
           description: ElevenLabs voice ID for speech synthesis
+        model_id:
+          type: string
+          nullable: true
+          description: ElevenLabs TTS model ID for speech synthesis
         stability:
           type: number
           nullable: true

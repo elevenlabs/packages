@@ -39,6 +39,7 @@ function Playground() {
       "end-confirmation": JSON.stringify(state.endConfirmation),
       "show-agent-status": JSON.stringify(state.showAgentStatus),
       "show-resize-button": JSON.stringify(state.showResizeButton),
+      "mobile-fullscreen": JSON.stringify(state.mobileFullscreen),
       "show-language-selector-on-trigger": JSON.stringify(
         state.showLanguageSelectorOnTrigger
       ),
@@ -71,6 +72,7 @@ function Playground() {
     state.endConfirmation,
     state.showAgentStatus,
     state.showResizeButton,
+    state.mobileFullscreen,
     state.showLanguageSelectorOnTrigger,
     state.dynamicVariables,
     state.location,

@@ -69,6 +69,22 @@ export function useStickToBottom({
   }, [scrollPinned]);
 
   useEffect(() => {
+    const container = scrollContainer.current;
+    if (!container) return;
+
+    // Passive so the browser never waits on these handlers before scrolling
+    const options = { passive: true };
+    container.addEventListener("wheel", handleWheel, options);
+    container.addEventListener("touchstart", handleTouchStart, options);
+    container.addEventListener("touchmove", handleTouchMove, options);
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [handleWheel, handleTouchStart, handleTouchMove]);
+
+  useEffect(() => {
     firstRender.current = false;
 
     const content = contentRef.current;
@@ -97,9 +113,6 @@ export function useStickToBottom({
     scrollContainer,
     contentRef,
     handleScroll,
-    handleWheel,
-    handleTouchStart,
-    handleTouchMove,
     firstRender,
   };
 }

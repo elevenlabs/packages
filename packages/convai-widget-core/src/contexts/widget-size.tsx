@@ -3,11 +3,13 @@ import type { ComponentChildren } from "preact";
 import { createContext } from "preact";
 import { useCallback, useEffect, useMemo } from "preact/hooks";
 import { useContextSafely } from "../utils/useContextSafely";
+import { useWidgetConfig } from "./widget-config";
 
 export type SizeVariant = "compact" | "expanded" | "fullscreen";
 
 interface WidgetSizeContextType {
   variant: Signal<SizeVariant>;
+  fullscreenOnly: Signal<boolean>;
   toggleSize: () => void;
 }
 
@@ -26,6 +28,7 @@ export function WidgetSizeProvider({
   children,
   initialVariant = "compact",
 }: WidgetSizeProviderProps) {
+  const config = useWidgetConfig();
   const expanded = useSignal(initialVariant !== "compact");
   const isMobile = useSignal<boolean>(
     typeof window !== "undefined"
@@ -46,16 +49,31 @@ export function WidgetSizeProvider({
     expanded.value = !expanded.value;
   }, [expanded]);
 
-  const variant = useComputed(() =>
-    expanded.value ? (isMobile.value ? "fullscreen" : "expanded") : "compact"
+  // Always-expanded sheets can't be closed, so they keep the toggle
+  const fullscreenOnly = useComputed(
+    () =>
+      isMobile.value &&
+      !!config.value.mobile_fullscreen &&
+      !config.value.always_expanded
   );
+
+  const variant = useComputed<SizeVariant>(() => {
+    if (fullscreenOnly.value) {
+      return "fullscreen";
+    }
+    if (!expanded.value) {
+      return "compact";
+    }
+    return isMobile.value ? "fullscreen" : "expanded";
+  });
 
   const value = useMemo(
     () => ({
       variant,
+      fullscreenOnly,
       toggleSize,
     }),
-    [variant, toggleSize]
+    [variant, fullscreenOnly, toggleSize]
   );
 
   return (

@@ -30,6 +30,7 @@ import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLife
 
 interface SheetProps {
   open: Signalish<boolean>;
+  onClose?: () => void;
 }
 
 const ORIGIN_CLASSES: Record<Placement, string> = {
@@ -41,7 +42,7 @@ const ORIGIN_CLASSES: Record<Placement, string> = {
   bottom: "origin-bottom",
 };
 
-export function Sheet({ open }: SheetProps) {
+export function Sheet({ open, onClose }: SheetProps) {
   const textOnly = useTextOnly();
   const isConversationTextOnly = useIsConversationTextOnly();
   const config = useWidgetConfig();
@@ -170,6 +171,7 @@ export function Sheet({ open }: SheetProps) {
           showLanguageSelector={showLanguageSelector}
           showConversationModeToggle={showConversationModeToggle}
           showExpandButton={showExpandButton}
+          onClose={onClose}
         />
         <InOutTransition active={currentContent.value === "transcript"}>
           <div className="grow flex flex-col min-h-0 relative transition-opacity duration-300 ease-out data-hidden:opacity-0">
