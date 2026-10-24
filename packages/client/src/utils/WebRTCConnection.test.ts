@@ -66,6 +66,15 @@ import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 import { NO_VOLUME } from "./volumeProvider.js";
 import type { PongEvent } from "./events.js";
+import { VoiceConversation } from "../VoiceConversation.js";
+import {
+  BaseConversation,
+  type Options,
+  type PartialOptions,
+} from "../BaseConversation.js";
+import type { BaseConnection } from "./BaseConnection.js";
+import type { InputController } from "../InputController.js";
+import type { OutputController } from "../OutputController.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -1236,6 +1245,100 @@ describe("WebRTCConnection", () => {
       const message: PongEvent = { type: "pong", event_id: 1 };
       await expect(connection.sendMessage(message)).resolves.toBeUndefined();
 
+      connection.close();
+    });
+  });
+
+  // Mode is derived in VoiceConversation, so these tests run one on top of
+  // the mocked WebRTC connection to exercise the full mode path.
+  describe("output mode", () => {
+    const noopInput = {
+      close: vi.fn(),
+      setDevice: vi.fn(),
+      setMuted: vi.fn(),
+      isMuted: () => false,
+      getAnalyser: () => undefined,
+      getVolume: () => 0,
+      getByteFrequencyData: () => {},
+    } satisfies InputController;
+
+    const noopOutput = {
+      close: vi.fn(),
+      setDevice: vi.fn(),
+      setVolume: vi.fn(),
+      interrupt: vi.fn(),
+      getAnalyser: () => undefined,
+      getVolume: () => 0,
+      getByteFrequencyData: () => {},
+    } satisfies OutputController;
+
+    class TestVoiceConversation extends VoiceConversation {
+      public static create(
+        options: Partial<Options> = {},
+        connection: BaseConnection
+      ) {
+        const fullOptions = BaseConversation.getFullOptions({
+          agentId: "test-agent-id",
+          connectionType: "webrtc",
+          ...options,
+        } as PartialOptions);
+
+        return new TestVoiceConversation(
+          fullOptions,
+          connection,
+          noopInput,
+          noopOutput,
+          null,
+          async () => {}
+        );
+      }
+    }
+
+    async function createModeSetup(options: Partial<Options> = {}) {
+      const mockRoom = new Room() as any;
+      const handlers = new Map<string, (...args: any[]) => unknown>();
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: any[]) => unknown) => {
+          handlers.set(event, callback);
+          if (event === "connected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      TestVoiceConversation.create(options, connection);
+      return { connection, handlers };
+    }
+
+    it("does not report speaking for metadata-only audio events", async () => {
+      const onModeChange = vi.fn();
+      const { connection, handlers } = await createModeSetup({ onModeChange });
+
+      const dataReceived = handlers.get("dataReceived");
+      expect(dataReceived).toBeDefined();
+
+      // The agent's audio bytes travel on the LiveKit track, so the data
+      // channel can carry audio events without audio_base_64.
+      const payload = new TextEncoder().encode(
+        JSON.stringify({ type: "audio", audio_event: { event_id: 5 } })
+      );
+      (dataReceived as (...args: any[]) => unknown)(payload, {
+        identity: "agent-abc",
+      });
+
+      expect(onModeChange).not.toHaveBeenCalled();
       connection.close();
     });
   });
