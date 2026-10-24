@@ -1340,7 +1340,10 @@ describe("Scribe", () => {
       expect(() => connection.mute()).toThrow(
         "Cannot mute audio without an active microphone MediaStreamTrack"
       );
+      const onAudioStarted = vi.fn();
+      connection.on(RealtimeEvents.AUDIO_STARTED, onAudioStarted);
       connection.send({ audioBase64: "dGVzdA==" });
+      expect(onAudioStarted).not.toHaveBeenCalled();
 
       await sleep(100);
       expect(onMessageSend).toHaveBeenCalledTimes(1);
@@ -1399,6 +1402,8 @@ describe("Scribe", () => {
           noiseSuppression: false,
         },
       });
+      const onAudioStarted = vi.fn();
+      connection.on(RealtimeEvents.AUDIO_STARTED, onAudioStarted);
 
       const client = await clientPromise;
       const onMessage = vi.fn();
@@ -1408,6 +1413,8 @@ describe("Scribe", () => {
       await sleep(100);
 
       expect(mockSetup).toHaveBeenCalledTimes(1);
+      // A connected socket and microphone setup are not proof of an audio frame.
+      expect(onAudioStarted).not.toHaveBeenCalled();
       expect(mockSetup).toHaveBeenCalledWith(
         {
           deviceId: undefined,
@@ -1427,6 +1434,13 @@ describe("Scribe", () => {
       expect(onMessage).toHaveBeenCalledTimes(1);
       const sentMessage = JSON.parse(onMessage.mock.calls[0][0] as string);
       expect(sentMessage.audio_base_64).toBe("dGVzdA==");
+      expect(onAudioStarted).toHaveBeenCalledTimes(1);
+
+      // Later chunks do not re-emit the first-audio event.
+      capturedOnAudioData!("c2Vjb25k");
+      await sleep(50);
+      expect(onMessage).toHaveBeenCalledTimes(2);
+      expect(onAudioStarted).toHaveBeenCalledTimes(1);
 
       // Verify mute/unmute work via the injected track
       connection.mute();
@@ -1436,6 +1450,9 @@ describe("Scribe", () => {
 
       connection.close();
       expect(cleanup).toHaveBeenCalledTimes(1);
+      // Late microphone frames cannot trigger the event on a closed connection.
+      capturedOnAudioData!("bGF0ZQ==");
+      expect(onAudioStarted).toHaveBeenCalledTimes(1);
 
       server.close();
     });

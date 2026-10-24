@@ -139,6 +139,8 @@ function normalizeError(error: unknown): ScribeErrorMessage {
 export enum RealtimeEvents {
   /** Emitted when the session is successfully started */
   SESSION_STARTED = "session_started",
+  /** Emitted once when the first microphone audio chunk is sent over the WebSocket. */
+  AUDIO_STARTED = "audio_started",
   /** Emitted when a partial (interim) transcript is available */
   PARTIAL_TRANSCRIPT = "partial_transcript",
   /** Emitted when a final transcript for a segment is available, before it is committed */
@@ -192,6 +194,7 @@ export enum RealtimeEvents {
  */
 export interface RealtimeEventMap {
   [RealtimeEvents.SESSION_STARTED]: SessionStartedMessage;
+  [RealtimeEvents.AUDIO_STARTED]: undefined;
   [RealtimeEvents.PARTIAL_TRANSCRIPT]: PartialTranscriptMessage;
   [RealtimeEvents.FINAL_TRANSCRIPT]: FinalTranscriptMessage;
   [RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS]: FinalTranscriptWithTimestampsMessage;
@@ -254,6 +257,7 @@ export class RealtimeConnection {
   private eventEmitter: EventEmitter = new EventEmitter();
   private currentSampleRate: number = 16000;
   private _muted: boolean = false;
+  private microphoneAudioStarted = false;
   /** @internal True once the socket is gone (via close() or a server close); read by ScribeRealtime to abort a racing mic setup. */
   public _closed: boolean = false;
   public _audioCleanup?: () => void;
@@ -542,6 +546,16 @@ export class RealtimeConnection {
       : (data: RealtimeEventMap[E]) => void
   ): void {
     this.eventEmitter.off(event, listener as (...args: unknown[]) => void);
+  }
+
+  /**
+   * @internal Called only after ScribeRealtime sends a microphone audio chunk.
+   * A WebSocket send is not proof that the server received or transcribed it.
+   */
+  public _emitMicrophoneAudioStarted(): void {
+    if (this._closed || this.microphoneAudioStarted) return;
+    this.microphoneAudioStarted = true;
+    this.eventEmitter.emit(RealtimeEvents.AUDIO_STARTED);
   }
 
   /** @internal Report a local failure through the public Scribe error event. */
