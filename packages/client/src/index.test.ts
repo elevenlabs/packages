@@ -534,6 +534,54 @@ describe("Audio alignment playback", () => {
   });
 });
 
+describe("Audio metadata events", () => {
+  it("does not report speaking for audio events without audio_base_64", async () => {
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/metadata-only-audio"
+    );
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+
+    const modes: Mode[] = [];
+    const conversationPromise = Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/metadata-only-audio",
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      onModeChange: value => {
+        modes.push(value.mode);
+      },
+    });
+
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+    const conversation = await conversationPromise;
+
+    // Audio metadata without samples must not claim the speaking mode.
+    client.send(
+      JSON.stringify({
+        type: "audio",
+        audio_event: { event_id: 1 },
+      })
+    );
+
+    expect(modes).toEqual([]);
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
 describe("Connection Types", () => {
   describe("ConnectionFactory", () => {
     it("throws error for unknown connection type", async () => {
