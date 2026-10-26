@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.26.0
+
+### Minor Changes
+
+- 93991e2: Add `overrides.tts.modelId` support to the client so a per-conversation TTS model override can be sent as `tts.model_id` via `conversation_initiation_client_data`.
+
 ## 0.25.0
 
 ### Minor Changes
