@@ -105,11 +105,17 @@ const connection = Scribe.connect({
 ```
 
 Self-hosted worklets must come from the same version of `@elevenlabs/client`
-as the code that loads them. Each worklet registers its processor under a name
-that includes a hash of its source, and the client only instantiates the name
-it was built with, so a stale copy fails when the session starts with an error
-naming the worklet and path. Copy the files from `node_modules` as part of
-your build rather than committing them, so they stay in step with upgrades.
+as the code that loads them. Once self-hosted, a worklet is deployed separately
+from the client code in your bundle, so nothing else ensures that the worklet a
+browser loads matches what the client expects of it, for example after an
+upgrade or while a CDN or browser cache still serves an older copy. A
+mismatched worklet can still load and play audio while silently misbehaving.
+
+To catch this, each worklet registers its processor under a name that includes
+a hash of its source, and the client only instantiates the name it was built
+with. A stale copy fails when the session starts, with an error naming the
+worklet and path. Copy the files from `node_modules` as part of your build
+rather than committing them, so they stay in step with upgrades.
 
 ## Approving MCP tool calls
 
