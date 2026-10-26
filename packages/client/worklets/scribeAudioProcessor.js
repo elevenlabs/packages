@@ -102,5 +102,5 @@ class ScribeAudioProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("scribeAudioProcessor", ScribeAudioProcessor);
+registerProcessor("scribeAudioProcessor@bd293b92cef79b80", ScribeAudioProcessor);
 

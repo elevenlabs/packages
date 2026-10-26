@@ -125,4 +125,4 @@ class RawAudioProcessor extends AudioWorkletProcessor {
     return true; // Continue processing
   }
 }
-registerProcessor("rawAudioProcessor", RawAudioProcessor);
+registerProcessor("rawAudioProcessor@6731b766e9e6176d", RawAudioProcessor);

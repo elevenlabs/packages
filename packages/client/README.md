@@ -104,6 +104,13 @@ const connection = Scribe.connect({
 });
 ```
 
+Self-hosted worklets must come from the same version of `@elevenlabs/client`
+as the code that loads them. Each worklet registers its processor under a name
+that includes a hash of its source, and the client only instantiates the name
+it was built with, so a stale copy fails when the session starts with an error
+naming the worklet and path. Copy the files from `node_modules` as part of
+your build rather than committing them, so they stay in step with upgrades.
+
 ## Approving MCP tool calls
 
 When an agent's MCP tool requires approval, the server sends an

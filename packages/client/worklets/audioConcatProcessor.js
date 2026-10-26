@@ -107,4 +107,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@af57da6035f0119a", AudioConcatProcessor);
