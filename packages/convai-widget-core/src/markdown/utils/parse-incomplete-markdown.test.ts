@@ -4,7 +4,7 @@ import { parseIncompleteMarkdown } from "./parse-incomplete-markdown";
 describe("parseIncompleteMarkdown", () => {
   it("leaves the text of an incomplete link unformatted", () => {
     expect(parseIncompleteMarkdown("See [snake_case](https://exa")).toBe(
-      "See snake_case"
+      "See [snake_case](streamdown:incomplete-link)"
     );
   });
 

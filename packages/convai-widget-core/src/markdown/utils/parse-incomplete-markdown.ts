@@ -105,9 +105,11 @@ const isInsideCodeBlock = (text: string, position: number): boolean => {
   return inInlineCode || inMultilineCode;
 };
 
+export const INCOMPLETE_LINK_HREF = "streamdown:incomplete-link";
+
 type LinkResult = { text: string; isIncompleteLink: boolean };
 
-// Shows an incomplete link as plain text until its URL completes
+// Keeps an incomplete link inside a placeholder link so GFM doesn't autolink its text
 const handleIncompleteLinksAndImages = (text: string): LinkResult => {
   // Look for patterns like [text]( or ![text]( at the end of text
   // We need to handle nested brackets in the link text
@@ -140,7 +142,10 @@ const handleIncompleteLinksAndImages = (text: string): LinkResult => {
           return { text: beforeLink, isIncompleteLink: false };
         }
 
-        return { text: `${beforeLink}${linkText}`, isIncompleteLink: true };
+        return {
+          text: `${beforeLink}[${linkText}](${INCOMPLETE_LINK_HREF})`,
+          isIncompleteLink: true,
+        };
       }
     }
   }
@@ -165,7 +170,7 @@ const handleIncompleteLinksAndImages = (text: string): LinkResult => {
         }
 
         return {
-          text: `${beforeLink}${text.substring(i + 1)}`,
+          text: `${text}](${INCOMPLETE_LINK_HREF})`,
           isIncompleteLink: true,
         };
       }
@@ -182,7 +187,7 @@ const handleIncompleteLinksAndImages = (text: string): LinkResult => {
         }
 
         return {
-          text: `${beforeLink}${text.substring(i + 1)}`,
+          text: `${text}](${INCOMPLETE_LINK_HREF})`,
           isIncompleteLink: true,
         };
       }
@@ -737,7 +742,7 @@ export const parseIncompleteMarkdown = (text: string): string => {
   const { text: processedResult, isIncompleteLink } =
     handleIncompleteLinksAndImages(result);
 
-  // Keep the link text as-is
+  // Leave the placeholder link's text unformatted
   if (isIncompleteLink) {
     return processedResult;
   }

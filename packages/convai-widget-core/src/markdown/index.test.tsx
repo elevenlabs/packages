@@ -15,7 +15,14 @@ describe("WidgetStreamdown", () => {
   afterEach(() => render(null, container));
 
   it("shows the text of a partially streamed link instead of [blocked]", () => {
-    for (const partial of ["See [docs](https://example.com/pa", "See [do"]) {
+    for (const partial of [
+      "See [docs](https://example.com/pa",
+      "See [do",
+      "See [https://other.com/page](https://other.com/pa",
+      "See [https://exa",
+      "See [www.example.com](https://www.exa",
+      "See [me@example.com](mailto:me@exa",
+    ]) {
       render(
         <WidgetStreamdown linkConfig={linkConfig}>{partial}</WidgetStreamdown>,
         container
