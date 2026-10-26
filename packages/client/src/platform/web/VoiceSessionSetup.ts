@@ -46,23 +46,35 @@ async function setupWebSocketIO(
   connection: WebSocketConnection,
   audioContext: AudioContext | null
 ): Promise<Omit<VoiceSessionSetupResult, "connection">> {
-  const [input, output] = await Promise.all([
-    MediaDeviceInput.create({
-      ...connection.inputFormat,
-      preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
-      inputDeviceId: options.inputDeviceId,
-      inputChunkDurationMs: options.inputChunkDurationMs,
-      workletPaths: options.workletPaths,
-      libsampleratePath: options.libsampleratePath,
-    }),
-    MediaDeviceOutput.create({
-      ...connection.outputFormat,
-      outputDeviceId: options.outputDeviceId,
-      workletPaths: options.workletPaths,
-      libsampleratePath: options.libsampleratePath,
-      audioContext: audioContext ?? undefined,
-    }),
-  ]);
+  const inputPromise = MediaDeviceInput.create({
+    ...connection.inputFormat,
+    preferHeadphonesForIosDevices: options.preferHeadphonesForIosDevices,
+    inputDeviceId: options.inputDeviceId,
+    inputChunkDurationMs: options.inputChunkDurationMs,
+    workletPaths: options.workletPaths,
+    libsampleratePath: options.libsampleratePath,
+  });
+  const outputPromise = MediaDeviceOutput.create({
+    ...connection.outputFormat,
+    outputDeviceId: options.outputDeviceId,
+    workletPaths: options.workletPaths,
+    libsampleratePath: options.libsampleratePath,
+    audioContext: audioContext ?? undefined,
+  });
+  let input: MediaDeviceInput;
+  let output: MediaDeviceOutput;
+  try {
+    [input, output] = await Promise.all([inputPromise, outputPromise]);
+  } catch (error) {
+    // Release whichever of the two did start, e.g. the microphone when only
+    // the output failed
+    await Promise.allSettled(
+      [inputPromise, outputPromise].map(promise =>
+        promise.then(controller => controller.close())
+      )
+    );
+    throw error;
+  }
 
   const detachInput = attachInputToConnection(input, connection);
   const detachOutput = attachConnectionToOutput(connection, output);
