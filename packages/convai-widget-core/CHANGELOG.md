@@ -1,5 +1,15 @@
 # @elevenlabs/convai-widget-core
 
+## 0.21.6
+
+### Patch Changes
+
+- 1893782: Fix the carousel's previous/next arrow icons flickering while the transcript updates.
+- ffab3e9: Show the text of a partially revealed markdown link instead of `[blocked]` until its URL is complete.
+- fc0965b: Show typing dots in voice calls when the agent takes more than a second to start replying, or "Thinking..." under the avatar when the transcript is off. They stay on while a tool runs and stop after 10 seconds without a reply.
+- Updated dependencies [695dadc]
+  - @elevenlabs/client@1.32.0
+
 ## 0.21.5
 
 ### Patch Changes
