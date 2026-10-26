@@ -33,16 +33,12 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
-          // A second resampler could finish creating after the first and
-          // replace it with one for the wrong rate
+          // A second resampler could finish last and replace the first with the wrong rate
           if (this.format !== undefined) {
             throw new Error("setFormat can only be sent once");
           }
           this.format = data.format;
           if (sampleRate !== data.sampleRate) {
-            // Audio played before the resampler exists comes out at the wrong
-            // rate, so the main thread waits for resampler_ready before
-            // sending any
             this.createResampler(data.sampleRate).then(
               () => this.port.postMessage({ type: "resampler_ready" }),
               error =>
@@ -127,4 +123,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@fc92ba0f095f6d2b", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@e5742d9d56cdbf62", AudioConcatProcessor);

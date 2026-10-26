@@ -538,10 +538,7 @@ describe("Audio alignment playback", () => {
 describe("Output resampling", () => {
   const AGENT_SAMPLE_RATE = 16000;
 
-  // Stands in for libsamplerate. Creating the output resampler (agent rate to
-  // context rate) takes outputDelayMs, and fails when failOutput is set; the
-  // input one always works. The output resampler turns any audio into a 440 Hz
-  // tone, so audible output means it went through the resampler.
+  // The output resampler turns any audio into a 440 Hz tone, so audible output proves it ran
   function fakeLibsampleratePath({
     failOutput,
     outputDelayMs,
@@ -554,9 +551,7 @@ describe("Output resampling", () => {
         if (inputSampleRate !== ${AGENT_SAMPLE_RATE}) {
           return { full: samples => samples };
         }
-        // AudioWorkletGlobalScope has no timers. Compiling a WebAssembly
-        // module completes in a later task, so the worklet keeps handling
-        // messages and rendering while this waits.
+        // AudioWorkletGlobalScope has no timers; awaiting compile yields without blocking the worklet
         const emptyModule = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]);
         const end = Date.now() + ${outputDelayMs};
         while (Date.now() < end) {
@@ -595,8 +590,7 @@ describe("Output resampling", () => {
     onConnection?: (socket: Client) => void;
     onAudioAlignmentPlayback?: () => void;
   }) {
-    // Without the sample rate constraint the AudioContext runs at the device
-    // rate, so the agent's audio has to be resampled
+    // Forces the AudioContext to the device rate, so the agent's audio needs resampling
     vi.spyOn(navigator.mediaDevices, "getSupportedConstraints").mockReturnValue(
       {}
     );

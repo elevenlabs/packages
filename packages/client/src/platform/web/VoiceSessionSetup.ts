@@ -66,8 +66,6 @@ async function setupWebSocketIO(
   try {
     [input, output] = await Promise.all([inputPromise, outputPromise]);
   } catch (error) {
-    // Release whichever of the two did start, e.g. the microphone when only
-    // the output failed
     await Promise.allSettled(
       [inputPromise, outputPromise].map(promise =>
         promise.then(controller => controller.close())
