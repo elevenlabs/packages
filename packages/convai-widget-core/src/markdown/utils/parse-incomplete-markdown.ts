@@ -105,8 +105,10 @@ const isInsideCodeBlock = (text: string, position: number): boolean => {
   return inInlineCode || inMultilineCode;
 };
 
-// Handles incomplete links and images by preserving them with a special marker
-const handleIncompleteLinksAndImages = (text: string): string => {
+type LinkResult = { text: string; isIncompleteLink: boolean };
+
+// Shows an incomplete link as plain text until its URL completes
+const handleIncompleteLinksAndImages = (text: string): LinkResult => {
   // Look for patterns like [text]( or ![text]( at the end of text
   // We need to handle nested brackets in the link text
 
@@ -135,11 +137,10 @@ const handleIncompleteLinksAndImages = (text: string): string => {
 
         if (isImage) {
           // For images with incomplete URLs, remove them entirely
-          return beforeLink;
+          return { text: beforeLink, isIncompleteLink: false };
         }
 
-        // For links with incomplete URLs, replace the URL with placeholder and close it
-        return `${beforeLink}[${linkText}](streamdown:incomplete-link)`;
+        return { text: `${beforeLink}${linkText}`, isIncompleteLink: true };
       }
     }
   }
@@ -160,12 +161,13 @@ const handleIncompleteLinksAndImages = (text: string): string => {
 
         if (isImage) {
           // For images, we remove them as they can't show skeleton
-          return beforeLink;
+          return { text: beforeLink, isIncompleteLink: false };
         }
 
-        // For links, preserve the text and close the link with a
-        // special placeholder URL that indicates it's incomplete
-        return `${text}](streamdown:incomplete-link)`;
+        return {
+          text: `${beforeLink}${text.substring(i + 1)}`,
+          isIncompleteLink: true,
+        };
       }
 
       // If we found a closing bracket, we need to check if it's the matching one
@@ -176,15 +178,18 @@ const handleIncompleteLinksAndImages = (text: string): string => {
         const beforeLink = text.substring(0, openIndex);
 
         if (isImage) {
-          return beforeLink;
+          return { text: beforeLink, isIncompleteLink: false };
         }
 
-        return `${text}](streamdown:incomplete-link)`;
+        return {
+          text: `${beforeLink}${text.substring(i + 1)}`,
+          isIncompleteLink: true,
+        };
       }
     }
   }
 
-  return text;
+  return { text, isIncompleteLink: false };
 };
 
 // Completes incomplete bold formatting (**)
@@ -729,11 +734,11 @@ export const parseIncompleteMarkdown = (text: string): string => {
   let result = text;
 
   // Handle incomplete links and images first
-  const processedResult = handleIncompleteLinksAndImages(result);
+  const { text: processedResult, isIncompleteLink } =
+    handleIncompleteLinksAndImages(result);
 
-  // If we added an incomplete link marker, don't process other formatting
-  // as the content inside the link should be preserved as-is
-  if (processedResult.endsWith("](streamdown:incomplete-link)")) {
+  // Keep the link text as-is
+  if (isIncompleteLink) {
     return processedResult;
   }
 
