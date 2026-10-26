@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx";
 import { useEffect, useRef } from "preact/compat";
 import { Button } from "../components/Button";
+import { Icon } from "../components/Icon";
 import { useTextContents } from "../contexts/text-contents";
 import { ButtonGroup, RichContentButton } from "./ButtonGroup";
 import { MAX_RATING } from "./validate";
