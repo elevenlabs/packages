@@ -34,25 +34,19 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
       switch (data.type) {
         case "setFormat":
           this.format = data.format;
-          if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
+          if (sampleRate !== data.sampleRate) {
             // Audio played before the resampler exists comes out at the wrong
-            // rate, so playback waits for it
-            this.waitingForResampler = true;
-            globalThis.LibSampleRate.create(1, data.sampleRate, sampleRate)
-              .then(
-                resampler => {
-                  this.resampler = resampler;
-                },
-                error => {
-                  console.error(
-                    "[ConversationalAI] Failed to create resampler, playing audio unresampled",
-                    error
-                  );
-                }
-              )
-              .finally(() => {
-                this.waitingForResampler = false;
-              });
+            // rate, so the main thread waits for resampler_ready before
+            // sending any
+            this.createResampler(data.sampleRate).then(
+              () => this.port.postMessage({ type: "resampler_ready" }),
+              error =>
+                this.port.postMessage({
+                  type: "resampler_error",
+                  message:
+                    error instanceof Error ? error.message : String(error),
+                })
+            );
           }
           break;
         case "buffer":
@@ -77,11 +71,17 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
       }
     };
   }
-  process(_, outputs) {
-    if (this.waitingForResampler) {
-      return true;
+  async createResampler(inputSampleRate) {
+    if (!globalThis.LibSampleRate) {
+      throw new Error("libsamplerate is not loaded");
     }
-
+    this.resampler = await globalThis.LibSampleRate.create(
+      1,
+      inputSampleRate,
+      sampleRate
+    );
+  }
+  process(_, outputs) {
     let finished = false;
     const output = outputs[0][0];
     for (let i = 0; i < output.length; i++) {
@@ -122,4 +122,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@765b61e7e4abc4e9", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@974c26372d85e215", AudioConcatProcessor);

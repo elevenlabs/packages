@@ -75,10 +75,19 @@ describe("audioConcatProcessor", () => {
     return postedMessages().filter(message => message.type === "chunk_start");
   }
 
+  function flushPromises() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
   describe("without resampling", () => {
     beforeEach(() => {
       processor = createProcessor();
       send({ type: "setFormat", format: "pcm", sampleRate: 16000 });
+    });
+
+    it("posts no resampler messages", async () => {
+      await flushPromises();
+      expect(postedMessages()).toEqual([]);
     });
 
     it("posts chunk_start with the chunk's id when it starts playing", () => {
@@ -120,8 +129,8 @@ describe("audioConcatProcessor", () => {
       },
     };
 
-    function flushPromises() {
-      return new Promise(resolve => setTimeout(resolve, 0));
+    function setFormat() {
+      send({ type: "setFormat", format: "pcm", sampleRate: AGENT_SAMPLE_RATE });
     }
 
     beforeEach(() => {
@@ -134,72 +143,60 @@ describe("audioConcatProcessor", () => {
       );
       vi.stubGlobal("LibSampleRate", { create });
       processor = createProcessor(CONTEXT_SAMPLE_RATE);
-      send({ type: "setFormat", format: "pcm", sampleRate: AGENT_SAMPLE_RATE });
     });
 
     afterEach(() => {
       vi.unstubAllGlobals();
-      vi.restoreAllMocks();
     });
 
-    it("creates a resampler from the agent's rate to the context's rate", () => {
+    it("posts resampler_ready once the resampler is created", async () => {
+      setFormat();
       expect(create).toHaveBeenCalledWith(
         1,
         AGENT_SAMPLE_RATE,
         CONTEXT_SAMPLE_RATE
       );
-    });
-
-    it("holds audio that arrives before the resampler is ready", async () => {
-      queue(QUANTUM, 1, SAMPLE);
-
-      expect(render()).toEqual(new Float32Array(QUANTUM));
-      expect(render()).toEqual(new Float32Array(QUANTUM));
-      expect(chunkStarts()).toEqual([]);
+      await flushPromises();
       expect(postedMessages()).toEqual([]);
 
       resolveResampler(fakeResampler);
       await flushPromises();
+      expect(postedMessages()).toEqual([{ type: "resampler_ready" }]);
+    });
 
-      // One source chunk now fills RATIO quanta instead of one
+    it("plays audio through the resampler", async () => {
+      setFormat();
+      resolveResampler(fakeResampler);
+      await flushPromises();
+
+      queue(QUANTUM, 1, SAMPLE);
+      // One source chunk fills RATIO quanta instead of one
       for (let i = 0; i < RATIO; i++) {
         expect(render()).toEqual(
           new Float32Array(QUANTUM).fill(SAMPLE / 32768)
         );
       }
       expect(render()).toEqual(new Float32Array(QUANTUM));
-      expect(chunkStarts()).toEqual([{ type: "chunk_start", chunkId: 1 }]);
-      expect(postedMessages()).toContainEqual({
-        type: "process",
-        finished: true,
-      });
     });
 
-    it("drops held audio when interrupted before the resampler is ready", async () => {
-      queue(QUANTUM, 1, SAMPLE);
-      send({ type: "interrupt" });
-      send({ type: "clearInterrupted" });
-
-      resolveResampler(fakeResampler);
+    it("posts resampler_error if the resampler fails to load", async () => {
+      setFormat();
+      rejectResampler("invalid inputSampleRate");
       await flushPromises();
 
-      expect(render()).toEqual(new Float32Array(QUANTUM));
-      expect(chunkStarts()).toEqual([]);
+      expect(postedMessages()).toEqual([
+        { type: "resampler_error", message: "invalid inputSampleRate" },
+      ]);
     });
 
-    it("plays audio unresampled if the resampler fails to load", async () => {
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-      queue(QUANTUM, 1, SAMPLE);
-
-      rejectResampler(new Error("failed to load"));
+    it("posts resampler_error if libsamplerate is not loaded", async () => {
+      vi.unstubAllGlobals();
+      setFormat();
       await flushPromises();
 
-      expect(consoleError).toHaveBeenCalled();
-      expect(render()).toEqual(new Float32Array(QUANTUM).fill(SAMPLE / 32768));
-      expect(render()).toEqual(new Float32Array(QUANTUM));
-      expect(chunkStarts()).toEqual([{ type: "chunk_start", chunkId: 1 }]);
+      expect(postedMessages()).toEqual([
+        { type: "resampler_error", message: "libsamplerate is not loaded" },
+      ]);
     });
   });
 });
