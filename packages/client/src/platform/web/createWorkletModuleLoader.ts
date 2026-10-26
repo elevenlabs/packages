@@ -8,13 +8,19 @@ function cacheKey(processorName: string, path?: string) {
   return path ? `${processorName} ${path}` : processorName;
 }
 
-async function addWorkletModule(
-  worklet: AudioWorklet,
-  name: string,
-  key: string,
-  sourceCode: string,
-  path?: string
-) {
+async function addWorkletModule({
+  worklet,
+  name,
+  key,
+  sourceCode,
+  path,
+}: {
+  worklet: AudioWorklet;
+  name: string;
+  key: string;
+  sourceCode: string;
+  path?: string;
+}) {
   const cachedUrl = URLCache.get(key);
   if (cachedUrl) {
     return worklet.addModule(cachedUrl);
@@ -58,35 +64,26 @@ async function addWorkletModule(
   }
 }
 
-/**
- * Returns a function that loads the worklet module into the given context and
- * instantiates its processor.
- *
- * The processor is registered under a name that includes `hash`, a content
- * hash of `sourceCode`. A self-hosted module from a different version of the
- * SDK registers a different name, so creating the node fails right after the
- * module loads rather than running a processor the client wasn't built for.
- */
+/** Loads the worklet module and instantiates its processor under a content-hashed name. */
 export function createWorkletModuleLoader(
   name: string,
   hash: string,
   sourceCode: string
 ) {
-  // Must match the name scripts/generateWorklets.js writes into the worklet's
-  // registerProcessor() call.
+  // Must match the name scripts/generateWorklets.js writes into registerProcessor().
   const processorName = `${name}@${hash}`;
   return async (
     context: BaseAudioContext,
     path?: string,
     options?: AudioWorkletNodeOptions
   ): Promise<AudioWorkletNode> => {
-    await addWorkletModule(
-      context.audioWorklet,
+    await addWorkletModule({
+      worklet: context.audioWorklet,
       name,
-      cacheKey(processorName, path),
+      key: cacheKey(processorName, path),
       sourceCode,
-      path
-    );
+      path,
+    });
 
     try {
       return new AudioWorkletNode(context, processorName, options);

@@ -2,8 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InputMessageEvent } from "../InputController.js";
 import { MediaDeviceInput } from "../platform/web/input.js";
 
-// Served by the Vitest dev server straight from the package's published
-// `worklets/` directory, as a self-hosting app would serve its copy.
+// Served by the Vitest dev server from the published `worklets/` directory.
 const PUBLISHED_WORKLET = "/worklets/rawAudioProcessor.js";
 
 async function staleWorkletUrl() {

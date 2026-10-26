@@ -40,15 +40,7 @@ const worklets = [
   }
 ];
 
-/**
- * Each worklet registers its processor as `<processorName>@<hash>`, where the
- * hash covers the worklet source itself. The client only ever instantiates the
- * name matching the source it was built with, so a self-hosted copy from any
- * other version fails at node creation instead of running mismatched code.
- *
- * The hash is computed with the registered name reset to the bare
- * `processorName`, so rewriting the name back into the file is idempotent.
- */
+// Hashed with the bare name so rewriting the hashed name back in is idempotent.
 function registrationPattern(processorName) {
   return new RegExp(`registerProcessor\\(\\s*(["'])${processorName}(?:@[0-9a-f]*)?\\1`, 'g');
 }
