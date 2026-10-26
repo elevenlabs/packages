@@ -5,7 +5,7 @@ const { workletSource } = vi.hoisted(() => ({
   workletSource: { current: "" },
 }));
 vi.mock("./createWorkletModuleLoader.js", () => ({
-  createWorkletModuleLoader: (_name: string, source: string) => {
+  createWorkletModuleLoader: (_name: string, _hash: string, source: string) => {
     workletSource.current = source;
     return async () => {};
   },

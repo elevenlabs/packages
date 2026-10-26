@@ -13,6 +13,7 @@ import { useTextContents } from "../contexts/text-contents";
 import {
   useMarkdownLinkConfig,
   useEndFeedbackType,
+  useIsConversationTextOnly,
   useWidgetConfig,
 } from "../contexts/widget-config";
 import { stripAudioTags } from "../utils/stripAudioTags";
@@ -354,6 +355,7 @@ function TypingIndicatorMessage({
   entry: Extract<DisplayTranscriptEntry, { type: "typing_indicator" }>;
 }) {
   const text = useTextContents();
+  const textOnly = useIsConversationTextOnly();
 
   if (entry.isExternalAgent) {
     return (
@@ -372,7 +374,11 @@ function TypingIndicatorMessage({
         role="status"
         className="inline-flex items-center gap-1 h-10 px-3 rounded-bubble bg-base-active"
       >
-        <span className="sr-only">{text.typing_indicator.value}</span>
+        <span className="sr-only">
+          {textOnly.value
+            ? text.typing_indicator.value
+            : text.thinking_status.value}
+        </span>
         {[0, 160, 320].map(delay => (
           <span
             key={delay}

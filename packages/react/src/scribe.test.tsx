@@ -23,6 +23,14 @@ function createMockConnection(): RealtimeConnection {
   } as unknown as RealtimeConnection;
 }
 
+function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
+  return vi
+    .mocked(connection.on)
+    .mock.calls.find(([registered]) => registered === event)?.[1] as
+    | ((data?: unknown) => void)
+    | undefined;
+}
+
 describe("useScribe", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -238,14 +246,6 @@ describe("useScribe", () => {
   });
 
   describe("transcript editing", () => {
-    function handlerFor(connection: RealtimeConnection, event: RealtimeEvents) {
-      return vi
-        .mocked(connection.on)
-        .mock.calls.find(([registered]) => registered === event)?.[1] as
-        | ((data: unknown) => void)
-        | undefined;
-    }
-
     it("attaches edited_transcript to the matching committed segment", async () => {
       const connection = createMockConnection();
       vi.mocked(Scribe.connect).mockReturnValue(connection);
@@ -295,6 +295,122 @@ describe("useScribe", () => {
         edited.edited_text
       );
       expect(onEditedTranscript).toHaveBeenCalledWith(edited);
+    });
+  });
+
+  describe("connected status", () => {
+    const SESSION_STARTED = { message_type: "session_started" };
+
+    it("waits for the first microphone audio before reporting connected", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const { result } = renderHook(() => useScribe());
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.SESSION_STARTED
+        )?.(SESSION_STARTED);
+      });
+      expect(result.current.status).toBe("connecting");
+      expect(result.current.isConnected).toBe(false);
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.AUDIO_STARTED)?.();
+      });
+      expect(result.current.status).toBe("connected");
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    it("waits for the session when microphone audio starts first", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const { result } = renderHook(() => useScribe());
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.AUDIO_STARTED)?.();
+      });
+      expect(result.current.status).toBe("connecting");
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.SESSION_STARTED
+        )?.(SESSION_STARTED);
+      });
+      expect(result.current.status).toBe("connected");
+    });
+
+    it("does not leave the error state when microphone audio starts", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const { result } = renderHook(() => useScribe());
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.SESSION_STARTED
+        )?.(SESSION_STARTED);
+        handlerFor(
+          connection,
+          RealtimeEvents.AUTH_ERROR
+        )?.({
+          error: "Invalid token",
+        });
+        handlerFor(connection, RealtimeEvents.AUDIO_STARTED)?.();
+      });
+      expect(result.current.status).toBe("error");
+    });
+
+    it("reports connected on session start in manual audio mode", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const { result } = renderHook(() => useScribe());
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          audioFormat: AudioFormat.PCM_16000,
+          sampleRate: 16000,
+        });
+      });
+
+      expect(
+        handlerFor(connection, RealtimeEvents.AUDIO_STARTED)
+      ).toBeUndefined();
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.SESSION_STARTED
+        )?.(SESSION_STARTED);
+      });
+      expect(result.current.status).toBe("connected");
     });
   });
 

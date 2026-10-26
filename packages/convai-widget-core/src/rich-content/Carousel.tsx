@@ -2,7 +2,6 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx";
 import { useEffect, useRef } from "preact/compat";
 import { Button } from "../components/Button";
-import { Icon } from "../components/Icon";
 import { useTextContents } from "../contexts/text-contents";
 import { ButtonGroup, RichContentButton } from "./ButtonGroup";
 import { MAX_RATING } from "./validate";
@@ -240,17 +239,14 @@ function CarouselArrow({
       variant="secondary"
       aria-label={isNext ? text.carousel_next : text.carousel_previous}
       onClick={onClick}
+      icon="chevron-up"
+      iconClassName={
+        isNext ? "rotate-90 rtl:-rotate-90" : "-rotate-90 rtl:rotate-90"
+      }
       className={clsx(
         "absolute top-1/2 -translate-y-1/2 h-10 w-10 px-0 rounded-full shadow-md pointer-coarse:hidden",
         isNext ? "-end-2" : "-start-2"
       )}
-    >
-      <Icon
-        name="chevron-up"
-        className={
-          isNext ? "rotate-90 rtl:-rotate-90" : "-rotate-90 rtl:rotate-90"
-        }
-      />
-    </Button>
+    />
   );
 }

@@ -111,11 +111,10 @@ export class MediaDeviceOutput
         }
         await addLibsamplerateModule(context, libsampleratePath);
       }
-      await loadAudioConcatProcessor(
-        context.audioWorklet,
+      const worklet = await loadAudioConcatProcessor(
+        context,
         workletPaths?.audioConcatProcessor
       );
-      const worklet = new AudioWorkletNode(context, "audioConcatProcessor");
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
       worklet.connect(gain);
 
