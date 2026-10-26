@@ -23,30 +23,14 @@ type WorkletMessage =
   | { type: "resampler_ready" }
   | { type: "resampler_error"; message: string };
 
-// Creating the resampler takes milliseconds. A worklet that never answers is
-// most likely a self-hosted copy from before resampler_ready existed.
-const RESAMPLER_READY_TIMEOUT_MS = 5000;
-
 function waitForResampler(worklet: AudioWorkletNode): Promise<void> {
   return new Promise((resolve, reject) => {
-    const settle = () => {
-      clearTimeout(timeout);
-      worklet.port.removeEventListener("message", onMessage);
-    };
-    const timeout = setTimeout(() => {
-      settle();
-      reject(
-        new Error(
-          "Timed out waiting for the audio resampler. If you self-host the worklets with workletPaths, update them to match this version of @elevenlabs/client."
-        )
-      );
-    }, RESAMPLER_READY_TIMEOUT_MS);
     const onMessage = ({ data }: MessageEvent<WorkletMessage>) => {
       if (data.type === "resampler_ready") {
-        settle();
+        worklet.port.removeEventListener("message", onMessage);
         resolve();
       } else if (data.type === "resampler_error") {
-        settle();
+        worklet.port.removeEventListener("message", onMessage);
         reject(new Error(`Failed to create audio resampler: ${data.message}`));
       }
     };

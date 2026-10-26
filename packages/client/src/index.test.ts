@@ -577,10 +577,6 @@ describe("Output resampling", () => {
         };
       },
     };`;
-    return moduleUrl(source);
-  }
-
-  function moduleUrl(source: string) {
     return URL.createObjectURL(
       new Blob([source], { type: "application/javascript" })
     );
@@ -590,14 +586,12 @@ describe("Output resampling", () => {
     path,
     failOutput = false,
     outputDelayMs = 0,
-    workletPaths,
     onConnection,
     onAudioAlignmentPlayback,
   }: {
     path: string;
     failOutput?: boolean;
     outputDelayMs?: number;
-    workletPaths?: { audioConcatProcessor: string };
     onConnection?: (socket: Client) => void;
     onAudioAlignmentPlayback?: () => void;
   }) {
@@ -629,7 +623,6 @@ describe("Output resampling", () => {
       connectionType: "websocket",
       connectionDelay: { default: 0 },
       libsampleratePath: fakeLibsampleratePath({ failOutput, outputDelayMs }),
-      workletPaths,
       onStatusChange: ({ status }) => statuses.push(status),
       onAudioAlignmentPlayback,
     });
@@ -711,31 +704,6 @@ describe("Output resampling", () => {
     );
     expect(statuses.at(-1)).toBe("disconnected");
     expect(closeInput).toHaveBeenCalledTimes(1);
-
-    server.close();
-  });
-
-  it("fails the session if a self-hosted worklet never reports the resampler ready", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    // Like a copy of the worklet from before resampler_ready existed
-    const outdatedWorklet = moduleUrl(`registerProcessor(
-      "audioConcatProcessor",
-      class extends AudioWorkletProcessor {
-        process() {
-          return true;
-        }
-      }
-    );`);
-    const { server, statuses, conversationPromise } =
-      await startResampledSession({
-        path: "resampler-timeout",
-        workletPaths: { audioConcatProcessor: outdatedWorklet },
-      });
-
-    await expect(conversationPromise).rejects.toThrow(
-      "Timed out waiting for the audio resampler"
-    );
-    expect(statuses.at(-1)).toBe("disconnected");
 
     server.close();
   });
