@@ -5,12 +5,15 @@ import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
 import { useTextContents } from "../contexts/text-contents";
 import { ButtonGroup, RichContentButton } from "./ButtonGroup";
+import { MAX_RATING } from "./validate";
 
 export interface CarouselItem {
   title: string;
   subtitle?: string;
   description?: string;
   imageUrl?: string;
+  rating?: number;
+  reviewCount?: number;
   buttons?: RichContentButton[];
 }
 
@@ -85,7 +88,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex w-72 pointer-coarse:w-56 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
+              className="flex w-64 pointer-coarse:w-56 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
             >
               {item.imageUrl && (
                 <img
@@ -93,7 +96,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
                   alt={item.title}
                   loading="lazy"
                   decoding="async"
-                  className="aspect-[4/5] pointer-coarse:aspect-square w-full rounded-input bg-base-active object-cover"
+                  className="aspect-square w-full rounded-input bg-base-active object-cover"
                 />
               )}
               <div className="flex min-w-0 flex-col gap-0.5">
@@ -107,6 +110,12 @@ export function Carousel({ items, richContentId }: CarouselProps) {
                   <span dir="auto" className="text-xs text-base-subtle">
                     {item.subtitle}
                   </span>
+                )}
+                {item.rating !== undefined && (
+                  <CardRating
+                    rating={item.rating}
+                    reviewCount={item.reviewCount}
+                  />
                 )}
                 {item.description && (
                   <span
@@ -157,6 +166,52 @@ export function Carousel({ items, richContentId }: CarouselProps) {
         </div>
       )}
     </div>
+  );
+}
+
+function CardRating({
+  rating,
+  reviewCount,
+}: {
+  rating: number;
+  reviewCount?: number;
+}) {
+  const formatted = rating.toLocaleString(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return (
+    <div
+      role="img"
+      aria-label={`Rating: ${formatted} out of ${MAX_RATING}${reviewCount !== undefined ? `, ${reviewCount} reviews` : ""}`}
+      className="flex items-center gap-1.5 text-xs text-base-subtle"
+    >
+      <span className="flex gap-0.5">
+        {Array.from({ length: MAX_RATING }, (_, index) => (
+          <Star key={index} fill={Math.min(Math.max(rating - index, 0), 1)} />
+        ))}
+      </span>
+      <span className="text-base-primary">{formatted}</span>
+      {reviewCount !== undefined && (
+        <span>({reviewCount.toLocaleString()})</span>
+      )}
+    </div>
+  );
+}
+
+function Star({ fill }: { fill: number }) {
+  return (
+    <span className="relative flex shrink-0 text-base-border">
+      <Icon name="star" size="xs" />
+      {fill > 0 && (
+        <span
+          className="absolute inset-y-0 start-0 overflow-hidden text-base-primary"
+          style={{ width: `${fill * 100}%` }}
+        >
+          <Icon name="star" size="xs" className="w-max" />
+        </span>
+      )}
+    </span>
   );
 }
 
