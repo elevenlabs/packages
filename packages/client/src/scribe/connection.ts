@@ -548,10 +548,7 @@ export class RealtimeConnection {
     this.eventEmitter.off(event, listener as (...args: unknown[]) => void);
   }
 
-  /**
-   * @internal Called only after ScribeRealtime sends a microphone audio chunk.
-   * A WebSocket send is not proof that the server received or transcribed it.
-   */
+  /** @internal Emit AUDIO_STARTED once per connection. */
   public _emitMicrophoneAudioStarted(): void {
     if (this._closed || this.microphoneAudioStarted) return;
     this.microphoneAudioStarted = true;

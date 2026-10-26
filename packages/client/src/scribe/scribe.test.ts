@@ -1413,7 +1413,6 @@ describe("Scribe", () => {
       await sleep(100);
 
       expect(mockSetup).toHaveBeenCalledTimes(1);
-      // A connected socket and microphone setup are not proof of an audio frame.
       expect(onAudioStarted).not.toHaveBeenCalled();
       expect(mockSetup).toHaveBeenCalledWith(
         {
@@ -1436,7 +1435,6 @@ describe("Scribe", () => {
       expect(sentMessage.audio_base_64).toBe("dGVzdA==");
       expect(onAudioStarted).toHaveBeenCalledTimes(1);
 
-      // Later chunks do not re-emit the first-audio event.
       capturedOnAudioData!("c2Vjb25k");
       await sleep(50);
       expect(onMessage).toHaveBeenCalledTimes(2);
@@ -1450,7 +1448,6 @@ describe("Scribe", () => {
 
       connection.close();
       expect(cleanup).toHaveBeenCalledTimes(1);
-      // Late microphone frames cannot trigger the event on a closed connection.
       capturedOnAudioData!("bGF0ZQ==");
       expect(onAudioStarted).toHaveBeenCalledTimes(1);
 
