@@ -549,12 +549,34 @@ function useConversationSetup() {
     let persistenceUnavailable = false;
 
     const navigationResumeStore = createNavigationResumeStore(config);
-    // The call a navigation interrupted, read once per page.
+    // The call a navigation interrupted, read once per page. Held until a
+    // continued call is actually up, so a start that fails can be offered
+    // again instead of stranding the previous page's turns.
     const pendingNavigationResume = signal(
       widgetConfig.peek().resume_call_after_navigation
         ? navigationResumeStore.consume()
         : null
     );
+    // The mic state the interrupted call was left in, applied once the
+    // continued call is connected.
+    const navigationResumeMicMuted = signal(false);
+    const resumePromptEntry = (): TranscriptEntry => ({
+      type: "resume_prompt",
+      conversationIndex: conversationIndex.peek(),
+    });
+    // What a continued call starts from: the turns handed over, without the
+    // offer it just spent or the error an earlier attempt left behind.
+    const navigationResumeTranscript = (): TranscriptEntry[] =>
+      transcript
+        .peek()
+        .filter(
+          entry =>
+            entry.type !== "resume_prompt" &&
+            !(
+              entry.type === "error" &&
+              entry.conversationIndex === conversationIndex.peek()
+            )
+        );
     const resumedTurns = pendingNavigationResume.peek()?.turns;
     if (resumedTurns?.length) {
       transcript.value = [
@@ -567,7 +589,7 @@ function useConversationSetup() {
             conversationIndex: conversationIndex.peek(),
           })
         ),
-        { type: "resume_prompt", conversationIndex: conversationIndex.peek() },
+        resumePromptEntry(),
       ];
     }
 
@@ -591,6 +613,7 @@ function useConversationSetup() {
       isResuming,
       hasStoredSession: storedSession.hasStoredSession,
       pendingNavigationResume,
+      navigationResumeMicMuted,
       startSession: async (
         element: HTMLElement | null,
         initialMessage?: string,
@@ -602,11 +625,13 @@ function useConversationSetup() {
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        // Typing opens a text conversation, which never continues a call.
+        // Typing opens a text conversation, which cannot carry a call's
+        // turns, so it spends the offer rather than leaving it for the next
+        // voice start. A continued call keeps it until the connection is up.
         const navigationResume = initialMessage
           ? null
           : pendingNavigationResume.peek();
-        if (navigationResume) {
+        if (initialMessage) {
           pendingNavigationResume.value = null;
         }
         if (resume || navigationResume) {
@@ -705,9 +730,7 @@ function useConversationSetup() {
           ...(keepTranscript
             ? transcript.peek()
             : navigationResume
-              ? transcript
-                  .peek()
-                  .filter(entry => entry.type !== "resume_prompt")
+              ? navigationResumeTranscript()
               : resume
                 ? []
                 : firstMessageEntries()),
@@ -1065,6 +1088,10 @@ function useConversationSetup() {
             );
           }
           if (navigationResume) {
+            // The call has been handed over, so a later start opens a fresh
+            // conversation rather than continuing this one again.
+            pendingNavigationResume.value = null;
+            navigationResumeMicMuted.value = navigationResume.micMuted;
             const instance = conversationRef.current;
             // Context rather than a message, so the agent knows what was said
             // without being asked to reply to it.
@@ -1153,6 +1180,11 @@ function useConversationSetup() {
                 conversationIndex: conversationIndex.peek(),
               },
             ];
+          }
+          if (navigationResume) {
+            // The call was never handed over, so offer it again rather than
+            // leaving the previous page's turns with no way to continue them.
+            transcript.value = [...transcript.peek(), resumePromptEntry()];
           }
         } finally {
           lockRef.current = null;

@@ -1,5 +1,5 @@
 import { useSignalEffect } from "@preact/signals";
-import { useEffect, useRef } from "preact/compat";
+import { useEffect } from "preact/compat";
 import { useAudioConfig } from "../contexts/audio-config";
 import { useConversation } from "../contexts/conversation";
 
@@ -8,10 +8,9 @@ import { useConversation } from "../contexts/conversation";
  * carries over once the visitor picks the call back up.
  */
 export function useNavigationResumeLifecycle() {
-  const { status, pendingNavigationResume, storeNavigationResume } =
+  const { status, navigationResumeMicMuted, storeNavigationResume } =
     useConversation();
   const { isMuted, setIsMuted } = useAudioConfig();
-  const restoreMicMutedRef = useRef(false);
 
   // `pagehide` is the last event a page reliably gets, including one about to
   // enter the back/forward cache.
@@ -26,16 +25,13 @@ export function useNavigationResumeLifecycle() {
     };
   }, [isMuted, storeNavigationResume]);
 
-  useEffect(() => {
-    restoreMicMutedRef.current =
-      pendingNavigationResume.peek()?.micMuted ?? false;
-  }, [pendingNavigationResume]);
-
   // Muting is reset on every disconnect, so the previous page's choice is
-  // reapplied once the call is back up rather than before it starts.
+  // reapplied once the continued call is up rather than before it starts. The
+  // conversation only asks for it once that call connects, so a text chat or
+  // a fresh call started in the meantime is left unmuted.
   useSignalEffect(() => {
-    if (status.value === "connected" && restoreMicMutedRef.current) {
-      restoreMicMutedRef.current = false;
+    if (status.value === "connected" && navigationResumeMicMuted.value) {
+      navigationResumeMicMuted.value = false;
       setIsMuted(true);
     }
   });

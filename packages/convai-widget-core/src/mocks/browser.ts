@@ -551,6 +551,16 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "",
   },
+  // A widget that takes typed messages as well as calls, so a test can type
+  // while a call is being offered back.
+  navigation_resume_text_input: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    mic_muting_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+  },
   // Text chat, which is carried by persistent sessions rather than offered
   // back as a call.
   navigation_resume_text: {
@@ -1003,6 +1013,31 @@ export const Worker = setupWorker(
             },
           })
         );
+      }
+      if (agentId === "navigation_resume_text_input") {
+        const connection = navigationResumeConnections++;
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response:
+                connection === 0
+                  ? "Looking at womens boots"
+                  : `Nothing carried over ${connection}`,
+              event_id: 1,
+              response_id: `typed-navigation-resume-${connection}`,
+            },
+          })
+        );
+        // The typed chat hangs up once it has the message, so a test can go on
+        // to start a second call.
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          await new Promise(resolve => setTimeout(resolve, 50));
+          client.close(1000);
+        });
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

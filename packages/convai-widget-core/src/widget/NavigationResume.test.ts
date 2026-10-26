@@ -19,7 +19,10 @@ import type { NavigationResumeRecord } from "../utils/navigationResume";
 
 const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 
-type ResumeAgent = "navigation_resume" | "navigation_resume_text";
+type ResumeAgent =
+  | "navigation_resume"
+  | "navigation_resume_text"
+  | "navigation_resume_text_input";
 
 function mountWidget(
   agentId: ResumeAgent = "navigation_resume",
@@ -189,6 +192,77 @@ describe("Resuming a call after a navigation", () => {
 
     await expect.element(callButton().first()).toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
+  });
+
+  it("offers the call back again when the call fails to start", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget();
+    const getUserMedia = vi
+      .spyOn(navigator.mediaDevices, "getUserMedia")
+      .mockRejectedValue(new Error("Microphone permission denied"));
+    await resumeButton().click();
+    await expect
+      .element(page.getByText("Microphone permission denied"))
+      .toBeInTheDocument();
+
+    // The turns are still there, behind a fresh offer to pick the call up.
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    getUserMedia.mockRestore();
+    await resumeButton().click();
+
+    await expect
+      .element(page.getByText("Here are the mens casual shoes"))
+      .toBeInTheDocument();
+    // The failed attempt's error is not left above the continued call.
+    expect(page.getByText("Microphone permission denied").all()).toHaveLength(
+      0
+    );
+    await vi.waitFor(() =>
+      expect(receivedContextualUpdates().join("\n")).toContain(
+        "Looking at womens boots"
+      )
+    );
+  });
+
+  it("spends the offer on a typed message", async () => {
+    const firstMount = mountWidget("navigation_resume_text_input");
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_text_input");
+    await expect.element(resumeButton()).toBeInTheDocument();
+
+    // Typing opens a text conversation, which cannot carry the call's turns.
+    const textInput = page.getByRole("textbox", { name: "Text message input" });
+    await textInput.fill("Show me boots instead");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect
+      .element(page.getByText("Show me boots instead"))
+      .toBeInTheDocument();
+
+    // The chat hangs up, so the next call starts from a disconnected widget.
+    await expect.element(callButton().first()).toBeInTheDocument();
+    await startCall();
+    await expect
+      .element(page.getByText("Nothing carried over 2"))
+      .toBeInTheDocument();
+
+    // A fresh conversation: no turns handed to the agent, nothing kept on
+    // screen from either the call or the chat that came before it.
+    expect(receivedContextualUpdates()).toHaveLength(0);
+    expect(page.getByText("Show me boots instead").all()).toHaveLength(0);
+    expect(page.getByText("Looking at womens boots").all()).toHaveLength(0);
   });
 
   it("offers the call back only once", async () => {
