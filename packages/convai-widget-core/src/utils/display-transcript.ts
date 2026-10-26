@@ -52,6 +52,10 @@ export type DisplayTranscriptEntry =
       conversationIndex: number;
     }
   | {
+      type: "resume_prompt";
+      conversationIndex: number;
+    }
+  | {
       type: "rich_content";
       component: string;
       props: unknown;

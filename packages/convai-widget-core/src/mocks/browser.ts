@@ -543,6 +543,25 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  // A voice call that can be interrupted by a navigation and offered back.
+  navigation_resume: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    mic_muting_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+  },
+  // Text chat, which is carried by persistent sessions rather than offered
+  // back as a call.
+  navigation_resume_text: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 type PersistentConversation = {
@@ -551,6 +570,28 @@ type PersistentConversation = {
 };
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
+
+const contextualUpdates: string[] = [];
+
+export function receivedContextualUpdates() {
+  return [...contextualUpdates];
+}
+
+// Counts connections to the navigation_resume agents so each one says
+// something different, which is how a test tells the conversation that
+// carried over from the one the next page starts.
+let navigationResumeConnections = 0;
+
+const NAVIGATION_RESUME_REPLIES = [
+  "Looking at womens boots",
+  "Here are the mens casual shoes",
+  "Still here",
+];
+
+export function resetNavigationResumeMock() {
+  navigationResumeConnections = 0;
+  contextualUpdates.length = 0;
+}
 
 export function persistentConversationIdFor(token: string | null) {
   return token ? persistentConversations.get(token)?.conversationId : undefined;
@@ -717,6 +758,14 @@ export const Worker = setupWorker(
       ) as keyof typeof AGENTS;
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
+
+      client.addEventListener("message", event => {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : null;
+        if (data?.type === "contextual_update") {
+          contextualUpdates.push(data.text);
+        }
+      });
 
       if (
         agentId === "persistent_session_disabled" &&
@@ -905,7 +954,8 @@ export const Worker = setupWorker(
         agentId !== "persistent_session_disabled" &&
         agentId !== "persistent_session_voice" &&
         agentId !== "persistent_session_terms" &&
-        agentId !== "agent_attachments"
+        agentId !== "agent_attachments" &&
+        agentId !== "navigation_resume_text"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -936,6 +986,23 @@ export const Worker = setupWorker(
       }
       if (agentId === "aligned_voice") {
         sendAlignedAgentTurn(client);
+      }
+      if (
+        agentId === "navigation_resume" ||
+        agentId === "navigation_resume_text"
+      ) {
+        const connection = navigationResumeConnections++;
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response:
+                NAVIGATION_RESUME_REPLIES[connection] ?? "Still here",
+              event_id: 1,
+              response_id: `navigation-resume-${connection}`,
+            },
+          })
+        );
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

@@ -94,6 +94,7 @@ export interface WidgetConfig {
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
+  resume_call_after_navigation?: boolean;
 }
 
 export type AvatarConfig =
@@ -117,6 +118,7 @@ export const DefaultTextContents = {
   start_chat: "Message",
   send_message: "Send",
   new_call: "New call",
+  resume_call: "Resume talking?",
   end_call: "End",
   end_chat: "End chat",
   mute_microphone: "Mute microphone",

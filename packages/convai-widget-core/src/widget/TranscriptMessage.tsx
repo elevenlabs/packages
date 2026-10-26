@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { Button } from "../components/Button";
 import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
@@ -297,6 +298,27 @@ function QueueTimeoutMessage() {
   );
 }
 
+/**
+ * Offers the call back after a navigation tore it down. A button rather than
+ * an automatic reconnect: browsers need a gesture to open a microphone.
+ */
+function ResumePromptMessage() {
+  const text = useTextContents();
+  const { startSession } = useConversation();
+
+  return (
+    <div className="px-8 flex justify-center transition-opacity duration-200 data-hidden:opacity-0">
+      <Button
+        variant="primary"
+        icon="phone"
+        onClick={e => void startSession(e.currentTarget)}
+      >
+        {text.resume_call}
+      </Button>
+    </div>
+  );
+}
+
 interface ModeToggleMessageProps {
   entry: Extract<DisplayTranscriptEntry, { type: "mode_toggle" }>;
 }
@@ -414,6 +436,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "queue_timeout") {
     return <QueueTimeoutMessage />;
+  }
+  if (entry.type === "resume_prompt") {
+    return <ResumePromptMessage />;
   }
   if (entry.type === "typing_indicator") {
     return <TypingIndicatorMessage entry={entry} />;

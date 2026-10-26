@@ -64,6 +64,7 @@ export const CustomAttributeList = [
   "show-language-selector-on-trigger",
   "environment",
   "persistent-session",
+  "resume-call-after-navigation",
 ] as const;
 
 export type CustomAttributes = {
