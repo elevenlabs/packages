@@ -73,6 +73,12 @@ export interface TranscriptSegment {
 }
 
 export interface ScribeCallbacks {
+  /**
+   * Called when the session has started; `status` becomes `"connected"` at the
+   * same time. In microphone mode this waits until the microphone is capturing
+   * and its first audio chunk has been sent. Use `onConnect` to react to the
+   * socket opening instead.
+   */
   onSessionStarted?: () => void;
   onPartialTranscript?: (data: { text: string }) => void;
   onCommittedTranscript?: (data: { text: string }) => void;

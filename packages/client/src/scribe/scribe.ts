@@ -325,7 +325,8 @@ export class ScribeRealtime {
    *     sampleRate: 16000,
    * });
    *
-   * // Automatic microphone streaming
+   * // Automatic microphone streaming. SESSION_STARTED fires once the
+   * // microphone is live and its first audio chunk has been sent.
    * const connection = Scribe.connect({
    *     token: "...",
    *     modelId: "scribe_v2_realtime",
@@ -357,6 +358,7 @@ export class ScribeRealtime {
 
     // If microphone mode, set up streaming handler
     if ("microphone" in options && options.microphone) {
+      connection._deferSessionStartedUntilAudio();
       websocket.addEventListener("open", () => {
         ScribeRealtime.streamFromMicrophone(
           options as MicrophoneOptions,
@@ -382,6 +384,7 @@ export class ScribeRealtime {
         if (connection._closed) return;
         connection.send({ audioBase64: base64Audio, previousText });
         previousText = undefined;
+        connection._onMicrophoneAudioSent();
       });
 
       connection._mediaStreamTrack = result.mediaStreamTrack;

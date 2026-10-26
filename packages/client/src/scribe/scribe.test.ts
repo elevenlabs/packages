@@ -1691,6 +1691,121 @@ describe("Scribe", () => {
       server.close();
     });
 
+    describe("session_started in microphone mode", () => {
+      async function startMicrophoneSession(
+        setupResult: () => Promise<{
+          mediaStreamTrack: MediaStreamTrack;
+          cleanup: () => void;
+        }> = () =>
+          Promise.resolve({
+            mediaStreamTrack: { enabled: true } as MediaStreamTrack,
+            cleanup: vi.fn(),
+          })
+      ) {
+        let onAudioData: ((base64: string) => void) | null = null;
+        setScribeMicrophoneSetup(
+          vi.fn((_config, callback) => {
+            onAudioData = callback;
+            return setupResult();
+          })
+        );
+
+        const server = new Server(
+          "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+        );
+        onTestFinished(() => server.close());
+        const clientPromise = new Promise<Client>((resolve, reject) => {
+          server.on("connection", socket => resolve(socket));
+          server.on("error", reject);
+          setTimeout(() => reject(new Error("timeout")), 5000);
+        });
+
+        const connection = Scribe.connect({
+          token: TEST_TOKEN,
+          modelId: TEST_MODEL_ID,
+          microphone: {},
+        });
+        onTestFinished(() => connection.close());
+        const onSessionStarted = vi.fn();
+        connection.on(RealtimeEvents.SESSION_STARTED, onSessionStarted);
+
+        const client = await clientPromise;
+        await sleep(100);
+
+        return {
+          connection,
+          client,
+          onSessionStarted,
+          sendMicrophoneAudio: (base64: string) => onAudioData?.(base64),
+          sendSessionStarted: () =>
+            client.send(
+              JSON.stringify({
+                message_type: "session_started",
+                session_id: TEST_SESSION_ID,
+              })
+            ),
+        };
+      }
+
+      it("is held until the first microphone chunk has been sent", async () => {
+        const { onSessionStarted, sendMicrophoneAudio, sendSessionStarted } =
+          await startMicrophoneSession();
+
+        sendSessionStarted();
+        await sleep(50);
+        expect(onSessionStarted).not.toHaveBeenCalled();
+
+        sendMicrophoneAudio("dGVzdA==");
+        expect(onSessionStarted).toHaveBeenCalledTimes(1);
+        expect(onSessionStarted).toHaveBeenCalledWith({
+          message_type: "session_started",
+          session_id: TEST_SESSION_ID,
+        });
+
+        sendMicrophoneAudio("c2Vjb25k");
+        expect(onSessionStarted).toHaveBeenCalledTimes(1);
+      });
+
+      it("fires on arrival when microphone audio is already flowing", async () => {
+        const { onSessionStarted, sendMicrophoneAudio, sendSessionStarted } =
+          await startMicrophoneSession();
+
+        sendMicrophoneAudio("dGVzdA==");
+        expect(onSessionStarted).not.toHaveBeenCalled();
+
+        sendSessionStarted();
+        await sleep(50);
+        expect(onSessionStarted).toHaveBeenCalledTimes(1);
+      });
+
+      it("never fires when microphone setup fails", async () => {
+        const { onSessionStarted, sendSessionStarted } =
+          await startMicrophoneSession(() =>
+            Promise.reject(new Error("Permission denied"))
+          );
+
+        sendSessionStarted();
+        await sleep(50);
+        expect(onSessionStarted).not.toHaveBeenCalled();
+      });
+
+      it("never fires when the connection closes before any audio is sent", async () => {
+        const {
+          connection,
+          onSessionStarted,
+          sendMicrophoneAudio,
+          sendSessionStarted,
+        } = await startMicrophoneSession();
+
+        sendSessionStarted();
+        await sleep(50);
+        connection.close();
+        sendMicrophoneAudio("dGVzdA==");
+        await sleep(50);
+        expect(onSessionStarted).not.toHaveBeenCalled();
+      });
+    });
+
     it("emits an error instead of rejecting when microphone setup fails", async () => {
       const setupError = new Error("microphone permission denied");
       setScribeMicrophoneSetup(() => Promise.reject(setupError));

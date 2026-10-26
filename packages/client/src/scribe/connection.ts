@@ -137,7 +137,12 @@ function normalizeError(error: unknown): ScribeErrorMessage {
  * Events emitted by the RealtimeConnection.
  */
 export enum RealtimeEvents {
-  /** Emitted when the session is successfully started */
+  /**
+   * Emitted when the session is successfully started. In microphone mode this
+   * waits until the microphone is capturing and its first audio chunk has been
+   * sent, so it can be used to tell the user they are being listened to.
+   * Use {@link RealtimeEvents.OPEN} to react to the socket opening instead.
+   */
   SESSION_STARTED = "session_started",
   /** Emitted when a partial (interim) transcript is available */
   PARTIAL_TRANSCRIPT = "partial_transcript",
@@ -259,9 +264,40 @@ export class RealtimeConnection {
   public _audioCleanup?: () => void;
   /** @internal Set by ScribeRealtime in microphone mode to enable track-level muting. */
   public _mediaStreamTrack?: MediaStreamTrack;
+  private sessionStartedAwaitsAudio = false;
+  private microphoneAudioSent = false;
+  private pendingSessionStarted: SessionStartedMessage | null = null;
 
   constructor(sampleRate: number) {
     this.currentSampleRate = sampleRate;
+  }
+
+  /**
+   * @internal Called by ScribeRealtime in microphone mode so SESSION_STARTED is
+   * held until the first microphone chunk has been sent.
+   */
+  public _deferSessionStartedUntilAudio(): void {
+    this.sessionStartedAwaitsAudio = true;
+  }
+
+  /** @internal Called by ScribeRealtime after each microphone chunk is sent. */
+  public _onMicrophoneAudioSent(): void {
+    if (this.microphoneAudioSent) return;
+    this.microphoneAudioSent = true;
+
+    const pending = this.pendingSessionStarted;
+    this.pendingSessionStarted = null;
+    if (pending && !this._closed) {
+      this.eventEmitter.emit(RealtimeEvents.SESSION_STARTED, pending);
+    }
+  }
+
+  private handleSessionStarted(data: SessionStartedMessage): void {
+    if (this.sessionStartedAwaitsAudio && !this.microphoneAudioSent) {
+      this.pendingSessionStarted = data;
+      return;
+    }
+    this.eventEmitter.emit(RealtimeEvents.SESSION_STARTED, data);
   }
 
   /**
@@ -347,7 +383,7 @@ export class RealtimeConnection {
 
         switch (data.message_type) {
           case "session_started":
-            this.eventEmitter.emit(RealtimeEvents.SESSION_STARTED, data);
+            this.handleSessionStarted(data);
             break;
           case "partial_transcript":
             this.eventEmitter.emit(RealtimeEvents.PARTIAL_TRANSCRIPT, data);
