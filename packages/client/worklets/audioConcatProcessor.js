@@ -35,13 +35,24 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
         case "setFormat":
           this.format = data.format;
           if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
-            globalThis.LibSampleRate.create(
-              1,
-              data.sampleRate,
-              sampleRate
-            ).then(resampler => {
-              this.resampler = resampler;
-            });
+            // Audio played before the resampler exists comes out at the wrong
+            // rate, so playback waits for it
+            this.waitingForResampler = true;
+            globalThis.LibSampleRate.create(1, data.sampleRate, sampleRate)
+              .then(
+                resampler => {
+                  this.resampler = resampler;
+                },
+                error => {
+                  console.error(
+                    "[ConversationalAI] Failed to create resampler, playing audio unresampled",
+                    error
+                  );
+                }
+              )
+              .finally(() => {
+                this.waitingForResampler = false;
+              });
           }
           break;
         case "buffer":
@@ -67,6 +78,10 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     };
   }
   process(_, outputs) {
+    if (this.waitingForResampler) {
+      return true;
+    }
+
     let finished = false;
     const output = outputs[0][0];
     for (let i = 0; i < output.length; i++) {
@@ -107,4 +122,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@af57da6035f0119a", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@765b61e7e4abc4e9", AudioConcatProcessor);
