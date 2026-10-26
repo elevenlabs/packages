@@ -189,6 +189,18 @@ describe("audioConcatProcessor", () => {
       ]);
     });
 
+    it("rejects a second setFormat", async () => {
+      setFormat();
+      expect(() =>
+        send({ type: "setFormat", format: "pcm", sampleRate: 24000 })
+      ).toThrow("setFormat can only be sent once");
+      expect(create).toHaveBeenCalledTimes(1);
+
+      resolveResampler(fakeResampler);
+      await flushPromises();
+      expect(postedMessages()).toEqual([{ type: "resampler_ready" }]);
+    });
+
     it("posts resampler_error if libsamplerate is not loaded", async () => {
       vi.unstubAllGlobals();
       setFormat();

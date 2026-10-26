@@ -3,7 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadAudioConcatProcessor = createWorkletModuleLoader(
   "audioConcatProcessor",
-  "974c26372d85e215",
+  "fc92ba0f095f6d2b",
   // language=JavaScript
   `/*
  * ulaw decoding logic taken from the wavefile library
@@ -40,6 +40,11 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
+          // A second resampler could finish creating after the first and
+          // replace it with one for the wrong rate
+          if (this.format !== undefined) {
+            throw new Error("setFormat can only be sent once");
+          }
           this.format = data.format;
           if (sampleRate !== data.sampleRate) {
             // Audio played before the resampler exists comes out at the wrong
@@ -129,6 +134,6 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@974c26372d85e215", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@fc92ba0f095f6d2b", AudioConcatProcessor);
 `
 );
