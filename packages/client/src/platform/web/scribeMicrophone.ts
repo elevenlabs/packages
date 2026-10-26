@@ -57,14 +57,13 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
     );
 
     // Load scribe worklet
-    await loadScribeAudioProcessor(
-      audioContext.audioWorklet,
+    scribeNode = await loadScribeAudioProcessor(
+      audioContext,
       config.workletPaths?.scribeAudioProcessor
     );
 
     // Set up audio pipeline
     source = audioContext.createMediaStreamSource(stream);
-    scribeNode = new AudioWorkletNode(audioContext, "scribeAudioProcessor");
 
     // Configure the worklet with sample rate info for resampling
     // (only needed when AudioContext sample rate differs from target)

@@ -3,6 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadAudioConcatProcessor = createWorkletModuleLoader(
   "audioConcatProcessor",
+  "af57da6035f0119a",
   // language=JavaScript
   `/*
  * ulaw decoding logic taken from the wavefile library
@@ -113,6 +114,6 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@af57da6035f0119a", AudioConcatProcessor);
 `
 );

@@ -3,6 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadRawAudioProcessor = createWorkletModuleLoader(
   "rawAudioProcessor",
+  "6731b766e9e6176d",
   // language=JavaScript
   `/*
  * ulaw encoding logic taken from the wavefile library
@@ -131,6 +132,6 @@ class RawAudioProcessor extends AudioWorkletProcessor {
     return true; // Continue processing
   }
 }
-registerProcessor("rawAudioProcessor", RawAudioProcessor);
+registerProcessor("rawAudioProcessor@6731b766e9e6176d", RawAudioProcessor);
 `
 );
