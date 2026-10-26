@@ -378,11 +378,27 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         connectionRef.current = connection;
 
+        let sessionStarted = false;
+        let awaitingAudio = !!microphone;
+        const setConnectedWhenReady = () => {
+          if (sessionStarted && !awaitingAudio) {
+            setStatus(prev => (prev === "connecting" ? "connected" : prev));
+          }
+        };
+
         // Set up event listeners
         connection.on(RealtimeEvents.SESSION_STARTED, () => {
-          setStatus("connected");
+          sessionStarted = true;
+          setConnectedWhenReady();
           onSessionStarted?.();
         });
+
+        if (microphone) {
+          connection.on(RealtimeEvents.AUDIO_STARTED, () => {
+            awaitingAudio = false;
+            setConnectedWhenReady();
+          });
+        }
 
         connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: unknown) => {
           const message = data as PartialTranscriptMessage;
