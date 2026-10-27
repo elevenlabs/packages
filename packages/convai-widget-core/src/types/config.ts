@@ -91,6 +91,7 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
+  transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
