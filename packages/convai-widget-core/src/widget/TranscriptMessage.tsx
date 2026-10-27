@@ -304,14 +304,14 @@ function QueueTimeoutMessage() {
  */
 function ResumePromptMessage() {
   const text = useTextContents();
-  const { startSession } = useConversation();
+  const { continueNavigationCall } = useConversation();
 
   return (
     <div className="px-8 flex justify-center transition-opacity duration-200 data-hidden:opacity-0">
       <Button
         variant="primary"
         icon="phone"
-        onClick={e => void startSession(e.currentTarget)}
+        onClick={e => void continueNavigationCall(e.currentTarget)}
       >
         {text.resume_call}
       </Button>

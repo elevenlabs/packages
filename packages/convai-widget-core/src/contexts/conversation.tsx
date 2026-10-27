@@ -39,6 +39,7 @@ import {
   buildResumeContext,
   createNavigationResumeStore,
   MAX_RESUMED_TURNS,
+  type NavigationResumeRecord,
   type NavigationResumeTurn,
 } from "../utils/navigationResume";
 import { SpeechReveal } from "../utils/speechReveal";
@@ -581,13 +582,26 @@ function useConversationSetup() {
     if (resumedTurns?.length) {
       transcript.value = [
         ...resumedTurns.map(
-          (turn): TranscriptEntry => ({
-            type: "message",
-            role: turn.role,
-            message: turn.message,
-            isText: false,
-            conversationIndex: conversationIndex.peek(),
-          })
+          (turn): TranscriptEntry =>
+            turn.type === "rich_content"
+              ? {
+                  type: "rich_content",
+                  component: turn.component,
+                  props: turn.props,
+                  richContentId: turn.richContentId,
+                  // The continued conversation numbers its own events from
+                  // one, so restored cards take an id no turn can speak
+                  // under and are never held back as still being said.
+                  eventId: 0,
+                  conversationIndex: conversationIndex.peek(),
+                }
+              : {
+                  type: "message",
+                  role: turn.role,
+                  message: turn.message,
+                  isText: false,
+                  conversationIndex: conversationIndex.peek(),
+                }
         ),
         resumePromptEntry(),
       ];
@@ -618,20 +632,22 @@ function useConversationSetup() {
         element: HTMLElement | null,
         initialMessage?: string,
         initialMessageOptions?: SendUserMessageOptions,
-        resumeToken?: string
+        resumeToken?: string,
+        continuedCall?: NavigationResumeRecord | null
       ): Promise<string | undefined> => {
         // A message typed after a disconnect continues the stored text
         // conversation instead of opening a second one. Starting a voice
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        // Typing opens a text conversation, which cannot carry a call's
-        // turns, so it spends the offer rather than leaving it for the next
-        // voice start. A continued call keeps it until the connection is up.
-        const navigationResume = initialMessage
-          ? null
-          : pendingNavigationResume.peek();
-        if (initialMessage) {
+        // The resume prompt hands the record in. Replying to the offer by
+        // typing continues the same conversation in text, so it carries the
+        // turns too. Starting a call any other way is the visitor choosing to
+        // begin again, which spends the offer.
+        const navigationResume =
+          continuedCall ??
+          (initialMessage ? pendingNavigationResume.peek() : null);
+        if (!navigationResume) {
           pendingNavigationResume.value = null;
         }
         if (resume || navigationResume) {
@@ -674,6 +690,16 @@ function useConversationSetup() {
             processedConfig.overrides.conversation ??= {};
             processedConfig.overrides.conversation.textOnly = true;
           }
+        }
+        // A continued conversation is a new one to the orchestrator, so the
+        // agent would greet the visitor again partway through. Starting it
+        // without a first message leaves the agent picking up where it left
+        // off. The agent has to allow the first message override for this;
+        // agents that never greet need no override at all.
+        if (navigationResume && firstMessage.peek()) {
+          processedConfig.overrides ??= {};
+          processedConfig.overrides.agent ??= {};
+          processedConfig.overrides.agent.firstMessage = "";
         }
         configurePersistentSession(processedConfig, {
           resume,
@@ -723,8 +749,9 @@ function useConversationSetup() {
         if (!keepTranscript) {
           isResumedSession.value = !!resume || !!navigationResume;
         }
-        // No greeting is sent on resume.
-        receivedFirstMessageRef.current = !!resume;
+        // No greeting is sent on either kind of resume, so the text-mode
+        // handlers below must not hold the next reply back waiting for one.
+        receivedFirstMessageRef.current = !!resume || !!navigationResume;
         speechReveal.reset();
         transcript.value = [
           ...(keepTranscript
@@ -794,6 +821,7 @@ function useConversationSetup() {
               // first reply of a resumed segment carries this id.
               if (
                 !resume &&
+                !navigationResume &&
                 firstMessage.peek() &&
                 conversationTextOnly.peek() === true &&
                 role === "agent" &&
@@ -1078,31 +1106,30 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          if (initialMessage) {
-            const instance = conversationRef.current;
-            // TODO: Remove the delay once BE can handle it
-            setTimeout(
-              () =>
-                instance.sendUserMessage(initialMessage, initialMessageOptions),
-              100
-            );
-          }
           if (navigationResume) {
-            // The call has been handed over, so a later start opens a fresh
-            // conversation rather than continuing this one again.
+            // The conversation has been handed over, so a later start opens a
+            // fresh one rather than continuing this one again.
             pendingNavigationResume.value = null;
-            navigationResumeMicMuted.value = navigationResume.micMuted;
+            // A text conversation has no microphone to put back.
+            navigationResumeMicMuted.value =
+              navigationResume.micMuted && !processedConfig.textOnly;
+          }
+          if (navigationResume || initialMessage) {
             const instance = conversationRef.current;
-            // Context rather than a message, so the agent knows what was said
-            // without being asked to reply to it.
             // TODO: Remove the delay once BE can handle it
-            setTimeout(
-              () =>
+            setTimeout(() => {
+              // The turns go first, as context rather than a message, so the
+              // agent knows what was said without being asked to reply to it —
+              // and has it in hand before answering anything typed alongside.
+              if (navigationResume) {
                 instance.sendContextualUpdate(
                   buildResumeContext(navigationResume.turns)
-                ),
-              100
-            );
+                );
+              }
+              if (initialMessage) {
+                instance.sendUserMessage(initialMessage, initialMessageOptions);
+              }
+            }, 100);
           }
 
           const id = conversationRef.current.getId();
@@ -1126,7 +1153,9 @@ function useConversationSetup() {
               return value.startSession(
                 element,
                 initialMessage,
-                initialMessageOptions
+                initialMessageOptions,
+                undefined,
+                navigationResume
               );
             }
           }
@@ -1196,6 +1225,20 @@ function useConversationSetup() {
         if (token) {
           await value.startSession(null, undefined, undefined, token);
         }
+      },
+      /**
+       * Picks the call a navigation interrupted back up, carrying the previous
+       * page's turns. Typing instead of calling continues the same turns in
+       * text; starting a call any other way begins a fresh conversation.
+       */
+      continueNavigationCall: async (element: HTMLElement | null) => {
+        return value.startSession(
+          element,
+          undefined,
+          undefined,
+          undefined,
+          pendingNavigationResume.peek()
+        );
       },
       /**
        * Offers the live call to the page being navigated to. A text chat is
@@ -1382,13 +1425,26 @@ function triggerCallEvent(
   }
 }
 
-/** The spoken turns worth offering on the page being navigated to. */
+/** The turns worth offering on the page being navigated to. */
 function resumableTurns(transcript: TranscriptEntry[]): NavigationResumeTurn[] {
   return transcript
-    .filter(
-      (entry): entry is Extract<TranscriptEntry, { type: "message" }> =>
-        entry.type === "message" && !!entry.message.trim()
-    )
-    .slice(-MAX_RESUMED_TURNS)
-    .map(entry => ({ role: entry.role, message: entry.message }));
+    .flatMap((entry): NavigationResumeTurn[] => {
+      if (entry.type === "message" && entry.message.trim()) {
+        return [{ type: "message", role: entry.role, message: entry.message }];
+      }
+      // Cards the agent drew are part of the conversation on screen, so they
+      // travel with it rather than vanishing on the next page.
+      if (entry.type === "rich_content") {
+        return [
+          {
+            type: "rich_content",
+            component: entry.component,
+            props: entry.props,
+            richContentId: entry.richContentId,
+          },
+        ];
+      }
+      return [];
+    })
+    .slice(-MAX_RESUMED_TURNS);
 }

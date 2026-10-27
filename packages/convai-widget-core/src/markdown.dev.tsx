@@ -279,6 +279,7 @@ function MockConversationProvider({
       hasStoredSession: signal(false),
       pendingNavigationResume: signal(null),
       navigationResumeMicMuted: signal(false),
+      continueNavigationCall: async () => undefined,
       storeNavigationResume: () => {},
       resumeSession: async () => {},
       disconnectSession: async () => {},

@@ -22,7 +22,8 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 type ResumeAgent =
   | "navigation_resume"
   | "navigation_resume_text"
-  | "navigation_resume_text_input";
+  | "navigation_resume_greeting"
+  | "navigation_resume_rich_content";
 
 function mountWidget(
   agentId: ResumeAgent = "navigation_resume",
@@ -232,37 +233,104 @@ describe("Resuming a call after a navigation", () => {
     );
   });
 
-  it("spends the offer on a typed message", async () => {
-    const firstMount = mountWidget("navigation_resume_text_input");
+  it("carries the agent's cards over to the next page", async () => {
+    const firstMount = mountWidget("navigation_resume_rich_content");
+    await startCall();
+    await expect.element(page.getByText("Albany")).toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_rich_content");
+
+    // The carousel is still on screen alongside the offer, and stays once the
+    // conversation is picked back up.
+    await expect.element(page.getByText("Albany")).toBeInTheDocument();
+    await expect.element(resumeButton()).toBeInTheDocument();
+
+    await resumeButton().click();
+    await expect
+      .element(page.getByText("Picking up again"))
+      .toBeInTheDocument();
+    await expect.element(page.getByText("Albany")).toBeInTheDocument();
+  });
+
+  it("does not greet again on the continued call", async () => {
+    const firstMount = mountWidget("navigation_resume_greeting");
+    await startCall();
+    await expect
+      .element(page.getByText("Welcome to the shop"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_greeting");
+    await resumeButton().click();
+
+    await vi.waitFor(() =>
+      expect(receivedContextualUpdates().join("\n")).toContain(
+        "Welcome to the shop"
+      )
+    );
+    // The greeting handed over from the previous page, and no second one: the
+    // agent opens the continued call listening.
+    expect(page.getByText("Welcome to the shop").all()).toHaveLength(1);
+  });
+
+  it("starts a new conversation from the call button", async () => {
+    const firstMount = mountWidget();
     await startCall();
     await expect
       .element(page.getByText("Looking at womens boots"))
       .toBeInTheDocument();
     navigateAway(firstMount);
 
-    mountWidget("navigation_resume_text_input");
+    mountWidget();
     await expect.element(resumeButton()).toBeInTheDocument();
 
-    // Typing opens a text conversation, which cannot carry the call's turns.
-    const textInput = page.getByRole("textbox", { name: "Text message input" });
-    await textInput.fill("Show me boots instead");
-    await page.getByRole("button", { name: "Send" }).click();
-    await expect
-      .element(page.getByText("Show me boots instead"))
-      .toBeInTheDocument();
-
-    // The chat hangs up, so the next call starts from a disconnected widget.
-    await expect.element(callButton().first()).toBeInTheDocument();
+    // The call button is how a visitor starts over, so it does not pick the
+    // interrupted call back up.
     await startCall();
     await expect
-      .element(page.getByText("Nothing carried over 2"))
+      .element(page.getByText("Here are the mens casual shoes"))
       .toBeInTheDocument();
 
-    // A fresh conversation: no turns handed to the agent, nothing kept on
-    // screen from either the call or the chat that came before it.
-    expect(receivedContextualUpdates()).toHaveLength(0);
-    expect(page.getByText("Show me boots instead").all()).toHaveLength(0);
+    expect(resumeButton().all()).toHaveLength(0);
     expect(page.getByText("Looking at womens boots").all()).toHaveLength(0);
+    expect(receivedContextualUpdates()).toHaveLength(0);
+  });
+
+  it("continues the conversation when the offer is answered by typing", async () => {
+    const firstMount = mountWidget("navigation_resume_greeting");
+    await startCall();
+    await expect
+      .element(page.getByText("Welcome to the shop"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_greeting");
+    await expect.element(resumeButton()).toBeInTheDocument();
+
+    const textInput = page.getByRole("textbox", { name: "Text message input" });
+    await textInput.fill("Show me those in black");
+    await page.getByRole("button", { name: "Send" }).click();
+
+    // The reply arrives under the first-message event id, since the continued
+    // conversation was started without a greeting.
+    await expect
+      .element(page.getByText("Those come in black too"))
+      .toBeInTheDocument();
+    // The turns carried over stay on screen and reach the agent, and the
+    // offer that was just answered is gone.
+    await expect
+      .element(page.getByText("Show me those in black"))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Welcome to the shop"))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+    await vi.waitFor(() =>
+      expect(receivedContextualUpdates().join("\n")).toContain(
+        "Welcome to the shop"
+      )
+    );
   });
 
   it("offers the call back only once", async () => {

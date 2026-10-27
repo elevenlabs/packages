@@ -551,15 +551,23 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "",
   },
-  // A widget that takes typed messages as well as calls, so a test can type
-  // while a call is being offered back.
-  navigation_resume_text_input: {
+  // Draws a carousel during a call, so a test can check the cards travel to
+  // the next page along with the turns.
+  navigation_resume_rich_content: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+  },
+  // Greets on a fresh call, so a test can check that a continued one does not
+  // greet a second time. Takes typed messages too, so a test can reply to the
+  // offer by typing rather than calling.
+  navigation_resume_greeting: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
     text_input_enabled: true,
-    mic_muting_enabled: true,
     terms_html: undefined,
-    first_message: "",
+    first_message: "Welcome to the shop",
   },
   // Text chat, which is carried by persistent sessions rather than offered
   // back as a call.
@@ -769,11 +777,19 @@ export const Worker = setupWorker(
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
 
+      // The agent's greeting, as the client asked for it. An empty override
+      // means the agent opens the call listening instead of speaking.
+      let overriddenFirstMessage: string | undefined;
+
       client.addEventListener("message", event => {
         const data =
           typeof event.data === "string" ? JSON.parse(event.data) : null;
         if (data?.type === "contextual_update") {
           contextualUpdates.push(data.text);
+        }
+        if (data?.type === "conversation_initiation_client_data") {
+          overriddenFirstMessage =
+            data.conversation_config_override?.agent?.first_message;
         }
       });
 
@@ -917,7 +933,11 @@ export const Worker = setupWorker(
           "first-message",
           agentId === "streamed_first_message_with_final"
         );
-      } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
+      } else if (
+        agentId !== "streamed_first_reply" &&
+        !resumedConversation &&
+        overriddenFirstMessage !== ""
+      ) {
         persistentConversation?.rows.push({
           role: "agent",
           text: config.first_message ?? "",
@@ -1014,29 +1034,58 @@ export const Worker = setupWorker(
           })
         );
       }
-      if (agentId === "navigation_resume_text_input") {
+      if (agentId === "navigation_resume_rich_content") {
         const connection = navigationResumeConnections++;
         client.send(
           JSON.stringify({
             type: "agent_response",
             agent_response_event: {
               agent_response:
-                connection === 0
-                  ? "Looking at womens boots"
-                  : `Nothing carried over ${connection}`,
+                connection === 0 ? "Here are my picks" : "Picking up again",
               event_id: 1,
-              response_id: `typed-navigation-resume-${connection}`,
+              response_id: `rich-navigation-resume-${connection}`,
             },
           })
         );
-        // The typed chat hangs up once it has the message, so a test can go on
-        // to start a second call.
-        client.addEventListener("message", async event => {
+        if (connection === 0) {
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: "rc_picks",
+                component: "carousel",
+                props: {
+                  items: [
+                    {
+                      title: "Albany",
+                      subtitle: "mens casual",
+                      description: "$139.95",
+                    },
+                  ],
+                },
+                event_id: 1,
+              },
+            })
+          );
+        }
+      }
+      if (agentId === "navigation_resume_greeting") {
+        client.addEventListener("message", event => {
           const data =
             typeof event.data === "string" ? JSON.parse(event.data) : null;
           if (data?.type !== "user_message") return;
-          await new Promise(resolve => setTimeout(resolve, 50));
-          client.close(1000);
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Those come in black too",
+                // Event ids restart from the first-message id when no greeting
+                // was sent, which is how a continued conversation starts.
+                event_id: 1,
+                response_id: "typed-reply",
+              },
+            })
+          );
         });
       }
       if (agentId === "fail") {
