@@ -81,8 +81,8 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       if (!supportsSampleRateConstraint) {
         await addLibsamplerateModule(context, libsampleratePath);
       }
-      await loadRawAudioProcessor(
-        context.audioWorklet,
+      const worklet = await loadRawAudioProcessor(
+        context,
         workletPaths?.rawAudioProcessor
       );
 
@@ -92,7 +92,6 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       });
 
       const source = context.createMediaStreamSource(inputStream);
-      const worklet = new AudioWorkletNode(context, "rawAudioProcessor");
       worklet.port.postMessage({
         type: "setFormat",
         format,

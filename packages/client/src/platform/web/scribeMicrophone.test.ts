@@ -50,11 +50,9 @@ function installAudioEnvironment(options?: {
       return audioContext;
     })
   );
-  vi.stubGlobal(
-    "AudioWorkletNode",
-    vi.fn(function MockAudioWorkletNode() {
-      return scribeNode;
-    })
+
+  vi.mocked(loadScribeAudioProcessor).mockResolvedValue(
+    scribeNode as unknown as AudioWorkletNode
   );
 
   return { audioContext, scribeNode, source, track };
@@ -69,7 +67,6 @@ describe("webScribeMicrophoneSetup", () => {
   it("retains the successful setup cleanup behavior", async () => {
     const { audioContext, scribeNode, source, track } =
       installAudioEnvironment();
-    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
 
     const result = await webScribeMicrophoneSetup({}, vi.fn());
     result.cleanup();
@@ -97,7 +94,6 @@ describe("webScribeMicrophoneSetup", () => {
 
   it("forwards a custom workletPaths.scribeAudioProcessor to the loader", async () => {
     installAudioEnvironment();
-    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
 
     await webScribeMicrophoneSetup(
       { workletPaths: { scribeAudioProcessor: "/vendor/scribe-processor.js" } },
@@ -112,7 +108,6 @@ describe("webScribeMicrophoneSetup", () => {
 
   it("passes undefined to the loader when no workletPaths are provided", async () => {
     installAudioEnvironment();
-    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
 
     await webScribeMicrophoneSetup({}, vi.fn());
 
@@ -127,7 +122,6 @@ describe("webScribeMicrophoneSetup", () => {
     const { audioContext, scribeNode, source, track } = installAudioEnvironment(
       { state: "suspended", resumeError }
     );
-    vi.mocked(loadScribeAudioProcessor).mockResolvedValueOnce(undefined);
 
     await expect(webScribeMicrophoneSetup({}, vi.fn())).rejects.toThrow(
       resumeError

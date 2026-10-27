@@ -1,5 +1,17 @@
 # @elevenlabs/client
 
+## 1.31.0
+
+### Minor Changes
+
+- 8ed0b79: Emit a per-connection `RealtimeEvents.AUDIO_STARTED` event once after the first microphone audio frame is sent, distinguishing an open transcription session from one that has begun sending audio.
+- 93991e2: Add `overrides.tts.modelId` support to the client so a per-conversation TTS model override can be sent as `tts.model_id` via `conversation_initiation_client_data`.
+
+### Patch Changes
+
+- Updated dependencies [93991e2]
+  - @elevenlabs/types@0.26.0
+
 ## 1.30.0
 
 ### Minor Changes
