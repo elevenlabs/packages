@@ -24,6 +24,7 @@ export function usePlaygroundSettings() {
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [showResizeButton, setShowResizeButton] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(true);
+  const [transcriptSpeechSync, setTranscriptSpeechSync] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
     useState(true);
   const [dynamicVariablesStr, setDynamicVariablesStr] = useState("");
@@ -78,6 +79,8 @@ export function usePlaygroundSettings() {
     setShowResizeButton,
     mobileFullscreen,
     setMobileFullscreen,
+    transcriptSpeechSync,
+    setTranscriptSpeechSync,
     showLanguageSelectorOnTrigger,
     setShowLanguageSelectorOnTrigger,
     dynamicVariablesStr,
@@ -218,6 +221,14 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setMobileFullscreen(e.currentTarget.checked)}
         />{" "}
         Mobile fullscreen
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.transcriptSpeechSync}
+          onChange={e => state.setTranscriptSpeechSync(e.currentTarget.checked)}
+        />{" "}
+        Transcript speech sync
       </label>
       <label>
         <input
