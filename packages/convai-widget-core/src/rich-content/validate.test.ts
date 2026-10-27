@@ -128,6 +128,8 @@ describe("parseCarouselProps", () => {
     subtitle: "beauty",
     description: "A volumising mascara.",
     image_url: "https://cdn.test/mascara.png",
+    rating: 4.7,
+    review_count: 128,
   };
 
   it("keeps every field a card draws", () => {
@@ -138,9 +140,24 @@ describe("parseCarouselProps", () => {
           subtitle: "beauty",
           description: "A volumising mascara.",
           imageUrl: "https://cdn.test/mascara.png",
+          rating: 4.7,
+          reviewCount: 128,
         },
       ],
     });
+  });
+
+  it.each<{ description: string; fields: object }>([
+    { description: "a rating above 5", fields: { rating: 6, review_count: 3 } },
+    { description: "a negative rating", fields: { rating: -1 } },
+    {
+      description: "a review count without a rating",
+      fields: { review_count: 3 },
+    },
+  ])("drops $description", ({ fields }) => {
+    expect(
+      parseCarouselProps({ items: [{ title: "Mascara", ...fields }] })
+    ).toEqual({ items: [{ title: "Mascara" }] });
   });
 
   it("caps the number of cards", () => {
