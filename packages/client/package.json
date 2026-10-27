@@ -62,6 +62,6 @@
   },
   "dependencies": {
     "@elevenlabs/types": "workspace:*",
-    "livekit-client": "^2.21.0"
+    "livekit-client": "^2.23.0"
   }
 }
