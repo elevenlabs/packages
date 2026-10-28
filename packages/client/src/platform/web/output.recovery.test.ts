@@ -18,9 +18,11 @@ describe("MediaDeviceOutput recovery", () => {
   let context: any;
   let worklet: any;
   let element: any;
+  let onWorkletMessage: ((event: MessageEvent) => void) | undefined;
 
   async function setup() {
     listeners.clear();
+    onWorkletMessage = undefined;
     context = {
       state: "running",
       currentTime: 0,
@@ -46,7 +48,15 @@ describe("MediaDeviceOutput recovery", () => {
       createMediaStreamDestination: () => ({ stream: {} }),
     };
     worklet = {
-      port: { postMessage: vi.fn(), addEventListener: vi.fn(), start: vi.fn() },
+      port: {
+        postMessage: vi.fn(),
+        addEventListener: vi.fn(
+          (type: string, callback: (event: MessageEvent) => void) => {
+            if (type === "message") onWorkletMessage = callback;
+          }
+        ),
+        start: vi.fn(),
+      },
       connect: vi.fn(),
     };
     loadWorklet.mockResolvedValue(worklet);
@@ -136,6 +146,35 @@ describe("MediaDeviceOutput recovery", () => {
       "visible";
     listeners.get("doc:visibilitychange")?.forEach(callback => callback());
     await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+    await output.close();
+  });
+
+  it("recovers audio queued while running after suspension before completion", async () => {
+    const output = await setup();
+    output.playAudio(new ArrayBuffer(4));
+    expect(context.resume).not.toHaveBeenCalled();
+
+    context.state = "suspended";
+    listeners.get("statechange")?.forEach(callback => callback());
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(context.state).toBe("running"));
+    // Allow the recovery promise's finally handler to clear its in-flight guard.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // A successful resume does not complete queued playback. If the browser
+    // suspends again without a new chunk, recovery must still be possible.
+    context.state = "interrupted";
+    listeners.get("statechange")?.forEach(callback => callback());
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(2));
+
+    onWorkletMessage?.(
+      new MessageEvent("message", {
+        data: { type: "process", finished: true },
+      })
+    );
+    context.state = "suspended";
+    listeners.get("statechange")?.forEach(callback => callback());
+    expect(context.resume).toHaveBeenCalledTimes(2);
     await output.close();
   });
 

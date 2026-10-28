@@ -174,10 +174,6 @@ export class MediaDeviceOutput
     if (this.recoveryInFlight) return;
     this.recoveryInFlight = this.context
       .resume()
-      .then(() => {
-        if (!this.closed && this.context.state === "running")
-          this.playbackPending = false;
-      })
       .catch(() => {
         // Autoplay policy may require a later user gesture; do not spin on errors.
       })
@@ -240,6 +236,11 @@ export class MediaDeviceOutput
     event: MessageEvent<WorkletMessage>
   ) => {
     let playbackEvent: PlaybackStateEvent = event as PlaybackStateEvent;
+    if (event.data.type === "process" && event.data.finished) {
+      // The worklet has consumed its queue; resuming the context alone does
+      // not mean previously queued audio has finished playing.
+      this.playbackPending = false;
+    }
     if (event.data.type === "chunk_start") {
       const { chunkId } = event.data;
       const metadata = this.chunkMetadata.get(chunkId);
@@ -264,7 +265,8 @@ export class MediaDeviceOutput
   }
 
   public playAudio(chunk: ArrayBuffer, metadata?: OutputChunkMetadata): void {
-    this.playbackPending ||= this.context.state !== "running";
+    // A running context can suspend after enqueue and before playback ends.
+    this.playbackPending = true;
     this.recoverPlayback();
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
