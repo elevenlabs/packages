@@ -1,5 +1,25 @@
 # @elevenlabs/convai-widget-core
 
+## 0.22.0
+
+### Minor Changes
+
+- e86b63c: Add a `transcript-speech-sync` attribute. Set it to `false` to show the agent's full message at once in voice calls instead of revealing it as the agent speaks.
+
+### Patch Changes
+
+- 2bbd8c2: Make carousel cards smaller on desktop, with square images like on touch screens, and add an optional star rating to each card. Cards accept a `rating` from 0 to 5 and an optional `review_count`, shown under the subtitle, for example ★★★★★ 4.7 (1,284).
+
+## 0.21.6
+
+### Patch Changes
+
+- 1893782: Fix the carousel's previous/next arrow icons flickering while the transcript updates.
+- ffab3e9: Show the text of a partially revealed markdown link instead of `[blocked]` until its URL is complete.
+- fc0965b: Show typing dots in voice calls when the agent takes more than a second to start replying, or "Thinking..." under the avatar when the transcript is off. They stay on while a tool runs and stop after 10 seconds without a reply.
+- Updated dependencies [695dadc]
+  - @elevenlabs/client@1.32.0
+
 ## 0.21.5
 
 ### Patch Changes
