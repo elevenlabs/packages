@@ -635,6 +635,7 @@ describe("Connection Types", () => {
 
         const onConnect = vi.fn();
         const onDisconnect = vi.fn();
+        const onConversationMetadata = vi.fn();
         let status: Status | null = null;
 
         const conversationPromise = Conversation.startSession({
@@ -642,6 +643,7 @@ describe("Connection Types", () => {
           connectionType: "websocket",
           onConnect,
           onDisconnect,
+          onConversationMetadata,
           onStatusChange: value => {
             status = value.status;
           },
@@ -664,6 +666,12 @@ describe("Connection Types", () => {
 
         const conversation = await conversationPromise;
         expect(conversation.getId()).toEqual(CONVERSATION_ID);
+        await vi.waitFor(() => {
+          expect(onConversationMetadata).toHaveBeenCalledExactlyOnceWith({
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+          });
+        });
         expect(status).toEqual("connected");
         expect(onConnect).toHaveBeenCalledWith({
           conversationId: CONVERSATION_ID,
