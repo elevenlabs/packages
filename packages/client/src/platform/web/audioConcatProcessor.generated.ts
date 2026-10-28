@@ -3,7 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadAudioConcatProcessor = createWorkletModuleLoader(
   "audioConcatProcessor",
-  "af57da6035f0119a",
+  "f6687065dcb4a1b6",
   // language=JavaScript
   `/*
  * ulaw decoding logic taken from the wavefile library
@@ -36,6 +36,7 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.currentBuffer = null;
     this.wasInterrupted = false;
     this.finished = false;
+    this.lastBufferSequence = 0;
 
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
@@ -53,6 +54,7 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           break;
         case "buffer":
           this.wasInterrupted = false;
+          this.lastBufferSequence = data.bufferSequence ?? this.lastBufferSequence;
           this.buffers.push({
             samples:
               this.format === "ulaw"
@@ -107,13 +109,17 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
 
     if (this.finished !== finished) {
       this.finished = finished;
-      this.port.postMessage({ type: "process", finished });
+      this.port.postMessage({
+        type: "process",
+        finished,
+        bufferSequence: this.lastBufferSequence,
+      });
     }
 
     return true; // Continue processing
   }
 }
 
-registerProcessor("audioConcatProcessor@af57da6035f0119a", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@f6687065dcb4a1b6", AudioConcatProcessor);
 `
 );

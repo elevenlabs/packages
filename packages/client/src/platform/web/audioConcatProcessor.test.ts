@@ -70,6 +70,33 @@ describe("audioConcatProcessor", () => {
     send({ type: "setFormat", format: "pcm", sampleRate: 16000 });
   });
 
+  it("reports the last accepted buffer sequence when playback finishes", () => {
+    send({
+      type: "buffer",
+      buffer: new Int16Array(QUANTUM).buffer,
+      bufferSequence: 1,
+    });
+    render();
+    render();
+    expect(processor.port.postMessage).toHaveBeenCalledWith({
+      type: "process",
+      finished: true,
+      bufferSequence: 1,
+    });
+    send({
+      type: "buffer",
+      buffer: new Int16Array(QUANTUM).buffer,
+      bufferSequence: 2,
+    });
+    render();
+    render();
+    expect(processor.port.postMessage).toHaveBeenCalledWith({
+      type: "process",
+      finished: true,
+      bufferSequence: 2,
+    });
+  });
+
   it("posts chunk_start with the chunk's id when it starts playing", () => {
     queue(QUANTUM * 2, 1);
     queue(QUANTUM, 2);

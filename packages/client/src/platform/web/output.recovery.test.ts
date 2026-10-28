@@ -169,12 +169,48 @@ describe("MediaDeviceOutput recovery", () => {
 
     onWorkletMessage?.(
       new MessageEvent("message", {
-        data: { type: "process", finished: true },
+        data: { type: "process", finished: true, bufferSequence: 1 },
       })
     );
     context.state = "suspended";
     listeners.get("statechange")?.forEach(callback => callback());
     expect(context.resume).toHaveBeenCalledTimes(2);
+    await output.close();
+  });
+
+  it("ignores an idle notification from before newer audio was queued", async () => {
+    const output = await setup();
+    output.playAudio(new ArrayBuffer(4));
+    const first = worklet.port.postMessage.mock.calls.find(
+      ([message]: [{ type: string }]) => message.type === "buffer"
+    )![0];
+    expect(first.bufferSequence).toBe(1);
+    output.playAudio(new ArrayBuffer(4));
+    const buffers = worklet.port.postMessage.mock.calls
+      .map(([message]: [{ type: string }]) => message)
+      .filter((message: { type: string }) => message.type === "buffer");
+    expect(buffers[1].bufferSequence).toBe(2);
+
+    // The worklet finished an earlier queue before it received the new buffer.
+    onWorkletMessage?.(
+      new MessageEvent("message", {
+        data: { type: "process", finished: true, bufferSequence: 1 },
+      })
+    );
+    context.state = "suspended";
+    listeners.get("statechange")?.forEach(callback => callback());
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+
+    // Once the latest buffer finishes, recovery is no longer needed.
+    onWorkletMessage?.(
+      new MessageEvent("message", {
+        data: { type: "process", finished: true, bufferSequence: 2 },
+      })
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+    context.state = "suspended";
+    listeners.get("statechange")?.forEach(callback => callback());
+    expect(context.resume).toHaveBeenCalledTimes(1);
     await output.close();
   });
 

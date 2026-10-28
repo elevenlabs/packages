@@ -18,7 +18,7 @@ import {
 import { isIosDevice } from "./compatibility.js";
 
 type WorkletMessage =
-  | { type: "process"; finished: boolean }
+  | { type: "process"; finished: boolean; bufferSequence: number }
   | { type: "chunk_start"; chunkId: number };
 
 function maybePrimeIosPlayback({
@@ -153,6 +153,7 @@ export class MediaDeviceOutput
   // Resume only after an actual playback request. A backgrounded browser may
   // reject resume() until user activation; the next visibility change retries.
   private playbackPending = false;
+  private lastBufferSequence = 0;
   private recoveryInFlight: Promise<void> | null = null;
   private closed = false;
 
@@ -236,7 +237,11 @@ export class MediaDeviceOutput
     event: MessageEvent<WorkletMessage>
   ) => {
     let playbackEvent: PlaybackStateEvent = event as PlaybackStateEvent;
-    if (event.data.type === "process" && event.data.finished) {
+    if (
+      event.data.type === "process" &&
+      event.data.finished &&
+      event.data.bufferSequence === this.lastBufferSequence
+    ) {
       // The worklet has consumed its queue; resuming the context alone does
       // not mean previously queued audio has finished playing.
       this.playbackPending = false;
@@ -280,7 +285,12 @@ export class MediaDeviceOutput
       chunkId = ++this.nextChunkId;
       this.chunkMetadata.set(chunkId, metadata);
     }
-    this.worklet.port.postMessage({ type: "buffer", buffer: chunk, chunkId });
+    this.worklet.port.postMessage({
+      type: "buffer",
+      buffer: chunk,
+      chunkId,
+      bufferSequence: ++this.lastBufferSequence,
+    });
   }
 
   public interrupt(resetDuration = 2000): void {
