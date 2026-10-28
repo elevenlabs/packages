@@ -129,6 +129,22 @@ describe("Persistent sessions", () => {
     ]);
   });
 
+  it("replays the rich content the agent showed after a reload", async () => {
+    const firstMount = mountPersistentWidget();
+    await typeMessage("show me buttons");
+    await expect
+      .element(page.getByRole("button", { name: "Track it" }))
+      .toBeInTheDocument();
+
+    firstMount.remove();
+    mountPersistentWidget();
+
+    await expect
+      .element(page.getByRole("button", { name: "Track it" }))
+      .toBeInTheDocument();
+    await assertRenderedInOrder(["show me buttons", "Pick one", "Track it"]);
+  });
+
   it("delivers a message typed while the conversation is still resuming", async () => {
     const firstMount = mountPersistentWidget();
     await sendMessage("Where is my parcel?");
