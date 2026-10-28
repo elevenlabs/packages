@@ -88,7 +88,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex w-64 pointer-coarse:w-56 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
+              className="flex w-72 pointer-coarse:w-60 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
             >
               {item.imageUrl && (
                 <img
@@ -96,7 +96,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
                   alt={item.title}
                   loading="lazy"
                   decoding="async"
-                  className="aspect-square w-full rounded-input bg-base-active object-cover"
+                  className="aspect-[4/5] w-full rounded-input bg-base-active object-cover"
                 />
               )}
               <div className="flex min-w-0 flex-col gap-0.5">
