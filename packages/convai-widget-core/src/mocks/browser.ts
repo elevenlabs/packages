@@ -543,7 +543,6 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
-  // A voice call that can be interrupted by a navigation and offered back.
   navigation_resume: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
@@ -551,17 +550,13 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "",
   },
-  // Draws a carousel during a call, so a test can check the cards travel to
-  // the next page along with the turns.
   navigation_resume_rich_content: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
     terms_html: undefined,
     first_message: "",
   },
-  // Greets on a fresh call, so a test can check that a continued one does not
-  // greet a second time. Takes typed messages too, so a test can reply to the
-  // offer by typing rather than calling.
+  // Greets on a fresh call and replies to typed messages.
   navigation_resume_greeting: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
@@ -569,8 +564,13 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "Welcome to the shop",
   },
-  // Text chat, which is carried by persistent sessions rather than offered
-  // back as a call.
+  // Greets, but refuses an override of its first message.
+  navigation_resume_no_override: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "Welcome to the shop",
+  },
   navigation_resume_text: {
     ...BASIC_CONFIG,
     text_only: true,
@@ -595,9 +595,7 @@ export function receivedContextualUpdates() {
   return [...contextualUpdates];
 }
 
-// Counts connections to the navigation_resume agents so each one says
-// something different, which is how a test tells the conversation that
-// carried over from the one the next page starts.
+// Each connection replies differently, so tests can tell them apart.
 let navigationResumeConnections = 0;
 
 const NAVIGATION_RESUME_REPLIES = [
@@ -777,8 +775,7 @@ export const Worker = setupWorker(
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
 
-      // The agent's greeting, as the client asked for it. An empty override
-      // means the agent opens the call listening instead of speaking.
+      // An empty override means the agent waits instead of greeting.
       let overriddenFirstMessage: string | undefined;
 
       client.addEventListener("message", event => {
@@ -790,6 +787,16 @@ export const Worker = setupWorker(
         if (data?.type === "conversation_initiation_client_data") {
           overriddenFirstMessage =
             data.conversation_config_override?.agent?.first_message;
+          // Like xi, refused after the metadata has already gone out.
+          if (
+            agentId === "navigation_resume_no_override" &&
+            overriddenFirstMessage === ""
+          ) {
+            client.close(
+              1008,
+              "Override for field 'first_message' is not allowed by config."
+            );
+          }
         }
       });
 
@@ -1067,6 +1074,25 @@ export const Worker = setupWorker(
               },
             })
           );
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: "rc_replies",
+                component: "buttons",
+                props: {
+                  buttons: [
+                    {
+                      type: "message",
+                      label: "Tell me more",
+                      message: "Tell me more",
+                    },
+                  ],
+                },
+                event_id: 1,
+              },
+            })
+          );
         }
       }
       if (agentId === "navigation_resume_greeting") {
@@ -1079,8 +1105,6 @@ export const Worker = setupWorker(
               type: "agent_response",
               agent_response_event: {
                 agent_response: "Those come in black too",
-                // Event ids restart from the first-message id when no greeting
-                // was sent, which is how a continued conversation starts.
                 event_id: 1,
                 response_id: "typed-reply",
               },

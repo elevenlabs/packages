@@ -38,9 +38,9 @@ import {
 import {
   buildResumeContext,
   createNavigationResumeStore,
-  MAX_RESUMED_TURNS,
+  isFirstMessageOverrideRefused,
+  toTranscriptEntries,
   type NavigationResumeRecord,
-  type NavigationResumeTurn,
 } from "../utils/navigationResume";
 import { SpeechReveal } from "../utils/speechReveal";
 
@@ -550,59 +550,17 @@ function useConversationSetup() {
     let persistenceUnavailable = false;
 
     const navigationResumeStore = createNavigationResumeStore(config);
-    // The call a navigation interrupted, read once per page. Held until a
-    // continued call is actually up, so a start that fails can be offered
-    // again instead of stranding the previous page's turns.
-    const pendingNavigationResume = signal(
-      widgetConfig.peek().resume_call_after_navigation
-        ? navigationResumeStore.consume()
-        : null
-    );
-    // The mic state the interrupted call was left in, applied once the
-    // continued call is connected.
+    const pendingNavigationResume = navigationResumeStore.pending;
     const navigationResumeMicMuted = signal(false);
     const resumePromptEntry = (): TranscriptEntry => ({
       type: "resume_prompt",
       conversationIndex: conversationIndex.peek(),
     });
-    // What a continued call starts from: the turns handed over, without the
-    // offer it just spent or the error an earlier attempt left behind.
-    const navigationResumeTranscript = (): TranscriptEntry[] =>
-      transcript
-        .peek()
-        .filter(
-          entry =>
-            entry.type !== "resume_prompt" &&
-            !(
-              entry.type === "error" &&
-              entry.conversationIndex === conversationIndex.peek()
-            )
-        );
-    const resumedTurns = pendingNavigationResume.peek()?.turns;
-    if (resumedTurns?.length) {
+    let greetingOverrideRefused = false;
+    const initialResume = pendingNavigationResume.peek();
+    if (initialResume?.turns.length) {
       transcript.value = [
-        ...resumedTurns.map(
-          (turn): TranscriptEntry =>
-            turn.type === "rich_content"
-              ? {
-                  type: "rich_content",
-                  component: turn.component,
-                  props: turn.props,
-                  richContentId: turn.richContentId,
-                  // The continued conversation numbers its own events from
-                  // one, so restored cards take an id no turn can speak
-                  // under and are never held back as still being said.
-                  eventId: 0,
-                  conversationIndex: conversationIndex.peek(),
-                }
-              : {
-                  type: "message",
-                  role: turn.role,
-                  message: turn.message,
-                  isText: false,
-                  conversationIndex: conversationIndex.peek(),
-                }
-        ),
+        ...toTranscriptEntries(initialResume, conversationIndex.peek()),
         resumePromptEntry(),
       ];
     }
@@ -640,19 +598,31 @@ function useConversationSetup() {
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        // The resume prompt hands the record in. Replying to the offer by
-        // typing continues the same conversation in text, so it carries the
-        // turns too. Starting a call any other way is the visitor choosing to
-        // begin again, which spends the offer.
+        // Typing also answers the offer; any other call start spends it.
         const navigationResume =
           continuedCall ??
           (initialMessage ? pendingNavigationResume.peek() : null);
         if (!navigationResume) {
           pendingNavigationResume.value = null;
         }
+        const retry = () =>
+          value.startSession(
+            element,
+            initialMessage,
+            initialMessageOptions,
+            undefined,
+            continuedCall
+          );
+        const greetingRefused = (cause: unknown) => {
+          if (!navigationResume || greetingOverrideRefused) return false;
+          greetingOverrideRefused = isFirstMessageOverrideRefused(cause);
+          return greetingOverrideRefused;
+        };
+        // A refusal before this start returns retries once the start settles.
+        let started = false;
+        let refusedBeforeStart = false;
         if (resume || navigationResume) {
-          // The conversation was already started behind the terms gate, so
-          // continuing it does not ask again.
+          // The conversation was already started behind the terms gate.
           terms.acceptTerms();
         } else {
           await terms.requestTerms();
@@ -679,9 +649,12 @@ function useConversationSetup() {
 
         // If the user started the conversation with a text message, and the
         // agent supports it, switch to text-only mode. Persistent sessions are
-        // text only, so a resume does the same.
+        // text only, so a resume does the same. A quick reply that continues
+        // an interrupted call stays in voice.
         if (
-          (initialMessage && widgetConfig.value.supports_text_only) ||
+          (initialMessage &&
+            !continuedCall &&
+            widgetConfig.value.supports_text_only) ||
           resume
         ) {
           processedConfig.textOnly = true;
@@ -691,12 +664,12 @@ function useConversationSetup() {
             processedConfig.overrides.conversation.textOnly = true;
           }
         }
-        // A continued conversation is a new one to the orchestrator, so the
-        // agent would greet the visitor again partway through. Starting it
-        // without a first message leaves the agent picking up where it left
-        // off. The agent has to allow the first message override for this;
-        // agents that never greet need no override at all.
-        if (navigationResume && firstMessage.peek()) {
+        // Skips the greeting; the agent must allow first message overrides.
+        if (
+          navigationResume &&
+          firstMessage.peek() &&
+          !greetingOverrideRefused
+        ) {
           processedConfig.overrides ??= {};
           processedConfig.overrides.agent ??= {};
           processedConfig.overrides.agent.firstMessage = "";
@@ -744,20 +717,18 @@ function useConversationSetup() {
         resetAgentResponseState();
         isResuming.value = !!resume;
         // A kept transcript renders its greeting as before; a replayed one
-        // holds the greeting as a stored row. A continued call already shows
-        // the previous page's turns, so its greeting is suppressed too.
+        // holds the greeting as a stored row.
         if (!keepTranscript) {
           isResumedSession.value = !!resume || !!navigationResume;
         }
-        // No greeting is sent on either kind of resume, so the text-mode
-        // handlers below must not hold the next reply back waiting for one.
+        // No greeting is sent on either kind of resume.
         receivedFirstMessageRef.current = !!resume || !!navigationResume;
         speechReveal.reset();
         transcript.value = [
           ...(keepTranscript
             ? transcript.peek()
             : navigationResume
-              ? navigationResumeTranscript()
+              ? toTranscriptEntries(navigationResume, conversationIndex.peek())
               : resume
                 ? []
                 : firstMessageEntries()),
@@ -1063,6 +1034,16 @@ function useConversationSetup() {
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
               isAwaitingReply.value = false;
+              // xi refuses the override after sending metadata on web calls.
+              if (greetingRefused(details)) {
+                if (!started) {
+                  refusedBeforeStart = true;
+                  return;
+                }
+                pendingNavigationResume.value = navigationResume;
+                setTimeout(() => void retry());
+                return;
+              }
               // A close with the token still stored is a pause, not an end:
               // the transcript stays and the next message or the page coming
               // back to the foreground continues the conversation.
@@ -1106,11 +1087,13 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
+          started = true;
+          if (refusedBeforeStart) {
+            lockRef.current = null;
+            return retry();
+          }
           if (navigationResume) {
-            // The conversation has been handed over, so a later start opens a
-            // fresh one rather than continuing this one again.
             pendingNavigationResume.value = null;
-            // A text conversation has no microphone to put back.
             navigationResumeMicMuted.value =
               navigationResume.micMuted && !processedConfig.textOnly;
           }
@@ -1118,9 +1101,6 @@ function useConversationSetup() {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
             setTimeout(() => {
-              // The turns go first, as context rather than a message, so the
-              // agent knows what was said without being asked to reply to it —
-              // and has it in hand before answering anything typed alongside.
               if (navigationResume) {
                 instance.sendContextualUpdate(
                   buildResumeContext(navigationResume.turns)
@@ -1137,6 +1117,10 @@ function useConversationSetup() {
           error.value = null;
           return id;
         } catch (e) {
+          if (refusedBeforeStart || greetingRefused(e)) {
+            lockRef.current = null;
+            return retry();
+          }
           if (
             processedConfig.persistentSession &&
             isPersistentSessionRefused(e)
@@ -1150,13 +1134,7 @@ function useConversationSetup() {
               // Clear the rejected promise first, otherwise the retry awaits it
               // at the top of startSession and rethrows.
               lockRef.current = null;
-              return value.startSession(
-                element,
-                initialMessage,
-                initialMessageOptions,
-                undefined,
-                navigationResume
-              );
+              return retry();
             }
           }
           if (resume && !initialMessage) {
@@ -1211,8 +1189,6 @@ function useConversationSetup() {
             ];
           }
           if (navigationResume) {
-            // The call was never handed over, so offer it again rather than
-            // leaving the previous page's turns with no way to continue them.
             transcript.value = [...transcript.peek(), resumePromptEntry()];
           }
         } finally {
@@ -1226,38 +1202,55 @@ function useConversationSetup() {
           await value.startSession(null, undefined, undefined, token);
         }
       },
-      /**
-       * Picks the call a navigation interrupted back up, carrying the previous
-       * page's turns. Typing instead of calling continues the same turns in
-       * text; starting a call any other way begins a fresh conversation.
-       */
-      continueNavigationCall: async (element: HTMLElement | null) => {
+      continueNavigationCall: async (
+        element: HTMLElement | null,
+        message?: string,
+        options?: SendUserMessageOptions
+      ) => {
         return value.startSession(
           element,
-          undefined,
-          undefined,
+          message,
+          options,
           undefined,
           pendingNavigationResume.peek()
         );
       },
-      /**
-       * Offers the live call to the page being navigated to. A text chat is
-       * left alone: persistent sessions already carry those.
-       */
+      /** Saves a live voice call for the next page. */
       storeNavigationResume: ({ micMuted }: { micMuted: boolean }) => {
-        if (!widgetConfig.peek().resume_call_after_navigation) return;
-        if (!conversationRef.current?.isOpen()) return;
+        if (!config.peek().persistentSession) return;
+        const conversation = conversationRef.current;
+        if (!conversation?.isOpen()) {
+          navigationResumeStore.carryOver();
+          return;
+        }
         if (conversationTextOnly.peek() === true) return;
-        navigationResumeStore.store({
-          recordedAt: Date.now(),
-          turns: resumableTurns(transcript.peek()),
+        navigationResumeStore.save(transcript.peek(), {
           micMuted,
+          conversationId: conversation.getId(),
         });
       },
       /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
         storedSession.clear();
         navigationResumeStore.clear();
+        // Declining an interrupted call shows its end screen; nothing is live.
+        const pending = pendingNavigationResume.peek();
+        if (pending && !lockRef.current) {
+          pendingNavigationResume.value = null;
+          lastId.value = pending.conversationId ?? null;
+          transcript.value = [
+            ...transcript
+              .peek()
+              .filter(entry => entry.type !== "resume_prompt"),
+            {
+              type: "disconnection",
+              role: "user",
+              conversationIndex: conversationIndex.peek(),
+            },
+          ];
+          conversationIndex.value++;
+          return;
+        }
         await value.disconnectSession();
       },
       /** Closes the connection but keeps a persistent session resumable. */
@@ -1413,8 +1406,6 @@ function triggerCallEvent(
     const event = new CustomEvent("elevenlabs-convai:call", {
       bubbles: true,
       composed: true,
-      // `navigationResume` tells the page this start continues the call a
-      // navigation interrupted rather than opening a fresh one.
       detail: { config, navigationResume },
     });
     element?.dispatchEvent(event);
@@ -1423,28 +1414,4 @@ function triggerCallEvent(
     console.error("[ConversationalAI] Could not trigger call event:", e);
     return config;
   }
-}
-
-/** The turns worth offering on the page being navigated to. */
-function resumableTurns(transcript: TranscriptEntry[]): NavigationResumeTurn[] {
-  return transcript
-    .flatMap((entry): NavigationResumeTurn[] => {
-      if (entry.type === "message" && entry.message.trim()) {
-        return [{ type: "message", role: entry.role, message: entry.message }];
-      }
-      // Cards the agent drew are part of the conversation on screen, so they
-      // travel with it rather than vanishing on the next page.
-      if (entry.type === "rich_content") {
-        return [
-          {
-            type: "rich_content",
-            component: entry.component,
-            props: entry.props,
-            richContentId: entry.richContentId,
-          },
-        ];
-      }
-      return [];
-    })
-    .slice(-MAX_RESUMED_TURNS);
 }

@@ -298,22 +298,26 @@ function QueueTimeoutMessage() {
   );
 }
 
-/**
- * Offers the call back after a navigation tore it down. A button rather than
- * an automatic reconnect: browsers need a gesture to open a microphone.
- */
+/** A button rather than a reconnect, since the mic needs a user gesture. */
 function ResumePromptMessage() {
   const text = useTextContents();
-  const { continueNavigationCall } = useConversation();
+  const { continueNavigationCall, endSession } = useConversation();
 
   return (
-    <div className="px-8 flex justify-center transition-opacity duration-200 data-hidden:opacity-0">
+    <div className="px-8 flex justify-center gap-2 transition-opacity duration-200 data-hidden:opacity-0">
       <Button
         variant="primary"
         icon="phone"
         onClick={e => void continueNavigationCall(e.currentTarget)}
       >
         {text.resume_call}
+      </Button>
+      <Button
+        variant="outline"
+        icon="phone-off"
+        onClick={() => void endSession()}
+      >
+        {text.end_call}
       </Button>
     </div>
   );

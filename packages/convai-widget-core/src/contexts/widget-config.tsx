@@ -144,9 +144,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showLanguageSelectorOnTrigger = useAttribute(
     "show-language-selector-on-trigger"
   );
-  const resumeCallAfterNavigation = useAttribute(
-    "resume-call-after-navigation"
-  );
 
   const value = useComputed<WidgetConfig | null>(() => {
     if (!fetchedConfig.value) {
@@ -213,10 +210,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(showLanguageSelectorOnTrigger.value) ??
       fetchedConfig.value.show_language_selector_on_trigger ??
       true;
-    const patchedResumeCallAfterNavigation =
-      parseBoolAttribute(resumeCallAfterNavigation.value) ??
-      fetchedConfig.value.resume_call_after_navigation ??
-      false;
 
     return {
       ...fetchedConfig.value,
@@ -237,7 +230,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       mobile_fullscreen: patchedMobileFullscreen,
       end_confirmation_enabled: patchedEndConfirmation,
       show_language_selector_on_trigger: patchedShowLanguageSelectorOnTrigger,
-      resume_call_after_navigation: patchedResumeCallAfterNavigation,
     };
   });
 
