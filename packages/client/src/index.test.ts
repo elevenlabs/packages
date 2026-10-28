@@ -10,6 +10,7 @@ import {
 import { Client, Server } from "mock-socket";
 import chunk from "./__tests__/chunk.js";
 import { Mode, Status, Conversation } from "./platform/web/index.js";
+import { MediaDeviceInput } from "./platform/web/input.js";
 import { createConnection } from "./utils/ConnectionFactory.js";
 import type { SessionConfig } from "./utils/BaseConnection.js";
 import { PACKAGE_VERSION } from "./version.js";
@@ -530,6 +531,174 @@ describe("Audio alignment playback", () => {
     expect(onAudioAlignmentPlayback).toHaveBeenCalledTimes(2);
 
     await conversation.endSession();
+    server.close();
+  });
+});
+
+describe("Output resampling", () => {
+  const AGENT_SAMPLE_RATE = 16000;
+
+  // The output resampler turns any audio into a 440 Hz tone, so audible output proves it ran
+  function fakeLibsampleratePath({
+    failOutput,
+    outputDelayMs,
+  }: {
+    failOutput: boolean;
+    outputDelayMs: number;
+  }) {
+    const source = `globalThis.LibSampleRate = {
+      create: async (_channels, inputSampleRate, outputSampleRate) => {
+        if (inputSampleRate !== ${AGENT_SAMPLE_RATE}) {
+          return { full: samples => samples };
+        }
+        // AudioWorkletGlobalScope has no timers; awaiting compile yields without blocking the worklet
+        const emptyModule = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]);
+        const end = Date.now() + ${outputDelayMs};
+        while (Date.now() < end) {
+          await WebAssembly.compile(emptyModule);
+        }
+        if (${failOutput}) {
+          throw "invalid outputSampleRate";
+        }
+        const ratio = outputSampleRate / inputSampleRate;
+        return {
+          full: samples => {
+            const tone = new Float32Array(Math.round(samples.length * ratio));
+            for (let i = 0; i < tone.length; i++) {
+              tone[i] = Math.sin((2 * Math.PI * 440 * i) / outputSampleRate) * 16000;
+            }
+            return tone;
+          },
+        };
+      },
+    };`;
+    return URL.createObjectURL(
+      new Blob([source], { type: "application/javascript" })
+    );
+  }
+
+  async function startResampledSession({
+    path,
+    failOutput = false,
+    outputDelayMs = 0,
+    onConnection,
+    onAudioAlignmentPlayback,
+  }: {
+    path: string;
+    failOutput?: boolean;
+    outputDelayMs?: number;
+    onConnection?: (socket: Client) => void;
+    onAudioAlignmentPlayback?: () => void;
+  }) {
+    // Forces the AudioContext to the device rate, so the agent's audio needs resampling
+    vi.spyOn(navigator.mediaDevices, "getSupportedConstraints").mockReturnValue(
+      {}
+    );
+    const probe = new AudioContext();
+    expect(probe.sampleRate).not.toBe(AGENT_SAMPLE_RATE);
+    await probe.close();
+
+    const server = new Server(`wss://api.elevenlabs.io/voice/${path}`);
+    server.on("connection", socket => {
+      socket.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: `pcm_${AGENT_SAMPLE_RATE}`,
+          },
+        })
+      );
+      onConnection?.(socket);
+    });
+    const statuses: Status[] = [];
+    const conversationPromise = Conversation.startSession({
+      signedUrl: `wss://api.elevenlabs.io/voice/${path}`,
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      libsampleratePath: fakeLibsampleratePath({ failOutput, outputDelayMs }),
+      onStatusChange: ({ status }) => statuses.push(status),
+      onAudioAlignmentPlayback,
+    });
+    return { server, statuses, conversationPromise };
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("starts the session once the resampler is ready", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { server, statuses, conversationPromise } =
+      await startResampledSession({ path: "resampler-ready" });
+
+    const conversation = await conversationPromise;
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        `Sample rate ${AGENT_SAMPLE_RATE} not available, resampling`
+      )
+    );
+    expect(statuses.at(-1)).toBe("connected");
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("holds audio that arrives while the resampler loads and plays it through the resampler", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    // 1s of silence at pcm_16000; only the resampler makes it audible
+    const audio = btoa(String.fromCharCode(...new Uint8Array(32000)));
+    const alignment = {
+      chars: ["H", "i"],
+      char_start_times_ms: [0, 50],
+      char_durations_ms: [50, 50],
+    };
+    const order: string[] = [];
+    const { server, conversationPromise } = await startResampledSession({
+      path: "resampler-slow",
+      outputDelayMs: 300,
+      onConnection: socket => {
+        // A real socket delivers each message as its own task
+        setTimeout(() => {
+          socket.send(
+            JSON.stringify({
+              type: "audio",
+              audio_event: { audio_base_64: audio, event_id: 1, alignment },
+            })
+          );
+          order.push("audio sent");
+        });
+      },
+      onAudioAlignmentPlayback: () => order.push("audio played"),
+    });
+
+    const conversation = await conversationPromise;
+    order.push("connected");
+    await vi.waitFor(() => expect(order).toContain("audio played"));
+    expect(order).toEqual(["audio sent", "connected", "audio played"]);
+    await vi.waitFor(() =>
+      expect(conversation.getOutputVolume()).toBeGreaterThan(0.01)
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("fails the session and releases the microphone if the resampler can't be created", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const closeInput = vi.spyOn(MediaDeviceInput.prototype, "close");
+    const { server, statuses, conversationPromise } =
+      await startResampledSession({
+        path: "resampler-error",
+        failOutput: true,
+      });
+
+    await expect(conversationPromise).rejects.toThrow(
+      "Failed to create audio resampler: invalid outputSampleRate"
+    );
+    expect(statuses.at(-1)).toBe("disconnected");
+    expect(closeInput).toHaveBeenCalledTimes(1);
+
     server.close();
   });
 });
