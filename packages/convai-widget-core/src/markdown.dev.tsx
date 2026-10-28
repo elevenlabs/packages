@@ -278,6 +278,10 @@ function MockConversationProvider({
       isResumedSession: signal(false),
       isResuming: signal(false),
       hasStoredSession: signal(false),
+      pendingNavigationResume: signal(null),
+      navigationResumeMicMuted: signal(false),
+      continueNavigationCall: async () => undefined,
+      storeNavigationResume: () => {},
       resumeSession: async () => {},
       disconnectSession: async () => {},
     }),
@@ -487,7 +491,9 @@ function MarkdownPlayground() {
                 }
               >
                 <option value="text">Text — markdown</option>
-                <option value="voice">Voice — markdown + styled audio tags</option>
+                <option value="voice">
+                  Voice — markdown + styled audio tags
+                </option>
               </select>
             </div>
             {renderMode === "voice" && (

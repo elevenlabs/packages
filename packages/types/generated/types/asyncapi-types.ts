@@ -389,9 +389,16 @@ export interface ConversationHistoryEventRowsItem {
   role: ConversationHistoryEventRowsItemRole;
   text: string;
   timestamp_unix_secs: number;
+  rich_content?: ConversationHistoryEventRowsItemRichContent;
 }
 
 export type ConversationHistoryEventRowsItemRole = "user" | "agent";
+
+export interface ConversationHistoryEventRowsItemRichContent {
+  rich_content_id: string;
+  component: string;
+  props: Record<string, any>;
+}
 
 export interface ClientToolCallMessage {
   type: "client_tool_call";

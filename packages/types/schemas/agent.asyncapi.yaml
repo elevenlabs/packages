@@ -1202,6 +1202,20 @@ components:
         timestamp_unix_secs:
           type: integer
           description: Unix time in seconds. Rows replayed from a live session all carry the conversation start time.
+        rich_content:
+          $ref: "#/components/schemas/ConversationHistoryRichContent"
+
+    ConversationHistoryRichContent:
+      type: object
+      description: Rich content the agent showed; rows carrying it have empty text
+      required: [rich_content_id, component, props]
+      properties:
+        rich_content_id:
+          type: string
+        component:
+          type: string
+        props:
+          type: object
 
     ClientToolCallData:
       type: object
