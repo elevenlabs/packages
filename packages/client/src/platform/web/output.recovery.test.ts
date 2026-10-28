@@ -117,6 +117,28 @@ describe("MediaDeviceOutput recovery", () => {
     await output.close();
   });
 
+  it("recovers an interrupted context when audio arrives", async () => {
+    const output = await setup();
+    context.state = "interrupted";
+    output.playAudio(new ArrayBuffer(4));
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+    await output.close();
+  });
+
+  it("defers interrupted recovery until returning to foreground", async () => {
+    const output = await setup();
+    context.state = "interrupted";
+    (document as unknown as { visibilityState: string }).visibilityState =
+      "hidden";
+    output.playAudio(new ArrayBuffer(4));
+    expect(context.resume).not.toHaveBeenCalled();
+    (document as unknown as { visibilityState: string }).visibilityState =
+      "visible";
+    listeners.get("doc:visibilitychange")?.forEach(callback => callback());
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+    await output.close();
+  });
+
   it("removes listeners and does not resume after close", async () => {
     const output = await setup();
     await output.close();

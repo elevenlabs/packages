@@ -160,7 +160,8 @@ export class MediaDeviceOutput
     if (
       this.closed ||
       !this.playbackPending ||
-      this.context.state !== "suspended"
+      (this.context.state !== "suspended" &&
+        this.context.state !== "interrupted")
     ) {
       return;
     }
