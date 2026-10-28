@@ -94,18 +94,15 @@ describe("Resuming a call after a navigation", () => {
 
       await resumeButton().click();
       await expect
-        .element(page.getByText("Here are the mens casual shoes"))
+        .element(page.getByRole("button", { name: "End", exact: true }))
         .toBeInTheDocument();
       await expect
         .element(page.getByText("Looking at womens boots"))
         .toBeInTheDocument();
       expect(resumeButton().all()).toHaveLength(0);
       expect(sawResume).toBe(true);
-      await vi.waitFor(() =>
-        expect(receivedContextualUpdates().join("\n")).toContain(
-          "Looking at womens boots"
-        )
-      );
+      // The same conversation carries on, so the agent needs no summary.
+      expect(receivedContextualUpdates()).toHaveLength(0);
     } finally {
       document.removeEventListener("elevenlabs-convai:call", onCall);
     }
@@ -164,15 +161,10 @@ describe("Resuming a call after a navigation", () => {
     await resumeButton().click();
 
     await expect
-      .element(page.getByText("Here are the mens casual shoes"))
+      .element(page.getByRole("button", { name: "End", exact: true }))
       .toBeInTheDocument();
     expect(page.getByText("Microphone permission denied").all()).toHaveLength(
       0
-    );
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Looking at womens boots"
-      )
     );
   });
 
@@ -191,11 +183,6 @@ describe("Resuming a call after a navigation", () => {
       .element(page.getByRole("button", { name: "End", exact: true }))
       .toBeInTheDocument();
     await expect.element(page.getByText("Albany")).toBeInTheDocument();
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Here are my picks"
-      )
-    );
   });
 
   it("does not greet again on the continued call", async () => {
@@ -209,11 +196,9 @@ describe("Resuming a call after a navigation", () => {
     mountWidget("navigation_resume_greeting");
     await resumeButton().click();
 
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Welcome to the shop"
-      )
-    );
+    await expect
+      .element(page.getByRole("button", { name: "End", exact: true }))
+      .toBeInTheDocument();
     expect(page.getByText("Welcome to the shop").all()).toHaveLength(1);
   });
 
