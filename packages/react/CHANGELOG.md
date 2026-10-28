@@ -1,5 +1,12 @@
 # @elevenlabs/react
 
+## 1.20.2
+
+### Patch Changes
+
+- Updated dependencies [e92f62e]
+  - @elevenlabs/client@1.32.1
+
 ## 1.20.1
 
 ### Patch Changes
