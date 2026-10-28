@@ -150,6 +150,41 @@ export class MediaDeviceOutput
     }
   }
 
+  // Resume only after an actual playback request. A backgrounded browser may
+  // reject resume() until user activation; the next visibility change retries.
+  private playbackPending = false;
+  private recoveryInFlight: Promise<void> | null = null;
+  private closed = false;
+
+  private readonly recoverPlayback = () => {
+    if (
+      this.closed ||
+      !this.playbackPending ||
+      this.context.state !== "suspended"
+    ) {
+      return;
+    }
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    if (this.recoveryInFlight) return;
+    this.recoveryInFlight = this.context
+      .resume()
+      .then(() => {
+        if (!this.closed && this.context.state === "running")
+          this.playbackPending = false;
+      })
+      .catch(() => {
+        // Autoplay policy may require a later user gesture; do not spin on errors.
+      })
+      .finally(() => {
+        this.recoveryInFlight = null;
+      });
+  };
+
   private volume = 1;
   private interrupted = false;
   private readonly listeners = new Set<PlaybackListener>();
@@ -166,6 +201,10 @@ export class MediaDeviceOutput
     private readonly worklet: AudioWorkletNode,
     private readonly audioElement: HTMLAudioElement
   ) {
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", this.recoverPlayback);
+    }
+    this.context.addEventListener("statechange", this.recoverPlayback);
     this.worklet.port.addEventListener("message", this.handleWorkletMessage);
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
@@ -224,6 +263,8 @@ export class MediaDeviceOutput
   }
 
   public playAudio(chunk: ArrayBuffer, metadata?: OutputChunkMetadata): void {
+    this.playbackPending ||= this.context.state !== "running";
+    this.recoverPlayback();
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
     if (this.interruptTimeout) {
@@ -285,6 +326,12 @@ export class MediaDeviceOutput
   }
 
   public async close() {
+    this.closed = true;
+    this.playbackPending = false;
+    this.context.removeEventListener("statechange", this.recoverPlayback);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", this.recoverPlayback);
+    }
     // Clear any pending interrupt timeout
     if (this.interruptTimeout) {
       clearTimeout(this.interruptTimeout);
