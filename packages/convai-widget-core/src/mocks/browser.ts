@@ -584,7 +584,15 @@ const codeBlock = true;
 
 type PersistentConversation = {
   conversationId: string;
-  rows: { role: "user" | "agent"; text: string }[];
+  rows: {
+    role: "user" | "agent";
+    text: string;
+    rich_content?: {
+      rich_content_id: string;
+      component: string;
+      props: object;
+    };
+  }[];
 };
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
@@ -892,6 +900,40 @@ export const Worker = setupWorker(
           if (data.text === "drop the connection") {
             // Abnormal closure, as when a backgrounded WebView loses its socket.
             client.close(1006);
+            return;
+          }
+          if (data.text === "show me buttons") {
+            const richContent = {
+              rich_content_id: "rc_replay",
+              component: "buttons",
+              props: {
+                buttons: [
+                  { type: "message", label: "Track it", message: "Track it" },
+                ],
+              },
+            };
+            rows?.push(
+              { role: "user", text: data.text },
+              { role: "agent", text: "Pick one" },
+              { role: "agent", text: "", rich_content: richContent }
+            );
+            client.send(
+              JSON.stringify({
+                type: "agent_response",
+                agent_response_event: {
+                  agent_response: "Pick one",
+                  event_id: eventId,
+                  response_id: `reply-${eventId}`,
+                },
+              })
+            );
+            client.send(
+              JSON.stringify({
+                type: "rich_content",
+                rich_content: { ...richContent, event_id: eventId },
+              })
+            );
+            eventId++;
             return;
           }
           const reply = `You said: ${data.text}`;

@@ -770,13 +770,24 @@ function useConversationSetup() {
               // as the message that triggered the resume.
               transcript.value = [
                 ...rows.map(
-                  (row): TranscriptEntry => ({
-                    type: "message",
-                    role: row.role,
-                    message: row.text,
-                    isText: true,
-                    conversationIndex: conversationIndex.peek(),
-                  })
+                  ({ role, text, rich_content }): TranscriptEntry =>
+                    rich_content
+                      ? {
+                          type: "rich_content",
+                          component: rich_content.component,
+                          props: rich_content.props,
+                          richContentId: rich_content.rich_content_id,
+                          // No turn speaks under 0, so the card is never held back.
+                          eventId: 0,
+                          conversationIndex: conversationIndex.peek(),
+                        }
+                      : {
+                          type: "message",
+                          role,
+                          message: text,
+                          isText: true,
+                          conversationIndex: conversationIndex.peek(),
+                        }
                 ),
                 ...transcript.peek(),
               ];
