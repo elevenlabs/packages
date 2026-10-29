@@ -30,6 +30,7 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.wasInterrupted = false;
     this.finished = false;
     this.lastBufferSequence = 0;
+    this.lastFinishedBufferSequence = 0;
 
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
@@ -53,7 +54,8 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           break;
         case "buffer":
           this.wasInterrupted = false;
-          this.lastBufferSequence = data.bufferSequence ?? this.lastBufferSequence;
+          this.lastBufferSequence =
+            data.bufferSequence ?? this.lastBufferSequence;
           this.buffers.push({
             samples:
               this.format === "ulaw"
@@ -116,8 +118,16 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
       }
     }
 
-    if (this.finished !== finished) {
+    // A short buffer can finish within one render quantum while already idle.
+    // Report its completion even when the finished state has not changed.
+    if (
+      this.finished !== finished ||
+      (finished && this.lastFinishedBufferSequence !== this.lastBufferSequence)
+    ) {
       this.finished = finished;
+      if (finished) {
+        this.lastFinishedBufferSequence = this.lastBufferSequence;
+      }
       this.port.postMessage({
         type: "process",
         finished,
@@ -129,4 +139,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@3c303437f4a5527e", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@9c58fa2cda75d303", AudioConcatProcessor);

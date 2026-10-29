@@ -1,9 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MediaDeviceOutput } from "./output.js";
 
-const { loadWorklet } = vi.hoisted(() => ({ loadWorklet: vi.fn() }));
-vi.mock("./audioConcatProcessor.generated.js", () => ({
-  loadAudioConcatProcessor: loadWorklet,
+const { loadWorklet, workletSource } = vi.hoisted(() => ({
+  loadWorklet: vi.fn(),
+  workletSource: { current: "" },
+}));
+vi.mock("./createWorkletModuleLoader.js", () => ({
+  createWorkletModuleLoader: (_name: string, _hash: string, source: string) => {
+    workletSource.current = source;
+    return loadWorklet;
+  },
 }));
 vi.mock("./volumeProvider.js", () => ({
   createAnalyserVolumeProvider: () => ({
@@ -95,6 +101,55 @@ describe("MediaDeviceOutput recovery", () => {
     });
     context.resume.mockClear();
     return output;
+  }
+
+  // Connect the shipped worklet to the output controller, retaining message
+  // delivery control so completion can race with a newly queued buffer.
+  function connectProcessor() {
+    type WorkletMessage = Record<string, unknown>;
+    type Processor = {
+      port: { onmessage: (event: { data: WorkletMessage }) => void };
+      process(inputs: unknown, outputs: Float32Array[][]): boolean;
+    };
+    const messages: WorkletMessage[] = [];
+    let Processor: (new () => Processor) | undefined;
+    class FakeAudioWorkletProcessor {
+      port = {
+        onmessage: (_event: { data: WorkletMessage }) => {},
+        postMessage: (data: WorkletMessage) => messages.push(data),
+      };
+    }
+    new Function(
+      "AudioWorkletProcessor",
+      "registerProcessor",
+      "sampleRate",
+      workletSource.current
+    )(
+      FakeAudioWorkletProcessor,
+      (_name: string, cls: new () => Processor) => {
+        Processor = cls;
+      },
+      context.sampleRate
+    );
+    const processor = new Processor!();
+    processor.port.onmessage({
+      data: {
+        type: "setFormat",
+        format: "pcm",
+        sampleRate: context.sampleRate,
+      },
+    });
+    worklet.port.postMessage.mockImplementation((data: WorkletMessage) => {
+      processor.port.onmessage({ data });
+    });
+    return {
+      render: () => processor.process([], [[new Float32Array(128)]]),
+      deliverMessages: () => {
+        for (const data of messages.splice(0)) {
+          onWorkletMessage?.(new MessageEvent("message", { data }));
+        }
+      },
+    };
   }
 
   afterEach(() => {
@@ -210,6 +265,52 @@ describe("MediaDeviceOutput recovery", () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     context.state = "suspended";
     listeners.get("statechange")?.forEach(callback => callback());
+    expect(context.resume).toHaveBeenCalledTimes(1);
+    await output.close();
+  });
+
+  it.each(["suspended", "interrupted"])(
+    "does not resume completed short chunks after the context is %s",
+    async state => {
+      const output = await setup();
+      const processor = connectProcessor();
+      processor.render();
+      processor.deliverMessages();
+
+      for (let i = 0; i < 2; i++) {
+        output.playAudio(new Int16Array(64).buffer);
+        processor.render();
+        processor.deliverMessages();
+      }
+      context.state = state;
+      listeners.get("statechange")?.forEach(callback => callback());
+      listeners.get("doc:visibilitychange")?.forEach(callback => callback());
+      expect(context.resume).not.toHaveBeenCalled();
+      await output.close();
+    }
+  );
+
+  it("keeps newer audio pending when a short-chunk completion arrives late", async () => {
+    const output = await setup();
+    const processor = connectProcessor();
+    processor.render();
+    processor.deliverMessages();
+
+    output.playAudio(new Int16Array(64).buffer);
+    processor.render();
+    // Queue newer audio before delivering the preceding short completion.
+    output.playAudio(new Int16Array(64).buffer);
+    processor.deliverMessages();
+    context.state = "suspended";
+    listeners.get("statechange")?.forEach(callback => callback());
+    await vi.waitFor(() => expect(context.resume).toHaveBeenCalledTimes(1));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    processor.render();
+    processor.deliverMessages();
+    context.state = "interrupted";
+    listeners.get("statechange")?.forEach(callback => callback());
+    listeners.get("doc:visibilitychange")?.forEach(callback => callback());
     expect(context.resume).toHaveBeenCalledTimes(1);
     await output.close();
   });
