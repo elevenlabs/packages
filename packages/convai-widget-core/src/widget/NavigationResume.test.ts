@@ -54,6 +54,12 @@ async function startCall() {
   await callButton().first().click();
 }
 
+function expectContextualUpdate(text: string) {
+  return expect
+    .poll(() => receivedContextualUpdates().join("\n"), { timeout: 5000 })
+    .toContain(text);
+}
+
 function navigateAway(mount: HTMLElement) {
   window.dispatchEvent(new Event("pagehide"));
   mount.remove();
@@ -101,11 +107,7 @@ describe("Resuming a call after a navigation", () => {
         .toBeInTheDocument();
       expect(resumeButton().all()).toHaveLength(0);
       expect(sawResume).toBe(true);
-      await vi.waitFor(() =>
-        expect(receivedContextualUpdates().join("\n")).toContain(
-          "Looking at womens boots"
-        )
-      );
+      await expectContextualUpdate("Looking at womens boots");
     } finally {
       document.removeEventListener("elevenlabs-convai:call", onCall);
     }
@@ -169,11 +171,7 @@ describe("Resuming a call after a navigation", () => {
     expect(page.getByText("Microphone permission denied").all()).toHaveLength(
       0
     );
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Looking at womens boots"
-      )
-    );
+    await expectContextualUpdate("Looking at womens boots");
   });
 
   it("carries the agent's cards over and continues from a quick reply", async () => {
@@ -191,11 +189,7 @@ describe("Resuming a call after a navigation", () => {
       .element(page.getByRole("button", { name: "End", exact: true }))
       .toBeInTheDocument();
     await expect.element(page.getByText("Albany")).toBeInTheDocument();
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Here are my picks"
-      )
-    );
+    await expectContextualUpdate("Here are my picks");
   });
 
   it("does not greet again on the continued call", async () => {
@@ -209,11 +203,7 @@ describe("Resuming a call after a navigation", () => {
     mountWidget("navigation_resume_greeting");
     await resumeButton().click();
 
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Welcome to the shop"
-      )
-    );
+    await expectContextualUpdate("Welcome to the shop");
     expect(page.getByText("Welcome to the shop").all()).toHaveLength(1);
   });
 
@@ -229,14 +219,12 @@ describe("Resuming a call after a navigation", () => {
     await resumeButton().click();
 
     await expect
-      .poll(() => page.getByText("Welcome to the shop").all())
+      .poll(() => page.getByText("Welcome to the shop").all(), {
+        timeout: 5000,
+      })
       .toHaveLength(2);
     expect(page.getByText("not allowed by config").all()).toHaveLength(0);
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Welcome to the shop"
-      )
-    );
+    await expectContextualUpdate("Welcome to the shop");
   });
 
   it("keeps the offer through quick navigations, not a long stay", async () => {
@@ -330,10 +318,6 @@ describe("Resuming a call after a navigation", () => {
       .element(page.getByText("Welcome to the shop"))
       .toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
-    await vi.waitFor(() =>
-      expect(receivedContextualUpdates().join("\n")).toContain(
-        "Welcome to the shop"
-      )
-    );
+    await expectContextualUpdate("Welcome to the shop");
   });
 });

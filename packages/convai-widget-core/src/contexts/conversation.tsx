@@ -746,8 +746,9 @@ function useConversationSetup() {
         ];
         isAwaitingReply.value = !!initialMessage;
 
+        let lock: Promise<Conversation> | null = null;
         try {
-          lockRef.current = Conversation.startSession({
+          lockRef.current = lock = Conversation.startSession({
             ...processedConfig,
             onModeChange: props => {
               mode.value = props.mode;
@@ -1101,6 +1102,7 @@ function useConversationSetup() {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
             setTimeout(() => {
+              if (!instance.isOpen()) return;
               if (navigationResume) {
                 instance.sendContextualUpdate(
                   buildResumeContext(navigationResume.turns)
@@ -1192,8 +1194,11 @@ function useConversationSetup() {
             transcript.value = [...transcript.peek(), resumePromptEntry()];
           }
         } finally {
-          lockRef.current = null;
-          isResuming.value = false;
+          // A retry may already own the lock.
+          if (!lockRef.current || lockRef.current === lock) {
+            lockRef.current = null;
+            isResuming.value = false;
+          }
         }
       },
       resumeSession: async () => {

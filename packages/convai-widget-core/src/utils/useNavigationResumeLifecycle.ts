@@ -1,5 +1,5 @@
 import { useSignalEffect } from "@preact/signals";
-import { useEffect } from "preact/compat";
+import { useLayoutEffect } from "preact/compat";
 import { useAudioConfig } from "../contexts/audio-config";
 import { useConversation } from "../contexts/conversation";
 
@@ -9,8 +9,8 @@ export function useNavigationResumeLifecycle() {
     useConversation();
   const { isMuted, setIsMuted } = useAudioConfig();
 
-  // `pagehide` is the last event a page reliably gets.
-  useEffect(() => {
+  // `pagehide` is the last event a page reliably gets; listen before paint.
+  useLayoutEffect(() => {
     const handlePageHide = () => {
       storeNavigationResume({ micMuted: isMuted.peek() });
     };
