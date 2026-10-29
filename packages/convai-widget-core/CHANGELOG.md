@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.22.2
+
+### Patch Changes
+
+- 507b082: Carousel card images use a 4:5 ratio again so tall products aren't cropped, and cards are 288px wide (240px on touch screens).
+
 ## 0.22.1
 
 ### Patch Changes
