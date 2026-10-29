@@ -1,5 +1,22 @@
 # @elevenlabs/convai-widget-core
 
+## 0.22.1
+
+### Patch Changes
+
+- Updated dependencies [e92f62e]
+  - @elevenlabs/client@1.32.1
+
+## 0.22.0
+
+### Minor Changes
+
+- e86b63c: Add a `transcript-speech-sync` attribute. Set it to `false` to show the agent's full message at once in voice calls instead of revealing it as the agent speaks.
+
+### Patch Changes
+
+- 2bbd8c2: Make carousel cards smaller on desktop, with square images like on touch screens, and add an optional star rating to each card. Cards accept a `rating` from 0 to 5 and an optional `review_count`, shown under the subtitle, for example ★★★★★ 4.7 (1,284).
+
 ## 0.21.6
 
 ### Patch Changes

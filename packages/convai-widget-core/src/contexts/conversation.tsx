@@ -683,6 +683,10 @@ function useConversationSetup() {
             : []),
         ];
         isAwaitingReply.value = !!initialMessage;
+        // WebRTC reports no playback, so its messages are shown in full
+        const transcriptSpeechSync =
+          !!widgetConfig.value.transcript_speech_sync_enabled &&
+          processedConfig.connectionType !== "webrtc";
 
         try {
           lockRef.current = Conversation.startSession({
@@ -876,13 +880,14 @@ function useConversationSetup() {
               }
             },
             onAudioAlignment: () => {
-              // WebRTC reports no playback, so its messages are shown in full
-              if (processedConfig.connectionType !== "webrtc") {
+              if (transcriptSpeechSync) {
                 speechReveal.onAlignmentReceived();
               }
             },
             onAudioAlignmentPlayback: ({ event_id, alignment }) => {
-              speechReveal.onAlignmentPlayback(event_id, alignment);
+              if (transcriptSpeechSync) {
+                speechReveal.onAlignmentPlayback(event_id, alignment);
+              }
             },
             onInterruption: ({ event_id }) => {
               speechReveal.onInterruption(event_id);

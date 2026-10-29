@@ -34,15 +34,21 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
+          // A second resampler could finish last and replace the first with the wrong rate
+          if (this.format !== undefined) {
+            throw new Error("setFormat can only be sent once");
+          }
           this.format = data.format;
-          if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
-            globalThis.LibSampleRate.create(
-              1,
-              data.sampleRate,
-              sampleRate
-            ).then(resampler => {
-              this.resampler = resampler;
-            });
+          if (sampleRate !== data.sampleRate) {
+            this.createResampler(data.sampleRate).then(
+              () => this.port.postMessage({ type: "resampler_ready" }),
+              error =>
+                this.port.postMessage({
+                  type: "resampler_error",
+                  message:
+                    error instanceof Error ? error.message : String(error),
+                })
+            );
           }
           break;
         case "buffer":
@@ -67,6 +73,16 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
           }
       }
     };
+  }
+  async createResampler(inputSampleRate) {
+    if (!globalThis.LibSampleRate) {
+      throw new Error("libsamplerate is not loaded");
+    }
+    this.resampler = await globalThis.LibSampleRate.create(
+      1,
+      inputSampleRate,
+      sampleRate
+    );
   }
   process(_, outputs) {
     let finished = false;
@@ -113,4 +129,4 @@ class AudioConcatProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("audioConcatProcessor@f6687065dcb4a1b6", AudioConcatProcessor);
+registerProcessor("audioConcatProcessor@3c303437f4a5527e", AudioConcatProcessor);

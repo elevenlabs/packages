@@ -19,7 +19,25 @@ import { isIosDevice } from "./compatibility.js";
 
 type WorkletMessage =
   | { type: "process"; finished: boolean; bufferSequence: number }
-  | { type: "chunk_start"; chunkId: number };
+  | { type: "chunk_start"; chunkId: number }
+  | { type: "resampler_ready" }
+  | { type: "resampler_error"; message: string };
+
+function waitForResampler(worklet: AudioWorkletNode): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onMessage = ({ data }: MessageEvent<WorkletMessage>) => {
+      if (data.type === "resampler_ready") {
+        worklet.port.removeEventListener("message", onMessage);
+        resolve();
+      } else if (data.type === "resampler_error") {
+        worklet.port.removeEventListener("message", onMessage);
+        reject(new Error(`Failed to create audio resampler: ${data.message}`));
+      }
+    };
+    worklet.port.addEventListener("message", onMessage);
+    worklet.port.start();
+  });
+}
 
 function maybePrimeIosPlayback({
   sampleRate,
@@ -103,8 +121,9 @@ export class MediaDeviceOutput
       gain.connect(analyser);
       analyser.connect(destination);
 
-      if (!supportsSampleRateConstraint || context.sampleRate !== sampleRate) {
-        if (context.sampleRate !== sampleRate) {
+      const needsResampling = context.sampleRate !== sampleRate;
+      if (!supportsSampleRateConstraint || needsResampling) {
+        if (needsResampling) {
           console.warn(
             `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
           );
@@ -115,10 +134,13 @@ export class MediaDeviceOutput
         context,
         workletPaths?.audioConcatProcessor
       );
+      const resamplerReady = needsResampling
+        ? waitForResampler(worklet)
+        : Promise.resolve();
       worklet.port.postMessage({ type: "setFormat", format, sampleRate });
       worklet.connect(gain);
 
-      await context.resume();
+      await Promise.all([context.resume(), resamplerReady]);
 
       maybePrimeIosPlayback({ sampleRate, format, worklet, audioElement });
 
