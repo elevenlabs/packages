@@ -28,6 +28,7 @@ export function SessionConfigProvider({
   const overrideSpeed = useAttribute("override-speed");
   const overrideStability = useAttribute("override-stability");
   const overrideSimilarityBoost = useAttribute("override-similarity-boost");
+  const overrideCloneStrength = useAttribute("override-clone-strength");
   const overrideFirstMessage = useAttribute("override-first-message");
   const overrideVoiceId = useAttribute("override-voice-id");
   const overrideTextOnly = useAttribute("override-text-only");
@@ -50,6 +51,9 @@ export function SessionConfigProvider({
         : undefined,
       similarityBoost: overrideSimilarityBoost.value
         ? parseFloat(overrideSimilarityBoost.value)
+        : undefined,
+      cloneStrength: overrideCloneStrength.value
+        ? parseFloat(overrideCloneStrength.value)
         : undefined,
     },
     conversation: {

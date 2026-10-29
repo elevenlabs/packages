@@ -162,6 +162,7 @@ export interface ConversationConfigOverrideTts {
   stability?: number;
   speed?: number;
   similarity_boost?: number;
+  clone_strength?: number;
 }
 
 export interface ConversationConfigOverrideConversation {

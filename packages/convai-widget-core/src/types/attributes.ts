@@ -33,6 +33,7 @@ export const CustomAttributeList = [
   "override-speed",
   "override-stability",
   "override-similarity-boost",
+  "override-clone-strength",
   "override-first-message",
   "override-language",
   "override-voice-id",

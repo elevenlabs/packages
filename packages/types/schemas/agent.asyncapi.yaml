@@ -1599,6 +1599,12 @@ components:
           minimum: 0
           maximum: 1
           description: Voice similarity boost (0-1). Higher values = more similar to original
+        clone_strength:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1
+          description: Clone strength (0-1) for v4 voices fine-tuned with a professional voice clone
 
     ConversationConfigOverride:
       type: object
