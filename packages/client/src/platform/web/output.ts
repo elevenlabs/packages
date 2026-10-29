@@ -78,6 +78,8 @@ export type MediaDeviceOutputConfig = FormatConfig &
   OutputConfig &
   AudioWorkletConfig & {
     audioContext?: AudioContext;
+    // Set when the SDK created `audioContext`; only then is it resumed when the browser pauses it.
+    ownsAudioContext?: boolean;
   };
 
 export class MediaDeviceOutput
@@ -90,6 +92,7 @@ export class MediaDeviceOutput
     workletPaths,
     libsampleratePath,
     audioContext,
+    ownsAudioContext,
   }: MediaDeviceOutputConfig): Promise<MediaDeviceOutput> {
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
@@ -154,7 +157,8 @@ export class MediaDeviceOutput
         analyser,
         gain,
         worklet,
-        audioElement
+        audioElement,
+        !audioContext || ownsAudioContext === true
       );
 
       return newOutput;
@@ -186,15 +190,18 @@ export class MediaDeviceOutput
     private readonly analyser: AnalyserNode,
     private readonly gain: GainNode,
     private readonly worklet: AudioWorkletNode,
-    private readonly audioElement: HTMLAudioElement
+    private readonly audioElement: HTMLAudioElement,
+    ownsContext: boolean
   ) {
     this.worklet.port.addEventListener("message", this.handleWorkletMessage);
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
-    this.context.addEventListener("statechange", this.resumeIfSuspended);
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", this.resumeIfSuspended);
+    if (ownsContext) {
+      this.context.addEventListener("statechange", this.resumeIfSuspended);
+      if (typeof document !== "undefined") {
+        document.addEventListener("visibilitychange", this.resumeIfSuspended);
+      }
     }
     this.volumeProvider = createAnalyserVolumeProvider(
       analyser,
@@ -222,10 +229,14 @@ export class MediaDeviceOutput
     this.listeners.delete(listener);
   }
 
-  // Browsers suspend the context when the tab is hidden (iOS Safari reports
-  // "interrupted" for calls and alarms). The worklet stops draining its queue
-  // until the context runs again, so resume whenever the page is visible.
-  // The SDK never calls suspend() itself, so this can't undo a deliberate one.
+  // Resumes an SDK-created context while the page is visible. "interrupted" is
+  // a pause the browser decides on, outside the app's control; "suspended" is
+  // the state after suspend() (MDN BaseAudioContext.state:
+  // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/state).
+  // In both states the context does not process audio (Web Audio API,
+  // AudioContextState: https://webaudio.github.io/web-audio-api/), so chunks
+  // queued in the worklet wait. Contexts passed in without ownsAudioContext
+  // get no listeners.
   private readonly resumeIfSuspended = () => {
     const state: string = this.context.state;
     if (

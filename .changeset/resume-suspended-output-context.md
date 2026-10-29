@@ -2,4 +2,4 @@
 "@elevenlabs/client": patch
 ---
 
-Resume the output AudioContext after the browser suspends it (e.g. tab hidden), fixing lost agent audio (#867)
+Resume the output AudioContext the SDK creates after the browser suspends or interrupts it, fixing lost agent audio (#867)

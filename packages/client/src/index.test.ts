@@ -796,14 +796,16 @@ describe("Output AudioContext suspension", () => {
 
     setVisibility("hidden");
     await context.suspend();
+    // A chunk sent while suspended waits in the worklet queue
+    sendAudio(100);
     // Hidden pages are left alone until they come back
     await sleep(100);
     expect(context.state).toBe("suspended");
+    expect(onAudioAlignmentPlayback).not.toHaveBeenCalled();
 
     setVisibility("visible");
     await vi.waitFor(() => expect(context.state).toBe("running"));
 
-    sendAudio(100);
     await vi.waitFor(() =>
       expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
         event_id: 100,
