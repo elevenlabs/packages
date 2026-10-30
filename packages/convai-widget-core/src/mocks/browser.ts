@@ -543,6 +543,43 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "[happy] Hello there! [excited] How can I help you today?",
   },
+  navigation_resume: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    mic_muting_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+  },
+  navigation_resume_rich_content: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+  },
+  // Greets on a fresh call and replies to typed messages.
+  navigation_resume_greeting: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    first_message: "Welcome to the shop",
+  },
+  // Greets, but refuses an override of its first message.
+  navigation_resume_no_override: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "Welcome to the shop",
+  },
+  navigation_resume_text: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: "",
+  },
 } as const satisfies Record<string, WidgetConfig>;
 
 type PersistentConversation = {
@@ -559,6 +596,26 @@ type PersistentConversation = {
 };
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
+
+const contextualUpdates: string[] = [];
+
+export function receivedContextualUpdates() {
+  return [...contextualUpdates];
+}
+
+// Each connection replies differently, so tests can tell them apart.
+let navigationResumeConnections = 0;
+
+const NAVIGATION_RESUME_REPLIES = [
+  "Looking at womens boots",
+  "Here are the mens casual shoes",
+  "Still here",
+];
+
+export function resetNavigationResumeMock() {
+  navigationResumeConnections = 0;
+  contextualUpdates.length = 0;
+}
 
 export function persistentConversationIdFor(token: string | null) {
   return token ? persistentConversations.get(token)?.conversationId : undefined;
@@ -725,6 +782,31 @@ export const Worker = setupWorker(
       ) as keyof typeof AGENTS;
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
+
+      // An empty override means the agent waits instead of greeting.
+      let overriddenFirstMessage: string | undefined;
+
+      client.addEventListener("message", event => {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : null;
+        if (data?.type === "contextual_update") {
+          contextualUpdates.push(data.text);
+        }
+        if (data?.type === "conversation_initiation_client_data") {
+          overriddenFirstMessage =
+            data.conversation_config_override?.agent?.first_message;
+          // Like xi, refused after the metadata has already gone out.
+          if (
+            agentId === "navigation_resume_no_override" &&
+            overriddenFirstMessage === ""
+          ) {
+            client.close(
+              1008,
+              "Override for field 'first_message' is not allowed by config."
+            );
+          }
+        }
+      });
 
       if (
         agentId === "persistent_session_disabled" &&
@@ -900,7 +982,11 @@ export const Worker = setupWorker(
           "first-message",
           agentId === "streamed_first_message_with_final"
         );
-      } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
+      } else if (
+        agentId !== "streamed_first_reply" &&
+        !resumedConversation &&
+        overriddenFirstMessage !== ""
+      ) {
         persistentConversation?.rows.push({
           role: "agent",
           text: config.first_message ?? "",
@@ -947,7 +1033,8 @@ export const Worker = setupWorker(
         agentId !== "persistent_session_disabled" &&
         agentId !== "persistent_session_voice" &&
         agentId !== "persistent_session_terms" &&
-        agentId !== "agent_attachments"
+        agentId !== "agent_attachments" &&
+        agentId !== "navigation_resume_text"
       ) {
         const agentResponse =
           agentId === "markdown_agent_response"
@@ -978,6 +1065,94 @@ export const Worker = setupWorker(
       }
       if (agentId === "aligned_voice") {
         sendAlignedAgentTurn(client);
+      }
+      if (
+        agentId === "navigation_resume" ||
+        agentId === "navigation_resume_text"
+      ) {
+        const connection = navigationResumeConnections++;
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response:
+                NAVIGATION_RESUME_REPLIES[connection] ?? "Still here",
+              event_id: 1,
+              response_id: `navigation-resume-${connection}`,
+            },
+          })
+        );
+      }
+      if (agentId === "navigation_resume_rich_content") {
+        const connection = navigationResumeConnections++;
+        client.send(
+          JSON.stringify({
+            type: "agent_response",
+            agent_response_event: {
+              agent_response:
+                connection === 0 ? "Here are my picks" : "Picking up again",
+              event_id: 1,
+              response_id: `rich-navigation-resume-${connection}`,
+            },
+          })
+        );
+        if (connection === 0) {
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: "rc_picks",
+                component: "carousel",
+                props: {
+                  items: [
+                    {
+                      title: "Albany",
+                      subtitle: "mens casual",
+                      description: "$139.95",
+                    },
+                  ],
+                },
+                event_id: 1,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: "rc_replies",
+                component: "buttons",
+                props: {
+                  buttons: [
+                    {
+                      type: "message",
+                      label: "Tell me more",
+                      message: "Tell me more",
+                    },
+                  ],
+                },
+                event_id: 1,
+              },
+            })
+          );
+        }
+      }
+      if (agentId === "navigation_resume_greeting") {
+        client.addEventListener("message", event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Those come in black too",
+                event_id: 1,
+                response_id: "typed-reply",
+              },
+            })
+          );
+        });
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

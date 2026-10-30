@@ -24,6 +24,8 @@ export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
   const {
     sendUserMessage,
     startSession,
+    continueNavigationCall,
+    pendingNavigationResume,
     isDisconnected,
     status,
     isWaitingForAgent,
@@ -57,7 +59,13 @@ export function ButtonGroup({ buttons, richContentId }: ButtonGroupProps) {
             disabled={disabled}
             onClick={e => {
               const attribution = { richContentId };
-              if (isDisconnected.value) {
+              if (pendingNavigationResume.value) {
+                void continueNavigationCall(
+                  e.currentTarget,
+                  button.message,
+                  attribution
+                );
+              } else if (isDisconnected.value) {
                 void startSession(e.currentTarget, button.message, attribution);
               } else {
                 sendUserMessage(button.message, attribution);
