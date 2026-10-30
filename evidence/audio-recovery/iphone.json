@@ -1,0 +1,59 @@
+{
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0.1 Mobile/15E148 Safari/604.1",
+  "events": [
+    {
+      "time": "2026-10-27T21:06:33.180Z",
+      "type": "page-loaded",
+      "visibility": "visible",
+      "state": null,
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0.1 Mobile/15E148 Safari/604.1"
+    },
+    {
+      "time": "2026-10-27T21:06:35.166Z",
+      "type": "started",
+      "visibility": "visible",
+      "state": "running",
+      "sampleRate": 48000,
+      "playerPaused": false
+    },
+    {
+      "time": "2026-10-27T21:06:38.265Z",
+      "type": "auto-recovery-enabled",
+      "visibility": "visible",
+      "state": "running",
+      "note": "Compiled MediaDeviceOutput owns recovery; no harness resume call"
+    },
+    {
+      "time": "2026-10-27T21:06:40.249Z",
+      "type": "suspended",
+      "visibility": "visible",
+      "state": "suspended"
+    },
+    {
+      "time": "2026-10-27T21:06:40.249Z",
+      "type": "statechange",
+      "visibility": "visible",
+      "state": "suspended"
+    },
+    {
+      "time": "2026-10-27T21:06:45.642Z",
+      "type": "chunk-queued",
+      "visibility": "visible",
+      "state": "suspended",
+      "chunkId": 1
+    },
+    {
+      "time": "2026-10-27T21:06:45.644Z",
+      "type": "statechange",
+      "visibility": "visible",
+      "state": "running"
+    },
+    {
+      "time": "2026-10-27T21:06:45.649Z",
+      "type": "chunk_start",
+      "visibility": "visible",
+      "state": "running",
+      "chunkId": 1
+    }
+  ]
+}

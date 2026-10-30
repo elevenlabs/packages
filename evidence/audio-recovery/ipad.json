@@ -1,0 +1,13 @@
+{
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+  "events": [
+    {"time":"2026-10-28T00:28:23.305Z","type":"page-loaded","visibility":"visible","state":null,"userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15"},
+    {"time":"2026-10-28T00:28:32.083Z","type":"started","visibility":"visible","state":"running","sampleRate":48000,"playerPaused":false,"compiledSDK":true},
+    {"time":"2026-10-28T00:28:34.703Z","type":"auto-recovery-enabled","visibility":"visible","state":"running","note":"Compiled MediaDeviceOutput owns recovery; no harness resume call"},
+    {"time":"2026-10-28T00:28:37.826Z","type":"suspended","visibility":"visible","state":"suspended"},
+    {"time":"2026-10-28T00:28:37.827Z","type":"statechange","visibility":"visible","state":"suspended"},
+    {"time":"2026-10-28T00:28:43.789Z","type":"chunk-queued","visibility":"visible","state":"suspended","chunkId":1,"manualResumePressed":false},
+    {"time":"2026-10-28T00:28:43.792Z","type":"statechange","visibility":"visible","state":"running"},
+    {"time":"2026-10-28T00:28:43.796Z","type":"chunk_start","visibility":"visible","state":"running","chunkId":1}
+  ]
+}
