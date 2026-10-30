@@ -78,6 +78,8 @@ export type MediaDeviceOutputConfig = FormatConfig &
   OutputConfig &
   AudioWorkletConfig & {
     audioContext?: AudioContext;
+    // Set when the SDK created `audioContext`; only then is it resumed when the browser pauses it.
+    ownsAudioContext?: boolean;
   };
 
 export class MediaDeviceOutput
@@ -90,6 +92,7 @@ export class MediaDeviceOutput
     workletPaths,
     libsampleratePath,
     audioContext,
+    ownsAudioContext,
   }: MediaDeviceOutputConfig): Promise<MediaDeviceOutput> {
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
@@ -154,7 +157,8 @@ export class MediaDeviceOutput
         analyser,
         gain,
         worklet,
-        audioElement
+        audioElement,
+        !audioContext || ownsAudioContext === true
       );
 
       return newOutput;
@@ -186,12 +190,19 @@ export class MediaDeviceOutput
     private readonly analyser: AnalyserNode,
     private readonly gain: GainNode,
     private readonly worklet: AudioWorkletNode,
-    private readonly audioElement: HTMLAudioElement
+    private readonly audioElement: HTMLAudioElement,
+    ownsContext: boolean
   ) {
     this.worklet.port.addEventListener("message", this.handleWorkletMessage);
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
     this.worklet.port.start();
+    if (ownsContext) {
+      this.context.addEventListener("statechange", this.resumeIfSuspended);
+      if (typeof document !== "undefined") {
+        document.addEventListener("visibilitychange", this.resumeIfSuspended);
+      }
+    }
     this.volumeProvider = createAnalyserVolumeProvider(
       analyser,
       context.sampleRate
@@ -217,6 +228,24 @@ export class MediaDeviceOutput
   public removeListener(listener: PlaybackListener): void {
     this.listeners.delete(listener);
   }
+
+  // Resumes an SDK-created context while the page is visible. "interrupted" is
+  // a pause the browser decides on, outside the app's control; "suspended" is
+  // the state after suspend() (MDN BaseAudioContext.state:
+  // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/state).
+  // In both states the context does not process audio (Web Audio API,
+  // AudioContextState: https://webaudio.github.io/web-audio-api/), so chunks
+  // queued in the worklet wait. Contexts passed in without ownsAudioContext
+  // get no listeners.
+  private readonly resumeIfSuspended = () => {
+    const state: string = this.context.state;
+    if (
+      (state === "suspended" || state === "interrupted") &&
+      document.visibilityState === "visible"
+    ) {
+      void this.context.resume().catch(() => {});
+    }
+  };
 
   private readonly handleWorkletMessage = (
     event: MessageEvent<WorkletMessage>
@@ -307,6 +336,10 @@ export class MediaDeviceOutput
   }
 
   public async close() {
+    this.context.removeEventListener("statechange", this.resumeIfSuspended);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", this.resumeIfSuspended);
+    }
     // Clear any pending interrupt timeout
     if (this.interruptTimeout) {
       clearTimeout(this.interruptTimeout);
