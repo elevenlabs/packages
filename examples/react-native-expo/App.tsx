@@ -112,10 +112,9 @@ const ConversationScreen = () => {
         <Text style={styles.statusText}>{getStatusText(status)}</Text>
       </View>
 
-      {/* Error Message */}
-      {status === "error" && statusMessage && (
-        <Text style={styles.errorText}>{statusMessage}</Text>
-      )}
+      {/* Error Message — reported for mid-session errors too, which leave
+          the session connected */}
+      {statusMessage && <Text style={styles.errorText}>{statusMessage}</Text>}
 
       {/* Conversation ID Display */}
       {status === "connected" && (
