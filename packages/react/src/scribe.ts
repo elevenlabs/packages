@@ -84,7 +84,7 @@ export interface ScribeCallbacks {
   /** Called with the edited version of a committed transcript (only when transcriptEdit is set) */
   onEditedTranscript?: (data: { text: string; edited_text: string }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
-  onError?: (error: Error | Event) => void;
+  onError?: (error: Error) => void;
   onAuthError?: (data: { error: string }) => void;
   onQuotaExceededError?: (data: { error: string }) => void;
   onCommitThrottledError?: (data: { error: string }) => void;

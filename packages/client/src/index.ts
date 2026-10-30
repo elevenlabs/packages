@@ -64,6 +64,17 @@ export { postOverallFeedback } from "./utils/postOverallFeedback.js";
 export { SessionConnectionError } from "./utils/errors.js";
 export { stripAudioTags } from "./utils/audioTags.js";
 export type { Location } from "./utils/location.js";
+export type {
+  DeviceIdConstraint,
+  DeviceIdConstraintParameters,
+  BlobLike,
+  ResponseLike,
+  AbortSignalLike,
+  CloseEventLike,
+  WebSocketLike,
+  MediaStreamTrackLike,
+  AnalyserNodeLike,
+} from "./platformTypes.js";
 export { VoiceConversation } from "./VoiceConversation.js";
 export { TextConversation } from "./TextConversation.js";
 

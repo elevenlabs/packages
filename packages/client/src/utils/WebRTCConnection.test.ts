@@ -550,6 +550,41 @@ describe("WebRTCConnection", () => {
     connection.close();
   });
 
+  it("passes a constraint inputDeviceId through unchanged", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValue({
+      mediaStreamTrack: { id: "constrained-device-track", kind: "audio" },
+    });
+
+    const connection = await WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      inputDeviceId: { ideal: ["preferred-mic", "fallback-mic"] },
+    });
+
+    expect(createLocalAudioTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceId: { ideal: ["preferred-mic", "fallback-mic"] },
+      })
+    );
+
+    connection.close();
+  });
+
   it("falls back to setMicrophoneEnabled when no inputDeviceId is configured", async () => {
     const mockRoom = new Room() as any;
     (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(

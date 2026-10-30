@@ -2,6 +2,7 @@ import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
+import type { DeviceIdConstraint } from "../../platformTypes.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import {
   DEFAULT_INPUT_CHUNK_DURATION_MS,
@@ -127,10 +128,13 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
 
   // Use { ideal } on iOS as a defensive measure - some iOS versions may not support { exact } for deviceId constraints
   private static getDeviceIdConstraint(
-    deviceId?: string
+    deviceId?: DeviceIdConstraint
   ): MediaTrackConstraints["deviceId"] {
     if (!deviceId) {
       return undefined;
+    }
+    if (typeof deviceId !== "string") {
+      return deviceId;
     }
     return isIosDevice() ? { ideal: deviceId } : { exact: deviceId };
   }

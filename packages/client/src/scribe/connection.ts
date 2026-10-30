@@ -27,6 +27,11 @@ import type {
   ScribeChunkSizeExceededErrorMessage,
   ScribeInsufficientAudioActivityErrorMessage,
 } from "@elevenlabs/types";
+import type {
+  CloseEventLike,
+  MediaStreamTrackLike,
+  WebSocketLike,
+} from "../platformTypes.js";
 
 // Re-export types for public API
 export type {
@@ -217,7 +222,7 @@ export interface RealtimeEventMap {
   [RealtimeEvents.CHUNK_SIZE_EXCEEDED]: ScribeChunkSizeExceededErrorMessage;
   [RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY]: ScribeInsufficientAudioActivityErrorMessage;
   [RealtimeEvents.OPEN]: undefined;
-  [RealtimeEvents.CLOSE]: CloseEvent;
+  [RealtimeEvents.CLOSE]: CloseEventLike;
 }
 
 /**
@@ -262,7 +267,7 @@ export class RealtimeConnection {
   public _closed: boolean = false;
   public _audioCleanup?: () => void;
   /** @internal Set by ScribeRealtime in microphone mode to enable track-level muting. */
-  public _mediaStreamTrack?: MediaStreamTrack;
+  public _mediaStreamTrack?: MediaStreamTrackLike;
 
   constructor(sampleRate: number) {
     this.currentSampleRate = sampleRate;
@@ -285,7 +290,7 @@ export class RealtimeConnection {
 
   private getMediaStreamTrackForMute(
     action: "mute" | "unmute"
-  ): MediaStreamTrack {
+  ): MediaStreamTrackLike {
     if (!this._mediaStreamTrack) {
       throw new Error(
         `Cannot ${action} audio without an active microphone MediaStreamTrack. ` +
@@ -332,8 +337,9 @@ export class RealtimeConnection {
    * @internal
    * Used internally by ScribeRealtime to attach the WebSocket after connection is created.
    */
-  public setWebSocket(websocket: WebSocket): void {
-    this.websocket = websocket;
+  public setWebSocket(websocket: WebSocketLike): void {
+    // Only Scribe.connect calls this, always with the platform WebSocket.
+    this.websocket = websocket as WebSocket;
 
     // If WebSocket is already open, emit OPEN event immediately
     if (this.websocket.readyState === WebSocket.OPEN) {
