@@ -651,10 +651,13 @@ export abstract class BaseConversation {
   }
 
   protected handleErrorEvent(event: ErrorMessageEvent) {
-    const errorEvent = event.error_event;
-    const errorType = errorEvent?.error_type;
-    const message =
-      errorEvent?.message || errorEvent?.reason || "Unknown error";
+    // Some server paths (e.g. custom LLM failures over WebRTC) send the error
+    // fields flat on the message instead of nested under `error_event`.
+    const errorEvent: Partial<ErrorMessageEvent["error_event"]> =
+      event.error_event ??
+      (event as unknown as Partial<ErrorMessageEvent["error_event"]>);
+    const errorType = errorEvent.error_type;
+    const message = errorEvent.message || errorEvent.reason || "Unknown error";
 
     if (errorType === "max_duration_exceeded") {
       void this.endSessionWithDetails({
@@ -672,9 +675,9 @@ export abstract class BaseConversation {
 
     this.onError(`Server error: ${message}`, {
       errorType,
-      code: errorEvent?.code,
-      debugMessage: errorEvent?.debug_message,
-      details: errorEvent?.details,
+      code: errorEvent.code,
+      debugMessage: errorEvent.debug_message,
+      details: errorEvent.details,
     });
   }
 
