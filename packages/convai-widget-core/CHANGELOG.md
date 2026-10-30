@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.23.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- 4b2b8e5: Replay the rich content an agent showed when a persistent text conversation resumes. History rows can now carry `rich_content`.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
 ## 0.22.2
 
 ### Patch Changes

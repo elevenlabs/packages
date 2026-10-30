@@ -1,5 +1,17 @@
 # @elevenlabs/client
 
+## 1.33.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- Updated dependencies [23e10c4]
+- Updated dependencies [4b2b8e5]
+  - @elevenlabs/types@0.27.0
+
 ## 1.32.1
 
 ### Patch Changes
