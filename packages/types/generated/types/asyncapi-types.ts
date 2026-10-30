@@ -891,6 +891,8 @@ export interface Config {
   keyterms?: string[];
   no_verbatim?: boolean;
   entity_detection?: string[];
+  entity_redaction?: string[];
+  entity_redaction_mode?: string;
   filter_background_audio?: boolean;
 }
 
@@ -972,6 +974,12 @@ export interface EditedTranscript {
   message_type: "edited_transcript";
   text: string;
   edited_text: string;
+}
+
+export interface RedactedTranscript {
+  message_type: "redacted_transcript";
+  text: string;
+  redacted_text: string;
 }
 
 export interface Error {
@@ -1105,6 +1113,12 @@ export interface EditedTranscriptMessage {
   message_type: "edited_transcript";
   text: string;
   edited_text: string;
+}
+
+export interface RedactedTranscriptMessage {
+  message_type: "redacted_transcript";
+  text: string;
+  redacted_text: string;
 }
 
 export interface ScribeErrorMessage {

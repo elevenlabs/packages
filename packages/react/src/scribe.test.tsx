@@ -298,6 +298,98 @@ describe("useScribe", () => {
     });
   });
 
+  it("passes entityRedaction and entityRedactionMode through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({
+        entityRedaction: ["pii", "email_address"],
+        entityRedactionMode: "entity_type",
+      })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityRedaction: ["pii", "email_address"],
+        entityRedactionMode: "entity_type",
+      })
+    );
+  });
+
+  describe("entity redaction", () => {
+    it("attaches redacted_transcript to the matching committed segment", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const onRedactedTranscript = vi.fn();
+      const { result } = renderHook(() =>
+        useScribe({ entityRedaction: "all", onRedactedTranscript })
+      );
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const committed = {
+        message_type: "committed_transcript",
+        text: "John Smith will call you back",
+      };
+      const redacted = {
+        message_type: "redacted_transcript",
+        text: committed.text,
+        redacted_text: "{NAME_0} will call you back",
+      };
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT
+        )?.(committed);
+      });
+      expect(
+        result.current.committedTranscripts[0]?.redactedText
+      ).toBeUndefined();
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.REDACTED_TRANSCRIPT)?.(redacted);
+      });
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
+      expect(result.current.committedTranscripts[0]?.text).toBe(committed.text);
+      expect(result.current.committedTranscripts[0]?.redactedText).toBe(
+        redacted.redacted_text
+      );
+      expect(onRedactedTranscript).toHaveBeenCalledWith(redacted);
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS
+        )?.({
+          message_type: "committed_transcript_with_timestamps",
+          text: committed.text,
+          words: [],
+        });
+      });
+
+      expect(result.current.committedTranscripts).toHaveLength(2);
+      expect(result.current.committedTranscripts[1]?.redactedText).toBe(
+        redacted.redacted_text
+      );
+    });
+  });
+
   describe("connected status", () => {
     const SESSION_STARTED = { message_type: "session_started" };
 
