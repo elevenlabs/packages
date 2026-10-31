@@ -53,7 +53,8 @@ export function ConversationInputProvider({
   });
 
   useEffect(() => {
-    if (isControlled && conversation) {
+    // Text conversations have no microphone; their setMicMuted throws.
+    if (isControlled && conversation && conversation.type !== "text") {
       conversation.setMicMuted(controlledIsMuted);
     }
   }, [conversation, controlledIsMuted, isControlled]);

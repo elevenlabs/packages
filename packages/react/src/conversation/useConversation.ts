@@ -69,14 +69,20 @@ export function useConversation(props: UseConversationOptions = {}) {
 
   const conversation = useRawConversation();
 
+  // Text conversations have no microphone or audio output, and their
+  // setMicMuted and setVolume throw.
   useEffect(() => {
-    if (micMuted !== undefined && conversation) {
+    if (
+      micMuted !== undefined &&
+      conversation &&
+      conversation.type !== "text"
+    ) {
       setMuted(micMuted);
     }
   }, [micMuted, conversation, setMuted]);
 
   useEffect(() => {
-    if (volume !== undefined && conversation) {
+    if (volume !== undefined && conversation && conversation.type !== "text") {
       conversation.setVolume({ volume });
     }
   }, [volume, conversation]);
