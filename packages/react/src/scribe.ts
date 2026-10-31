@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { Scribe, RealtimeEvents } from "@elevenlabs/client";
 import type {
   RealtimeConnection,
@@ -249,7 +255,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   // ones, and so passing new callback functions on each render does not change
   // the identity of `connect` (which would re-run the `autoConnect` effect).
   const callbacksRef = useRef(options);
-  useEffect(() => {
+  useLayoutEffect(() => {
     callbacksRef.current = options;
   });
 
