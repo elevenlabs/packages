@@ -217,6 +217,28 @@ describe("ConversationInput", () => {
     expect(mockConversation.setMicMuted).toHaveBeenLastCalledWith(false);
   });
 
+  it("does not apply controlled isMuted to a text conversation", async () => {
+    const textConversation = {
+      ...createMockConversation(),
+      type: "text",
+      setMicMuted: vi.fn(() => {
+        throw new Error("setMicMuted is not supported in text conversations");
+      }),
+    } as unknown as Conversation;
+    vi.mocked(Conversation.startSession).mockResolvedValue(textConversation);
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper({ isMuted: true }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(textConversation.setMicMuted).not.toHaveBeenCalled();
+    expect(result.current.input.isMuted).toBe(true);
+  });
+
   it("reapplies controlled mute state when a new session starts", async () => {
     const firstConversation = createMockConversation("first");
     const secondConversation = createMockConversation("second");

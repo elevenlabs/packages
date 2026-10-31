@@ -188,6 +188,33 @@ describe("useConversation", () => {
     expect(mockConversation.setMicMuted).toHaveBeenCalledWith(true);
   });
 
+  it("does not apply volume or micMuted to a text conversation", async () => {
+    const textConversation = {
+      ...createMockConversation(),
+      type: "text",
+      setMicMuted: vi.fn(() => {
+        throw new Error("setMicMuted is not supported in text conversations");
+      }),
+      setVolume: vi.fn(() => {
+        throw new Error("setVolume is not supported in text conversations");
+      }),
+    } as unknown as Conversation;
+    vi.mocked(Conversation.startSession).mockResolvedValue(textConversation);
+
+    const { result } = renderHook(
+      () => useConversation({ volume: 0.5, micMuted: true }),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.startSession({ signedUrl: "wss://test.example.com" });
+    });
+
+    expect(textConversation.setVolume).not.toHaveBeenCalled();
+    expect(textConversation.setMicMuted).not.toHaveBeenCalled();
+    expect(result.current.isMuted).toBe(true);
+  });
+
   it("registers hook callbacks so they are invoked during a session", async () => {
     const onConnect = vi.fn();
     const onError = vi.fn();
