@@ -14,6 +14,7 @@ export {
   useConversationFeedback,
   useRawConversation,
   useConversation,
+  useConversationClientTool,
   type UseConversationOptions,
   type ConversationControlsValue,
   type ConversationInputValue,
@@ -24,4 +25,7 @@ export {
   type ConversationProviderProps,
   type HookOptions,
   type HookCallbacks,
+  type ClientTool,
+  type ClientTools,
+  type ClientToolResult,
 } from "@elevenlabs/react";
