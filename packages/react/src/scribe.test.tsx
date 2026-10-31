@@ -484,5 +484,33 @@ describe("useScribe", () => {
       expect(onDisconnect).toHaveBeenCalledTimes(1);
       expect(result.current.status).toBe("disconnected");
     });
+
+    it("reconnects with autoConnect after a StrictMode remount", async () => {
+      const first = createMockConnection();
+      const second = createMockConnection();
+      vi.mocked(Scribe.connect)
+        .mockReturnValueOnce(first)
+        .mockReturnValueOnce(second);
+
+      const onDisconnect = vi.fn();
+      const { result } = renderHook(
+        () => useScribe({ ...SESSION, autoConnect: true, onDisconnect }),
+        { reactStrictMode: true }
+      );
+      await act(async () => {});
+
+      // StrictMode unmounts and remounts once, closing the first connection.
+      expect(first.close).toHaveBeenCalledTimes(1);
+      expect(Scribe.connect).toHaveBeenCalledTimes(2);
+      expect(result.current.getConnection()).toBe(second);
+
+      act(() => {
+        closeHandlerFor(first)?.();
+      });
+
+      expect(onDisconnect).not.toHaveBeenCalled();
+      expect(result.current.status).not.toBe("disconnected");
+      expect(result.current.getConnection()).toBe(second);
+    });
   });
 });

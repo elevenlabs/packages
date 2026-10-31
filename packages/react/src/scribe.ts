@@ -278,7 +278,11 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      connectionRef.current?.close();
+      // Release the ref before closing so a remount (React StrictMode) can
+      // connect again instead of seeing the closed connection.
+      const connection = connectionRef.current;
+      connectionRef.current = null;
+      connection?.close();
     };
   }, []);
 
