@@ -275,10 +275,15 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
   >([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Cleanup on unmount
+  // Cleanup on unmount. Clear the ref before close() so a StrictMode
+  // remount, which runs this cleanup and then the autoConnect effect again
+  // before the socket's close event, does not treat the closing socket as
+  // live. That socket's later close is then a different connection.
   useEffect(() => {
     return () => {
-      connectionRef.current?.close();
+      const connection = connectionRef.current;
+      connectionRef.current = null;
+      connection?.close();
     };
   }, []);
 
@@ -378,6 +383,19 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         connectionRef.current = connection;
 
+        // Transcript, error, and session events from a socket that is no
+        // longer current (StrictMode aborted it, or disconnect() cleared it)
+        // must not mark the replacement session connected, disconnected, or
+        // errored. CLOSE is separate: a null ref still ends this session.
+        const onCurrentConnection =
+          <Args extends unknown[]>(handler: (...args: Args) => void) =>
+          (...args: Args) => {
+            if (connectionRef.current !== connection) {
+              return;
+            }
+            handler(...args);
+          };
+
         let sessionStarted = false;
         let awaitingAudio = !!microphone;
         const setConnectedWhenReady = () => {
@@ -387,42 +405,54 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         };
 
         // Set up event listeners
-        connection.on(RealtimeEvents.SESSION_STARTED, () => {
-          sessionStarted = true;
-          setConnectedWhenReady();
-          onSessionStarted?.();
-        });
+        connection.on(
+          RealtimeEvents.SESSION_STARTED,
+          onCurrentConnection(() => {
+            sessionStarted = true;
+            setConnectedWhenReady();
+            onSessionStarted?.();
+          })
+        );
 
         if (microphone) {
-          connection.on(RealtimeEvents.AUDIO_STARTED, () => {
-            awaitingAudio = false;
-            setConnectedWhenReady();
-          });
+          connection.on(
+            RealtimeEvents.AUDIO_STARTED,
+            onCurrentConnection(() => {
+              awaitingAudio = false;
+              setConnectedWhenReady();
+            })
+          );
         }
 
-        connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: unknown) => {
-          const message = data as PartialTranscriptMessage;
-          setPartialTranscript(message.text);
-          setStatus("transcribing");
-          onPartialTranscript?.(message);
-        });
+        connection.on(
+          RealtimeEvents.PARTIAL_TRANSCRIPT,
+          onCurrentConnection((data: unknown) => {
+            const message = data as PartialTranscriptMessage;
+            setPartialTranscript(message.text);
+            setStatus("transcribing");
+            onPartialTranscript?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: unknown) => {
-          const message = data as CommittedTranscriptMessage;
-          const segment: TranscriptSegment = {
-            id: `${Date.now()}-${Math.random()}`,
-            text: message.text,
-            timestamp: Date.now(),
-            isFinal: true,
-          };
-          setCommittedTranscripts(prev => [...prev, segment]);
-          setPartialTranscript("");
-          onCommittedTranscript?.(message);
-        });
+        connection.on(
+          RealtimeEvents.COMMITTED_TRANSCRIPT,
+          onCurrentConnection((data: unknown) => {
+            const message = data as CommittedTranscriptMessage;
+            const segment: TranscriptSegment = {
+              id: `${Date.now()}-${Math.random()}`,
+              text: message.text,
+              timestamp: Date.now(),
+              isFinal: true,
+            };
+            setCommittedTranscripts(prev => [...prev, segment]);
+            setPartialTranscript("");
+            onCommittedTranscript?.(message);
+          })
+        );
 
         connection.on(
           RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS,
-          (data: unknown) => {
+          onCurrentConnection((data: unknown) => {
             const message = data as CommittedTranscriptWithTimestampsMessage;
             const segment: TranscriptSegment = {
               id: `${Date.now()}-${Math.random()}`,
@@ -435,123 +465,163 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             setCommittedTranscripts(prev => [...prev, segment]);
             setPartialTranscript("");
             onCommittedTranscriptWithTimestamps?.(message);
-          }
+          })
         );
 
-        connection.on(RealtimeEvents.EDITED_TRANSCRIPT, (data: unknown) => {
-          const message = data as EditedTranscriptMessage;
-          // Edits run asynchronously and may arrive out of commit order, so the
-          // committed segment is matched on its text.
-          setCommittedTranscripts(prev =>
-            prev.map(segment =>
-              segment.text === message.text && segment.editedText === undefined
-                ? { ...segment, editedText: message.edited_text }
-                : segment
-            )
-          );
-          onEditedTranscript?.(message);
-        });
+        connection.on(
+          RealtimeEvents.EDITED_TRANSCRIPT,
+          onCurrentConnection((data: unknown) => {
+            const message = data as EditedTranscriptMessage;
+            // Edits run asynchronously and may arrive out of commit order, so the
+            // committed segment is matched on its text.
+            setCommittedTranscripts(prev =>
+              prev.map(segment =>
+                segment.text === message.text &&
+                segment.editedText === undefined
+                  ? { ...segment, editedText: message.edited_text }
+                  : segment
+              )
+            );
+            onEditedTranscript?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.ERROR, (err: unknown) => {
-          const message = err as ScribeErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onError?.(new Error(message.error));
-        });
+        connection.on(
+          RealtimeEvents.ERROR,
+          onCurrentConnection((err: unknown) => {
+            const message = err as ScribeErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onError?.(new Error(message.error));
+          })
+        );
 
-        connection.on(RealtimeEvents.AUTH_ERROR, (data: unknown) => {
-          const message = data as ScribeAuthErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onAuthError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.AUTH_ERROR,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeAuthErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onAuthError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.QUOTA_EXCEEDED, (data: unknown) => {
-          const message = data as ScribeQuotaExceededErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onQuotaExceededError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.QUOTA_EXCEEDED,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeQuotaExceededErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onQuotaExceededError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.COMMIT_THROTTLED, (data: unknown) => {
-          const message = data as ScribeCommitThrottledErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onCommitThrottledError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.COMMIT_THROTTLED,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeCommitThrottledErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onCommitThrottledError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.TRANSCRIBER_ERROR, (data: unknown) => {
-          const message = data as ScribeTranscriberErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onTranscriberError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.TRANSCRIBER_ERROR,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeTranscriberErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onTranscriberError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.UNACCEPTED_TERMS, (data: unknown) => {
-          const message = data as ScribeUnacceptedTermsErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onUnacceptedTermsError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.UNACCEPTED_TERMS,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeUnacceptedTermsErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onUnacceptedTermsError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.RATE_LIMITED, (data: unknown) => {
-          const message = data as ScribeRateLimitedErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onRateLimitedError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.RATE_LIMITED,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeRateLimitedErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onRateLimitedError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.INPUT_ERROR, (data: unknown) => {
-          const message = data as ScribeInputErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onInputError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.INPUT_ERROR,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeInputErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onInputError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.QUEUE_OVERFLOW, (data: unknown) => {
-          const message = data as ScribeQueueOverflowErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onQueueOverflowError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.QUEUE_OVERFLOW,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeQueueOverflowErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onQueueOverflowError?.(message);
+          })
+        );
 
-        connection.on(RealtimeEvents.RESOURCE_EXHAUSTED, (data: unknown) => {
-          const message = data as ScribeResourceExhaustedErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onResourceExhaustedError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.RESOURCE_EXHAUSTED,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeResourceExhaustedErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onResourceExhaustedError?.(message);
+          })
+        );
 
         connection.on(
           RealtimeEvents.SESSION_TIME_LIMIT_EXCEEDED,
-          (data: unknown) => {
+          onCurrentConnection((data: unknown) => {
             const message = data as ScribeSessionTimeLimitExceededErrorMessage;
             setError(message.error);
             setStatus("error");
             onSessionTimeLimitExceededError?.(message);
-          }
+          })
         );
 
-        connection.on(RealtimeEvents.CHUNK_SIZE_EXCEEDED, (data: unknown) => {
-          const message = data as ScribeChunkSizeExceededErrorMessage;
-          setError(message.error);
-          setStatus("error");
-          onChunkSizeExceededError?.(message);
-        });
+        connection.on(
+          RealtimeEvents.CHUNK_SIZE_EXCEEDED,
+          onCurrentConnection((data: unknown) => {
+            const message = data as ScribeChunkSizeExceededErrorMessage;
+            setError(message.error);
+            setStatus("error");
+            onChunkSizeExceededError?.(message);
+          })
+        );
 
         connection.on(
           RealtimeEvents.INSUFFICIENT_AUDIO_ACTIVITY,
-          (data: unknown) => {
+          onCurrentConnection((data: unknown) => {
             const message = data as ScribeInsufficientAudioActivityErrorMessage;
             setError(message.error);
             setStatus("error");
             onInsufficientAudioActivityError?.(message);
-          }
+          })
         );
 
-        connection.on(RealtimeEvents.OPEN, () => {
-          onConnect?.();
-        });
+        connection.on(
+          RealtimeEvents.OPEN,
+          onCurrentConnection(() => {
+            onConnect?.();
+          })
+        );
 
         connection.on(RealtimeEvents.CLOSE, () => {
           // A socket that has already been replaced must not tear down the
