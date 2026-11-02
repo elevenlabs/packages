@@ -19,7 +19,8 @@ type ResumeAgent =
   | "navigation_resume"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
-  | "navigation_resume_rich_content";
+  | "navigation_resume_rich_content"
+  | "navigation_resume_voice_only";
 
 function mountWidget(
   agentId: ResumeAgent = "navigation_resume",
@@ -213,6 +214,27 @@ describe("Resuming a call after a navigation", () => {
 
     await expect
       .element(page.getByText(/Invalid or expired persistent session token/))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+  });
+
+  it("offers the call back from the call button without a transcript", async () => {
+    const firstMount = mountWidget("navigation_resume_voice_only");
+    await startCall();
+    // Nothing shows that the call connected, so navigate once it can be saved.
+    await expect
+      .poll(() => {
+        window.dispatchEvent(new Event("pagehide"));
+        return storedRecord("navigation_resume_voice_only");
+      })
+      .not.toBeNull();
+    firstMount.remove();
+
+    mountWidget("navigation_resume_voice_only");
+    await resumeButton().click();
+
+    await expect
+      .element(page.getByRole("button", { name: "End" }))
       .toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
   });

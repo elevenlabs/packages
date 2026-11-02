@@ -786,7 +786,7 @@ function useConversationSetup() {
                           type: "message",
                           role,
                           message: text,
-                          isText: true,
+                          isText: !!processedConfig.textOnly,
                           conversationIndex: conversationIndex.peek(),
                         }
                 ),
