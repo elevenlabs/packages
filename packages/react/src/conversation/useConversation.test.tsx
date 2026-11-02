@@ -189,8 +189,7 @@ describe("useConversation", () => {
   });
 
   it("does not apply volume or micMuted to a text conversation", async () => {
-    const textConversation = {
-      ...createMockConversation(),
+    const textConversation = Object.assign(createMockConversation(), {
       type: "text",
       setMicMuted: vi.fn(() => {
         throw new Error("setMicMuted is not supported in text conversations");
@@ -198,7 +197,7 @@ describe("useConversation", () => {
       setVolume: vi.fn(() => {
         throw new Error("setVolume is not supported in text conversations");
       }),
-    } as unknown as Conversation;
+    });
     vi.mocked(Conversation.startSession).mockResolvedValue(textConversation);
 
     const { result } = renderHook(
