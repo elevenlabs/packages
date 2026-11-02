@@ -1,9 +1,4 @@
-import {
-  SessionConnectionError,
-  type DisconnectionDetails,
-  type Role,
-  type SessionConfig,
-} from "@elevenlabs/client";
+import type { Role, SessionConfig } from "@elevenlabs/client";
 import { signal, type ReadonlySignal } from "@preact/signals";
 import type { TranscriptEntry } from "../contexts/conversation";
 
@@ -28,7 +23,7 @@ export interface NavigationResumeRecord {
   turns: NavigationResumeTurn[];
   micMuted: boolean;
   conversationId?: string;
-  persistentSessionToken?: string;
+  persistentSessionToken: string;
 }
 
 function storageKey(config: SessionConfig): string | null {
@@ -45,19 +40,6 @@ function storageKey(config: SessionConfig): string | null {
   } catch {
     return null;
   }
-}
-
-export function isFirstMessageOverrideRefused(
-  cause: SessionConnectionError | DisconnectionDetails | unknown
-): boolean {
-  let reason: string | undefined;
-  if (cause instanceof SessionConnectionError) {
-    reason = cause.closeReason;
-  } else if ((cause as DisconnectionDetails | undefined)?.reason === "error") {
-    const details = cause as Extract<DisconnectionDetails, { reason: "error" }>;
-    reason = details.closeReason ?? details.message;
-  }
-  return !!reason?.includes("Override for field 'first_message'");
 }
 
 function isTurn(value: unknown): value is NavigationResumeTurn {
@@ -82,8 +64,7 @@ function isRecord(value: unknown): value is NavigationResumeRecord {
     typeof record.micMuted === "boolean" &&
     (record.conversationId === undefined ||
       typeof record.conversationId === "string") &&
-    (record.persistentSessionToken === undefined ||
-      typeof record.persistentSessionToken === "string")
+    typeof record.persistentSessionToken === "string"
   );
 }
 
@@ -145,7 +126,7 @@ export function createNavigationResumeStore(
       details: {
         micMuted: boolean;
         conversationId: string;
-        persistentSessionToken?: string;
+        persistentSessionToken: string;
       }
     ) =>
       store({
@@ -206,17 +187,4 @@ export function toTranscriptEntries(
             conversationIndex,
           }
   );
-}
-
-export function buildResumeContext(turns: NavigationResumeTurn[]): string {
-  // Rich content isn't spoken, so it has no line here.
-  const lines = turns.flatMap(turn =>
-    turn.type === "message"
-      ? [`${turn.role === "user" ? "User" : "You"}: ${turn.message}`]
-      : []
-  );
-  return [
-    "The page the user was on changed and this call reconnected. You are continuing the same conversation, so do not greet the user again.",
-    ...(lines.length ? ["", "What was said before:", ...lines] : []),
-  ].join("\n");
 }

@@ -36,9 +36,7 @@ import {
   isPersistentSessionRefused,
 } from "../utils/persistentSession";
 import {
-  buildResumeContext,
   createNavigationResumeStore,
-  isFirstMessageOverrideRefused,
   toTranscriptEntries,
   type NavigationResumeRecord,
 } from "../utils/navigationResume";
@@ -563,7 +561,6 @@ function useConversationSetup() {
       type: "resume_prompt",
       conversationIndex: conversationIndex.peek(),
     });
-    let greetingOverrideRefused = false;
     // Kept per page rather than stored, since a voice call only resumes in this tab.
     let voiceSessionToken: string | null = null;
     const initialResume = pendingNavigationResume.peek();
@@ -608,15 +605,12 @@ function useConversationSetup() {
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        // Typing also answers the offer; any other call start spends it.
-        const navigationResume =
-          continuedCall ??
-          (initialMessage ? pendingNavigationResume.peek() : null);
+        // A continued call rejoins its session, history and all; any other
+        // call start spends the offer.
+        const navigationResume = continuedCall ?? null;
         if (!navigationResume) {
           pendingNavigationResume.value = null;
         }
-        // A call that kept its session rejoins it, history and all.
-        const rejoinToken = continuedCall?.persistentSessionToken ?? null;
         const retry = () =>
           value.startSession(
             element,
@@ -625,14 +619,6 @@ function useConversationSetup() {
             undefined,
             continuedCall
           );
-        const greetingRefused = (cause: unknown) => {
-          if (!navigationResume || greetingOverrideRefused) return false;
-          greetingOverrideRefused = isFirstMessageOverrideRefused(cause);
-          return greetingOverrideRefused;
-        };
-        // A refusal before this start returns retries once the start settles.
-        let started = false;
-        let refusedBeforeStart = false;
         if (resume || navigationResume) {
           // The conversation was already started behind the terms gate.
           terms.acceptTerms();
@@ -676,19 +662,8 @@ function useConversationSetup() {
             processedConfig.overrides.conversation.textOnly = true;
           }
         }
-        // Skips the greeting; the agent must allow first message overrides.
-        if (
-          navigationResume &&
-          !rejoinToken &&
-          firstMessage.peek() &&
-          !greetingOverrideRefused
-        ) {
-          processedConfig.overrides ??= {};
-          processedConfig.overrides.agent ??= {};
-          processedConfig.overrides.agent.firstMessage = "";
-        }
         configurePersistentSession(processedConfig, {
-          resume: resume ?? rejoinToken,
+          resume: resume ?? navigationResume?.persistentSessionToken ?? null,
           // A voice call ends with its connection, so xi has nothing to relay.
           resumeOnly: !processedConfig.textOnly,
           unavailable: persistenceUnavailable,
@@ -730,7 +705,7 @@ function useConversationSetup() {
         conversationTextOnly.value = processedConfig.textOnly ?? false;
         queueStatus.value = null;
         resetAgentResponseState();
-        isResuming.value = !!resume || !!rejoinToken;
+        isResuming.value = !!resume || !!navigationResume;
         // A kept transcript renders its greeting as before; a replayed one
         // holds the greeting as a stored row.
         if (!keepTranscript) {
@@ -795,7 +770,7 @@ function useConversationSetup() {
               // history supersedes the turns shown while it was offered.
               const added = transcript
                 .peek()
-                .slice(rejoinToken ? (navigationResume?.turns.length ?? 0) : 0);
+                .slice(navigationResume?.turns.length ?? 0);
               transcript.value = [
                 ...rows.map(
                   ({ role, text, rich_content }): TranscriptEntry =>
@@ -1080,16 +1055,6 @@ function useConversationSetup() {
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
               isAwaitingReply.value = false;
-              // xi refuses the override after sending metadata on web calls.
-              if (greetingRefused(details)) {
-                if (!started) {
-                  refusedBeforeStart = true;
-                  return;
-                }
-                pendingNavigationResume.value = navigationResume;
-                setTimeout(() => void retry());
-                return;
-              }
               // A close with the token still stored is a pause, not an end:
               // the transcript stays and the next message or the page coming
               // back to the foreground continues the conversation.
@@ -1133,30 +1098,19 @@ function useConversationSetup() {
           });
 
           conversationRef.current = await lockRef.current;
-          started = true;
-          if (refusedBeforeStart) {
-            lockRef.current = null;
-            return retry();
-          }
           if (navigationResume) {
             pendingNavigationResume.value = null;
             navigationResumeMicMuted.value =
               navigationResume.micMuted && !processedConfig.textOnly;
           }
-          if (navigationResume || initialMessage) {
+          if (initialMessage) {
             const instance = conversationRef.current;
             // TODO: Remove the delay once BE can handle it
-            setTimeout(() => {
-              if (!instance.isOpen()) return;
-              if (navigationResume && !rejoinToken) {
-                instance.sendContextualUpdate(
-                  buildResumeContext(navigationResume.turns)
-                );
-              }
-              if (initialMessage) {
-                instance.sendUserMessage(initialMessage, initialMessageOptions);
-              }
-            }, 100);
+            setTimeout(
+              () =>
+                instance.sendUserMessage(initialMessage, initialMessageOptions),
+              100
+            );
           }
 
           const id = conversationRef.current.getId();
@@ -1164,26 +1118,10 @@ function useConversationSetup() {
           error.value = null;
           return id;
         } catch (e) {
-          if (refusedBeforeStart || greetingRefused(e)) {
-            lockRef.current = null;
-            return retry();
-          }
-          if (
-            navigationResume &&
-            rejoinToken &&
-            isPersistentSessionRefused(e)
-          ) {
-            // The session is gone, so continue it from the carried-over turns.
-            lockRef.current = null;
-            return value.startSession(
-              element,
-              initialMessage,
-              initialMessageOptions,
-              undefined,
-              { ...navigationResume, persistentSessionToken: undefined }
-            );
-          }
-          if (
+          if (navigationResume && isPersistentSessionRefused(e)) {
+            // A call that can't be rejoined isn't offered again.
+            pendingNavigationResume.value = null;
+          } else if (
             processedConfig.persistentSession &&
             isPersistentSessionRefused(e)
           ) {
@@ -1250,7 +1188,7 @@ function useConversationSetup() {
               },
             ];
           }
-          if (navigationResume) {
+          if (pendingNavigationResume.peek()) {
             transcript.value = [...transcript.peek(), resumePromptEntry()];
           }
         } finally {
@@ -1288,11 +1226,12 @@ function useConversationSetup() {
           navigationResumeStore.carryOver();
           return;
         }
-        if (conversationTextOnly.peek() === true) return;
+        // Only a call with a session can be rejoined on the next page.
+        if (conversationTextOnly.peek() === true || !voiceSessionToken) return;
         navigationResumeStore.save(transcript.peek(), {
           micMuted,
           conversationId: conversation.getId(),
-          persistentSessionToken: voiceSessionToken ?? undefined,
+          persistentSessionToken: voiceSessionToken,
         });
       },
       /** Ends the conversation for good; a persistent session is forgotten. */

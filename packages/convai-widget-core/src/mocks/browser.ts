@@ -556,18 +556,10 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "",
   },
-  // Greets on a fresh call and replies to typed messages.
   navigation_resume_greeting: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
     text_input_enabled: true,
-    terms_html: undefined,
-    first_message: "Welcome to the shop",
-  },
-  // Greets, but refuses an override of its first message.
-  navigation_resume_no_override: {
-    ...BASIC_CONFIG,
-    transcript_enabled: true,
     terms_html: undefined,
     first_message: "Welcome to the shop",
   },
@@ -597,12 +589,6 @@ type PersistentConversation = {
 // Keyed by resume token; every connection mints a new one.
 const persistentConversations = new Map<string, PersistentConversation>();
 
-const contextualUpdates: string[] = [];
-
-export function receivedContextualUpdates() {
-  return [...contextualUpdates];
-}
-
 // Each connection replies differently, so tests can tell them apart.
 let navigationResumeConnections = 0;
 
@@ -614,7 +600,6 @@ const NAVIGATION_RESUME_REPLIES = [
 
 export function resetNavigationResumeMock() {
   navigationResumeConnections = 0;
-  contextualUpdates.length = 0;
 }
 
 export function persistentConversationIdFor(token: string | null) {
@@ -783,37 +768,19 @@ export const Worker = setupWorker(
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
 
-      // An empty override means the agent waits instead of greeting.
-      let overriddenFirstMessage: string | undefined;
       let overriddenTextOnly = false;
 
       client.addEventListener("message", event => {
         const data =
           typeof event.data === "string" ? JSON.parse(event.data) : null;
-        if (data?.type === "contextual_update") {
-          contextualUpdates.push(data.text);
-        }
         if (data?.type === "conversation_initiation_client_data") {
-          overriddenFirstMessage =
-            data.conversation_config_override?.agent?.first_message;
           overriddenTextOnly =
             data.conversation_config_override?.conversation?.text_only === true;
-          // Like xi, refused after the metadata has already gone out.
-          if (
-            agentId === "navigation_resume_no_override" &&
-            overriddenFirstMessage === ""
-          ) {
-            client.close(
-              1008,
-              "Override for field 'first_message' is not allowed by config."
-            );
-          }
         }
       });
 
       if (
-        (agentId === "persistent_session_disabled" ||
-          agentId === "navigation_resume_no_override") &&
+        agentId === "persistent_session_disabled" &&
         client.url.searchParams.get("is_persistent") === "true"
       ) {
         client.close(
@@ -986,11 +953,7 @@ export const Worker = setupWorker(
           "first-message",
           agentId === "streamed_first_message_with_final"
         );
-      } else if (
-        agentId !== "streamed_first_reply" &&
-        !resumedConversation &&
-        overriddenFirstMessage !== ""
-      ) {
+      } else if (agentId !== "streamed_first_reply" && !resumedConversation) {
         persistentConversation?.rows.push({
           role: "agent",
           text: config.first_message ?? "",
@@ -1151,23 +1114,6 @@ export const Worker = setupWorker(
             })
           );
         }
-      }
-      if (agentId === "navigation_resume_greeting") {
-        client.addEventListener("message", event => {
-          const data =
-            typeof event.data === "string" ? JSON.parse(event.data) : null;
-          if (data?.type !== "user_message") return;
-          client.send(
-            JSON.stringify({
-              type: "agent_response",
-              agent_response_event: {
-                agent_response: "Those come in black too",
-                event_id: 1,
-                response_id: "typed-reply",
-              },
-            })
-          );
-        });
       }
       if (agentId === "fail") {
         client.addEventListener("message", () => {

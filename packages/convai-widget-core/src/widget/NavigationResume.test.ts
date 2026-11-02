@@ -8,11 +8,7 @@ import {
   expect,
   vi,
 } from "vitest";
-import {
-  receivedContextualUpdates,
-  resetNavigationResumeMock,
-  Worker,
-} from "../mocks/browser";
+import { resetNavigationResumeMock, Worker } from "../mocks/browser";
 import { setupWebComponent } from "../mocks/web-component";
 import type { CustomAttributes } from "../types/attributes";
 import type { NavigationResumeRecord } from "../utils/navigationResume";
@@ -23,7 +19,6 @@ type ResumeAgent =
   | "navigation_resume"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
-  | "navigation_resume_no_override"
   | "navigation_resume_rich_content";
 
 function mountWidget(
@@ -52,12 +47,6 @@ const callButton = () => page.getByRole("button", { name: "Start a call" });
 
 async function startCall() {
   await callButton().first().click();
-}
-
-function expectContextualUpdate(text: string) {
-  return expect
-    .poll(() => receivedContextualUpdates().join("\n"), { timeout: 5000 })
-    .toContain(text);
 }
 
 function navigateAway(mount: HTMLElement) {
@@ -107,8 +96,6 @@ describe("Resuming a call after a navigation", () => {
         .toBeInTheDocument();
       expect(resumeButton().all()).toHaveLength(0);
       expect(sawResume).toBe(true);
-      // The same conversation carries on, so the agent needs no summary.
-      expect(receivedContextualUpdates()).toHaveLength(0);
     } finally {
       document.removeEventListener("elevenlabs-convai:call", onCall);
     }
@@ -208,24 +195,26 @@ describe("Resuming a call after a navigation", () => {
     expect(page.getByText("Welcome to the shop").all()).toHaveLength(1);
   });
 
-  it("lets the agent greet when it refuses the greeting override", async () => {
-    const firstMount = mountWidget("navigation_resume_no_override");
+  it("drops the offer when its session can't be rejoined", async () => {
+    const firstMount = mountWidget();
     await startCall();
     await expect
-      .element(page.getByText("Welcome to the shop"))
+      .element(page.getByText("Looking at womens boots"))
       .toBeInTheDocument();
     navigateAway(firstMount);
+    const record = storedRecord();
+    sessionStorage.setItem(
+      STORAGE_KEY_PREFIX + "navigation_resume",
+      JSON.stringify({ ...record, persistentSessionToken: "pstkn_gone" })
+    );
 
-    mountWidget("navigation_resume_no_override");
+    mountWidget();
     await resumeButton().click();
 
     await expect
-      .poll(() => page.getByText("Welcome to the shop").all(), {
-        timeout: 5000,
-      })
-      .toHaveLength(2);
-    expect(page.getByText("not allowed by config").all()).toHaveLength(0);
-    await expectContextualUpdate("Welcome to the shop");
+      .element(page.getByText(/Invalid or expired persistent session token/))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
   });
 
   it("keeps the offer through quick navigations, not a long stay", async () => {
@@ -291,34 +280,5 @@ describe("Resuming a call after a navigation", () => {
 
     expect(resumeButton().all()).toHaveLength(0);
     expect(page.getByText("Looking at womens boots").all()).toHaveLength(0);
-    expect(receivedContextualUpdates()).toHaveLength(0);
-  });
-
-  it("continues the conversation when the offer is answered by typing", async () => {
-    const firstMount = mountWidget("navigation_resume_greeting");
-    await startCall();
-    await expect
-      .element(page.getByText("Welcome to the shop"))
-      .toBeInTheDocument();
-    navigateAway(firstMount);
-
-    mountWidget("navigation_resume_greeting");
-    await expect.element(resumeButton()).toBeInTheDocument();
-
-    const textInput = page.getByRole("textbox", { name: "Text message input" });
-    await textInput.fill("Show me those in black");
-    await page.getByRole("button", { name: "Send" }).click();
-
-    await expect
-      .element(page.getByText("Those come in black too"))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByText("Show me those in black"))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByText("Welcome to the shop"))
-      .toBeInTheDocument();
-    expect(resumeButton().all()).toHaveLength(0);
-    await expectContextualUpdate("Welcome to the shop");
   });
 });
