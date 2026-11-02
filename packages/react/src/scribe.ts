@@ -463,17 +463,19 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               words: message.words,
             };
             setCommittedTranscripts(prev => {
-              const redacted = [...prev]
-                .reverse()
-                .find(
-                  existing =>
-                    existing.text === message.text &&
-                    existing.redactedText !== undefined
-                );
+              const sameText = prev.filter(
+                existing => existing.text === message.text
+              );
+              const occurrence = sameText.filter(
+                existing => "words" in existing
+              ).length;
+              const committed = sameText.filter(
+                existing => !("words" in existing)
+              )[occurrence];
               return [
                 ...prev,
-                redacted
-                  ? { ...segment, redactedText: redacted.redactedText }
+                committed?.redactedText !== undefined
+                  ? { ...segment, redactedText: committed.redactedText }
                   : segment,
               ];
             });
@@ -498,14 +500,25 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
 
         connection.on(RealtimeEvents.REDACTED_TRANSCRIPT, (data: unknown) => {
           const message = data as RedactedTranscriptMessage;
-          setCommittedTranscripts(prev =>
-            prev.map(segment =>
-              segment.text === message.text &&
-              segment.redactedText === undefined
+          setCommittedTranscripts(prev => {
+            const occurrence = prev.filter(
+              segment =>
+                segment.text === message.text &&
+                !("words" in segment) &&
+                segment.redactedText !== undefined
+            ).length;
+            let committed = 0;
+            let timestamped = 0;
+            return prev.map(segment => {
+              if (segment.text !== message.text) {
+                return segment;
+              }
+              const index = "words" in segment ? timestamped++ : committed++;
+              return index === occurrence
                 ? { ...segment, redactedText: message.redacted_text }
-                : segment
-            )
-          );
+                : segment;
+            });
+          });
           onRedactedTranscript?.(message);
         });
 

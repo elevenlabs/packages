@@ -388,6 +388,67 @@ describe("useScribe", () => {
         redacted.redacted_text
       );
     });
+
+    it("pairs redactions of repeated text with their own segments", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const { result } = renderHook(() =>
+        useScribe({ entityRedaction: "all" })
+      );
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const text = "Call John";
+      const fire = (event: RealtimeEvents, payload: object) =>
+        act(() => {
+          handlerFor(connection, event)?.(payload);
+        });
+
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT, {
+        message_type: "committed_transcript",
+        text,
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT, {
+        message_type: "committed_transcript",
+        text,
+      });
+      fire(RealtimeEvents.REDACTED_TRANSCRIPT, {
+        message_type: "redacted_transcript",
+        text,
+        redacted_text: "Call {NAME_0}",
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, {
+        message_type: "committed_transcript_with_timestamps",
+        text,
+        words: [],
+      });
+      fire(RealtimeEvents.REDACTED_TRANSCRIPT, {
+        message_type: "redacted_transcript",
+        text,
+        redacted_text: "Call {NAME_1}",
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, {
+        message_type: "committed_transcript_with_timestamps",
+        text,
+        words: [],
+      });
+
+      expect(
+        result.current.committedTranscripts.map(segment => segment.redactedText)
+      ).toEqual([
+        "Call {NAME_0}",
+        "Call {NAME_1}",
+        "Call {NAME_0}",
+        "Call {NAME_1}",
+      ]);
+    });
   });
 
   describe("connected status", () => {
