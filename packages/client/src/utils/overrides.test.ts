@@ -74,4 +74,17 @@ describe("constructOverrides", () => {
 
     expect(event.conversation_config_override?.tts?.model_id).toBeUndefined();
   });
+
+  it("maps tts cloneStrength to clone_strength in conversation_config_override", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: {
+        tts: {
+          cloneStrength: 0.4,
+        },
+      },
+    });
+
+    expect(event.conversation_config_override?.tts?.clone_strength).toBe(0.4);
+  });
 });

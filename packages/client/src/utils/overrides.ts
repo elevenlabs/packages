@@ -25,6 +25,7 @@ export function constructOverrides(
         speed: config.overrides.tts?.speed,
         stability: config.overrides.tts?.stability,
         similarity_boost: config.overrides.tts?.similarityBoost,
+        clone_strength: config.overrides.tts?.cloneStrength,
       },
       ...(config.overrides.asr?.keywords !== undefined
         ? { asr: { keywords: config.overrides.asr.keywords } }

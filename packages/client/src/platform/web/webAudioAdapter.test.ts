@@ -46,11 +46,9 @@ function installAudioEnvironment() {
       return {};
     })
   );
-  vi.stubGlobal(
-    "AudioWorkletNode",
-    vi.fn(function MockAudioWorkletNode() {
-      return worklet;
-    })
+
+  vi.mocked(loadRawAudioProcessor).mockResolvedValue(
+    worklet as unknown as AudioWorkletNode
   );
 
   return { analyser, audioContext, source, worklet };
@@ -66,7 +64,6 @@ describe("WebAudioAdapter.setupOutputAnalysis", () => {
 
   it("forwards a custom workletPaths.rawAudioProcessor to the loader", async () => {
     installAudioEnvironment();
-    vi.mocked(loadRawAudioProcessor).mockResolvedValueOnce(undefined);
 
     await new WebAudioAdapter().setupOutputAnalysis(
       track,
@@ -83,7 +80,6 @@ describe("WebAudioAdapter.setupOutputAnalysis", () => {
 
   it("passes undefined to the loader when no workletPaths are provided", async () => {
     installAudioEnvironment();
-    vi.mocked(loadRawAudioProcessor).mockResolvedValueOnce(undefined);
 
     await new WebAudioAdapter().setupOutputAnalysis(
       track,
@@ -99,7 +95,6 @@ describe("WebAudioAdapter.setupOutputAnalysis", () => {
 
   it("passes undefined when workletPaths carries only unrelated processors", async () => {
     installAudioEnvironment();
-    vi.mocked(loadRawAudioProcessor).mockResolvedValueOnce(undefined);
 
     await new WebAudioAdapter().setupOutputAnalysis(
       track,
@@ -116,7 +111,6 @@ describe("WebAudioAdapter.setupOutputAnalysis", () => {
 
   it("still wires the capture graph when a custom worklet path is used", async () => {
     const { analyser, source, worklet } = installAudioEnvironment();
-    vi.mocked(loadRawAudioProcessor).mockResolvedValueOnce(undefined);
 
     const result = await new WebAudioAdapter().setupOutputAnalysis(
       track,

@@ -59,6 +59,7 @@ export type BaseSessionConfig = {
       speed?: number;
       stability?: number;
       similarityBoost?: number;
+      cloneStrength?: number;
     };
     asr?: {
       /** Keywords to boost ASR prediction probability for this conversation. */

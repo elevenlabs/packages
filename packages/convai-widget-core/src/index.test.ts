@@ -1261,6 +1261,42 @@ describe("elevenlabs-convai", () => {
         .element(page.getByText("Sure, booking it now."), { timeout: 3000 })
         .toBeInTheDocument();
     });
+
+    it("shows the full message at once when sync is turned off", async () => {
+      setupWebComponent({
+        "agent-id": "aligned_voice",
+        variant: "compact",
+        "transcript-speech-sync": "false",
+      });
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+
+      // Before the 1.5s first chunk finishes playing
+      await expect
+        .element(page.getByText("Sure, booking it now."), { timeout: 1000 })
+        .toBeInTheDocument();
+    });
+  });
+
+  describe("voice typing indicator", () => {
+    it("shows typing dots after the user's voice turn", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        transcript: "true",
+        variant: "compact",
+      });
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+
+      // The mock ends on a user transcript with no reply
+      await expect
+        .element(page.getByText("User transcript"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("status"), { timeout: 3000 })
+        .toHaveTextContent("Thinking...");
+    });
   });
 
   describe("strip audio tags", () => {

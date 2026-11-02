@@ -140,6 +140,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showConversationId = useAttribute("show-conversation-id");
   const showResizeButton = useAttribute("show-resize-button");
   const mobileFullscreen = useAttribute("mobile-fullscreen");
+  const transcriptSpeechSync = useAttribute("transcript-speech-sync");
   const endConfirmation = useAttribute("end-confirmation");
   const showLanguageSelectorOnTrigger = useAttribute(
     "show-language-selector-on-trigger"
@@ -202,6 +203,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(mobileFullscreen.value) ??
       fetchedConfig.value.mobile_fullscreen ??
       true;
+    const patchedTranscriptSpeechSync =
+      parseBoolAttribute(transcriptSpeechSync.value) ??
+      fetchedConfig.value.transcript_speech_sync_enabled ??
+      true;
     const patchedEndConfirmation =
       parseBoolAttribute(endConfirmation.value) ??
       fetchedConfig.value.end_confirmation_enabled ??
@@ -228,6 +233,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       show_conversation_id: patchedShowConversationId,
       show_resize_button: patchedShowResizeButton,
       mobile_fullscreen: patchedMobileFullscreen,
+      transcript_speech_sync_enabled: patchedTranscriptSpeechSync,
       end_confirmation_enabled: patchedEndConfirmation,
       show_language_selector_on_trigger: patchedShowLanguageSelectorOnTrigger,
     };

@@ -9,13 +9,21 @@ export default defineConfig({
           name: "Unit tests",
           environment: "node",
           include: ["src/**/*.test.ts"],
-          exclude: ["src/index.test.ts", "src/utils/input.test.ts"],
+          exclude: [
+            "src/index.test.ts",
+            "src/utils/input.test.ts",
+            "src/utils/selfHostedWorklets.test.ts",
+          ],
         },
       },
       {
         test: {
           name: "Browser tests",
-          include: ["src/index.test.ts", "src/utils/input.test.ts"],
+          include: [
+            "src/index.test.ts",
+            "src/utils/input.test.ts",
+            "src/utils/selfHostedWorklets.test.ts",
+          ],
           browser: {
             enabled: true,
             instances: [

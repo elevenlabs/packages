@@ -55,6 +55,7 @@ export function Sheet({ open, onClose }: SheetProps) {
     conversationIndex,
     isAgentTyping,
     isAwaitingReply,
+    isAgentThinking,
     isExternalAgentMode,
     isWaitingForAgent,
   } = useConversation();
@@ -111,8 +112,7 @@ export function Sheet({ open, onClose }: SheetProps) {
         isAgentTyping.value &&
         !isWaitingForAgent.value,
       showAgentReplyPending:
-        isTextOnly &&
-        isAwaitingReply.value &&
+        (isTextOnly ? isAwaitingReply.value : isAgentThinking.value) &&
         !isExternalAgentMode.value &&
         !isWaitingForAgent.value,
     });

@@ -1,5 +1,39 @@
 # @elevenlabs/react
 
+## 1.20.3
+
+### Patch Changes
+
+- 37bdc21: Fix `useScribe` so `autoConnect` keeps one open session under React StrictMode.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
+## 1.20.2
+
+### Patch Changes
+
+- Updated dependencies [e92f62e]
+  - @elevenlabs/client@1.32.1
+
+## 1.20.1
+
+### Patch Changes
+
+- Updated dependencies [695dadc]
+  - @elevenlabs/client@1.32.0
+
+## 1.20.0
+
+### Minor Changes
+
+- 8ed0b79: `useScribe` in microphone mode now reports `status: "connected"` (and `isConnected`) only after the session has started and the first microphone audio frame has been sent, instead of as soon as the session starts.
+
+### Patch Changes
+
+- Updated dependencies [8ed0b79]
+- Updated dependencies [93991e2]
+  - @elevenlabs/client@1.31.0
+
 ## 1.19.1
 
 ### Patch Changes

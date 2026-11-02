@@ -1,5 +1,41 @@
 # @elevenlabs/client
 
+## 1.33.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- Updated dependencies [23e10c4]
+- Updated dependencies [4b2b8e5]
+  - @elevenlabs/types@0.27.0
+
+## 1.32.1
+
+### Patch Changes
+
+- e92f62e: Fix the start of the agent's first message playing too fast and too high when the browser can't use the agent's sample rate. Starting a voice session now waits for the output resampler to be ready, and fails with an error (closing the microphone) if it can't be created, instead of playing audio at the wrong rate.
+
+## 1.32.0
+
+### Minor Changes
+
+- 695dadc: Self-hosted worklets (`workletPaths`) are now checked against the installed version of the client. Each worklet registers its processor under a name that includes a hash of its source, so a copy from another release now fails at session start with an error naming the worklet and path, instead of running mismatched audio code. Because self-hosted worklets are deployed separately from the client, this ensures the worklet that loads matches what the client expects of it; previously a mismatched copy could load and play audio while silently misbehaving. Re-copy the files from `@elevenlabs/client/worklets/*` when upgrading.
+
+## 1.31.0
+
+### Minor Changes
+
+- 8ed0b79: Emit a per-connection `RealtimeEvents.AUDIO_STARTED` event once after the first microphone audio frame is sent, distinguishing an open transcription session from one that has begun sending audio.
+- 93991e2: Add `overrides.tts.modelId` support to the client so a per-conversation TTS model override can be sent as `tts.model_id` via `conversation_initiation_client_data`.
+
+### Patch Changes
+
+- Updated dependencies [93991e2]
+  - @elevenlabs/types@0.26.0
+
 ## 1.30.0
 
 ### Minor Changes

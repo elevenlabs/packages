@@ -3,6 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadScribeAudioProcessor = createWorkletModuleLoader(
   "scribeAudioProcessor",
+  "bd293b92cef79b80",
   // language=JavaScript
   `/*
  * Scribe Audio Processor for converting microphone audio to PCM16 format
@@ -108,7 +109,7 @@ class ScribeAudioProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("scribeAudioProcessor", ScribeAudioProcessor);
+registerProcessor("scribeAudioProcessor@bd293b92cef79b80", ScribeAudioProcessor);
 
 `
 );

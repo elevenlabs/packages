@@ -325,7 +325,7 @@ export class ScribeRealtime {
    *     sampleRate: 16000,
    * });
    *
-   * // Automatic microphone streaming
+   * // Automatic microphone streaming (the socket can open before the mic is live)
    * const connection = Scribe.connect({
    *     token: "...",
    *     modelId: "scribe_v2_realtime",
@@ -381,6 +381,7 @@ export class ScribeRealtime {
         // A frame can arrive after close(); send() throws on a closed socket.
         if (connection._closed) return;
         connection.send({ audioBase64: base64Audio, previousText });
+        connection._emitMicrophoneAudioStarted();
         previousText = undefined;
       });
 

@@ -91,6 +91,7 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
+  transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
@@ -181,6 +182,7 @@ export const DefaultTextContents = {
   file_too_large: "File size exceeds the maximum limit.",
   file_limit_reached: "Maximum number of files for this conversation reached.",
   typing_indicator: "Agent is typing ...",
+  thinking_status: "Thinking...",
   rich_content_unavailable: "This content could not be displayed",
   carousel_previous: "Previous",
   carousel_next: "Next",

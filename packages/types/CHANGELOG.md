@@ -1,5 +1,18 @@
 # @elevenlabs/types
 
+## 0.27.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+- 4b2b8e5: Replay the rich content an agent showed when a persistent text conversation resumes. History rows can now carry `rich_content`.
+
+## 0.26.0
+
+### Minor Changes
+
+- 93991e2: Add `overrides.tts.modelId` support to the client so a per-conversation TTS model override can be sent as `tts.model_id` via `conversation_initiation_client_data`.
+
 ## 0.25.0
 
 ### Minor Changes

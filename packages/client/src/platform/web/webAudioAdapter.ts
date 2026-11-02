@@ -103,11 +103,10 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
       audioContext.sampleRate
     );
 
-    await loadRawAudioProcessor(
-      audioContext.audioWorklet,
+    const worklet = await loadRawAudioProcessor(
+      audioContext,
       workletPaths?.rawAudioProcessor
     );
-    const worklet = new AudioWorkletNode(audioContext, "rawAudioProcessor");
 
     // Configure the processor and set up the message listener
     // before connecting the graph, so no early messages are missed.

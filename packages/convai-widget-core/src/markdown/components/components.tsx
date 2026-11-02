@@ -145,23 +145,18 @@ MemoStrong.displayName = "MarkdownStrong";
 
 type AProps = WithNode<JSX.IntrinsicElements["a"]> & { href?: string };
 const MemoA = memo<AProps>(
-  ({ children, className, href, node, ...props }: AProps) => {
-    const isIncomplete = href === "streamdown:incomplete-link";
-
-    return (
-      <a
-        className={cn("wrap-anywhere font-medium underline", className)}
-        data-incomplete={isIncomplete}
-        data-streamdown="link"
-        href={href}
-        rel="noreferrer"
-        target="_blank"
-        {...props}
-      >
-        {children}
-      </a>
-    );
-  },
+  ({ children, className, href, node, ...props }: AProps) => (
+    <a
+      className={cn("wrap-anywhere font-medium underline", className)}
+      data-streamdown="link"
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+      {...props}
+    >
+      {children}
+    </a>
+  ),
   (p, n) => sameClassAndNode(p, n) && p.href === n.href
 );
 MemoA.displayName = "MarkdownA";

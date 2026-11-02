@@ -17,6 +17,7 @@ import type { MarkdownLinkConfig } from "../contexts/widget-config";
 import { parseMarkdownIntoBlocks } from "./utils/parse-blocks";
 import { parseIncompleteMarkdown } from "./utils/parse-incomplete-markdown";
 import { rehypeAudioTags } from "./utils/rehype-audio-tags";
+import { rehypeUnwrapIncompleteLinks } from "./utils/rehype-unwrap-incomplete-links";
 import { cn } from "../utils/cn";
 import { ParsersContext, parserConfig } from "./utils/highlighter";
 
@@ -53,6 +54,8 @@ function createRehypePlugins(
   ];
 
   return [
+    // Before sanitize and harden, which would strip or block the placeholder href
+    rehypeUnwrapIncompleteLinks,
     rehypeRaw,
     [
       rehypeSanitize,

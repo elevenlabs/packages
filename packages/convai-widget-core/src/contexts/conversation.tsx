@@ -43,6 +43,7 @@ import {
   type NavigationResumeRecord,
 } from "../utils/navigationResume";
 import { SpeechReveal } from "../utils/speechReveal";
+import { AgentThinking } from "../utils/agentThinking";
 
 const FIRST_MESSAGE_EVENT_ID = 1;
 
@@ -507,12 +508,18 @@ function useConversationSetup() {
 
     const transcript = signal<TranscriptEntry[]>(firstMessageEntries());
     const speechReveal = new SpeechReveal(transcript);
+    const agentThinking = new AgentThinking();
     const conversationIndex = signal(0);
     const conversationTextOnly = signal<boolean | null>(null);
     const isAgentTyping = signal(false);
     const isExternalAgentMode = signal(false);
     // Whether the AI agent owes a reply to the user's last message
     const isAwaitingReply = signal(false);
+    // Voice calls only, and not while a human agent has taken over
+    const onUserTurnEnded = () => {
+      if (conversationTextOnly.peek() === false && !isExternalAgentMode.peek())
+        agentThinking.onUserTurnEnded();
+    };
     const queueStatus = signal<string | null>(null);
     // Unknown statuses mean "not held" so a new backend status cannot lock the UI.
     const isHeldInQueue = computed(
@@ -578,6 +585,7 @@ function useConversationSetup() {
       transcript,
       isAgentTyping,
       isAwaitingReply,
+      isAgentThinking: agentThinking.isThinking,
       isExternalAgentMode,
       queueStatus,
       isWaitingForAgent,
@@ -744,6 +752,10 @@ function useConversationSetup() {
             : []),
         ];
         isAwaitingReply.value = !!initialMessage;
+        // WebRTC reports no playback, so its messages are shown in full
+        const transcriptSpeechSync =
+          !!widgetConfig.value.transcript_speech_sync_enabled &&
+          processedConfig.connectionType !== "webrtc";
 
         let lock: Promise<Conversation> | null = null;
         try {
@@ -752,6 +764,7 @@ function useConversationSetup() {
             onModeChange: props => {
               mode.value = props.mode;
               speechReveal.onModeChange(props.mode);
+              agentThinking.onModeChange(props.mode);
             },
             onStatusChange: props => {
               status.value = props.status;
@@ -770,13 +783,24 @@ function useConversationSetup() {
               // as the message that triggered the resume.
               transcript.value = [
                 ...rows.map(
-                  (row): TranscriptEntry => ({
-                    type: "message",
-                    role: row.role,
-                    message: row.text,
-                    isText: true,
-                    conversationIndex: conversationIndex.peek(),
-                  })
+                  ({ role, text, rich_content }): TranscriptEntry =>
+                    rich_content
+                      ? {
+                          type: "rich_content",
+                          component: rich_content.component,
+                          props: rich_content.props,
+                          richContentId: rich_content.rich_content_id,
+                          // No turn speaks under 0, so the card is never held back.
+                          eventId: 0,
+                          conversationIndex: conversationIndex.peek(),
+                        }
+                      : {
+                          type: "message",
+                          role,
+                          message: text,
+                          isText: true,
+                          conversationIndex: conversationIndex.peek(),
+                        }
                 ),
                 ...transcript.peek(),
               ];
@@ -841,6 +865,7 @@ function useConversationSetup() {
 
               // The agent is done talking once the user has replied
               speechReveal.finishAll();
+              onUserTurnEnded();
 
               const currentTranscript = transcript.peek();
               transcript.value = [
@@ -937,18 +962,21 @@ function useConversationSetup() {
               }
             },
             onAudioAlignment: () => {
-              // WebRTC reports no playback, so its messages are shown in full
-              if (processedConfig.connectionType !== "webrtc") {
+              if (transcriptSpeechSync) {
                 speechReveal.onAlignmentReceived();
               }
             },
             onAudioAlignmentPlayback: ({ event_id, alignment }) => {
-              speechReveal.onAlignmentPlayback(event_id, alignment);
+              if (transcriptSpeechSync) {
+                speechReveal.onAlignmentPlayback(event_id, alignment);
+              }
             },
             onInterruption: ({ event_id }) => {
               speechReveal.onInterruption(event_id);
+              agentThinking.onInterruption();
             },
             onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
+              agentThinking.onToolRequest();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -961,6 +989,7 @@ function useConversationSetup() {
               ];
             },
             onAgentToolResponse: ({ tool_call_id, is_error, event_id }) => {
+              agentThinking.onToolResponse();
               transcript.value = [
                 ...transcript.peek(),
                 {
@@ -996,6 +1025,7 @@ function useConversationSetup() {
             onExternalAgentConnected: () => {
               isExternalAgentMode.value = true;
               isAwaitingReply.value = false;
+              agentThinking.reset();
             },
             onExternalAgentDisconnected: () => {
               setAgentTyping(false);
@@ -1030,6 +1060,7 @@ function useConversationSetup() {
               resetAgentResponseState();
               speechReveal.finishAll();
               speechReveal.reset();
+              agentThinking.reset();
               clearTypingTimer();
               isAgentTyping.value = false;
               isExternalAgentMode.value = false;
@@ -1311,6 +1342,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
+        onUserTurnEnded();
       },
       sendMultimodalMessage: (input: {
         text?: string;
@@ -1335,6 +1367,7 @@ function useConversationSetup() {
           },
         ];
         isAwaitingReply.value = !isExternalAgentMode.peek();
+        onUserTurnEnded();
       },
       sendUserActivity: () => {
         conversationRef.current?.sendUserActivity();

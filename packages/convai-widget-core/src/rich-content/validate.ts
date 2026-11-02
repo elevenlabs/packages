@@ -6,6 +6,7 @@ const MAX_BUTTONS = 3;
 const MAX_CAROUSEL_ITEMS = 5;
 const MAX_TEXT_LENGTH = 500;
 const MAX_URL_LENGTH = 2048;
+export const MAX_RATING = 5;
 
 const Text = z.pipe(
   z.pipe(
@@ -81,6 +82,8 @@ const CarouselItemSchema = z.pipe(
     subtitle: Optional(Text),
     description: Optional(Text),
     image_url: Optional(Link),
+    rating: Optional(z.number().check(z.gte(0), z.lte(MAX_RATING))),
+    review_count: Optional(z.int().check(z.gte(0))),
     buttons: z.catch(z.nullish(z.array(z.unknown())), undefined),
   }),
   z.transform((item): CarouselItem => {
@@ -88,6 +91,10 @@ const CarouselItemSchema = z.pipe(
     if (item.subtitle) card.subtitle = item.subtitle;
     if (item.description) card.description = item.description;
     if (item.image_url) card.imageUrl = item.image_url;
+    if (item.rating != null) {
+      card.rating = item.rating;
+      if (item.review_count != null) card.reviewCount = item.review_count;
+    }
 
     const buttons = parseButtons(item.buttons ?? []);
     if (buttons.length > 0) card.buttons = buttons;
