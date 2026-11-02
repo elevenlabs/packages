@@ -638,4 +638,80 @@ describe("useScribe", () => {
       expect(result.current.status).toBe("disconnected");
     });
   });
+
+  describe("autoConnect", () => {
+    const options = {
+      token: "test-token",
+      modelId: "scribe_v2_realtime",
+      audioFormat: AudioFormat.PCM_16000,
+      sampleRate: 16000,
+      autoConnect: true,
+    };
+
+    it("finishes with the replacement connection under React StrictMode", () => {
+      const first = createMockConnection();
+      const second = createMockConnection();
+      vi.mocked(Scribe.connect).mockReset();
+      vi.mocked(Scribe.connect)
+        .mockReturnValueOnce(first)
+        .mockReturnValueOnce(second);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { result } = renderHook(() => useScribe(options), {
+        reactStrictMode: true,
+      });
+
+      // StrictMode runs the mount effect, its cleanup, then the effect again.
+      // The aborted socket is closed, and the remount opens a replacement.
+      expect(first.close).toHaveBeenCalledTimes(1);
+      expect(second.close).not.toHaveBeenCalled();
+      expect(Scribe.connect).toHaveBeenCalledTimes(2);
+      expect(result.current.getConnection()).toBe(second);
+      // The mock never emits SESSION_STARTED, so connecting is the settled status.
+      expect(result.current.status).toBe("connecting");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+
+      // A late close, error, or transcript from the aborted socket must not
+      // clobber the replacement session.
+      act(() => {
+        handlerFor(first, RealtimeEvents.CLOSE)?.();
+        handlerFor(first, RealtimeEvents.ERROR)?.({ error: "socket aborted" });
+        handlerFor(
+          first,
+          RealtimeEvents.SESSION_STARTED
+        )?.({
+          message_type: "session_started",
+        });
+        handlerFor(
+          first,
+          RealtimeEvents.PARTIAL_TRANSCRIPT
+        )?.({
+          text: "from the aborted socket",
+        });
+      });
+
+      expect(result.current.getConnection()).toBe(second);
+      expect(result.current.status).toBe("connecting");
+      expect(result.current.error).toBeNull();
+      expect(result.current.partialTranscript).toBe("");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+      warn.mockRestore();
+    });
+
+    it("connects once without StrictMode and does not close during mount", () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReset();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { result } = renderHook(() => useScribe(options));
+
+      expect(Scribe.connect).toHaveBeenCalledTimes(1);
+      expect(connection.close).not.toHaveBeenCalled();
+      expect(result.current.getConnection()).toBe(connection);
+      expect(result.current.status).toBe("connecting");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+      warn.mockRestore();
+    });
+  });
 });
