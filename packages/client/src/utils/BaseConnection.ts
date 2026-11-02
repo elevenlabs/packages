@@ -95,9 +95,8 @@ export type BaseSessionConfig = {
   /**
    * Websocket-only. `true` starts a resumable conversation and `{ token }`
    * resumes one with the `persistent_session_token` received in
-   * `onConversationMetadata`. `resumeOnly` ends the session when the
-   * connection closes, so the next one resumes it from the stored transcript;
-   * voice conversations need it.
+   * `onConversationMetadata`. `resumeOnly`, needed for voice, ends the
+   * session with its connection so the next one resumes from the transcript.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.

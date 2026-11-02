@@ -114,7 +114,7 @@ export function createNavigationResumeStore(
     }
   };
 
-  // Kept until the continued call connects, so a failed start can retry.
+  // Kept until the continued call connects, so a failed start offers it again.
   const pending = signal(config.peek().persistentSession ? consume() : null);
   const shownAt = Date.now();
 

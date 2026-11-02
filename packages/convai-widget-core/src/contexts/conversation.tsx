@@ -561,7 +561,6 @@ function useConversationSetup() {
       type: "resume_prompt",
       conversationIndex: conversationIndex.peek(),
     });
-    // Kept per page rather than stored, since a voice call only resumes in this tab.
     let voiceSessionToken: string | null = null;
     const initialResume = pendingNavigationResume.peek();
     if (initialResume?.turns.length) {
@@ -605,8 +604,7 @@ function useConversationSetup() {
         // call is a new conversation, so it never resumes.
         const resume =
           resumeToken ?? (initialMessage ? storedSession.read() : null);
-        // A continued call rejoins its session, history and all; any other
-        // call start spends the offer.
+        // Any other call start spends the offer.
         const navigationResume = continuedCall ?? null;
         if (!navigationResume) {
           pendingNavigationResume.value = null;
@@ -620,7 +618,8 @@ function useConversationSetup() {
             continuedCall
           );
         if (resume || navigationResume) {
-          // The conversation was already started behind the terms gate.
+          // The stored conversation was started behind the terms gate, so a
+          // resume does not ask again.
           terms.acceptTerms();
         } else {
           await terms.requestTerms();
@@ -647,8 +646,7 @@ function useConversationSetup() {
 
         // If the user started the conversation with a text message, and the
         // agent supports it, switch to text-only mode. Persistent sessions are
-        // text only, so a resume does the same. A quick reply that continues
-        // an interrupted call stays in voice.
+        // text only, so a resume does the same; a continued call stays voice.
         if (
           (initialMessage &&
             !continuedCall &&
@@ -711,7 +709,7 @@ function useConversationSetup() {
         if (!keepTranscript) {
           isResumedSession.value = !!resume || !!navigationResume;
         }
-        // No greeting is sent on either kind of resume.
+        // No greeting is sent on resume.
         receivedFirstMessageRef.current = !!resume || !!navigationResume;
         speechReveal.reset();
         transcript.value = [
@@ -766,8 +764,8 @@ function useConversationSetup() {
             onConversationHistory: ({ rows }) => {
               if (keepTranscript) return;
               // Replayed rows predate everything this segment has added, such
-              // as the message that triggered the resume. A rejoined call's
-              // history supersedes the turns shown while it was offered.
+              // as the message that triggered the resume, and replace the turns
+              // a continued call showed while it was offered.
               const added = transcript
                 .peek()
                 .slice(navigationResume?.turns.length ?? 0);
@@ -1218,7 +1216,6 @@ function useConversationSetup() {
           pendingNavigationResume.peek()
         );
       },
-      /** Saves a live voice call for the next page. */
       storeNavigationResume: ({ micMuted }: { micMuted: boolean }) => {
         if (!config.peek().persistentSession) return;
         const conversation = conversationRef.current;
@@ -1226,7 +1223,6 @@ function useConversationSetup() {
           navigationResumeStore.carryOver();
           return;
         }
-        // Only a call with a session can be rejoined on the next page.
         if (conversationTextOnly.peek() === true || !voiceSessionToken) return;
         navigationResumeStore.save(transcript.peek(), {
           micMuted,
