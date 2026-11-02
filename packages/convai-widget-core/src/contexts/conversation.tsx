@@ -622,7 +622,8 @@ function useConversationSetup() {
         let started = false;
         let refusedBeforeStart = false;
         if (resume || navigationResume) {
-          // The conversation was already started behind the terms gate.
+          // The stored conversation was started behind the terms gate, so a
+          // resume does not ask again.
           terms.acceptTerms();
         } else {
           await terms.requestTerms();
@@ -649,8 +650,7 @@ function useConversationSetup() {
 
         // If the user started the conversation with a text message, and the
         // agent supports it, switch to text-only mode. Persistent sessions are
-        // text only, so a resume does the same. A quick reply that continues
-        // an interrupted call stays in voice.
+        // text only, so a resume does the same; a continued call stays voice.
         if (
           (initialMessage &&
             !continuedCall &&
@@ -690,8 +690,7 @@ function useConversationSetup() {
         try {
           processedConfig = triggerCallEvent(
             shadowHost.value ?? element,
-            processedConfig,
-            !!navigationResume
+            processedConfig
           );
         } catch (error) {
           console.error(
@@ -721,7 +720,7 @@ function useConversationSetup() {
         if (!keepTranscript) {
           isResumedSession.value = !!resume || !!navigationResume;
         }
-        // No greeting is sent on either kind of resume.
+        // No greeting is sent on resume.
         receivedFirstMessageRef.current = !!resume || !!navigationResume;
         speechReveal.reset();
         transcript.value = [
@@ -1220,7 +1219,6 @@ function useConversationSetup() {
           pendingNavigationResume.peek()
         );
       },
-      /** Saves a live voice call for the next page. */
       storeNavigationResume: ({ micMuted }: { micMuted: boolean }) => {
         if (!config.peek().persistentSession) return;
         const conversation = conversationRef.current;
@@ -1404,14 +1402,13 @@ async function getOrCreateUserId(): Promise<string> {
 
 function triggerCallEvent(
   element: HTMLElement | null,
-  config: SessionConfig,
-  navigationResume: boolean
+  config: SessionConfig
 ): SessionConfig {
   try {
     const event = new CustomEvent("elevenlabs-convai:call", {
       bubbles: true,
       composed: true,
-      detail: { config, navigationResume },
+      detail: { config },
     });
     element?.dispatchEvent(event);
     return event.detail.config;

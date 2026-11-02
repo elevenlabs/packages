@@ -2,4 +2,4 @@
 "@elevenlabs/convai-widget-core": minor
 ---
 
-With `persistent-session` enabled, voice calls can now resume after a same-tab page navigation. The widget shows the previous turns and a "Resume talking?" button that continues the call. The agent skips its greeting when it allows first message overrides, and greets again otherwise.
+With `persistent-session` enabled, a voice call can be resumed after a page navigation: the next page shows the conversation so far with "Resume talking?". Resuming starts a new conversation that continues from those turns, and skips the greeting if the agent allows first message overrides.

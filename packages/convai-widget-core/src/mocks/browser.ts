@@ -550,6 +550,11 @@ const codeBlock = true;
     terms_html: undefined,
     first_message: "",
   },
+  navigation_resume_voice_only: {
+    ...BASIC_CONFIG,
+    terms_html: undefined,
+    first_message: "",
+  },
   navigation_resume_rich_content: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
@@ -1026,7 +1031,8 @@ export const Worker = setupWorker(
       }
       if (
         agentId === "navigation_resume" ||
-        agentId === "navigation_resume_text"
+        agentId === "navigation_resume_text" ||
+        agentId === "navigation_resume_voice_only"
       ) {
         const connection = navigationResumeConnections++;
         client.send(

@@ -24,7 +24,8 @@ type ResumeAgent =
   | "navigation_resume_text"
   | "navigation_resume_greeting"
   | "navigation_resume_no_override"
-  | "navigation_resume_rich_content";
+  | "navigation_resume_rich_content"
+  | "navigation_resume_voice_only";
 
 function mountWidget(
   agentId: ResumeAgent = "navigation_resume",
@@ -77,40 +78,28 @@ describe("Resuming a call after a navigation", () => {
   });
 
   it("offers the call back on the next page and continues it", async () => {
-    let sawResume: boolean | undefined;
-    const onCall = (event: Event) => {
-      sawResume = (event as CustomEvent).detail.navigationResume;
-    };
-    document.addEventListener("elevenlabs-convai:call", onCall);
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
 
-    try {
-      const firstMount = mountWidget();
-      await startCall();
-      await expect
-        .element(page.getByText("Looking at womens boots"))
-        .toBeInTheDocument();
-      expect(sawResume).toBe(false);
-      navigateAway(firstMount);
+    mountWidget();
+    await expect.element(resumeButton()).toBeInTheDocument();
+    expect(page.getByText("Here are the mens casual shoes").all()).toHaveLength(
+      0
+    );
 
-      mountWidget();
-      await expect.element(resumeButton()).toBeInTheDocument();
-      expect(
-        page.getByText("Here are the mens casual shoes").all()
-      ).toHaveLength(0);
-
-      await resumeButton().click();
-      await expect
-        .element(page.getByText("Here are the mens casual shoes"))
-        .toBeInTheDocument();
-      await expect
-        .element(page.getByText("Looking at womens boots"))
-        .toBeInTheDocument();
-      expect(resumeButton().all()).toHaveLength(0);
-      expect(sawResume).toBe(true);
-      await expectContextualUpdate("Looking at womens boots");
-    } finally {
-      document.removeEventListener("elevenlabs-convai:call", onCall);
-    }
+    await resumeButton().click();
+    await expect
+      .element(page.getByText("Here are the mens casual shoes"))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+    await expectContextualUpdate("Looking at womens boots");
   });
 
   it("does nothing when the option is off", async () => {
@@ -225,6 +214,27 @@ describe("Resuming a call after a navigation", () => {
       .toHaveLength(2);
     expect(page.getByText("not allowed by config").all()).toHaveLength(0);
     await expectContextualUpdate("Welcome to the shop");
+  });
+
+  it("offers the call back from the call button without a transcript", async () => {
+    const firstMount = mountWidget("navigation_resume_voice_only");
+    await startCall();
+    // Nothing shows that the call connected, so navigate once it can be saved.
+    await expect
+      .poll(() => {
+        window.dispatchEvent(new Event("pagehide"));
+        return storedRecord("navigation_resume_voice_only");
+      })
+      .not.toBeNull();
+    firstMount.remove();
+
+    mountWidget("navigation_resume_voice_only");
+    await resumeButton().click();
+
+    const endButton = page.getByRole("button", { name: "End" });
+    await expect.element(endButton).toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+    await endButton.click();
   });
 
   it("keeps the offer through quick navigations, not a long stay", async () => {
