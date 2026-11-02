@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { Button } from "../components/Button";
 import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { InOutTransition } from "../components/InOutTransition";
@@ -298,6 +299,31 @@ function QueueTimeoutMessage() {
   );
 }
 
+/** A button rather than a reconnect, since the mic needs a user gesture. */
+function ResumePromptMessage() {
+  const text = useTextContents();
+  const { continueNavigationCall, endSession } = useConversation();
+
+  return (
+    <div className="px-8 flex justify-center gap-2 transition-opacity duration-200 data-hidden:opacity-0">
+      <Button
+        variant="primary"
+        icon="phone"
+        onClick={e => void continueNavigationCall(e.currentTarget)}
+      >
+        {text.resume_call}
+      </Button>
+      <Button
+        variant="outline"
+        icon="phone-off"
+        onClick={() => void endSession()}
+      >
+        {text.end_call}
+      </Button>
+    </div>
+  );
+}
+
 interface ModeToggleMessageProps {
   entry: Extract<DisplayTranscriptEntry, { type: "mode_toggle" }>;
 }
@@ -420,6 +446,9 @@ function getMessageComponent(entry: DisplayTranscriptEntry) {
   }
   if (entry.type === "queue_timeout") {
     return <QueueTimeoutMessage />;
+  }
+  if (entry.type === "resume_prompt") {
+    return <ResumePromptMessage />;
   }
   if (entry.type === "typing_indicator") {
     return <TypingIndicatorMessage entry={entry} />;
