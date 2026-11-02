@@ -93,14 +93,16 @@ export type BaseSessionConfig = {
   userId?: string;
   environment?: string;
   /**
-   * Text-only, websocket-only. `true` starts a resumable conversation and
-   * `{ token }` resumes one with the `persistent_session_token` received in
-   * `onConversationMetadata`.
+   * Websocket-only. `true` starts a resumable conversation and `{ token }`
+   * resumes one with the `persistent_session_token` received in
+   * `onConversationMetadata`. `resumeOnly` ends the session when the
+   * connection closes, so the next one resumes it from the stored transcript;
+   * voice conversations need it.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.
    */
-  persistentSession?: true | { token: string };
+  persistentSession?: true | { token?: string; resumeOnly?: boolean };
 };
 
 export type ConnectionType = "websocket" | "webrtc";

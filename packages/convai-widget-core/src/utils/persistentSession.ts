@@ -28,16 +28,20 @@ export function isFinalDisconnect(details: DisconnectionDetails): boolean {
 
 export function configurePersistentSession(
   config: SessionConfig,
-  { resume, unavailable }: { resume: string | null; unavailable: boolean }
+  {
+    resume,
+    resumeOnly,
+    unavailable,
+  }: { resume: string | null; resumeOnly: boolean; unavailable: boolean }
 ) {
-  if (resume) {
-    config.persistentSession = { token: resume };
+  if (resume || (resumeOnly && config.persistentSession)) {
+    config.persistentSession = { token: resume ?? undefined, resumeOnly };
   }
-  if (!config.textOnly || unavailable) {
+  if (unavailable) {
     delete config.persistentSession;
   } else if (config.persistentSession && config.agentId) {
     // Persistent sessions are websocket only; an agent with use_rtc would
-    // otherwise route this text chat over the WebRTC data channel.
+    // otherwise route this conversation over WebRTC.
     config.connectionType = "websocket";
   }
 }
