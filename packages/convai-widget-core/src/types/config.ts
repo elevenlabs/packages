@@ -9,6 +9,15 @@ export function parseVariant(variant: string | undefined): Variant {
     : Variants[0];
 }
 
+export const DefaultSizes = ["compact", "expanded"] as const;
+export type DefaultSize = (typeof DefaultSizes)[number];
+
+export function parseDefaultSize(size: string | undefined): DefaultSize {
+  return DefaultSizes.includes(size as DefaultSize)
+    ? (size as DefaultSize)
+    : DefaultSizes[0];
+}
+
 export const Placements = [
   "top-left",
   "top",
@@ -91,6 +100,7 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
+  default_size?: DefaultSize;
   transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;

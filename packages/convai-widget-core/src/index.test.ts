@@ -1094,6 +1094,51 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("default size", () => {
+    const sheetVariant = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
+
+    afterEach(() => page.viewport(414, 896));
+
+    it("should open at the expanded size on desktop", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "expanded",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("expanded");
+    });
+
+    it("should open fullscreen on mobile even when always expanded", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "expanded",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("fullscreen");
+    });
+
+    it("should fall back to compact for an unknown size", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "huge",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("compact");
+    });
+  });
+
   describe("markdown rendering", () => {
     beforeEach(() => {
       setupWebComponent({
