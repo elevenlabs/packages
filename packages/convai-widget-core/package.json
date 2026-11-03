@@ -60,7 +60,7 @@
     "hast-util-from-lezer": "^0.5.4",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "marked": "^18.0.3",
-    "preact": "^10.26.5",
+    "preact": "^11.1.0",
     "preact-custom-element": "^4.3.0",
     "rehype-harden": "^1.1.8",
     "rehype-raw": "^7.0.0",
