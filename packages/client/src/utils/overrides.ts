@@ -5,10 +5,16 @@ import { sourceInfo } from "../sourceInfo.js";
 export const CONVERSATION_INITIATION_CLIENT_DATA_TYPE =
   "conversation_initiation_client_data";
 
+let avatarVideo = false;
+
+export function enableAvatarVideo(): void {
+  avatarVideo = true;
+}
+
 export function constructOverrides(
   config: SessionConfig
 ): InitiationClientDataEvent {
-  const overridesEvent: InitiationClientDataEvent = {
+  const overridesEvent: InitiationClientDataEvent & { avatar_video?: true } = {
     type: CONVERSATION_INITIATION_CLIENT_DATA_TYPE,
   };
 
@@ -59,6 +65,10 @@ export function constructOverrides(
       mocked_tool_names: config.toolMockConfig.mockedToolNames,
       fallback_strategy: config.toolMockConfig.fallbackStrategy,
     };
+  }
+
+  if (avatarVideo) {
+    overridesEvent.avatar_video = true;
   }
 
   return overridesEvent;

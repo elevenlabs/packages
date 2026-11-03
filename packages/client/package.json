@@ -13,6 +13,7 @@
       "default": "./dist/index.js"
     },
     "./internal": "./dist/internal.js",
+    "./experimental": "./dist/experimental.js",
     "./internal/unity": "./dist/internal/unity.js",
     "./worklets/*": "./worklets/*"
   },
