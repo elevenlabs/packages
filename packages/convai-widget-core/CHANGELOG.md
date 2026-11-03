@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.24.0
+
+### Minor Changes
+
+- a141a02: With `persistent-session` enabled, a voice call can be resumed after a page navigation: the next page shows the conversation so far with "Resume talking?". Resuming starts a new conversation that continues from those turns, and skips the greeting if the agent allows first message overrides.
+
 ## 0.23.0
 
 ### Minor Changes
