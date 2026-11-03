@@ -1,5 +1,13 @@
 # @elevenlabs/react
 
+## 1.20.3
+
+### Patch Changes
+
+- 37bdc21: Fix `useScribe` so `autoConnect` keeps one open session under React StrictMode.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
 ## 1.20.2
 
 ### Patch Changes
