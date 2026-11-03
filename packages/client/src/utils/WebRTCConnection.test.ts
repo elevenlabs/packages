@@ -1231,7 +1231,7 @@ describe("WebRTCConnection", () => {
 
       expect(videoTracks).toEqual([null, avatarVideo.mediaStreamTrack, null]);
       expect(onDisconnect).not.toHaveBeenCalled();
-      expect(modes).toEqual(["speaking"]);
+      expect(modes).toEqual(["listening", "speaking"]);
       expect(adapter.setupOutputAnalysis.mock.lastCall?.[0]).toBe(agentAudio);
     });
   });

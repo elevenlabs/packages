@@ -1,4 +1,4 @@
-// Unstable: anything here may change or disappear in any release.
+// TODO(AVE-792): replace with the public avatar video API.
 import type { Conversation } from "./index.js";
 import { WebRTCConnection } from "./utils/WebRTCConnection.js";
 

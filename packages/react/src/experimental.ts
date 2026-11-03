@@ -1,4 +1,4 @@
-// Unstable: anything here may change or disappear in any release.
+// TODO(AVE-792): replace with the public avatar video API.
 import { useEffect, useState } from "react";
 import { onAvatarVideoTrack } from "@elevenlabs/client/experimental";
 import { useRawConversation } from "./conversation/ConversationContext.js";

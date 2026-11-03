@@ -509,6 +509,7 @@ export class WebRTCConnection extends BaseConnection {
         if (isAvatar(participant)) {
           this.avatarIdentity = null;
           this.setAvatarVideoTrack(null);
+          this.updateMode("listening");
           if (this.agentAudioTrack) {
             void this.setupAudioCapture(this.agentAudioTrack);
           }
@@ -545,7 +546,7 @@ export class WebRTCConnection extends BaseConnection {
     this.avatarVideoTrackListeners.forEach(listener => listener(track));
   }
 
-  // Reached through `@elevenlabs/client/experimental` only.
+  // TODO(AVE-792): reached through `./experimental` until the public API ships.
   private onAvatarVideoTrack(
     callback: (track: MediaStreamTrack | null) => void
   ): () => void {
