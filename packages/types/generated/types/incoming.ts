@@ -29,6 +29,7 @@ export type {
   McpToolCallClientEvent,
   PartialTranscriptMessage,
   PingEvent,
+  RedactedTranscriptMessage,
   RichContentClientEvent,
   ScribeAuthErrorMessage,
   ScribeChunkSizeExceededErrorMessage,

@@ -6,10 +6,13 @@ import type {
   MicrophoneOptions,
   AudioFormat,
   CommitStrategy,
+  EntityDetectionOption,
+  EntityRedactionMode,
   PartialTranscriptMessage,
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
   EditedTranscriptMessage,
+  RedactedTranscriptMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -70,6 +73,8 @@ export interface TranscriptSegment {
   words?: WordTimestamp[];
   /** Edited transcript text (only present when transcriptEdit is set and the edit has arrived) */
   editedText?: string;
+  /** Redacted transcript text (only present when entityRedaction is set and the redaction has arrived) */
+  redactedText?: string;
 }
 
 export interface ScribeCallbacks {
@@ -83,6 +88,11 @@ export interface ScribeCallbacks {
   }) => void;
   /** Called with the edited version of a committed transcript (only when transcriptEdit is set) */
   onEditedTranscript?: (data: { text: string; edited_text: string }) => void;
+  /** Called with the redacted version of a committed transcript (only when entityRedaction is set) */
+  onRedactedTranscript?: (data: {
+    text: string;
+    redacted_text: string;
+  }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
@@ -151,10 +161,23 @@ export interface ScribeHookOptions extends ScribeCallbacks {
    * Natural-language instruction applied to each committed transcript (max 2000
    * characters). The edited text is delivered through `onEditedTranscript` and attached
    * to the matching committed segment as `editedText`. Cannot be combined with entity
-   * detection. Adds a 30% premium to the base transcription cost, billed for at least 10
+   * detection or redaction. Adds a 30% premium to the base transcription cost, billed for at least 10
    * seconds of audio per committed transcript.
    */
   transcriptEdit?: string;
+
+  /**
+   * Redact entities from committed transcripts. Accepts `"all"`, a single entity type or
+   * category, or a list of types/categories. The redacted text is delivered through
+   * `onRedactedTranscript` and attached to the matching committed segment as `redactedText`.
+   * Cannot be combined with `transcriptEdit`.
+   */
+  entityRedaction?: EntityDetectionOption | EntityDetectionOption[];
+  /**
+   * How redacted entities are marked in the redacted text. Only used with `entityRedaction`.
+   * @default "enumerated_entity_type"
+   */
+  entityRedactionMode?: EntityRedactionMode;
 
   /**
    * Enable background speech filtering to reduce false activations from nearby
@@ -214,6 +237,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onCommittedTranscript,
     onCommittedTranscriptWithTimestamps,
     onEditedTranscript,
+    onRedactedTranscript,
     onError,
     onAuthError,
     onQuotaExceededError,
@@ -259,6 +283,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     keyterms: defaultKeyterms,
     noVerbatim: defaultNoVerbatim,
     transcriptEdit: defaultTranscriptEdit,
+    entityRedaction: defaultEntityRedaction,
+    entityRedactionMode: defaultEntityRedactionMode,
     filterBackgroundAudio: defaultFilterBackgroundAudio,
 
     // Logging
@@ -353,6 +379,10 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
           noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
           transcriptEdit:
             runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
+          entityRedaction:
+            runtimeOptions.entityRedaction ?? defaultEntityRedaction,
+          entityRedactionMode:
+            runtimeOptions.entityRedactionMode ?? defaultEntityRedactionMode,
           filterBackgroundAudio:
             runtimeOptions.filterBackgroundAudio ??
             defaultFilterBackgroundAudio,
@@ -462,7 +492,23 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               languageCode: message.language_code,
               words: message.words,
             };
-            setCommittedTranscripts(prev => [...prev, segment]);
+            setCommittedTranscripts(prev => {
+              const sameText = prev.filter(
+                existing => existing.text === message.text
+              );
+              const occurrence = sameText.filter(
+                existing => "words" in existing
+              ).length;
+              const committed = sameText.filter(
+                existing => !("words" in existing)
+              )[occurrence];
+              return [
+                ...prev,
+                committed?.redactedText !== undefined
+                  ? { ...segment, redactedText: committed.redactedText }
+                  : segment,
+              ];
+            });
             setPartialTranscript("");
             onCommittedTranscriptWithTimestamps?.(message);
           })
@@ -483,6 +529,33 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
               )
             );
             onEditedTranscript?.(message);
+          })
+        );
+
+        connection.on(
+          RealtimeEvents.REDACTED_TRANSCRIPT,
+          onCurrentConnection((data: unknown) => {
+            const message = data as RedactedTranscriptMessage;
+            setCommittedTranscripts(prev => {
+              const occurrence = prev.filter(
+                segment =>
+                  segment.text === message.text &&
+                  !("words" in segment) &&
+                  segment.redactedText !== undefined
+              ).length;
+              let committed = 0;
+              let timestamped = 0;
+              return prev.map(segment => {
+                if (segment.text !== message.text) {
+                  return segment;
+                }
+                const index = "words" in segment ? timestamped++ : committed++;
+                return index === occurrence
+                  ? { ...segment, redactedText: message.redacted_text }
+                  : segment;
+              });
+            });
+            onRedactedTranscript?.(message);
           })
         );
 
@@ -664,6 +737,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultKeyterms,
       defaultNoVerbatim,
       defaultTranscriptEdit,
+      defaultEntityRedaction,
+      defaultEntityRedactionMode,
       defaultFilterBackgroundAudio,
       defaultEnableLogging,
       onSessionStarted,
@@ -671,6 +746,7 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       onCommittedTranscript,
       onCommittedTranscriptWithTimestamps,
       onEditedTranscript,
+      onRedactedTranscript,
       onError,
       onAuthError,
       onQuotaExceededError,
