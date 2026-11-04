@@ -1,4 +1,7 @@
-import type { SessionConfig } from "./BaseConnection.js";
+import type {
+  ConversationConfigOverrideTts,
+  SessionConfig,
+} from "./BaseConnection.js";
 import type { InitiationClientDataEvent } from "./events.js";
 import { sourceInfo } from "../sourceInfo.js";
 
@@ -21,7 +24,14 @@ export function constructOverrides(
       },
       tts: {
         voice_id: config.overrides.tts?.voiceId,
-        model_id: config.overrides.tts?.modelId,
+        // Ids outside the generated union are forwarded as-is; the API is the
+        // source of truth for which models are accepted.
+        ...(config.overrides.tts?.modelId !== undefined
+          ? {
+              model_id: config.overrides.tts
+                .modelId as ConversationConfigOverrideTts["model_id"],
+            }
+          : {}),
         speed: config.overrides.tts?.speed,
         stability: config.overrides.tts?.stability,
         similarity_boost: config.overrides.tts?.similarityBoost,
