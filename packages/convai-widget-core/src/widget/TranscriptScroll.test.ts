@@ -12,7 +12,7 @@ describe("Transcript scroll", () => {
   beforeAll(() => Worker.start({ quiet: true }));
   afterAll(() => Worker.stop());
 
-  it("follows products that arrive after an upward scroll that went nowhere", async () => {
+  it("follows new content after an upward scroll that went nowhere", async () => {
     setupWebComponent({ "agent-id": "product_carousel", variant: "compact" });
 
     await page
