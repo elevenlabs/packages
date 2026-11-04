@@ -41,6 +41,16 @@ const PERSISTENT_SESSION_AGENT: WidgetConfig = {
   first_message: "Hello from the agent",
 };
 
+const TEXT_CHAT_CONFIG: WidgetConfig = {
+  ...BASIC_CONFIG,
+  text_only: true,
+  transcript_enabled: true,
+  text_input_enabled: true,
+  terms_html: undefined,
+  default_expanded: true,
+  first_message: "",
+};
+
 export const AGENTS = {
   basic: BASIC_CONFIG,
   text_only: {
@@ -479,15 +489,8 @@ const codeBlock = true;
     ...PERSISTENT_SESSION_AGENT,
     terms_html: "Test terms",
   },
-  agent_attachments: {
-    ...BASIC_CONFIG,
-    text_only: true,
-    transcript_enabled: true,
-    text_input_enabled: true,
-    terms_html: undefined,
-    default_expanded: true,
-    first_message: "",
-  },
+  agent_attachments: TEXT_CHAT_CONFIG,
+  product_carousel: TEXT_CHAT_CONFIG,
   text_and_voice: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -1039,6 +1042,7 @@ export const Worker = setupWorker(
         agentId !== "persistent_session_voice" &&
         agentId !== "persistent_session_terms" &&
         agentId !== "agent_attachments" &&
+        agentId !== "product_carousel" &&
         agentId !== "navigation_resume_text"
       ) {
         const agentResponse =
@@ -2198,6 +2202,39 @@ export const Worker = setupWorker(
             },
           })
         );
+      }
+      if (agentId === "product_carousel") {
+        // Products land a moment after the reply, like a tool call would.
+        client.addEventListener("message", async event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Here are some shoes",
+                event_id: 2,
+              },
+            })
+          );
+          await new Promise(resolve => setTimeout(resolve, 600));
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: "rc_products",
+                component: "carousel",
+                props: {
+                  items: [
+                    { title: "Albany", description: "$139.95\n".repeat(40) },
+                  ],
+                },
+                event_id: 2,
+              },
+            })
+          );
+        });
       }
       if (agentId === "agent_attachments") {
         // Human-agent replies relay files: the first turn pairs text with an
