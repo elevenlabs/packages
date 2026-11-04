@@ -29,6 +29,12 @@ export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 export type OnOutgoingMessageCallback = (event: any) => void;
 
+type KnownTtsModelId = NonNullable<ConversationConfigOverrideTts["model_id"]>;
+
+// `string & {}` keeps the known literals from collapsing into `string`, so
+// editors still autocomplete them while arbitrary strings remain assignable.
+type TtsModelId = KnownTtsModelId | (string & {});
+
 export type BaseSessionConfig = {
   origin?: string;
   authorization?: string;
@@ -57,7 +63,14 @@ export type BaseSessionConfig = {
     };
     tts?: {
       voiceId?: string;
-      modelId?: ConversationConfigOverrideTts["model_id"];
+      /**
+       * TTS model for this conversation. Documented model ids are suggested by
+       * the editor; any other string is accepted so that newly released or
+       * deprecated models are never rejected by the compiler, but the API may
+       * reject ids outside the documented list at runtime. Prefer a
+       * documented model id.
+       */
+      modelId?: TtsModelId;
       speed?: number;
       stability?: number;
       similarityBoost?: number;
