@@ -62,6 +62,31 @@ describe("constructOverrides", () => {
     });
   });
 
+  it("serializes the documented tts model values", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: { tts: { modelId: "eleven_v3_conversational" } },
+    });
+
+    expect(event.conversation_config_override?.tts).toMatchObject({
+      model_id: "eleven_v3_conversational",
+    });
+    expect(
+      JSON.parse(JSON.stringify(event)).conversation_config_override.tts
+    ).toEqual({ model_id: "eleven_v3_conversational" });
+  });
+
+  it("omits the model_id key entirely when modelId is not provided", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      overrides: { tts: { voiceId: "voice_123" } },
+    });
+
+    expect(event.conversation_config_override?.tts).not.toHaveProperty(
+      "model_id"
+    );
+  });
+
   it("leaves tts model_id undefined when modelId is not provided", () => {
     const event = constructOverrides({
       agentId: "agent_123",
