@@ -30,4 +30,41 @@ describe("Transcript scroll", () => {
       .poll(() => distanceFromBottom(reply.element()))
       .toBeLessThanOrEqual(16);
   });
+
+  it("offers a jump to products that arrive after scrolling up", async () => {
+    setupWebComponent({ "agent-id": "product_carousel", variant: "compact" });
+    const textInput = page.getByRole("textbox", {
+      name: "Text message input",
+    });
+    const jumpButton = page.getByRole("button", { name: "1 new message" });
+
+    await textInput.fill("show me shoes");
+    await userEvent.keyboard("{Enter}");
+    await expect
+      .element(page.getByText("Here are some shoes"))
+      .toBeInTheDocument();
+    releaseProducts();
+    await expect.element(page.getByText("Albany")).toBeInTheDocument();
+
+    await textInput.fill("show me more");
+    await userEvent.keyboard("{Enter}");
+    const reply = page.getByText("Here are some shoes").nth(1);
+    await expect.element(reply).toBeInTheDocument();
+    const container = reply.element().closest(".overflow-y-auto")!;
+    const scrolled = new Promise(resolve =>
+      container.addEventListener("scroll", resolve, { once: true })
+    );
+    await userEvent.wheel(container, { delta: { y: -5000 } });
+    await scrolled;
+    releaseProducts();
+
+    await expect.element(page.getByText("Albany").nth(1)).toBeInTheDocument();
+    expect(distanceFromBottom(container)).toBeGreaterThan(16);
+
+    await jumpButton.click();
+    await expect
+      .poll(() => distanceFromBottom(container))
+      .toBeLessThanOrEqual(16);
+    await expect.element(jumpButton).not.toBeInTheDocument();
+  });
 });
