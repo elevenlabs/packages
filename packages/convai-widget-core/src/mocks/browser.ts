@@ -607,6 +607,14 @@ const persistentConversations = new Map<string, PersistentConversation>();
 
 const contextualUpdates: string[] = [];
 
+let sendProducts: (() => void) | null = null;
+
+/** Sends the pending `product_carousel` products, so tests set up first. */
+export function releaseProducts() {
+  sendProducts?.();
+  sendProducts = null;
+}
+
 export function receivedContextualUpdates() {
   return [...contextualUpdates];
 }
@@ -2204,32 +2212,31 @@ export const Worker = setupWorker(
         );
       }
       if (agentId === "product_carousel") {
-        // Products land a moment after the reply, like a tool call would.
-        client.addEventListener("message", async event => {
+        client.addEventListener("message", event => {
           const data =
             typeof event.data === "string" ? JSON.parse(event.data) : null;
           if (data?.type !== "user_message") return;
+          sendProducts = () =>
+            client.send(
+              JSON.stringify({
+                type: "rich_content",
+                rich_content: {
+                  rich_content_id: "rc_products",
+                  component: "carousel",
+                  props: {
+                    items: [
+                      { title: "Albany", description: "$139.95\n".repeat(40) },
+                    ],
+                  },
+                  event_id: 2,
+                },
+              })
+            );
           client.send(
             JSON.stringify({
               type: "agent_response",
               agent_response_event: {
                 agent_response: "Here are some shoes",
-                event_id: 2,
-              },
-            })
-          );
-          await new Promise(resolve => setTimeout(resolve, 600));
-          client.send(
-            JSON.stringify({
-              type: "rich_content",
-              rich_content: {
-                rich_content_id: "rc_products",
-                component: "carousel",
-                props: {
-                  items: [
-                    { title: "Albany", description: "$139.95\n".repeat(40) },
-                  ],
-                },
                 event_id: 2,
               },
             })

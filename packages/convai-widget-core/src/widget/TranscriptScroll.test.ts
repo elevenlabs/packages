@@ -1,6 +1,6 @@
 import { page, userEvent } from "vitest/browser";
 import { describe, it, beforeAll, expect, afterAll } from "vitest";
-import { Worker } from "../mocks/browser";
+import { releaseProducts, Worker } from "../mocks/browser";
 import { setupWebComponent } from "../mocks/web-component";
 
 function distanceFromBottom(element: Element) {
@@ -23,6 +23,7 @@ describe("Transcript scroll", () => {
     const reply = page.getByText("Here are some shoes");
     await expect.element(reply).toBeInTheDocument();
     await userEvent.wheel(reply, { direction: "up" });
+    releaseProducts();
 
     await expect.element(page.getByText("Albany")).toBeInTheDocument();
     await expect
