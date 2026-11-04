@@ -196,6 +196,8 @@ export const DefaultTextContents = {
   rich_content_unavailable: "This content could not be displayed",
   carousel_previous: "Previous",
   carousel_next: "Next",
+  new_message: "1 new message",
+  new_messages: "{count} new messages",
 };
 
 export const TextKeys = Object.keys(

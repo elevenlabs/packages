@@ -23,6 +23,11 @@ export function useStickToBottom({
     });
   }, []);
 
+  const jumpToLatest = useCallback(() => {
+    scrollPinned.value = true;
+    scrollToBottom();
+  }, [scrollPinned, scrollToBottom]);
+
   // Gestures only mark intent; unpin once the transcript actually moves up
   const lastUpwardGesture = useRef(0);
   const lastScrollTop = useRef(0);
@@ -119,5 +124,6 @@ export function useStickToBottom({
     contentRef,
     handleScroll,
     firstRender,
+    jumpToLatest,
   };
 }
