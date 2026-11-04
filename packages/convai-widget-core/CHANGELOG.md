@@ -1,5 +1,19 @@
 # @elevenlabs/convai-widget-core
 
+## 0.25.0
+
+### Minor Changes
+
+- 5dc3299: Redesign the voice/text mode toggle as a Voice/Text segmented control, labeled in the expanded widget and icon-only in the compact widget, and add `voice_mode_label` and `text_mode_label` text contents for its labels.
+- 3c69b6f: Add a `default-size` attribute (`compact` or `expanded`) that sets the size the widget's chat opens at.
+- 131ddb9: Show a "new messages" button with a count when messages, like product carousels, arrive while the transcript is scrolled up. The labels can be customized with the `new_message` and `new_messages` text content keys, where `{count}` is replaced with the number of messages.
+
+### Patch Changes
+
+- 81afd10: Keep the transcript scrolling to new messages, like product carousels, after a scroll or swipe that didn't move it.
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/client@1.35.0
+
 ## 0.24.1
 
 ### Patch Changes
