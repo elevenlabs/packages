@@ -61,6 +61,7 @@ export const CustomAttributeList = [
   "show-conversation-id",
   "show-resize-button",
   "mobile-fullscreen",
+  "default-size",
   "transcript-speech-sync",
   "end-confirmation",
   "show-language-selector-on-trigger",
