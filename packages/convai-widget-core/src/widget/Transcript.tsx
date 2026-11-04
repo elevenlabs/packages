@@ -76,7 +76,7 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
           variant="primary"
           icon="arrow-down"
           onClick={jumpToLatest}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 h-10 px-4 border-0 rounded-full shadow-md transition-[opacity,translate] duration-200 data-hidden:opacity-0 data-hidden:translate-y-2"
+          className="absolute z-10 bottom-4 left-1/2 -translate-x-1/2 h-10 px-4 border-0 rounded-full shadow-md transition-[opacity,translate] duration-200 data-hidden:opacity-0 data-hidden:translate-y-2"
         >
           {label}
         </Button>
