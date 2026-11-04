@@ -626,6 +626,24 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  it("switches between voice and text mode with the segmented toggle", async () => {
+    setupWebComponent({ "agent-id": "mode_toggle", variant: "full" });
+    await page.getByRole("button", { name: "Start a call" }).click();
+    await expect.element(page.getByText("Agent response")).toBeInTheDocument();
+
+    const voice = page.getByRole("button", { name: "Voice" });
+    const textButton = page.getByRole("button", { name: "Text", exact: true });
+    await expect.element(voice).toHaveAttribute("aria-pressed", "true");
+    await expect.element(textButton).toHaveAttribute("aria-pressed", "false");
+
+    await textButton.click();
+
+    await expect.element(textButton).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .element(page.getByText("Switched to text mode"))
+      .toBeInTheDocument();
+  });
+
   describe("first message rich content in a voice call", () => {
     it("shows the buttons below the first message", async () => {
       setupWebComponent({ "agent-id": "voice_rich_content", variant: "full" });

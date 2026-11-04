@@ -498,6 +498,13 @@ const codeBlock = true;
     default_expanded: true,
     first_message: "Welcome message",
   },
+  mode_toggle: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    conversation_mode_toggle_enabled: true,
+  },
   text_and_voice_rich_content: {
     ...BASIC_CONFIG,
     text_only: false,
