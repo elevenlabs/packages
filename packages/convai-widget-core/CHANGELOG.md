@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-core
 
+## 0.25.1
+
+### Patch Changes
+
+- b3bf0e4: Show up to 10 cards in a carousel, up from 5.
+
 ## 0.25.0
 
 ### Minor Changes
