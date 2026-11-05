@@ -34,9 +34,13 @@ function clearStashDiscardTimer(): void {
   discardTimer = null;
 }
 
-/** Unlock iOS audio during a user gesture. No-op on non-iOS. */
+/** Unlock iOS audio during a user gesture when Web Audio is available. */
 export function unlockIosAudioForSession(): void {
-  if (!isIosDevice() || stashedAudioContext) {
+  if (
+    !isIosDevice() ||
+    typeof AudioContext === "undefined" ||
+    stashedAudioContext
+  ) {
     return;
   }
 
@@ -54,6 +58,7 @@ export function unlockIosAudioForSession(): void {
 export function installIosAudioUnlockListener(): void {
   if (
     !isIosDevice() ||
+    typeof AudioContext === "undefined" ||
     unlockListenerInstalled ||
     typeof document === "undefined"
   ) {
