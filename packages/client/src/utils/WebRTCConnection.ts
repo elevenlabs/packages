@@ -38,6 +38,7 @@ import {
   type WebRTCAudioAdapter,
 } from "../WebRTCAudioAdapter.js";
 import type { AudioWorkletConfig } from "../BaseConversation.js";
+import type { DeviceIdConstraint } from "../platformTypes.js";
 
 const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
@@ -671,7 +672,9 @@ export class WebRTCConnection extends BaseConnection {
     this.outputDeviceId = deviceId;
   }
 
-  public async setAudioInputDevice(deviceId: string): Promise<void> {
+  public async setAudioInputDevice(
+    deviceId: DeviceIdConstraint
+  ): Promise<void> {
     if (!this.isConnected || !this.room.localParticipant) {
       throw new Error(
         "Cannot change input device: room not connected or no local participant"
@@ -735,7 +738,9 @@ export class WebRTCConnection extends BaseConnection {
     this.setupInputAnalyser(audioTrack.mediaStreamTrack);
   }
 
-  private async enableMicrophone(inputDeviceId?: string): Promise<void> {
+  private async enableMicrophone(
+    inputDeviceId?: DeviceIdConstraint
+  ): Promise<void> {
     if (!inputDeviceId) {
       await this.room.localParticipant.setMicrophoneEnabled(true);
       return;
@@ -755,9 +760,11 @@ export class WebRTCConnection extends BaseConnection {
     }
   }
 
-  private createMicrophoneTrack(deviceId: string): Promise<LocalAudioTrack> {
+  private createMicrophoneTrack(
+    deviceId: DeviceIdConstraint
+  ): Promise<LocalAudioTrack> {
     return createLocalAudioTrack({
-      deviceId: { exact: deviceId },
+      deviceId: typeof deviceId === "string" ? { exact: deviceId } : deviceId,
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,

@@ -7,9 +7,13 @@
  */
 
 import { missingRegistrationError } from "../platform/diagnostics.js";
+import type {
+  DeviceIdConstraint,
+  MediaStreamTrackLike,
+} from "../platformTypes.js";
 
 export interface ScribeMicrophoneConfig {
-  deviceId?: MediaDeviceConstraint;
+  deviceId?: DeviceIdConstraint;
   echoCancellation?: boolean;
   noiseSuppression?: boolean;
   autoGainControl?: boolean;
@@ -27,7 +31,7 @@ export interface ScribeMicrophoneConfig {
 
 export interface ScribeMicrophoneResult {
   /** Track reference so the connection can toggle `track.enabled` for mute/unmute. */
-  mediaStreamTrack: MediaStreamTrack;
+  mediaStreamTrack: MediaStreamTrackLike;
   /** Tear down the audio pipeline and release hardware. */
   cleanup: () => void;
 }

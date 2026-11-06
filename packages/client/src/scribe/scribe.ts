@@ -1,5 +1,6 @@
 import { RealtimeConnection } from "./connection.js";
 import { getScribeMicrophoneSetup } from "./microphone.js";
+import type { DeviceIdConstraint } from "../platformTypes.js";
 
 export enum AudioFormat {
   PCM_8000 = "pcm_8000",
@@ -180,7 +181,7 @@ export interface AudioOptions extends BaseOptions {
  */
 export interface MicrophoneOptions extends BaseOptions {
   microphone?: {
-    deviceId?: MediaDeviceConstraint;
+    deviceId?: DeviceIdConstraint;
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;

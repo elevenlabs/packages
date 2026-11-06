@@ -522,6 +522,24 @@ importers:
         specifier: ^5.5.4
         version: 5.9.3
 
+  packages/type-tests:
+    devDependencies:
+      '@elevenlabs/client':
+        specifier: workspace:*
+        version: link:../client
+      '@elevenlabs/react':
+        specifier: workspace:*
+        version: link:../react
+      '@types/node':
+        specifier: ^25.6.2
+        version: 25.6.2
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.2)(@vitest/browser-playwright@4.1.5)(jsdom@30.0.1)(msw@2.12.4(@types/node@25.6.2)(typescript@5.9.3))(vite@8.0.12(@types/node@25.6.2)(esbuild@0.27.1)(jiti@2.7.0)(terser@5.49.1)(tsx@4.21.0)(yaml@2.9.0))
+
   packages/types:
     devDependencies:
       '@asyncapi/cli':

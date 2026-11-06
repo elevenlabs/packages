@@ -7,6 +7,7 @@ import {
   type MultimodalMessageInput,
   type UploadFileResult,
   type ContextualUpdateOptions,
+  type BlobLike,
 } from "@elevenlabs/client";
 import type { HookOptions } from "./types.js";
 import { ConversationContext } from "./ConversationContext.js";
@@ -18,7 +19,7 @@ export type ConversationControlsValue = {
   endSession: () => void;
   sendUserMessage: (text: string) => void;
   sendMultimodalMessage: (options: MultimodalMessageInput) => void;
-  uploadFile: (file: Blob) => Promise<UploadFileResult>;
+  uploadFile: (file: BlobLike) => Promise<UploadFileResult>;
   sendContextualUpdate: (
     text: string,
     options?: ContextualUpdateOptions
@@ -83,7 +84,7 @@ export function ConversationControlsProvider({
   );
 
   const uploadFile = useCallback(
-    (file: Blob) => {
+    (file: BlobLike) => {
       return getConversation().uploadFile(file);
     },
     [getConversation]

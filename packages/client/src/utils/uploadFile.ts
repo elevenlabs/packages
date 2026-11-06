@@ -1,12 +1,13 @@
 import { assertJsonObject } from "./assert.js";
 import { extractApiErrorMessage } from "./errors.js";
+import type { BlobLike } from "../platformTypes.js";
 
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
 export type UploadFileArgs = {
   conversationId: string;
   origin?: string;
-  file: Blob;
+  file: BlobLike;
   filename?: string;
 };
 
@@ -31,7 +32,7 @@ export async function uploadFile({
       : `upload.${(file.type || "image/png").split("/").pop()?.split("+")[0]}`);
 
   const body = new FormData();
-  body.append("file", file, filename);
+  body.append("file", file as Blob, filename);
 
   const response = await fetch(
     `${origin}/v1/convai/conversations/${conversationId}/files`,

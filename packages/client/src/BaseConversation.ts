@@ -7,6 +7,7 @@ import type {
   FormatConfig,
 } from "./utils/BaseConnection.js";
 import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
+import type { BlobLike } from "./platformTypes.js";
 import { throttle, type ThrottledFunction } from "./utils/throttle.js";
 import { stripAudioTags } from "./utils/audioTags.js";
 import type { Conversation } from "./index.js";
@@ -937,7 +938,7 @@ export abstract class BaseConversation {
     });
   }
 
-  public async uploadFile(file: Blob): Promise<UploadFileResult> {
+  public async uploadFile(file: BlobLike): Promise<UploadFileResult> {
     if (this.options.orchestrator) {
       // Without this guard the file body would leave the customer network for the ElevenLabs cloud.
       throw new Error(
