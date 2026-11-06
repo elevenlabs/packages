@@ -60,6 +60,8 @@ async function setupWebSocketIO(
     workletPaths: options.workletPaths,
     libsampleratePath: options.libsampleratePath,
     audioContext: audioContext ?? undefined,
+    // Taken from unlockIosAudioForSession(), which creates the context (audioUnlock.ts:43).
+    ownsAudioContext: true,
   });
   let input: MediaDeviceInput;
   let output: MediaDeviceOutput;
