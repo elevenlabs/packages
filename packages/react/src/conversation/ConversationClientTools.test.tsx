@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderHook } from "@testing-library/react";
 import type { ClientToolsConfig } from "@elevenlabs/client";
+import type { ClientTool, ClientTools } from "./types.js";
 import {
   ConversationContext,
   type ConversationContextValue,
@@ -223,5 +224,23 @@ describe("buildClientTools", () => {
     const result = buildClientTools(undefined, registry);
 
     expect(result).toEqual({ my_tool: handler });
+  });
+
+  it("types a hook-registered tool by what the runtime coerces", () => {
+    // Compile-time only. `ClientTool` used to cap the result at
+    // `string | number | void`, which is narrower than the coercion in
+    // `BaseConversation` accepts and narrower than `ClientToolsConfig`, so a
+    // handler could be valid for `clientTools` and invalid for this hook.
+    const objectTool: ClientTool = async () => ({ ok: true });
+    const booleanTool: ClientTool = () => true;
+    const tools: ClientTools = { objectTool, booleanTool };
+
+    // The two types have to stay interchangeable, in both directions.
+    const asEntry: ClientToolEntry = objectTool;
+    const asTool: ClientTool = (() => ({ ok: true })) as ClientToolEntry;
+
+    expect(Object.keys(tools)).toEqual(["objectTool", "booleanTool"]);
+    expect(asEntry).toBe(objectTool);
+    expect(typeof asTool).toBe("function");
   });
 });
