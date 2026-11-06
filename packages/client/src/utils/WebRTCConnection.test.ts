@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Track mock calls using a global object that can be accessed after mocking
 const mockCalls = {
@@ -49,7 +49,7 @@ vi.mock("livekit-client", () => {
       ParticipantDisconnected: "participantDisconnected",
     },
     Track: {
-      Kind: { Audio: "audio" },
+      Kind: { Audio: "audio", Video: "video" },
       Source: { Microphone: "microphone" },
     },
     ConnectionState: {
@@ -66,6 +66,8 @@ import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 import { NO_VOLUME } from "./volumeProvider.js";
 import type { PongEvent } from "./events.js";
+import { enableAvatarVideo, onAvatarVideoTrack } from "../experimental.js";
+import type { Conversation } from "../index.js";
 
 describe("WebRTCConnection", () => {
   beforeEach(() => {
@@ -1135,6 +1137,105 @@ describe("WebRTCConnection", () => {
     }
   });
 
+  describe("avatar", () => {
+    const agent = { identity: "agent_123", attributes: {} };
+    const avatar = {
+      identity: "avatar-anam",
+      attributes: { "lk.publish_on_behalf": "agent_123" },
+    };
+    const agentAudio = { kind: "audio", mediaStreamTrack: { id: "agent" } };
+    const avatarAudio = { kind: "audio", mediaStreamTrack: { id: "avatar" } };
+    const avatarVideo = { kind: "video", mediaStreamTrack: { id: "video" } };
+
+    const createAdapter = () => ({
+      attachRemoteTrack: vi.fn((_track: unknown) => Promise.resolve()),
+      setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
+      setupOutputAnalysis: vi.fn((_track: unknown) =>
+        Promise.resolve({ volumeProvider: NO_VOLUME })
+      ),
+      setVolume: vi.fn(),
+      setOutputDevice: vi.fn(() => Promise.resolve()),
+      cleanup: vi.fn(),
+    });
+
+    let handlers: Map<string, (...args: any[]) => any>;
+    let adapter: ReturnType<typeof createAdapter>;
+    let connection: WebRTCConnection;
+    let videoTracks: unknown[];
+    let modes: string[];
+
+    const subscribe = (track: unknown, participant: unknown) =>
+      handlers.get("trackSubscribed")?.(track, {}, participant);
+    const speakers = (...participants: unknown[]) =>
+      handlers.get("activeSpeakersChanged")?.(participants);
+
+    beforeEach(async () => {
+      const mockRoom = new Room() as any;
+      handlers = new Map();
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: any[]) => any) => {
+          handlers.set(event, callback);
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      adapter = createAdapter();
+      setWebRTCAudioAdapterFactory(() => adapter);
+
+      connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      videoTracks = [];
+      onAvatarVideoTrack({ connection } as unknown as Conversation, track =>
+        videoTracks.push(track)
+      );
+      modes = [];
+      connection.onModeChange(mode => modes.push(mode));
+      await subscribe(agentAudio, agent);
+    });
+
+    afterEach(() => {
+      connection.close();
+      setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+    });
+
+    it("plays the avatar, shows its video and follows its speech", async () => {
+      await subscribe(avatarAudio, avatar);
+      await subscribe(avatarVideo, avatar);
+      speakers(agent);
+      speakers(avatar);
+
+      expect(videoTracks).toEqual([null, avatarVideo.mediaStreamTrack]);
+      expect(modes).toEqual(["listening", "speaking"]);
+      expect(adapter.attachRemoteTrack.mock.lastCall?.[0]).toBe(avatarAudio);
+      expect(adapter.setupOutputAnalysis.mock.lastCall?.[0]).toBe(avatarAudio);
+    });
+
+    it("falls back to the agent when the avatar leaves", async () => {
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+      await subscribe(avatarAudio, avatar);
+      await subscribe(avatarVideo, avatar);
+
+      handlers.get("participantDisconnected")?.(avatar);
+      speakers(agent);
+
+      expect(videoTracks).toEqual([null, avatarVideo.mediaStreamTrack, null]);
+      expect(onDisconnect).not.toHaveBeenCalled();
+      expect(modes).toEqual(["listening", "speaking"]);
+      expect(adapter.setupOutputAnalysis.mock.lastCall?.[0]).toBe(agentAudio);
+    });
+  });
+
   describe("conversation initiation payload", () => {
     let mockRoom: any;
 
@@ -1237,6 +1338,42 @@ describe("WebRTCConnection", () => {
       await expect(connection.sendMessage(message)).resolves.toBeUndefined();
 
       connection.close();
+    });
+
+    // Opting in is module-wide and can't be undone, so this runs last.
+    it("asks for avatar video only once the app opts in", async () => {
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      const publishedPayload = () => {
+        const [data] = (
+          mockRoom.localParticipant.publishData as ReturnType<typeof vi.fn>
+        ).mock.calls.at(-1) as [Uint8Array];
+        return JSON.parse(new TextDecoder().decode(data));
+      };
+
+      const before = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      expect(publishedPayload()).not.toHaveProperty("avatar_video");
+      before.close();
+
+      enableAvatarVideo();
+
+      const after = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      expect(publishedPayload()).toMatchObject({
+        type: "conversation_initiation_client_data",
+        avatar_video: true,
+      });
+      after.close();
     });
   });
 });

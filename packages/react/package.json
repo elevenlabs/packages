@@ -9,7 +9,8 @@
       "types": "./dist/index.d.ts",
       "unpkg": "./dist/lib.iife.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./experimental": "./dist/experimental.js"
   },
   "files": [
     "dist"
@@ -17,7 +18,7 @@
   "scripts": {
     "generate-version": "node ../../scripts/generate-version.mjs",
     "build:esm": "tsc --build",
-    "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsReact -o dist/lib.iife.js --sourcemap --external react --external react-dom --external @elevenlabs/client --external @elevenlabs/client/internal",
+    "build:iife": "rolldown src/index.ts -f iife --name ElevenLabsReact -o dist/lib.iife.js --sourcemap --external react --external react-dom --external @elevenlabs/client --external @elevenlabs/client/internal --external @elevenlabs/client/experimental",
     "build": "node --run build:esm && node --run build:iife",
     "clean": "tsc --build --clean && rm -rf ./dist",
     "dev": "tsc --build --watch",

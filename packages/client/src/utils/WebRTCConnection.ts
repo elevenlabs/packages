@@ -43,6 +43,13 @@ const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const AUDIO_VOLUME_THRESHOLD = 0.01;
 
+function isAvatar(participant: Participant): boolean {
+  return (
+    participant.attributes?.["lk.publish_on_behalf"]?.startsWith("agent") ??
+    false
+  );
+}
+
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
   return origin.replace(/^wss:\/\//, "https://");
@@ -75,6 +82,13 @@ export class WebRTCConnection extends BaseConnection {
 
   private outputAnalyser: unknown = undefined;
   private outputVolumeProvider: VolumeProvider = NO_VOLUME;
+
+  private agentAudioTrack: RemoteAudioTrack | null = null;
+  private avatarIdentity: string | null = null;
+  private avatarVideoTrack: MediaStreamTrack | null = null;
+  private readonly avatarVideoTrackListeners = new Set<
+    (track: MediaStreamTrack | null) => void
+  >();
 
   // InputController state
   private _isMuted = false;
@@ -456,24 +470,22 @@ export class WebRTCConnection extends BaseConnection {
         _publication: TrackPublication,
         participant: Participant
       ) => {
-        if (
+        if (isAvatar(participant)) {
+          this.avatarIdentity = participant.identity;
+          if (track.kind === Track.Kind.Video) {
+            this.setAvatarVideoTrack(track.mediaStreamTrack);
+          } else if (track.kind === Track.Kind.Audio) {
+            await this.playRemoteAudio(track as RemoteAudioTrack, true);
+          }
+        } else if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
         ) {
-          const remoteAudioTrack = track as RemoteAudioTrack;
-
-          if (this.audioAdapter) {
-            // Delegate playback to the platform-specific adapter
-            await this.audioAdapter.attachRemoteTrack(
-              remoteAudioTrack,
-              this.outputDeviceId
-            );
-
-            // Set up output volume analysis and audio capture
-            await this.setupAudioCapture(remoteAudioTrack);
-
-            this.onDebug?.({ type: "audio_element_ready" });
-          }
+          this.agentAudioTrack = track as RemoteAudioTrack;
+          await this.playRemoteAudio(
+            this.agentAudioTrack,
+            this.avatarIdentity === null
+          );
         }
       }
     );
@@ -483,7 +495,7 @@ export class WebRTCConnection extends BaseConnection {
       async (speakers: Participant[]) => {
         if (speakers.length > 0) {
           this.updateMode(
-            speakers[0].identity.startsWith("agent") ? "speaking" : "listening"
+            this.isAgentVoice(speakers[0]) ? "speaking" : "listening"
           );
         } else {
           this.updateMode("listening");
@@ -494,7 +506,14 @@ export class WebRTCConnection extends BaseConnection {
     this.room.on(
       RoomEvent.ParticipantDisconnected,
       (participant: RemoteParticipant) => {
-        if (participant.identity?.startsWith("agent")) {
+        if (isAvatar(participant)) {
+          this.avatarIdentity = null;
+          this.setAvatarVideoTrack(null);
+          this.updateMode("listening");
+          if (this.agentAudioTrack) {
+            void this.setupAudioCapture(this.agentAudioTrack);
+          }
+        } else if (participant.identity?.startsWith("agent")) {
           this.disconnect({
             reason: "agent",
             context: { type: "close", reason: "agent disconnected" },
@@ -502,6 +521,40 @@ export class WebRTCConnection extends BaseConnection {
         }
       }
     );
+  }
+
+  private async playRemoteAudio(track: RemoteAudioTrack, capture: boolean) {
+    if (!this.audioAdapter) return;
+
+    await this.audioAdapter.attachRemoteTrack(track, this.outputDeviceId);
+    if (capture) {
+      await this.setupAudioCapture(track);
+    }
+    this.onDebug?.({ type: "audio_element_ready" });
+  }
+
+  private isAgentVoice(participant: Participant): boolean {
+    return this.avatarIdentity === null
+      ? participant.identity.startsWith("agent")
+      : participant.identity === this.avatarIdentity;
+  }
+
+  private setAvatarVideoTrack(track: MediaStreamTrack | null) {
+    if (track === this.avatarVideoTrack) return;
+
+    this.avatarVideoTrack = track;
+    this.avatarVideoTrackListeners.forEach(listener => listener(track));
+  }
+
+  // TODO(AVE-792): reached through `./experimental` until the public API ships.
+  private onAvatarVideoTrack(
+    callback: (track: MediaStreamTrack | null) => void
+  ): () => void {
+    this.avatarVideoTrackListeners.add(callback);
+    callback(this.avatarVideoTrack);
+    return () => {
+      this.avatarVideoTrackListeners.delete(callback);
+    };
   }
 
   public close() {
