@@ -1232,6 +1232,48 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("right-to-left text", () => {
+    beforeEach(() => {
+      setupWebComponent({
+        "agent-id": "markdown_rtl",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+    });
+
+    it("should lay out markdown from the start side of an Arabic reply", async () => {
+      const listItem = page.getByText("النقطة الأولى");
+      await expect.element(listItem).toBeInTheDocument();
+
+      const list = listItem.element().closest("ul")!;
+      expect(getComputedStyle(list).marginRight).toBe("16px");
+      expect(getComputedStyle(list).marginLeft).toBe("0px");
+
+      const quote = page
+        .getByText("ملاحظة: الرسوم غير مستردة.")
+        .element()
+        .closest("blockquote")!;
+      expect(getComputedStyle(quote).borderRightWidth).toBe("4px");
+      expect(getComputedStyle(quote).borderLeftWidth).toBe("0px");
+      expect(getComputedStyle(quote).paddingRight).toBe("16px");
+
+      const header = page.getByText("الخدمة").element().closest("th")!;
+      expect(getComputedStyle(header).textAlign).toBe("start");
+    });
+
+    it("should lay out typed text in the direction of its language", async () => {
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+
+      await textInput.fill("مرحبا، كيف حالك؟");
+      expect(getComputedStyle(textInput.element()).direction).toBe("rtl");
+
+      await textInput.fill("Hello, how are you?");
+      expect(getComputedStyle(textInput.element()).direction).toBe("ltr");
+    });
+  });
+
   describe("markdown link allowlist", () => {
     it("should render links from bare text-only agent responses", async () => {
       setupWebComponent({
