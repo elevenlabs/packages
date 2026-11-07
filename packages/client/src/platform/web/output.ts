@@ -94,12 +94,15 @@ export class MediaDeviceOutput
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {
-      const supportsSampleRateConstraint =
-        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+      // The microphone sampleRate constraint is unrelated to AudioContext.
+      // Firefox reports it unsupported but still accepts the agent rate here,
+      // which keeps resampling off the audio thread.
       if (!context) {
-        context = new AudioContext(
-          supportsSampleRateConstraint ? { sampleRate } : {}
-        );
+        try {
+          context = new AudioContext({ sampleRate });
+        } catch {
+          context = new AudioContext({});
+        }
       }
 
       const analyser = context.createAnalyser();
@@ -122,12 +125,10 @@ export class MediaDeviceOutput
       analyser.connect(destination);
 
       const needsResampling = context.sampleRate !== sampleRate;
-      if (!supportsSampleRateConstraint || needsResampling) {
-        if (needsResampling) {
-          console.warn(
-            `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
-          );
-        }
+      if (needsResampling) {
+        console.warn(
+          `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
+        );
         await addLibsamplerateModule(context, libsampleratePath);
       }
       const worklet = await loadAudioConcatProcessor(
