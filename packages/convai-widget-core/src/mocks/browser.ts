@@ -189,6 +189,23 @@ const codeBlock = true;
 ---
 `,
   },
+  markdown_rtl: {
+    ...BASIC_CONFIG,
+    text_only: true,
+    transcript_enabled: true,
+    text_input_enabled: true,
+    terms_html: undefined,
+    default_expanded: true,
+    first_message: `- النقطة الأولى
+- النقطة الثانية
+
+> ملاحظة: الرسوم غير مستردة.
+
+| الخدمة | السعر |
+| ------ | ----- |
+| الحجز  | ١٠    |
+`,
+  },
   markdown_no_links: {
     ...BASIC_CONFIG,
     text_only: true,
