@@ -43,11 +43,18 @@ const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const AUDIO_VOLUME_THRESHOLD = 0.01;
 
-function isAvatar(participant: Participant): boolean {
-  return (
-    participant.attributes?.["lk.publish_on_behalf"]?.startsWith("agent") ??
-    false
-  );
+// The server names the avatar in the room metadata before the avatar joins.
+function isAvatar(room: Room, participant: Participant): boolean {
+  try {
+    const metadata: unknown = JSON.parse(room.metadata ?? "null");
+    return (
+      isJsonObject(metadata) &&
+      isJsonObject(metadata.avatar) &&
+      metadata.avatar.participant_identity === participant.identity
+    );
+  } catch {
+    return false;
+  }
 }
 
 // Convert WSS origin to HTTPS for API calls
@@ -84,7 +91,9 @@ export class WebRTCConnection extends BaseConnection {
   private outputVolumeProvider: VolumeProvider = NO_VOLUME;
 
   private agentAudioTrack: RemoteAudioTrack | null = null;
-  private avatarIdentity: string | null = null;
+  private avatarAudioTrack: RemoteAudioTrack | null = null;
+  private capturedTrack: RemoteAudioTrack | null = null;
+  private voice: "agent" | "avatar" = "agent";
   private avatarVideoTrack: MediaStreamTrack | null = null;
   private readonly avatarVideoTrackListeners = new Set<
     (track: MediaStreamTrack | null) => void
@@ -470,49 +479,61 @@ export class WebRTCConnection extends BaseConnection {
         _publication: TrackPublication,
         participant: Participant
       ) => {
-        if (isAvatar(participant)) {
-          this.avatarIdentity = participant.identity;
-          if (track.kind === Track.Kind.Video) {
-            this.setAvatarVideoTrack(track.mediaStreamTrack);
-          } else if (track.kind === Track.Kind.Audio) {
-            await this.playRemoteAudio(track as RemoteAudioTrack, true);
-          }
+        const avatar = isAvatar(this.room, participant);
+        if (avatar && track.kind === Track.Kind.Video) {
+          this.setAvatarVideoTrack(track.mediaStreamTrack);
+        } else if (avatar && track.kind === Track.Kind.Audio) {
+          this.avatarAudioTrack = track as RemoteAudioTrack;
+          await this.playRemoteAudio(this.avatarAudioTrack);
         } else if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
         ) {
           this.agentAudioTrack = track as RemoteAudioTrack;
-          await this.playRemoteAudio(
-            this.agentAudioTrack,
-            this.avatarIdentity === null
-          );
+          await this.playRemoteAudio(this.agentAudioTrack);
         }
       }
     );
 
+    this.room.on(RoomEvent.TrackUnsubscribed, (track: Track) => {
+      if (track.mediaStreamTrack === this.avatarVideoTrack) {
+        this.setAvatarVideoTrack(null);
+      }
+      if (track === this.agentAudioTrack) {
+        this.agentAudioTrack = null;
+      }
+      if (track === this.avatarAudioTrack) {
+        this.avatarAudioTrack = null;
+        this.voice = "agent";
+      }
+      if (track === this.capturedTrack) {
+        this.capturedTrack = null;
+      }
+      void this.syncCapture();
+    });
+
     this.room.on(
       RoomEvent.ActiveSpeakersChanged,
       async (speakers: Participant[]) => {
-        if (speakers.length > 0) {
-          this.updateMode(
-            this.isAgentVoice(speakers[0]) ? "speaking" : "listening"
-          );
+        const speaker = speakers[0];
+        if (speaker && isAvatar(this.room, speaker)) {
+          this.voice = "avatar";
+        } else if (speaker?.identity.startsWith("agent")) {
+          this.voice = "agent";
         } else {
           this.updateMode("listening");
+          return;
         }
+        this.updateMode("speaking");
+        await this.syncCapture();
       }
     );
 
     this.room.on(
       RoomEvent.ParticipantDisconnected,
       (participant: RemoteParticipant) => {
-        if (isAvatar(participant)) {
-          this.avatarIdentity = null;
-          this.setAvatarVideoTrack(null);
+        if (isAvatar(this.room, participant)) {
           this.updateMode("listening");
-          if (this.agentAudioTrack) {
-            void this.setupAudioCapture(this.agentAudioTrack);
-          }
         } else if (participant.identity?.startsWith("agent")) {
           this.disconnect({
             reason: "agent",
@@ -523,20 +544,23 @@ export class WebRTCConnection extends BaseConnection {
     );
   }
 
-  private async playRemoteAudio(track: RemoteAudioTrack, capture: boolean) {
+  private async playRemoteAudio(track: RemoteAudioTrack) {
     if (!this.audioAdapter) return;
 
     await this.audioAdapter.attachRemoteTrack(track, this.outputDeviceId);
-    if (capture) {
-      await this.setupAudioCapture(track);
-    }
+    await this.syncCapture();
     this.onDebug?.({ type: "audio_element_ready" });
   }
 
-  private isAgentVoice(participant: Participant): boolean {
-    return this.avatarIdentity === null
-      ? participant.identity.startsWith("agent")
-      : participant.identity === this.avatarIdentity;
+  // The agent hands each utterance to the avatar only once the avatar is
+  // ready, so capture follows whichever of the two last spoke.
+  private async syncCapture() {
+    const track =
+      this.voice === "avatar" ? this.avatarAudioTrack : this.agentAudioTrack;
+    if (!track || track === this.capturedTrack) return;
+
+    this.capturedTrack = track;
+    await this.setupAudioCapture(track);
   }
 
   private setAvatarVideoTrack(track: MediaStreamTrack | null) {
@@ -578,6 +602,10 @@ export class WebRTCConnection extends BaseConnection {
       this.outputAnalyser = undefined;
       this.inputVolumeProvider = NO_VOLUME;
       this.outputVolumeProvider = NO_VOLUME;
+      this.agentAudioTrack = null;
+      this.avatarAudioTrack = null;
+      this.capturedTrack = null;
+      this.setAvatarVideoTrack(null);
 
       this.room.disconnect();
     }

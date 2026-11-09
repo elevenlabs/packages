@@ -45,6 +45,7 @@ vi.mock("livekit-client", () => {
       ConnectionStateChanged: "connectionStateChanged",
       DataReceived: "dataReceived",
       TrackSubscribed: "trackSubscribed",
+      TrackUnsubscribed: "trackUnsubscribed",
       ActiveSpeakersChanged: "activeSpeakersChanged",
       ParticipantDisconnected: "participantDisconnected",
     },
@@ -1143,6 +1144,10 @@ describe("WebRTCConnection", () => {
       identity: "avatar-anam",
       attributes: { "lk.publish_on_behalf": "agent_123" },
     };
+    const unnamed = {
+      identity: "avatar-other",
+      attributes: { "lk.publish_on_behalf": "agent_123" },
+    };
     const agentAudio = { kind: "audio", mediaStreamTrack: { id: "agent" } };
     const avatarAudio = { kind: "audio", mediaStreamTrack: { id: "avatar" } };
     const avatarVideo = { kind: "video", mediaStreamTrack: { id: "video" } };
@@ -1158,6 +1163,7 @@ describe("WebRTCConnection", () => {
       cleanup: vi.fn(),
     });
 
+    let mockRoom: any;
     let handlers: Map<string, (...args: any[]) => any>;
     let adapter: ReturnType<typeof createAdapter>;
     let connection: WebRTCConnection;
@@ -1166,11 +1172,18 @@ describe("WebRTCConnection", () => {
 
     const subscribe = (track: unknown, participant: unknown) =>
       handlers.get("trackSubscribed")?.(track, {}, participant);
+    const unsubscribe = (track: unknown, participant: unknown) =>
+      handlers.get("trackUnsubscribed")?.(track, {}, participant);
     const speakers = (...participants: unknown[]) =>
       handlers.get("activeSpeakersChanged")?.(participants);
+    const capturedTracks = () =>
+      adapter.setupOutputAnalysis.mock.calls.map(([track]) => track);
 
     beforeEach(async () => {
-      const mockRoom = new Room() as any;
+      mockRoom = new Room() as any;
+      mockRoom.metadata = JSON.stringify({
+        avatar: { participant_identity: avatar.identity },
+      });
       handlers = new Map();
       (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
         (event: string, callback: (...args: any[]) => any) => {
@@ -1205,34 +1218,68 @@ describe("WebRTCConnection", () => {
 
     afterEach(() => {
       connection.close();
+      delete mockRoom.metadata;
       setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
     });
 
-    it("plays the avatar, shows its video and follows its speech", async () => {
-      await subscribe(avatarAudio, avatar);
+    it("plays the avatar and shows its video", async () => {
       await subscribe(avatarVideo, avatar);
-      speakers(agent);
-      speakers(avatar);
+      await subscribe(avatarAudio, avatar);
 
       expect(videoTracks).toEqual([null, avatarVideo.mediaStreamTrack]);
-      expect(modes).toEqual(["listening", "speaking"]);
       expect(adapter.attachRemoteTrack.mock.lastCall?.[0]).toBe(avatarAudio);
-      expect(adapter.setupOutputAnalysis.mock.lastCall?.[0]).toBe(avatarAudio);
+    });
+
+    it("ignores a participant the room metadata does not name", async () => {
+      await subscribe(avatarVideo, unnamed);
+      await subscribe(avatarAudio, unnamed);
+
+      expect(videoTracks).toEqual([null]);
+      expect(adapter.attachRemoteTrack.mock.calls).toHaveLength(1);
+    });
+
+    it("keeps following the agent until the avatar speaks", async () => {
+      await subscribe(avatarVideo, avatar);
+      await subscribe(avatarAudio, avatar);
+      await speakers(agent);
+
+      expect(modes).toEqual(["speaking"]);
+      expect(capturedTracks()).toEqual([agentAudio]);
+
+      await speakers(avatar);
+
+      expect(modes).toEqual(["speaking", "speaking"]);
+      expect(capturedTracks()).toEqual([agentAudio, avatarAudio]);
     });
 
     it("falls back to the agent when the avatar leaves", async () => {
       const onDisconnect = vi.fn();
       connection.onDisconnect(onDisconnect);
-      await subscribe(avatarAudio, avatar);
       await subscribe(avatarVideo, avatar);
+      await subscribe(avatarAudio, avatar);
+      await speakers(avatar);
 
+      unsubscribe(avatarAudio, avatar);
+      unsubscribe(avatarVideo, avatar);
       handlers.get("participantDisconnected")?.(avatar);
-      speakers(agent);
+      await speakers(agent);
 
       expect(videoTracks).toEqual([null, avatarVideo.mediaStreamTrack, null]);
       expect(onDisconnect).not.toHaveBeenCalled();
-      expect(modes).toEqual(["listening", "speaking"]);
-      expect(adapter.setupOutputAnalysis.mock.lastCall?.[0]).toBe(agentAudio);
+      expect(modes).toEqual(["speaking", "listening", "speaking"]);
+      expect(capturedTracks()).toEqual([agentAudio, avatarAudio, agentAudio]);
+    });
+
+    it("starts no capture for tracks that drop after close", async () => {
+      await subscribe(avatarAudio, avatar);
+      await speakers(avatar);
+
+      connection.close();
+      unsubscribe(avatarAudio, avatar);
+      unsubscribe(agentAudio, agent);
+      handlers.get("participantDisconnected")?.(avatar);
+
+      expect(capturedTracks()).toEqual([agentAudio, avatarAudio]);
     });
   });
 
