@@ -281,11 +281,31 @@ export function buildDisplayTranscript(
     }
   }
 
+  // The agent replies after a tool call, except after system tools like end_call
+  let awaitingToolReply = false;
+  for (let i = entries.length - 1; i > lastUserEntryIndex; i--) {
+    const entry = entries[i];
+    if (entry.type === "agent_tool_request") {
+      awaitingToolReply = entry.toolType !== "system";
+      break;
+    }
+    if (
+      entry.type === "rich_content" ||
+      (entry.type === "message" && (entry.message || entry.attachments?.length))
+    )
+      break;
+  }
+
   const lastShown = result[result.length - 1];
+  const lastShownIsUser =
+    lastShown?.type === "message" && lastShown.role === "user";
+  // A loading tool badge already shows the agent is working
+  const toolBadgeLoading =
+    lastShown?.type === "message" &&
+    lastShown.toolStatus === ToolCallStatus.LOADING;
   const agentReplyPending =
     config.showAgentReplyPending &&
-    lastShown?.type === "message" &&
-    lastShown.role === "user";
+    (lastShownIsUser || (awaitingToolReply && !toolBadgeLoading));
 
   // Show the typing row while a human agent types or the AI agent owes a reply
   if (config.showTypingIndicator || agentReplyPending) {
