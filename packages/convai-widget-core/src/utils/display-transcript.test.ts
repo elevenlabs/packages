@@ -629,6 +629,36 @@ describe("buildDisplayTranscript", () => {
       ]);
     });
 
+    it("gives way to the tool status when a component follows the badge", () => {
+      const result = build(
+        [
+          msg("user", "Show me shoes"),
+          msg("agent", "Here are some", { eventId: 2 }),
+          carousel("carousel_1", { eventId: 2 }),
+          toolReq(2),
+        ],
+        { showAgentStatus: true, showAgentReplyPending: true }
+      );
+      expect(result.at(-1)).toMatchObject({ component: "carousel" });
+    });
+
+    it("stays up while the reply after a tool is not said yet", () => {
+      const result = build(
+        [
+          msg("user", "Where's my order?"),
+          msg("agent", "Let me check", { eventId: 2, isText: false }),
+          toolReq(2),
+          toolRes(2),
+          {
+            ...msg("agent", "It ships today", { eventId: 2, isText: false }),
+            visibleLength: 0,
+          },
+        ],
+        { showAgentReplyPending: true }
+      );
+      expect(result.at(-1)).toMatchObject({ type: "typing_indicator" });
+    });
+
     it("shows after the agent's opening line until it replies past the tool", () => {
       const config = { showAgentReplyPending: true };
       const pending = [

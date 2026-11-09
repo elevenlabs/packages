@@ -282,27 +282,34 @@ export function buildDisplayTranscript(
   }
 
   // The agent replies after a tool call, except after system tools like end_call
-  let awaitingToolReply = false;
+  let awaitedToolEventId: number | undefined;
   for (let i = entries.length - 1; i > lastUserEntryIndex; i--) {
     const entry = entries[i];
     if (entry.type === "agent_tool_request") {
-      awaitingToolReply = entry.toolType !== "system";
+      if (entry.toolType !== "system") awaitedToolEventId = entry.eventId;
       break;
     }
+    // Voice text counts once it starts being said
     if (
       entry.type === "rich_content" ||
-      (entry.type === "message" && (entry.message || entry.attachments?.length))
+      (entry.type === "message" &&
+        ((entry.message && entry.visibleLength !== 0) ||
+          entry.attachments?.length))
     )
       break;
   }
+  const awaitingToolReply = awaitedToolEventId !== undefined;
 
   const lastShown = result[result.length - 1];
   const lastShownIsUser =
     lastShown?.type === "message" && lastShown.role === "user";
   // A loading tool badge already shows the agent is working
-  const toolBadgeLoading =
-    lastShown?.type === "message" &&
-    lastShown.toolStatus === ToolCallStatus.LOADING;
+  const toolBadgeLoading = result.some(
+    shown =>
+      shown.type === "message" &&
+      shown.eventId === awaitedToolEventId &&
+      shown.toolStatus === ToolCallStatus.LOADING
+  );
   const agentReplyPending =
     config.showAgentReplyPending &&
     (lastShownIsUser || (awaitingToolReply && !toolBadgeLoading));
