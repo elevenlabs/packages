@@ -642,22 +642,32 @@ describe("buildDisplayTranscript", () => {
       expect(result.at(-1)).toMatchObject({ component: "carousel" });
     });
 
-    it("stays up while the reply after a tool is not said yet", () => {
-      const result = build(
-        [
-          msg("user", "Where's my order?"),
-          msg("agent", "Let me check", { eventId: 2, isText: false }),
-          toolReq(2),
-          toolRes(2),
-          {
-            ...msg("agent", "It ships today", { eventId: 2, isText: false }),
-            visibleLength: 0,
-          },
-        ],
-        { showAgentReplyPending: true }
-      );
-      expect(result.at(-1)).toMatchObject({ type: "typing_indicator" });
-    });
+    it.each([
+      ["text", msg("agent", "It ships today", { eventId: 2, isText: false })],
+      [
+        "file",
+        msg("agent", "", {
+          eventId: 2,
+          isText: false,
+          attachments: [file("receipt.pdf")],
+        }),
+      ],
+    ])(
+      "stays up while the %s reply after a tool is not said yet",
+      (_, reply) => {
+        const result = build(
+          [
+            msg("user", "Where's my order?"),
+            msg("agent", "Let me check", { eventId: 2, isText: false }),
+            toolReq(2),
+            toolRes(2),
+            { ...reply, visibleLength: 0 },
+          ],
+          { showAgentReplyPending: true }
+        );
+        expect(result.at(-1)).toMatchObject({ type: "typing_indicator" });
+      }
+    );
 
     it("shows after the agent's opening line until it replies past the tool", () => {
       const config = { showAgentReplyPending: true };

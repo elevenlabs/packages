@@ -134,6 +134,7 @@ export function buildDisplayTranscript(
   });
 
   const speakingEventIds = new Set<number>();
+  const shownContentIndices = new Set<number>();
 
   for (const [entryIndex, rawEntry] of entries.entries()) {
     const entry =
@@ -176,6 +177,7 @@ export function buildDisplayTranscript(
       )
         continue;
       result.push(entry);
+      shownContentIndices.add(entryIndex);
       continue;
     }
 
@@ -211,6 +213,12 @@ export function buildDisplayTranscript(
     // Filter non-text messages when transcript is disabled
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
+
+    if (
+      entry.type === "message" &&
+      (entry.message || entry.attachments?.length)
+    )
+      shownContentIndices.add(entryIndex);
 
     // Fold an empty agent placeholder into the following same-turn message.
     // Two entries sharing an eventId are otherwise distinct messages (e.g.
@@ -289,14 +297,8 @@ export function buildDisplayTranscript(
       if (entry.toolType !== "system") awaitedToolEventId = entry.eventId;
       break;
     }
-    // Voice text counts once it starts being said
-    if (
-      entry.type === "rich_content" ||
-      (entry.type === "message" &&
-        ((entry.message && entry.visibleLength !== 0) ||
-          entry.attachments?.length))
-    )
-      break;
+    // Voice text and files held until they are said don't count yet
+    if (shownContentIndices.has(i)) break;
   }
   const awaitingToolReply = awaitedToolEventId !== undefined;
 
