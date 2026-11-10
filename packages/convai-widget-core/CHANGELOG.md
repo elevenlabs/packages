@@ -1,5 +1,15 @@
 # @elevenlabs/convai-widget-core
 
+## 0.25.2
+
+### Patch Changes
+
+- fd3c20d: Keep the typing dots up after a tool call until the agent's reply shows, including when the agent spoke before calling the tool. System tools like `end_call` don't bring them back.
+- 953b617: Lay out right-to-left replies correctly: markdown lists, blockquotes and table headers now start on the right in Arabic and other RTL text, and the message and feedback inputs follow the direction of the text typed into them.
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+
 ## 0.25.1
 
 ### Patch Changes

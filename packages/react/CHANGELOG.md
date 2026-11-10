@@ -1,5 +1,17 @@
 # @elevenlabs/react
 
+## 1.22.0
+
+### Minor Changes
+
+- a2d3513: Add experimental avatar video under the `./experimental` subpath. Call `enableAvatarVideo()` to request an avatar, then read its video track with `onAvatarVideoTrack(conversation, callback)` or, in React, `useAvatarVideoTrack()`. While the avatar is in a WebRTC call, the SDK plays its audio and follows its speech. If it leaves, the call continues on the agent's voice. These exports may change in any release.
+
+### Patch Changes
+
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+
 ## 1.21.1
 
 ### Patch Changes

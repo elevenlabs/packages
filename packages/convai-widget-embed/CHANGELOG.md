@@ -1,5 +1,7 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.25.2
+
 ## 0.25.1
 
 ## 0.25.0
