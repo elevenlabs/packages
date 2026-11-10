@@ -96,6 +96,7 @@ export type TranscriptEntry =
   | {
       type: "agent_tool_request";
       toolName: string;
+      toolType: string;
       toolCallId: string;
       eventId: number;
       conversationIndex: number;
@@ -975,13 +976,19 @@ function useConversationSetup() {
               speechReveal.onInterruption(event_id);
               agentThinking.onInterruption();
             },
-            onAgentToolRequest: ({ tool_call_id, tool_name, event_id }) => {
+            onAgentToolRequest: ({
+              tool_call_id,
+              tool_name,
+              tool_type,
+              event_id,
+            }) => {
               agentThinking.onToolRequest();
               transcript.value = [
                 ...transcript.peek(),
                 {
                   type: "agent_tool_request",
                   toolName: tool_name,
+                  toolType: tool_type,
                   toolCallId: tool_call_id,
                   eventId: event_id,
                   conversationIndex: conversationIndex.peek(),

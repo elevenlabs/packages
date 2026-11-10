@@ -134,6 +134,7 @@ export function buildDisplayTranscript(
   });
 
   const speakingEventIds = new Set<number>();
+  const shownContentIndices = new Set<number>();
 
   for (const [entryIndex, rawEntry] of entries.entries()) {
     const entry =
@@ -176,6 +177,7 @@ export function buildDisplayTranscript(
       )
         continue;
       result.push(entry);
+      shownContentIndices.add(entryIndex);
       continue;
     }
 
@@ -211,6 +213,12 @@ export function buildDisplayTranscript(
     // Filter non-text messages when transcript is disabled
     if (!config.transcriptEnabled && entry.type === "message" && !entry.isText)
       continue;
+
+    if (
+      entry.type === "message" &&
+      (entry.message || entry.attachments?.length)
+    )
+      shownContentIndices.add(entryIndex);
 
     // Fold an empty agent placeholder into the following same-turn message.
     // Two entries sharing an eventId are otherwise distinct messages (e.g.
@@ -281,11 +289,32 @@ export function buildDisplayTranscript(
     }
   }
 
+  // The agent replies after a tool call, except after system tools like end_call
+  let awaitedToolEventId: number | undefined;
+  for (let i = entries.length - 1; i > lastUserEntryIndex; i--) {
+    const entry = entries[i];
+    if (entry.type === "agent_tool_request") {
+      if (entry.toolType !== "system") awaitedToolEventId = entry.eventId;
+      break;
+    }
+    // Voice text and files held until they are said don't count yet
+    if (shownContentIndices.has(i)) break;
+  }
+  const awaitingToolReply = awaitedToolEventId !== undefined;
+
   const lastShown = result[result.length - 1];
+  const lastShownIsUser =
+    lastShown?.type === "message" && lastShown.role === "user";
+  // A loading tool badge already shows the agent is working
+  const toolBadgeLoading = result.some(
+    shown =>
+      shown.type === "message" &&
+      shown.eventId === awaitedToolEventId &&
+      shown.toolStatus === ToolCallStatus.LOADING
+  );
   const agentReplyPending =
     config.showAgentReplyPending &&
-    lastShown?.type === "message" &&
-    lastShown.role === "user";
+    (lastShownIsUser || (awaitingToolReply && !toolBadgeLoading));
 
   // Show the typing row while a human agent types or the AI agent owes a reply
   if (config.showTypingIndicator || agentReplyPending) {
