@@ -18,6 +18,7 @@ import { createAnalyserVolumeProvider } from "./volumeProvider.js";
  */
 export class WebAudioAdapter implements WebRTCAudioAdapter {
   private audioElements: HTMLAudioElement[] = [];
+  private volume = 1;
 
   private inputAudioContext: AudioContext | null = null;
   private audioCaptureContext: AudioContext | null = null;
@@ -29,6 +30,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     const audioElement = track.attach();
     audioElement.autoplay = true;
     audioElement.controls = false;
+    audioElement.volume = this.volume;
 
     // Set output device if one was previously selected
     if (outputDeviceId && audioElement.setSinkId) {
@@ -128,6 +130,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
   }
 
   setVolume(volume: number): void {
+    this.volume = volume;
     for (const element of this.audioElements) {
       element.volume = volume;
     }

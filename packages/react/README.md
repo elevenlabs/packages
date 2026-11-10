@@ -64,6 +64,13 @@ For the full API reference including connection types, client tools, conversatio
 
 For real-time speech-to-text with the `useScribe` hook, see the [Scribe documentation](https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/client-side-streaming).
 
+## Entrypoints
+
+| Path                             | Stability                          |
+| -------------------------------- | ---------------------------------- |
+| `@elevenlabs/react`              | Public, semver-stable              |
+| `@elevenlabs/react/experimental` | Experimental, no semver guarantees |
+
 ## Development
 
 Please refer to the README.md file in the root of this repository.
