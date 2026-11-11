@@ -68,6 +68,7 @@ channels:
           - $ref: "#/components/messages/ContextUsage"
           - $ref: "#/components/messages/ASRInitiationMetadata"
           - $ref: "#/components/messages/GuardrailTriggered"
+          - $ref: "#/components/messages/ConversationEnded"
           - $ref: "#/components/messages/InternalTurnProbability"
           - $ref: "#/components/messages/InternalTentativeAgentResponse"
           - $ref: "#/components/messages/AgentTyping"
@@ -353,6 +354,14 @@ components:
       payload:
         $ref: "#/components/schemas/GuardrailTriggeredPayload"
 
+    ConversationEnded:
+      name: ConversationEndedClientEvent
+      title: Conversation Ended
+      summary: Event sent just before the server closes the conversation, stating why it ended
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConversationEndedPayload"
+
     InternalTurnProbability:
       name: TurnProbabilityInternalClientEvent
       title: Internal Turn Probability
@@ -429,6 +438,7 @@ components:
         - context_usage
         - asr_initiation_metadata
         - guardrail_triggered
+        - conversation_ended
         - internal_turn_probability
         - internal_tentative_agent_response
         - agent_typing
@@ -1429,6 +1439,25 @@ components:
         type:
           type: string
           const: guardrail_triggered
+
+    ConversationEndedPayload:
+      type: object
+      required: [conversation_ended_event, type]
+      properties:
+        type:
+          type: string
+          const: conversation_ended
+        conversation_ended_event:
+          $ref: "#/components/schemas/ConversationEndedData"
+
+    ConversationEndedData:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum:
+            - max_duration_exceeded
 
     InternalTurnProbabilityPayload:
       type: object

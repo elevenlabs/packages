@@ -15,6 +15,7 @@ export type {
   CommittedTranscriptMessage,
   CommittedTranscriptWithTimestampsMessage,
   ContextUsageClientEvent,
+  ConversationEndedClientEvent,
   ConversationHistoryClientEvent,
   ConversationInitiationMetadataEvent,
   EditedTranscriptMessage,
