@@ -1112,6 +1112,28 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("always expanded", () => {
+    it("should show the sheet when turned on after mounting", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+      });
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeInTheDocument();
+
+      widget.setAttribute("always-expanded", "true");
+
+      await expect
+        .poll(() =>
+          widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-shown")
+        )
+        .toBe("true");
+    });
+  });
+
   describe("default size", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");

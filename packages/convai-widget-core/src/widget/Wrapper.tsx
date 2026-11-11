@@ -178,12 +178,18 @@ export const Wrapper = memo(function Wrapper() {
     <>
       <InOutTransition initial={false} active={showConversation}>
         <Root className={className} style={HIDDEN_STYLE}>
+          {/* Distinct keys remount the sheet when always_expanded changes, so
+              its open transition never tracks the other branch's signal */}
           {config.value.always_expanded ? (
-            <Sheet open />
+            <Sheet key="always-expanded" open />
           ) : (
             <>
               {expandable.value && (
-                <Sheet open={expanded} onClose={handleClose} />
+                <Sheet
+                  key="toggleable"
+                  open={expanded}
+                  onClose={handleClose}
+                />
               )}
               <Trigger
                 expandable={expandable.value}
