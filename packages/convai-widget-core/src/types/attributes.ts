@@ -62,6 +62,7 @@ export const CustomAttributeList = [
   "show-resize-button",
   "mobile-fullscreen",
   "default-size",
+  "layout",
   "transcript-speech-sync",
   "end-confirmation",
   "show-language-selector-on-trigger",

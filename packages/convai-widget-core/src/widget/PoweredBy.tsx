@@ -12,9 +12,12 @@ export function PoweredBy() {
     <p
       className={clsx(
         "whitespace-nowrap [line-height:var(--el-overlay-padding)] text-[10px] px-3 z-10",
-        config.value.placement.startsWith("top")
-          ? "-translate-y-[calc(var(--el-overlay-padding))]"
-          : "translate-y-[calc(var(--el-overlay-padding))]"
+        // A page has no overlay padding to sit in
+        config.value.layout === "page"
+          ? undefined
+          : config.value.placement.startsWith("top")
+            ? "-translate-y-[calc(var(--el-overlay-padding))]"
+            : "translate-y-[calc(var(--el-overlay-padding))]"
       )}
     >
       <span className="opacity-30">Powered by</span>{" "}

@@ -65,7 +65,7 @@ export function Sheet({ open, onClose }: SheetProps) {
   usePersistentSessionLifecycle(openSignal);
   const textInputEnabled = useTextInputEnabled();
   const { currentContent, currentConfig } = useSheetContent();
-  const { variant } = useWidgetSize();
+  const { variant, showSpeechPane } = useWidgetSize();
   const { confirmationShown } = useEndConfirmation();
 
   const localFirstMessage = useComputed(() => {
@@ -123,14 +123,20 @@ export function Sheet({ open, onClose }: SheetProps) {
       (!isDisconnected.value && config.value.transcript_enabled)
   );
   const scrollPinned = useSignal(true);
-  const showAvatar = useComputed(() => currentContent.value !== "feedback");
+  // The page layout's speech pane shows the avatar beside the sheet instead
+  const showAvatar = useComputed(
+    () => currentContent.value !== "feedback" && !showSpeechPane.value
+  );
+  // Beside the call pane, the conversation's state shows under its orb
   const showStatusLabel = useComputed(
-    () => showTranscript.value && !isDisconnected.value
+    () =>
+      showTranscript.value && !isDisconnected.value && !showSpeechPane.value
   );
 
   const showLanguageSelector = useComputed(
     () =>
       currentContent.value !== "feedback" &&
+      !showSpeechPane.value &&
       (!showTranscript.value || isDisconnected.value)
   );
 
@@ -139,6 +145,15 @@ export function Sheet({ open, onClose }: SheetProps) {
       !!config.value.conversation_mode_toggle_enabled &&
       !isConversationTextOnly.value &&
       !isDisconnected.value
+  );
+
+  // Beside the call pane the header would be empty, unless it holds the mode
+  // toggle or the feedback page's back button
+  const showHeader = useComputed(
+    () =>
+      !showSpeechPane.value ||
+      currentContent.value !== "transcript" ||
+      showConversationModeToggle.value
   );
 
   const showExpandButton = useComputed(
@@ -151,33 +166,46 @@ export function Sheet({ open, onClose }: SheetProps) {
         data-variant={variant.value}
         className={cn(
           "sheet",
-          "flex flex-col overflow-hidden absolute bg-base shadow-lg pointer-events-auto z-2",
+          "flex flex-col overflow-hidden bg-base pointer-events-auto z-2",
           "transition-[width,height,max-width,max-height,transform,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
           "data-hidden:scale-90 data-hidden:opacity-0",
-          ORIGIN_CLASSES[placement],
-          placement.startsWith("top")
-            ? config.value.always_expanded
-              ? "top-0"
-              : "top-20"
-            : config.value.always_expanded
-              ? "bottom-0"
-              : "bottom-20"
+          variant.value === "page"
+            ? "relative w-full h-full"
+            : cn(
+                "absolute shadow-lg",
+                ORIGIN_CLASSES[placement],
+                placement.startsWith("top")
+                  ? config.value.always_expanded
+                    ? "top-0"
+                    : "top-20"
+                  : config.value.always_expanded
+                    ? "bottom-0"
+                    : "bottom-20"
+              )
         )}
       >
-        <SheetHeader
-          showBackButton={currentConfig.showHeaderBack}
-          onBackClick={currentConfig.onHeaderBack}
-          showStatusLabel={showStatusLabel}
-          showLanguageSelector={showLanguageSelector}
-          showConversationModeToggle={showConversationModeToggle}
-          showExpandButton={showExpandButton}
-          onClose={onClose}
-        />
+        {showHeader.value && (
+          <SheetHeader
+            showBackButton={currentConfig.showHeaderBack}
+            onBackClick={currentConfig.onHeaderBack}
+            showStatusLabel={showStatusLabel}
+            showLanguageSelector={showLanguageSelector}
+            showConversationModeToggle={showConversationModeToggle}
+            showExpandButton={showExpandButton}
+            onClose={onClose}
+          />
+        )}
         <InOutTransition active={currentContent.value === "transcript"}>
-          <div className="grow flex flex-col min-h-0 relative transition-opacity duration-300 ease-out data-hidden:opacity-0">
+          <div
+            className={cn(
+              "grow flex flex-col min-h-0 relative transition-opacity duration-300 ease-out data-hidden:opacity-0",
+              variant.value === "page" && "w-full max-w-[768px] mx-auto"
+            )}
+          >
             <Transcript
               transcript={filteredTranscript}
               scrollPinned={scrollPinned}
+              withoutHeader={!showHeader.value}
             />
             <SheetActions
               showTranscript={showTranscript.value}
@@ -197,9 +225,11 @@ export function Sheet({ open, onClose }: SheetProps) {
           isDisconnected={isDisconnected}
           onStartSession={startSession}
         />
-        <InOutTransition active={confirmationShown}>
-          <EndConfirmationDialog overlay />
-        </InOutTransition>
+        {variant.value !== "page" && (
+          <InOutTransition active={confirmationShown}>
+            <EndConfirmationDialog overlay />
+          </InOutTransition>
+        )}
       </div>
     </InOutTransition>
   );

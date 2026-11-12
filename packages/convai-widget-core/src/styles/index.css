@@ -61,6 +61,13 @@
     }
   }
 
+  [data-variant="page"] {
+    &.sheet {
+      /* Leaves room for the "Powered by" line under the actions */
+      @apply pb-6;
+    }
+  }
+
   [data-variant="fullscreen"] {
     &.sheet {
       @apply rounded-none w-full max-w-dvw h-full max-h-dvh bottom-0 pb-6;

@@ -1112,6 +1112,137 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("page layout", () => {
+    const sheetVariant = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
+    const speechPane = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector('[data-pane="speech"]');
+
+    afterEach(() => page.viewport(414, 896));
+
+    it("should show the call pane beside the chat on desktop", async () => {
+      await page.viewport(1280, 800);
+      // The agent turns chat off, but a page always shows it
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        dismissible: "true",
+        layout: "page",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("page");
+      await expect.poll(() => !!speechPane(widget)).toBe(true);
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .toBeVisible();
+      await expect
+        .element(page.getByRole("button", { name: "Expand widget" }))
+        .not.toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: "Dismiss" }))
+        .not.toBeInTheDocument();
+    });
+
+    it("should show only the chat on mobile", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "page",
+      });
+
+      await expect
+        .element(page.getByRole("textbox", { name: "Text message input" }))
+        .toBeVisible();
+      expect(speechPane(widget)).toBeFalsy();
+    });
+
+    it("should leave out the call pane for text-only agents", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        "override-text-only": "true",
+        layout: "page",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("page");
+      expect(speechPane(widget)).toBeFalsy();
+    });
+
+    it("should leave call controls to the call pane", async () => {
+      await page.viewport(1280, 800);
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "page",
+      });
+
+      const startCall = page.getByRole("button", { name: "Start a call" });
+      await expect.element(startCall).toBeVisible();
+      expect(startCall.elements()).toHaveLength(1);
+    });
+
+    it("should say a text chat beside the call pane is with an AI agent", async () => {
+      await page.viewport(1280, 800);
+      setupWebComponent({
+        "agent-id": "text_and_voice",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "page",
+      });
+
+      const input = page.getByRole("textbox", { name: "Text message input" });
+      await input.fill("Hi there");
+      await userEvent.keyboard("{Enter}");
+
+      await expect
+        .element(page.getByText("Chatting with AI Agent"))
+        .toBeVisible();
+    });
+
+    it("should confirm ending a call over the whole page", async () => {
+      await page.viewport(1280, 800);
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        "end-confirmation": "true",
+        layout: "page",
+      });
+
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+      // Ending while still connecting has no session to end yet
+      const endButton = page.getByRole("button", { name: "End", exact: true });
+      await expect.element(endButton).toBeVisible();
+      await expect
+        .element(page.getByText("Connecting"))
+        .not.toBeInTheDocument();
+      await endButton.click();
+      await page.getByRole("button", { name: "End call" }).click();
+
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeVisible();
+    });
+
+    it("should float as usual for an unknown layout", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        layout: "sidebar",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("compact");
+      expect(speechPane(widget)).toBeFalsy();
+    });
+  });
+
   describe("default size", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");

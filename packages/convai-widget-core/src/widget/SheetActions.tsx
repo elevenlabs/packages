@@ -30,6 +30,7 @@ import { useEndConfirmation } from "../contexts/end-confirmation";
 import { TriggerMuteButton } from "./TriggerMuteButton";
 import { useConversationMode } from "../contexts/conversation-mode";
 import { useSheetContent } from "../contexts/sheet-content";
+import { useWidgetSize } from "../contexts/widget-size";
 import { UploadFileButton } from "./UploadFileButton";
 import { PendingFilePreview } from "./PendingFilePreview";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "./useFileUpload";
@@ -343,12 +344,22 @@ function SheetButtons({
   const { requestEndSession } = useEndConfirmation();
   const callDisabled = useCallButtonDisabled();
   const { isTextMode } = useConversationMode();
+  const { showSpeechPane } = useWidgetSize();
 
+  // Beside the page layout's call pane, only a text chat's stop button stays here
   const showCallButton = useComputed(() => {
+    if (showSpeechPane.value) {
+      return textOnly.value && !isDisconnected.value;
+    }
     return !isDisconnected.value || (!textOnly.value && showTranscript);
   });
   const showMuteButton = useComputed(() => {
-    return !textOnly.value && !isDisconnected.value && !isTextMode.value;
+    return (
+      !showSpeechPane.value &&
+      !textOnly.value &&
+      !isDisconnected.value &&
+      !isTextMode.value
+    );
   });
 
   return (
