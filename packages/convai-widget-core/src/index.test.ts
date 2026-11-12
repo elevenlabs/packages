@@ -1214,13 +1214,7 @@ describe("elevenlabs-convai", () => {
 
       await page.getByRole("button", { name: "Start a call" }).click();
       await page.getByRole("button", { name: "Accept" }).click();
-      // Ending while still connecting has no session to end yet
-      const endButton = page.getByRole("button", { name: "End", exact: true });
-      await expect.element(endButton).toBeVisible();
-      await expect
-        .element(page.getByText("Connecting"))
-        .not.toBeInTheDocument();
-      await endButton.click();
+      await page.getByRole("button", { name: "End", exact: true }).click();
       await page.getByRole("button", { name: "End call" }).click();
 
       await expect

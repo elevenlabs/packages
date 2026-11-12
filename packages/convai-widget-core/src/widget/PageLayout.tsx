@@ -2,7 +2,10 @@ import { useComputed } from "@preact/signals";
 import { Avatar } from "../components/Avatar";
 import { InOutTransition } from "../components/InOutTransition";
 import { useAudioConfig } from "../contexts/audio-config";
-import { useConversation } from "../contexts/conversation";
+import {
+  useCallButtonDisabled,
+  useConversation,
+} from "../contexts/conversation";
 import { useLanguageConfig } from "../contexts/language-config";
 import { useIsConversationTextOnly } from "../contexts/widget-config";
 import { useWidgetSize } from "../contexts/widget-size";
@@ -52,6 +55,7 @@ export function PageLayout() {
 
 function SpeechPane() {
   const { isDisconnected } = useConversation();
+  const callDisabled = useCallButtonDisabled();
   const isConversationTextOnly = useIsConversationTextOnly();
   const { isMutingEnabled } = useAudioConfig();
   const { showPicker } = useLanguageConfig();
@@ -81,7 +85,11 @@ function SpeechPane() {
         <Avatar size="xl" />
         <InOutTransition active={showCallButton}>
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 scale-150 p-1 rounded-[calc(var(--el-button-radius)+4px)] bg-base transition-opacity data-hidden:opacity-0">
-            <CallButton iconOnly isDisconnected={isDisconnected.value} />
+            <CallButton
+              iconOnly
+              isDisconnected={isDisconnected.value}
+              disabled={callDisabled.value}
+            />
           </div>
         </InOutTransition>
         <InOutTransition active={showStatus}>
