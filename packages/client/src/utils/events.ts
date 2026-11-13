@@ -11,6 +11,7 @@ import type {
   AgentToolRequestClientEvent,
   ClientToolCallMessage,
   ContextUsageClientEvent,
+  ConversationEndedClientEvent,
   ConversationHistoryClientEvent,
   ConversationMetadata,
   ErrorMessage,
@@ -60,6 +61,7 @@ export type AgentReasoningResponsePartEvent =
 export type RichContentEvent = RichContentClientEvent;
 export type ErrorMessageEvent = ErrorMessage;
 export type GuardrailTriggeredEvent = GuardrailTriggered;
+export type ConversationEndedEvent = ConversationEndedClientEvent;
 export type AgentTypingEvent = AgentTypingClientEvent;
 export type ExternalAgentConnectedEvent = ExternalAgentConnectedClientEvent;
 export type ExternalAgentDisconnectedEvent =
@@ -91,6 +93,7 @@ export type IncomingSocketEvent =
   | RichContentEvent
   | ErrorMessageEvent
   | GuardrailTriggeredEvent
+  | ConversationEndedEvent
   | AgentTypingEvent
   | ExternalAgentConnectedEvent
   | ExternalAgentDisconnectedEvent;

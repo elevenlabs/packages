@@ -19,6 +19,7 @@ import type {
   ConversationHistoryClientEvent,
   Ping,
   RichContentClientEvent,
+  ConversationEndedClientEvent,
 } from "@elevenlabs/types";
 
 /**
@@ -212,6 +213,14 @@ export type Callbacks = {
    */
   onRichContent?: (props: RichContentClientEvent["rich_content"]) => void;
   onGuardrailTriggered?: () => void;
+  /**
+   * Called when the server announces why it is about to end the conversation,
+   * just before it closes the connection. Receives `{ reason }`. Only sent when
+   * `conversation_ended` is in the agent's enabled client events.
+   */
+  onConversationEnded?: (
+    props: ConversationEndedClientEvent["conversation_ended_event"]
+  ) => void;
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   /** Called when an aligned chunk starts playing, skipping interrupted ones. Not called on WebRTC. */
   onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
@@ -280,6 +289,7 @@ export const CALLBACK_KEYS = [
   "onAudioAlignment",
   "onAudioAlignmentPlayback",
   "onGuardrailTriggered",
+  "onConversationEnded",
   "onAgentTyping",
   "onExternalAgentConnected",
   "onExternalAgentDisconnected",
