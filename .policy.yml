@@ -8,7 +8,7 @@ policy:
 
 approval_rules:
   - name: convai-widget-core changes approved by widget team
-    description: ConvAI widget core changes require approval from kamilk-11, kalvin807, or giannagerton
+    description: ConvAI widget core changes require approval from the widget team
     if:
       changed_files:
         paths:
@@ -34,7 +34,7 @@ approval_rules:
         mode: all-users
 
   - name: convai-widget-embed changes approved by widget team
-    description: ConvAI widget embed changes require approval from kamilk-11, kalvin807, or giannagerton
+    description: ConvAI widget embed changes require approval from the widget team
     if:
       changed_files:
         paths:
@@ -49,7 +49,7 @@ approval_rules:
         mode: all-users
 
   - name: client changes approved by owner
-    description: Client package changes require approval from PaulAsjes, AngeloGiacco, or kraenhansen
+    description: Client package changes require approval from a package owner
     if:
       changed_files:
         paths:
@@ -64,7 +64,7 @@ approval_rules:
         mode: all-users
 
   - name: react-native changes approved by owner
-    description: React Native package changes require approval from PaulAsjes, AngeloGiacco, or kraenhansen
+    description: React Native package changes require approval from a package owner
     if:
       changed_files:
         paths:
