@@ -103,7 +103,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span
                   dir="auto"
-                  className="text-sm font-medium wrap-break-word"
+                  className="text-sm font-medium wrap-break-word group-data-[variant=compact]/sheet:line-clamp-1"
                 >
                   {item.title}
                 </span>
@@ -121,7 +121,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
                 {item.description && (
                   <span
                     dir="auto"
-                    className="text-xs text-base-subtle whitespace-pre-line wrap-break-word"
+                    className="text-xs text-base-subtle whitespace-pre-line wrap-break-word group-data-[variant=compact]/sheet:line-clamp-2"
                   >
                     {item.description}
                   </span>

@@ -2294,8 +2294,9 @@ export const Worker = setupWorker(
                 props: {
                   items: ["Albany", "Brixton", "Chelsea"].map(title => ({
                     title,
-                    subtitle: "Leather knee-high boot",
-                    description: "$139.95",
+                    subtitle: "$139.95",
+                    description:
+                      "Full-grain leather knee-high boot with a stacked heel and side zip, waterproofed for rain and snow.",
                     image_url: `${ATTACHMENT_HOST}/${title}.svg`,
                     rating: 4.6,
                     review_count: 318,
