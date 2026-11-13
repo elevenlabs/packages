@@ -34,6 +34,9 @@ vi.mock("livekit-client", async importOriginal => {
     off: vi.fn(),
     localParticipant: mockLocalParticipant,
     name: "conv_test123",
+    remoteParticipants: new Map([
+      ["agent-test", { identity: "agent-test" }],
+    ]),
   };
 
   return {
@@ -49,6 +52,7 @@ vi.mock("livekit-client", async importOriginal => {
       TrackSubscribed: "trackSubscribed",
       TrackUnsubscribed: "trackUnsubscribed",
       ActiveSpeakersChanged: "activeSpeakersChanged",
+      ParticipantConnected: "participantConnected",
       ParticipantDisconnected: "participantDisconnected",
     },
     Track: {
