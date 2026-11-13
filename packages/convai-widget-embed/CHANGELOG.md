@@ -1,5 +1,11 @@
 # @elevenlabs/convai-widget-embed
 
+## 0.26.0
+
+### Patch Changes
+
+- 3971c0f: Fix the widget staying hidden when always expanded is turned on after it has loaded.
+
 ## 0.25.2
 
 ## 0.25.1

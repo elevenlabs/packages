@@ -1,5 +1,17 @@
 # @elevenlabs/convai-widget-core
 
+## 0.26.0
+
+### Minor Changes
+
+- 1cf635d: Add a `layout="page"` attribute that makes the widget fill its host element as a full page that always shows the chat, with a call pane beside it on desktop.
+
+### Patch Changes
+
+- 3971c0f: Fix the widget staying hidden when always expanded is turned on after it has loaded.
+- Updated dependencies [a6bbdee]
+  - @elevenlabs/client@1.36.1
+
 ## 0.25.2
 
 ### Patch Changes
