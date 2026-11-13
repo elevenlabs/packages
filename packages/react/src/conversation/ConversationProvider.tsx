@@ -287,6 +287,7 @@ export function ConversationProvider({
   const endSession = useCallback(() => {
     shouldEndRef.current = true;
     const pendingConnection = lockRef.current;
+    lockRef.current = null;
     const conv = conversationRef.current;
     conversationRef.current = null;
     setConversation(null);
@@ -307,10 +308,7 @@ export function ConversationProvider({
   }, []);
 
   useEffect(() => {
-    return () => {
-      endSession();
-      lockRef.current = null;
-    };
+    return () => endSession();
   }, [endSession]);
 
   const contextValue = useMemo<ConversationContextValue>(
