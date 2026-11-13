@@ -250,6 +250,33 @@ describe("ConversationProvider", () => {
     expect(mockConversation.endSession).toHaveBeenCalled();
   });
 
+  it("connects when a child starts the session on mount under React StrictMode", async () => {
+    const first = createMockConversation("first-id");
+    const second = createMockConversation("second-id");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(first)
+      .mockResolvedValue(second);
+
+    const { result } = renderHook(
+      () => {
+        const context = useTestContext();
+        const { startSession } = context;
+        React.useEffect(() => {
+          startSession();
+        }, [startSession]);
+        return context;
+      },
+      { wrapper: createWrapper(), reactStrictMode: true }
+    );
+
+    await act(async () => {});
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(first.endSession).toHaveBeenCalledTimes(1);
+    expect(second.endSession).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(second);
+  });
+
   it("calls both prop and startSession callbacks when both are provided", async () => {
     const propCalls: string[] = [];
     const sessionCalls: string[] = [];

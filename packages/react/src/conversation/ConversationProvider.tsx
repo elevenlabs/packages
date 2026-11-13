@@ -306,20 +306,12 @@ export function ConversationProvider({
     }
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      shouldEndRef.current = true;
-      if (lockRef.current) {
-        lockRef.current.then(
-          conv => conv.endSession().catch(() => {}),
-          () => {}
-        );
-      } else {
-        conversationRef.current?.endSession().catch(() => {});
-      }
+      endSession();
+      lockRef.current = null;
     };
-  }, []);
+  }, [endSession]);
 
   const contextValue = useMemo<ConversationContextValue>(
     () => ({
