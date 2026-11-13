@@ -118,7 +118,7 @@ export function Sheet({ open, onClose }: SheetProps) {
         !isWaitingForAgent.value,
     });
   });
-  useExpandForCarousels(filteredTranscript, openSignal);
+  useExpandForCarousels(filteredTranscript);
   const showTranscript = useComputed(
     () =>
       filteredTranscript.value.length > 0 ||

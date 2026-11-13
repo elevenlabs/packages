@@ -5,13 +5,13 @@ import type { DisplayTranscriptEntry } from "./display-transcript";
 
 /** Expands the sheet when a carousel first shows, since its cards don't fit the compact size. */
 export function useExpandForCarousels(
-  transcript: ReadonlySignal<DisplayTranscriptEntry[]>,
-  open: { peek(): boolean }
+  transcript: ReadonlySignal<DisplayTranscriptEntry[]>
 ) {
   const { autoExpand } = useWidgetSize();
   // Null until the first run, so carousels already shown don't count as new
   const shownCarousels = useRef<Set<string> | null>(null);
 
+  // Runs while the sheet is closed too, so it reopens at the expanded size
   useSignalEffect(() => {
     const ids = transcript.value.flatMap(entry =>
       entry.type === "rich_content" && entry.component === "carousel"
@@ -20,7 +20,7 @@ export function useExpandForCarousels(
     );
     const shown = shownCarousels.current;
     shownCarousels.current = new Set([...(shown ?? []), ...ids]);
-    if (shown && open.peek() && ids.some(id => !shown.has(id))) {
+    if (shown && ids.some(id => !shown.has(id))) {
       autoExpand();
     }
   });
