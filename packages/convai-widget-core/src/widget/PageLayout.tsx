@@ -25,7 +25,13 @@ export function PageLayout() {
   const { showSpeechPane } = useWidgetSize();
 
   return (
-    <div className="flex w-full h-full bg-base pointer-events-auto">
+    <div
+      className={cn(
+        "flex w-full h-full pointer-events-auto",
+        // Matches the sheet, which fades in over it
+        showSpeechPane.value ? "bg-base" : "bg-base-hover"
+      )}
+    >
       {showSpeechPane.value && <SpeechPane />}
       <div
         className={cn(
