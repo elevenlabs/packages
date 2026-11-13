@@ -9,6 +9,15 @@ export function parseVariant(variant: string | undefined): Variant {
     : Variants[0];
 }
 
+export const DefaultSizes = ["compact", "expanded"] as const;
+export type DefaultSize = (typeof DefaultSizes)[number];
+
+export function parseDefaultSize(size: string | undefined): DefaultSize {
+  return DefaultSizes.includes(size as DefaultSize)
+    ? (size as DefaultSize)
+    : DefaultSizes[0];
+}
+
 export const Placements = [
   "top-left",
   "top",
@@ -91,6 +100,7 @@ export interface WidgetConfig {
   };
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
+  default_size?: DefaultSize;
   transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
@@ -118,11 +128,14 @@ export const DefaultTextContents = {
   start_chat: "Message",
   send_message: "Send",
   new_call: "New call",
+  resume_call: "Resume talking?",
   end_call: "End",
   end_chat: "End chat",
   mute_microphone: "Mute microphone",
   text_mode: "Switch to text mode",
   voice_mode: "Switch to voice mode",
+  voice_mode_label: "Voice",
+  text_mode_label: "Text",
   switched_to_text_mode: "Switched to text mode",
   switched_to_voice_mode: "Switched to voice mode",
   change_language: "Change language",
@@ -185,6 +198,8 @@ export const DefaultTextContents = {
   rich_content_unavailable: "This content could not be displayed",
   carousel_previous: "Previous",
   carousel_next: "Next",
+  new_message: "1 new message",
+  new_messages: "{count} new messages",
 };
 
 export const TextKeys = Object.keys(

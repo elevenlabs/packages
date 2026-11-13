@@ -3,12 +3,14 @@ import type { Mode } from "../BaseConversation.js";
 import type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
+  ConversationConfigOverrideTts,
 } from "@elevenlabs/types";
 import type { DisconnectionDetails } from "../types.js";
 
 export type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
+  ConversationConfigOverrideTts,
 } from "@elevenlabs/types";
 export type { DisconnectionContext, DisconnectionDetails } from "../types.js";
 
@@ -26,6 +28,12 @@ export type FormatConfig = {
 export type OnDisconnectCallback = (details: DisconnectionDetails) => void;
 export type OnMessageCallback = (event: IncomingSocketEvent) => void;
 export type OnOutgoingMessageCallback = (event: any) => void;
+
+type KnownTtsModelId = NonNullable<ConversationConfigOverrideTts["model_id"]>;
+
+// `string & {}` keeps the known literals from collapsing into `string`, so
+// editors still autocomplete them while arbitrary strings remain assignable.
+type TtsModelId = KnownTtsModelId | (string & {});
 
 export type BaseSessionConfig = {
   origin?: string;
@@ -55,10 +63,18 @@ export type BaseSessionConfig = {
     };
     tts?: {
       voiceId?: string;
-      modelId?: string;
+      /**
+       * TTS model for this conversation. Documented model ids are suggested by
+       * the editor; any other string is accepted so that newly released or
+       * deprecated models are never rejected by the compiler, but the API may
+       * reject ids outside the documented list at runtime. Prefer a
+       * documented model id.
+       */
+      modelId?: TtsModelId;
       speed?: number;
       stability?: number;
       similarityBoost?: number;
+      cloneStrength?: number;
     };
     asr?: {
       /** Keywords to boost ASR prediction probability for this conversation. */

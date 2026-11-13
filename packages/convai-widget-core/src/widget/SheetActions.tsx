@@ -299,6 +299,7 @@ function SheetTextarea({
   return (
     <textarea
       ref={inputRef}
+      dir="auto"
       aria-label={text.input_label}
       value={userMessage.value}
       onInput={sendUserActivity}

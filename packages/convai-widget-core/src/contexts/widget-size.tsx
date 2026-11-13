@@ -29,7 +29,10 @@ export function WidgetSizeProvider({
   initialVariant = "compact",
 }: WidgetSizeProviderProps) {
   const config = useWidgetConfig();
-  const expanded = useSignal(initialVariant !== "compact");
+  // On mobile an expanded sheet is fullscreen
+  const expanded = useSignal(
+    initialVariant !== "compact" || config.peek().default_size === "expanded"
+  );
   const isMobile = useSignal<boolean>(
     typeof window !== "undefined"
       ? window.innerWidth < MOBILE_BREAKPOINT

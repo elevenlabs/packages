@@ -24,6 +24,7 @@ export function usePlaygroundSettings() {
   const [showAgentStatus, setShowAgentStatus] = useState(false);
   const [showResizeButton, setShowResizeButton] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(true);
+  const [defaultSizeExpanded, setDefaultSizeExpanded] = useState(false);
   const [transcriptSpeechSync, setTranscriptSpeechSync] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
     useState(true);
@@ -79,6 +80,8 @@ export function usePlaygroundSettings() {
     setShowResizeButton,
     mobileFullscreen,
     setMobileFullscreen,
+    defaultSizeExpanded,
+    setDefaultSizeExpanded,
     transcriptSpeechSync,
     setTranscriptSpeechSync,
     showLanguageSelectorOnTrigger,
@@ -221,6 +224,14 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setMobileFullscreen(e.currentTarget.checked)}
         />{" "}
         Mobile fullscreen
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.defaultSizeExpanded}
+          onChange={e => state.setDefaultSizeExpanded(e.currentTarget.checked)}
+        />{" "}
+        Start at expanded size
       </label>
       <label>
         <input

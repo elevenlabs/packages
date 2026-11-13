@@ -46,7 +46,7 @@
   }
 
   .focus-ring {
-    @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
+    @apply ring-accent ring-offset-base focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
 
   [data-variant="compact"] {

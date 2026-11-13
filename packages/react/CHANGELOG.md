@@ -1,5 +1,55 @@
 # @elevenlabs/react
 
+## 1.22.0
+
+### Minor Changes
+
+- a2d3513: Add experimental avatar video under the `./experimental` subpath. Call `enableAvatarVideo()` to request an avatar, then read its video track with `onAvatarVideoTrack(conversation, callback)` or, in React, `useAvatarVideoTrack()`. While the avatar is in a WebRTC call, the SDK plays its audio and follows its speech. If it leaves, the call continues on the agent's voice. These exports may change in any release.
+
+### Patch Changes
+
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+
+## 1.21.1
+
+### Patch Changes
+
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/client@1.35.0
+
+## 1.21.0
+
+### Minor Changes
+
+- 29f9b8e: Add the `entityRedaction` and `entityRedactionMode` options to `Scribe.connect()` and dispatch the new `redacted_transcript` server message:
+  - `entityRedaction`: redact entities from committed transcripts. Accepts the same values as `entityDetection` (`"all"`, a category, a specific entity type, or a list), sent as repeated `entity_redaction` query params. Cannot be combined with `transcriptEdit`.
+  - `entityRedactionMode` (`EntityRedactionMode`): how redacted entities are marked, `"redacted"` (`{REDACTED}`), `"entity_type"` (`{NAME}`) or `"enumerated_entity_type"` (`{NAME_0}`, the server default). Sent as the `entity_redaction_mode` query param only when set.
+  - `redacted_transcript` (`RealtimeEvents.REDACTED_TRANSCRIPT`), carrying the committed `text` and its `redacted_text` (`RedactedTranscriptMessage`). It is sent after its committed transcript, in commit order; partial and committed transcripts stay unredacted.
+  - `useScribe()` accepts the same `entityRedaction` and `entityRedactionMode` options, exposes an `onRedactedTranscript` callback and attaches the redacted text to the matching entry in `committedTranscripts` as `redactedText`.
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+- Updated dependencies [6dab091]
+  - @elevenlabs/client@1.34.0
+
+## 1.20.3
+
+### Patch Changes
+
+- 37bdc21: Fix `useScribe` so `autoConnect` keeps one open session under React StrictMode.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
+## 1.20.2
+
+### Patch Changes
+
+- Updated dependencies [e92f62e]
+  - @elevenlabs/client@1.32.1
+
 ## 1.20.1
 
 ### Patch Changes

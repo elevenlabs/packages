@@ -9,6 +9,7 @@ import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import {
   DefaultStyles,
+  parseDefaultSize,
   parsePlacement,
   parseVariant,
   type SyntaxHighlightTheme,
@@ -140,6 +141,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showConversationId = useAttribute("show-conversation-id");
   const showResizeButton = useAttribute("show-resize-button");
   const mobileFullscreen = useAttribute("mobile-fullscreen");
+  const defaultSize = useAttribute("default-size");
   const transcriptSpeechSync = useAttribute("transcript-speech-sync");
   const endConfirmation = useAttribute("end-confirmation");
   const showLanguageSelectorOnTrigger = useAttribute(
@@ -233,6 +235,9 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       show_conversation_id: patchedShowConversationId,
       show_resize_button: patchedShowResizeButton,
       mobile_fullscreen: patchedMobileFullscreen,
+      default_size: parseDefaultSize(
+        defaultSize.value ?? fetchedConfig.value.default_size
+      ),
       transcript_speech_sync_enabled: patchedTranscriptSpeechSync,
       end_confirmation_enabled: patchedEndConfirmation,
       show_language_selector_on_trigger: patchedShowLanguageSelectorOnTrigger,

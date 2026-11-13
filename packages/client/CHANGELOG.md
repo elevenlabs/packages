@@ -1,5 +1,61 @@
 # @elevenlabs/client
 
+## 1.36.0
+
+### Minor Changes
+
+- a2d3513: Add experimental avatar video under the `./experimental` subpath. Call `enableAvatarVideo()` to request an avatar, then read its video track with `onAvatarVideoTrack(conversation, callback)` or, in React, `useAvatarVideoTrack()`. While the avatar is in a WebRTC call, the SDK plays its audio and follows its speech. If it leaves, the call continues on the agent's voice. These exports may change in any release.
+
+### Patch Changes
+
+- a2d3513: Apply the volume from `setVolume` to WebRTC audio that starts playing after it was set.
+
+## 1.35.0
+
+### Minor Changes
+
+- 3d1c8ef: Type the existing `overrides.tts.modelId` from the spec. `@elevenlabs/types` now declares the documented ElevenAgents TTS models (`eleven_turbo_v2`, `eleven_turbo_v2_5`, `eleven_flash_v2`, `eleven_flash_v2_5`, `eleven_multilingual_v2`, `eleven_v3_conversational`, `eleven_v4`, `eleven_v4_turbo`) as `ConversationConfigOverrideTtsModelId`, and `@elevenlabs/client` suggests them when setting `modelId`. Any other string is still accepted so that newly released or deprecated models are never rejected by the compiler, but the API may reject ids outside the documented list at runtime. `model_id` is only added to `conversation_config_override.tts` when `modelId` is provided.
+
+### Patch Changes
+
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/types@0.29.0
+
+## 1.34.0
+
+### Minor Changes
+
+- 29f9b8e: Add the `entityRedaction` and `entityRedactionMode` options to `Scribe.connect()` and dispatch the new `redacted_transcript` server message:
+  - `entityRedaction`: redact entities from committed transcripts. Accepts the same values as `entityDetection` (`"all"`, a category, a specific entity type, or a list), sent as repeated `entity_redaction` query params. Cannot be combined with `transcriptEdit`.
+  - `entityRedactionMode` (`EntityRedactionMode`): how redacted entities are marked, `"redacted"` (`{REDACTED}`), `"entity_type"` (`{NAME}`) or `"enumerated_entity_type"` (`{NAME_0}`, the server default). Sent as the `entity_redaction_mode` query param only when set.
+  - `redacted_transcript` (`RealtimeEvents.REDACTED_TRANSCRIPT`), carrying the committed `text` and its `redacted_text` (`RedactedTranscriptMessage`). It is sent after its committed transcript, in commit order; partial and committed transcripts stay unredacted.
+  - `useScribe()` accepts the same `entityRedaction` and `entityRedactionMode` options, exposes an `onRedactedTranscript` callback and attaches the redacted text to the matching entry in `committedTranscripts` as `redactedText`.
+
+- 6dab091: `stripAudioTags` now removes audio tags written in any language, such as `[차분]` or `[穏やかに]`, not only tags made of English letters.
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+  - @elevenlabs/types@0.28.0
+
+## 1.33.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- Updated dependencies [23e10c4]
+- Updated dependencies [4b2b8e5]
+  - @elevenlabs/types@0.27.0
+
+## 1.32.1
+
+### Patch Changes
+
+- e92f62e: Fix the start of the agent's first message playing too fast and too high when the browser can't use the agent's sample rate. Starting a voice session now waits for the output resampler to be ready, and fails with an error (closing the microphone) if it can't be created, instead of playing audio at the wrong rate.
+
 ## 1.32.0
 
 ### Minor Changes

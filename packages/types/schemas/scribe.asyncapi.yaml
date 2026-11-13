@@ -49,6 +49,7 @@ channels:
           - $ref: "#/components/messages/CommittedTranscriptWithTimestamps"
           - $ref: "#/components/messages/CommittedTranscriptEntities"
           - $ref: "#/components/messages/EditedTranscript"
+          - $ref: "#/components/messages/RedactedTranscript"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
           - $ref: "#/components/messages/QuotaExceededError"
@@ -147,6 +148,14 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/EditedTranscriptPayload"
+
+    RedactedTranscript:
+      name: RedactedTranscriptMessage
+      title: Redacted Transcript
+      summary: Redacted version of a committed transcript. Only sent when the entityRedaction option is set.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/RedactedTranscriptPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -272,6 +281,7 @@ components:
         - committed_transcript_with_timestamps
         - committed_transcript_entities
         - edited_transcript
+        - redacted_transcript
         - error
         - auth_error
         - invalid_request
@@ -482,6 +492,14 @@ components:
               items:
                 type: string
               description: Entity categories or types the session detects on committed transcripts.
+            entity_redaction:
+              type: array
+              items:
+                type: string
+              description: Entity categories or types the session redacts from committed transcripts.
+            entity_redaction_mode:
+              type: string
+              description: How redacted entities are marked in the redacted text.
             filter_background_audio:
               type: boolean
               description: Whether background speech filtering is enabled to reduce false activations from nearby conversations and ambient noise.
@@ -590,6 +608,20 @@ components:
         edited_text:
           type: string
           description: The edited transcript text. If no edits were made it will be identical to the `text` field.
+
+    RedactedTranscriptPayload:
+      type: object
+      required: [message_type, text, redacted_text]
+      properties:
+        message_type:
+          type: string
+          const: redacted_transcript
+        text:
+          type: string
+          description: The committed transcript text the entities were redacted from. Redacted transcripts are sent in commit order, each after its committed transcript.
+        redacted_text:
+          type: string
+          description: The transcript text with each redacted entity replaced by a marker such as `{NAME_0}`, formatted according to the entityRedactionMode option.
 
     # Base error structure - used as anchor for all error payloads
     ScribeErrorBase: &ScribeErrorBase

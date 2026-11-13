@@ -626,6 +626,24 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  it("switches between voice and text mode with the segmented toggle", async () => {
+    setupWebComponent({ "agent-id": "mode_toggle", variant: "full" });
+    await page.getByRole("button", { name: "Start a call" }).click();
+    await expect.element(page.getByText("Agent response")).toBeInTheDocument();
+
+    const voice = page.getByRole("button", { name: "Voice" });
+    const textButton = page.getByRole("button", { name: "Text", exact: true });
+    await expect.element(voice).toHaveAttribute("aria-pressed", "true");
+    await expect.element(textButton).toHaveAttribute("aria-pressed", "false");
+
+    await textButton.click();
+
+    await expect.element(textButton).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .element(page.getByText("Switched to text mode"))
+      .toBeInTheDocument();
+  });
+
   describe("first message rich content in a voice call", () => {
     it("shows the buttons below the first message", async () => {
       setupWebComponent({ "agent-id": "voice_rich_content", variant: "full" });
@@ -1094,6 +1112,51 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("default size", () => {
+    const sheetVariant = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
+
+    afterEach(() => page.viewport(414, 896));
+
+    it("should open at the expanded size on desktop", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "expanded",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("expanded");
+    });
+
+    it("should open fullscreen on mobile even when always expanded", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "expanded",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("fullscreen");
+    });
+
+    it("should fall back to compact for an unknown size", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "always-expanded": "true",
+        "default-size": "huge",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("compact");
+    });
+  });
+
   describe("markdown rendering", () => {
     beforeEach(() => {
       setupWebComponent({
@@ -1166,6 +1229,48 @@ describe("elevenlabs-convai", () => {
       // Verify table cells
       await expect.element(page.getByText("Cell 1")).toBeInTheDocument();
       await expect.element(page.getByText("Cell 2")).toBeInTheDocument();
+    });
+  });
+
+  describe("right-to-left text", () => {
+    beforeEach(() => {
+      setupWebComponent({
+        "agent-id": "markdown_rtl",
+        variant: "compact",
+        "default-expanded": "true",
+      });
+    });
+
+    it("should lay out markdown from the start side of an Arabic reply", async () => {
+      const listItem = page.getByText("النقطة الأولى");
+      await expect.element(listItem).toBeInTheDocument();
+
+      const list = listItem.element().closest("ul")!;
+      expect(getComputedStyle(list).marginRight).toBe("16px");
+      expect(getComputedStyle(list).marginLeft).toBe("0px");
+
+      const quote = page
+        .getByText("ملاحظة: الرسوم غير مستردة.")
+        .element()
+        .closest("blockquote")!;
+      expect(getComputedStyle(quote).borderRightWidth).toBe("4px");
+      expect(getComputedStyle(quote).borderLeftWidth).toBe("0px");
+      expect(getComputedStyle(quote).paddingRight).toBe("16px");
+
+      const header = page.getByText("الخدمة").element().closest("th")!;
+      expect(getComputedStyle(header).textAlign).toBe("start");
+    });
+
+    it("should lay out typed text in the direction of its language", async () => {
+      const textInput = page.getByRole("textbox", {
+        name: "Text message input",
+      });
+
+      await textInput.fill("مرحبا، كيف حالك؟");
+      expect(getComputedStyle(textInput.element()).direction).toBe("rtl");
+
+      await textInput.fill("Hello, how are you?");
+      expect(getComputedStyle(textInput.element()).direction).toBe("ltr");
     });
   });
 

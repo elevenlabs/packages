@@ -43,6 +43,20 @@ const DEFAULT_LIVEKIT_WS_URL = "wss://livekit.rtc.elevenlabs.io";
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 const AUDIO_VOLUME_THRESHOLD = 0.01;
 
+// The server names the avatar in the room metadata before the avatar joins.
+function isAvatar(room: Room, participant: Participant): boolean {
+  try {
+    const metadata: unknown = JSON.parse(room.metadata ?? "null");
+    return (
+      isJsonObject(metadata) &&
+      isJsonObject(metadata.avatar) &&
+      metadata.avatar.participant_identity === participant.identity
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
   return origin.replace(/^wss:\/\//, "https://");
@@ -75,6 +89,15 @@ export class WebRTCConnection extends BaseConnection {
 
   private outputAnalyser: unknown = undefined;
   private outputVolumeProvider: VolumeProvider = NO_VOLUME;
+
+  private agentAudioTrack: RemoteAudioTrack | null = null;
+  private avatarAudioTrack: RemoteAudioTrack | null = null;
+  private capturedTrack: RemoteAudioTrack | null = null;
+  private voice: "agent" | "avatar" = "agent";
+  private avatarVideoTrack: MediaStreamTrack | null = null;
+  private readonly avatarVideoTrackListeners = new Set<
+    (track: MediaStreamTrack | null) => void
+  >();
 
   // InputController state
   private _isMuted = false;
@@ -456,45 +479,62 @@ export class WebRTCConnection extends BaseConnection {
         _publication: TrackPublication,
         participant: Participant
       ) => {
-        if (
+        const avatar = isAvatar(this.room, participant);
+        if (avatar && track.kind === Track.Kind.Video) {
+          this.setAvatarVideoTrack(track.mediaStreamTrack);
+        } else if (avatar && track.kind === Track.Kind.Audio) {
+          this.avatarAudioTrack = track as RemoteAudioTrack;
+          await this.playRemoteAudio(this.avatarAudioTrack);
+        } else if (
           track.kind === Track.Kind.Audio &&
           participant.identity.includes("agent")
         ) {
-          const remoteAudioTrack = track as RemoteAudioTrack;
-
-          if (this.audioAdapter) {
-            // Delegate playback to the platform-specific adapter
-            await this.audioAdapter.attachRemoteTrack(
-              remoteAudioTrack,
-              this.outputDeviceId
-            );
-
-            // Set up output volume analysis and audio capture
-            await this.setupAudioCapture(remoteAudioTrack);
-
-            this.onDebug?.({ type: "audio_element_ready" });
-          }
+          this.agentAudioTrack = track as RemoteAudioTrack;
+          await this.playRemoteAudio(this.agentAudioTrack);
         }
       }
     );
 
+    this.room.on(RoomEvent.TrackUnsubscribed, (track: Track) => {
+      if (track.mediaStreamTrack === this.avatarVideoTrack) {
+        this.setAvatarVideoTrack(null);
+      }
+      if (track === this.agentAudioTrack) {
+        this.agentAudioTrack = null;
+      }
+      if (track === this.avatarAudioTrack) {
+        this.avatarAudioTrack = null;
+        this.voice = "agent";
+      }
+      if (track === this.capturedTrack) {
+        this.capturedTrack = null;
+      }
+      void this.syncCapture();
+    });
+
     this.room.on(
       RoomEvent.ActiveSpeakersChanged,
       async (speakers: Participant[]) => {
-        if (speakers.length > 0) {
-          this.updateMode(
-            speakers[0].identity.startsWith("agent") ? "speaking" : "listening"
-          );
+        const speaker = speakers[0];
+        if (speaker && isAvatar(this.room, speaker)) {
+          this.voice = "avatar";
+        } else if (speaker?.identity.startsWith("agent")) {
+          this.voice = "agent";
         } else {
           this.updateMode("listening");
+          return;
         }
+        this.updateMode("speaking");
+        await this.syncCapture();
       }
     );
 
     this.room.on(
       RoomEvent.ParticipantDisconnected,
       (participant: RemoteParticipant) => {
-        if (participant.identity?.startsWith("agent")) {
+        if (isAvatar(this.room, participant)) {
+          this.updateMode("listening");
+        } else if (participant.identity?.startsWith("agent")) {
           this.disconnect({
             reason: "agent",
             context: { type: "close", reason: "agent disconnected" },
@@ -502,6 +542,43 @@ export class WebRTCConnection extends BaseConnection {
         }
       }
     );
+  }
+
+  private async playRemoteAudio(track: RemoteAudioTrack) {
+    if (!this.audioAdapter) return;
+
+    await this.audioAdapter.attachRemoteTrack(track, this.outputDeviceId);
+    await this.syncCapture();
+    this.onDebug?.({ type: "audio_element_ready" });
+  }
+
+  // The agent hands each utterance to the avatar only once the avatar is
+  // ready, so capture follows whichever of the two last spoke.
+  private async syncCapture() {
+    const track =
+      this.voice === "avatar" ? this.avatarAudioTrack : this.agentAudioTrack;
+    if (!track || track === this.capturedTrack) return;
+
+    this.capturedTrack = track;
+    await this.setupAudioCapture(track);
+  }
+
+  private setAvatarVideoTrack(track: MediaStreamTrack | null) {
+    if (track === this.avatarVideoTrack) return;
+
+    this.avatarVideoTrack = track;
+    this.avatarVideoTrackListeners.forEach(listener => listener(track));
+  }
+
+  // TODO(AVE-792): reached through `./experimental` until the public API ships.
+  private onAvatarVideoTrack(
+    callback: (track: MediaStreamTrack | null) => void
+  ): () => void {
+    this.avatarVideoTrackListeners.add(callback);
+    callback(this.avatarVideoTrack);
+    return () => {
+      this.avatarVideoTrackListeners.delete(callback);
+    };
   }
 
   public close() {
@@ -525,6 +602,10 @@ export class WebRTCConnection extends BaseConnection {
       this.outputAnalyser = undefined;
       this.inputVolumeProvider = NO_VOLUME;
       this.outputVolumeProvider = NO_VOLUME;
+      this.agentAudioTrack = null;
+      this.avatarAudioTrack = null;
+      this.capturedTrack = null;
+      this.setAvatarVideoTrack(null);
 
       this.room.disconnect();
     }

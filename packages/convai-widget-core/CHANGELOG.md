@@ -1,5 +1,74 @@
 # @elevenlabs/convai-widget-core
 
+## 0.25.2
+
+### Patch Changes
+
+- fd3c20d: Keep the typing dots up after a tool call until the agent's reply shows, including when the agent spoke before calling the tool. System tools like `end_call` don't bring them back.
+- 953b617: Lay out right-to-left replies correctly: markdown lists, blockquotes and table headers now start on the right in Arabic and other RTL text, and the message and feedback inputs follow the direction of the text typed into them.
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+
+## 0.25.1
+
+### Patch Changes
+
+- b3bf0e4: Show up to 10 cards in a carousel, up from 5.
+
+## 0.25.0
+
+### Minor Changes
+
+- 5dc3299: Redesign the voice/text mode toggle as a Voice/Text segmented control, labeled in the expanded widget and icon-only in the compact widget, and add `voice_mode_label` and `text_mode_label` text contents for its labels.
+- 3c69b6f: Add a `default-size` attribute (`compact` or `expanded`) that sets the size the widget's chat opens at.
+- 131ddb9: Show a "new messages" button with a count when messages, like product carousels, arrive while the transcript is scrolled up. The labels can be customized with the `new_message` and `new_messages` text content keys, where `{count}` is replaced with the number of messages.
+
+### Patch Changes
+
+- 81afd10: Keep the transcript scrolling to new messages, like product carousels, after a scroll or swipe that didn't move it.
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/client@1.35.0
+
+## 0.24.1
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+- Updated dependencies [6dab091]
+  - @elevenlabs/client@1.34.0
+
+## 0.24.0
+
+### Minor Changes
+
+- a141a02: With `persistent-session` enabled, a voice call can be resumed after a page navigation: the next page shows the conversation so far with "Resume talking?". Resuming starts a new conversation that continues from those turns, and skips the greeting if the agent allows first message overrides.
+
+## 0.23.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- 4b2b8e5: Replay the rich content an agent showed when a persistent text conversation resumes. History rows can now carry `rich_content`.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
+## 0.22.2
+
+### Patch Changes
+
+- 507b082: Carousel card images use a 4:5 ratio again so tall products aren't cropped, and cards are 288px wide (240px on touch screens).
+
+## 0.22.1
+
+### Patch Changes
+
+- Updated dependencies [e92f62e]
+  - @elevenlabs/client@1.32.1
+
 ## 0.22.0
 
 ### Minor Changes

@@ -1,5 +1,28 @@
 # @elevenlabs/types
 
+## 0.29.0
+
+### Minor Changes
+
+- 3d1c8ef: Type the existing `overrides.tts.modelId` from the spec. `@elevenlabs/types` now declares the documented ElevenAgents TTS models (`eleven_turbo_v2`, `eleven_turbo_v2_5`, `eleven_flash_v2`, `eleven_flash_v2_5`, `eleven_multilingual_v2`, `eleven_v3_conversational`, `eleven_v4`, `eleven_v4_turbo`) as `ConversationConfigOverrideTtsModelId`, and `@elevenlabs/client` suggests them when setting `modelId`. Any other string is still accepted so that newly released or deprecated models are never rejected by the compiler, but the API may reject ids outside the documented list at runtime. `model_id` is only added to `conversation_config_override.tts` when `modelId` is provided.
+
+## 0.28.0
+
+### Minor Changes
+
+- 29f9b8e: Add the `entityRedaction` and `entityRedactionMode` options to `Scribe.connect()` and dispatch the new `redacted_transcript` server message:
+  - `entityRedaction`: redact entities from committed transcripts. Accepts the same values as `entityDetection` (`"all"`, a category, a specific entity type, or a list), sent as repeated `entity_redaction` query params. Cannot be combined with `transcriptEdit`.
+  - `entityRedactionMode` (`EntityRedactionMode`): how redacted entities are marked, `"redacted"` (`{REDACTED}`), `"entity_type"` (`{NAME}`) or `"enumerated_entity_type"` (`{NAME_0}`, the server default). Sent as the `entity_redaction_mode` query param only when set.
+  - `redacted_transcript` (`RealtimeEvents.REDACTED_TRANSCRIPT`), carrying the committed `text` and its `redacted_text` (`RedactedTranscriptMessage`). It is sent after its committed transcript, in commit order; partial and committed transcripts stay unredacted.
+  - `useScribe()` accepts the same `entityRedaction` and `entityRedactionMode` options, exposes an `onRedactedTranscript` callback and attaches the redacted text to the matching entry in `committedTranscripts` as `redactedText`.
+
+## 0.27.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+- 4b2b8e5: Replay the rich content an agent showed when a persistent text conversation resumes. History rows can now carry `rich_content`.
+
 ## 0.26.0
 
 ### Minor Changes

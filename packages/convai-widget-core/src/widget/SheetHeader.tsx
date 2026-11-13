@@ -6,7 +6,7 @@ import { useTextContents } from "../contexts/text-contents";
 import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { StatusLabel } from "./StatusLabel";
 import { useWidgetSize } from "../contexts/widget-size";
-import { ConversationModeToggleButton } from "./ConversationModeToggleButton";
+import { ConversationModeToggle } from "./ConversationModeToggle";
 
 interface SheetHeaderProps {
   showBackButton: boolean;
@@ -38,38 +38,35 @@ export function SheetHeader({
     <div className="w-full relative shrink-0 z-10">
       <div className="h-16 absolute top-0 w-full bg-base" />
       <div className="h-4 absolute top-16 w-full bg-gradient-to-b from-base to-transparent backdrop-blur-[1px] [mask-image:linear-gradient(to_bottom,black,transparent)] shadow-scroll-fade-bottom" />
-      <div className="h-16 top-0 absolute flex flex-row items-center justify-center w-full">
-        <div className="absolute start-3 flex gap-2 items-center">
+      <div className="h-16 top-0 absolute flex flex-row items-center justify-between gap-2 px-3 w-full">
+        <div className="flex gap-2 items-center min-w-0">
           {showBackButton ? (
             <Button
               variant="ghost"
               onClick={onBackClick}
               aria-label={text.go_back}
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
             >
               <Icon name="chevron-up" className="-rotate-90" size="xs" />
             </Button>
           ) : (
-            <div className="relative w-8 h-8" />
+            <div className="relative w-8 h-8 shrink-0" />
           )}
           <InOutTransition active={showStatusLabel}>
             <StatusLabel
               compact
-              className="transition-opacity data-hidden:opacity-0"
+              className="min-w-0 transition-opacity data-hidden:opacity-0"
             />
           </InOutTransition>
         </div>
-        <div className="absolute flex flex-row items-center gap-2 ms-auto end-3">
+        <div className="flex flex-row items-center gap-2 shrink-0">
           <InOutTransition active={showLanguageSelector}>
             <div className="transition-[opacity,transform] duration-200 data-hidden:opacity-0 data-hidden:-translate-y-4">
               <SheetLanguageSelect />
             </div>
           </InOutTransition>
           <InOutTransition active={showConversationModeToggle}>
-            <ConversationModeToggleButton
-              variant="ghost"
-              className="h-8 w-8 transition-opacity data-hidden:opacity-0"
-            />
+            <ConversationModeToggle className="transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
           {onClose && fullscreenOnly.value ? (
             <Button

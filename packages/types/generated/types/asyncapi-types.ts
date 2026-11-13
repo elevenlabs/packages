@@ -158,11 +158,22 @@ export interface ConversationConfigOverrideAsr {
 
 export interface ConversationConfigOverrideTts {
   voice_id?: string;
-  model_id?: string;
+  model_id?: ConversationConfigOverrideTtsModelId;
   stability?: number;
   speed?: number;
   similarity_boost?: number;
+  clone_strength?: number;
 }
+
+export type ConversationConfigOverrideTtsModelId =
+  | "eleven_turbo_v2"
+  | "eleven_turbo_v2_5"
+  | "eleven_flash_v2"
+  | "eleven_flash_v2_5"
+  | "eleven_multilingual_v2"
+  | "eleven_v3_conversational"
+  | "eleven_v4"
+  | "eleven_v4_turbo";
 
 export interface ConversationConfigOverrideConversation {
   text_only?: boolean;
@@ -389,9 +400,16 @@ export interface ConversationHistoryEventRowsItem {
   role: ConversationHistoryEventRowsItemRole;
   text: string;
   timestamp_unix_secs: number;
+  rich_content?: ConversationHistoryEventRowsItemRichContent;
 }
 
 export type ConversationHistoryEventRowsItemRole = "user" | "agent";
+
+export interface ConversationHistoryEventRowsItemRichContent {
+  rich_content_id: string;
+  component: string;
+  props: Record<string, any>;
+}
 
 export interface ClientToolCallMessage {
   type: "client_tool_call";
@@ -883,6 +901,8 @@ export interface Config {
   keyterms?: string[];
   no_verbatim?: boolean;
   entity_detection?: string[];
+  entity_redaction?: string[];
+  entity_redaction_mode?: string;
   filter_background_audio?: boolean;
 }
 
@@ -964,6 +984,12 @@ export interface EditedTranscript {
   message_type: "edited_transcript";
   text: string;
   edited_text: string;
+}
+
+export interface RedactedTranscript {
+  message_type: "redacted_transcript";
+  text: string;
+  redacted_text: string;
 }
 
 export interface Error {
@@ -1097,6 +1123,12 @@ export interface EditedTranscriptMessage {
   message_type: "edited_transcript";
   text: string;
   edited_text: string;
+}
+
+export interface RedactedTranscriptMessage {
+  message_type: "redacted_transcript";
+  text: string;
+  redacted_text: string;
 }
 
 export interface ScribeErrorMessage {

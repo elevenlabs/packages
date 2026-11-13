@@ -18,6 +18,7 @@ import { useWidgetSize } from "../contexts/widget-size";
 import { cn } from "../utils/cn";
 import { useShadowHost } from "../contexts/shadow-host";
 import { ExpandButton } from "../components/ExpandButton";
+import { useNavigationResumeLifecycle } from "../utils/useNavigationResumeLifecycle";
 
 const HORIZONTAL = {
   left: "items-start",
@@ -47,12 +48,17 @@ const HIDDEN_STYLE = {
 
 export const Wrapper = memo(function Wrapper() {
   const config = useWidgetConfig();
-  const { error, isDisconnected, hasStoredSession } = useConversation();
+  const { error, isDisconnected, hasStoredSession, pendingNavigationResume } =
+    useConversation();
   // A stored persistent session means the visitor left mid-conversation, so
   // reopen the chat on load instead of making them click the trigger again.
+  // A call a navigation interrupted reopens so its resume prompt is visible.
   const expanded = useSignal(
-    config.peek().default_expanded || hasStoredSession.peek()
+    config.peek().default_expanded ||
+      hasStoredSession.peek() ||
+      !!pendingNavigationResume.peek()
   );
+  useNavigationResumeLifecycle();
   const hidden = useSignal(false);
   const sawError = useSignal(false);
   const terms = useTerms();
@@ -173,11 +179,15 @@ export const Wrapper = memo(function Wrapper() {
       <InOutTransition initial={false} active={showConversation}>
         <Root className={className} style={HIDDEN_STYLE}>
           {config.value.always_expanded ? (
-            <Sheet open />
+            <Sheet key="always-expanded" open />
           ) : (
             <>
               {expandable.value && (
-                <Sheet open={expanded} onClose={handleClose} />
+                <Sheet
+                  key="toggleable"
+                  open={expanded}
+                  onClose={handleClose}
+                />
               )}
               <Trigger
                 expandable={expandable.value}

@@ -298,6 +298,159 @@ describe("useScribe", () => {
     });
   });
 
+  it("passes entityRedaction and entityRedactionMode through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({
+        entityRedaction: ["pii", "email_address"],
+        entityRedactionMode: "entity_type",
+      })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v2_realtime",
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityRedaction: ["pii", "email_address"],
+        entityRedactionMode: "entity_type",
+      })
+    );
+  });
+
+  describe("entity redaction", () => {
+    it("attaches redacted_transcript to the matching committed segment", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const onRedactedTranscript = vi.fn();
+      const { result } = renderHook(() =>
+        useScribe({ entityRedaction: "all", onRedactedTranscript })
+      );
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const committed = {
+        message_type: "committed_transcript",
+        text: "John Smith will call you back",
+      };
+      const redacted = {
+        message_type: "redacted_transcript",
+        text: committed.text,
+        redacted_text: "{NAME_0} will call you back",
+      };
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT
+        )?.(committed);
+      });
+      expect(
+        result.current.committedTranscripts[0]?.redactedText
+      ).toBeUndefined();
+
+      act(() => {
+        handlerFor(connection, RealtimeEvents.REDACTED_TRANSCRIPT)?.(redacted);
+      });
+
+      expect(result.current.committedTranscripts).toHaveLength(1);
+      expect(result.current.committedTranscripts[0]?.text).toBe(committed.text);
+      expect(result.current.committedTranscripts[0]?.redactedText).toBe(
+        redacted.redacted_text
+      );
+      expect(onRedactedTranscript).toHaveBeenCalledWith(redacted);
+
+      act(() => {
+        handlerFor(
+          connection,
+          RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS
+        )?.({
+          message_type: "committed_transcript_with_timestamps",
+          text: committed.text,
+          words: [],
+        });
+      });
+
+      expect(result.current.committedTranscripts).toHaveLength(2);
+      expect(result.current.committedTranscripts[1]?.redactedText).toBe(
+        redacted.redacted_text
+      );
+    });
+
+    it("pairs redactions of repeated text with their own segments", async () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+
+      const { result } = renderHook(() =>
+        useScribe({ entityRedaction: "all" })
+      );
+
+      await act(async () => {
+        await result.current.connect({
+          token: "test-token",
+          modelId: "scribe_v2_realtime",
+          microphone: {},
+        });
+      });
+
+      const text = "Call John";
+      const fire = (event: RealtimeEvents, payload: object) =>
+        act(() => {
+          handlerFor(connection, event)?.(payload);
+        });
+
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT, {
+        message_type: "committed_transcript",
+        text,
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT, {
+        message_type: "committed_transcript",
+        text,
+      });
+      fire(RealtimeEvents.REDACTED_TRANSCRIPT, {
+        message_type: "redacted_transcript",
+        text,
+        redacted_text: "Call {NAME_0}",
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, {
+        message_type: "committed_transcript_with_timestamps",
+        text,
+        words: [],
+      });
+      fire(RealtimeEvents.REDACTED_TRANSCRIPT, {
+        message_type: "redacted_transcript",
+        text,
+        redacted_text: "Call {NAME_1}",
+      });
+      fire(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, {
+        message_type: "committed_transcript_with_timestamps",
+        text,
+        words: [],
+      });
+
+      expect(
+        result.current.committedTranscripts.map(segment => segment.redactedText)
+      ).toEqual([
+        "Call {NAME_0}",
+        "Call {NAME_1}",
+        "Call {NAME_0}",
+        "Call {NAME_1}",
+      ]);
+    });
+  });
+
   describe("connected status", () => {
     const SESSION_STARTED = { message_type: "session_started" };
 
@@ -483,6 +636,82 @@ describe("useScribe", () => {
 
       expect(onDisconnect).toHaveBeenCalledTimes(1);
       expect(result.current.status).toBe("disconnected");
+    });
+  });
+
+  describe("autoConnect", () => {
+    const options = {
+      token: "test-token",
+      modelId: "scribe_v2_realtime",
+      audioFormat: AudioFormat.PCM_16000,
+      sampleRate: 16000,
+      autoConnect: true,
+    };
+
+    it("finishes with the replacement connection under React StrictMode", () => {
+      const first = createMockConnection();
+      const second = createMockConnection();
+      vi.mocked(Scribe.connect).mockReset();
+      vi.mocked(Scribe.connect)
+        .mockReturnValueOnce(first)
+        .mockReturnValueOnce(second);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { result } = renderHook(() => useScribe(options), {
+        reactStrictMode: true,
+      });
+
+      // StrictMode runs the mount effect, its cleanup, then the effect again.
+      // The aborted socket is closed, and the remount opens a replacement.
+      expect(first.close).toHaveBeenCalledTimes(1);
+      expect(second.close).not.toHaveBeenCalled();
+      expect(Scribe.connect).toHaveBeenCalledTimes(2);
+      expect(result.current.getConnection()).toBe(second);
+      // The mock never emits SESSION_STARTED, so connecting is the settled status.
+      expect(result.current.status).toBe("connecting");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+
+      // A late close, error, or transcript from the aborted socket must not
+      // clobber the replacement session.
+      act(() => {
+        handlerFor(first, RealtimeEvents.CLOSE)?.();
+        handlerFor(first, RealtimeEvents.ERROR)?.({ error: "socket aborted" });
+        handlerFor(
+          first,
+          RealtimeEvents.SESSION_STARTED
+        )?.({
+          message_type: "session_started",
+        });
+        handlerFor(
+          first,
+          RealtimeEvents.PARTIAL_TRANSCRIPT
+        )?.({
+          text: "from the aborted socket",
+        });
+      });
+
+      expect(result.current.getConnection()).toBe(second);
+      expect(result.current.status).toBe("connecting");
+      expect(result.current.error).toBeNull();
+      expect(result.current.partialTranscript).toBe("");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+      warn.mockRestore();
+    });
+
+    it("connects once without StrictMode and does not close during mount", () => {
+      const connection = createMockConnection();
+      vi.mocked(Scribe.connect).mockReset();
+      vi.mocked(Scribe.connect).mockReturnValue(connection);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { result } = renderHook(() => useScribe(options));
+
+      expect(Scribe.connect).toHaveBeenCalledTimes(1);
+      expect(connection.close).not.toHaveBeenCalled();
+      expect(result.current.getConnection()).toBe(connection);
+      expect(result.current.status).toBe("connecting");
+      expect(warn).not.toHaveBeenCalledWith("Already connected");
+      warn.mockRestore();
     });
   });
 });
