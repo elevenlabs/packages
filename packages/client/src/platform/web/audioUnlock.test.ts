@@ -7,7 +7,6 @@ vi.mock("./compatibility.js", () => ({
 import { isIosDevice } from "./compatibility.js";
 import {
   discardStashedAudioContext,
-  installIosAudioUnlockListener,
   takeUnlockedAudioContext,
   unlockIosAudioForSession,
 } from "./audioUnlock.js";
@@ -50,6 +49,14 @@ describe("unlockIosAudioForSession", () => {
     expect(takeUnlockedAudioContext()).toBeNull();
   });
 
+  it("does not throw or stash a context when Web Audio is unavailable", () => {
+    vi.stubGlobal("AudioContext", undefined);
+
+    expect(() => unlockIosAudioForSession()).not.toThrow();
+    expect(() => unlockIosAudioForSession()).not.toThrow();
+    expect(takeUnlockedAudioContext()).toBeNull();
+  });
+
   it("stashes an AudioContext on iOS until taken", () => {
     unlockIosAudioForSession();
     const ctx = takeUnlockedAudioContext();
@@ -76,19 +83,40 @@ describe("unlockIosAudioForSession", () => {
 });
 
 describe("installIosAudioUnlockListener", () => {
-  beforeEach(() => {
+  let installListener: () => void;
+
+  beforeEach(async () => {
+    vi.resetModules();
     vi.mocked(isIosDevice).mockReturnValue(true);
+    ({ installIosAudioUnlockListener: installListener } =
+      await import("./audioUnlock.js"));
+    vi.stubGlobal("AudioContext", vi.fn());
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
+  it("leaves listeners uninstalled without Web Audio and permits a later install", () => {
+    const addEventListener = vi.fn();
+    vi.stubGlobal("document", { addEventListener });
+    vi.stubGlobal("AudioContext", undefined);
+
+    expect(() => installListener()).not.toThrow();
+    installListener();
+    expect(addEventListener).not.toHaveBeenCalled();
+
+    vi.stubGlobal("AudioContext", vi.fn());
+    installListener();
+    expect(addEventListener).toHaveBeenCalledTimes(3);
+  });
+
   it("registers capture-phase gesture listeners on iOS", () => {
     const addEventListener = vi.fn();
     vi.stubGlobal("document", { addEventListener });
 
-    installIosAudioUnlockListener();
+    installListener();
+    installListener();
 
     expect(addEventListener).toHaveBeenCalledTimes(3);
     expect(addEventListener).toHaveBeenCalledWith(
@@ -96,5 +124,10 @@ describe("installIosAudioUnlockListener", () => {
       expect.any(Function),
       true
     );
+
+    vi.stubGlobal("AudioContext", undefined);
+    for (const [, listener] of addEventListener.mock.calls) {
+      expect(() => listener()).not.toThrow();
+    }
   });
 });
