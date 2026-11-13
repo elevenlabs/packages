@@ -3,7 +3,6 @@ import { useRef } from "preact/hooks";
 import { useWidgetSize } from "../contexts/widget-size";
 import type { DisplayTranscriptEntry } from "./display-transcript";
 
-/** Expands the sheet when a carousel first shows, since its cards don't fit the compact size. */
 export function useExpandForCarousels(
   transcript: ReadonlySignal<DisplayTranscriptEntry[]>
 ) {

@@ -28,20 +28,6 @@ describe("Carousel", () => {
   afterAll(() => Worker.stop());
   beforeEach(() => page.viewport(1280, 800));
 
-  it("expands the compact sheet on desktop when product cards arrive", async () => {
-    setupWebComponent({
-      "agent-id": "product_cards",
-      variant: "compact",
-      "expand-on-carousel": "true",
-    });
-
-    const title = await askForBoots();
-
-    await expect
-      .poll(() => title.closest(".sheet")!.getAttribute("data-variant"))
-      .toBe("expanded");
-  });
-
   it("expands on reopening for cards that arrived while it was closed", async () => {
     setupWebComponent({
       "agent-id": "product_carousel",

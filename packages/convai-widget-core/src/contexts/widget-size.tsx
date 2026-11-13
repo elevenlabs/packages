@@ -13,7 +13,6 @@ interface WidgetSizeContextType {
   /** The page layout's call pane, shown for voice agents beside the chat on desktop */
   showSpeechPane: Signal<boolean>;
   toggleSize: () => void;
-  /** Expands a compact desktop sheet for expand_on_carousel, unless the user resized it */
   autoExpand: () => void;
 }
 

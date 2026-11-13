@@ -85,7 +85,6 @@ export function Carousel({ items, richContentId }: CarouselProps) {
           onScroll={handleScroll}
           className="flex snap-x snap-mandatory pointer-coarse:snap-none gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {/* Full-size cards are taller than the compact sheet's transcript */}
           {items.map((item, index) => (
             <div
               key={index}
