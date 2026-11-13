@@ -18,7 +18,7 @@ import {
 import { isIosDevice } from "./compatibility.js";
 
 type WorkletMessage =
-  | { type: "process"; finished: boolean }
+  | { type: "process"; finished: boolean; bufferSequence: number }
   | { type: "chunk_start"; chunkId: number }
   | { type: "resampler_ready" }
   | { type: "resampler_error"; message: string };
@@ -172,6 +172,39 @@ export class MediaDeviceOutput
     }
   }
 
+  // Resume only after an actual playback request. A backgrounded browser may
+  // reject resume() until user activation; the next visibility change retries.
+  private playbackPending = false;
+  private lastBufferSequence = 0;
+  private recoveryInFlight: Promise<void> | null = null;
+  private closed = false;
+
+  private readonly recoverPlayback = () => {
+    if (
+      this.closed ||
+      !this.playbackPending ||
+      (this.context.state !== "suspended" &&
+        this.context.state !== "interrupted")
+    ) {
+      return;
+    }
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    if (this.recoveryInFlight) return;
+    this.recoveryInFlight = this.context
+      .resume()
+      .catch(() => {
+        // Autoplay policy may require a later user gesture; do not spin on errors.
+      })
+      .finally(() => {
+        this.recoveryInFlight = null;
+      });
+  };
+
   private volume = 1;
   private interrupted = false;
   private readonly listeners = new Set<PlaybackListener>();
@@ -188,6 +221,10 @@ export class MediaDeviceOutput
     private readonly worklet: AudioWorkletNode,
     private readonly audioElement: HTMLAudioElement
   ) {
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", this.recoverPlayback);
+    }
+    this.context.addEventListener("statechange", this.recoverPlayback);
     this.worklet.port.addEventListener("message", this.handleWorkletMessage);
     // Start the MessagePort to enable addEventListener to work
     // (required when using addEventListener instead of onmessage)
@@ -222,6 +259,15 @@ export class MediaDeviceOutput
     event: MessageEvent<WorkletMessage>
   ) => {
     let playbackEvent: PlaybackStateEvent = event as PlaybackStateEvent;
+    if (
+      event.data.type === "process" &&
+      event.data.finished &&
+      event.data.bufferSequence === this.lastBufferSequence
+    ) {
+      // The worklet has consumed its queue; resuming the context alone does
+      // not mean previously queued audio has finished playing.
+      this.playbackPending = false;
+    }
     if (event.data.type === "chunk_start") {
       const { chunkId } = event.data;
       const metadata = this.chunkMetadata.get(chunkId);
@@ -246,6 +292,9 @@ export class MediaDeviceOutput
   }
 
   public playAudio(chunk: ArrayBuffer, metadata?: OutputChunkMetadata): void {
+    // A running context can suspend after enqueue and before playback ends.
+    this.playbackPending = true;
+    this.recoverPlayback();
     this.gain.gain.cancelScheduledValues(this.context.currentTime);
     this.gain.gain.value = this.volume;
     if (this.interruptTimeout) {
@@ -258,7 +307,12 @@ export class MediaDeviceOutput
       chunkId = ++this.nextChunkId;
       this.chunkMetadata.set(chunkId, metadata);
     }
-    this.worklet.port.postMessage({ type: "buffer", buffer: chunk, chunkId });
+    this.worklet.port.postMessage({
+      type: "buffer",
+      buffer: chunk,
+      chunkId,
+      bufferSequence: ++this.lastBufferSequence,
+    });
   }
 
   public interrupt(resetDuration = 2000): void {
@@ -307,6 +361,12 @@ export class MediaDeviceOutput
   }
 
   public async close() {
+    this.closed = true;
+    this.playbackPending = false;
+    this.context.removeEventListener("statechange", this.recoverPlayback);
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", this.recoverPlayback);
+    }
     // Clear any pending interrupt timeout
     if (this.interruptTimeout) {
       clearTimeout(this.interruptTimeout);

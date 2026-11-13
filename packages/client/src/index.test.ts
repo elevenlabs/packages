@@ -1027,6 +1027,8 @@ describe("Volume Control", () => {
         },
         resume: vi.fn(() => Promise.resolve()),
         close: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       };
     }) as unknown as typeof AudioContext;
 
@@ -1116,6 +1118,8 @@ describe("Volume Control", () => {
         },
         resume: vi.fn(() => Promise.resolve()),
         close: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       };
     }) as unknown as typeof AudioContext;
 
@@ -1238,6 +1242,8 @@ describe("Volume Control", () => {
         },
         resume: vi.fn(() => Promise.resolve()),
         close: vi.fn(() => Promise.resolve()),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       };
     }) as unknown as typeof AudioContext;
 
