@@ -5,6 +5,7 @@ policy:
         - convai-widget-embed changes approved by widget team
         - client changes approved by owner
         - react-native changes approved by owner
+        - other changes approved by a maintainer
 
 approval_rules:
   - name: convai-widget-core changes approved by widget team
@@ -77,3 +78,22 @@ approval_rules:
       request_review:
         enabled: true
         mode: all-users
+
+  # Must not apply when an owned package changes; the top-level "or" would
+  # otherwise let a maintainer approval bypass the package owners.
+  - name: other changes approved by a maintainer
+    description: Changes outside the owned packages require approval from a maintainer
+    if:
+      no_changed_files:
+        paths:
+          - "^packages/convai-widget-core/.*$"
+          - "^packages/convai-widget-embed/.*$"
+          - "^packages/client/.*$"
+          - "^packages/react-native/.*$"
+    requires:
+      count: 1
+      permissions: ["write"]
+    options:
+      <<: *default_options
+      request_review:
+        enabled: false
