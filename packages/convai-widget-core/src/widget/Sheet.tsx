@@ -156,6 +156,11 @@ export function Sheet({ open, onClose }: SheetProps) {
       showConversationModeToggle.value
   );
 
+  // Alone on a page, the sheet takes the page's gray so the chat has no edges
+  const isMuted = useComputed(
+    () => variant.value === "page" && !showSpeechPane.value
+  );
+
   const showExpandButton = useComputed(
     () => showTranscript.value && (config.value.show_resize_button ?? true)
   );
@@ -164,9 +169,11 @@ export function Sheet({ open, onClose }: SheetProps) {
     <InOutTransition initial={false} active={open}>
       <div
         data-variant={variant.value}
+        data-muted={isMuted.value || undefined}
         className={cn(
-          "sheet",
-          "flex flex-col overflow-hidden bg-base pointer-events-auto z-2",
+          "sheet group/sheet",
+          "flex flex-col overflow-hidden pointer-events-auto z-2",
+          isMuted.value ? "bg-base-hover" : "bg-base",
           "transition-[width,height,max-width,max-height,transform,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
           "data-hidden:scale-90 data-hidden:opacity-0",
           variant.value === "page"
@@ -214,7 +221,7 @@ export function Sheet({ open, onClose }: SheetProps) {
           </div>
         </InOutTransition>
         <InOutTransition active={currentContent.value === "feedback"}>
-          <div className="absolute inset-0 top-[88px] flex flex-col bg-base transition-transform duration-300 ease-out data-hidden:translate-x-full">
+          <div className="absolute inset-0 top-[88px] flex flex-col bg-base group-data-muted/sheet:bg-base-hover transition-transform duration-300 ease-out data-hidden:translate-x-full">
             <FeedbackPage />
             <FeedbackActions />
           </div>

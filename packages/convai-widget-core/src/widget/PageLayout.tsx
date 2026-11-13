@@ -33,20 +33,9 @@ export function PageLayout() {
           showSpeechPane.value && "basis-2/5 shadow-[0_0_48px_rgba(0,0,0,0.08)]"
         )}
       >
-        {!showSpeechPane.value && (
-          <div className="absolute inset-0 hidden md:block bg-base-hover" />
-        )}
-        <div
-          className={cn(
-            "relative flex w-full bg-base",
-            !showSpeechPane.value &&
-              "md:max-w-[800px] md:mx-auto md:shadow-[0_0_48px_rgba(0,0,0,0.08)]"
-          )}
-        >
-          <Sheet open />
-          <div className="absolute inset-x-0 bottom-1 flex justify-center z-2">
-            <PoweredBy />
-          </div>
+        <Sheet open />
+        <div className="absolute inset-x-0 bottom-1 flex justify-center z-2">
+          <PoweredBy />
         </div>
       </div>
     </div>
