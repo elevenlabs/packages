@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React, { useContext } from "react";
-import { renderHook, act } from "@testing-library/react";
+import { render, renderHook, act } from "@testing-library/react";
 import {
   Conversation,
   type Callbacks,
@@ -248,6 +248,66 @@ describe("ConversationProvider", () => {
     unmount();
 
     expect(mockConversation.endSession).toHaveBeenCalled();
+  });
+
+  it("connects when a child starts the session on mount under React StrictMode", async () => {
+    const first = createMockConversation("first-id");
+    const second = createMockConversation("second-id");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(first)
+      .mockResolvedValue(second);
+
+    const { result } = renderHook(
+      () => {
+        const context = useTestContext();
+        const { startSession } = context;
+        React.useEffect(() => {
+          startSession();
+        }, [startSession]);
+        return context;
+      },
+      { wrapper: createWrapper(), reactStrictMode: true }
+    );
+
+    await act(async () => {});
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(first.endSession).toHaveBeenCalledTimes(1);
+    expect(second.endSession).not.toHaveBeenCalled();
+    expect(result.current.conversation).toBe(second);
+  });
+
+  it("connects when a child mounted after the provider starts and ends the session under React StrictMode", async () => {
+    const first = createMockConversation("first-id");
+    const second = createMockConversation("second-id");
+    vi.mocked(Conversation.startSession)
+      .mockResolvedValueOnce(first)
+      .mockResolvedValue(second);
+
+    function CallScreen() {
+      const { conversation, startSession, endSession } = useTestContext();
+      React.useEffect(() => {
+        startSession();
+        return () => endSession();
+      }, [startSession, endSession]);
+      return <>{conversation?.getId() ?? "none"}</>;
+    }
+
+    const { getByText, rerender } = render(<ConversationProvider />, {
+      reactStrictMode: true,
+    });
+
+    rerender(
+      <ConversationProvider>
+        <CallScreen />
+      </ConversationProvider>
+    );
+    await act(async () => {});
+
+    expect(Conversation.startSession).toHaveBeenCalledTimes(2);
+    expect(first.endSession).toHaveBeenCalledTimes(1);
+    expect(second.endSession).not.toHaveBeenCalled();
+    expect(getByText("second-id")).toBeTruthy();
   });
 
   it("calls both prop and startSession callbacks when both are provided", async () => {

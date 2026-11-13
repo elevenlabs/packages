@@ -287,6 +287,7 @@ export function ConversationProvider({
   const endSession = useCallback(() => {
     shouldEndRef.current = true;
     const pendingConnection = lockRef.current;
+    lockRef.current = null;
     const conv = conversationRef.current;
     conversationRef.current = null;
     setConversation(null);
@@ -306,20 +307,9 @@ export function ConversationProvider({
     }
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      shouldEndRef.current = true;
-      if (lockRef.current) {
-        lockRef.current.then(
-          conv => conv.endSession().catch(() => {}),
-          () => {}
-        );
-      } else {
-        conversationRef.current?.endSession().catch(() => {});
-      }
-    };
-  }, []);
+    return () => endSession();
+  }, [endSession]);
 
   const contextValue = useMemo<ConversationContextValue>(
     () => ({
