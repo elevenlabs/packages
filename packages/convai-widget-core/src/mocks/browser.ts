@@ -508,6 +508,7 @@ const codeBlock = true;
   },
   agent_attachments: TEXT_CHAT_CONFIG,
   product_carousel: TEXT_CHAT_CONFIG,
+  product_cards: TEXT_CHAT_CONFIG,
   text_and_voice: {
     ...BASIC_CONFIG,
     text_only: false,
@@ -1075,6 +1076,7 @@ export const Worker = setupWorker(
         agentId !== "persistent_session_terms" &&
         agentId !== "agent_attachments" &&
         agentId !== "product_carousel" &&
+        agentId !== "product_cards" &&
         agentId !== "navigation_resume_text"
       ) {
         const agentResponse =
@@ -2261,6 +2263,52 @@ export const Worker = setupWorker(
               type: "agent_response",
               agent_response_event: {
                 agent_response: "Here are some shoes",
+                event_id: 2,
+              },
+            })
+          );
+        });
+      }
+      if (agentId === "product_cards") {
+        let replies = 0;
+        client.addEventListener("message", event => {
+          const data =
+            typeof event.data === "string" ? JSON.parse(event.data) : null;
+          if (data?.type !== "user_message") return;
+          replies++;
+          client.send(
+            JSON.stringify({
+              type: "agent_response",
+              agent_response_event: {
+                agent_response: "Here are some boots",
+                event_id: 2,
+              },
+            })
+          );
+          client.send(
+            JSON.stringify({
+              type: "rich_content",
+              rich_content: {
+                rich_content_id: `rc_boots_${replies}`,
+                component: "carousel",
+                props: {
+                  items: ["Albany", "Brixton", "Chelsea"].map(title => ({
+                    title,
+                    subtitle: "Leather knee-high boot",
+                    description: "$139.95",
+                    image_url: `${ATTACHMENT_HOST}/${title}.svg`,
+                    rating: 4.6,
+                    review_count: 318,
+                    buttons: [
+                      {
+                        type: "link",
+                        label: "View",
+                        link: "https://example.com",
+                      },
+                      { label: "Add to cart", message: `Add ${title}` },
+                    ],
+                  })),
+                },
                 event_id: 2,
               },
             })

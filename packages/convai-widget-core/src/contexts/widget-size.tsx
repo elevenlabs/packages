@@ -13,6 +13,8 @@ interface WidgetSizeContextType {
   /** The page layout's call pane, shown for voice agents beside the chat on desktop */
   showSpeechPane: Signal<boolean>;
   toggleSize: () => void;
+  /** Expands a compact desktop sheet for expand_on_carousel, unless the user resized it */
+  autoExpand: () => void;
 }
 
 const WidgetSizeContext = createContext<WidgetSizeContextType | undefined>(
@@ -51,8 +53,24 @@ export function WidgetSizeProvider({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const resizedByUser = useSignal(false);
+
   const toggleSize = useCallback(() => {
+    resizedByUser.value = true;
     expanded.value = !expanded.value;
+  }, [expanded]);
+
+  // Without the resize button the user couldn't shrink it back
+  const autoExpand = useCallback(() => {
+    if (
+      !config.peek().expand_on_carousel ||
+      resizedByUser.peek() ||
+      isMobile.peek() ||
+      config.peek().show_resize_button === false
+    ) {
+      return;
+    }
+    expanded.value = true;
   }, [expanded]);
 
   // Always-expanded sheets can't be closed, so they keep the toggle
@@ -86,8 +104,9 @@ export function WidgetSizeProvider({
       fullscreenOnly,
       showSpeechPane,
       toggleSize,
+      autoExpand,
     }),
-    [variant, fullscreenOnly, showSpeechPane, toggleSize]
+    [variant, fullscreenOnly, showSpeechPane, toggleSize, autoExpand]
   );
 
   return (

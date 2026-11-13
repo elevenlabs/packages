@@ -27,6 +27,7 @@ import { stripAudioTags } from "../utils/stripAudioTags";
 import { useEndConfirmation } from "../contexts/end-confirmation";
 import { EndConfirmationDialog } from "./EndConfirmationDialog";
 import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLifecycle";
+import { useExpandForCarousels } from "../utils/useExpandForCarousels";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -117,6 +118,7 @@ export function Sheet({ open, onClose }: SheetProps) {
         !isWaitingForAgent.value,
     });
   });
+  useExpandForCarousels(filteredTranscript, openSignal);
   const showTranscript = useComputed(
     () =>
       filteredTranscript.value.length > 0 ||

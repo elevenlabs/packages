@@ -25,6 +25,7 @@ export function usePlaygroundSettings() {
   const [showResizeButton, setShowResizeButton] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(true);
   const [defaultSizeExpanded, setDefaultSizeExpanded] = useState(false);
+  const [expandOnCarousel, setExpandOnCarousel] = useState(false);
   const [pageLayout, setPageLayout] = useState(false);
   const [transcriptSpeechSync, setTranscriptSpeechSync] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
@@ -83,6 +84,8 @@ export function usePlaygroundSettings() {
     setMobileFullscreen,
     defaultSizeExpanded,
     setDefaultSizeExpanded,
+    expandOnCarousel,
+    setExpandOnCarousel,
     pageLayout,
     setPageLayout,
     transcriptSpeechSync,
@@ -235,6 +238,14 @@ export function PlaygroundSettingsPanel({
           onChange={e => state.setDefaultSizeExpanded(e.currentTarget.checked)}
         />{" "}
         Start at expanded size
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={state.expandOnCarousel}
+          onChange={e => state.setExpandOnCarousel(e.currentTarget.checked)}
+        />{" "}
+        Expand for product cards
       </label>
       <label>
         <input

@@ -85,10 +85,11 @@ export function Carousel({ items, richContentId }: CarouselProps) {
           onScroll={handleScroll}
           className="flex snap-x snap-mandatory pointer-coarse:snap-none gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
+          {/* Full-size cards are taller than the compact sheet's transcript */}
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex w-72 pointer-coarse:w-60 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
+              className="flex w-72 pointer-coarse:w-60 group-data-[variant=compact]/sheet:w-60 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
             >
               {item.imageUrl && (
                 <img
