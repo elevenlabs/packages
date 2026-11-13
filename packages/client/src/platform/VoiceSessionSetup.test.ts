@@ -5,6 +5,7 @@ vi.mock("livekit-client", () => ({
   RoomEvent: {},
   Track: { Kind: { Audio: "audio" }, Source: { Microphone: "microphone" } },
   ConnectionState: {},
+  DisconnectReason: {},
   createLocalAudioTrack: vi.fn(),
 }));
 
