@@ -49,14 +49,14 @@ approval_rules:
         mode: all-users
 
   - name: client changes approved by owner
-    description: Client package changes require approval from PaulAsjes or AngeloGiacco
+    description: Client package changes require approval from PaulAsjes, AngeloGiacco, or kraenhansen
     if:
       changed_files:
         paths:
           - "^packages/client/.*$"
     requires:
       count: 1
-      users: ["PaulAsjes", "AngeloGiacco"]
+      users: ["PaulAsjes", "AngeloGiacco", "kraenhansen"]
     options:
       <<: *default_options
       request_review:
@@ -64,14 +64,14 @@ approval_rules:
         mode: all-users
 
   - name: react-native changes approved by owner
-    description: React Native package changes require approval from PaulAsjes or AngeloGiacco
+    description: React Native package changes require approval from PaulAsjes, AngeloGiacco, or kraenhansen
     if:
       changed_files:
         paths:
           - "^packages/react-native/.*$"
     requires:
       count: 1
-      users: ["PaulAsjes", "AngeloGiacco"]
+      users: ["PaulAsjes", "AngeloGiacco", "kraenhansen"]
     options:
       <<: *default_options
       request_review:
