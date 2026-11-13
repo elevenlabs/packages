@@ -2,6 +2,7 @@ import type { RemoteAudioTrack } from "livekit-client";
 import type { AudioWorkletConfig } from "./BaseConversation.js";
 import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { VolumeProvider } from "./utils/volumeProvider.js";
+import type { MediaStreamTrackLike } from "./platformTypes.js";
 
 /**
  * Result of setting up volume analysis (input or output).
@@ -35,7 +36,7 @@ export interface WebRTCAudioAdapter {
    * Called once after mic is enabled and again after input device switches.
    * Implementations must clean up previous resources on re-call.
    */
-  setupInputAnalysis(mediaStreamTrack: MediaStreamTrack): AnalysisResult;
+  setupInputAnalysis(mediaStreamTrack: MediaStreamTrackLike): AnalysisResult;
 
   /**
    * Set up output volume analysis and raw audio capture from a remote track.

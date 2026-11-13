@@ -8,6 +8,11 @@
 //
 // Because this file has an `export`, TypeScript treats it as a module.
 // All ambient declarations must therefore be inside `declare global`.
+//
+// Nothing here is visible to consumers: published declarations must use the
+// types from `platformTypes.ts` instead of these globals.
+
+import type { DeviceIdConstraint } from "./platformTypes.js";
 
 declare global {
   // -------------------------------------------------------------------------
@@ -160,6 +165,13 @@ declare global {
 
   class AbortSignal {
     readonly aborted: boolean;
+    readonly reason: unknown;
+    addEventListener(
+      type: "abort",
+      listener: () => void,
+      options?: { once?: boolean }
+    ): void;
+    removeEventListener(type: "abort", listener: () => void): void;
   }
 
   // -------------------------------------------------------------------------
@@ -214,18 +226,8 @@ declare global {
     getConstraints(): MediaTrackConstraints;
   }
 
-  interface MediaDeviceConstraintParameters {
-    exact?: string | string[];
-    ideal?: string | string[];
-  }
-
-  type MediaDeviceConstraint =
-    | string
-    | string[]
-    | MediaDeviceConstraintParameters;
-
   interface MediaTrackConstraints {
-    deviceId?: MediaDeviceConstraint;
+    deviceId?: DeviceIdConstraint;
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;
