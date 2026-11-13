@@ -30,6 +30,7 @@ import { useEndConfirmation } from "../contexts/end-confirmation";
 import { TriggerMuteButton } from "./TriggerMuteButton";
 import { useConversationMode } from "../contexts/conversation-mode";
 import { useSheetContent } from "../contexts/sheet-content";
+import { useWidgetSize } from "../contexts/widget-size";
 import { UploadFileButton } from "./UploadFileButton";
 import { PendingFilePreview } from "./PendingFilePreview";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "./useFileUpload";
@@ -175,7 +176,7 @@ export function SheetActions({
 
   return (
     <div className="sticky bottom-0 pointer-events-none z-10 max-h-[50%] flex flex-col">
-      <div className="absolute top-0 left-0 right-0 h-4 -translate-y-full bg-gradient-to-t from-base to-transparent pointer-events-none backdrop-blur-[1px] [mask-image:linear-gradient(to_top,black,transparent)] shadow-scroll-fade-top" />
+      <div className="absolute top-0 left-0 right-0 h-4 -translate-y-full bg-gradient-to-t from-base group-data-muted/sheet:from-base-hover to-transparent pointer-events-none backdrop-blur-[1px] [mask-image:linear-gradient(to_top,black,transparent)] shadow-scroll-fade-top" />
       <div className="relative w-full px-3 pb-3 flex flex-col items-center pointer-events-auto min-h-0">
         {fileError.value && (
           <div className="w-full px-1 pb-1.5 text-xs text-base-error text-center">
@@ -343,12 +344,22 @@ function SheetButtons({
   const { requestEndSession } = useEndConfirmation();
   const callDisabled = useCallButtonDisabled();
   const { isTextMode } = useConversationMode();
+  const { showSpeechPane } = useWidgetSize();
 
+  // Beside the page layout's call pane, only a text chat's stop button stays here
   const showCallButton = useComputed(() => {
+    if (showSpeechPane.value) {
+      return textOnly.value && !isDisconnected.value;
+    }
     return !isDisconnected.value || (!textOnly.value && showTranscript);
   });
   const showMuteButton = useComputed(() => {
-    return !textOnly.value && !isDisconnected.value && !isTextMode.value;
+    return (
+      !showSpeechPane.value &&
+      !textOnly.value &&
+      !isDisconnected.value &&
+      !isTextMode.value
+    );
   });
 
   return (

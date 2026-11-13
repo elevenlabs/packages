@@ -3,13 +3,15 @@ import type { ComponentChildren } from "preact";
 import { createContext } from "preact";
 import { useCallback, useEffect, useMemo } from "preact/hooks";
 import { useContextSafely } from "../utils/useContextSafely";
-import { useWidgetConfig } from "./widget-config";
+import { useTextOnly, useWidgetConfig } from "./widget-config";
 
-export type SizeVariant = "compact" | "expanded" | "fullscreen";
+export type SizeVariant = "compact" | "expanded" | "fullscreen" | "page";
 
 interface WidgetSizeContextType {
   variant: Signal<SizeVariant>;
   fullscreenOnly: Signal<boolean>;
+  /** The page layout's call pane, shown for voice agents beside the chat on desktop */
+  showSpeechPane: Signal<boolean>;
   toggleSize: () => void;
 }
 
@@ -29,6 +31,7 @@ export function WidgetSizeProvider({
   initialVariant = "compact",
 }: WidgetSizeProviderProps) {
   const config = useWidgetConfig();
+  const textOnly = useTextOnly();
   // On mobile an expanded sheet is fullscreen
   const expanded = useSignal(
     initialVariant !== "compact" || config.peek().default_size === "expanded"
@@ -60,7 +63,14 @@ export function WidgetSizeProvider({
       !config.value.always_expanded
   );
 
+  const showSpeechPane = useComputed(
+    () => config.value.layout === "page" && !textOnly.value && !isMobile.value
+  );
+
   const variant = useComputed<SizeVariant>(() => {
+    if (config.value.layout === "page") {
+      return "page";
+    }
     if (fullscreenOnly.value) {
       return "fullscreen";
     }
@@ -74,9 +84,10 @@ export function WidgetSizeProvider({
     () => ({
       variant,
       fullscreenOnly,
+      showSpeechPane,
       toggleSize,
     }),
-    [variant, fullscreenOnly, toggleSize]
+    [variant, fullscreenOnly, showSpeechPane, toggleSize]
   );
 
   return (

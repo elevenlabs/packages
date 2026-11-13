@@ -9,6 +9,13 @@ export function parseVariant(variant: string | undefined): Variant {
     : Variants[0];
 }
 
+export const Layouts = ["default", "page"] as const;
+export type Layout = (typeof Layouts)[number];
+
+export function parseLayout(layout: string | undefined): Layout {
+  return Layouts.includes(layout as Layout) ? (layout as Layout) : Layouts[0];
+}
+
 export const DefaultSizes = ["compact", "expanded"] as const;
 export type DefaultSize = (typeof DefaultSizes)[number];
 
@@ -101,6 +108,7 @@ export interface WidgetConfig {
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
   default_size?: DefaultSize;
+  layout?: Layout;
   transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;

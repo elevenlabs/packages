@@ -11,13 +11,20 @@ import { useStickToBottom } from "../utils/useStickToBottom";
 import { Button } from "../components/Button";
 import { InOutTransition } from "../components/InOutTransition";
 import { useTextContents } from "../contexts/text-contents";
+import { cn } from "../utils/cn";
 
 interface TranscriptProps {
   scrollPinned: Signal<boolean>;
   transcript: ReadonlySignal<DisplayTranscriptEntry[]>;
+  /** Drops the space kept free for the sheet header */
+  withoutHeader?: boolean;
 }
 
-export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
+export function Transcript({
+  scrollPinned,
+  transcript,
+  withoutHeader,
+}: TranscriptProps) {
   const text = useTextContents();
   const {
     scrollContainer,
@@ -58,7 +65,10 @@ export function Transcript({ scrollPinned, transcript }: TranscriptProps) {
     <div className="relative grow min-h-0 flex flex-col z-2">
       <div
         ref={scrollContainer}
-        className="px-4 pt-20 pb-4 grow overflow-y-auto"
+        className={cn(
+          "px-4 pb-4 grow overflow-y-auto",
+          withoutHeader ? "pt-10" : "pt-20"
+        )}
         onScroll={handleScroll}
       >
         <div ref={contentRef} className="flex flex-col gap-6">
