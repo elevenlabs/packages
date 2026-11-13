@@ -20,15 +20,16 @@ export function CallButton({
   const text = useTextContents();
   return (
     <Button
-      variant={isDisconnected ? "primary" : "secondary"}
+      variant={isDisconnected ? "primary" : "danger"}
       icon={isDisconnected ? "phone" : "phone-off"}
-      onClick={isDisconnected ? e => startSession(e.currentTarget) : requestEndSession}
+      onClick={
+        isDisconnected ? e => startSession(e.currentTarget) : requestEndSession
+      }
       aria-label={isDisconnected ? text.start_call : text.end_call}
       {...props}
     >
       {!iconOnly
-        ? (children ??
-          (isDisconnected ? text.start_call : text.end_call))
+        ? (children ?? (isDisconnected ? text.start_call : text.end_call))
         : undefined}
     </Button>
   );

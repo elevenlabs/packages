@@ -400,7 +400,11 @@ function SheetButtons({
             iconOnly
             isDisconnected={isDisconnected.value}
             disabled={callDisabled.value}
-            className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+            className={cn(
+              "pointer-events-auto",
+              isDisconnected.value &&
+                "bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+            )}
           />
         )}
       </SizeTransition>
