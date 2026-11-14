@@ -157,13 +157,21 @@ export function SheetActions({
         scrollPinned.value = true;
         if (isDisconnected.value) {
           isStartingFromDraft.value = true;
+          let committed = false;
           try {
-            const id = await startSession(e.currentTarget, message);
-            if (id !== undefined && userMessage.peek() === draft) {
-              userMessage.value = "";
-            }
+            await startSession(e.currentTarget, message, {
+              onCommit: () => {
+                committed = true;
+                if (userMessage.peek() === draft) {
+                  userMessage.value = "";
+                }
+                isStartingFromDraft.value = false;
+              },
+            });
           } finally {
-            isStartingFromDraft.value = false;
+            if (!committed) {
+              isStartingFromDraft.value = false;
+            }
           }
         } else {
           sendUserMessage(message);

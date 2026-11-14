@@ -68,6 +68,11 @@ type LegacyAgentResponseState = {
 
 type ConversationSetup = ReturnType<typeof useConversationSetup>;
 
+type InitialMessageOptions = SendUserMessageOptions & {
+  /** Called once the widget has added the initial message to the transcript. */
+  onCommit?: () => void;
+};
+
 interface ConversationProviderProps {
   children: ComponentChildren;
 }
@@ -598,10 +603,11 @@ function useConversationSetup() {
       startSession: async (
         element: HTMLElement | null,
         initialMessage?: string,
-        initialMessageOptions?: SendUserMessageOptions,
+        options?: InitialMessageOptions,
         resumeToken?: string,
         continuedCall?: NavigationResumeRecord | null
       ): Promise<string | undefined> => {
+        const { onCommit, ...initialMessageOptions } = options ?? {};
         // A message typed after a disconnect continues the stored text
         // conversation instead of opening a second one. Starting a voice
         // call is a new conversation, so it never resumes.
@@ -639,6 +645,11 @@ function useConversationSetup() {
         }
 
         if (conversationRef.current?.isOpen()) {
+          if (initialMessage) {
+            if (isWaitingForAgent.peek()) return;
+            value.sendUserMessage(initialMessage, initialMessageOptions);
+            onCommit?.();
+          }
           return conversationRef.current.getId();
         }
 
@@ -646,7 +657,9 @@ function useConversationSetup() {
           // A message typed while a connect is in flight rides on that
           // connection instead of being dropped.
           if (initialMessage) {
+            if (isWaitingForAgent.peek()) return;
             value.sendUserMessage(initialMessage, initialMessageOptions);
+            onCommit?.();
           }
           const conversation = await lockRef.current;
           return conversation.getId();
@@ -752,6 +765,9 @@ function useConversationSetup() {
               ]
             : []),
         ];
+        if (initialMessage) {
+          onCommit?.();
+        }
         isAwaitingReply.value = !!initialMessage;
         // WebRTC reports no playback, so its messages are shown in full
         const transcriptSpeechSync =
