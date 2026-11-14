@@ -35,6 +35,7 @@ export class WebSocketConnection
 
   private outputListeners: Set<OutputListener> = new Set();
   private pendingAudioEvents: AgentAudioEvent[] = [];
+  private lastInterruptEventId = 0;
 
   private constructor(
     private readonly socket: WebSocket,
@@ -280,8 +281,20 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
+    if (parsedEvent.type === "interruption") {
+      this.lastInterruptEventId = parsedEvent.interruption_event.event_id;
+      this.pendingAudioEvents = this.pendingAudioEvents.filter(
+        ({ audio_event }) => audio_event.event_id >= this.lastInterruptEventId
+      );
+      return;
+    }
+
     // Emit audio events to output listeners
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
+      // Chunks of an interrupted response can still arrive after the interruption
+      if (parsedEvent.audio_event.event_id < this.lastInterruptEventId) {
+        return;
+      }
       if (this.outputListeners.size === 0) {
         this.pendingAudioEvents.push(parsedEvent);
         return;

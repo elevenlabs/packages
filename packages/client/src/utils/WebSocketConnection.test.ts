@@ -260,6 +260,72 @@ describe("WebSocketConnection", () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
+  describe("audio after an interruption", () => {
+    function emitAudio(eventId: number) {
+      emit("message", {
+        data: JSON.stringify({
+          type: "audio",
+          audio_event: { audio_base_64: `chunk-${eventId}`, event_id: eventId },
+        }),
+      });
+    }
+
+    function emitInterruption(eventId: number) {
+      emit("message", {
+        data: JSON.stringify({
+          type: "interruption",
+          interruption_event: { event_id: eventId },
+        }),
+      });
+    }
+
+    function playedChunks(listener: ReturnType<typeof vi.fn>) {
+      return listener.mock.calls.map(([event]) => event.audio_base_64);
+    }
+
+    it("passes audio through when there is no interruption", async () => {
+      const connection = await createConnection();
+      const listener = vi.fn();
+      connection.addListener(listener);
+
+      emitAudio(1);
+      emitAudio(2);
+
+      expect(playedChunks(listener)).toEqual(["chunk-1", "chunk-2"]);
+    });
+
+    it("drops audio from before the last interruption", async () => {
+      const connection = await createConnection();
+      const listener = vi.fn();
+      connection.addListener(listener);
+
+      emitAudio(100);
+      emitInterruption(200);
+      emitAudio(150);
+      emitAudio(200);
+      emitAudio(201);
+
+      expect(playedChunks(listener)).toEqual([
+        "chunk-100",
+        "chunk-200",
+        "chunk-201",
+      ]);
+    });
+
+    it("drops buffered audio from before the last interruption", async () => {
+      const connection = await createConnection();
+      const listener = vi.fn();
+
+      emitAudio(100);
+      emitInterruption(200);
+      emitAudio(150);
+      emitAudio(200);
+      connection.addListener(listener);
+
+      expect(playedChunks(listener)).toEqual(["chunk-200"]);
+    });
+  });
+
   it("properly reports sent messages", async () => {
     const connection = await createConnection();
     const listener = vi.fn();
