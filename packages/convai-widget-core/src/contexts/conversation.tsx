@@ -634,8 +634,8 @@ function useConversationSetup() {
           // The stored conversation was started behind the terms gate, so a
           // resume does not ask again.
           terms.acceptTerms();
-        } else {
-          await terms.requestTerms();
+        } else if (!(await terms.requestTerms())) {
+          return;
         }
 
         if (conversationRef.current?.isOpen()) {

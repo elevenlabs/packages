@@ -45,7 +45,7 @@ export function SheetActions({
   const textInputEnabled = useTextInputEnabled();
   const fileInputEnabled = useFileInputEnabled();
   const maxFiles = useFileInputMaxFiles();
-  const userMessage = useSignal("");
+  const { userMessage, isStartingFromDraft } = useSheetContent();
   const isFocused = useSignal(false);
   const text = useTextContents();
   const {
@@ -118,6 +118,7 @@ export function SheetActions({
     const hasReadyFile = pendingFile.value?.status === "ready";
     return (
       (hasText || hasReadyFile) &&
+      !isStartingFromDraft.value &&
       !isUploading.value &&
       !isWaitingForAgent.value
     );
@@ -132,7 +133,8 @@ export function SheetActions({
       // text-only path and silently drop the in-flight file.
       if (!canSend.peek()) return;
 
-      const message = userMessage.value.trim();
+      const draft = userMessage.peek();
+      const message = draft.trim();
       const pending = pendingFile.value;
 
       if (pending?.status === "ready" && !isDisconnected.value) {
@@ -153,11 +155,19 @@ export function SheetActions({
 
       if (message) {
         scrollPinned.value = true;
-        userMessage.value = "";
         if (isDisconnected.value) {
-          await startSession(e.currentTarget, message);
+          isStartingFromDraft.value = true;
+          try {
+            const id = await startSession(e.currentTarget, message);
+            if (id !== undefined && userMessage.peek() === draft) {
+              userMessage.value = "";
+            }
+          } finally {
+            isStartingFromDraft.value = false;
+          }
         } else {
           sendUserMessage(message);
+          userMessage.value = "";
         }
       }
     },
@@ -171,6 +181,7 @@ export function SheetActions({
       pendingFile,
       markFileAsSent,
       canSend,
+      isStartingFromDraft,
     ]
   );
 

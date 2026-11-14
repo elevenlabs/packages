@@ -1112,6 +1112,40 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  it.each(["page", "floating"] as const)(
+    "%s widget keeps the first chat draft when terms are canceled",
+    async layout => {
+      setupWebComponent({
+        "agent-id": "persistent_session_terms",
+        ...(layout === "page" ? { layout } : { "always-expanded": "true" }),
+      });
+
+      const input = page.getByRole("textbox", { name: "Text message input" });
+      const draft = "Can you help me with my order?";
+      await input.fill(draft);
+      await userEvent.keyboard("{Enter}");
+      await expect.element(page.getByText("Test terms")).toBeVisible();
+      if (layout === "floating") {
+        await expect.element(input).not.toBeInTheDocument();
+      }
+      await page.getByRole("button", { name: "Cancel", exact: true }).click();
+      await expect
+        .element(page.getByText("Test terms"))
+        .not.toBeInTheDocument();
+      await expect.element(input).toHaveValue(draft);
+      await expect.element(page.getByText(draft)).not.toBeInTheDocument();
+
+      await page.getByRole("button", { name: "Send", exact: true }).click();
+      await page.getByRole("button", { name: "Accept", exact: true }).click();
+      const sentMessage = page.getByText(draft, { exact: true });
+      const reply = page.getByText(`You said: ${draft}`, { exact: true });
+      await expect.element(reply).toBeVisible();
+      expect(sentMessage.elements()).toHaveLength(1);
+      expect(reply.elements()).toHaveLength(1);
+      await expect.element(input).toHaveValue("");
+    }
+  );
+
   describe("page layout", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
