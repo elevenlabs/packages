@@ -631,6 +631,18 @@ const persistentConversations = new Map<string, PersistentConversation>();
 
 const contextualUpdates: string[] = [];
 
+type TermsHandshakeOutcome = "connect" | "refuse";
+
+let termsHandshake: Promise<TermsHandshakeOutcome> | undefined;
+
+export function holdTermsHandshake() {
+  let release!: (outcome: TermsHandshakeOutcome) => void;
+  termsHandshake = new Promise(resolve => {
+    release = resolve;
+  });
+  return release;
+}
+
 let sendProducts: (() => void) | null = null;
 
 /** Sends the pending `product_carousel` products, so tests set up first. */
@@ -887,6 +899,14 @@ export const Worker = setupWorker(
       if (resumedConversation) {
         // Holds the handshake long enough for a test to type during a resume.
         await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      if (agentId === "persistent_session_terms" && termsHandshake) {
+        const pendingHandshake = termsHandshake;
+        termsHandshake = undefined;
+        if ((await pendingHandshake) === "refuse") {
+          client.close(3000, "Test connection refused");
+          return;
+        }
       }
       client.send(
         JSON.stringify({

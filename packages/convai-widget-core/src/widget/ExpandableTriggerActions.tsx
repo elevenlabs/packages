@@ -52,12 +52,11 @@ export function ExpandableTriggerActions({
     [expanded, pendingInputFocus]
   );
 
-  // requestTerms rejects on decline, gating both opening and connecting.
   const handleStartCall = useCallback(
     async (e: TargetedEvent<HTMLElement>) => {
       e.stopPropagation();
       const target = e.currentTarget;
-      await terms.requestTerms();
+      if (!(await terms.requestTerms())) return;
       openSheet();
       void startSession(target);
     },
@@ -68,7 +67,7 @@ export function ExpandableTriggerActions({
   const handleMessage = useCallback(
     async (e: TargetedEvent<HTMLElement>) => {
       e.stopPropagation();
-      await terms.requestTerms();
+      if (!(await terms.requestTerms())) return;
       openSheet({ focusInput: true });
     },
     [terms, openSheet]

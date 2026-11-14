@@ -24,9 +24,9 @@ export function Trigger({ expandable, expanded, onDismiss }: TriggerProps) {
   const terms = useTerms();
   const { isDisconnected } = useConversation();
   const toggleExpanded = useCallback(async () => {
-    await terms.requestTerms();
+    if (!(await terms.requestTerms())) return;
     expanded.value = !expanded.peek();
-  }, [expanded]);
+  }, [expanded, terms]);
 
   const isFull = variant === "full";
   if (expandable) {
