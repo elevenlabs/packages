@@ -25,9 +25,12 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
   const imageRef = useRef<HTMLDivElement>(null);
 
   useSignalEffect(() => {
+    // Preact clears refs on unmount before this effect is cleaned up
+    const background = backgroundRef.current!;
+    const image = imageRef.current!;
     if (isDisconnected.value) {
-      backgroundRef.current!.style.transform = "";
-      imageRef.current!.style.transform = "";
+      background.style.transform = "";
+      image.style.transform = "";
 
       return;
     }
@@ -40,8 +43,8 @@ export function Avatar({ size = "sm", className }: AvatarProps) {
       const inputScale = isSpeaking.peek() ? 1 : 1 - inputVolume * 0.4;
       const outputScale = !isSpeaking.peek() ? 1 : 1 + outputVolume * 0.4;
 
-      backgroundRef.current!.style.transform = `scale(${outputScale})`;
-      imageRef.current!.style.transform = `scale(${inputScale})`;
+      background.style.transform = `scale(${outputScale})`;
+      image.style.transform = `scale(${inputScale})`;
 
       id = requestAnimationFrame(draw);
     }
