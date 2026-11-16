@@ -533,9 +533,6 @@ importers:
       '@asyncapi/parser':
         specifier: ^3.6.0
         version: 3.6.0(encoding@0.1.14)
-      '@elevenlabs/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.2
@@ -551,8 +548,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-
-  packages/typescript-config: {}
 
 packages:
 
