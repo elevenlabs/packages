@@ -1,5 +1,5 @@
 {
-  "extends": "@elevenlabs/typescript-config/base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./",
@@ -9,7 +9,13 @@
     "incremental": true,
     "isolatedModules": false,
     "module": "nodenext",
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["@types/node"]
   },
   "include": ["src/**/*.ts", "generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
