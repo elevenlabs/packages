@@ -62,6 +62,7 @@ export const CustomAttributeList = [
   "show-resize-button",
   "mobile-fullscreen",
   "default-size",
+  "expand-on-carousel",
   "layout",
   "transcript-speech-sync",
   "end-confirmation",

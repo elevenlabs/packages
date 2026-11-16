@@ -143,6 +143,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showResizeButton = useAttribute("show-resize-button");
   const mobileFullscreen = useAttribute("mobile-fullscreen");
   const defaultSize = useAttribute("default-size");
+  const expandOnCarousel = useAttribute("expand-on-carousel");
   const layout = useAttribute("layout");
   const transcriptSpeechSync = useAttribute("transcript-speech-sync");
   const endConfirmation = useAttribute("end-confirmation");
@@ -211,6 +212,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(mobileFullscreen.value) ??
       fetchedConfig.value.mobile_fullscreen ??
       true;
+    const patchedExpandOnCarousel =
+      parseBoolAttribute(expandOnCarousel.value) ??
+      fetchedConfig.value.expand_on_carousel ??
+      false;
     const patchedTranscriptSpeechSync =
       parseBoolAttribute(transcriptSpeechSync.value) ??
       fetchedConfig.value.transcript_speech_sync_enabled ??
@@ -246,6 +251,7 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       default_size: parseDefaultSize(
         defaultSize.value ?? fetchedConfig.value.default_size
       ),
+      expand_on_carousel: patchedExpandOnCarousel,
       layout: patchedLayout,
       transcript_speech_sync_enabled: patchedTranscriptSpeechSync,
       end_confirmation_enabled: patchedEndConfirmation,

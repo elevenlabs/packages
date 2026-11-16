@@ -324,8 +324,8 @@ importers:
         specifier: ^1.0.4
         version: 1.0.4
       '@preact/signals':
-        specifier: ^2.9.0
-        version: 2.9.0(preact@10.28.0)
+        specifier: ^2.11.4
+        version: 2.11.4(preact@10.28.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -533,9 +533,6 @@ importers:
       '@asyncapi/parser':
         specifier: ^3.6.0
         version: 3.6.0(encoding@0.1.14)
-      '@elevenlabs/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.2
@@ -551,8 +548,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-
-  packages/typescript-config: {}
 
 packages:
 
@@ -3227,11 +3222,11 @@ packages:
       '@babel/core': 7.x
       vite: 2.x || 3.x || 4.x || 5.x || 6.x || 7.x || 8.x
 
-  '@preact/signals-core@1.14.1':
-    resolution: {integrity: sha512-vxPpfXqrwUe9lpjqfYNjAF/0RF/eFGeLgdJzdmIIZjpOnTmGmAB4BjWone562mJGMRP4frU6iZ6ei3PDsu52Ng==}
+  '@preact/signals-core@1.14.5':
+    resolution: {integrity: sha512-vcRv7Ityz5JVmeiVqIluLFzT/PDS/AlhHUpw3/aUWqcVUs6bDGIPXE/6RSC4evBNWYvnniozg5Syfj33al3gkg==}
 
-  '@preact/signals@2.9.0':
-    resolution: {integrity: sha512-hYrY0KyUqkDgOl1qba/JGn6y81pXnurn21PMaxfcMwdncdZ3M/oVdmpTvEnsGjh48dIwDVc7bjWHqIsngSjYug==}
+  '@preact/signals@2.11.4':
+    resolution: {integrity: sha512-Rb+5RPo9gWSaHtzJeauhHxiC8KP/IF2DEPkHPEOGOnuy2wnJzRqyeLRankUCYd6ADqtxS6GnWGv6Ie343d8aYw==}
     peerDependencies:
       preact: '>= 10.25.0 || >=11.0.0-0'
 
@@ -17267,11 +17262,11 @@ snapshots:
       - rollup
       - supports-color
 
-  '@preact/signals-core@1.14.1': {}
+  '@preact/signals-core@1.14.5': {}
 
-  '@preact/signals@2.9.0(preact@10.28.0)':
+  '@preact/signals@2.11.4(preact@10.28.0)':
     dependencies:
-      '@preact/signals-core': 1.14.1
+      '@preact/signals-core': 1.14.5
       preact: 10.28.0
 
   '@prefresh/babel-plugin@0.5.3': {}
