@@ -83,9 +83,9 @@ export const ImageComponent = ({
   node,
   className,
   src,
-  alt,
   ...props
 }: ImageComponentProps) => {
+  const alt = "alt" in props ? props.alt : undefined;
   const { downloadImage, disabled } = useDownloadImage({
     src: src?.toString() || "",
     alt: alt?.toString(),
@@ -111,7 +111,6 @@ export const ImageComponent = ({
       </ContentBlock.Actions>
       <ContentBlock.Content>
         <img
-          alt={alt}
           className={cn("max-w-full", className)}
           data-streamdown="image"
           src={src}
