@@ -14,8 +14,7 @@
     "forceConsistentCasingInFileNames": true,
     "preserveWatchOutput": true,
     "skipLibCheck": true,
-    "strict": true,
-    "types": ["@types/node"]
+    "strict": true
   },
   "include": ["src/**/*.ts", "generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
