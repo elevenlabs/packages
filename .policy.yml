@@ -4,7 +4,6 @@ policy:
         - convai-widget changes approved by widget team
         - client changes approved by owner
         - react and example changes approved by owner
-        - typescript-config changes approved by owner
         - other changes approved by a maintainer
 
 approval_rules:
@@ -63,18 +62,6 @@ approval_rules:
     options:
       <<: *default_options
 
-  - name: typescript-config changes approved by owner
-    description: Shared TypeScript config changes require approval from a package owner
-    if:
-      changed_files:
-        paths:
-          - "^packages/typescript-config/.*$"
-    requires:
-      count: 1
-      users: *sdk_owners
-    options:
-      <<: *default_options
-
   # Must not apply when an owned path changes; the top-level "or" would
   # otherwise let a maintainer approval bypass the owners. Keep this list in
   # sync with the paths of the rules above.
@@ -91,7 +78,6 @@ approval_rules:
           - "^packages/react-native/.*$"
           - "^examples/react-native-expo/.*$"
           - "^examples/agent-testbench/.*$"
-          - "^packages/typescript-config/.*$"
     requires:
       count: 1
       permissions: ["write"]
