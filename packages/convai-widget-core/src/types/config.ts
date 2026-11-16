@@ -108,6 +108,7 @@ export interface WidgetConfig {
   show_resize_button?: boolean;
   mobile_fullscreen?: boolean;
   default_size?: DefaultSize;
+  expand_on_carousel?: boolean;
   layout?: Layout;
   transcript_speech_sync_enabled?: boolean;
   end_confirmation_enabled?: boolean;
