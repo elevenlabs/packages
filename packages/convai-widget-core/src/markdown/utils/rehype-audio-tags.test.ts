@@ -57,4 +57,17 @@ describe("rehypeAudioTags", () => {
       children: [text("[excited]")],
     });
   });
+
+  it("styles audio tags written in any language", () => {
+    const tree = root([element("p", [text("안녕 [차분] 고객님")])]);
+
+    rehypeAudioTags()(tree);
+
+    const paragraph = tree.children[0] as Element;
+    expect(paragraph.children[1]).toMatchObject({
+      type: "element",
+      tagName: "span",
+      children: [text("[차분]")],
+    });
+  });
 });

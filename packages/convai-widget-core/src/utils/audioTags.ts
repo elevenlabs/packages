@@ -1,5 +1,4 @@
-// Matches [word] or [word word] but NOT markdown links like [text](url)
-export const AUDIO_TAG_PATTERN = /\[[\w\s]+\](?!\()/;
+export const AUDIO_TAG_PATTERN = /\[[\p{L}\p{M}\p{N}_\s]+\](?!\()/u;
 
 export const AUDIO_TAG_CLASSNAME =
   "font-medium py-px px-1 border border-audio-tag/20 rounded-button whitespace-nowrap text-audio-tag";
@@ -11,7 +10,7 @@ export interface ParsedTextPart {
 
 export function parseTextWithAudioTags(text: string): ParsedTextPart[] {
   const parts: ParsedTextPart[] = [];
-  const regex = new RegExp(AUDIO_TAG_PATTERN, "g");
+  const regex = new RegExp(AUDIO_TAG_PATTERN, `${AUDIO_TAG_PATTERN.flags}g`);
   let lastIndex = 0;
 
   for (const match of text.matchAll(regex)) {
