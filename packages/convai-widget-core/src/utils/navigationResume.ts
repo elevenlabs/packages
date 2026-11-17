@@ -28,6 +28,7 @@ export interface NavigationResumeRecord {
   turns: NavigationResumeTurn[];
   micMuted: boolean;
   conversationId?: string;
+  persistentSessionToken?: string;
 }
 
 function storageKey(config: SessionConfig): string | null {
@@ -80,7 +81,9 @@ function isRecord(value: unknown): value is NavigationResumeRecord {
     record.turns.every(isTurn) &&
     typeof record.micMuted === "boolean" &&
     (record.conversationId === undefined ||
-      typeof record.conversationId === "string")
+      typeof record.conversationId === "string") &&
+    (record.persistentSessionToken === undefined ||
+      typeof record.persistentSessionToken === "string")
   );
 }
 
@@ -130,7 +133,7 @@ export function createNavigationResumeStore(
     }
   };
 
-  // Kept until the continued call connects, so a failed start can retry.
+  // Kept until the continued call connects, so a failed start offers it again.
   const pending = signal(config.peek().persistentSession ? consume() : null);
   const shownAt = Date.now();
 
@@ -139,7 +142,11 @@ export function createNavigationResumeStore(
     clear,
     save: (
       transcript: TranscriptEntry[],
-      details: { micMuted: boolean; conversationId: string }
+      details: {
+        micMuted: boolean;
+        conversationId: string;
+        persistentSessionToken?: string;
+      }
     ) =>
       store({
         recordedAt: Date.now(),

@@ -565,6 +565,7 @@ function useConversationSetup() {
       conversationIndex: conversationIndex.peek(),
     });
     let greetingOverrideRefused = false;
+    let voiceSessionToken: string | null = null;
     const initialResume = pendingNavigationResume.peek();
     if (initialResume?.turns.length) {
       transcript.value = [
@@ -614,6 +615,8 @@ function useConversationSetup() {
         if (!navigationResume) {
           pendingNavigationResume.value = null;
         }
+        // A call that kept its session rejoins it, history and all.
+        const rejoinToken = continuedCall?.persistentSessionToken ?? null;
         const retry = () =>
           value.startSession(
             element,
@@ -676,6 +679,7 @@ function useConversationSetup() {
         // Skips the greeting; the agent must allow first message overrides.
         if (
           navigationResume &&
+          !rejoinToken &&
           firstMessage.peek() &&
           !greetingOverrideRefused
         ) {
@@ -684,11 +688,13 @@ function useConversationSetup() {
           processedConfig.overrides.agent.firstMessage = "";
         }
         configurePersistentSession(processedConfig, {
-          resume,
+          resume: resume ?? rejoinToken,
+          // A voice call ends with its connection, so xi has nothing to relay.
+          resumeOnly: !processedConfig.textOnly,
           unavailable: persistenceUnavailable,
         });
         if (
-          !processedConfig.persistentSession &&
+          !(processedConfig.persistentSession && processedConfig.textOnly) &&
           storedSession.hasStoredSession.peek()
         ) {
           // A voice call cannot continue the paused text conversation, so
@@ -699,7 +705,8 @@ function useConversationSetup() {
         try {
           processedConfig = triggerCallEvent(
             shadowHost.value ?? element,
-            processedConfig
+            processedConfig,
+            !!navigationResume
           );
         } catch (error) {
           console.error(
@@ -723,7 +730,7 @@ function useConversationSetup() {
         conversationTextOnly.value = processedConfig.textOnly ?? false;
         queueStatus.value = null;
         resetAgentResponseState();
-        isResuming.value = !!resume;
+        isResuming.value = !!resume || !!rejoinToken;
         // A kept transcript renders its greeting as before; a replayed one
         // holds the greeting as a stored row.
         if (!keepTranscript) {
@@ -774,14 +781,21 @@ function useConversationSetup() {
               canSendFeedback.value = props.canSendFeedback;
             },
             onConversationMetadata: ({ persistent_session_token }) => {
-              if (persistent_session_token) {
+              if (!persistent_session_token) return;
+              if (processedConfig.textOnly) {
                 storedSession.store(persistent_session_token);
+              } else {
+                voiceSessionToken = persistent_session_token;
               }
             },
             onConversationHistory: ({ rows }) => {
               if (keepTranscript) return;
               // Replayed rows predate everything this segment has added, such
-              // as the message that triggered the resume.
+              // as the message that triggered the resume, and replace the turns
+              // a continued call showed while it was offered.
+              const added = transcript
+                .peek()
+                .slice(rejoinToken ? (navigationResume?.turns.length ?? 0) : 0);
               transcript.value = [
                 ...rows.map(
                   ({ role, text, rich_content }): TranscriptEntry =>
@@ -799,11 +813,11 @@ function useConversationSetup() {
                           type: "message",
                           role,
                           message: text,
-                          isText: true,
+                          isText: !!processedConfig.textOnly,
                           conversationIndex: conversationIndex.peek(),
                         }
                 ),
-                ...transcript.peek(),
+                ...added,
               ];
             },
             onMessage: ({
@@ -1140,7 +1154,7 @@ function useConversationSetup() {
             // TODO: Remove the delay once BE can handle it
             setTimeout(() => {
               if (!instance.isOpen()) return;
-              if (navigationResume) {
+              if (navigationResume && !rejoinToken) {
                 instance.sendContextualUpdate(
                   buildResumeContext(navigationResume.turns)
                 );
@@ -1159,6 +1173,21 @@ function useConversationSetup() {
           if (refusedBeforeStart || greetingRefused(e)) {
             lockRef.current = null;
             return retry();
+          }
+          if (
+            navigationResume &&
+            rejoinToken &&
+            isPersistentSessionRefused(e)
+          ) {
+            // The session is gone, so continue it from the carried-over turns.
+            lockRef.current = null;
+            return value.startSession(
+              element,
+              initialMessage,
+              initialMessageOptions,
+              undefined,
+              { ...navigationResume, persistentSessionToken: undefined }
+            );
           }
           if (
             processedConfig.persistentSession &&
@@ -1268,11 +1297,13 @@ function useConversationSetup() {
         navigationResumeStore.save(transcript.peek(), {
           micMuted,
           conversationId: conversation.getId(),
+          persistentSessionToken: voiceSessionToken ?? undefined,
         });
       },
       /** Ends the conversation for good; a persistent session is forgotten. */
       endSession: async () => {
         storedSession.clear();
+        voiceSessionToken = null;
         navigationResumeStore.clear();
         // Declining an interrupted call shows its end screen; nothing is live.
         const pending = pendingNavigationResume.peek();
@@ -1442,13 +1473,14 @@ async function getOrCreateUserId(): Promise<string> {
 
 function triggerCallEvent(
   element: HTMLElement | null,
-  config: SessionConfig
+  config: SessionConfig,
+  navigationResume: boolean
 ): SessionConfig {
   try {
     const event = new CustomEvent("elevenlabs-convai:call", {
       bubbles: true,
       composed: true,
-      detail: { config },
+      detail: { config, navigationResume },
     });
     element?.dispatchEvent(event);
     return event.detail.config;
