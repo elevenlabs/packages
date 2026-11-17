@@ -1,5 +1,20 @@
 # @elevenlabs/client
 
+## 1.37.0
+
+### Minor Changes
+
+- 7eedbeb: Sync the conversation initiation types with the published AsyncAPI spec and expose the new overrides, including the prompt knowledge base, on the session config.
+
+### Patch Changes
+
+- d88d47f: Fix `stripAudioTags` leaving doubled spaces, or a space before punctuation or a newline, where a tag was removed mid sentence.
+- 5c7e913: Fix static and echo during Firefox agent playback. The output audio context is created at the agent's sample rate, and audio is resampled only when that context actually runs at a different rate.
+- e1a5a46: Fix `sendUserActivity` so it keeps sending `user_activity` about once a second while the user types, instead of only once at the start. The internal `throttle` no longer restarts its window on every suppressed call.
+- de331bc: Fix microphone audio being sent at the wrong sample rate when the browser can't capture at the agent's input rate (for example Firefox on a WebSocket session). Starting a voice session now waits for the input resampler to be ready, drops microphone audio until then, and fails with an error if the resampler can't be created, instead of sending audio at the device rate.
+- Updated dependencies [7eedbeb]
+  - @elevenlabs/types@0.30.0
+
 ## 1.36.1
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @elevenlabs/convai-widget-core
 
+## 0.27.0
+
+### Minor Changes
+
+- 80ed76e: Add an `expand-on-carousel` setting (off by default). When it's on, the compact sheet on desktop expands when product cards arrive, unless the user has already resized it or the resize button is hidden. Cards in the compact sheet are now 240px wide.
+
+### Patch Changes
+
+- ff974be: Update `@preact/signals` to 2.11.4, the minimum version that works with Preact 11.1.
+- Updated dependencies [d88d47f]
+- Updated dependencies [5c7e913]
+- Updated dependencies [7eedbeb]
+- Updated dependencies [e1a5a46]
+- Updated dependencies [de331bc]
+  - @elevenlabs/client@1.37.0
+
 ## 0.26.0
 
 ### Minor Changes
