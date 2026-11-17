@@ -37,24 +37,29 @@ export function throttle<Args extends unknown[]>(
     }
   };
 
-  const throttled = (...args: Args) => {
-    const isLeadingCall = timer === undefined;
+  const startWindow = () => {
+    timer = setTimeout(() => {
+      timer = undefined;
+      if (trailingArgs === undefined) return;
+      const pendingArgs = trailingArgs;
+      trailingArgs = undefined;
+      startWindow();
+      fn(...pendingArgs);
+    }, waitMs);
+  };
 
-    if (isLeadingCall && leading) {
+  const throttled = (...args: Args) => {
+    if (timer !== undefined) {
+      if (trailing) trailingArgs = args;
+      return;
+    }
+
+    startWindow();
+    if (leading) {
       fn(...args);
     } else if (trailing) {
       trailingArgs = args;
     }
-
-    clearTimer();
-    timer = setTimeout(() => {
-      timer = undefined;
-      if (trailing && trailingArgs !== undefined) {
-        const pendingArgs = trailingArgs;
-        trailingArgs = undefined;
-        fn(...pendingArgs);
-      }
-    }, waitMs);
   };
 
   throttled.cancel = () => {
