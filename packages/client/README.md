@@ -105,6 +105,12 @@ const connection = Scribe.connect({
 });
 ```
 
+Browsers that can't capture at a requested sample rate (such as Firefox) also
+load the `libsamplerate` resampler worklet, from jsDelivr by default. To self-host
+it, serve a copy of `@alexanderolsen/libsamplerate-js/dist/libsamplerate.worklet.js`
+and pass it as `libsampleratePath` to `Conversation` or as
+`microphone.workletPaths.libsamplerate` to `Scribe`.
+
 Self-hosted worklets must come from the same version of `@elevenlabs/client`
 as the code that loads them. Once self-hosted, a worklet is deployed separately
 from the client code in your bundle, so nothing else ensures that the worklet a
