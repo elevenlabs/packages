@@ -8,12 +8,12 @@ const CLOSING = /[\p{Terminal_Punctuation}\p{Pe}\p{Pf}]/u;
 const OPENING = /[\p{Ps}\p{Pi}]/u;
 const WHITESPACE = /\s/u;
 
-function lastChar(text: string): string | undefined {
-  return [...text.slice(-2)].at(-1);
+function charBefore(text: string, index: number): string | undefined {
+  return [...text.slice(Math.max(0, index - 2), index)].at(-1);
 }
 
-function firstChar(text: string): string | undefined {
-  const codePoint = text.codePointAt(0);
+function charAt(text: string, index: number): string | undefined {
+  const codePoint = text.codePointAt(index);
   return codePoint === undefined ? undefined : String.fromCodePoint(codePoint);
 }
 
@@ -31,8 +31,8 @@ export function stripAudioTags(text: string): string {
     .replace(AUDIO_TAG_RUN, (run: string, offset: number) =>
       joinAround(
         run,
-        lastChar(text.slice(0, offset)),
-        firstChar(text.slice(offset + run.length))
+        charBefore(text, offset),
+        charAt(text, offset + run.length)
       )
     )
     .trim();
