@@ -3,7 +3,7 @@ import {
   VoiceConversation,
   type FormatConfig,
   type InputDeviceConfig,
-  type OutputDeviceConfig,
+  type OutputConfig,
   type MultimodalMessageInput,
   type UploadFileResult,
   type ContextualUpdateOptions,
@@ -30,7 +30,7 @@ export type ConversationControlsValue = {
     config: Partial<FormatConfig> & InputDeviceConfig
   ) => Promise<void>;
   changeOutputDevice: (
-    config: Partial<FormatConfig> & OutputDeviceConfig
+    config: Partial<FormatConfig> & OutputConfig
   ) => Promise<void>;
   /** Returns byte frequency data (0-255) for the input, focused on 100-8000 Hz. */
   getInputByteFrequencyData: () => Uint8Array;
@@ -128,7 +128,7 @@ export function ConversationControlsProvider({
   );
 
   const changeOutputDevice = useCallback(
-    async (config: Partial<FormatConfig> & OutputDeviceConfig) => {
+    async (config: Partial<FormatConfig> & OutputConfig) => {
       const conversation = getConversation();
       if (conversation instanceof VoiceConversation) {
         return await conversation.changeOutputDevice(config);

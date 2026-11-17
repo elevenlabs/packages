@@ -1,16 +1,15 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { AudioAlignmentEvent } from "./types.js";
 
-export type OutputDeviceConfig = {
-  outputDeviceId?: string;
-};
-
 export type OutputDeviceKind = "bluetooth" | "headset" | "speaker" | "earpiece";
 
-export type OutputConfig = OutputDeviceConfig & {
-  /** Most preferred first; unlisted kinds fall back to the default order. Throws on web. */
+export type OutputDeviceConfig = {
+  outputDeviceId?: string;
+  /** Most preferred first; unlisted kinds fall back to the default order. Native only, at session start. */
   preferredOutputDevices?: OutputDeviceKind[];
 };
+
+export type OutputConfig = OutputDeviceConfig;
 
 // Passed to playback listeners when the chunk starts playing
 export type OutputChunkMetadata = {

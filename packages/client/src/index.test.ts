@@ -1719,6 +1719,12 @@ describe("Device Change Default Device", () => {
       }
     }
 
+    await expect(
+      conversation.changeOutputDevice({ preferredOutputDevices: ["speaker"] })
+    ).rejects.toThrow(
+      "preferredOutputDevices can't be changed during a session"
+    );
+
     await conversation.endSession();
     server.close();
   });
