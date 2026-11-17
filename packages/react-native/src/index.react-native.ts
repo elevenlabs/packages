@@ -8,6 +8,7 @@ import {
   setSetupStrategy,
   createConnection,
   setupWebRTCSession,
+  resolveOutputDeviceOrder,
   type VoiceSessionSetupResult,
 } from "@elevenlabs/client/internal";
 import { attachNativeVolume } from "./nativeVolume.js";
@@ -38,13 +39,18 @@ async function reactNativeSessionSetup(
     );
   }
 
+  const outputOrder = resolveOutputDeviceOrder(options.preferredOutputDevices);
   await AudioSession.configureAudio({
     android: {
-      preferredOutputList: ["speaker"],
+      // Always sent: the native module keeps the previous list across sessions
+      preferredOutputList: outputOrder,
       audioTypeOptions: AndroidAudioTypePresets.communication,
     },
     ios: {
-      defaultOutput: "speaker",
+      defaultOutput: outputOrder.find(
+        (kind): kind is "speaker" | "earpiece" =>
+          kind === "speaker" || kind === "earpiece"
+      ),
     },
   });
   await AudioSession.startAudioSession();

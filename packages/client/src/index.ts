@@ -34,6 +34,7 @@ export { DEFAULT_INPUT_CHUNK_DURATION_MS } from "./InputController.js";
 export type {
   OutputController,
   OutputDeviceConfig,
+  OutputDeviceKind,
   OutputConfig,
 } from "./OutputController.js";
 export type {

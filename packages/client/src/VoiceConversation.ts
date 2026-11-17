@@ -1,6 +1,6 @@
 import type { InputConfig } from "./InputController.js";
 import type {
-  OutputConfig,
+  OutputDeviceConfig,
   PlaybackEventTarget,
   PlaybackListener,
 } from "./OutputController.js";
@@ -199,7 +199,7 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     outputDeviceId,
-  }: Partial<FormatConfig> & OutputConfig): Promise<void> {
+  }: Partial<FormatConfig> & OutputDeviceConfig): Promise<void> {
     try {
       await this.output.setDevice({
         outputDeviceId,

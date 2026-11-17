@@ -5,7 +5,12 @@ export type OutputDeviceConfig = {
   outputDeviceId?: string;
 };
 
-export type OutputConfig = OutputDeviceConfig;
+export type OutputDeviceKind = "bluetooth" | "headset" | "speaker" | "earpiece";
+
+export type OutputConfig = OutputDeviceConfig & {
+  /** Most preferred first; unlisted kinds fall back to the default order. Ignored on web. */
+  preferredOutputDevices?: OutputDeviceKind[];
+};
 
 // Passed to playback listeners when the chunk starts playing
 export type OutputChunkMetadata = {

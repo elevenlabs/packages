@@ -20,6 +20,10 @@ export {
   MIN_VOICE_FREQUENCY,
   MAX_VOICE_FREQUENCY,
 } from "./utils/volumeProvider.js";
+export {
+  DEFAULT_OUTPUT_DEVICE_ORDER,
+  resolveOutputDeviceOrder,
+} from "./utils/outputDeviceOrder.js";
 export { setPlatformSetupHint } from "./platform/diagnostics.js";
 export { setWebRTCAudioAdapterFactory } from "./WebRTCAudioAdapter.js";
 export type {
