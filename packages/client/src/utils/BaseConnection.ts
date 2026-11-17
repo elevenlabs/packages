@@ -4,6 +4,8 @@ import type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
   ConversationConfigOverrideTts,
+  ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem as PronunciationDictionaryLocator,
+  ConversationConfigOverrideTtsSupportedVoicesItem as SupportedVoice,
 } from "@elevenlabs/types";
 import type { DisconnectionDetails } from "../types.js";
 
@@ -11,6 +13,9 @@ export type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
   ConversationConfigOverrideTts,
+  ConversationConfigOverrideAgentPromptKnowledgeBaseItem as KnowledgeBaseLocator,
+  ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem as PronunciationDictionaryLocator,
+  ConversationConfigOverrideTtsSupportedVoicesItem as SupportedVoice,
 } from "@elevenlabs/types";
 export type { DisconnectionContext, DisconnectionDetails } from "../types.js";
 
@@ -60,6 +65,7 @@ export type BaseSessionConfig = {
       prompt?: ConversationConfigOverrideAgentPrompt;
       firstMessage?: string;
       language?: Language;
+      maxConversationDurationMessage?: string;
     };
     tts?: {
       voiceId?: string;
@@ -75,6 +81,8 @@ export type BaseSessionConfig = {
       stability?: number;
       similarityBoost?: number;
       cloneStrength?: number;
+      pronunciationDictionaryLocators?: PronunciationDictionaryLocator[];
+      supportedVoices?: SupportedVoice[];
     };
     asr?: {
       /** Keywords to boost ASR prediction probability for this conversation. */
@@ -82,8 +90,21 @@ export type BaseSessionConfig = {
     };
     conversation?: {
       textOnly?: boolean;
+      maxDurationSeconds?: number;
+    };
+    turn?: {
+      softTimeoutConfig?: {
+        message?: string;
+        additionalSoftTimeoutMessages?: string[];
+      };
+      noisyEnvironmentMessage?: string;
     };
   };
+  branchId?: string;
+  startingWorkflowNodeId?: string;
+  /** An empty list disables all of the agent's procedures. */
+  procedureIds?: string[];
+  startProcedureIds?: string[];
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   toolMockConfig?: {
@@ -206,6 +227,7 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
   authorization?: never;
   origin?: never;
   environment?: never;
+  branchId?: never;
   persistentSession?: never;
 };
 

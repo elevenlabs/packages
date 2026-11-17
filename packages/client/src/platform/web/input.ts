@@ -3,6 +3,7 @@ import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import { waitForResampler } from "./waitForResampler.js";
 import {
   DEFAULT_INPUT_CHUNK_DURATION_MS,
   type InputController,
@@ -92,6 +93,10 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       });
 
       const source = context.createMediaStreamSource(inputStream);
+      const resamplerReady =
+        context.sampleRate !== sampleRate
+          ? waitForResampler(worklet)
+          : Promise.resolve();
       worklet.port.postMessage({
         type: "setFormat",
         format,
@@ -102,7 +107,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       source.connect(analyser);
       analyser.connect(worklet);
 
-      await context.resume();
+      await Promise.all([context.resume(), resamplerReady]);
 
       const permissions = await navigator.permissions.query({
         name: "microphone",

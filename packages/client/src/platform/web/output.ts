@@ -16,28 +16,12 @@ import {
   type VolumeProvider,
 } from "./volumeProvider.js";
 import { isIosDevice } from "./compatibility.js";
+import { type ResamplerMessage, waitForResampler } from "./waitForResampler.js";
 
 type WorkletMessage =
   | { type: "process"; finished: boolean }
   | { type: "chunk_start"; chunkId: number }
-  | { type: "resampler_ready" }
-  | { type: "resampler_error"; message: string };
-
-function waitForResampler(worklet: AudioWorkletNode): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onMessage = ({ data }: MessageEvent<WorkletMessage>) => {
-      if (data.type === "resampler_ready") {
-        worklet.port.removeEventListener("message", onMessage);
-        resolve();
-      } else if (data.type === "resampler_error") {
-        worklet.port.removeEventListener("message", onMessage);
-        reject(new Error(`Failed to create audio resampler: ${data.message}`));
-      }
-    };
-    worklet.port.addEventListener("message", onMessage);
-    worklet.port.start();
-  });
-}
+  | ResamplerMessage;
 
 function maybePrimeIosPlayback({
   sampleRate,
@@ -94,12 +78,15 @@ export class MediaDeviceOutput
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {
-      const supportsSampleRateConstraint =
-        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+      // The microphone sampleRate constraint is unrelated to AudioContext.
+      // Firefox reports it unsupported but still accepts the agent rate here,
+      // which keeps resampling off the audio thread.
       if (!context) {
-        context = new AudioContext(
-          supportsSampleRateConstraint ? { sampleRate } : {}
-        );
+        try {
+          context = new AudioContext({ sampleRate });
+        } catch {
+          context = new AudioContext({});
+        }
       }
 
       const analyser = context.createAnalyser();
@@ -122,12 +109,10 @@ export class MediaDeviceOutput
       analyser.connect(destination);
 
       const needsResampling = context.sampleRate !== sampleRate;
-      if (!supportsSampleRateConstraint || needsResampling) {
-        if (needsResampling) {
-          console.warn(
-            `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
-          );
-        }
+      if (needsResampling) {
+        console.warn(
+          `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
+        );
         await addLibsamplerateModule(context, libsampleratePath);
       }
       const worklet = await loadAudioConcatProcessor(

@@ -551,10 +551,12 @@ describe("Output resampling", () => {
         if (inputSampleRate !== ${AGENT_SAMPLE_RATE}) {
           return { full: samples => samples };
         }
-        // AudioWorkletGlobalScope has no timers; awaiting compile yields without blocking the worklet
+        // AudioWorkletGlobalScope has no timers; awaiting compile yields without blocking the worklet.
+        // Bound the wait to the worklet clock. A Date.now() spin can starve process()
+        // for the rest of the context, so playback never starts.
         const emptyModule = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]);
-        const end = Date.now() + ${outputDelayMs};
-        while (Date.now() < end) {
+        const end = currentTime + ${outputDelayMs} / 1000;
+        while (currentTime < end) {
           await WebAssembly.compile(emptyModule);
         }
         if (${failOutput}) {
@@ -577,6 +579,45 @@ describe("Output resampling", () => {
     );
   }
 
+  // Records worklet URLs per context rate. rejectSampleRate mimics a browser
+  // whose AudioContext constructor refuses the agent rate and falls back.
+  function installAudioContext({
+    rejectSampleRate,
+  }: {
+    rejectSampleRate: boolean;
+  }) {
+    const RealAudioContext = window.AudioContext;
+    const workletLoads: { sampleRate: number; url: string }[] = [];
+
+    function TestAudioContext(options?: AudioContextOptions) {
+      if (rejectSampleRate && options?.sampleRate != null) {
+        throw new DOMException(
+          "The requested sampleRate is not supported.",
+          "NotSupportedError"
+        );
+      }
+      const context = new RealAudioContext(options);
+      const worklet = context.audioWorklet;
+      const addModule = worklet.addModule.bind(worklet);
+      worklet.addModule = ((
+        url: string | URL,
+        workletOptions?: WorkletOptions
+      ) => {
+        workletLoads.push({
+          sampleRate: context.sampleRate,
+          url: String(url),
+        });
+        return addModule(url, workletOptions);
+      }) as typeof worklet.addModule;
+      return context;
+    }
+
+    vi.spyOn(window, "AudioContext").mockImplementation(
+      TestAudioContext as unknown as typeof AudioContext
+    );
+    return { workletLoads };
+  }
+
   async function startResampledSession({
     path,
     failOutput = false,
@@ -590,10 +631,14 @@ describe("Output resampling", () => {
     onConnection?: (socket: Client) => void;
     onAudioAlignmentPlayback?: () => void;
   }) {
-    // Forces the AudioContext to the device rate, so the agent's audio needs resampling
+    // Chromium can construct an AudioContext at the agent rate. Reject that
+    // rate so playback falls back to the device rate and must resample.
+    // Input still honors the microphone constraint, so report it unsupported
+    // or the mic context requests the same rate and throws with the output.
     vi.spyOn(navigator.mediaDevices, "getSupportedConstraints").mockReturnValue(
       {}
     );
+    installAudioContext({ rejectSampleRate: true });
     const probe = new AudioContext();
     expect(probe.sampleRate).not.toBe(AGENT_SAMPLE_RATE);
     await probe.close();
@@ -699,6 +744,61 @@ describe("Output resampling", () => {
     expect(statuses.at(-1)).toBe("disconnected");
     expect(closeInput).toHaveBeenCalledTimes(1);
 
+    server.close();
+  });
+
+  it("does not load libsamplerate when AudioContext accepts the agent sample rate", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Firefox reports the microphone sampleRate constraint as unsupported.
+    // Playback must still use the agent rate and skip the resampler.
+    vi.spyOn(navigator.mediaDevices, "getSupportedConstraints").mockReturnValue(
+      {}
+    );
+    const { workletLoads } = installAudioContext({ rejectSampleRate: false });
+    const probe = new AudioContext();
+    expect(probe.sampleRate).not.toBe(AGENT_SAMPLE_RATE);
+    await probe.close();
+
+    const libsampleratePath = fakeLibsampleratePath({
+      failOutput: false,
+      outputDelayMs: 0,
+    });
+    const server = new Server(
+      "wss://api.elevenlabs.io/voice/native-agent-rate"
+    );
+    server.on("connection", socket => {
+      socket.send(
+        JSON.stringify({
+          type: "conversation_initiation_metadata",
+          conversation_initiation_metadata_event: {
+            conversation_id: CONVERSATION_ID,
+            agent_output_audio_format: `pcm_${AGENT_SAMPLE_RATE}`,
+          },
+        })
+      );
+    });
+
+    const conversation = await Conversation.startSession({
+      signedUrl: "wss://api.elevenlabs.io/voice/native-agent-rate",
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      libsampleratePath,
+    });
+
+    const agentRateLoads = workletLoads.filter(
+      load => load.sampleRate === AGENT_SAMPLE_RATE
+    );
+    expect(agentRateLoads.length).toBeGreaterThan(0);
+    expect(agentRateLoads.map(load => load.url)).not.toContain(
+      libsampleratePath
+    );
+    expect(warn).not.toHaveBeenCalledWith(
+      expect.stringContaining(
+        `Sample rate ${AGENT_SAMPLE_RATE} not available, resampling`
+      )
+    );
+
+    await conversation.endSession();
     server.close();
   });
 });
