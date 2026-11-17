@@ -679,10 +679,22 @@ describe("BaseConversation", () => {
       conversation.sendUserActivity();
       vi.advanceTimersByTime(500);
       conversation.sendUserActivity();
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(400);
       conversation.sendUserActivity();
 
       expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps sending once per window while the user keeps typing", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      for (let elapsed = 0; elapsed < 5000; elapsed += 200) {
+        conversation.sendUserActivity();
+        vi.advanceTimersByTime(200);
+      }
+
+      expect(sendMessage).toHaveBeenCalledTimes(5);
     });
 
     it("sends again once the throttle window has elapsed", () => {
