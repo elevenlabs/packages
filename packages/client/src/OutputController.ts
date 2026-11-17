@@ -8,7 +8,7 @@ export type OutputDeviceConfig = {
 export type OutputDeviceKind = "bluetooth" | "headset" | "speaker" | "earpiece";
 
 export type OutputConfig = OutputDeviceConfig & {
-  /** Most preferred first; unlisted kinds fall back to the default order. Ignored on web. */
+  /** Most preferred first; unlisted kinds fall back to the default order. Throws on web. */
   preferredOutputDevices?: OutputDeviceKind[];
 };
 
