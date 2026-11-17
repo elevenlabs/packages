@@ -16,28 +16,12 @@ import {
   type VolumeProvider,
 } from "./volumeProvider.js";
 import { isIosDevice } from "./compatibility.js";
+import { type ResamplerMessage, waitForResampler } from "./waitForResampler.js";
 
 type WorkletMessage =
   | { type: "process"; finished: boolean }
   | { type: "chunk_start"; chunkId: number }
-  | { type: "resampler_ready" }
-  | { type: "resampler_error"; message: string };
-
-function waitForResampler(worklet: AudioWorkletNode): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onMessage = ({ data }: MessageEvent<WorkletMessage>) => {
-      if (data.type === "resampler_ready") {
-        worklet.port.removeEventListener("message", onMessage);
-        resolve();
-      } else if (data.type === "resampler_error") {
-        worklet.port.removeEventListener("message", onMessage);
-        reject(new Error(`Failed to create audio resampler: ${data.message}`));
-      }
-    };
-    worklet.port.addEventListener("message", onMessage);
-    worklet.port.start();
-  });
-}
+  | ResamplerMessage;
 
 function maybePrimeIosPlayback({
   sampleRate,

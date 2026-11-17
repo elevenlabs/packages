@@ -3,7 +3,7 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadRawAudioProcessor = createWorkletModuleLoader(
   "rawAudioProcessor",
-  "6731b766e9e6176d",
+  "934df7d37ace6c88",
   // language=JavaScript
   `/*
  * ulaw encoding logic taken from the wavefile library
@@ -55,8 +55,11 @@ class RawAudioProcessor extends AudioWorkletProcessor {
     this.port.onmessage = ({ data }) => {
       switch (data.type) {
         case "setFormat":
+          // A second resampler could finish last and replace the first with the wrong rate
+          if (this.format !== undefined) {
+            throw new Error("setFormat can only be sent once");
+          }
           this.isMuted = false;
-          this.buffer = []; // Initialize an empty buffer
           const chunkDurationMs = data.chunkDurationMs ?? 25;
           this.bufferSize = Math.max(
             1,
@@ -64,10 +67,21 @@ class RawAudioProcessor extends AudioWorkletProcessor {
           );
           this.format = data.format;
 
-          if (globalThis.LibSampleRate && sampleRate !== data.sampleRate) {
-            globalThis.LibSampleRate.create(1, sampleRate, data.sampleRate).then(resampler => {
-              this.resampler = resampler;
-            });
+          if (sampleRate === data.sampleRate) {
+            this.buffer = [];
+          } else {
+            this.createResampler(data.sampleRate).then(
+              () => {
+                this.buffer = [];
+                this.port.postMessage({ type: "resampler_ready" });
+              },
+              error =>
+                this.port.postMessage({
+                  type: "resampler_error",
+                  message:
+                    error instanceof Error ? error.message : String(error),
+                })
+            );
           }
           break;
         case "setMuted":
@@ -75,6 +89,16 @@ class RawAudioProcessor extends AudioWorkletProcessor {
           break;
       }
     };
+  }
+  async createResampler(outputSampleRate) {
+    if (!globalThis.LibSampleRate) {
+      throw new Error("libsamplerate is not loaded");
+    }
+    this.resampler = await globalThis.LibSampleRate.create(
+      1,
+      sampleRate,
+      outputSampleRate
+    );
   }
   process(inputs) {
     if (!this.buffer) {
@@ -132,6 +156,6 @@ class RawAudioProcessor extends AudioWorkletProcessor {
     return true; // Continue processing
   }
 }
-registerProcessor("rawAudioProcessor@6731b766e9e6176d", RawAudioProcessor);
+registerProcessor("rawAudioProcessor@934df7d37ace6c88", RawAudioProcessor);
 `
 );
