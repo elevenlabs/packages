@@ -11,7 +11,6 @@ import {
   type VoiceSessionSetupResult,
 } from "@elevenlabs/client/internal";
 import { attachNativeVolume } from "./nativeVolume.js";
-import { resolveAndroidPreferredOutputList } from "./audioSession.js";
 
 // Polyfill WebRTC globals needed by livekit-client in React Native
 registerGlobals();
@@ -39,21 +38,14 @@ async function reactNativeSessionSetup(
     );
   }
 
-  const audioSessionOverrides = options.webRtc?.reactNative?.audioSession;
   await AudioSession.configureAudio({
     android: {
-      // Defaults to bluetooth > headset > speaker > earpiece, so a connected
-      // Bluetooth or wired headset is used automatically instead of always
-      // forcing the speaker. Callers who want a different order can ask for
-      // one explicitly. The list is always sent, never omitted; see
-      // resolveAndroidPreferredOutputList for why.
-      preferredOutputList: resolveAndroidPreferredOutputList(
-        audioSessionOverrides?.android?.preferredOutputList
-      ),
+      // Always sent: the native module keeps the previous list across sessions
+      preferredOutputList: ["bluetooth", "headset", "speaker", "earpiece"],
       audioTypeOptions: AndroidAudioTypePresets.communication,
     },
     ios: {
-      defaultOutput: audioSessionOverrides?.ios?.defaultOutput ?? "speaker",
+      defaultOutput: "speaker",
     },
   });
   await AudioSession.startAudioSession();
