@@ -1,28 +1,20 @@
 const AUDIO_TAG = String.raw`\[[\p{L}\p{M}\p{N}_\s]+\](?!\()`;
-const AUDIO_TAG_PATTERN = new RegExp(AUDIO_TAG, "gu");
+const AUDIO_TAGS = new RegExp(AUDIO_TAG, "gu");
+// Captured so that `split` returns [text, run, text, run, ..., text].
 const AUDIO_TAG_RUN = new RegExp(
-  String.raw`(?<![\p{Zs}\t])[\p{Zs}\t]*(?:${AUDIO_TAG}[\p{Zs}\t]*)+`,
-  "gu"
+  String.raw`([\p{Zs}\t]*(?:${AUDIO_TAG}[\p{Zs}\t]*)+)`,
+  "u"
 );
-const CLOSING = /[\p{Terminal_Punctuation}\p{Pe}\p{Pf}]/u;
-const OPENING = /[\p{Ps}\p{Pi}]/u;
-const WHITESPACE = /\s/u;
+const ENDS_LINE = /(?:^|\s)$/u;
+const STARTS_LINE = /^(?:\s|$)/u;
+const ENDS_WITH_OPENING = /[\p{Ps}\p{Pi}]$/u;
+const STARTS_WITH_CLOSING = /^[\p{Terminal_Punctuation}\p{Pe}\p{Pf}]/u;
 
-function charBefore(text: string, index: number): string | undefined {
-  return [...text.slice(Math.max(0, index - 2), index)].at(-1);
-}
-
-function charAt(text: string, index: number): string | undefined {
-  const codePoint = text.codePointAt(index);
-  return codePoint === undefined ? undefined : String.fromCodePoint(codePoint);
-}
-
-function joinAround(run: string, before?: string, after?: string): string {
-  if (!before || !after) return "";
-  if (WHITESPACE.test(before) || WHITESPACE.test(after)) return "";
-  if (!WHITESPACE.test(run.replace(AUDIO_TAG_PATTERN, ""))) return "";
-  if (!WHITESPACE.test(run.at(-1)!) && CLOSING.test(after)) return "";
-  if (!WHITESPACE.test(run[0]) && OPENING.test(before)) return "";
+function separator(before: string, run: string, after: string): string {
+  if (ENDS_LINE.test(before) || STARTS_LINE.test(after)) return "";
+  if (run.replace(AUDIO_TAGS, "") === "") return "";
+  if (run.startsWith("[") && ENDS_WITH_OPENING.test(before)) return "";
+  if (run.endsWith("]") && STARTS_WITH_CLOSING.test(after)) return "";
   return " ";
 }
 
@@ -31,13 +23,10 @@ function joinAround(run: string, before?: string, after?: string): string {
  * from agent text. Tags may be written in any language.
  */
 export function stripAudioTags(text: string): string {
-  return text
-    .replace(AUDIO_TAG_RUN, (run: string, offset: number) =>
-      joinAround(
-        run,
-        charBefore(text, offset),
-        charAt(text, offset + run.length)
-      )
-    )
-    .trim();
+  const parts = text.split(AUDIO_TAG_RUN);
+  let result = parts[0];
+  for (let i = 1; i < parts.length; i += 2) {
+    result += separator(parts[i - 1], parts[i], parts[i + 1]) + parts[i + 1];
+  }
+  return result.trim();
 }
