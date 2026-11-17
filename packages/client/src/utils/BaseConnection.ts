@@ -4,6 +4,8 @@ import type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
   ConversationConfigOverrideTts,
+  ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem as PronunciationDictionaryLocator,
+  ConversationConfigOverrideTtsSupportedVoicesItem as SupportedVoice,
 } from "@elevenlabs/types";
 import type { DisconnectionDetails } from "../types.js";
 
@@ -11,6 +13,9 @@ export type {
   ConversationConfigOverrideAgentPrompt,
   ConversationConfigOverrideAgentLanguage as Language,
   ConversationConfigOverrideTts,
+  ConversationConfigOverrideAgentPromptKnowledgeBaseItem as KnowledgeBaseLocator,
+  ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem as PronunciationDictionaryLocator,
+  ConversationConfigOverrideTtsSupportedVoicesItem as SupportedVoice,
 } from "@elevenlabs/types";
 export type { DisconnectionContext, DisconnectionDetails } from "../types.js";
 
@@ -57,9 +62,16 @@ export type BaseSessionConfig = {
   };
   overrides?: {
     agent?: {
+      /**
+       * Prompt overrides, forwarded in the API's wire format: `prompt`, `llm`,
+       * `reasoning_effort`, `tool_ids`, `tool_ids_strict`,
+       * `native_mcp_server_ids` and `knowledge_base`.
+       */
       prompt?: ConversationConfigOverrideAgentPrompt;
       firstMessage?: string;
       language?: Language;
+      /** Message the agent sends when the max conversation duration is reached. */
+      maxConversationDurationMessage?: string;
     };
     tts?: {
       voiceId?: string;
@@ -75,6 +87,9 @@ export type BaseSessionConfig = {
       stability?: number;
       similarityBoost?: number;
       cloneStrength?: number;
+      pronunciationDictionaryLocators?: PronunciationDictionaryLocator[];
+      /** Additional voices the agent may switch between during the conversation. */
+      supportedVoices?: SupportedVoice[];
     };
     asr?: {
       /** Keywords to boost ASR prediction probability for this conversation. */
@@ -82,8 +97,36 @@ export type BaseSessionConfig = {
     };
     conversation?: {
       textOnly?: boolean;
+      maxDurationSeconds?: number;
+    };
+    turn?: {
+      softTimeoutConfig?: {
+        /**
+         * Filler message spoken at the first soft timeout while waiting for
+         * the LLM. Supports dynamic variables.
+         */
+        message?: string;
+        /** Filler messages for subsequent soft timeouts in the same generation. */
+        additionalSoftTimeoutMessages?: string[];
+      };
+      /** What the agent says when it detects a noisy environment. */
+      noisyEnvironmentMessage?: string;
     };
   };
+  /** ID of the agent branch to use for this conversation. */
+  branchId?: string;
+  /** Start the workflow at this node instead of the default entry. */
+  startingWorkflowNodeId?: string;
+  /**
+   * Restricts the starting agent to these procedures; an empty list disables
+   * all of them. Requires `enable_procedure_ids_from_client` on the agent.
+   */
+  procedureIds?: string[];
+  /**
+   * Free-form procedures to start when the conversation starts (at most five).
+   * Requires `enable_procedure_ids_from_client` on the agent.
+   */
+  startProcedureIds?: string[];
   customLlmExtraBody?: unknown;
   dynamicVariables?: Record<string, string | number | boolean>;
   toolMockConfig?: {
@@ -206,6 +249,7 @@ export type OrchestratorSessionConfig = BaseSessionConfig & {
   authorization?: never;
   origin?: never;
   environment?: never;
+  branchId?: never;
   persistentSession?: never;
 };
 
