@@ -57,6 +57,11 @@ export interface ConversationInitiation {
   user_id?: string;
   source_info?: SourceInfo;
   tool_mock_config?: ToolMockConfig;
+  branch_id?: string;
+  environment?: string;
+  starting_workflow_node_id?: string;
+  procedure_ids?: string[];
+  start_procedure_ids?: string[];
 }
 
 export interface ConversationConfigOverride {
@@ -64,11 +69,13 @@ export interface ConversationConfigOverride {
   asr?: ConversationConfigOverrideAsr;
   tts?: ConversationConfigOverrideTts;
   conversation?: ConversationConfigOverrideConversation;
+  turn?: ConversationConfigOverrideTurn;
 }
 
 export interface ConversationConfigOverrideAgent {
   first_message?: string;
   language?: ConversationConfigOverrideAgentLanguage;
+  max_conversation_duration_message?: string;
   prompt?: ConversationConfigOverrideAgentPrompt;
   native_mcp_server_ids?: string[];
 }
@@ -150,7 +157,38 @@ export type ConversationConfigOverrideAgentLanguage =
 export interface ConversationConfigOverrideAgentPrompt {
   prompt?: string;
   llm?: string;
+  reasoning_effort?: ConversationConfigOverrideAgentPromptReasoningEffort;
+  tool_ids?: string[];
+  tool_ids_strict?: boolean;
+  native_mcp_server_ids?: string[];
+  knowledge_base?: ConversationConfigOverrideAgentPromptKnowledgeBaseItem[];
 }
+
+export type ConversationConfigOverrideAgentPromptReasoningEffort =
+  | "none"
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh"
+  | "max";
+
+export interface ConversationConfigOverrideAgentPromptKnowledgeBaseItem {
+  type: ConversationConfigOverrideAgentPromptKnowledgeBaseItemType;
+  name: string;
+  id: string;
+  usage_mode?: ConversationConfigOverrideAgentPromptKnowledgeBaseItemUsageMode;
+}
+
+export type ConversationConfigOverrideAgentPromptKnowledgeBaseItemType =
+  | "file"
+  | "url"
+  | "text"
+  | "folder";
+
+export type ConversationConfigOverrideAgentPromptKnowledgeBaseItemUsageMode =
+  | "prompt"
+  | "auto";
 
 export interface ConversationConfigOverrideAsr {
   keywords?: string[];
@@ -163,6 +201,8 @@ export interface ConversationConfigOverrideTts {
   speed?: number;
   similarity_boost?: number;
   clone_strength?: number;
+  pronunciation_dictionary_locators?: ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem[];
+  supported_voices?: ConversationConfigOverrideTtsSupportedVoicesItem[];
 }
 
 export type ConversationConfigOverrideTtsModelId =
@@ -175,8 +215,38 @@ export type ConversationConfigOverrideTtsModelId =
   | "eleven_v4"
   | "eleven_v4_turbo";
 
+export interface ConversationConfigOverrideTtsPronunciationDictionaryLocatorsItem {
+  pronunciation_dictionary_id: string;
+  version_id: string;
+}
+
+export interface ConversationConfigOverrideTtsSupportedVoicesItem {
+  label: string;
+  voice_id: string;
+  description?: string;
+  language?: string;
+  model_family?: ConversationConfigOverrideTtsSupportedVoicesItemModelFamily;
+  optimize_streaming_latency?: ConversationConfigOverrideTtsSupportedVoicesItemOptimizeStreamingLatency;
+  stability?: number;
+  speed?: number;
+  similarity_boost?: number;
+  clone_strength?: number;
+}
+
+export type ConversationConfigOverrideTtsSupportedVoicesItemModelFamily =
+  | "turbo"
+  | "flash"
+  | "multilingual"
+  | "v3_conversational"
+  | "v4"
+  | "v4_turbo";
+
+export type ConversationConfigOverrideTtsSupportedVoicesItemOptimizeStreamingLatency =
+  0 | 1 | 2 | 3 | 4;
+
 export interface ConversationConfigOverrideConversation {
   text_only?: boolean;
+  max_duration_seconds?: number;
   client_events?: ConversationConfigOverrideConversationClientEventsItem[];
 }
 
@@ -208,6 +278,16 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "agent_typing"
   | "external_agent_connected"
   | "external_agent_disconnected";
+
+export interface ConversationConfigOverrideTurn {
+  soft_timeout_config?: ConversationConfigOverrideTurnSoftTimeoutConfig;
+  noisy_environment_message?: string;
+}
+
+export interface ConversationConfigOverrideTurnSoftTimeoutConfig {
+  message?: string;
+  additional_soft_timeout_messages?: string[];
+}
 
 export interface SourceInfo {
   source?: string;
@@ -860,6 +940,11 @@ export interface ConversationInitiationClientToOrchestratorEvent {
   user_id?: string;
   source_info?: SourceInfo;
   tool_mock_config?: ToolMockConfig;
+  branch_id?: string;
+  environment?: string;
+  starting_workflow_node_id?: string;
+  procedure_ids?: string[];
+  start_procedure_ids?: string[];
 }
 
 export interface MultimodalMessageClientToOrchestratorEvent {
