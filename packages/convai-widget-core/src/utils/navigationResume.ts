@@ -11,8 +11,17 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 
 const MAX_RESUMED_TURNS = 30;
 
-// Long enough to read a page, short enough not to offer a stale call.
+// Long enough to read a page, short enough not to offer a stale call. Under the
+// three minutes after which the backend settles a voice visit, so an offered call
+// can still rejoin its conversation.
 const MAX_AGE_MS = 2 * 60_000;
+
+/** When an offer stops being shown: its call can't be continued after that. */
+export function navigationResumeExpiresAt(
+  record: NavigationResumeRecord
+): number {
+  return record.recordedAt + MAX_AGE_MS;
+}
 
 export type NavigationResumeTurn =
   | { type: "message"; role: Role; message: string }
@@ -135,7 +144,6 @@ export function createNavigationResumeStore(
 
   // Kept until the continued call connects, so a failed start offers it again.
   const pending = signal(config.peek().persistentSession ? consume() : null);
-  const shownAt = Date.now();
 
   return {
     pending,
@@ -153,10 +161,10 @@ export function createNavigationResumeStore(
         turns: toResumeTurns(transcript),
         ...details,
       }),
-    /** An untaken offer carries on, aging from when this page showed it. */
+    /** An untaken offer carries on, still aging from when its call ended. */
     carryOver: () => {
       const record = pending.peek();
-      if (record) store({ ...record, recordedAt: shownAt });
+      if (record) store(record);
     },
   };
 }

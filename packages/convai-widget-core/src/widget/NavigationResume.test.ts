@@ -320,6 +320,49 @@ describe("Resuming a call after a navigation", () => {
     expect(resumeButton().all()).toHaveLength(0);
   });
 
+  it("keeps the offer's window from the end of its call across pages", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    const recordedAt = storedRecord()?.recordedAt;
+    expect(recordedAt).toBeTruthy();
+
+    const secondMount = mountWidget();
+    await expect.element(resumeButton()).toBeInTheDocument();
+    navigateAway(secondMount);
+
+    expect(storedRecord()?.recordedAt).toBe(recordedAt);
+  });
+
+  it("shows the end screen once the offer runs out", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    const record = storedRecord();
+    expect(record).toBeTruthy();
+    // Half a second of its two minutes left.
+    sessionStorage.setItem(
+      STORAGE_KEY_PREFIX + "navigation_resume",
+      JSON.stringify({ ...record, recordedAt: Date.now() - 2 * 60_000 + 500 })
+    );
+
+    const secondMount = mountWidget();
+    await expect.element(resumeButton()).toBeInTheDocument();
+
+    await expect
+      .element(page.getByText("You ended the conversation"))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+    navigateAway(secondMount);
+    expect(storedRecord()).toBeNull();
+  });
+
   it("shows the end screen when the offer is turned down", async () => {
     const firstMount = mountWidget();
     await startCall();

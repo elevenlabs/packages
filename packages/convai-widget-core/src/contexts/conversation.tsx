@@ -39,6 +39,7 @@ import {
   buildResumeContext,
   createNavigationResumeStore,
   isFirstMessageOverrideRefused,
+  navigationResumeExpiresAt,
   toTranscriptEntries,
   type NavigationResumeRecord,
 } from "../utils/navigationResume";
@@ -1428,6 +1429,22 @@ function useConversationSetup() {
     };
     return value;
   }, [config]);
+
+  // An offer left unanswered ends like a declined one, showing the end screen and
+  // its rating, once its call can no longer be continued.
+  useSignalEffect(() => {
+    const pending = conversation.pendingNavigationResume.value;
+    if (!pending) return;
+    const timer = setTimeout(
+      () => {
+        if (conversation.pendingNavigationResume.peek() && !lockRef.current) {
+          void conversation.endSession();
+        }
+      },
+      Math.max(0, navigationResumeExpiresAt(pending) - Date.now())
+    );
+    return () => clearTimeout(timer);
+  });
 
   useSignalEffect(() => {
     const richContent = firstMessageRichContent.value;
