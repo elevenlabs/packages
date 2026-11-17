@@ -26,6 +26,10 @@ function joinAround(run: string, before?: string, after?: string): string {
   return " ";
 }
 
+/**
+ * Removes expressive audio tags such as `[laughs]`, `[whispers]` or `[차분]`
+ * from agent text. Tags may be written in any language.
+ */
 export function stripAudioTags(text: string): string {
   return text
     .replace(AUDIO_TAG_RUN, (run: string, offset: number) =>
