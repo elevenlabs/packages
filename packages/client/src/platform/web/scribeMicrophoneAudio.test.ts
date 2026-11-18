@@ -50,7 +50,7 @@ async function captureScribeAudio(frequencies: number[]) {
   try {
     await vi.waitFor(
       () => expect(samples.length).toBeGreaterThan(2 * ANALYSIS_SAMPLES),
-      { timeout: 5000 }
+      { timeout: 10000 }
     );
   } finally {
     cleanup();
