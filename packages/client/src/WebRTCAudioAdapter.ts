@@ -47,7 +47,8 @@ export interface WebRTCAudioAdapter {
     track: RemoteAudioTrack,
     format: FormatConfig,
     onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void,
-    workletPaths?: AudioWorkletConfig["workletPaths"]
+    workletPaths?: AudioWorkletConfig["workletPaths"],
+    libsampleratePath?: AudioWorkletConfig["libsampleratePath"]
   ): Promise<AnalysisResult>;
 
   /** Set playback volume (0-1) for all managed audio elements. */

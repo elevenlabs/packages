@@ -13,6 +13,7 @@ export default defineConfig({
             "src/index.test.ts",
             "src/utils/input.test.ts",
             "src/utils/selfHostedWorklets.test.ts",
+            "src/utils/webAudioAdapter.test.ts",
           ],
         },
       },
@@ -23,6 +24,7 @@ export default defineConfig({
             "src/index.test.ts",
             "src/utils/input.test.ts",
             "src/utils/selfHostedWorklets.test.ts",
+            "src/utils/webAudioAdapter.test.ts",
           ],
           browser: {
             enabled: true,
