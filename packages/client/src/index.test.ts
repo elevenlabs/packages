@@ -1103,11 +1103,13 @@ describe("Volume Control", () => {
         currentTime: 0,
         createAnalyser: vi.fn(() => ({
           connect: vi.fn(),
+          disconnect: vi.fn(),
           frequencyBinCount: 1024,
           getByteFrequencyData: vi.fn(),
         })),
         createGain: vi.fn(() => ({
           connect: vi.fn(),
+          disconnect: vi.fn(),
           gain: {
             value: 1,
             cancelScheduledValues: vi.fn(),
@@ -1133,11 +1135,13 @@ describe("Volume Control", () => {
     globalThis.AudioWorkletNode = vi.fn(function MockAudioWorkletNode() {
       return {
         connect: vi.fn(),
+        disconnect: vi.fn(),
         port: {
           postMessage: vi.fn(),
           addEventListener: vi.fn(),
           removeEventListener: vi.fn(),
           start: vi.fn(),
+          close: vi.fn(),
         },
       };
     }) as unknown as typeof AudioWorkletNode;
@@ -1188,6 +1192,7 @@ describe("Volume Control", () => {
         cancelScheduledValues: vi.fn(),
       },
       connect: vi.fn(),
+      disconnect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
 
@@ -1198,6 +1203,7 @@ describe("Volume Control", () => {
         currentTime: 0,
         createAnalyser: vi.fn(() => ({
           connect: vi.fn(),
+          disconnect: vi.fn(),
           frequencyBinCount: 1024,
           getByteFrequencyData: vi.fn(),
         })),
@@ -1310,6 +1316,7 @@ describe("Volume Control", () => {
         cancelScheduledValues: vi.fn(),
       },
       connect: vi.fn(),
+      disconnect: vi.fn(),
     };
     const createGainSpy = vi.fn(() => mockGainNode);
 
@@ -1320,6 +1327,7 @@ describe("Volume Control", () => {
         currentTime: 0,
         createAnalyser: vi.fn(() => ({
           connect: vi.fn(),
+          disconnect: vi.fn(),
           frequencyBinCount: 1024,
           getByteFrequencyData: vi.fn(),
         })),
