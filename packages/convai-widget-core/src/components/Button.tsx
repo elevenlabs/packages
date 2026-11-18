@@ -18,6 +18,8 @@ const VARIANT_CLASSES = {
     "text-base-primary border border-base bg-base hover:bg-base-hover hover:border-base-hover active:bg-base-active active:border-base-active",
   outline:
     "text-accent border border-accent bg-base hover:bg-base-hover active:bg-base-active",
+  danger:
+    "text-base-error border border-transparent bg-base-error/10 hover:bg-base-error/15 active:bg-base-error/20",
   "md-button":
     "text-base-primary border border-base-border bg-base hover:bg-base-hover active:bg-base-active text-sm h-6",
 };

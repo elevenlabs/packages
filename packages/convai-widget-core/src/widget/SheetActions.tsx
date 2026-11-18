@@ -364,7 +364,7 @@ function SheetButtons({
 
   return (
     <>
-      <SizeTransition visible={showUploadButton.value}>
+      <SizeTransition visible={showUploadButton.value} className="pr-1.5">
         <UploadFileButton
           iconOnly
           disabled={!uploadEnabled.value}
@@ -372,10 +372,10 @@ function SheetButtons({
           className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
         />
       </SizeTransition>
-      <div className="grow" />
-      <SizeTransition visible={showMuteButton.value} className="pr-1.5">
+      <SizeTransition visible={showMuteButton.value}>
         <TriggerMuteButton className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active" />
       </SizeTransition>
+      <div className="grow" />
       <SizeTransition visible={showCallButton.value} className="pr-1.5">
         {textOnly.value ? (
           <div className="group relative pointer-events-auto">
@@ -397,10 +397,14 @@ function SheetButtons({
           </div>
         ) : (
           <CallButton
-            iconOnly
+            iconOnly={isDisconnected.value}
             isDisconnected={isDisconnected.value}
             disabled={callDisabled.value}
-            className="pointer-events-auto bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+            className={cn(
+              "pointer-events-auto",
+              isDisconnected.value &&
+                "bg-base text-base-primary hover:bg-base-hover active:bg-base-active"
+            )}
           />
         )}
       </SizeTransition>
