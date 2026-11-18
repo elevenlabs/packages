@@ -3,6 +3,7 @@ import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import { disconnectAudioNode } from "./disconnectAudioNode.js";
 import { waitForResampler } from "./waitForResampler.js";
 import {
   DEFAULT_INPUT_CHUNK_DURATION_MS,
@@ -207,6 +208,11 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       "change",
       this.handlePermissionsChange
     );
+    // The worklet is a sink, so it may have no outgoing connection.
+    // Closing the port drops PCM listeners without removing ones callers own.
+    disconnectAudioNode(this.worklet);
+    disconnectAudioNode(this.analyser);
+    this.worklet.port.close();
     await this.context.close();
   }
 

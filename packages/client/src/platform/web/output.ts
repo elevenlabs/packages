@@ -2,6 +2,7 @@ import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import { disconnectAudioNode } from "./disconnectAudioNode.js";
 import type {
   OutputChunkMetadata,
   OutputController,
@@ -56,6 +57,18 @@ function maybePrimeIosPlayback({
     buffer: silentBuffer.buffer,
   });
   void audioElement.play().catch(() => {});
+}
+
+// A live destination track keeps the <audio> element in Chromium's pending
+// activities after the session ends. Stop those tracks, then drop srcObject.
+function releaseAudioElementStream(audioElement: HTMLAudioElement): void {
+  const { srcObject } = audioElement;
+  if (srcObject instanceof MediaStream) {
+    for (const track of srcObject.getTracks()) {
+      track.stop();
+    }
+  }
+  audioElement.srcObject = null;
 }
 
 export type MediaDeviceOutputConfig = FormatConfig &
@@ -144,11 +157,15 @@ export class MediaDeviceOutput
 
       return newOutput;
     } catch (error) {
-      // Clean up audio element from DOM
-      if (audioElement?.parentNode) {
-        audioElement.parentNode.removeChild(audioElement);
+      // Setup can fail after the element is already pointing at the
+      // destination stream. Release that stream before removing it.
+      if (audioElement) {
+        releaseAudioElementStream(audioElement);
+        if (audioElement.parentNode) {
+          audioElement.parentNode.removeChild(audioElement);
+        }
+        audioElement.pause();
       }
-      audioElement?.pause();
       if (context && context.state !== "closed") {
         await context.close();
       }
@@ -297,6 +314,17 @@ export class MediaDeviceOutput
       clearTimeout(this.interruptTimeout);
       this.interruptTimeout = null;
     }
+
+    // The message listener closes over this output. Remove it and close the
+    // port before tearing down the element, or Chromium retains both.
+    this.worklet.port.removeEventListener("message", this.handleWorkletMessage);
+    this.worklet.port.close();
+    disconnectAudioNode(this.worklet);
+    releaseAudioElementStream(this.audioElement);
+    disconnectAudioNode(this.gain);
+    disconnectAudioNode(this.analyser);
+    this.listeners.clear();
+    this.chunkMetadata.clear();
 
     // Remove audio element from DOM
     if (this.audioElement.parentNode) {
