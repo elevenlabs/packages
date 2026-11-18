@@ -1,5 +1,13 @@
 # @elevenlabs/convai-widget-core
 
+## 0.27.1
+
+### Patch Changes
+
+- bbdc7e3: Make the end-call button easier to find by tinting it with the `base_error` color. In the sheet it shows its "End" label, and the mute button moves to the left of the button row.
+- Updated dependencies [9bbf514]
+  - @elevenlabs/client@1.37.1
+
 ## 0.27.0
 
 ### Minor Changes
