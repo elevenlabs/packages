@@ -96,6 +96,11 @@ async function setupWebSocketIO(
 export async function webSessionSetup(
   options: Options
 ): Promise<VoiceSessionSetupResult> {
+  if (options.preferredOutputDevices?.length) {
+    throw new Error(
+      "preferredOutputDevices is not supported on web. Use outputDeviceId to choose an output device, or pass preferredOutputDevices only on native platforms (e.g. with Platform.select)."
+    );
+  }
   const useWakeLock = options.useWakeLock ?? true;
   let wakeLock: WakeLockSentinel | null = null;
   let preliminaryInputStream: MediaStream | null = null;

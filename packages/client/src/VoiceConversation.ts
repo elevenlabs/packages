@@ -199,7 +199,13 @@ export class VoiceConversation extends BaseConversation {
     sampleRate,
     format,
     outputDeviceId,
+    preferredOutputDevices,
   }: Partial<FormatConfig> & OutputConfig): Promise<void> {
+    if (preferredOutputDevices?.length) {
+      throw new Error(
+        "preferredOutputDevices can't be changed during a session yet. Pass it when starting the session."
+      );
+    }
     try {
       await this.output.setDevice({
         outputDeviceId,

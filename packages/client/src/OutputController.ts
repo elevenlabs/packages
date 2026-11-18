@@ -1,8 +1,12 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { AudioAlignmentEvent } from "./types.js";
 
+export type OutputDeviceKind = "bluetooth" | "headset" | "speaker" | "earpiece";
+
 export type OutputDeviceConfig = {
   outputDeviceId?: string;
+  /** Most preferred first; unlisted kinds fall back to the default order. Native only, at session start. */
+  preferredOutputDevices?: OutputDeviceKind[];
 };
 
 export type OutputConfig = OutputDeviceConfig;
