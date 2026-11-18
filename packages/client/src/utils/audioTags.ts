@@ -1,5 +1,6 @@
 const AUDIO_TAG = String.raw`\[[\p{L}\p{M}\p{N}_\s]+\](?!\()`;
 const AUDIO_TAGS = new RegExp(AUDIO_TAG, "gu");
+const AUDIO_TAG_SPLIT = new RegExp(`(${AUDIO_TAG})`, "u");
 // Captured so that `split` returns [text, run, text, run, ..., text].
 const AUDIO_TAG_RUN = new RegExp(
   String.raw`([\p{Zs}\t]*(?:${AUDIO_TAG}[\p{Zs}\t]*)+)`,
@@ -29,4 +30,21 @@ export function stripAudioTags(text: string): string {
     result += separator(parts[i - 1], parts[i], parts[i + 1]) + parts[i + 1];
   }
   return result.trim();
+}
+
+export interface AudioTagPart {
+  type: "text" | "audioTag";
+  content: string;
+}
+
+export function splitAudioTags(text: string): AudioTagPart[] {
+  return text
+    .split(AUDIO_TAG_SPLIT)
+    .map(
+      (content, i): AudioTagPart => ({
+        type: i % 2 === 1 ? "audioTag" : "text",
+        content,
+      })
+    )
+    .filter(part => part.content !== "");
 }
