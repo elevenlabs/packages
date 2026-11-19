@@ -202,7 +202,9 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.mediaStreamSource.disconnect();
   }
 
+  private closed = false;
   public async close() {
+    this.closed = true;
     this.forgetInputStreamAndSource();
     this.permissions.removeEventListener(
       "change",
@@ -257,6 +259,14 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       const newInputStream = await navigator.mediaDevices.getUserMedia({
         audio: constraints,
       });
+
+      // close() ran while waiting for the new stream, so nothing would stop it.
+      if (this.closed) {
+        for (const track of newInputStream.getTracks()) {
+          track.stop();
+        }
+        return;
+      }
 
       this.forgetInputStreamAndSource();
 
