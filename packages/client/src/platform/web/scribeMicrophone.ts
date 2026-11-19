@@ -10,6 +10,7 @@ import { waitForResampler } from "./waitForResampler.js";
 
 const TARGET_SAMPLE_RATE = 16000;
 
+// Firefox requires the AudioContext to match the microphone's native sample rate
 function audioContextOptions(track?: MediaStreamTrack): AudioContextOptions {
   if (navigator.mediaDevices.getSupportedConstraints().sampleRate) {
     return { sampleRate: TARGET_SAMPLE_RATE };
