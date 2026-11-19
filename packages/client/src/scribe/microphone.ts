@@ -22,7 +22,6 @@ export interface ScribeMicrophoneConfig {
    */
   workletPaths?: {
     scribeAudioProcessor?: string;
-    libsamplerate?: string;
   };
 }
 

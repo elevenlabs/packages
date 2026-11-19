@@ -12,7 +12,6 @@ export function installAudioEnvironment(options?: {
   resumeError?: Error;
   supportsSampleRate?: boolean;
   trackSampleRate?: number;
-  resamplerError?: string;
 }) {
   const track = {
     getSettings: fn(() => ({ sampleRate: options?.trackSampleRate })),
@@ -26,24 +25,11 @@ export function installAudioEnvironment(options?: {
     connect: fn(),
     disconnect: fn(),
   };
-  const listeners = new Set<(event: { data: unknown }) => void>();
   const scribeNode = {
     disconnect: fn(),
     port: {
       onmessage: null,
-      addEventListener: fn((_type: string, listener) =>
-        listeners.add(listener)
-      ),
-      removeEventListener: fn((_type: string, listener) =>
-        listeners.delete(listener)
-      ),
-      start: fn(),
-      postMessage: fn(() => {
-        const data = options?.resamplerError
-          ? { type: "resampler_error", message: options.resamplerError }
-          : { type: "resampler_ready" };
-        for (const listener of [...listeners]) listener({ data });
-      }),
+      postMessage: fn(),
     },
   };
   const audioContext = {

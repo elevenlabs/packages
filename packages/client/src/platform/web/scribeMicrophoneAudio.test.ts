@@ -7,8 +7,6 @@ const SCRIBE_SAMPLE_RATE = 16000;
 const TONE_AMPLITUDE = 0.25;
 const TONE_DB = 20 * Math.log10(TONE_AMPLITUDE);
 const ANALYSIS_SAMPLES = 8192;
-const LIBSAMPLERATE =
-  "/node_modules/@alexanderolsen/libsamplerate-js/dist/libsamplerate.worklet.js";
 
 async function toneMicrophone(frequencies: number[]) {
   await userEvent.click(document.body);
@@ -43,9 +41,8 @@ function decodePcm16(base64: string) {
 async function captureScribeAudio(frequencies: number[]) {
   const micContext = await toneMicrophone(frequencies);
   const samples: number[] = [];
-  const { cleanup } = await webScribeMicrophoneSetup(
-    { workletPaths: { libsamplerate: LIBSAMPLERATE } },
-    chunk => samples.push(...decodePcm16(chunk))
+  const { cleanup } = await webScribeMicrophoneSetup({}, chunk =>
+    samples.push(...decodePcm16(chunk))
   );
   try {
     await vi.waitFor(
@@ -78,23 +75,10 @@ describe("Scribe microphone audio from a 48 kHz mic", () => {
     vi.restoreAllMocks();
   });
 
-  it.each([
-    { path: "browser resampling", constraint: true },
-    { path: "libsamplerate", constraint: false },
-  ])(
-    "keeps 1 kHz and drops 12 kHz instead of folding it to 4 kHz ($path)",
-    async ({ constraint }) => {
-      if (!constraint) {
-        vi.spyOn(
-          navigator.mediaDevices,
-          "getSupportedConstraints"
-        ).mockReturnValue({});
-      }
+  it("keeps 1 kHz and drops 12 kHz instead of folding it to 4 kHz", async () => {
+    const samples = await captureScribeAudio([1000, 12000]);
 
-      const samples = await captureScribeAudio([1000, 12000]);
-
-      expect(levelDb(samples, 1000)).toBeCloseTo(TONE_DB, 0);
-      expect(levelDb(samples, 4000)).toBeLessThan(TONE_DB - 60);
-    }
-  );
+    expect(levelDb(samples, 1000)).toBeCloseTo(TONE_DB, 0);
+    expect(levelDb(samples, 4000)).toBeLessThan(TONE_DB - 60);
+  });
 });
