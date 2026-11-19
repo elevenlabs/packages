@@ -40,7 +40,8 @@ async function reactNativeSessionSetup(
 
   await AudioSession.configureAudio({
     android: {
-      preferredOutputList: ["speaker"],
+      // Always sent: the native module keeps the previous list across sessions
+      preferredOutputList: ["bluetooth", "headset", "speaker", "earpiece"],
       audioTypeOptions: AndroidAudioTypePresets.communication,
     },
     ios: {
