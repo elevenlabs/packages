@@ -662,8 +662,9 @@ function useConversationSetup() {
         }
 
         // If the user started the conversation with a text message, and the
-        // agent supports it, switch to text-only mode. Persistent sessions are
-        // text only, so a resume does the same; a continued call stays voice.
+        // agent supports it, switch to text-only mode. The stored session is
+        // always a text conversation, so resuming it is text-only too; a
+        // continued call stays voice, even when it rejoins its session.
         if (
           (initialMessage &&
             !continuedCall &&
