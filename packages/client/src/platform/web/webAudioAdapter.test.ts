@@ -207,4 +207,35 @@ describe("WebAudioAdapter.cleanup", () => {
     expect(worklet.port.onmessage).toBeNull();
     expect(worklet.port.close).toHaveBeenCalledTimes(1);
   });
+
+  it("closes a worklet whose load is overtaken by a newer setup", async () => {
+    const { audioContext, worklet: stale } = installAudioEnvironment();
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function MockAudioContext() {
+        return { ...audioContext };
+      })
+    );
+    const live = createWorklet();
+    let finishStale!: () => void;
+    vi.mocked(loadRawAudioProcessor)
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            finishStale = () => resolve(stale as unknown as AudioWorkletNode);
+          })
+      )
+      .mockResolvedValueOnce(live as unknown as AudioWorkletNode);
+    const adapter = new WebAudioAdapter();
+
+    const pending = adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    await adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    finishStale();
+    await pending;
+
+    expect(stale.port.onmessage).toBeNull();
+    expect(stale.port.close).toHaveBeenCalledTimes(1);
+    expect(live.port.onmessage).toBeTypeOf("function");
+    expect(live.port.close).not.toHaveBeenCalled();
+  });
 });
