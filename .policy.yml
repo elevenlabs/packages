@@ -1,18 +1,19 @@
 policy:
   approval:
     - or:
-        - convai-widget-core changes approved by widget team
-        - convai-widget-embed changes approved by widget team
+        - convai-widget changes approved by widget team
         - client changes approved by owner
-        - react-native changes approved by owner
+        - react and example changes approved by owner
+        - other changes approved by a maintainer
 
 approval_rules:
-  - name: convai-widget-core changes approved by widget team
-    description: ConvAI widget core changes require approval from kamilk-11, kalvin807, or giannagerton
+  - name: convai-widget changes approved by widget team
+    description: ConvAI widget changes require approval from the widget team
     if:
       changed_files:
         paths:
           - "^packages/convai-widget-core/.*$"
+          - "^packages/convai-widget-embed/.*$"
     requires:
       count: 1
       users: ["kamilk-11", "kalvin807", "giannagerton"]
@@ -33,47 +34,54 @@ approval_rules:
         enabled: true
         mode: all-users
 
-  - name: convai-widget-embed changes approved by widget team
-    description: ConvAI widget embed changes require approval from kamilk-11, kalvin807, or giannagerton
-    if:
-      changed_files:
-        paths:
-          - "^packages/convai-widget-embed/.*$"
-    requires:
-      count: 1
-      users: ["kamilk-11", "kalvin807", "giannagerton"]
-    options:
-      <<: *default_options
-      request_review:
-        enabled: true
-        mode: all-users
-
   - name: client changes approved by owner
-    description: Client package changes require approval from PaulAsjes or AngeloGiacco
+    description: Client and types package changes require approval from a package owner
     if:
       changed_files:
         paths:
           - "^packages/client/.*$"
+          - "^packages/types/.*$"
     requires:
       count: 1
-      users: ["PaulAsjes", "AngeloGiacco"]
+      users: &sdk_owners ["PaulAsjes", "AngeloGiacco", "kraenhansen"]
     options:
       <<: *default_options
-      request_review:
-        enabled: true
-        mode: all-users
 
-  - name: react-native changes approved by owner
-    description: React Native package changes require approval from PaulAsjes or AngeloGiacco
+  - name: react and example changes approved by owner
+    description: React, React Native and example app changes require approval from a package owner
     if:
       changed_files:
         paths:
+          - "^packages/react/.*$"
           - "^packages/react-native/.*$"
+          - "^examples/react-native-expo/.*$"
+          - "^examples/agent-testbench/.*$"
     requires:
       count: 1
-      users: ["PaulAsjes", "AngeloGiacco"]
+      users: *sdk_owners
+    options:
+      <<: *default_options
+
+  # Must not apply when an owned path changes; the top-level "or" would
+  # otherwise let a maintainer approval bypass the owners. Keep this list in
+  # sync with the paths of the rules above.
+  - name: other changes approved by a maintainer
+    description: Changes outside the owned packages require approval from a maintainer
+    if:
+      no_changed_files:
+        paths:
+          - "^packages/convai-widget-core/.*$"
+          - "^packages/convai-widget-embed/.*$"
+          - "^packages/client/.*$"
+          - "^packages/types/.*$"
+          - "^packages/react/.*$"
+          - "^packages/react-native/.*$"
+          - "^examples/react-native-expo/.*$"
+          - "^examples/agent-testbench/.*$"
+    requires:
+      count: 1
+      permissions: ["write"]
     options:
       <<: *default_options
       request_review:
-        enabled: true
-        mode: all-users
+        enabled: false

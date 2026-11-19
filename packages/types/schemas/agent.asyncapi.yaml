@@ -764,6 +764,31 @@ components:
           $ref: "#/components/schemas/SourceInfo"
         tool_mock_config:
           $ref: "#/components/schemas/ToolMockConfig"
+        branch_id:
+          type: string
+          description: ID of the agent branch to use for this conversation
+        environment:
+          type: string
+          description: Environment to use for resolving environment variables
+        starting_workflow_node_id:
+          type: string
+          description: If set, start the workflow at this node id instead of the default entry
+        procedure_ids:
+          type: array
+          items:
+            type: string
+          description: |
+            If set, only these procedures are available to the starting agent. Each ID must be attached to that
+            agent; unknown IDs fail conversation start. An empty list disables all of that agent's procedures. Not applied
+            after an agent transfer. Requires enable_procedure_ids_from_client.
+        start_procedure_ids:
+          type: array
+          items:
+            type: string
+          description: |
+            If set, these free-form procedures start when the conversation starts. Accepts at most five IDs. Each
+            ID must be available after procedure_ids is applied. Unknown IDs and structured procedures fail conversation start.
+            Requires enable_procedure_ids_from_client.
 
     ToolMockConfig:
       type: object
@@ -1538,6 +1563,8 @@ components:
           $ref: "#/components/schemas/TTSConversationalConfigOverride"
         conversation:
           $ref: "#/components/schemas/ConversationConfigOverride"
+        turn:
+          $ref: "#/components/schemas/TurnConfigOverride"
 
     ASRConversationalConfigOverride:
       type: object
@@ -1560,15 +1587,20 @@ components:
           description: Initial message the agent will say. If empty, agent waits for user to start
         language:
           $ref: "#/components/schemas/Language"
+        max_conversation_duration_message:
+          type: string
+          nullable: true
+          description: If non-empty, the message the agent will send when max conversation duration is reached
         prompt:
           $ref: "#/components/schemas/PromptAgentOverride"
         native_mcp_server_ids:
           type: array
           nullable: true
+          deprecated: true
           maxItems: 10
           items:
             type: string
-          description: List of Native MCP server IDs to be used by the agent
+          description: Deprecated. Use prompt.native_mcp_server_ids, which is where the API reads this override.
 
     PromptAgentOverride:
       type: object
@@ -1582,6 +1614,55 @@ components:
           type: string
           nullable: true
           description: The LLM model to use for the conversation
+        reasoning_effort:
+          type: string
+          nullable: true
+          enum: [none, minimal, low, medium, high, xhigh, max]
+          description: Reasoning effort of the model. Only available for some models.
+        tool_ids:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: A list of IDs of tools used by the agent
+        tool_ids_strict:
+          type: boolean
+          nullable: true
+          description: |
+            Only applies as a conversation override, allowed whenever tool_ids may be overridden. When true, the
+            overridden tool_ids is the full list of tools allowed in the conversation, including tools on workflow nodes.
+        native_mcp_server_ids:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: A list of Native MCP server ids to be used by the agent
+        knowledge_base:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/KnowledgeBaseLocator"
+          description: A list of knowledge bases to be used by the agent
+
+    KnowledgeBaseLocator:
+      type: object
+      required: [type, name, id]
+      properties:
+        type:
+          type: string
+          enum: [file, url, text, folder]
+          description: The type of the knowledge base
+        name:
+          type: string
+          description: The name of the knowledge base
+        id:
+          type: string
+          description: The ID of the knowledge base
+        usage_mode:
+          type: string
+          enum: [prompt, auto]
+          default: auto
+          description: The usage mode of the knowledge base
 
     TTSConversationalConfigOverride:
       type: object
@@ -1594,6 +1675,15 @@ components:
         model_id:
           type: string
           nullable: true
+          enum:
+            - eleven_turbo_v2
+            - eleven_turbo_v2_5
+            - eleven_flash_v2
+            - eleven_flash_v2_5
+            - eleven_multilingual_v2
+            - eleven_v3_conversational
+            - eleven_v4
+            - eleven_v4_turbo
           description: ElevenLabs TTS model ID for speech synthesis
         stability:
           type: number
@@ -1619,6 +1709,97 @@ components:
           minimum: 0
           maximum: 1
           description: Clone strength (0-1) for v4 voices fine-tuned with a professional voice clone
+        pronunciation_dictionary_locators:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/PronunciationDictionaryLocator"
+          description: The pronunciation dictionary locators
+        supported_voices:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SupportedVoice"
+          description: Additional supported voices for the agent
+
+    PronunciationDictionaryLocator:
+      type: object
+      required: [pronunciation_dictionary_id, version_id]
+      properties:
+        pronunciation_dictionary_id:
+          type: string
+          description: The ID of the pronunciation dictionary
+        version_id:
+          type: string
+          description: The ID of the version of the pronunciation dictionary
+
+    SupportedVoice:
+      type: object
+      required: [label, voice_id]
+      properties:
+        label:
+          type: string
+          minLength: 1
+        voice_id:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        language:
+          type: string
+        model_family:
+          type: string
+          enum: [turbo, flash, multilingual, v3_conversational, v4, v4_turbo]
+        optimize_streaming_latency:
+          type: integer
+          enum: [0, 1, 2, 3, 4]
+        stability:
+          type: number
+          minimum: 0
+          maximum: 1
+        speed:
+          type: number
+          minimum: 0.7
+          maximum: 1.2
+        similarity_boost:
+          type: number
+          minimum: 0
+          maximum: 1
+        clone_strength:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    TurnConfigOverride:
+      type: object
+      description: Turn detection configuration overrides
+      properties:
+        soft_timeout_config:
+          $ref: "#/components/schemas/SoftTimeoutConfigOverride"
+        noisy_environment_message:
+          type: string
+          nullable: true
+          description: What the agent says when it detects a noisy environment
+
+    SoftTimeoutConfigOverride:
+      type: object
+      description: Configuration for soft timeout functionality. Provides immediate feedback during longer LLM responses.
+      properties:
+        message:
+          type: string
+          nullable: true
+          description: |
+            Message to show when the first soft timeout is reached while waiting for LLM response.
+            Supports dynamic variables (e.g., {{system__time}}, {{custom_variable}}).
+        additional_soft_timeout_messages:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: |
+            Extra static filler messages for subsequent soft timeouts in the same LLM generation. The first timeout
+            uses `message`. If fewer messages are configured than `max_soft_timeouts_per_generation`, the last
+            configured message is repeated; otherwise a built-in filler is used.
 
     ConversationConfigOverride:
       type: object
@@ -1628,6 +1809,10 @@ components:
           type: boolean
           nullable: true
           description: If true, disables audio processing and uses text-only mode
+        max_duration_seconds:
+          type: integer
+          nullable: true
+          description: The maximum duration of a conversation in seconds
         client_events:
           type: array
           nullable: true

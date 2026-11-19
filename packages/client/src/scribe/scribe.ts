@@ -37,6 +37,16 @@ export type EntityDetectionCategory =
 // while still accepting any specific entity type the API supports.
 export type EntityDetectionOption = EntityDetectionCategory | (string & {});
 
+/**
+ * Marker format accepted by {@link BaseOptions.entityRedactionMode}: `"redacted"`
+ * replaces each entity with `{REDACTED}`, `"entity_type"` with its type such as
+ * `{NAME}`, and `"enumerated_entity_type"` with its numbered type such as `{NAME_0}`.
+ */
+export type EntityRedactionMode =
+  | "redacted"
+  | "entity_type"
+  | "enumerated_entity_type";
+
 interface BaseOptions {
   /**
    * Token to use for the WebSocket connection. Obtained from the ElevenLabs API.
@@ -115,12 +125,26 @@ interface BaseOptions {
    */
   entityDetection?: EntityDetectionOption | EntityDetectionOption[];
   /**
+   * Redact entities from committed transcripts. Accepts the same values as entityDetection.
+   * The redacted text is delivered in a separate redacted_transcript event after each
+   * committed transcript, which itself stays unredacted.
+   *
+   * @remarks
+   * Cannot be combined with transcriptEdit.
+   */
+  entityRedaction?: EntityDetectionOption | EntityDetectionOption[];
+  /**
+   * How redacted entities are marked in the redacted text. Only used with entityRedaction.
+   * @default "enumerated_entity_type"
+   */
+  entityRedactionMode?: EntityRedactionMode;
+  /**
    * Natural-language instruction applied to each committed transcript (max 2000 characters).
    * The edited text is delivered in a separate edited_transcript event containing the
    * committed text and the edited text.
    *
    * @remarks
-   * Cannot be combined with entityDetection. Adds a 30% premium to the base transcription
+   * Cannot be combined with entityDetection or entityRedaction. Adds a 30% premium to the base transcription
    * cost, billed for at least 10 seconds of audio per committed transcript.
    */
   transcriptEdit?: string;
@@ -291,6 +315,17 @@ export class ScribeRealtime {
       for (const entity of entityDetection) {
         params.append("entity_detection", entity);
       }
+    }
+    if (options.entityRedaction !== undefined) {
+      const entityRedaction = Array.isArray(options.entityRedaction)
+        ? options.entityRedaction
+        : [options.entityRedaction];
+      for (const entity of entityRedaction) {
+        params.append("entity_redaction", entity);
+      }
+    }
+    if (options.entityRedactionMode !== undefined) {
+      params.append("entity_redaction_mode", options.entityRedactionMode);
     }
     if (options.transcriptEdit !== undefined) {
       params.append("transcript_edit", options.transcriptEdit);

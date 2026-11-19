@@ -15,6 +15,7 @@ export type {
   MicrophoneOptions,
   EntityDetectionCategory,
   EntityDetectionOption,
+  EntityRedactionMode,
 } from "./scribe.js";
 export type {
   WebSocketMessage,
@@ -28,6 +29,7 @@ export type {
   CommittedTranscriptWithTimestampsMessage,
   CommittedTranscriptEntitiesMessage,
   EditedTranscriptMessage,
+  RedactedTranscriptMessage,
   DetectedEntity,
   TranscriptCharacter,
   ScribeErrorMessage,

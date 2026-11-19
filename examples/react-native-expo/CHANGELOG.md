@@ -1,5 +1,48 @@
 # elevenlabs-react-native-example
 
+## 1.1.47
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.42
+
+## 1.1.46
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.41
+
+## 1.1.45
+
+### Patch Changes
+
+- Updated dependencies [a6bbdee]
+  - @elevenlabs/react-native@1.2.40
+
+## 1.1.44
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.39
+
+## 1.1.43
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.38
+
+## 1.1.42
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.37
+
+## 1.1.41
+
+### Patch Changes
+
+- @elevenlabs/react-native@1.2.36
+
 ## 1.1.40
 
 ### Patch Changes

@@ -88,7 +88,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex w-72 pointer-coarse:w-60 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
+              className="flex w-72 pointer-coarse:w-60 group-data-[variant=compact]/sheet:w-60 shrink-0 snap-center flex-col gap-2 rounded-bubble border border-base-border bg-base p-3 text-start"
             >
               {item.imageUrl && (
                 <img
@@ -102,7 +102,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span
                   dir="auto"
-                  className="text-sm font-medium wrap-break-word"
+                  className="text-sm font-medium wrap-break-word group-data-[variant=compact]/sheet:line-clamp-1"
                 >
                   {item.title}
                 </span>
@@ -120,7 +120,7 @@ export function Carousel({ items, richContentId }: CarouselProps) {
                 {item.description && (
                   <span
                     dir="auto"
-                    className="text-xs text-base-subtle whitespace-pre-line wrap-break-word"
+                    className="text-xs text-base-subtle whitespace-pre-line wrap-break-word group-data-[variant=compact]/sheet:line-clamp-2"
                   >
                     {item.description}
                   </span>

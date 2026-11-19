@@ -162,10 +162,10 @@ describe("parseCarouselProps", () => {
 
   it("caps the number of cards", () => {
     const parsed = parseCarouselProps({
-      items: Array.from({ length: 9 }, (_, i) => ({ title: `Item ${i}` })),
+      items: Array.from({ length: 12 }, (_, i) => ({ title: `Item ${i}` })),
     });
 
-    expect(parsed?.items).toHaveLength(5);
+    expect(parsed?.items).toHaveLength(10);
   });
 
   it("keeps drawable cards minus their bad fields and drops the rest", () => {

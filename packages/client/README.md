@@ -58,12 +58,13 @@ For the full API reference including connection types, client tools, conversatio
 
 ## Entrypoints
 
-| Path                                | Stability                      |
-| ----------------------------------- | ------------------------------ |
-| `@elevenlabs/client`                | Public, semver-stable          |
-| `@elevenlabs/client/internal`       | Internal, no semver guarantees |
-| `@elevenlabs/client/internal/unity` | Internal, no semver guarantees |
-| `@elevenlabs/client/worklets/*`     | Public, semver-stable          |
+| Path                                | Stability                          |
+| ----------------------------------- | ---------------------------------- |
+| `@elevenlabs/client`                | Public, semver-stable              |
+| `@elevenlabs/client/experimental`   | Experimental, no semver guarantees |
+| `@elevenlabs/client/internal`       | Internal, no semver guarantees     |
+| `@elevenlabs/client/internal/unity` | Internal, no semver guarantees     |
+| `@elevenlabs/client/worklets/*`     | Public, semver-stable              |
 
 ## Self-hosting AudioWorklets under a strict CSP
 

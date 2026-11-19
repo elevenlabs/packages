@@ -305,6 +305,44 @@ describe("Scribe", () => {
       ]);
     });
 
+    it("builds URI with entityRedaction as repeated query params for a list", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityRedaction: ["pii", "email_address"],
+      });
+      onTestFinished(() => connection.close());
+
+      const resolved = await query;
+      expect(resolved.getAll("entity_redaction")).toEqual([
+        "pii",
+        "email_address",
+      ]);
+      expect(resolved.has("entity_redaction_mode")).toBe(false);
+    });
+
+    it("builds URI with entity_redaction_mode when entityRedactionMode is set", async () => {
+      const query = connectionQuery();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityRedaction: "all",
+        entityRedactionMode: "entity_type",
+      });
+      onTestFinished(() => connection.close());
+
+      const resolved = await query;
+      expect(resolved.getAll("entity_redaction")).toEqual(["all"]);
+      expect(resolved.get("entity_redaction_mode")).toBe("entity_type");
+    });
+
     it("builds URI with transcript_edit when transcriptEdit is set", async () => {
       const query = connectionQuery();
 
@@ -358,6 +396,8 @@ describe("Scribe", () => {
       expect(resolved.has("filter_background_audio")).toBe(false);
       expect(resolved.has("secondary_languages")).toBe(false);
       expect(resolved.has("entity_detection")).toBe(false);
+      expect(resolved.has("entity_redaction")).toBe(false);
+      expect(resolved.has("entity_redaction_mode")).toBe(false);
       expect(resolved.has("transcript_edit")).toBe(false);
     });
 
@@ -790,6 +830,46 @@ describe("Scribe", () => {
       await sleep(100);
       expect(onEditedTranscript).toHaveBeenCalledTimes(1);
       expect(onEditedTranscript).toHaveBeenCalledWith(payload);
+
+      connection.close();
+      server.close();
+    });
+
+    it("handles redacted_transcript event", async () => {
+      const server = new Server(
+        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&token=sutkn_123"
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => resolve(socket));
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      const onRedactedTranscript = vi.fn();
+
+      const connection = Scribe.connect({
+        token: TEST_TOKEN,
+        modelId: TEST_MODEL_ID,
+        audioFormat: AudioFormat.PCM_16000,
+        sampleRate: 16000,
+        entityRedaction: "all",
+      });
+
+      connection.on(RealtimeEvents.REDACTED_TRANSCRIPT, onRedactedTranscript);
+
+      const client = await clientPromise;
+      await sleep(100);
+
+      const payload = {
+        message_type: "redacted_transcript",
+        text: "John is here",
+        redacted_text: "{NAME_0} is here",
+      };
+      client.send(JSON.stringify(payload));
+
+      await sleep(100);
+      expect(onRedactedTranscript).toHaveBeenCalledTimes(1);
+      expect(onRedactedTranscript).toHaveBeenCalledWith(payload);
 
       connection.close();
       server.close();

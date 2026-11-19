@@ -1,5 +1,79 @@
 # @elevenlabs/react
 
+## 1.23.1
+
+### Patch Changes
+
+- Updated dependencies [9bbf514]
+  - @elevenlabs/client@1.37.1
+
+## 1.23.0
+
+### Minor Changes
+
+- 7eedbeb: Sync the conversation initiation types with the published AsyncAPI spec and expose the new overrides, including the prompt knowledge base, on the session config.
+
+### Patch Changes
+
+- 179dc58: Fix `ConversationProvider` so a session started on mount connects under React StrictMode.
+- Updated dependencies [d88d47f]
+- Updated dependencies [5c7e913]
+- Updated dependencies [7eedbeb]
+- Updated dependencies [e1a5a46]
+- Updated dependencies [de331bc]
+  - @elevenlabs/client@1.37.0
+
+## 1.22.1
+
+### Patch Changes
+
+- a6bbdee: WebRTC sessions that end because the LiveKit connection failed now reach `onDisconnect` with `reason: "error"` instead of `reason: "agent"`. This covers rooms that close for a failure reason such as `SIGNAL_CLOSE`, `CONNECTION_TIMEOUT`, `MEDIA_FAILURE` or `AGENT_ERROR`, and the agent dropping out of the room while LiveKit is reconnecting. Rooms the server closes on purpose, and an agent that leaves a connected room, are still reported as `reason: "agent"`.
+- Updated dependencies [a6bbdee]
+  - @elevenlabs/client@1.36.1
+
+## 1.22.0
+
+### Minor Changes
+
+- a2d3513: Add experimental avatar video under the `./experimental` subpath. Call `enableAvatarVideo()` to request an avatar, then read its video track with `onAvatarVideoTrack(conversation, callback)` or, in React, `useAvatarVideoTrack()`. While the avatar is in a WebRTC call, the SDK plays its audio and follows its speech. If it leaves, the call continues on the agent's voice. These exports may change in any release.
+
+### Patch Changes
+
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+
+## 1.21.1
+
+### Patch Changes
+
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/client@1.35.0
+
+## 1.21.0
+
+### Minor Changes
+
+- 29f9b8e: Add the `entityRedaction` and `entityRedactionMode` options to `Scribe.connect()` and dispatch the new `redacted_transcript` server message:
+  - `entityRedaction`: redact entities from committed transcripts. Accepts the same values as `entityDetection` (`"all"`, a category, a specific entity type, or a list), sent as repeated `entity_redaction` query params. Cannot be combined with `transcriptEdit`.
+  - `entityRedactionMode` (`EntityRedactionMode`): how redacted entities are marked, `"redacted"` (`{REDACTED}`), `"entity_type"` (`{NAME}`) or `"enumerated_entity_type"` (`{NAME_0}`, the server default). Sent as the `entity_redaction_mode` query param only when set.
+  - `redacted_transcript` (`RealtimeEvents.REDACTED_TRANSCRIPT`), carrying the committed `text` and its `redacted_text` (`RedactedTranscriptMessage`). It is sent after its committed transcript, in commit order; partial and committed transcripts stay unredacted.
+  - `useScribe()` accepts the same `entityRedaction` and `entityRedactionMode` options, exposes an `onRedactedTranscript` callback and attaches the redacted text to the matching entry in `committedTranscripts` as `redactedText`.
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+- Updated dependencies [6dab091]
+  - @elevenlabs/client@1.34.0
+
+## 1.20.3
+
+### Patch Changes
+
+- 37bdc21: Fix `useScribe` so `autoConnect` keeps one open session under React StrictMode.
+- Updated dependencies [23e10c4]
+  - @elevenlabs/client@1.33.0
+
 ## 1.20.2
 
 ### Patch Changes

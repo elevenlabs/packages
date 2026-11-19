@@ -1,5 +1,70 @@
 # @elevenlabs/react-native
 
+## 1.2.42
+
+### Patch Changes
+
+- Updated dependencies [9bbf514]
+  - @elevenlabs/client@1.37.1
+  - @elevenlabs/react@1.23.1
+
+## 1.2.41
+
+### Patch Changes
+
+- Updated dependencies [d88d47f]
+- Updated dependencies [179dc58]
+- Updated dependencies [5c7e913]
+- Updated dependencies [7eedbeb]
+- Updated dependencies [e1a5a46]
+- Updated dependencies [de331bc]
+  - @elevenlabs/client@1.37.0
+  - @elevenlabs/react@1.23.0
+
+## 1.2.40
+
+### Patch Changes
+
+- a6bbdee: WebRTC sessions that end because the LiveKit connection failed now reach `onDisconnect` with `reason: "error"` instead of `reason: "agent"`. This covers rooms that close for a failure reason such as `SIGNAL_CLOSE`, `CONNECTION_TIMEOUT`, `MEDIA_FAILURE` or `AGENT_ERROR`, and the agent dropping out of the room while LiveKit is reconnecting. Rooms the server closes on purpose, and an agent that leaves a connected room, are still reported as `reason: "agent"`.
+- Updated dependencies [a6bbdee]
+  - @elevenlabs/client@1.36.1
+  - @elevenlabs/react@1.22.1
+
+## 1.2.39
+
+### Patch Changes
+
+- Updated dependencies [a2d3513]
+- Updated dependencies [a2d3513]
+  - @elevenlabs/client@1.36.0
+  - @elevenlabs/react@1.22.0
+
+## 1.2.38
+
+### Patch Changes
+
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/client@1.35.0
+  - @elevenlabs/react@1.21.1
+
+## 1.2.37
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+- Updated dependencies [6dab091]
+  - @elevenlabs/client@1.34.0
+  - @elevenlabs/react@1.21.0
+
+## 1.2.36
+
+### Patch Changes
+
+- Updated dependencies [23e10c4]
+- Updated dependencies [37bdc21]
+  - @elevenlabs/client@1.33.0
+  - @elevenlabs/react@1.20.3
+
 ## 1.2.35
 
 ### Patch Changes

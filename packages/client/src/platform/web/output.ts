@@ -2,6 +2,7 @@ import { loadAudioConcatProcessor } from "./audioConcatProcessor.generated.js";
 import type { FormatConfig } from "../../utils/BaseConnection.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import { disconnectAudioNode } from "./disconnectAudioNode.js";
 import type {
   OutputChunkMetadata,
   OutputController,
@@ -16,28 +17,12 @@ import {
   type VolumeProvider,
 } from "./volumeProvider.js";
 import { isIosDevice } from "./compatibility.js";
+import { type ResamplerMessage, waitForResampler } from "./waitForResampler.js";
 
 type WorkletMessage =
   | { type: "process"; finished: boolean }
   | { type: "chunk_start"; chunkId: number }
-  | { type: "resampler_ready" }
-  | { type: "resampler_error"; message: string };
-
-function waitForResampler(worklet: AudioWorkletNode): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onMessage = ({ data }: MessageEvent<WorkletMessage>) => {
-      if (data.type === "resampler_ready") {
-        worklet.port.removeEventListener("message", onMessage);
-        resolve();
-      } else if (data.type === "resampler_error") {
-        worklet.port.removeEventListener("message", onMessage);
-        reject(new Error(`Failed to create audio resampler: ${data.message}`));
-      }
-    };
-    worklet.port.addEventListener("message", onMessage);
-    worklet.port.start();
-  });
-}
+  | ResamplerMessage;
 
 function maybePrimeIosPlayback({
   sampleRate,
@@ -74,6 +59,18 @@ function maybePrimeIosPlayback({
   void audioElement.play().catch(() => {});
 }
 
+// A live destination track keeps the <audio> element in Chromium's pending
+// activities after the session ends. Stop those tracks, then drop srcObject.
+function releaseAudioElementStream(audioElement: HTMLAudioElement): void {
+  const { srcObject } = audioElement;
+  if (srcObject instanceof MediaStream) {
+    for (const track of srcObject.getTracks()) {
+      track.stop();
+    }
+  }
+  audioElement.srcObject = null;
+}
+
 export type MediaDeviceOutputConfig = FormatConfig &
   OutputConfig &
   AudioWorkletConfig & {
@@ -94,12 +91,15 @@ export class MediaDeviceOutput
     let context: AudioContext | null = audioContext ?? null;
     let audioElement: HTMLAudioElement | null = null;
     try {
-      const supportsSampleRateConstraint =
-        navigator.mediaDevices.getSupportedConstraints().sampleRate;
+      // The microphone sampleRate constraint is unrelated to AudioContext.
+      // Firefox reports it unsupported but still accepts the agent rate here,
+      // which keeps resampling off the audio thread.
       if (!context) {
-        context = new AudioContext(
-          supportsSampleRateConstraint ? { sampleRate } : {}
-        );
+        try {
+          context = new AudioContext({ sampleRate });
+        } catch {
+          context = new AudioContext({});
+        }
       }
 
       const analyser = context.createAnalyser();
@@ -122,12 +122,10 @@ export class MediaDeviceOutput
       analyser.connect(destination);
 
       const needsResampling = context.sampleRate !== sampleRate;
-      if (!supportsSampleRateConstraint || needsResampling) {
-        if (needsResampling) {
-          console.warn(
-            `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
-          );
-        }
+      if (needsResampling) {
+        console.warn(
+          `[ConversationalAI] Sample rate ${sampleRate} not available, resampling to ${context.sampleRate}`
+        );
         await addLibsamplerateModule(context, libsampleratePath);
       }
       const worklet = await loadAudioConcatProcessor(
@@ -159,11 +157,15 @@ export class MediaDeviceOutput
 
       return newOutput;
     } catch (error) {
-      // Clean up audio element from DOM
-      if (audioElement?.parentNode) {
-        audioElement.parentNode.removeChild(audioElement);
+      // Setup can fail after the element is already pointing at the
+      // destination stream. Release that stream before removing it.
+      if (audioElement) {
+        releaseAudioElementStream(audioElement);
+        if (audioElement.parentNode) {
+          audioElement.parentNode.removeChild(audioElement);
+        }
+        audioElement.pause();
       }
-      audioElement?.pause();
       if (context && context.state !== "closed") {
         await context.close();
       }
@@ -312,6 +314,17 @@ export class MediaDeviceOutput
       clearTimeout(this.interruptTimeout);
       this.interruptTimeout = null;
     }
+
+    // The message listener closes over this output. Remove it and close the
+    // port before tearing down the element, or Chromium retains both.
+    this.worklet.port.removeEventListener("message", this.handleWorkletMessage);
+    this.worklet.port.close();
+    disconnectAudioNode(this.worklet);
+    releaseAudioElementStream(this.audioElement);
+    disconnectAudioNode(this.gain);
+    disconnectAudioNode(this.analyser);
+    this.listeners.clear();
+    this.chunkMetadata.clear();
 
     // Remove audio element from DOM
     if (this.audioElement.parentNode) {

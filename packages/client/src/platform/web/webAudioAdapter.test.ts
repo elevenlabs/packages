@@ -129,3 +129,23 @@ describe("WebAudioAdapter.setupOutputAnalysis", () => {
     expect(result.analyser).toBe(analyser);
   });
 });
+
+describe("WebAudioAdapter.attachRemoteTrack", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("applies a volume set before the track arrived", async () => {
+    vi.stubGlobal("document", { body: { appendChild: vi.fn() } });
+    const adapter = new WebAudioAdapter();
+    const audioElement = { volume: 1, style: {} };
+    const remoteTrack = {
+      attach: () => audioElement,
+    } as unknown as RemoteAudioTrack;
+
+    adapter.setVolume(0.25);
+    await adapter.attachRemoteTrack(remoteTrack, null);
+
+    expect(audioElement.volume).toBe(0.25);
+  });
+});

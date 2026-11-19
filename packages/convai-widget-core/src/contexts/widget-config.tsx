@@ -9,6 +9,8 @@ import { ComponentChildren } from "preact";
 import { createContext } from "preact/compat";
 import {
   DefaultStyles,
+  parseDefaultSize,
+  parseLayout,
   parsePlacement,
   parseVariant,
   type SyntaxHighlightTheme,
@@ -140,6 +142,9 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
   const showConversationId = useAttribute("show-conversation-id");
   const showResizeButton = useAttribute("show-resize-button");
   const mobileFullscreen = useAttribute("mobile-fullscreen");
+  const defaultSize = useAttribute("default-size");
+  const expandOnCarousel = useAttribute("expand-on-carousel");
+  const layout = useAttribute("layout");
   const transcriptSpeechSync = useAttribute("transcript-speech-sync");
   const endConfirmation = useAttribute("end-confirmation");
   const showLanguageSelectorOnTrigger = useAttribute(
@@ -169,6 +174,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
     const patchedTextInput =
       parseBoolAttribute(textInput.value) ??
       fetchedConfig.value.text_input_enabled;
+    const patchedLayout = parseLayout(
+      layout.value ?? fetchedConfig.value.layout
+    );
+    const isPage = patchedLayout === "page";
     const patchedAlwaysExpanded =
       parseBoolAttribute(alwaysExpanded.value) ??
       fetchedConfig.value.always_expanded ??
@@ -203,6 +212,10 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       parseBoolAttribute(mobileFullscreen.value) ??
       fetchedConfig.value.mobile_fullscreen ??
       true;
+    const patchedExpandOnCarousel =
+      parseBoolAttribute(expandOnCarousel.value) ??
+      fetchedConfig.value.expand_on_carousel ??
+      false;
     const patchedTranscriptSpeechSync =
       parseBoolAttribute(transcriptSpeechSync.value) ??
       fetchedConfig.value.transcript_speech_sync_enabled ??
@@ -222,17 +235,24 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       placement: parsePlacement(patchedPlacement),
       terms_key: patchedTermsKey,
       mic_muting_enabled: !textOnly && patchedMicMuting,
-      transcript_enabled: textOnly || patchedTranscript,
-      text_input_enabled: textOnly || patchedTextInput,
-      always_expanded: patchedAlwaysExpanded,
+      // A page always shows the chat
+      transcript_enabled: textOnly || isPage || patchedTranscript,
+      text_input_enabled: textOnly || isPage || patchedTextInput,
+      // A page has nothing to collapse into or dismiss to
+      always_expanded: isPage || patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
-      dismissible: patchedDismissible,
+      dismissible: !isPage && patchedDismissible,
       strip_audio_tags: patchedStripAudioTags,
       use_rtc: patchedUseRtc,
       show_agent_status: patchedShowAgentStatus,
       show_conversation_id: patchedShowConversationId,
-      show_resize_button: patchedShowResizeButton,
+      show_resize_button: !isPage && patchedShowResizeButton,
       mobile_fullscreen: patchedMobileFullscreen,
+      default_size: parseDefaultSize(
+        defaultSize.value ?? fetchedConfig.value.default_size
+      ),
+      expand_on_carousel: patchedExpandOnCarousel,
+      layout: patchedLayout,
       transcript_speech_sync_enabled: patchedTranscriptSpeechSync,
       end_confirmation_enabled: patchedEndConfirmation,
       show_language_selector_on_trigger: patchedShowLanguageSelectorOnTrigger,

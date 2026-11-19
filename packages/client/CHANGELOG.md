@@ -1,5 +1,82 @@
 # @elevenlabs/client
 
+## 1.37.1
+
+### Patch Changes
+
+- 9bbf514: Ended voice sessions release the output audio element and worklet port, so Chromium can collect them after the session closes. The microphone worklet port is closed as well.
+
+## 1.37.0
+
+### Minor Changes
+
+- 7eedbeb: Sync the conversation initiation types with the published AsyncAPI spec and expose the new overrides, including the prompt knowledge base, on the session config.
+
+### Patch Changes
+
+- d88d47f: Fix `stripAudioTags` leaving doubled spaces, or a space before punctuation or a newline, where a tag was removed mid sentence.
+- 5c7e913: Fix static and echo during Firefox agent playback. The output audio context is created at the agent's sample rate, and audio is resampled only when that context actually runs at a different rate.
+- e1a5a46: Fix `sendUserActivity` so it keeps sending `user_activity` about once a second while the user types, instead of only once at the start. The internal `throttle` no longer restarts its window on every suppressed call.
+- de331bc: Fix microphone audio being sent at the wrong sample rate when the browser can't capture at the agent's input rate (for example Firefox on a WebSocket session). Starting a voice session now waits for the input resampler to be ready, drops microphone audio until then, and fails with an error if the resampler can't be created, instead of sending audio at the device rate.
+- Updated dependencies [7eedbeb]
+  - @elevenlabs/types@0.30.0
+
+## 1.36.1
+
+### Patch Changes
+
+- a6bbdee: WebRTC sessions that end because the LiveKit connection failed now reach `onDisconnect` with `reason: "error"` instead of `reason: "agent"`. This covers rooms that close for a failure reason such as `SIGNAL_CLOSE`, `CONNECTION_TIMEOUT`, `MEDIA_FAILURE` or `AGENT_ERROR`, and the agent dropping out of the room while LiveKit is reconnecting. Rooms the server closes on purpose, and an agent that leaves a connected room, are still reported as `reason: "agent"`.
+
+## 1.36.0
+
+### Minor Changes
+
+- a2d3513: Add experimental avatar video under the `./experimental` subpath. Call `enableAvatarVideo()` to request an avatar, then read its video track with `onAvatarVideoTrack(conversation, callback)` or, in React, `useAvatarVideoTrack()`. While the avatar is in a WebRTC call, the SDK plays its audio and follows its speech. If it leaves, the call continues on the agent's voice. These exports may change in any release.
+
+### Patch Changes
+
+- a2d3513: Apply the volume from `setVolume` to WebRTC audio that starts playing after it was set.
+
+## 1.35.0
+
+### Minor Changes
+
+- 3d1c8ef: Type the existing `overrides.tts.modelId` from the spec. `@elevenlabs/types` now declares the documented ElevenAgents TTS models (`eleven_turbo_v2`, `eleven_turbo_v2_5`, `eleven_flash_v2`, `eleven_flash_v2_5`, `eleven_multilingual_v2`, `eleven_v3_conversational`, `eleven_v4`, `eleven_v4_turbo`) as `ConversationConfigOverrideTtsModelId`, and `@elevenlabs/client` suggests them when setting `modelId`. Any other string is still accepted so that newly released or deprecated models are never rejected by the compiler, but the API may reject ids outside the documented list at runtime. `model_id` is only added to `conversation_config_override.tts` when `modelId` is provided.
+
+### Patch Changes
+
+- Updated dependencies [3d1c8ef]
+  - @elevenlabs/types@0.29.0
+
+## 1.34.0
+
+### Minor Changes
+
+- 29f9b8e: Add the `entityRedaction` and `entityRedactionMode` options to `Scribe.connect()` and dispatch the new `redacted_transcript` server message:
+  - `entityRedaction`: redact entities from committed transcripts. Accepts the same values as `entityDetection` (`"all"`, a category, a specific entity type, or a list), sent as repeated `entity_redaction` query params. Cannot be combined with `transcriptEdit`.
+  - `entityRedactionMode` (`EntityRedactionMode`): how redacted entities are marked, `"redacted"` (`{REDACTED}`), `"entity_type"` (`{NAME}`) or `"enumerated_entity_type"` (`{NAME_0}`, the server default). Sent as the `entity_redaction_mode` query param only when set.
+  - `redacted_transcript` (`RealtimeEvents.REDACTED_TRANSCRIPT`), carrying the committed `text` and its `redacted_text` (`RedactedTranscriptMessage`). It is sent after its committed transcript, in commit order; partial and committed transcripts stay unredacted.
+  - `useScribe()` accepts the same `entityRedaction` and `entityRedactionMode` options, exposes an `onRedactedTranscript` callback and attaches the redacted text to the matching entry in `committedTranscripts` as `redactedText`.
+
+- 6dab091: `stripAudioTags` now removes audio tags written in any language, such as `[차분]` or `[穏やかに]`, not only tags made of English letters.
+
+### Patch Changes
+
+- Updated dependencies [29f9b8e]
+  - @elevenlabs/types@0.28.0
+
+## 1.33.0
+
+### Minor Changes
+
+- 23e10c4: Add a `cloneStrength` TTS override to the client and an `override-clone-strength` attribute to the widget.
+
+### Patch Changes
+
+- Updated dependencies [23e10c4]
+- Updated dependencies [4b2b8e5]
+  - @elevenlabs/types@0.27.0
+
 ## 1.32.1
 
 ### Patch Changes

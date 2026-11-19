@@ -9,6 +9,7 @@ import { clsx } from "clsx";
 const SIZE_CLASSES = {
   sm: "w-9 h-9",
   lg: "w-48 h-48",
+  xl: "w-72 h-72",
 };
 
 interface AvatarProps {

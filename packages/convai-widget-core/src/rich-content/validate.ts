@@ -3,7 +3,7 @@ import type { ButtonGroupProps, RichContentButton } from "./ButtonGroup";
 import type { CarouselItem, CarouselProps } from "./Carousel";
 
 const MAX_BUTTONS = 3;
-const MAX_CAROUSEL_ITEMS = 5;
+const MAX_CAROUSEL_ITEMS = 10;
 const MAX_TEXT_LENGTH = 500;
 const MAX_URL_LENGTH = 2048;
 export const MAX_RATING = 5;

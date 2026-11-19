@@ -46,7 +46,7 @@
   }
 
   .focus-ring {
-    @apply ring-accent ring-offset-base ring-offset-2 focus-visible:ring-2 focus-visible:outline-none;
+    @apply ring-accent ring-offset-base focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none;
   }
 
   [data-variant="compact"] {
@@ -58,6 +58,13 @@
   [data-variant="expanded"] {
     &.sheet {
       @apply rounded-sheet w-full max-w-[600px] h-full max-h-[calc(100%-80px)];
+    }
+  }
+
+  [data-variant="page"] {
+    &.sheet {
+      /* Leaves room for the "Powered by" line under the actions */
+      @apply pb-6;
     }
   }
 

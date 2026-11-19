@@ -40,11 +40,13 @@ function file(name: string): MessageAttachment {
 /** Helper to create a tool request entry */
 function toolReq(
   eventId: number,
-  toolCallId = "call_1"
+  toolCallId = "call_1",
+  toolType = "webhook"
 ): Extract<TranscriptEntry, { type: "agent_tool_request" }> {
   return {
     type: "agent_tool_request",
     toolName: "test_tool",
+    toolType,
     toolCallId,
     eventId,
     conversationIndex: 0,
@@ -609,15 +611,93 @@ describe("buildDisplayTranscript", () => {
       );
     });
 
-    it("gives way to the tool status once a tool runs", () => {
-      const result = build(
-        [msg("user", "Hi"), msg("agent", "", { eventId: 2 }), toolReq(2)],
-        { showAgentStatus: true, showAgentReplyPending: true }
-      );
-      expect(result).toEqual([
+    it("gives way to the tool status while a tool runs", () => {
+      const config = { showAgentStatus: true, showAgentReplyPending: true };
+      const running = [
+        msg("user", "Hi"),
+        msg("agent", "", { eventId: 2 }),
+        toolReq(2),
+      ];
+      expect(build(running, config)).toEqual([
         expect.objectContaining({ message: "Hi" }),
         expect.objectContaining({ role: "agent", toolStatus: "loading" }),
       ]);
+      expect(build([...running, toolRes(2)], config)).toEqual([
+        expect.objectContaining({ message: "Hi" }),
+        expect.objectContaining({ role: "agent", toolStatus: "success" }),
+        expect.objectContaining({ type: "typing_indicator" }),
+      ]);
+    });
+
+    it("gives way to the tool status when a component follows the badge", () => {
+      const result = build(
+        [
+          msg("user", "Show me shoes"),
+          msg("agent", "Here are some", { eventId: 2 }),
+          carousel("carousel_1", { eventId: 2 }),
+          toolReq(2),
+        ],
+        { showAgentStatus: true, showAgentReplyPending: true }
+      );
+      expect(result.at(-1)).toMatchObject({ component: "carousel" });
+    });
+
+    it.each([
+      ["text", msg("agent", "It ships today", { eventId: 2, isText: false })],
+      [
+        "file",
+        msg("agent", "", {
+          eventId: 2,
+          isText: false,
+          attachments: [file("receipt.pdf")],
+        }),
+      ],
+    ])(
+      "stays up while the %s reply after a tool is not said yet",
+      (_, reply) => {
+        const result = build(
+          [
+            msg("user", "Where's my order?"),
+            msg("agent", "Let me check", { eventId: 2, isText: false }),
+            toolReq(2),
+            toolRes(2),
+            { ...reply, visibleLength: 0 },
+          ],
+          { showAgentReplyPending: true }
+        );
+        expect(result.at(-1)).toMatchObject({ type: "typing_indicator" });
+      }
+    );
+
+    it("shows after the agent's opening line until it replies past the tool", () => {
+      const config = { showAgentReplyPending: true };
+      const pending = [
+        msg("user", "Where's my order?"),
+        msg("agent", "Let me check", { eventId: 2 }),
+        toolReq(2),
+        toolRes(2),
+      ];
+      expect(build(pending, config).at(-1)).toMatchObject({
+        type: "typing_indicator",
+      });
+      expect(
+        build(
+          [...pending, msg("agent", "It ships today", { eventId: 2 })],
+          config
+        ).at(-1)
+      ).toMatchObject({ message: "It ships today" });
+    });
+
+    it("does not show after a system tool", () => {
+      const result = build(
+        [
+          msg("user", "Bye"),
+          msg("agent", "Goodbye", { eventId: 2 }),
+          toolReq(2, "call_1", "system"),
+        ],
+        { showAgentReplyPending: true }
+      );
+      expect(result.at(-1)).toMatchObject({ message: "Goodbye" });
     });
 
     it("appends typing indicator when showTypingIndicator is true", () => {

@@ -68,7 +68,7 @@ const MemoOl = memo<OlProps>(
   ({ children, className, node, ...props }: OlProps) => (
     <ol
       className={cn(
-        "ml-4 mb-2 list-outside list-decimal whitespace-normal text-sm",
+        "ms-4 mb-2 list-outside list-decimal whitespace-normal text-sm",
         className
       )}
       data-streamdown="ordered-list"
@@ -102,7 +102,7 @@ const MemoUl = memo<UlProps>(
   ({ children, className, node, ...props }: UlProps) => (
     <ul
       className={cn(
-        "ml-4 list-outside list-disc whitespace-normal text-sm",
+        "ms-4 list-outside list-disc whitespace-normal text-sm",
         className
       )}
       data-streamdown="unordered-list"
@@ -324,7 +324,7 @@ const MemoTh = memo<ThProps>(
   ({ children, className, node, ...props }: ThProps) => (
     <th
       className={cn(
-        "whitespace-nowrap px-4 py-2 text-left font-medium text-sm",
+        "whitespace-nowrap px-4 py-2 text-start font-medium text-sm",
         className
       )}
       data-streamdown="table-header-cell"
@@ -357,7 +357,7 @@ const MemoBlockquote = memo<BlockquoteProps>(
   ({ children, className, node, ...props }: BlockquoteProps) => (
     <blockquote
       className={cn(
-        "my-4 border-base-subtle/30 border-l-4 pl-4 text-base-subtle italic",
+        "my-4 border-base-subtle/30 border-s-4 ps-4 text-base-subtle italic",
         className
       )}
       data-streamdown="blockquote"
