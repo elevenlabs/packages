@@ -4,7 +4,9 @@ import type {
   ScribeMicrophoneSetup,
 } from "../../scribe/microphone.js";
 import { arrayBufferToBase64 } from "../../utils/audio.js";
+import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import { loadScribeAudioProcessor } from "./scribeAudioProcessor.generated.js";
+import { waitForResampler } from "./waitForResampler.js";
 
 const TARGET_SAMPLE_RATE = 16000;
 
@@ -48,21 +50,29 @@ export const webScribeMicrophoneSetup: ScribeMicrophoneSetup = async (
     const [audioTrack] = stream.getAudioTracks();
     audioContext = new AudioContext(audioContextOptions(audioTrack));
 
+    // resample
+    if (audioContext.sampleRate !== TARGET_SAMPLE_RATE) {
+      await addLibsamplerateModule(
+        audioContext,
+        config.workletPaths?.libsamplerate
+      );
+    }
     scribeNode = await loadScribeAudioProcessor(
       audioContext,
       config.workletPaths?.scribeAudioProcessor
     );
-    source = audioContext.createMediaStreamSource(stream);
-    if (audioContext.sampleRate !== TARGET_SAMPLE_RATE) {
-      scribeNode.port.postMessage({
-        type: "configure",
-        inputSampleRate: audioContext.sampleRate,
-        outputSampleRate: TARGET_SAMPLE_RATE,
-      });
-    }
+    const resamplerReady = waitForResampler(scribeNode);
+    scribeNode.port.postMessage({
+      type: "configure",
+      outputSampleRate: TARGET_SAMPLE_RATE,
+    });
+    await resamplerReady;
+
+    // stream
     scribeNode.port.onmessage = event => {
       onAudioData(arrayBufferToBase64(event.data.audioData));
     };
+    source = audioContext.createMediaStreamSource(stream);
     source.connect(scribeNode);
     if (audioContext.state === "suspended") {
       await audioContext.resume();

@@ -3,113 +3,84 @@ import { createWorkletModuleLoader } from "./createWorkletModuleLoader.js";
 
 export const loadScribeAudioProcessor = createWorkletModuleLoader(
   "scribeAudioProcessor",
-  "bd293b92cef79b80",
+  "8fea0c560976ad51",
   // language=JavaScript
-  `/*
- * Scribe Audio Processor for converting microphone audio to PCM16 format
- * Supports resampling for browsers like Firefox that don't support
- * AudioContext sample rate constraints.
- * USED BY @elevenlabs/client
- */
-
-class ScribeAudioProcessor extends AudioWorkletProcessor {
+  `class ScribeAudioProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.buffer = [];
-    this.bufferSize = 4096; // Buffer size for optimal chunk transmission
-
-    // Resampling state
-    this.inputSampleRate = null;
-    this.outputSampleRate = null;
-    this.resampleRatio = 1;
-    this.lastSample = 0;
-    this.resampleAccumulator = 0;
+    this.bufferSize = 4096;
+    this.awaitingResampler = false;
 
     this.port.onmessage = ({ data }) => {
       if (data.type === "configure") {
-        this.inputSampleRate = data.inputSampleRate;
-        this.outputSampleRate = data.outputSampleRate;
-        if (this.inputSampleRate && this.outputSampleRate) {
-          this.resampleRatio = this.inputSampleRate / this.outputSampleRate;
-        }
+        this.configure(data.outputSampleRate);
       }
     };
   }
 
-  // Linear interpolation resampling
-  resample(inputData) {
-    if (this.resampleRatio === 1 || !this.inputSampleRate) {
-      return inputData;
+  configure(outputSampleRate) {
+    if (outputSampleRate === sampleRate) {
+      this.port.postMessage({ type: "resampler_ready" });
+      return;
     }
 
-    const outputSamples = [];
+    this.awaitingResampler = true;
+    this.createResampler(outputSampleRate).then(
+      () => {
+        this.awaitingResampler = false;
+        this.port.postMessage({ type: "resampler_ready" });
+      },
+      error =>
+        this.port.postMessage({
+          type: "resampler_error",
+          message: error instanceof Error ? error.message : String(error),
+        })
+    );
+  }
 
-    for (let i = 0; i < inputData.length; i++) {
-      const currentSample = inputData[i];
-
-      // Generate output samples using linear interpolation
-      while (this.resampleAccumulator < 1) {
-        const interpolated =
-          this.lastSample +
-          (currentSample - this.lastSample) * this.resampleAccumulator;
-        outputSamples.push(interpolated);
-        this.resampleAccumulator += this.resampleRatio;
-      }
-
-      this.resampleAccumulator -= 1;
-      this.lastSample = currentSample;
+  async createResampler(outputSampleRate) {
+    if (!globalThis.LibSampleRate) {
+      throw new Error("libsamplerate is not loaded");
     }
-
-    return new Float32Array(outputSamples);
+    this.resampler = await globalThis.LibSampleRate.create(
+      1,
+      sampleRate,
+      outputSampleRate
+    );
   }
 
   process(inputs) {
     const input = inputs[0];
-    if (input.length > 0) {
-      let channelData = input[0]; // Get first channel (mono)
-
-      // Resample if needed (for Firefox and other browsers that don't
-      // support AudioContext sample rate constraints)
-      if (this.resampleRatio !== 1) {
-        channelData = this.resample(channelData);
-      }
-
-      // Add incoming audio to buffer
-      for (let i = 0; i < channelData.length; i++) {
-        this.buffer.push(channelData[i]);
-      }
-
-      // When buffer reaches threshold, convert and send
-      if (this.buffer.length >= this.bufferSize) {
-        const float32Array = new Float32Array(this.buffer);
-        const int16Array = new Int16Array(float32Array.length);
-
-        // Convert Float32 [-1, 1] to Int16 [-32768, 32767]
-        for (let i = 0; i < float32Array.length; i++) {
-          // Clamp the value to prevent overflow
-          const sample = Math.max(-1, Math.min(1, float32Array[i]));
-          // Scale to PCM16 range
-          int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
-        }
-
-        // Send to main thread as transferable ArrayBuffer
-        this.port.postMessage(
-          {
-            audioData: int16Array.buffer
-          },
-          [int16Array.buffer]
-        );
-
-        // Clear buffer
-        this.buffer = [];
-      }
+    if (input.length === 0 || this.awaitingResampler) {
+      return true;
     }
 
-    return true; // Continue processing
+    const channelData = this.resampler
+      ? this.resampler.full(input[0])
+      : input[0];
+    for (let i = 0; i < channelData.length; i++) {
+      this.buffer.push(channelData[i]);
+    }
+
+    if (this.buffer.length >= this.bufferSize) {
+      const int16Array = new Int16Array(this.buffer.length);
+      for (let i = 0; i < this.buffer.length; i++) {
+        const sample = Math.max(-1, Math.min(1, this.buffer[i]));
+        int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
+      }
+      this.port.postMessage({ audioData: int16Array.buffer }, [
+        int16Array.buffer,
+      ]);
+      this.buffer = [];
+    }
+
+    return true;
   }
 }
 
-registerProcessor("scribeAudioProcessor@bd293b92cef79b80", ScribeAudioProcessor);
-
+registerProcessor("scribeAudioProcessor@8fea0c560976ad51",
+  ScribeAudioProcessor
+);
 `
 );
