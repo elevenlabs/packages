@@ -74,7 +74,7 @@ function convertWssToHttps(origin: string): string {
 }
 
 export type WebRTCConnectionConfig = SessionConfig &
-  Pick<AudioWorkletConfig, "workletPaths"> &
+  Pick<AudioWorkletConfig, "workletPaths" | "libsampleratePath"> &
   InputDeviceConfig & {
     onDebug?: (info: unknown) => void;
   };
@@ -135,6 +135,7 @@ export class WebRTCConnection extends BaseConnection {
 
   private audioAdapter: WebRTCAudioAdapter | null;
   private workletPaths: AudioWorkletConfig["workletPaths"];
+  private libsampleratePath: AudioWorkletConfig["libsampleratePath"];
 
   private inputAnalyser: unknown = undefined;
   private inputVolumeProvider: VolumeProvider = NO_VOLUME;
@@ -299,6 +300,7 @@ export class WebRTCConnection extends BaseConnection {
     config: {
       onDebug?: (info: unknown) => void;
       workletPaths?: AudioWorkletConfig["workletPaths"];
+      libsampleratePath?: AudioWorkletConfig["libsampleratePath"];
     } = {}
   ) {
     super(config);
@@ -308,6 +310,7 @@ export class WebRTCConnection extends BaseConnection {
     this.outputFormat = outputFormat;
     this.audioAdapter = createAudioAdapter();
     this.workletPaths = config.workletPaths;
+    this.libsampleratePath = config.libsampleratePath;
 
     this.setupRoomEventListeners();
   }
@@ -807,7 +810,8 @@ export class WebRTCConnection extends BaseConnection {
         track,
         this.outputFormat,
         onAudioData,
-        this.workletPaths
+        this.workletPaths,
+        this.libsampleratePath
       );
 
       this.outputVolumeProvider = result.volumeProvider;
