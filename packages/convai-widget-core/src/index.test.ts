@@ -1259,10 +1259,11 @@ describe("elevenlabs-convai", () => {
 
     it("should open as a panel on desktop and close from its header", async () => {
       await page.viewport(1280, 800);
-      // The agent turns chat off, but a panel always shows it
       const widget = setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
+        transcript: "true",
+        "text-input": "true",
         layout: "side-panel",
       });
       await openPanel(widget);
@@ -1272,10 +1273,33 @@ describe("elevenlabs-convai", () => {
       await expect.element(textInput()).not.toBeInTheDocument();
     });
 
+    it("should keep only the launcher when chat is off", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+      });
+
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeVisible();
+      document.dispatchEvent(
+        new CustomEvent("elevenlabs-agent:expand", {
+          detail: { action: "expand" },
+        })
+      );
+      // Longer than the panel's slide in
+      await new Promise(resolve => setTimeout(resolve, 400));
+      expect(widget.shadowRoot?.querySelector(".sheet")).toBeNull();
+    });
+
     it("should go fullscreen on mobile", async () => {
       const widget = setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
+        transcript: "true",
+        "text-input": "true",
         layout: "side-panel",
         "default-expanded": "true",
       });
@@ -1288,6 +1312,8 @@ describe("elevenlabs-convai", () => {
       const widget = setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
+        transcript: "true",
+        "text-input": "true",
         layout: "side-panel",
       });
 
@@ -1302,6 +1328,8 @@ describe("elevenlabs-convai", () => {
       const widget = setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
+        transcript: "true",
+        "text-input": "true",
         layout: "side-panel",
       });
 
@@ -1323,6 +1351,8 @@ describe("elevenlabs-convai", () => {
       const widget = setupWebComponent({
         "agent-id": "basic",
         variant: "compact",
+        transcript: "true",
+        "text-input": "true",
         layout: "side-panel",
         "end-confirmation": "true",
       });

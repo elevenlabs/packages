@@ -178,8 +178,6 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       layout.value ?? fetchedConfig.value.layout
     );
     const isPage = patchedLayout === "page";
-    // A page and a side panel are both the chat itself
-    const showsChat = isPage || patchedLayout === "side-panel";
     const patchedAlwaysExpanded =
       parseBoolAttribute(alwaysExpanded.value) ??
       fetchedConfig.value.always_expanded ??
@@ -237,8 +235,9 @@ export function WidgetConfigProvider({ children }: WidgetConfigProviderProps) {
       placement: parsePlacement(patchedPlacement),
       terms_key: patchedTermsKey,
       mic_muting_enabled: !textOnly && patchedMicMuting,
-      transcript_enabled: textOnly || showsChat || patchedTranscript,
-      text_input_enabled: textOnly || showsChat || patchedTextInput,
+      // A page always shows the chat
+      transcript_enabled: textOnly || isPage || patchedTranscript,
+      text_input_enabled: textOnly || isPage || patchedTextInput,
       // A page has nothing to collapse into or dismiss to
       always_expanded: isPage || patchedAlwaysExpanded,
       default_expanded: patchedDefaultExpanded,
