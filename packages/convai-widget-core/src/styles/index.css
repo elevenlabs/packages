@@ -71,7 +71,7 @@
   [data-variant="panel"] {
     &.sheet {
       /* Bleeds past the overlay padding to run the full height of one edge */
-      @apply rounded-none pb-6;
+      @apply pb-6;
       top: calc(-1 * var(--el-overlay-padding));
       bottom: calc(-1 * var(--el-overlay-padding));
       width: var(--el-panel-width);
