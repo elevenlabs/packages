@@ -1,4 +1,4 @@
-import { memo, useRef } from "preact/compat";
+import { memo } from "preact/compat";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
@@ -108,24 +108,6 @@ export const Wrapper = memo(function Wrapper() {
         sawError.value = false;
       }
     }
-  });
-
-  // Tell the page when the chat opens or closes, e.g. to dim itself
-  const announcedExpanded = useRef(false);
-  useSignalEffect(() => {
-    const isExpanded = sheetVisible.value;
-    const host = shadowHost.value;
-    if (!host || isExpanded === announcedExpanded.current) {
-      return;
-    }
-    announcedExpanded.current = isExpanded;
-    host.dispatchEvent(
-      new CustomEvent("elevenlabs-agent:expanded", {
-        detail: { expanded: isExpanded },
-        bubbles: true,
-        composed: true,
-      })
-    );
   });
 
   // Collapsing the sheet dismisses a confirmation shown on top of it

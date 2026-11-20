@@ -1340,34 +1340,6 @@ describe("elevenlabs-convai", () => {
     });
   });
 
-  describe("expanded event", () => {
-    it("should announce each time the chat opens or closes", async () => {
-      const announced: boolean[] = [];
-      const listener = (event: Event) =>
-        announced.push((event as CustomEvent).detail.expanded);
-      document.addEventListener("elevenlabs-agent:expanded", listener);
-      setupWebComponent({
-        "agent-id": "basic",
-        variant: "compact",
-        transcript: "true",
-        "text-input": "true",
-      });
-      await expect
-        .element(page.getByRole("button", { name: "Start a call" }))
-        .toBeVisible();
-
-      const send = (action: string) =>
-        document.dispatchEvent(
-          new CustomEvent("elevenlabs-agent:expand", { detail: { action } })
-        );
-      send("expand");
-      await expect.poll(() => announced).toEqual([true]);
-      send("collapse");
-      await expect.poll(() => announced).toEqual([true, false]);
-      document.removeEventListener("elevenlabs-agent:expanded", listener);
-    });
-  });
-
   describe("default size", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
