@@ -194,6 +194,7 @@ export interface MicrophoneOptions extends BaseOptions {
      */
     workletPaths?: {
       scribeAudioProcessor?: string;
+      libsamplerate?: string;
     };
   };
   /**
