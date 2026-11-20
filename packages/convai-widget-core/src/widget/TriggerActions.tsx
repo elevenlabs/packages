@@ -9,7 +9,6 @@ import { TriggerMuteButton } from "./TriggerMuteButton";
 import { SizeTransition } from "../components/SizeTransition";
 import { DismissButton } from "../components/DismissButton";
 import { useTextContents } from "../contexts/text-contents";
-import { useAudioConfig } from "../contexts/audio-config";
 
 interface TriggerActionsProps {
   onDismiss?: () => void;
@@ -22,7 +21,6 @@ export function TriggerActions({ onDismiss }: TriggerActionsProps) {
     useConversation();
   const callDisabled = useCallButtonDisabled();
   const text = useTextContents();
-  const { isMutingEnabled } = useAudioConfig();
   // Without a transcript to show the offer in, the call button takes it.
   const offersResume = isDisconnected.value && !!pendingNavigationResume.value;
   const showTriggerLanguageSelector =
@@ -43,10 +41,7 @@ export function TriggerActions({ onDismiss }: TriggerActionsProps) {
         })}
       />
       <TriggerLanguageSelect visible={showTriggerLanguageSelector} />
-      <SizeTransition
-        visible={!isDisconnected.value && isMutingEnabled.value}
-        className="p-1"
-      >
+      <SizeTransition visible={!isDisconnected.value} className="p-1">
         <TriggerMuteButton />
       </SizeTransition>
       <SizeTransition visible={!!onDismiss} className="p-1">
