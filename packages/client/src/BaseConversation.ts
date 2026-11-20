@@ -421,23 +421,24 @@ export abstract class BaseConversation {
         });
       }
     } else {
-      if (this.options.onUnhandledClientToolCall) {
-        this.options.onUnhandledClientToolCall(event.client_tool_call);
+      const message = `Client tool with name ${event.client_tool_call.tool_name} is not defined on client`;
 
-        return;
-      }
-
-      this.onError(
-        `Client tool with name ${event.client_tool_call.tool_name} is not defined on client`,
-        {
-          clientToolName: event.client_tool_call.tool_name,
-        }
-      );
+      // Sent before notifying the application, so the agent is never left
+      // waiting on a call nothing will answer, even if the callback throws.
       this.connection.sendMessage({
         type: "client_tool_result",
         tool_call_id: event.client_tool_call.tool_call_id,
-        result: `Client tool with name ${event.client_tool_call.tool_name} is not defined on client`,
+        result: message,
         is_error: true,
+      });
+
+      if (this.options.onUnhandledClientToolCall) {
+        this.options.onUnhandledClientToolCall(event.client_tool_call);
+        return;
+      }
+
+      this.onError(message, {
+        clientToolName: event.client_tool_call.tool_name,
       });
     }
   }
