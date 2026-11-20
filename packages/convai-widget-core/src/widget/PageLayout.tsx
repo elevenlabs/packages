@@ -41,7 +41,7 @@ export function PageLayout() {
       >
         <Sheet open />
         <div className="absolute inset-x-0 bottom-1 flex justify-center z-2">
-          <PoweredBy />
+          <PoweredBy inline />
         </div>
       </div>
     </div>

@@ -20,6 +20,7 @@ import { clsx } from "clsx";
 import { ExpandableProps } from "./Trigger";
 import { Avatar } from "../components/Avatar";
 import { DismissButton } from "../components/DismissButton";
+import { useAudioConfig } from "../contexts/audio-config";
 
 interface ExpandableTriggerActionsProps extends ExpandableProps {
   onDismiss?: () => void;
@@ -39,6 +40,7 @@ export function ExpandableTriggerActions({
   const text = useTextContents();
   const terms = useTerms();
   const { pendingInputFocus } = useSheetContent();
+  const { isMutingEnabled } = useAudioConfig();
 
   const toggleExpanded = useCallback(() => {
     expanded.value = !expanded.value;
@@ -96,7 +98,11 @@ export function ExpandableTriggerActions({
         <CallButton iconOnly isDisconnected={false} />
       </SizeTransition>
       <SizeTransition
-        visible={!conversationTextOnly.value && collapsedConnected}
+        visible={
+          !conversationTextOnly.value &&
+          collapsedConnected &&
+          isMutingEnabled.value
+        }
         className="p-1"
       >
         <TriggerMuteButton />

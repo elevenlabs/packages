@@ -41,7 +41,7 @@ function Playground() {
       "show-resize-button": JSON.stringify(state.showResizeButton),
       "mobile-fullscreen": JSON.stringify(state.mobileFullscreen),
       "default-size": state.defaultSizeExpanded ? "expanded" : "compact",
-      layout: state.pageLayout ? "page" : "default",
+      layout: state.layout,
       "transcript-speech-sync": JSON.stringify(state.transcriptSpeechSync),
       "show-language-selector-on-trigger": JSON.stringify(
         state.showLanguageSelectorOnTrigger
@@ -77,7 +77,7 @@ function Playground() {
     state.showResizeButton,
     state.mobileFullscreen,
     state.defaultSizeExpanded,
-    state.pageLayout,
+    state.layout,
     state.transcriptSpeechSync,
     state.showLanguageSelectorOnTrigger,
     state.dynamicVariables,

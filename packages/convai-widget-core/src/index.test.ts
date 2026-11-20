@@ -1237,6 +1237,95 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("side panel layout", () => {
+    const sheetVariant = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
+    // Repeats until the widget has loaded and is listening
+    const openPanel = (widget: HTMLElement) =>
+      expect
+        .poll(() => {
+          document.dispatchEvent(
+            new CustomEvent("elevenlabs-agent:expand", {
+              detail: { action: "expand" },
+            })
+          );
+          return sheetVariant(widget);
+        })
+        .toBe("panel");
+    const textInput = () =>
+      page.getByRole("textbox", { name: "Text message input" });
+
+    afterEach(() => page.viewport(414, 896));
+
+    it("should open as a panel on desktop and close from its header", async () => {
+      await page.viewport(1280, 800);
+      // The agent turns chat off, but a panel always shows it
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+      });
+      await openPanel(widget);
+      await expect.element(textInput()).toBeVisible();
+
+      await page.getByRole("button", { name: "Collapse", exact: true }).click();
+      await expect.element(textInput()).not.toBeInTheDocument();
+    });
+
+    it("should go fullscreen on mobile", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+        "default-expanded": "true",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("fullscreen");
+    });
+
+    it("should close with Escape", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+      });
+
+      await openPanel(widget);
+      await expect.element(textInput()).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+      await expect.element(textInput()).not.toBeInTheDocument();
+    });
+  });
+
+  describe("expanded event", () => {
+    it("should announce each time the chat opens or closes", async () => {
+      const announced: boolean[] = [];
+      const listener = (event: Event) =>
+        announced.push((event as CustomEvent).detail.expanded);
+      document.addEventListener("elevenlabs-agent:expanded", listener);
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+      });
+      await expect
+        .element(page.getByRole("button", { name: "Start a call" }))
+        .toBeVisible();
+
+      const send = (action: string) =>
+        document.dispatchEvent(
+          new CustomEvent("elevenlabs-agent:expand", { detail: { action } })
+        );
+      send("expand");
+      await expect.poll(() => announced).toEqual([true]);
+      send("collapse");
+      await expect.poll(() => announced).toEqual([true, false]);
+      document.removeEventListener("elevenlabs-agent:expanded", listener);
+    });
+  });
+
   describe("default size", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");

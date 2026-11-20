@@ -9,7 +9,7 @@ export function ConversationModeToggle({ className }: { className?: string }) {
   const text = useTextContents();
   const { mode, setMode } = useConversationMode();
   const { variant } = useWidgetSize();
-  const compact = variant.value === "compact";
+  const compact = variant.value === "compact" || variant.value === "panel";
 
   return (
     <div

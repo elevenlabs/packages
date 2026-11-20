@@ -5,7 +5,12 @@ import { useCallback, useEffect, useMemo } from "preact/hooks";
 import { useContextSafely } from "../utils/useContextSafely";
 import { useTextOnly, useWidgetConfig } from "./widget-config";
 
-export type SizeVariant = "compact" | "expanded" | "fullscreen" | "page";
+export type SizeVariant =
+  | "compact"
+  | "expanded"
+  | "fullscreen"
+  | "page"
+  | "panel";
 
 interface WidgetSizeContextType {
   variant: Signal<SizeVariant>;
@@ -62,6 +67,7 @@ export function WidgetSizeProvider({
   // Without the resize button the user couldn't shrink it back
   const autoExpand = useCallback(() => {
     if (
+      config.peek().layout === "side-panel" ||
       !config.peek().expand_on_carousel ||
       resizedByUser.peek() ||
       isMobile.peek() ||
@@ -76,7 +82,8 @@ export function WidgetSizeProvider({
   const fullscreenOnly = useComputed(
     () =>
       isMobile.value &&
-      !!config.value.mobile_fullscreen &&
+      (!!config.value.mobile_fullscreen ||
+        config.value.layout === "side-panel") &&
       !config.value.always_expanded
   );
 
@@ -90,6 +97,9 @@ export function WidgetSizeProvider({
     }
     if (fullscreenOnly.value) {
       return "fullscreen";
+    }
+    if (config.value.layout === "side-panel") {
+      return isMobile.value ? "fullscreen" : "panel";
     }
     if (!expanded.value) {
       return "compact";

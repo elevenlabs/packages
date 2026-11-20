@@ -68,6 +68,28 @@
     }
   }
 
+  [data-variant="panel"] {
+    &.sheet {
+      /* Bleeds past the overlay padding to run the full height of one edge */
+      @apply rounded-none pb-6;
+      top: calc(-1 * var(--el-overlay-padding));
+      bottom: calc(-1 * var(--el-overlay-padding));
+      width: var(--el-panel-width);
+      max-width: 100vw;
+    }
+    /* Casts its shadow sideways, over the page it covers */
+    &.sheet[data-side="right"] {
+      @apply border-l border-base-border;
+      right: calc(-1 * var(--el-overlay-padding));
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.12);
+    }
+    &.sheet[data-side="left"] {
+      @apply border-r border-base-border;
+      left: calc(-1 * var(--el-overlay-padding));
+      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.12);
+    }
+  }
+
   [data-variant="fullscreen"] {
     &.sheet {
       @apply rounded-none w-full max-w-dvw h-full max-h-dvh bottom-0 pb-6;

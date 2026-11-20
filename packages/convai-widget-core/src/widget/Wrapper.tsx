@@ -1,4 +1,4 @@
-import { memo } from "preact/compat";
+import { memo, useRef } from "preact/compat";
 import { useComputed, useSignal, useSignalEffect } from "@preact/signals";
 import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
@@ -82,6 +82,18 @@ export const Wrapper = memo(function Wrapper() {
   const sheetVisible = useComputed(
     () => config.value.always_expanded || (expandable.value && expanded.value)
   );
+  const panelOpen = useComputed(
+    () => variant.value === "panel" && sheetVisible.value && !hidden.value
+  );
+  const dialogClassName = useComputed(() =>
+    panelOpen.value
+      ? // Centers the dialogs over the open panel
+        cn(
+          "absolute inset-y-0 w-[var(--el-panel-width)] max-w-full z-10 !flex items-center justify-center p-4 pointer-events-auto bg-[rgba(0,0,0,0.2)] transition-[opacity] duration-200 data-hidden:opacity-0",
+          config.value.placement.endsWith("left") ? "left-0" : "right-0"
+        )
+      : className.value
+  );
   // Powered by should always at bottom of the viewport in fullscreen mode
   const poweredByClassName = useComputed(() => (
     variant.value === "fullscreen" && sheetVisible.value ? cn(className.value, PLACEMENT_CLASSES["bottom"]) : className.value
@@ -96,6 +108,41 @@ export const Wrapper = memo(function Wrapper() {
         sawError.value = false;
       }
     }
+  });
+
+  // Tell the page when the chat opens or closes, e.g. to dim itself
+  const announcedExpanded = useRef(false);
+  useSignalEffect(() => {
+    const isExpanded = sheetVisible.value;
+    const host = shadowHost.value;
+    if (!host || isExpanded === announcedExpanded.current) {
+      return;
+    }
+    announcedExpanded.current = isExpanded;
+    host.dispatchEvent(
+      new CustomEvent("elevenlabs-agent:expanded", {
+        detail: { expanded: isExpanded },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  });
+
+  useSignalEffect(() => {
+    if (
+      config.value.layout !== "side-panel" ||
+      config.value.always_expanded ||
+      !expanded.value
+    ) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        expanded.value = false;
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   });
 
   // Collapsing the sheet dismisses a confirmation shown on top of it
@@ -166,17 +213,20 @@ export const Wrapper = memo(function Wrapper() {
     hidden.value = false;
   };
 
-  // A page stays in place behind its dialogs instead of giving way to them
+  // A page or open panel stays in place behind its dialogs
   const showConversation = useComputed(
-    () => (isPage.value || isConversation.value) && !hidden.value
+    () =>
+      (isPage.value || panelOpen.value || isConversation.value) && !hidden.value
   );
   const showTerms = useComputed(() => isTerms.value && !hidden.value);
   const showError = useComputed(() => isError.value && !hidden.value);
   const showEndConfirmation = useComputed(
     () => isEndConfirmation.value && !hidden.value
   );
-  // The page layout places it under the chat column itself
-  const showPoweredBy = useComputed(() => !hidden.value && !isPage.value);
+  // A page or open panel places it inside itself
+  const showPoweredBy = useComputed(
+    () => !hidden.value && !isPage.value && !panelOpen.value
+  );
 
   // Only show dismiss button if dismissible is enabled AND call is not active
   const showDismiss = useComputed(() => config.value.dismissible && isDisconnected.value);
@@ -204,27 +254,30 @@ export const Wrapper = memo(function Wrapper() {
                   onClose={handleClose}
                 />
               )}
-              <Trigger
-                expandable={expandable.value}
-                expanded={expanded}
-                onDismiss={showDismiss.value ? handleDismiss : undefined}
-              />
+              {/* The open panel covers the trigger */}
+              {!panelOpen.value && (
+                <Trigger
+                  expandable={expandable.value}
+                  expanded={expanded}
+                  onDismiss={showDismiss.value ? handleDismiss : undefined}
+                />
+              )}
             </>
           )}
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={showTerms}>
-        <Root className={className} style={HIDDEN_STYLE}>
+        <Root className={dialogClassName} style={HIDDEN_STYLE}>
           <TermsModal />
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={showEndConfirmation}>
-        <Root className={className} style={HIDDEN_STYLE}>
+        <Root className={dialogClassName} style={HIDDEN_STYLE}>
           <EndConfirmationDialog />
         </Root>
       </InOutTransition>
       <InOutTransition initial={false} active={showError}>
-        <Root className={className} style={HIDDEN_STYLE}>
+        <Root className={dialogClassName} style={HIDDEN_STYLE}>
           <ErrorModal sawError={sawError} />
         </Root>
       </InOutTransition>
