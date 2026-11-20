@@ -34,9 +34,7 @@ vi.mock("livekit-client", async importOriginal => {
     off: vi.fn(),
     localParticipant: mockLocalParticipant,
     name: "conv_test123",
-    remoteParticipants: new Map([
-      ["agent-test", { identity: "agent-test" }],
-    ]),
+    remoteParticipants: new Map([["agent-test", { identity: "agent-test" }]]),
   };
 
   return {
@@ -1561,6 +1559,88 @@ describe("WebRTCConnection", () => {
         avatar_video: true,
       });
       after.close();
+    });
+  });
+
+  describe("waiting for the agent to join", () => {
+    type Handler = (...args: unknown[]) => void;
+    let mockRoom: any;
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+      mockRoom = new Room() as any;
+      handlers = new Map();
+      mockRoom.remoteParticipants.clear();
+      mockRoom.on.mockImplementation((event: string, callback: Handler) => {
+        handlers.set(event, callback);
+        if (event === "connected") queueMicrotask(() => callback());
+      });
+      mockRoom.once.mockImplementation((event: string, callback: Handler) => {
+        if (event === "signalConnected") queueMicrotask(() => callback());
+      });
+      mockRoom.localParticipant.getTrackPublication.mockReturnValue(undefined);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      mockRoom.remoteParticipants.set("agent-test", {
+        identity: "agent-test",
+      });
+    });
+
+    const create = (webRtc?: { waitForAgent?: boolean }) =>
+      WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+        webRtc,
+      });
+
+    it("does not send initiation data until the agent joins", async () => {
+      const connection = create();
+
+      await vi.waitFor(() =>
+        expect(handlers.has("participantConnected")).toBe(true)
+      );
+      handlers.get("participantConnected")?.({ identity: "user-1" });
+      await Promise.resolve();
+      expect(mockRoom.localParticipant.publishData).not.toHaveBeenCalled();
+
+      handlers.get("participantConnected")?.({ identity: "agent-1" });
+      (await connection).close();
+      expect(mockRoom.localParticipant.publishData).toHaveBeenCalledOnce();
+    });
+
+    it("sends immediately when the agent is already in the room", async () => {
+      mockRoom.remoteParticipants.set("agent-1", { identity: "agent-1" });
+
+      (await create()).close();
+      expect(mockRoom.localParticipant.publishData).toHaveBeenCalledOnce();
+    });
+
+    it("sends immediately when waitForAgent is false", async () => {
+      (await create({ waitForAgent: false })).close();
+      expect(mockRoom.localParticipant.publishData).toHaveBeenCalledOnce();
+    });
+
+    it("rejects when the agent does not join in time", async () => {
+      vi.useFakeTimers();
+      const result = expect(create()).rejects.toThrow(
+        "Timeout waiting for agent to join the room"
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      await result;
+      expect(mockRoom.localParticipant.publishData).not.toHaveBeenCalled();
+    });
+
+    it("rejects when the room disconnects while waiting", async () => {
+      const result = expect(create()).rejects.toThrow(
+        "Disconnected while waiting for agent to join"
+      );
+      await vi.waitFor(() =>
+        expect(handlers.has("participantConnected")).toBe(true)
+      );
+      handlers.get("disconnected")?.();
+      await result;
     });
   });
 });

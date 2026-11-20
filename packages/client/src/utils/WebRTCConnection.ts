@@ -82,6 +82,43 @@ export type WebRTCConnectionConfig = SessionConfig &
 /** @deprecated Use {@link WebRTCConnectionConfig} instead. */
 export type ConnectionConfig = WebRTCConnectionConfig;
 
+const AGENT_JOIN_TIMEOUT_MS = 30_000;
+
+const isAgent = ({ identity }: Pick<RemoteParticipant, "identity">) =>
+  identity.includes("agent");
+
+function waitForAgent(room: Room, timeoutMs = AGENT_JOIN_TIMEOUT_MS) {
+  return new Promise<void>((resolve, reject) => {
+    if ([...room.remoteParticipants.values()].some(isAgent)) {
+      resolve();
+      return;
+    }
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
+      room.off(RoomEvent.Disconnected, onDisconnected);
+    };
+    const onParticipantConnected = (participant: RemoteParticipant) => {
+      if (isAgent(participant)) {
+        cleanup();
+        resolve();
+      }
+    };
+    const onDisconnected = () => {
+      cleanup();
+      reject(new Error("Disconnected while waiting for agent to join"));
+    };
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout waiting for agent to join the room"));
+    }, timeoutMs);
+
+    room.on(RoomEvent.ParticipantConnected, onParticipantConnected);
+    room.on(RoomEvent.Disconnected, onDisconnected);
+  });
+}
+
 export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
   public readonly inputFormat: FormatConfig;
@@ -403,32 +440,9 @@ export class WebRTCConnection extends BaseConnection {
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
-      // Wait for the server-side agent to join the room before sending
-      // initiation data. Without this, publishData can fire before the
-      // agent has connected and the SFU silently drops the message.
-      await new Promise<void>((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          room.off(RoomEvent.ParticipantConnected, onParticipant);
-          reject(new Error("Timeout waiting for agent to join the room"));
-        }, 30_000);
-
-        for (const p of room.remoteParticipants.values()) {
-          if (p.identity.includes("agent")) {
-            clearTimeout(timeoutId);
-            resolve();
-            return;
-          }
-        }
-
-        const onParticipant = (participant: RemoteParticipant) => {
-          if (participant.identity.includes("agent")) {
-            clearTimeout(timeoutId);
-            room.off(RoomEvent.ParticipantConnected, onParticipant);
-            resolve();
-          }
-        };
-        room.on(RoomEvent.ParticipantConnected, onParticipant);
-      });
+      if (config.webRtc?.waitForAgent !== false) {
+        await waitForAgent(room);
+      }
 
       const overridesEvent = constructOverrides(config);
 
