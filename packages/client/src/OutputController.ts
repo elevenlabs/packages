@@ -1,5 +1,6 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
 import type { AudioAlignmentEvent } from "./types.js";
+import type { AnalyserNodeLike } from "./platformTypes.js";
 
 export type OutputDeviceConfig = {
   outputDeviceId?: string;
@@ -26,13 +27,14 @@ export type OutputEventTarget = {
 };
 
 // Playback state events from output worklet
-export type PlaybackStateEvent = MessageEvent<
-  | {
-      type: "process";
-      finished: boolean;
-    }
-  | ({ type: "chunk_start" } & OutputChunkMetadata)
->;
+export type PlaybackStateEvent = {
+  readonly data:
+    | {
+        type: "process";
+        finished: boolean;
+      }
+    | ({ type: "chunk_start" } & OutputChunkMetadata);
+};
 export type PlaybackListener = (event: PlaybackStateEvent) => void;
 
 export type PlaybackEventTarget = {
@@ -51,7 +53,7 @@ export interface OutputController {
    * platforms. Use {@link getVolume} for a scalar audio level (0-1) or
    * {@link getByteFrequencyData} for frequency band data instead.
    */
-  getAnalyser(): AnalyserNode | undefined;
+  getAnalyser(): AnalyserNodeLike | undefined;
 
   /** Returns current audio level as a scalar 0–1. */
   getVolume(): number;

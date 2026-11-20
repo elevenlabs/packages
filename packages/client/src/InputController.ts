@@ -1,10 +1,16 @@
 import type { FormatConfig } from "./utils/BaseConnection.js";
+import type { AnalyserNodeLike, DeviceIdConstraint } from "./platformTypes.js";
 
 /** Default microphone audio chunk duration sent to the agent (WebSocket path). */
 export const DEFAULT_INPUT_CHUNK_DURATION_MS = 25;
 
 export type InputDeviceConfig = {
-  inputDeviceId?: string;
+  /**
+   * Microphone to capture from. A device ID string selects that exact device
+   * (preferred rather than required on iOS); a constraint object or list of
+   * IDs is applied as given.
+   */
+  inputDeviceId?: DeviceIdConstraint;
   preferHeadphonesForIosDevices?: boolean;
 };
 
@@ -17,7 +23,7 @@ export type InputConfig = InputDeviceConfig & {
   inputChunkDurationMs?: number;
 };
 
-export type InputMessageEvent = MessageEvent<[Uint8Array, number]>;
+export type InputMessageEvent = { readonly data: [Uint8Array, number] };
 export type InputListener = (event: InputMessageEvent) => void;
 
 export type InputEventTarget = {
@@ -36,7 +42,7 @@ export interface InputController {
    * platforms. Use {@link getVolume} for a scalar audio level (0-1) or
    * {@link getByteFrequencyData} for frequency band data instead.
    */
-  getAnalyser(): AnalyserNode | undefined;
+  getAnalyser(): AnalyserNodeLike | undefined;
 
   /** Returns current audio level as a scalar 0–1. */
   getVolume(): number;

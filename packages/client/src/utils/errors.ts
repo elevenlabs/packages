@@ -1,7 +1,8 @@
 import { isJsonObject } from "./assert.js";
+import type { ResponseLike } from "../platformTypes.js";
 
 export async function extractApiErrorMessage(
-  response: Response
+  response: ResponseLike
 ): Promise<string> {
   try {
     const body: unknown = await response.json();

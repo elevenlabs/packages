@@ -20,6 +20,7 @@ import type {
   Ping,
   RichContentClientEvent,
 } from "@elevenlabs/types";
+import type { AbortSignalLike } from "./platformTypes.js";
 
 /**
  * Role in the conversation
@@ -116,7 +117,7 @@ export type MCPToolApprovalRequestContext = {
    * elapsed, for example), or the session ended. Use it to dismiss approval
    * UI that can no longer have an effect.
    */
-  signal: AbortSignal;
+  signal: AbortSignalLike;
 };
 
 /**
