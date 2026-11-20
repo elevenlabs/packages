@@ -28,6 +28,7 @@ import { useEndConfirmation } from "../contexts/end-confirmation";
 import { EndConfirmationDialog } from "./EndConfirmationDialog";
 import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLifecycle";
 import { useExpandForCarousels } from "../utils/useExpandForCarousels";
+import { PoweredBy } from "./PoweredBy";
 
 interface SheetProps {
   open: Signalish<boolean>;
@@ -167,30 +168,40 @@ export function Sheet({ open, onClose }: SheetProps) {
     () => showTranscript.value && (config.value.show_resize_button ?? true)
   );
 
+  const isPanel = variant.value === "panel";
+  const panelSide = placement.endsWith("left") ? "left" : "right";
+
   return (
     <InOutTransition initial={false} active={open}>
       <div
         data-variant={variant.value}
         data-muted={isMuted.value || undefined}
+        data-side={isPanel ? panelSide : undefined}
         className={cn(
           "sheet group/sheet",
           "flex flex-col overflow-hidden pointer-events-auto z-2",
           isMuted.value ? "bg-base-hover" : "bg-base",
-          "transition-[width,height,max-width,max-height,transform,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
-          "data-hidden:scale-90 data-hidden:opacity-0",
+          "transition-[width,height,max-width,max-height,transform,translate,scale,border-radius,opacity,inset,bottom,top,left,right,margin,padding] duration-200",
+          isPanel
+            ? panelSide === "left"
+              ? "data-hidden:-translate-x-full"
+              : "data-hidden:translate-x-full"
+            : "data-hidden:scale-90 data-hidden:opacity-0",
           variant.value === "page"
             ? "relative w-full h-full"
-            : cn(
-                "absolute shadow-lg",
-                ORIGIN_CLASSES[placement],
-                placement.startsWith("top")
-                  ? config.value.always_expanded
-                    ? "top-0"
-                    : "top-20"
-                  : config.value.always_expanded
-                    ? "bottom-0"
-                    : "bottom-20"
-              )
+            : isPanel
+              ? "absolute"
+              : cn(
+                  "absolute shadow-lg",
+                  ORIGIN_CLASSES[placement],
+                  placement.startsWith("top")
+                    ? config.value.always_expanded
+                      ? "top-0"
+                      : "top-20"
+                    : config.value.always_expanded
+                      ? "bottom-0"
+                      : "bottom-20"
+                )
         )}
       >
         {showHeader.value && (
@@ -238,6 +249,11 @@ export function Sheet({ open, onClose }: SheetProps) {
           <InOutTransition active={confirmationShown}>
             <EndConfirmationDialog overlay />
           </InOutTransition>
+        )}
+        {isPanel && (
+          <div className="absolute inset-x-0 bottom-1 flex justify-center z-2">
+            <PoweredBy inline />
+          </div>
         )}
       </div>
     </InOutTransition>

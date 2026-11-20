@@ -8,6 +8,9 @@ import {
   Variants,
   Location,
   parseLocation,
+  Layout,
+  Layouts,
+  parseLayout,
 } from "./types/config";
 
 export function usePlaygroundSettings() {
@@ -25,7 +28,7 @@ export function usePlaygroundSettings() {
   const [showResizeButton, setShowResizeButton] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(true);
   const [defaultSizeExpanded, setDefaultSizeExpanded] = useState(false);
-  const [pageLayout, setPageLayout] = useState(false);
+  const [layout, setLayout] = useState<Layout>("default");
   const [transcriptSpeechSync, setTranscriptSpeechSync] = useState(true);
   const [showLanguageSelectorOnTrigger, setShowLanguageSelectorOnTrigger] =
     useState(true);
@@ -83,8 +86,8 @@ export function usePlaygroundSettings() {
     setMobileFullscreen,
     defaultSizeExpanded,
     setDefaultSizeExpanded,
-    pageLayout,
-    setPageLayout,
+    layout,
+    setLayout,
     transcriptSpeechSync,
     setTranscriptSpeechSync,
     showLanguageSelectorOnTrigger,
@@ -237,12 +240,17 @@ export function PlaygroundSettingsPanel({
         Start at expanded size
       </label>
       <label>
-        <input
-          type="checkbox"
-          checked={state.pageLayout}
-          onChange={e => state.setPageLayout(e.currentTarget.checked)}
-        />{" "}
-        Page layout
+        Layout
+        <select
+          value={state.layout}
+          onChange={e => state.setLayout(parseLayout(e.currentTarget.value))}
+        >
+          {Layouts.map(layout => (
+            <option key={layout} value={layout}>
+              {layout}
+            </option>
+          ))}
+        </select>
       </label>
       <label>
         <input
