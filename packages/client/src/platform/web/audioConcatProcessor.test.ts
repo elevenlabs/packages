@@ -71,6 +71,12 @@ describe("audioConcatProcessor", () => {
     );
   }
 
+  function finishedMessages() {
+    return postedMessages().filter(
+      message => message.type === "process" && message.finished
+    );
+  }
+
   function chunkStarts() {
     return postedMessages().filter(message => message.type === "chunk_start");
   }
@@ -104,6 +110,98 @@ describe("audioConcatProcessor", () => {
       expect(chunkStarts()).toEqual([
         { type: "chunk_start", chunkId: 1 },
         { type: "chunk_start", chunkId: 2 },
+      ]);
+    });
+
+    it("reports the last accepted buffer sequence when playback finishes", () => {
+      send({
+        type: "buffer",
+        buffer: new Int16Array(QUANTUM).buffer,
+        bufferSequence: 1,
+      });
+      render();
+      render();
+      expect(processor.port.postMessage).toHaveBeenCalledWith({
+        type: "process",
+        finished: true,
+        bufferSequence: 1,
+      });
+      send({
+        type: "buffer",
+        buffer: new Int16Array(QUANTUM).buffer,
+        bufferSequence: 2,
+      });
+      render();
+      render();
+      expect(processor.port.postMessage).toHaveBeenCalledWith({
+        type: "process",
+        finished: true,
+        bufferSequence: 2,
+      });
+    });
+
+    it.each([1, QUANTUM / 2, QUANTUM - 1, QUANTUM, QUANTUM + 1, QUANTUM * 2])(
+      "reports completion once for an idle-start buffer of %i samples",
+      samples => {
+        render();
+        processor.port.postMessage.mockClear();
+        send({
+          type: "buffer",
+          buffer: new Int16Array(samples).buffer,
+          bufferSequence: 1,
+        });
+
+        for (let i = 0; i < Math.floor(samples / QUANTUM); i++) {
+          render();
+          expect(finishedMessages()).toEqual([]);
+        }
+        render();
+        const expected = [
+          { type: "process", finished: true, bufferSequence: 1 },
+        ];
+        expect(finishedMessages()).toEqual(expected);
+
+        render();
+        render();
+        expect(finishedMessages()).toEqual(expected);
+      }
+    );
+
+    it("reports each short buffer completed between idle renders", () => {
+      render();
+      processor.port.postMessage.mockClear();
+      for (let bufferSequence = 1; bufferSequence <= 3; bufferSequence++) {
+        send({
+          type: "buffer",
+          buffer: new Int16Array(QUANTUM / 2).buffer,
+          bufferSequence,
+        });
+        render();
+        render();
+      }
+      expect(finishedMessages()).toEqual(
+        [1, 2, 3].map(bufferSequence => ({
+          type: "process",
+          finished: true,
+          bufferSequence,
+        }))
+      );
+    });
+
+    it("reports only the latest sequence when short buffers finish together", () => {
+      render();
+      processor.port.postMessage.mockClear();
+      for (const bufferSequence of [1, 2]) {
+        send({
+          type: "buffer",
+          buffer: new Int16Array(QUANTUM / 4).buffer,
+          bufferSequence,
+        });
+      }
+      render();
+      render();
+      expect(finishedMessages()).toEqual([
+        { type: "process", finished: true, bufferSequence: 2 },
       ]);
     });
   });
@@ -178,6 +276,34 @@ describe("audioConcatProcessor", () => {
       }
       expect(render()).toEqual(new Float32Array(QUANTUM));
     });
+
+    it.each([1, Math.ceil(QUANTUM / RATIO)])(
+      "reports completion after resampling %i input samples from idle",
+      async samples => {
+        setFormat();
+        resolveResampler(fakeResampler);
+        await flushPromises();
+        render();
+        processor.port.postMessage.mockClear();
+        send({
+          type: "buffer",
+          buffer: new Int16Array(samples).fill(SAMPLE).buffer,
+          bufferSequence: 1,
+        });
+
+        for (let i = 0; i < Math.floor((samples * RATIO) / QUANTUM); i++) {
+          render();
+          expect(finishedMessages()).toEqual([]);
+        }
+        render();
+        const expected = [
+          { type: "process", finished: true, bufferSequence: 1 },
+        ];
+        expect(finishedMessages()).toEqual(expected);
+        render();
+        expect(finishedMessages()).toEqual(expected);
+      }
+    );
 
     it("posts resampler_error if the resampler fails to load", async () => {
       setFormat();
