@@ -1643,6 +1643,26 @@ describe("WebRTCConnection", () => {
       }
     });
 
+    it("releases audio resources when the wait fails", async () => {
+      const cleanup = vi.fn();
+      const track = { mediaStreamTrack: { id: "mic", kind: "audio" } };
+      mockRoom.localParticipant.getTrackPublication.mockReturnValue({ track });
+      const spy = vi
+        .spyOn(WebRTCConnection.prototype as any, "setupInputAnalyser")
+        .mockImplementation(function (this: any) {
+          this.audioAdapter = { cleanup };
+        });
+      vi.useFakeTimers();
+      try {
+        const result = expect(create()).rejects.toThrow("Timeout");
+        await vi.advanceTimersByTimeAsync(30_000);
+        await result;
+        expect(cleanup).toHaveBeenCalledOnce();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
     it("rejects when the room disconnects while waiting", async () => {
       const result = expect(create()).rejects.toThrow(
         "Disconnected while waiting for agent to join"

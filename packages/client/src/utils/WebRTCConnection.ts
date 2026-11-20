@@ -376,6 +376,7 @@ export class WebRTCConnection extends BaseConnection {
       singlePeerConnection === undefined ? undefined : { singlePeerConnection }
     );
 
+    let created: WebRTCConnection | undefined;
     try {
       // Create connection instance first to set up event listeners
       const conversationId = `room_${Date.now()}`;
@@ -388,6 +389,7 @@ export class WebRTCConnection extends BaseConnection {
         outputFormat,
         config
       );
+      created = connection;
 
       // Use configurable LiveKit URL or default if not provided
       const livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
@@ -463,6 +465,7 @@ export class WebRTCConnection extends BaseConnection {
 
       return connection;
     } catch (error) {
+      created?.releaseAudioResources();
       await room.disconnect();
       throw error;
     }
@@ -673,19 +676,21 @@ export class WebRTCConnection extends BaseConnection {
         console.warn("Error stopping local tracks:", error);
       }
 
-      // Delegate all audio cleanup to the adapter
-      this.audioAdapter?.cleanup();
-      this.inputAnalyser = undefined;
-      this.outputAnalyser = undefined;
-      this.inputVolumeProvider = NO_VOLUME;
-      this.outputVolumeProvider = NO_VOLUME;
-      this.agentAudioTrack = null;
-      this.avatarAudioTrack = null;
-      this.capturedTrack = null;
-      this.setAvatarVideoTrack(null);
-
+      this.releaseAudioResources();
       this.room.disconnect();
     }
+  }
+
+  private releaseAudioResources() {
+    this.audioAdapter?.cleanup();
+    this.inputAnalyser = undefined;
+    this.outputAnalyser = undefined;
+    this.inputVolumeProvider = NO_VOLUME;
+    this.outputVolumeProvider = NO_VOLUME;
+    this.agentAudioTrack = null;
+    this.avatarAudioTrack = null;
+    this.capturedTrack = null;
+    this.setAvatarVideoTrack(null);
   }
 
   public async sendMessage(message: OutgoingSocketEvent) {
