@@ -17,7 +17,7 @@ import {
   useIsConversationTextOnly,
   useWidgetConfig,
 } from "../contexts/widget-config";
-import { stripAudioTags } from "../utils/stripAudioTags";
+import { stripAudioTags } from "@elevenlabs/client";
 import { WidgetStreamdown } from "../markdown";
 import { isImageMimeType } from "./useFileUpload";
 import { ShimmeringText } from "../components/ShimmeringText";
