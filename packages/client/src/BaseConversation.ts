@@ -38,6 +38,7 @@ import type {
   ErrorMessageEvent,
   AgentToolRequestEvent,
   GuardrailTriggeredEvent,
+  ConversationEndedEvent,
 } from "./utils/events.js";
 import type { InputConfig } from "./InputController.js";
 import type { OutputConfig } from "./OutputController.js";
@@ -631,6 +632,12 @@ export abstract class BaseConversation {
     }
   }
 
+  protected handleConversationEnded(event: ConversationEndedEvent) {
+    if (this.options.onConversationEnded) {
+      this.options.onConversationEnded(event.conversation_ended_event);
+    }
+  }
+
   protected handleAgentTyping(event: AgentTypingEvent) {
     if (this.options.onAgentTyping) {
       this.options.onAgentTyping(event.agent_typing_event);
@@ -811,6 +818,11 @@ export abstract class BaseConversation {
 
       case "guardrail_triggered": {
         this.handleGuardrailTriggered(parsedEvent);
+        return;
+      }
+
+      case "conversation_ended": {
+        this.handleConversationEnded(parsedEvent);
         return;
       }
 
