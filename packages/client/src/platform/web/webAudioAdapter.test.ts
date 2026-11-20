@@ -11,6 +11,17 @@ import { WebAudioAdapter } from "./webAudioAdapter.js";
 
 const OUTPUT_FORMAT: FormatConfig = { format: "pcm", sampleRate: 48000 };
 
+function createWorklet() {
+  return {
+    disconnect: vi.fn(),
+    port: {
+      onmessage: null as unknown,
+      postMessage: vi.fn(),
+      close: vi.fn(),
+    },
+  };
+}
+
 function installAudioEnvironment() {
   const analyser = {
     fftSize: 0,
@@ -20,12 +31,7 @@ function installAudioEnvironment() {
     getByteFrequencyData: vi.fn(),
   };
   const source = { connect: vi.fn() };
-  const worklet = {
-    port: {
-      onmessage: null,
-      postMessage: vi.fn(),
-    },
-  };
+  const worklet = createWorklet();
   const audioContext = {
     audioWorklet: {},
     close: vi.fn().mockResolvedValue(undefined),
@@ -147,5 +153,89 @@ describe("WebAudioAdapter.attachRemoteTrack", () => {
     await adapter.attachRemoteTrack(remoteTrack, null);
 
     expect(audioElement.volume).toBe(0.25);
+  });
+});
+
+describe("WebAudioAdapter.cleanup", () => {
+  afterEach(() => {
+    vi.mocked(loadRawAudioProcessor).mockReset();
+    vi.unstubAllGlobals();
+  });
+
+  it("closes the capture worklet port so it stops holding onAudioData", async () => {
+    const { worklet } = installAudioEnvironment();
+    const adapter = new WebAudioAdapter();
+    await adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+
+    adapter.cleanup();
+    adapter.cleanup();
+
+    expect(worklet.port.onmessage).toBeNull();
+    expect(worklet.port.close).toHaveBeenCalledTimes(1);
+    expect(worklet.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("is safe before any capture was set up", () => {
+    expect(() => new WebAudioAdapter().cleanup()).not.toThrow();
+  });
+
+  it("releases the previous worklet when capture moves to a new track", async () => {
+    const { worklet: first } = installAudioEnvironment();
+    const second = createWorklet();
+    vi.mocked(loadRawAudioProcessor)
+      .mockResolvedValueOnce(first as unknown as AudioWorkletNode)
+      .mockResolvedValueOnce(second as unknown as AudioWorkletNode);
+    const adapter = new WebAudioAdapter();
+
+    await adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    await adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+
+    expect(first.port.onmessage).toBeNull();
+    expect(first.port.close).toHaveBeenCalledTimes(1);
+    expect(second.port.onmessage).toBeTypeOf("function");
+    expect(second.port.close).not.toHaveBeenCalled();
+  });
+
+  it("closes a worklet that finishes loading after cleanup", async () => {
+    const { worklet } = installAudioEnvironment();
+    const adapter = new WebAudioAdapter();
+
+    const pending = adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    adapter.cleanup();
+    await pending;
+
+    expect(worklet.port.onmessage).toBeNull();
+    expect(worklet.port.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes a worklet whose load is overtaken by a newer setup", async () => {
+    const { audioContext, worklet: stale } = installAudioEnvironment();
+    vi.stubGlobal(
+      "AudioContext",
+      vi.fn(function MockAudioContext() {
+        return { ...audioContext };
+      })
+    );
+    const live = createWorklet();
+    let finishStale!: () => void;
+    vi.mocked(loadRawAudioProcessor)
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            finishStale = () => resolve(stale as unknown as AudioWorkletNode);
+          })
+      )
+      .mockResolvedValueOnce(live as unknown as AudioWorkletNode);
+    const adapter = new WebAudioAdapter();
+
+    const pending = adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    await adapter.setupOutputAnalysis(track, OUTPUT_FORMAT, vi.fn());
+    finishStale();
+    await pending;
+
+    expect(stale.port.onmessage).toBeNull();
+    expect(stale.port.close).toHaveBeenCalledTimes(1);
+    expect(live.port.onmessage).toBeTypeOf("function");
+    expect(live.port.close).not.toHaveBeenCalled();
   });
 });

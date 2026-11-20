@@ -7,6 +7,7 @@ import type {
 } from "../../WebRTCAudioAdapter.js";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import { createAnalyserVolumeProvider } from "./volumeProvider.js";
+import { disconnectAudioNode } from "./disconnectAudioNode.js";
 
 /**
  * Web implementation of {@link WebRTCAudioAdapter}.
@@ -22,6 +23,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
 
   private inputAudioContext: AudioContext | null = null;
   private audioCaptureContext: AudioContext | null = null;
+  private captureWorklet: AudioWorkletNode | null = null;
 
   async attachRemoteTrack(
     track: RemoteAudioTrack,
@@ -81,6 +83,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     workletPaths?: AudioWorkletConfig["workletPaths"]
   ): Promise<AnalysisResult> {
     // Clean up previous audio capture context
+    this.releaseCaptureWorklet();
     if (this.audioCaptureContext) {
       this.audioCaptureContext.close().catch(() => {});
       this.audioCaptureContext = null;
@@ -109,6 +112,11 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
       audioContext,
       workletPaths?.rawAudioProcessor
     );
+    if (this.audioCaptureContext !== audioContext) {
+      worklet.port.close();
+      return { volumeProvider, analyser };
+    }
+    this.captureWorklet = worklet;
 
     // Configure the processor and set up the message listener
     // before connecting the graph, so no early messages are missed.
@@ -163,6 +171,7 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     }
 
     // Clean up audio capture context
+    this.releaseCaptureWorklet();
     if (this.audioCaptureContext) {
       this.audioCaptureContext.close().catch(error => {
         console.warn("Error closing audio capture context:", error);
@@ -175,5 +184,13 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
       element.remove();
     }
     this.audioElements = [];
+  }
+
+  private releaseCaptureWorklet(): void {
+    if (!this.captureWorklet) return;
+    this.captureWorklet.port.onmessage = null;
+    this.captureWorklet.port.close();
+    disconnectAudioNode(this.captureWorklet);
+    this.captureWorklet = null;
   }
 }

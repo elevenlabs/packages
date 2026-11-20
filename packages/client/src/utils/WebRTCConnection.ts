@@ -145,6 +145,7 @@ export class WebRTCConnection extends BaseConnection {
   private agentAudioTrack: RemoteAudioTrack | null = null;
   private avatarAudioTrack: RemoteAudioTrack | null = null;
   private capturedTrack: RemoteAudioTrack | null = null;
+  private captureGeneration = 0;
   private voice: "agent" | "avatar" = "agent";
   private avatarVideoTrack: MediaStreamTrack | null = null;
   private readonly avatarVideoTrackListeners = new Set<
@@ -682,6 +683,7 @@ export class WebRTCConnection extends BaseConnection {
   }
 
   private releaseAudioResources() {
+    this.captureGeneration++;
     this.audioAdapter?.cleanup();
     this.inputAnalyser = undefined;
     this.outputAnalyser = undefined;
@@ -781,6 +783,7 @@ export class WebRTCConnection extends BaseConnection {
 
   private async setupAudioCapture(track: RemoteAudioTrack) {
     if (!this.audioAdapter) return;
+    const generation = ++this.captureGeneration;
 
     try {
       const onAudioData = (audioData: ArrayBuffer, maxVolume: number) => {
@@ -809,6 +812,7 @@ export class WebRTCConnection extends BaseConnection {
         onAudioData,
         this.workletPaths
       );
+      if (generation !== this.captureGeneration) return;
 
       this.outputVolumeProvider = result.volumeProvider;
       this.outputAnalyser = result.analyser;
