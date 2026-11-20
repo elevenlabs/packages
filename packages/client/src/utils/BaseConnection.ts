@@ -59,6 +59,12 @@ export type BaseSessionConfig = {
      * livekit-client's own default, currently true.
      */
     singlePeerConnection?: boolean;
+    /**
+     * Whether to wait for the agent to join the room before sending the
+     * conversation initiation data.
+     * @default true
+     */
+    waitForAgent?: boolean;
   };
   overrides?: {
     agent?: {

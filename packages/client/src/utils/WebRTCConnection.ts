@@ -82,6 +82,47 @@ export type WebRTCConnectionConfig = SessionConfig &
 /** @deprecated Use {@link WebRTCConnectionConfig} instead. */
 export type ConnectionConfig = WebRTCConnectionConfig;
 
+const AGENT_JOIN_TIMEOUT_MS = 30_000;
+
+const isAgent = ({ identity }: Pick<RemoteParticipant, "identity">) =>
+  identity.includes("agent");
+
+function waitForAgent(room: Room, timeoutMs = AGENT_JOIN_TIMEOUT_MS) {
+  return new Promise<void>((resolve, reject) => {
+    if (room.state === ConnectionState.Disconnected) {
+      reject(new Error("Disconnected while waiting for agent to join"));
+      return;
+    }
+    if ([...room.remoteParticipants.values()].some(isAgent)) {
+      resolve();
+      return;
+    }
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
+      room.off(RoomEvent.Disconnected, onDisconnected);
+    };
+    const onParticipantConnected = (participant: RemoteParticipant) => {
+      if (isAgent(participant)) {
+        cleanup();
+        resolve();
+      }
+    };
+    const onDisconnected = () => {
+      cleanup();
+      reject(new Error("Disconnected while waiting for agent to join"));
+    };
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timeout waiting for agent to join the room"));
+    }, timeoutMs);
+
+    room.on(RoomEvent.ParticipantConnected, onParticipantConnected);
+    room.on(RoomEvent.Disconnected, onDisconnected);
+  });
+}
+
 export class WebRTCConnection extends BaseConnection {
   public conversationId: string;
   public readonly inputFormat: FormatConfig;
@@ -335,6 +376,7 @@ export class WebRTCConnection extends BaseConnection {
       singlePeerConnection === undefined ? undefined : { singlePeerConnection }
     );
 
+    let created: WebRTCConnection | undefined;
     try {
       // Create connection instance first to set up event listeners
       const conversationId = `room_${Date.now()}`;
@@ -347,6 +389,7 @@ export class WebRTCConnection extends BaseConnection {
         outputFormat,
         config
       );
+      created = connection;
 
       // Use configurable LiveKit URL or default if not provided
       const livekitUrl = config.livekitUrl || DEFAULT_LIVEKIT_WS_URL;
@@ -403,6 +446,10 @@ export class WebRTCConnection extends BaseConnection {
           room.name.match(/(conv_[a-zA-Z0-9]+)/)?.[0] || room.name;
       }
 
+      if (config.webRtc?.waitForAgent !== false) {
+        await waitForAgent(room);
+      }
+
       const overridesEvent = constructOverrides(config);
 
       connection.debug({
@@ -418,6 +465,7 @@ export class WebRTCConnection extends BaseConnection {
 
       return connection;
     } catch (error) {
+      created?.releaseAudioResources();
       await room.disconnect();
       throw error;
     }
@@ -628,19 +676,21 @@ export class WebRTCConnection extends BaseConnection {
         console.warn("Error stopping local tracks:", error);
       }
 
-      // Delegate all audio cleanup to the adapter
-      this.audioAdapter?.cleanup();
-      this.inputAnalyser = undefined;
-      this.outputAnalyser = undefined;
-      this.inputVolumeProvider = NO_VOLUME;
-      this.outputVolumeProvider = NO_VOLUME;
-      this.agentAudioTrack = null;
-      this.avatarAudioTrack = null;
-      this.capturedTrack = null;
-      this.setAvatarVideoTrack(null);
-
+      this.releaseAudioResources();
       this.room.disconnect();
     }
+  }
+
+  private releaseAudioResources() {
+    this.audioAdapter?.cleanup();
+    this.inputAnalyser = undefined;
+    this.outputAnalyser = undefined;
+    this.inputVolumeProvider = NO_VOLUME;
+    this.outputVolumeProvider = NO_VOLUME;
+    this.agentAudioTrack = null;
+    this.avatarAudioTrack = null;
+    this.capturedTrack = null;
+    this.setAvatarVideoTrack(null);
   }
 
   public async sendMessage(message: OutgoingSocketEvent) {
