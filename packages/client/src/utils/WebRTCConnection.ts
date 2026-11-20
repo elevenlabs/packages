@@ -89,6 +89,10 @@ const isAgent = ({ identity }: Pick<RemoteParticipant, "identity">) =>
 
 function waitForAgent(room: Room, timeoutMs = AGENT_JOIN_TIMEOUT_MS) {
   return new Promise<void>((resolve, reject) => {
+    if (room.state === ConnectionState.Disconnected) {
+      reject(new Error("Disconnected while waiting for agent to join"));
+      return;
+    }
     if ([...room.remoteParticipants.values()].some(isAgent)) {
       resolve();
       return;

@@ -1632,6 +1632,17 @@ describe("WebRTCConnection", () => {
       expect(mockRoom.localParticipant.publishData).not.toHaveBeenCalled();
     });
 
+    it("rejects when the room disconnected before the wait started", async () => {
+      mockRoom.state = "disconnected";
+      try {
+        await expect(create()).rejects.toThrow(
+          "Disconnected while waiting for agent to join"
+        );
+      } finally {
+        delete mockRoom.state;
+      }
+    });
+
     it("rejects when the room disconnects while waiting", async () => {
       const result = expect(create()).rejects.toThrow(
         "Disconnected while waiting for agent to join"
