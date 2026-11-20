@@ -679,10 +679,22 @@ describe("BaseConversation", () => {
       conversation.sendUserActivity();
       vi.advanceTimersByTime(500);
       conversation.sendUserActivity();
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(400);
       conversation.sendUserActivity();
 
       expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps sending once per window while the user keeps typing", () => {
+      vi.useFakeTimers();
+      const { sendMessage, conversation } = conversationSending();
+
+      for (let elapsed = 0; elapsed < 5000; elapsed += 200) {
+        conversation.sendUserActivity();
+        vi.advanceTimersByTime(200);
+      }
+
+      expect(sendMessage).toHaveBeenCalledTimes(5);
     });
 
     it("sends again once the throttle window has elapsed", () => {
@@ -1211,6 +1223,90 @@ describe("BaseConversation", () => {
       expect(onCanSendFeedbackChange).toHaveBeenLastCalledWith({
         canSendFeedback: false,
       });
+    });
+  });
+
+  describe("client_tool_call events for an unregistered tool", () => {
+    const toolCall = {
+      tool_name: "open_settings",
+      tool_call_id: "call-1",
+      parameters: { section: "audio" },
+      expects_response: true,
+      event_id: 3,
+    };
+    const errorResult = {
+      type: "client_tool_result",
+      tool_call_id: "call-1",
+      result: "Client tool with name open_settings is not defined on client",
+      is_error: true,
+    };
+
+    function createWithSpy(options: Partial<Options> = {}) {
+      const sendMessage = vi.fn();
+      const connection = {
+        ...noopConnection,
+        sendMessage,
+      } as unknown as BaseConnection;
+      const conversation = TestConversation.create(options, connection);
+      return { conversation, sendMessage };
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("sends an error result and reports it via onError without onUnhandledClientToolCall", async () => {
+      const onError = vi.fn();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const { conversation, sendMessage } = createWithSpy({ onError });
+
+      await conversation.receiveMessage({
+        type: "client_tool_call",
+        client_tool_call: toolCall,
+      });
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenCalledWith(errorResult);
+      expect(onError).toHaveBeenCalledWith(errorResult.result, {
+        clientToolName: "open_settings",
+      });
+    });
+
+    it("still sends an error result when onUnhandledClientToolCall is set", async () => {
+      const onError = vi.fn();
+      const onUnhandledClientToolCall = vi.fn();
+      const { conversation, sendMessage } = createWithSpy({
+        onError,
+        onUnhandledClientToolCall,
+      });
+
+      await conversation.receiveMessage({
+        type: "client_tool_call",
+        client_tool_call: toolCall,
+      });
+
+      expect(onUnhandledClientToolCall).toHaveBeenCalledWith(toolCall);
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenCalledWith(errorResult);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it("sends the error result even if onUnhandledClientToolCall throws", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const { conversation, sendMessage } = createWithSpy({
+        onError: vi.fn(),
+        onUnhandledClientToolCall: () => {
+          throw new Error("callback failed");
+        },
+      });
+
+      await conversation.receiveMessage({
+        type: "client_tool_call",
+        client_tool_call: toolCall,
+      });
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage).toHaveBeenCalledWith(errorResult);
     });
   });
 

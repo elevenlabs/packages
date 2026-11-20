@@ -44,6 +44,32 @@ describe("throttle", () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
+  it("fires once per window while called steadily", () => {
+    vi.useFakeTimers();
+    const fn = vi.fn();
+    const throttled = throttle(fn, 1000);
+
+    for (let elapsed = 0; elapsed < 5000; elapsed += 200) {
+      throttled();
+      vi.advanceTimersByTime(200);
+    }
+
+    expect(fn).toHaveBeenCalledTimes(5);
+  });
+
+  it("fires every call that comes slower than the wait window", () => {
+    vi.useFakeTimers();
+    const fn = vi.fn();
+    const throttled = throttle(fn, 1000);
+
+    for (let call = 0; call < 4; call++) {
+      throttled();
+      vi.advanceTimersByTime(1500);
+    }
+
+    expect(fn).toHaveBeenCalledTimes(4);
+  });
+
   it("resets the leading-edge window when cancelled", () => {
     vi.useFakeTimers();
     const fn = vi.fn();
@@ -85,5 +111,36 @@ describe("throttle", () => {
     vi.advanceTimersByTime(2000);
 
     expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("fires the trailing call once per window while called steadily", () => {
+    vi.useFakeTimers();
+    const fn = vi.fn();
+    const throttled = throttle(fn, 1000, { leading: false, trailing: true });
+
+    for (let elapsed = 0; elapsed < 5000; elapsed += 200) {
+      throttled(elapsed);
+      vi.advanceTimersByTime(200);
+    }
+
+    expect(fn).toHaveBeenCalledTimes(5);
+    expect(fn).toHaveBeenLastCalledWith(4800);
+  });
+
+  it("keeps leading and trailing calls at least one window apart", () => {
+    vi.useFakeTimers();
+    const firedAt: number[] = [];
+    const throttled = throttle(() => firedAt.push(Date.now()), 1000, {
+      trailing: true,
+    });
+
+    for (let elapsed = 0; elapsed < 5000; elapsed += 200) {
+      throttled();
+      vi.advanceTimersByTime(200);
+    }
+
+    const gaps = firedAt.slice(1).map((time, i) => time - firedAt[i]);
+    expect(firedAt).toHaveLength(6);
+    expect(gaps.every(gap => gap >= 1000)).toBe(true);
   });
 });

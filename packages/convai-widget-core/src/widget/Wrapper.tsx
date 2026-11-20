@@ -4,6 +4,7 @@ import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
 import { Root } from "../contexts/root-portal";
 import { Sheet } from "./Sheet";
+import { PageLayout } from "./PageLayout";
 import { Trigger } from "./Trigger";
 import { Placement } from "../types/config";
 import { useConversation } from "../contexts/conversation";
@@ -68,11 +69,15 @@ export const Wrapper = memo(function Wrapper() {
     () => config.value.transcript_enabled || config.value.text_input_enabled
   );
   const shadowHost = useShadowHost();
+  const isPage = useComputed(() => config.value.layout === "page");
   const className = useComputed(() =>
-    cn(
-      "overlay !flex transition-[opacity] duration-200 data-hidden:opacity-0",
-      PLACEMENT_CLASSES[config.value.placement]
-    )
+    isPage.value
+      ? // Fills the host, and centers the dialogs shown over the page behind a backdrop
+        "absolute inset-0 z-10 !flex items-center justify-center p-4 pointer-events-auto bg-[rgba(0,0,0,0.2)] transition-[opacity] duration-200 data-hidden:opacity-0"
+      : cn(
+          "overlay !flex transition-[opacity] duration-200 data-hidden:opacity-0",
+          PLACEMENT_CLASSES[config.value.placement]
+        )
   );
   const sheetVisible = useComputed(
     () => config.value.always_expanded || (expandable.value && expanded.value)
@@ -135,7 +140,8 @@ export const Wrapper = memo(function Wrapper() {
     if (!terms.termsAccepted.value && terms.termsShown.value) {
       return "terms";
     }
-    if (confirmationShown.value && !sheetVisible.value) {
+    // A page shows the confirmation over all of it, like its other dialogs
+    if (confirmationShown.value && (isPage.value || !sheetVisible.value)) {
       return "end-confirmation";
     }
     return "conversation";
@@ -160,13 +166,17 @@ export const Wrapper = memo(function Wrapper() {
     hidden.value = false;
   };
 
-  const showConversation = useComputed(() => isConversation.value && !hidden.value);
+  // A page stays in place behind its dialogs instead of giving way to them
+  const showConversation = useComputed(
+    () => (isPage.value || isConversation.value) && !hidden.value
+  );
   const showTerms = useComputed(() => isTerms.value && !hidden.value);
   const showError = useComputed(() => isError.value && !hidden.value);
   const showEndConfirmation = useComputed(
     () => isEndConfirmation.value && !hidden.value
   );
-  const showPoweredBy = useComputed(() => !hidden.value);
+  // The page layout places it under the chat column itself
+  const showPoweredBy = useComputed(() => !hidden.value && !isPage.value);
 
   // Only show dismiss button if dismissible is enabled AND call is not active
   const showDismiss = useComputed(() => config.value.dismissible && isDisconnected.value);
@@ -177,8 +187,13 @@ export const Wrapper = memo(function Wrapper() {
   return (
     <>
       <InOutTransition initial={false} active={showConversation}>
-        <Root className={className} style={HIDDEN_STYLE}>
-          {config.value.always_expanded ? (
+        <Root
+          className={isPage.value ? "absolute inset-0 !flex" : className}
+          style={HIDDEN_STYLE}
+        >
+          {isPage.value ? (
+            <PageLayout />
+          ) : config.value.always_expanded ? (
             <Sheet key="always-expanded" open />
           ) : (
             <>

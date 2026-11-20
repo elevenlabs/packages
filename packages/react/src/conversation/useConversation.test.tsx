@@ -211,6 +211,40 @@ describe("useConversation", () => {
     expect(onError).toHaveBeenCalledWith("something went wrong", { type: "unknown" });
   });
 
+  it("forwards knowledge_base overrides and initiation options to the SDK", async () => {
+    mockStartSessionWithLifecycle();
+    const overrides = {
+      agent: {
+        prompt: {
+          knowledge_base: [
+            { type: "file" as const, name: "Handbook", id: "kb_1" },
+          ],
+        },
+      },
+      turn: { noisyEnvironmentMessage: "It's a bit loud." },
+    };
+
+    const { result } = renderHook(() => useConversation(), {
+      wrapper: createWrapper({ overrides }),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        signedUrl: "wss://test.example.com",
+        branchId: "branch_1",
+        procedureIds: [],
+      });
+    });
+
+    expect(Conversation.startSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overrides,
+        branchId: "branch_1",
+        procedureIds: [],
+      })
+    );
+  });
+
   it("composes hook callbacks with provider callbacks", async () => {
     const providerOnConnect = vi.fn();
     const hookOnConnect = vi.fn();

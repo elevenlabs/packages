@@ -22,11 +22,14 @@ export function constructOverrides(
   };
 
   if (config.overrides) {
+    const turn = config.overrides.turn;
     overridesEvent.conversation_config_override = {
       agent: {
         prompt: config.overrides.agent?.prompt,
         first_message: config.overrides.agent?.firstMessage,
         language: config.overrides.agent?.language,
+        max_conversation_duration_message:
+          config.overrides.agent?.maxConversationDurationMessage,
       },
       tts: {
         voice_id: config.overrides.tts?.voiceId,
@@ -42,14 +45,50 @@ export function constructOverrides(
         stability: config.overrides.tts?.stability,
         similarity_boost: config.overrides.tts?.similarityBoost,
         clone_strength: config.overrides.tts?.cloneStrength,
+        pronunciation_dictionary_locators:
+          config.overrides.tts?.pronunciationDictionaryLocators,
+        supported_voices: config.overrides.tts?.supportedVoices,
       },
       ...(config.overrides.asr?.keywords !== undefined
         ? { asr: { keywords: config.overrides.asr.keywords } }
         : {}),
       conversation: {
         text_only: config.overrides.conversation?.textOnly,
+        max_duration_seconds: config.overrides.conversation?.maxDurationSeconds,
       },
+      ...(turn !== undefined
+        ? {
+            turn: {
+              ...(turn.softTimeoutConfig !== undefined
+                ? {
+                    soft_timeout_config: {
+                      message: turn.softTimeoutConfig.message,
+                      additional_soft_timeout_messages:
+                        turn.softTimeoutConfig.additionalSoftTimeoutMessages,
+                    },
+                  }
+                : {}),
+              noisy_environment_message: turn.noisyEnvironmentMessage,
+            },
+          }
+        : {}),
     };
+  }
+
+  if (config.branchId !== undefined) {
+    overridesEvent.branch_id = config.branchId;
+  }
+
+  if (config.startingWorkflowNodeId !== undefined) {
+    overridesEvent.starting_workflow_node_id = config.startingWorkflowNodeId;
+  }
+
+  if (config.procedureIds !== undefined) {
+    overridesEvent.procedure_ids = config.procedureIds;
+  }
+
+  if (config.startProcedureIds !== undefined) {
+    overridesEvent.start_procedure_ids = config.startProcedureIds;
   }
 
   if (config.customLlmExtraBody) {

@@ -3,6 +3,8 @@ import type { FormatConfig } from "../../utils/BaseConnection.js";
 import { isIosDevice } from "./compatibility.js";
 import type { AudioWorkletConfig } from "../../BaseConversation.js";
 import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
+import { disconnectAudioNode } from "./disconnectAudioNode.js";
+import { waitForResampler } from "./waitForResampler.js";
 import {
   DEFAULT_INPUT_CHUNK_DURATION_MS,
   type InputController,
@@ -92,6 +94,10 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       });
 
       const source = context.createMediaStreamSource(inputStream);
+      const resamplerReady =
+        context.sampleRate !== sampleRate
+          ? waitForResampler(worklet)
+          : Promise.resolve();
       worklet.port.postMessage({
         type: "setFormat",
         format,
@@ -102,7 +108,7 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       source.connect(analyser);
       analyser.connect(worklet);
 
-      await context.resume();
+      await Promise.all([context.resume(), resamplerReady]);
 
       const permissions = await navigator.permissions.query({
         name: "microphone",
@@ -196,12 +202,19 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
     this.mediaStreamSource.disconnect();
   }
 
+  private closed = false;
   public async close() {
+    this.closed = true;
     this.forgetInputStreamAndSource();
     this.permissions.removeEventListener(
       "change",
       this.handlePermissionsChange
     );
+    // The worklet is a sink, so it may have no outgoing connection.
+    // Closing the port drops PCM listeners without removing ones callers own.
+    disconnectAudioNode(this.worklet);
+    disconnectAudioNode(this.analyser);
+    this.worklet.port.close();
     await this.context.close();
   }
 
@@ -246,6 +259,14 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
       const newInputStream = await navigator.mediaDevices.getUserMedia({
         audio: constraints,
       });
+
+      // close() ran while waiting for the new stream, so nothing would stop it.
+      if (this.closed) {
+        for (const track of newInputStream.getTracks()) {
+          track.stop();
+        }
+        return;
+      }
 
       this.forgetInputStreamAndSource();
 

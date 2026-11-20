@@ -13,6 +13,7 @@ import {
   RoomEvent,
   Track,
   ConnectionState,
+  DisconnectReason,
   createLocalAudioTrack,
 } from "livekit-client";
 import type {
@@ -56,6 +57,16 @@ function isAvatar(room: Room, participant: Participant): boolean {
     return false;
   }
 }
+
+// Reasons LiveKit gives when the room was closed on purpose. Any other reason,
+// or none, means the connection failed.
+const DELIBERATE_DISCONNECT_REASONS: ReadonlySet<DisconnectReason | undefined> =
+  new Set([
+    DisconnectReason.CLIENT_INITIATED,
+    DisconnectReason.PARTICIPANT_REMOVED,
+    DisconnectReason.ROOM_DELETED,
+    DisconnectReason.ROOM_CLOSED,
+  ]);
 
 // Convert WSS origin to HTTPS for API calls
 function convertWssToHttps(origin: string): string {
@@ -419,10 +430,18 @@ export class WebRTCConnection extends BaseConnection {
 
     this.room.on(RoomEvent.Disconnected, reason => {
       this.isConnected = false;
-      this.disconnect({
-        reason: "agent",
-        context: { type: "close", reason: reason?.toString() },
-      });
+      const context = { type: "close", reason: reason?.toString() };
+      this.disconnect(
+        DELIBERATE_DISCONNECT_REASONS.has(reason)
+          ? { reason: "agent", context }
+          : {
+              reason: "error",
+              message: `LiveKit room disconnected: ${
+                DisconnectReason[reason ?? DisconnectReason.UNKNOWN_REASON]
+              }`,
+              context,
+            }
+      );
     });
 
     this.room.on(RoomEvent.ConnectionStateChanged, state => {
@@ -535,9 +554,22 @@ export class WebRTCConnection extends BaseConnection {
         if (isAvatar(this.room, participant)) {
           this.updateMode("listening");
         } else if (participant.identity?.startsWith("agent")) {
-          this.disconnect({
-            reason: "agent",
-            context: { type: "close", reason: "agent disconnected" },
+          // A full reconnect drops every remote participant before the room
+          // leaves the connected state, so read the state once LiveKit is done.
+          queueMicrotask(() => {
+            const state = this.room.state;
+            this.disconnect(
+              state === ConnectionState.Connected
+                ? {
+                    reason: "agent",
+                    context: { type: "close", reason: "agent disconnected" },
+                  }
+                : {
+                    reason: "error",
+                    message: `LiveKit connection state changed to ${state}`,
+                    context: { type: "connection_state_changed" },
+                  }
+            );
           });
         }
       }

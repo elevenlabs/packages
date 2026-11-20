@@ -1,5 +1,11 @@
 # @elevenlabs/types
 
+## 0.30.0
+
+### Minor Changes
+
+- 7eedbeb: Sync the conversation initiation types with the published AsyncAPI spec and expose the new overrides, including the prompt knowledge base, on the session config.
+
 ## 0.29.0
 
 ### Minor Changes

@@ -14,6 +14,7 @@ export {
   useConversationFeedback,
   useRawConversation,
   useConversation,
+  useConversationClientTool,
   type UseConversationOptions,
   type ConversationControlsValue,
   type ConversationInputValue,

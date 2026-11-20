@@ -5,7 +5,9 @@ const mockCalls = {
   setMicrophoneEnabled: [] as boolean[],
 };
 
-vi.mock("livekit-client", () => {
+vi.mock("livekit-client", async importOriginal => {
+  const { DisconnectReason } =
+    await importOriginal<typeof import("livekit-client")>();
   const mockLocalParticipant = {
     setMicrophoneEnabled: vi.fn((enabled: boolean) => {
       (globalThis as Record<string, unknown>).__mockCalls__ ??= {
@@ -56,13 +58,16 @@ vi.mock("livekit-client", () => {
     ConnectionState: {
       Connected: "connected",
       Disconnected: "disconnected",
+      Reconnecting: "reconnecting",
+      SignalReconnecting: "signalReconnecting",
     },
+    DisconnectReason,
     createLocalAudioTrack: vi.fn(),
   };
 });
 
 import { WebRTCConnection } from "./WebRTCConnection.js";
-import { Room, createLocalAudioTrack } from "livekit-client";
+import { Room, createLocalAudioTrack, DisconnectReason } from "livekit-client";
 import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 import { NO_VOLUME } from "./volumeProvider.js";
@@ -408,6 +413,8 @@ describe("WebRTCConnection", () => {
         }
       );
 
+      mockRoom.state = "connected";
+
       const connection = await WebRTCConnection.create({
         conversationToken: "test-token",
         connectionType: "webrtc",
@@ -421,11 +428,81 @@ describe("WebRTCConnection", () => {
       const onDisconnect = vi.fn();
       connection.onDisconnect(onDisconnect);
 
-      eventHandlers.get("disconnected")?.("client_initiated");
+      eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
 
       expect(onDisconnect).toHaveBeenCalledWith({
         reason: "agent",
-        context: { type: "close", reason: "client_initiated" },
+        context: {
+          type: "close",
+          reason: String(DisconnectReason.CLIENT_INITIATED),
+        },
+      });
+    });
+
+    it.each(
+      [
+        DisconnectReason.ROOM_DELETED,
+        DisconnectReason.ROOM_CLOSED,
+        DisconnectReason.PARTICIPANT_REMOVED,
+      ].map(reason => ({ reason, name: DisconnectReason[reason] }))
+    )(
+      "reports the agent when the server closes the room with $name",
+      async ({ reason }) => {
+        const { connection, eventHandlers } = await createWithHandlers();
+        const onDisconnect = vi.fn();
+        connection.onDisconnect(onDisconnect);
+
+        eventHandlers.get("disconnected")?.(reason);
+
+        expect(onDisconnect).toHaveBeenCalledOnce();
+        expect(onDisconnect).toHaveBeenCalledWith({
+          reason: "agent",
+          context: { type: "close", reason: String(reason) },
+        });
+      }
+    );
+
+    it.each(
+      [
+        DisconnectReason.UNKNOWN_REASON,
+        DisconnectReason.SERVER_SHUTDOWN,
+        DisconnectReason.JOIN_FAILURE,
+        DisconnectReason.SIGNAL_CLOSE,
+        DisconnectReason.CONNECTION_TIMEOUT,
+        DisconnectReason.MEDIA_FAILURE,
+        DisconnectReason.AGENT_ERROR,
+      ].map(reason => ({ reason, name: DisconnectReason[reason] }))
+    )(
+      "reports an error when the room disconnects with $name",
+      async ({ reason }) => {
+        const { connection, eventHandlers } = await createWithHandlers();
+        const onDisconnect = vi.fn();
+        connection.onDisconnect(onDisconnect);
+
+        eventHandlers.get("disconnected")?.(reason);
+
+        expect(onDisconnect).toHaveBeenCalledOnce();
+        expect(onDisconnect).toHaveBeenCalledWith({
+          reason: "error",
+          message: `LiveKit room disconnected: ${DisconnectReason[reason]}`,
+          context: { type: "close", reason: String(reason) },
+        });
+      }
+    );
+
+    // LiveKit emits Disconnected without a reason when it gives up
+    // reconnecting.
+    it("reports an error when the room disconnects without a reason", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("disconnected")?.(undefined);
+
+      expect(onDisconnect).toHaveBeenCalledWith({
+        reason: "error",
+        message: "LiveKit room disconnected: UNKNOWN_REASON",
+        context: { type: "close", reason: undefined },
       });
     });
 
@@ -451,11 +528,70 @@ describe("WebRTCConnection", () => {
       eventHandlers.get("participantDisconnected")?.({
         identity: "agent_123",
       });
+      await Promise.resolve();
 
       expect(onDisconnect).toHaveBeenCalledWith({
         reason: "agent",
         context: { type: "close", reason: "agent disconnected" },
       });
+    });
+
+    // A full reconnect drops every remote participant before the room leaves
+    // the connected state, so the agent's departure is a symptom of the
+    // failure rather than the agent ending the call.
+    it.each(["reconnecting", "signalReconnecting"])(
+      "reports an error when the agent drops out while the room is %s",
+      async state => {
+        const { connection, eventHandlers, mockRoom } =
+          await createWithHandlers();
+        const onDisconnect = vi.fn();
+        connection.onDisconnect(onDisconnect);
+
+        eventHandlers.get("participantDisconnected")?.({
+          identity: "agent_123",
+        });
+        mockRoom.state = state;
+        eventHandlers.get("connectionStateChanged")?.(state);
+        await Promise.resolve();
+
+        expect(onDisconnect).toHaveBeenCalledOnce();
+        expect(onDisconnect).toHaveBeenCalledWith({
+          reason: "error",
+          message: `LiveKit connection state changed to ${state}`,
+          context: { type: "connection_state_changed" },
+        });
+      }
+    );
+
+    it("keeps an error reported after the agent drops out of a failing room", async () => {
+      const { connection, eventHandlers, mockRoom } =
+        await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("participantDisconnected")?.({
+        identity: "agent_123",
+      });
+      mockRoom.state = "disconnected";
+      eventHandlers.get("connectionStateChanged")?.("disconnected");
+      eventHandlers.get("disconnected")?.(DisconnectReason.SIGNAL_CLOSE);
+      await Promise.resolve();
+
+      expect(onDisconnect).toHaveBeenCalledOnce();
+      expect(onDisconnect).toHaveBeenCalledWith(
+        expect.objectContaining({ reason: "error" })
+      );
+    });
+
+    it("ignores a non-agent participant leaving", async () => {
+      const { connection, eventHandlers } = await createWithHandlers();
+      const onDisconnect = vi.fn();
+      connection.onDisconnect(onDisconnect);
+
+      eventHandlers.get("participantDisconnected")?.({ identity: "user_1" });
+      await Promise.resolve();
+
+      expect(onDisconnect).not.toHaveBeenCalled();
     });
   });
 
