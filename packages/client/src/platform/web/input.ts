@@ -227,12 +227,13 @@ export class MediaDeviceInput implements InputController, InputEventTarget {
   public async setDevice(
     config?: Partial<FormatConfig> & InputDeviceConfig
   ): Promise<void> {
-    try {
-      if (this.settingInput) {
-        throw new Error("Input device is already being set");
-      }
-      this.settingInput = true;
+    // Reject before try so this call cannot clear another switch's guard.
+    if (this.settingInput) {
+      throw new Error("Input device is already being set");
+    }
+    this.settingInput = true;
 
+    try {
       // Extract inputDeviceId from config
       const inputDeviceId = config?.inputDeviceId;
 
