@@ -52,7 +52,7 @@ function installInputEnvironment() {
     close: vi.fn().mockResolvedValue(undefined),
     resume: vi.fn().mockResolvedValue(undefined),
     createAnalyser: vi.fn(() => analyser),
-    createMediaStreamSource: vi.fn(() => source),
+    createMediaStreamSource: vi.fn((_stream: MediaStream) => source),
     audioWorklet: {},
   };
 
@@ -162,5 +162,160 @@ describe("MediaDeviceInput.close", () => {
     await expect(input.close()).rejects.toBe(closeError);
     expect(env.track.stop).toHaveBeenCalledOnce();
     expect(env.port.close).toHaveBeenCalledOnce();
+  });
+});
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>(res => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+function streamFor(deviceId: string) {
+  const track = {
+    stop: vi.fn(),
+    getSettings: vi.fn(() => ({ deviceId, sampleRate: 16000 })),
+  };
+  return {
+    stream: {
+      id: deviceId,
+      getTracks: () => [track],
+      getAudioTracks: () => [track],
+    } as unknown as MediaStream,
+    track,
+  };
+}
+
+describe("MediaDeviceInput.setDevice", () => {
+  afterEach(() => {
+    vi.mocked(loadRawAudioProcessor).mockReset();
+    vi.unstubAllGlobals();
+  });
+
+  function recordInstalledDevices(
+    env: ReturnType<typeof installInputEnvironment>
+  ) {
+    const installed: string[] = [];
+    env.audioContext.createMediaStreamSource.mockImplementation(stream => {
+      const node = {
+        connect: vi.fn(() => {
+          installed.push(stream.id);
+        }),
+        disconnect: vi.fn(),
+      };
+      return node as ReturnType<
+        typeof env.audioContext.createMediaStreamSource
+      >;
+    });
+    return installed;
+  }
+
+  it("rejects an overlapping switch and installs the in-progress device", async () => {
+    const env = installInputEnvironment();
+    const onError = vi.fn();
+    const input = await MediaDeviceInput.create({ ...INPUT, onError });
+    const headset = streamFor("headset");
+    const headsetGate = deferred<MediaStream>();
+    let captureCalls = 0;
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementation(() => {
+      captureCalls += 1;
+      return headsetGate.promise;
+    });
+    const installed = recordInstalledDevices(env);
+
+    const first = input.setDevice({ inputDeviceId: "headset" });
+    try {
+      await expect(
+        input.setDevice({ inputDeviceId: "laptop" })
+      ).rejects.toThrow("Input device is already being set");
+      expect(onError).not.toHaveBeenCalled();
+      expect(captureCalls).toBe(1);
+
+      headsetGate.resolve(headset.stream);
+      await first;
+
+      expect(installed).toEqual(["headset"]);
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenLastCalledWith({
+        audio: expect.objectContaining({
+          deviceId: { exact: "headset" },
+        }),
+      });
+    } finally {
+      headsetGate.resolve(headset.stream);
+      await first.catch(() => undefined);
+      await input.close();
+    }
+  });
+
+  it("keeps rejecting retries after a rejected overlap until the original switch finishes", async () => {
+    const env = installInputEnvironment();
+    const onError = vi.fn();
+    const input = await MediaDeviceInput.create({ ...INPUT, onError });
+    const headset = streamFor("headset");
+    const laptop = streamFor("laptop");
+    const headsetGate = deferred<MediaStream>();
+    const laptopGate = deferred<MediaStream>();
+    let captureCalls = 0;
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementation(() => {
+      captureCalls += 1;
+      return captureCalls === 1 ? headsetGate.promise : laptopGate.promise;
+    });
+    const installed = recordInstalledDevices(env);
+
+    const first = input.setDevice({ inputDeviceId: "headset" });
+    try {
+      await expect(
+        input.setDevice({ inputDeviceId: "laptop" })
+      ).rejects.toThrow("Input device is already being set");
+
+      const retry = input.setDevice({ inputDeviceId: "laptop" });
+      // Complete the retry's capture first. It must not be the stream that sticks.
+      laptopGate.resolve(laptop.stream);
+      await expect(retry).rejects.toThrow("Input device is already being set");
+      expect(onError).not.toHaveBeenCalled();
+      expect(installed).toEqual([]);
+      expect(captureCalls).toBe(1);
+
+      headsetGate.resolve(headset.stream);
+      await first;
+
+      expect(installed).toEqual(["headset"]);
+      expect(laptop.track.stop).not.toHaveBeenCalled();
+    } finally {
+      headsetGate.resolve(headset.stream);
+      laptopGate.resolve(laptop.stream);
+      await first.catch(() => undefined);
+      await input.close();
+    }
+  });
+
+  it("stops the new microphone and clears the guard when close() runs during a switch", async () => {
+    const env = installInputEnvironment();
+    const input = await MediaDeviceInput.create(INPUT);
+    const headset = streamFor("headset");
+    const headsetGate = deferred<MediaStream>();
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(
+      () => headsetGate.promise
+    );
+
+    const switching = input.setDevice({ inputDeviceId: "headset" });
+    const closing = input.close();
+    headsetGate.resolve(headset.stream);
+    await switching;
+    await closing;
+
+    expect(headset.track.stop).toHaveBeenCalledOnce();
+    expect(env.audioContext.createMediaStreamSource).toHaveBeenCalledOnce();
+
+    const laptop = streamFor("laptop");
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockResolvedValueOnce(
+      laptop.stream
+    );
+    await expect(
+      input.setDevice({ inputDeviceId: "laptop" })
+    ).resolves.toBeUndefined();
+    expect(laptop.track.stop).toHaveBeenCalledOnce();
   });
 });
