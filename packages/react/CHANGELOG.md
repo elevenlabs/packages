@@ -1,5 +1,15 @@
 # @elevenlabs/react
 
+## 1.23.2
+
+### Patch Changes
+
+- 232f21c: A client tool call for a tool that isn't in `clientTools` is now always answered with an error `client_tool_result`, including when `onUnhandledClientToolCall` is set. Previously, setting that callback stopped the result from being sent, leaving the agent waiting on a tool call nothing would answer. `onUnhandledClientToolCall` is still called, and still replaces the `onError` report.
+- Updated dependencies [bca0531]
+- Updated dependencies [232f21c]
+- Updated dependencies [12bec81]
+  - @elevenlabs/client@1.37.2
+
 ## 1.23.1
 
 ### Patch Changes

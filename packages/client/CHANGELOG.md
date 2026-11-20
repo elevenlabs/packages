@@ -1,5 +1,13 @@
 # @elevenlabs/client
 
+## 1.37.2
+
+### Patch Changes
+
+- bca0531: Release the microphone when a voice session ends while `changeInputDevice()` is still waiting for the new device.
+- 232f21c: A client tool call for a tool that isn't in `clientTools` is now always answered with an error `client_tool_result`, including when `onUnhandledClientToolCall` is set. Previously, setting that callback stopped the result from being sent, leaving the agent waiting on a tool call nothing would answer. `onUnhandledClientToolCall` is still called, and still replaces the `onError` report.
+- 12bec81: Wait for the agent to join the room before sending conversation initiation data over WebRTC. Pass `webRtc: { waitForAgent: false }` to opt out.
+
 ## 1.37.1
 
 ### Patch Changes
