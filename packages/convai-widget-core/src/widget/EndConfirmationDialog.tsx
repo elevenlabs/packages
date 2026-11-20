@@ -25,6 +25,7 @@ export function EndConfirmationDialog({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         cancelEnd();
       }
     };

@@ -128,23 +128,6 @@ export const Wrapper = memo(function Wrapper() {
     );
   });
 
-  useSignalEffect(() => {
-    if (
-      config.value.layout !== "side-panel" ||
-      config.value.always_expanded ||
-      !expanded.value
-    ) {
-      return;
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) {
-        expanded.value = false;
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  });
-
   // Collapsing the sheet dismisses a confirmation shown on top of it
   useSignalEffect(() => {
     if (!expanded.value) {
@@ -200,6 +183,28 @@ export const Wrapper = memo(function Wrapper() {
   const isEndConfirmation = useComputed(
     () => state.value === "end-confirmation"
   );
+
+  useSignalEffect(() => {
+    if (
+      config.value.layout !== "side-panel" ||
+      config.value.always_expanded ||
+      !expanded.value
+    ) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) {
+        return;
+      }
+      // Escape belongs to a dialog shown over the panel, like terms or end confirmation
+      if (!isConversation.peek() || confirmationShown.peek()) {
+        return;
+      }
+      expanded.value = false;
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  });
 
   const handleClose = () => {
     expanded.value = false;

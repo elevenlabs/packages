@@ -1296,6 +1296,48 @@ describe("elevenlabs-convai", () => {
       await userEvent.keyboard("{Escape}");
       await expect.element(textInput()).not.toBeInTheDocument();
     });
+
+    it("should leave Escape to the terms dialog over it", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+      });
+
+      await openPanel(widget);
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await expect.element(page.getByText("Test terms")).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+      // Longer than the panel's slide out
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      await expect.element(page.getByText("Test terms")).toBeVisible();
+      expect(
+        widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-shown")
+      ).toBe("true");
+    });
+
+    it("should leave Escape to the end confirmation over it", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        layout: "side-panel",
+        "end-confirmation": "true",
+      });
+
+      await openPanel(widget);
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+      await page.getByRole("button", { name: "End", exact: true }).click();
+      const confirm = page.getByRole("button", { name: "End call" });
+      await expect.element(confirm).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+
+      await expect.element(confirm).not.toBeInTheDocument();
+      await expect.element(textInput()).toBeVisible();
+    });
   });
 
   describe("expanded event", () => {
