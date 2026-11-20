@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { JSX } from "preact";
+import { SVGAttributes } from "preact";
 
 const ICON_MAP = {
   phone: PhoneIcon,
@@ -53,7 +53,7 @@ export function Icon({ name, size = "md", className }: IconProps) {
   );
 }
 
-function PhoneIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function PhoneIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -68,7 +68,7 @@ function PhoneIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function PhoneSlashIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function PhoneSlashIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -84,7 +84,7 @@ function PhoneSlashIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function PaperclipIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function PaperclipIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +104,7 @@ function PaperclipIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function ChatIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function ChatIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -123,7 +123,7 @@ function ChatIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function MicIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function MicIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -139,7 +139,7 @@ function MicIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function MicOffIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function MicOffIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -155,7 +155,7 @@ function MicOffIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function SoundwaveIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function SoundwaveIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -174,7 +174,7 @@ function SoundwaveIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function ArrowDownIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function ArrowDownIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -194,7 +194,7 @@ function ArrowDownIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function ChevronDownIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function ChevronDownIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -213,7 +213,7 @@ function ChevronDownIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function ChevronUpIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function ChevronUpIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -232,7 +232,7 @@ function ChevronUpIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function CheckIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function CheckIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -251,7 +251,7 @@ function CheckIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function SendIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function SendIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -266,7 +266,7 @@ function SendIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function StarIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function StarIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       height="1em"
@@ -281,7 +281,7 @@ function StarIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function CopyIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function CopyIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -301,7 +301,7 @@ function CopyIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function DownloadIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function DownloadIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -322,7 +322,7 @@ function DownloadIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function WrapTextIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function WrapTextIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -458,7 +458,7 @@ export function FeedbackIcon({
   );
 }
 
-function MaximizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function MaximizeIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -480,7 +480,7 @@ function MaximizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function MinimizeIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -502,7 +502,7 @@ function MinimizeIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function LoaderIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function LoaderIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -521,7 +521,7 @@ function LoaderIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function StopIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function StopIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -538,7 +538,7 @@ function StopIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
   );
 }
 
-function XIcon(props: JSX.HTMLAttributes<SVGSVGElement>) {
+function XIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

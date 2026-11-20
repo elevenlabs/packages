@@ -1,8 +1,8 @@
-import { HTMLAttributes } from "preact/compat";
+import { ButtonHTMLAttributes } from "preact/compat";
 import { clsx } from "clsx";
 import { Avatar } from "./Avatar";
 
-interface ExpandButtonProps extends HTMLAttributes<HTMLButtonElement> {
+interface ExpandButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   onExpand?: () => void;
 }
 

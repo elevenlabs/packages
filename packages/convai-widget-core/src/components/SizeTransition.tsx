@@ -154,7 +154,6 @@ function Animated({
       {...handlers}
     >
       <div
-        ref={setWrapper}
         className={clsx(
           "min-h-min transition-opacity duration-200",
           shrink ? "min-w-0" : "shrink-0 min-w-min",
@@ -162,6 +161,7 @@ function Animated({
           className
         )}
         {...rest}
+        ref={setWrapper}
       >
         {(visible || retain) && cachedChildren.current}
       </div>
