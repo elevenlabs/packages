@@ -9,6 +9,7 @@ import {
 import { ConversationProvider } from "./ConversationProvider.js";
 import {
   ConversationContext,
+  useRawConversation,
   type ConversationContextValue,
 } from "./ConversationContext.js";
 import { useConversationStatus } from "./ConversationStatus.js";
@@ -30,7 +31,13 @@ const createMockConversation = (id = "test-id") =>
 function useTestHook() {
   const ctx = useContext(ConversationContext) as ConversationContextValue;
   const status = useConversationStatus();
-  return { startSession: ctx.startSession, endSession: ctx.endSession, status };
+  const conversation = useRawConversation();
+  return {
+    startSession: ctx.startSession,
+    endSession: ctx.endSession,
+    status,
+    conversation,
+  };
 }
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -103,9 +110,15 @@ describe("ConversationStatus", () => {
     expect(result.current.status.status).toBe("disconnected");
   });
 
-  it("sets error status and message from onError callback", async () => {
+  it("keeps the session connected when a mid-session error is reported", async () => {
     const mockConversation = createMockConversation();
-    vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      driveConnectedSessionLifecycle(
+        options as MockStartSessionOptions,
+        mockConversation
+      );
+      return mockConversation;
+    });
 
     const { result } = renderHook(() => useTestHook(), {
       wrapper: createWrapper(),
@@ -117,15 +130,54 @@ describe("ConversationStatus", () => {
 
     const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
 
+    // The client reports recoverable problems (unregistered client tool,
+    // throwing tool handler, server "error" event, MCP approval failure)
+    // through onError without closing the socket. The session is still
+    // usable, so consumers gating on status === "connected" must keep working.
     act(() => {
-      opts.onError!("Something went wrong");
+      opts.onError!("Client tool with name foo is not defined on client");
     });
 
-    expect(result.current.status.status).toBe("error");
-    expect(result.current.status.message).toBe("Something went wrong");
+    expect(result.current.status.status).toBe("connected");
+    expect(result.current.status.message).toBe(
+      "Client tool with name foo is not defined on client"
+    );
+    expect(result.current.conversation).toBe(mockConversation);
   });
 
-  it("clears error message when status transitions to non-error", async () => {
+  it("keeps the error message after the session ends", async () => {
+    const mockConversation = createMockConversation();
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      driveConnectedSessionLifecycle(
+        options as MockStartSessionOptions,
+        mockConversation
+      );
+      return mockConversation;
+    });
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+
+    act(() => {
+      opts.onError!("Server error: agent failed");
+    });
+    act(() => {
+      opts.onStatusChange!({ status: "disconnecting" });
+      opts.onStatusChange!({ status: "disconnected" });
+    });
+
+    expect(result.current.status.status).toBe("disconnected");
+    expect(result.current.status.message).toBe("Server error: agent failed");
+  });
+
+  it("clears the error message when a new connection attempt starts", async () => {
     const mockConversation = createMockConversation();
     vi.mocked(Conversation.startSession).mockResolvedValue(mockConversation);
 
@@ -142,13 +194,12 @@ describe("ConversationStatus", () => {
     act(() => {
       opts.onError!("Something went wrong");
     });
-    expect(result.current.status.status).toBe("error");
     expect(result.current.status.message).toBe("Something went wrong");
 
     act(() => {
-      opts.onStatusChange!({ status: "connected" });
+      opts.onStatusChange!({ status: "connecting" });
     });
-    expect(result.current.status.status).toBe("connected");
+    expect(result.current.status.status).toBe("connecting");
     expect(result.current.status.message).toBeUndefined();
   });
 
@@ -193,6 +244,41 @@ describe("ConversationStatus", () => {
 
     expect(result.current.status.status).toBe("error");
     expect(result.current.status.message).toBe("boom");
+  });
+
+  it("transitions to error status when onConnect throws after teardown runs", async () => {
+    const mockConversation = createMockConversation();
+    // Mirror the real SDK: a throwing onConnect is caught by startSession,
+    // which tears the session down (firing the disconnect statuses) before
+    // rejecting — so the provider's synthesized onError lands last.
+    vi.mocked(Conversation.startSession).mockImplementation(async options => {
+      const opts = options as MockStartSessionOptions;
+      try {
+        driveConnectedSessionLifecycle(opts, mockConversation);
+        return mockConversation;
+      } catch (error) {
+        opts.onStatusChange?.({ status: "disconnecting" });
+        opts.onStatusChange?.({ status: "disconnected" });
+        opts.onDisconnect?.({ reason: "user" });
+        throw error;
+      }
+    });
+
+    const { result } = renderHook(() => useTestHook(), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.startSession({
+        onConnect: () => {
+          throw new Error("boom");
+        },
+      });
+    });
+
+    expect(result.current.status.status).toBe("error");
+    expect(result.current.status.message).toBe("boom");
+    expect(result.current.conversation).toBeNull();
   });
 
   it("reports disconnecting as disconnected (conversation is already released)", async () => {
