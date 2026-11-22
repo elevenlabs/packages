@@ -1674,4 +1674,365 @@ describe("WebRTCConnection", () => {
       await result;
     });
   });
+
+  describe("overlapping input device switches", () => {
+    type MockTrack = {
+      mediaStreamTrack: { id: string; kind: string };
+      mute: ReturnType<typeof vi.fn>;
+      unmute: ReturnType<typeof vi.fn>;
+      stop: ReturnType<typeof vi.fn>;
+    };
+
+    function createMockTrack(id: string): MockTrack {
+      return {
+        mediaStreamTrack: { id, kind: "audio" },
+        mute: vi.fn(() => Promise.resolve()),
+        unmute: vi.fn(() => Promise.resolve()),
+        stop: vi.fn(),
+      };
+    }
+
+    let mockRoom: any;
+    let connection: WebRTCConnection | undefined;
+    let publishedTracks: unknown[];
+    let micPublication: { track: unknown } | undefined;
+    let pendingCaptures: Map<
+      string,
+      {
+        resolve: () => void;
+        reject: (error: Error) => void;
+        track: MockTrack;
+      }
+    >;
+
+    async function createConnectionWithMic() {
+      mockRoom = new Room() as any;
+      publishedTracks = [];
+      micPublication = undefined;
+      pendingCaptures = new Map();
+
+      const oldTrack = createMockTrack("old-track");
+      publishedTracks.push(oldTrack);
+      micPublication = { track: oldTrack };
+
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => micPublication);
+      // Model livekit-client 2.21.0: unpublishTrack drops the publication
+      // from its maps before its first await.
+      (
+        mockRoom.localParticipant.unpublishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementation((track: unknown) => {
+        publishedTracks = publishedTracks.filter(
+          published => published !== track
+        );
+        if (micPublication?.track === track) {
+          micPublication = undefined;
+        }
+        return Promise.resolve();
+      });
+      (
+        mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementation((track: unknown) => {
+        publishedTracks.push(track);
+        micPublication = { track };
+        return Promise.resolve();
+      });
+      (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockImplementation(
+        (options: { deviceId: { exact: string } }) => {
+          const deviceId = options.deviceId.exact;
+          const track = createMockTrack(`track-${deviceId}`);
+          let resolveCapture!: () => void;
+          let rejectCapture!: (error: Error) => void;
+          const capture = new Promise<MockTrack>((resolve, reject) => {
+            resolveCapture = () => resolve(track);
+            rejectCapture = reject;
+          });
+          pendingCaptures.set(deviceId, {
+            resolve: resolveCapture,
+            reject: rejectCapture,
+            track,
+          });
+          return capture;
+        }
+      );
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "connected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: () => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(callback);
+          }
+        }
+      );
+
+      connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      return { oldTrack };
+    }
+
+    afterEach(() => {
+      connection?.close();
+      connection = undefined;
+      if (mockRoom) {
+        (
+          mockRoom.localParticipant.getTrackPublication as ReturnType<
+            typeof vi.fn
+          >
+        ).mockReset();
+        (
+          mockRoom.localParticipant.unpublishTrack as ReturnType<typeof vi.fn>
+        ).mockReset();
+        (
+          mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+        ).mockReset();
+      }
+      (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockReset();
+    });
+
+    it("rejects the second overlapping switch and publishes only the first device", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      const secondSwitch = connection!.setAudioInputDevice("device-b");
+      pendingCaptures.get("device-a")!.resolve();
+      pendingCaptures.get("device-b")?.resolve();
+
+      const [first, second] = await Promise.allSettled([
+        firstSwitch,
+        secondSwitch,
+      ]);
+
+      expect(first.status).toBe("fulfilled");
+      expect(second.status).toBe("rejected");
+      expect((second as PromiseRejectedResult).reason).toMatchObject({
+        message: "Input device is already being set",
+      });
+
+      // The rejected call never captured a device, so the older request
+      // cannot win and no second track can be published.
+      expect(createLocalAudioTrack).toHaveBeenCalledTimes(1);
+      expect(createLocalAudioTrack).toHaveBeenCalledWith(
+        expect.objectContaining({ deviceId: { exact: "device-a" } })
+      );
+      expect(publishedTracks).toEqual([pendingCaptures.get("device-a")!.track]);
+      expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+        oldTrack
+      );
+    });
+
+    it("mutes the only published track after an overlapping switch attempt", async () => {
+      await createConnectionWithMic();
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      const secondSwitch = connection!.setAudioInputDevice("device-b");
+      pendingCaptures.get("device-a")!.resolve();
+      pendingCaptures.get("device-b")?.resolve();
+      await Promise.allSettled([firstSwitch, secondSwitch]);
+
+      await connection!.input.setMuted(true);
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-a")!.track);
+      expect((publishedTracks[0] as MockTrack).mute).toHaveBeenCalled();
+      expect(connection!.input.isMuted()).toBe(true);
+    });
+
+    it("releases the guard after a publish failure so the next switch can run", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+
+      (
+        mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(new Error("publish failed"));
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await expect(failedSwitch).rejects.toThrow("publish failed");
+
+      expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+        oldTrack
+      );
+      expect(publishedTracks).toEqual([]);
+      expect(pendingCaptures.get("device-a")!.track.stop).toHaveBeenCalled();
+
+      const retrySwitch = connection!.setAudioInputDevice("device-b");
+      pendingCaptures.get("device-b")!.resolve();
+      await retrySwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-b")!.track);
+    });
+
+    it("rejects the startup microphone publish while a switch is in progress", async () => {
+      await createConnectionWithMic();
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      await expect(
+        (
+          connection as unknown as {
+            enableMicrophone: (deviceId: string) => Promise<void>;
+          }
+        ).enableMicrophone("device-c")
+      ).rejects.toThrow("Input device is already being set");
+      expect(pendingCaptures.has("device-c")).toBe(false);
+
+      pendingCaptures.get("device-a")!.resolve();
+      await firstSwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-a")!.track);
+    });
+
+    it("rejects a switch while the startup microphone publish is in progress", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+
+      const startupPublish = (
+        connection as unknown as {
+          enableMicrophone: (deviceId: string) => Promise<void>;
+        }
+      ).enableMicrophone("device-c");
+      await expect(connection!.setAudioInputDevice("device-a")).rejects.toThrow(
+        "Input device is already being set"
+      );
+      expect(pendingCaptures.has("device-a")).toBe(false);
+
+      pendingCaptures.get("device-c")!.resolve();
+      await startupPublish;
+
+      const retrySwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await retrySwitch;
+
+      expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+        pendingCaptures.get("device-c")!.track
+      );
+      expect(publishedTracks).toEqual([
+        oldTrack,
+        pendingCaptures.get("device-a")!.track,
+      ]);
+    });
+
+    it("does not let setMuted publish a second track during a switch", async () => {
+      await createConnectionWithMic();
+      const microphoneEnabledCalls = (globalThis as Record<string, unknown>)
+        .__mockCalls__ as { setMicrophoneEnabled: boolean[] };
+      const callsBefore = microphoneEnabledCalls.setMicrophoneEnabled.length;
+
+      let resolvePublish!: () => void;
+      const publishGate = new Promise<void>(resolve => {
+        resolvePublish = resolve;
+      });
+      (
+        mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() =>
+        publishGate.then(() => {
+          publishedTracks.push(pendingCaptures.get("device-a")!.track);
+          micPublication = { track: pendingCaptures.get("device-a")!.track };
+        })
+      );
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+      );
+
+      await connection!.input.setMuted(true);
+
+      expect(microphoneEnabledCalls.setMicrophoneEnabled.length).toBe(
+        callsBefore
+      );
+      expect(connection!.input.isMuted()).toBe(true);
+
+      resolvePublish();
+      await firstSwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-a")!.track);
+      expect((publishedTracks[0] as MockTrack).mute).toHaveBeenCalled();
+    });
+
+    it("unmutes the new track when setMuted(false) runs during a muted switch", async () => {
+      await createConnectionWithMic();
+      await connection!.input.setMuted(true);
+
+      let resolvePublish!: () => void;
+      const publishGate = new Promise<void>(resolve => {
+        resolvePublish = resolve;
+      });
+      (
+        mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() =>
+        publishGate.then(() => {
+          publishedTracks.push(pendingCaptures.get("device-a")!.track);
+          micPublication = { track: pendingCaptures.get("device-a")!.track };
+        })
+      );
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+      );
+
+      // The new track was already muted before publishing, and setMuted
+      // skips the (unpublished) old track while the switch is in progress,
+      // so this unmute must be applied by the switch itself.
+      await connection!.input.setMuted(false);
+
+      resolvePublish();
+      await firstSwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-a")!.track);
+      expect((publishedTracks[0] as MockTrack).mute).toHaveBeenCalled();
+      expect((publishedTracks[0] as MockTrack).unmute).toHaveBeenCalled();
+      expect(connection!.input.isMuted()).toBe(false);
+    });
+
+    it("allows a switch once the previous switch finishes", async () => {
+      await createConnectionWithMic();
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await firstSwitch;
+
+      const secondSwitch = connection!.setAudioInputDevice("device-b");
+      pendingCaptures.get("device-b")!.resolve();
+      await secondSwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-b")!.track);
+      expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+        pendingCaptures.get("device-a")!.track
+      );
+    });
+
+    it("releases the guard after a failed capture so the next switch can run", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.reject(new Error("device unavailable"));
+      await expect(failedSwitch).rejects.toThrow("device unavailable");
+
+      expect(publishedTracks).toEqual([oldTrack]);
+      expect(mockRoom.localParticipant.unpublishTrack).not.toHaveBeenCalled();
+
+      const retrySwitch = connection!.setAudioInputDevice("device-b");
+      pendingCaptures.get("device-b")!.resolve();
+      await retrySwitch;
+
+      expect(publishedTracks).toHaveLength(1);
+      expect(publishedTracks[0]).toBe(pendingCaptures.get("device-b")!.track);
+    });
+  });
 });
