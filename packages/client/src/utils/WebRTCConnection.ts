@@ -663,6 +663,9 @@ export class WebRTCConnection extends BaseConnection {
 
   public close() {
     if (this.isConnected) {
+      // Mark the session ended before LiveKit reports the disconnect, so a
+      // device switch still capturing a track sees the teardown when it resumes.
+      this.isConnected = false;
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
         this.room.localParticipant.audioTrackPublications.forEach(
@@ -845,6 +848,15 @@ export class WebRTCConnection extends BaseConnection {
     // leaves the live microphone published.
     const audioTrack = await this.createMicrophoneTrack(deviceId);
 
+    if (!this.isConnected || !this.room.localParticipant) {
+      // The session ended while the new device was being captured. Stop the
+      // track now instead of publishing it onto a disconnected room.
+      audioTrack.stop();
+      throw new Error(
+        "Cannot change input device: room not connected or no local participant"
+      );
+    }
+
     try {
       const currentMicTrackPublication =
         this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
@@ -860,12 +872,30 @@ export class WebRTCConnection extends BaseConnection {
         await audioTrack.mute();
       }
 
+      // The session may have ended while the old track was being unpublished.
+      if (!this.isConnected || !this.room.localParticipant) {
+        throw new Error(
+          "Cannot change input device: room not connected or no local participant"
+        );
+      }
+
       await this.room.localParticipant.publishTrack(audioTrack, {
         name: "microphone",
         source: Track.Source.Microphone,
       });
+
+      // The session may have ended while the track was being published.
+      if (!this.isConnected || !this.room.localParticipant) {
+        audioTrack.stop();
+        throw new Error(
+          "Cannot change input device: room not connected or no local participant"
+        );
+      }
     } catch (error) {
-      console.error("Failed to change input device:", error);
+      // A switch that ends with the session is expected teardown, not an error.
+      if (this.isConnected) {
+        console.error("Failed to change input device:", error);
+      }
 
       const publication = this.room.localParticipant.getTrackPublication(
         Track.Source.Microphone
@@ -873,7 +903,7 @@ export class WebRTCConnection extends BaseConnection {
       if (publication?.track !== audioTrack) {
         audioTrack.stop();
       }
-      if (!publication?.track) {
+      if (!publication?.track && this.isConnected) {
         // The old track is already gone, so recover onto the default device
         // rather than leaving the session without a microphone.
         try {
@@ -905,6 +935,20 @@ export class WebRTCConnection extends BaseConnection {
     }
 
     const audioTrack = await this.createMicrophoneTrack(inputDeviceId);
+
+    // SignalConnected fires before Connected, so isConnected is still false
+    // while the session is starting up; the room state is the teardown
+    // signal here instead.
+    if (
+      this.room.state === ConnectionState.Disconnected ||
+      !this.room.localParticipant
+    ) {
+      audioTrack.stop();
+      throw new Error(
+        "Cannot change input device: room not connected or no local participant"
+      );
+    }
+
     try {
       await this.room.localParticipant.publishTrack(audioTrack, {
         name: "microphone",
