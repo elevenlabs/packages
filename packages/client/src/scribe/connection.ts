@@ -11,6 +11,9 @@ import type {
   CommittedTranscriptEntitiesMessage,
   EditedTranscriptMessage,
   RedactedTranscriptMessage,
+  DiarizedTranscriptMessage,
+  SpeakersMergedMessage,
+  SpeakerNamesMessage,
   DetectedEntity,
   TranscriptCharacter,
   ScribeErrorMessage,
@@ -42,6 +45,9 @@ export type {
   CommittedTranscriptEntitiesMessage,
   EditedTranscriptMessage,
   RedactedTranscriptMessage,
+  DiarizedTranscriptMessage,
+  SpeakersMergedMessage,
+  SpeakerNamesMessage,
   DetectedEntity,
   TranscriptCharacter,
   ScribeErrorMessage,
@@ -70,6 +76,9 @@ export type WebSocketMessage =
   | CommittedTranscriptEntitiesMessage
   | EditedTranscriptMessage
   | RedactedTranscriptMessage
+  | DiarizedTranscriptMessage
+  | SpeakersMergedMessage
+  | SpeakerNamesMessage
   | ScribeErrorMessage
   | ScribeAuthErrorMessage
   | ScribeQuotaExceededErrorMessage
@@ -160,6 +169,12 @@ export enum RealtimeEvents {
   EDITED_TRANSCRIPT = "edited_transcript",
   /** Emitted when the redacted version of a committed transcript is available */
   REDACTED_TRANSCRIPT = "redacted_transcript",
+  /** Emitted when the final words and speaker IDs of a committed transcript are available */
+  DIARIZED_TRANSCRIPT = "diarized_transcript",
+  /** Emitted when two speaker IDs have been identified as the same person */
+  SPEAKERS_MERGED = "speakers_merged",
+  /** Emitted when the names inferred for diarized speakers change */
+  SPEAKER_NAMES = "speaker_names",
   /** Emitted when an authentication error occurs */
   AUTH_ERROR = "auth_error",
   /** Emitted when an error occurs (also emitted for all specific error types) */
@@ -208,6 +223,9 @@ export interface RealtimeEventMap {
   [RealtimeEvents.COMMITTED_TRANSCRIPT_ENTITIES]: CommittedTranscriptEntitiesMessage;
   [RealtimeEvents.EDITED_TRANSCRIPT]: EditedTranscriptMessage;
   [RealtimeEvents.REDACTED_TRANSCRIPT]: RedactedTranscriptMessage;
+  [RealtimeEvents.DIARIZED_TRANSCRIPT]: DiarizedTranscriptMessage;
+  [RealtimeEvents.SPEAKERS_MERGED]: SpeakersMergedMessage;
+  [RealtimeEvents.SPEAKER_NAMES]: SpeakerNamesMessage;
   [RealtimeEvents.ERROR]: ScribeErrorMessage;
   [RealtimeEvents.AUTH_ERROR]: ScribeAuthErrorMessage;
   [RealtimeEvents.QUOTA_EXCEEDED]: ScribeQuotaExceededErrorMessage;
@@ -391,6 +409,15 @@ export class RealtimeConnection {
             break;
           case "redacted_transcript":
             this.eventEmitter.emit(RealtimeEvents.REDACTED_TRANSCRIPT, data);
+            break;
+          case "diarized_transcript":
+            this.eventEmitter.emit(RealtimeEvents.DIARIZED_TRANSCRIPT, data);
+            break;
+          case "speakers_merged":
+            this.eventEmitter.emit(RealtimeEvents.SPEAKERS_MERGED, data);
+            break;
+          case "speaker_names":
+            this.eventEmitter.emit(RealtimeEvents.SPEAKER_NAMES, data);
             break;
           // Error cases - emit both specific event and generic ERROR
           case "auth_error":
