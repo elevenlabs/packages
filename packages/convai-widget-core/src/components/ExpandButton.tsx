@@ -1,6 +1,7 @@
 import { HTMLAttributes } from "preact/compat";
 import { clsx } from "clsx";
 import { Avatar } from "./Avatar";
+import { useTextContents } from "../contexts/text-contents";
 
 interface ExpandButtonProps extends HTMLAttributes<HTMLButtonElement> {
   onExpand?: () => void;
@@ -11,6 +12,7 @@ export function ExpandButton({
   onExpand,
   ...rest
 }: ExpandButtonProps) {
+  const text = useTextContents();
   const handleClick = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -26,7 +28,7 @@ export function ExpandButton({
         "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 pointer-events-auto hover:scale-105 active:scale-95",
         className
       )}
-      aria-label="Open chat"
+      aria-label={text.open_chat}
       {...rest}
     >
       <Avatar className="w-12 h-12" />

@@ -1110,6 +1110,26 @@ describe("elevenlabs-convai", () => {
         .element(page.getByRole("button", { name: "Collapse widget" }))
         .toBeVisible();
     });
+
+    it("should use custom text contents for the resize toggle", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        "default-expanded": "true",
+        "mobile-fullscreen": "false",
+        "text-contents": JSON.stringify({
+          expand_widget: "Agrandir le widget",
+          collapse_widget: "Réduire le widget",
+        }),
+      });
+
+      await page.getByRole("button", { name: "Agrandir le widget" }).click();
+      await expect
+        .element(page.getByRole("button", { name: "Réduire le widget" }))
+        .toBeVisible();
+    });
   });
 
   describe("page layout", () => {
