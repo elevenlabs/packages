@@ -1,5 +1,21 @@
 # @elevenlabs/convai-widget-core
 
+## 0.28.0
+
+### Minor Changes
+
+- 7f72021: Add a side panel layout. `layout="side-panel"` opens the chat as a full-height panel that slides in on the placement's side.
+- 365224e: Make the minimize, launcher and resize button labels translatable through `text_contents` with the new `dismiss`, `open_chat`, `expand_widget` and `collapse_widget` keys.
+
+### Patch Changes
+
+- 7f72021: Restore the chat window's scale animation when it opens and closes, which had stopped running after the Tailwind v4 upgrade.
+- Updated dependencies [bca0531]
+- Updated dependencies [194bf33]
+- Updated dependencies [232f21c]
+- Updated dependencies [12bec81]
+  - @elevenlabs/client@1.38.0
+
 ## 0.27.1
 
 ### Patch Changes
