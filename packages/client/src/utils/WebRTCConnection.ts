@@ -220,17 +220,23 @@ export class WebRTCConnection extends BaseConnection {
           }
         } catch (_error) {
           // If track muting fails, fall back to participant-level control —
-          // but only while a track is still published. The publication above
-          // was fetched before the mute await, and a device switch may have
-          // unpublished it in the meantime; enabling the microphone with no
-          // publication would publish a second, default track alongside the
-          // switch. The switch applies the current mute state to the new
-          // track itself once it publishes.
+          // unless a device switch owns the mute state right now. With a
+          // switch active, an unmute would let LiveKit publish a default
+          // microphone if the switch unpublishes the old track before
+          // LiveKit's lookup (which waits out any republish in progress),
+          // and with no publication the switch applies the state to the
+          // new track itself. A mute can never create a track, so it still
+          // falls back while the old track is published. With no switch
+          // active, fall back unconditionally: a reconnect may have
+          // transiently unpublished the track, and nothing else would
+          // apply the mute state to the republished microphone.
           const currentPublication =
             this.room.localParticipant.getTrackPublication(
               Track.Source.Microphone
             );
-          if (currentPublication?.track) {
+          const switchOwnsMuteState =
+            this.settingInputDevice && (!currentPublication?.track || !isMuted);
+          if (!switchOwnsMuteState) {
             await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
           }
         }
