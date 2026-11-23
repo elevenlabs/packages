@@ -1692,6 +1692,23 @@ describe("WebRTCConnection", () => {
       };
     }
 
+    function useAnalyserSpy() {
+      const setupInputAnalysis = vi.fn(() => ({
+        volumeProvider: NO_VOLUME,
+      }));
+      setWebRTCAudioAdapterFactory(() => ({
+        attachRemoteTrack: vi.fn(() => Promise.resolve()),
+        setupInputAnalysis,
+        setupOutputAnalysis: vi.fn(() =>
+          Promise.resolve({ volumeProvider: NO_VOLUME })
+        ),
+        setVolume: vi.fn(),
+        setOutputDevice: vi.fn(() => Promise.resolve()),
+        cleanup: vi.fn(),
+      }));
+      return setupInputAnalysis;
+    }
+
     let mockRoom: any;
     let connection: WebRTCConnection | undefined;
     let publishedTracks: unknown[];
@@ -1997,6 +2014,120 @@ describe("WebRTCConnection", () => {
       expect((publishedTracks[0] as MockTrack).mute).toHaveBeenCalled();
       expect((publishedTracks[0] as MockTrack).unmute).toHaveBeenCalled();
       expect(connection!.input.isMuted()).toBe(false);
+    });
+
+    it("falls back to setMicrophoneEnabled when muting the old track fails during capture", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+      const setMicrophoneEnabled = mockRoom.localParticipant
+        .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+      setMicrophoneEnabled.mockClear();
+
+      oldTrack.mute.mockRejectedValueOnce(new Error("mute unsupported"));
+
+      const firstSwitch = connection!.setAudioInputDevice("device-a");
+      await connection!.input.setMuted(true);
+
+      // The old track is still published while the new device is being
+      // captured, so the participant-level fallback toggles that track
+      // instead of leaving it live while the session reports muted.
+      expect(setMicrophoneEnabled).toHaveBeenCalledTimes(1);
+      expect(setMicrophoneEnabled).toHaveBeenCalledWith(false);
+      expect(publishedTracks).toEqual([oldTrack]);
+
+      pendingCaptures.get("device-a")!.resolve();
+      await firstSwitch;
+
+      expect(publishedTracks).toEqual([pendingCaptures.get("device-a")!.track]);
+      expect(connection!.input.isMuted()).toBe(true);
+    });
+
+    it("does not fail a published switch when the post-publish mute fails", async () => {
+      const setupInputAnalysis = useAnalyserSpy();
+      try {
+        await createConnectionWithMic();
+        setupInputAnalysis.mockClear();
+
+        let resolvePublish!: () => void;
+        const publishGate = new Promise<void>(resolve => {
+          resolvePublish = resolve;
+        });
+        (
+          mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(() =>
+          publishGate.then(() => {
+            publishedTracks.push(pendingCaptures.get("device-a")!.track);
+            micPublication = { track: pendingCaptures.get("device-a")!.track };
+          })
+        );
+
+        const firstSwitch = connection!.setAudioInputDevice("device-a");
+        pendingCaptures.get("device-a")!.resolve();
+        await vi.waitFor(() =>
+          expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+        );
+
+        await connection!.input.setMuted(true);
+        pendingCaptures
+          .get("device-a")!
+          .track.mute.mockRejectedValueOnce(new Error("mute unsupported"));
+
+        resolvePublish();
+        await expect(firstSwitch).resolves.toBeUndefined();
+
+        const newTrack = pendingCaptures.get("device-a")!.track;
+        expect(publishedTracks).toEqual([newTrack]);
+        expect(setupInputAnalysis).toHaveBeenCalledWith(
+          newTrack.mediaStreamTrack
+        );
+        expect(connection!.input.isMuted()).toBe(true);
+      } finally {
+        setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+      }
+    });
+
+    it("does not fail a published switch when the post-publish unmute fails", async () => {
+      const setupInputAnalysis = useAnalyserSpy();
+      try {
+        await createConnectionWithMic();
+        await connection!.input.setMuted(true);
+        setupInputAnalysis.mockClear();
+
+        let resolvePublish!: () => void;
+        const publishGate = new Promise<void>(resolve => {
+          resolvePublish = resolve;
+        });
+        (
+          mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(() =>
+          publishGate.then(() => {
+            publishedTracks.push(pendingCaptures.get("device-a")!.track);
+            micPublication = { track: pendingCaptures.get("device-a")!.track };
+          })
+        );
+
+        const firstSwitch = connection!.setAudioInputDevice("device-a");
+        pendingCaptures.get("device-a")!.resolve();
+        await vi.waitFor(() =>
+          expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+        );
+
+        await connection!.input.setMuted(false);
+        pendingCaptures
+          .get("device-a")!
+          .track.unmute.mockRejectedValueOnce(new Error("unmute unsupported"));
+
+        resolvePublish();
+        await expect(firstSwitch).resolves.toBeUndefined();
+
+        const newTrack = pendingCaptures.get("device-a")!.track;
+        expect(publishedTracks).toEqual([newTrack]);
+        expect(setupInputAnalysis).toHaveBeenCalledWith(
+          newTrack.mediaStreamTrack
+        );
+        expect(connection!.input.isMuted()).toBe(false);
+      } finally {
+        setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+      }
     });
 
     it("allows a switch once the previous switch finishes", async () => {

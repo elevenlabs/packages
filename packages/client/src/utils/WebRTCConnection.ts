@@ -219,12 +219,10 @@ export class WebRTCConnection extends BaseConnection {
             await micTrackPublication.track.unmute();
           }
         } catch (_error) {
-          // If track muting fails, fall back to participant-level control,
-          // unless a device switch is already applying the mute state to
-          // the new track.
-          if (!this.settingInputDevice) {
-            await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
-          }
+          // If track muting fails, fall back to participant-level control.
+          // A track is already published here, so this toggles that track
+          // rather than publishing a second one.
+          await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
         }
       } else if (!this.settingInputDevice) {
         // No track found, use participant-level control directly. A device
@@ -858,6 +856,7 @@ export class WebRTCConnection extends BaseConnection {
       // leaves the live microphone published.
       const audioTrack = await this.createMicrophoneTrack(deviceId);
 
+      let mutedBeforePublish = false;
       try {
         const currentMicTrackPublication =
           this.room.localParticipant.getTrackPublication(
@@ -871,7 +870,7 @@ export class WebRTCConnection extends BaseConnection {
 
         // Publish muted rather than muting afterwards, so a muted session never
         // sends audio from the new device.
-        const mutedBeforePublish = this._isMuted;
+        mutedBeforePublish = this._isMuted;
         if (mutedBeforePublish) {
           await audioTrack.mute();
         }
@@ -880,16 +879,6 @@ export class WebRTCConnection extends BaseConnection {
           name: "microphone",
           source: Track.Source.Microphone,
         });
-
-        // setMuted may have run while the publish was in flight, after the
-        // check above, so re-apply the current mute state before returning.
-        // An unmute in that window must reach the new track: it was muted
-        // above and setMuted skipped it while the switch was in progress.
-        if (this._isMuted) {
-          await audioTrack.mute();
-        } else if (mutedBeforePublish) {
-          await audioTrack.unmute();
-        }
       } catch (error) {
         console.error("Failed to change input device:", error);
 
@@ -922,6 +911,22 @@ export class WebRTCConnection extends BaseConnection {
         }
 
         throw error;
+      }
+
+      // setMuted may have run while the publish was in flight, after the
+      // check above, so re-apply the current mute state before returning.
+      // An unmute in that window must reach the new track: it was muted
+      // above and setMuted skipped it while the switch was in progress.
+      // The new track is already published, so a failure here must not
+      // fail the switch.
+      try {
+        if (this._isMuted) {
+          await audioTrack.mute();
+        } else if (mutedBeforePublish) {
+          await audioTrack.unmute();
+        }
+      } catch (error) {
+        console.warn("Failed to apply mute state to new input device:", error);
       }
 
       this.setupInputAnalyser(audioTrack.mediaStreamTrack);
