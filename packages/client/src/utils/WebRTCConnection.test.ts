@@ -2463,5 +2463,37 @@ describe("WebRTCConnection", () => {
       expect(publishedTracks).toHaveLength(1);
       expect(publishedTracks[0]).toBe(pendingCaptures.get("device-b")!.track);
     });
+
+    it("applies the deferred unmute to the retained mic when capture fails", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+      await connection!.input.setMuted(true);
+      expect(oldTrack.mute).toHaveBeenCalledTimes(1);
+
+      // Hold the old track's unmute open while the switch is capturing.
+      let rejectUnmute!: (error: Error) => void;
+      const unmuteGate = new Promise<void>((_resolve, reject) => {
+        rejectUnmute = reject;
+      });
+      oldTrack.unmute.mockImplementationOnce(() => unmuteGate);
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      const setMutedPromise = connection!.input.setMuted(false);
+      await vi.waitFor(() => expect(oldTrack.unmute).toHaveBeenCalled());
+
+      rejectUnmute(new Error("unmute unsupported"));
+      await setMutedPromise;
+
+      // The fallback stays silent while the switch is active, so the old
+      // track is still muted here. Reject the capture: the switch must
+      // apply the deferred unmute to the retained mic before reporting
+      // the failure.
+      pendingCaptures.get("device-a")!.reject(new Error("device unavailable"));
+      await expect(failedSwitch).rejects.toThrow("device unavailable");
+
+      expect(oldTrack.unmute).toHaveBeenCalledTimes(2);
+      expect(publishedTracks).toEqual([oldTrack]);
+      expect(mockRoom.localParticipant.unpublishTrack).not.toHaveBeenCalled();
+      expect(connection!.input.isMuted()).toBe(false);
+    });
   });
 });

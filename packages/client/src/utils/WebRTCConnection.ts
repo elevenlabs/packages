@@ -870,7 +870,18 @@ export class WebRTCConnection extends BaseConnection {
     try {
       // Acquire the new track before releasing the old one, so a failed capture
       // leaves the live microphone published.
-      const audioTrack = await this.createMicrophoneTrack(deviceId);
+      let audioTrack: LocalAudioTrack;
+      try {
+        audioTrack = await this.createMicrophoneTrack(deviceId);
+      } catch (error) {
+        // A failed capture leaves the old microphone published. A setMuted
+        // call during the capture may have skipped its fallback while the
+        // switch was active, so apply the current mute state to the retained
+        // track before reporting the failure. This runs while the guard is
+        // still held, so no later switch can interleave with it.
+        await this.reconcileMuteStateOnCurrentTrack();
+        throw error;
+      }
 
       let mutedBeforePublish = false;
       try {
@@ -960,6 +971,46 @@ export class WebRTCConnection extends BaseConnection {
       this.setupInputAnalyser(audioTrack.mediaStreamTrack);
     } finally {
       this.settingInputDevice = false;
+    }
+  }
+
+  /**
+   * Applies the current mute state to the microphone that is published right
+   * now. Used when a device switch fails before publishing, so a mute state
+   * change that skipped its fallback while the switch was active is not lost
+   * on the retained track. The switch is failing and will not publish a
+   * competing track, so participant-level control here toggles the retained
+   * track rather than publishing a second one.
+   */
+  private async reconcileMuteStateOnCurrentTrack(): Promise<void> {
+    if (!this.isConnected || !this.room.localParticipant) {
+      return;
+    }
+    const publication = this.room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    );
+    if (!publication?.track) {
+      return;
+    }
+    try {
+      if (this._isMuted) {
+        await publication.track.mute();
+      } else {
+        await publication.track.unmute();
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to apply mute state to current input device:",
+        error
+      );
+      try {
+        await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+      } catch (fallbackError) {
+        console.warn(
+          "Failed to apply mute state to current input device via participant control:",
+          fallbackError
+        );
+      }
     }
   }
 
