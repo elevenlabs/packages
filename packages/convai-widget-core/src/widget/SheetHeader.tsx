@@ -33,7 +33,9 @@ export function SheetHeader({
   const { toggleSize, variant, fullscreenOnly } = useWidgetSize();
 
   const expandButtonLabel = useComputed(() =>
-    variant.value === "compact" ? "Expand widget" : "Collapse widget"
+    variant.value === "compact"
+      ? text.expand_widget.value
+      : text.collapse_widget.value
   );
   const isSidePanel = config.value.layout === "side-panel";
   // A side panel's close button stays, since its trigger may be hidden
