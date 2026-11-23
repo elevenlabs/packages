@@ -219,10 +219,20 @@ export class WebRTCConnection extends BaseConnection {
             await micTrackPublication.track.unmute();
           }
         } catch (_error) {
-          // If track muting fails, fall back to participant-level control.
-          // A track is already published here, so this toggles that track
-          // rather than publishing a second one.
-          await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+          // If track muting fails, fall back to participant-level control —
+          // but only while a track is still published. The publication above
+          // was fetched before the mute await, and a device switch may have
+          // unpublished it in the meantime; enabling the microphone with no
+          // publication would publish a second, default track alongside the
+          // switch. The switch applies the current mute state to the new
+          // track itself once it publishes.
+          const currentPublication =
+            this.room.localParticipant.getTrackPublication(
+              Track.Source.Microphone
+            );
+          if (currentPublication?.track) {
+            await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
+          }
         }
       } else if (!this.settingInputDevice) {
         // No track found, use participant-level control directly. A device
@@ -927,6 +937,18 @@ export class WebRTCConnection extends BaseConnection {
         }
       } catch (error) {
         console.warn("Failed to apply mute state to new input device:", error);
+        // The new track is published, so participant-level control toggles
+        // it rather than publishing a second one. Without this, a mute
+        // skipped while the switch had no publication would never reach
+        // the live microphone.
+        try {
+          await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+        } catch (fallbackError) {
+          console.warn(
+            "Failed to apply mute state to new input device via participant control:",
+            fallbackError
+          );
+        }
       }
 
       this.setupInputAnalyser(audioTrack.mediaStreamTrack);
