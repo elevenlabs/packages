@@ -1273,11 +1273,16 @@ describe("WebRTCConnection", () => {
       return { connection, eventHandlers, mockRoom };
     }
 
-    function microphoneEnabledCalls() {
-      return (
-        (globalThis as Record<string, unknown>)
-          .__mockCalls__ as typeof mockCalls
-      ).setMicrophoneEnabled;
+    // Read the mock's own call log: an earlier test replaces
+    // setMicrophoneEnabled with an implementation that never updates
+    // __mockCalls__, so counting through the global would compare zero to
+    // zero and miss an unwanted default-microphone capture.
+    function microphoneEnabledCalls(mockRoom: {
+      localParticipant: { setMicrophoneEnabled: ReturnType<typeof vi.fn> };
+    }) {
+      return mockRoom.localParticipant.setMicrophoneEnabled.mock.calls.map(
+        ([enabled]) => enabled
+      );
     }
 
     it("stops the captured track and rejects promptly when the session ends while capture is pending", async () => {
@@ -1298,7 +1303,7 @@ describe("WebRTCConnection", () => {
       ).mockImplementationOnce(() => capturePromise);
 
       const switchPromise = connection.setAudioInputDevice("new-device-id");
-      const micCallsBeforeEnd = microphoneEnabledCalls().length;
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
 
       connection.close();
       eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
@@ -1316,7 +1321,46 @@ describe("WebRTCConnection", () => {
         newMockTrack,
         expect.anything()
       );
-      expect(microphoneEnabledCalls().length).toBe(micCallsBeforeEnd);
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+    });
+
+    it("stops the captured track before the disconnected event when the session ends while capture is pending", async () => {
+      const { connection, mockRoom } = await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      let resolveCapture!: (track: unknown) => void;
+      const capturePromise = new Promise<unknown>(resolve => {
+        resolveCapture = resolve;
+      });
+      (
+        createLocalAudioTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => capturePromise);
+
+      const switchPromise = connection.setAudioInputDevice("new-device-id");
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      // No disconnected event: only the synchronous isConnected update in
+      // close() can stop the pending switch before capture resolves.
+      connection.close();
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveCapture(newMockTrack);
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalledWith(
+        newMockTrack,
+        expect.anything()
+      );
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
     });
 
     it("stops the captured track without recovering the default mic on a muted session", async () => {
@@ -1340,7 +1384,7 @@ describe("WebRTCConnection", () => {
       ).mockImplementationOnce(() => capturePromise);
 
       const switchPromise = connection.setAudioInputDevice("new-device-id");
-      const micCallsBeforeEnd = microphoneEnabledCalls().length;
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
 
       connection.close();
       eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
@@ -1355,7 +1399,7 @@ describe("WebRTCConnection", () => {
       await expect(switchPromise).rejects.toThrow("room not connected");
       expect(newMockTrack.stop).toHaveBeenCalled();
       expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
-      expect(microphoneEnabledCalls().length).toBe(micCallsBeforeEnd);
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
       expect(connection.input.isMuted()).toBe(true);
     });
 
@@ -1396,7 +1440,7 @@ describe("WebRTCConnection", () => {
           oldMockTrack
         )
       );
-      const micCallsBeforeEnd = microphoneEnabledCalls().length;
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
 
       connection.close();
       eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
@@ -1411,7 +1455,7 @@ describe("WebRTCConnection", () => {
       await expect(switchPromise).rejects.toThrow("room not connected");
       expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
       expect(newMockTrack.stop).toHaveBeenCalled();
-      expect(microphoneEnabledCalls().length).toBe(micCallsBeforeEnd);
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
     });
 
     it("keeps a muted session muted when it ends while the old track is being unpublished", async () => {
@@ -1456,7 +1500,7 @@ describe("WebRTCConnection", () => {
           oldMockTrack
         )
       );
-      const micCallsBeforeEnd = microphoneEnabledCalls().length;
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
 
       connection.close();
       eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
@@ -1474,7 +1518,7 @@ describe("WebRTCConnection", () => {
       expect(newMockTrack.mute).toHaveBeenCalled();
       expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
       expect(newMockTrack.stop).toHaveBeenCalled();
-      expect(microphoneEnabledCalls().length).toBe(micCallsBeforeEnd);
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
       expect(connection.input.isMuted()).toBe(true);
     });
 
