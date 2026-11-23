@@ -6,6 +6,7 @@ import {
 } from "./BaseConnection.js";
 import { sourceInfo } from "../sourceInfo.js";
 import {
+  type AgentAudioEvent,
   type ConfigEvent,
   isValidSocketEvent,
   type OutgoingSocketEvent,
@@ -33,7 +34,8 @@ export class WebSocketConnection
   public readonly outputFormat: FormatConfig;
 
   private outputListeners: Set<OutputListener> = new Set();
-  private pendingAudioEvents: OutputAudioEvent[] = [];
+  private pendingAudioEvents: AgentAudioEvent[] = [];
+  private lastInterruptEventId = 0;
 
   private constructor(
     private readonly socket: WebSocket,
@@ -268,7 +270,7 @@ export class WebSocketConnection
     const pending = this.pendingAudioEvents;
     this.pendingAudioEvents = [];
     for (const event of pending) {
-      listener(event);
+      listener(this.toOutputAudioEvent(event));
     }
   }
 
@@ -279,17 +281,35 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
+    if (parsedEvent.type === "interruption") {
+      this.lastInterruptEventId = parsedEvent.interruption_event.event_id;
+      this.pendingAudioEvents = this.pendingAudioEvents.filter(
+        ({ audio_event }) => audio_event.event_id >= this.lastInterruptEventId
+      );
+      return;
+    }
+
     // Emit audio events to output listeners
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
-      const { audio_base_64, event_id, alignment } = parsedEvent.audio_event;
-      const audioEvent: OutputAudioEvent = alignment
-        ? { audio_base_64, metadata: { event_id, alignment } }
-        : { audio_base_64 };
-      if (this.outputListeners.size === 0) {
-        this.pendingAudioEvents.push(audioEvent);
+      // Chunks of an interrupted response can still arrive after the interruption
+      if (parsedEvent.audio_event.event_id < this.lastInterruptEventId) {
         return;
       }
+      if (this.outputListeners.size === 0) {
+        this.pendingAudioEvents.push(parsedEvent);
+        return;
+      }
+      const audioEvent = this.toOutputAudioEvent(parsedEvent);
       this.outputListeners.forEach(listener => listener(audioEvent));
     }
+  }
+
+  private toOutputAudioEvent({
+    audio_event,
+  }: AgentAudioEvent): OutputAudioEvent {
+    const { audio_base_64, event_id, alignment } = audio_event;
+    return alignment
+      ? { audio_base_64, metadata: { event_id, alignment } }
+      : { audio_base_64 };
   }
 }
