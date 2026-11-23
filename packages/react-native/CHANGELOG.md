@@ -1,5 +1,22 @@
 # @elevenlabs/react-native
 
+## 1.3.0
+
+### Minor Changes
+
+- 232f21c: Export `useConversationClientTool` from `@elevenlabs/react-native`, so a component can register a client tool while it is mounted and have it removed when it unmounts, as it can with `@elevenlabs/react`.
+
+### Patch Changes
+
+- 925691b: Fix conversation audio always playing through the phone speaker on Android, even with a Bluetooth or wired headset connected. Output now prefers a Bluetooth headset, then a wired headset, then the speaker, then the earpiece.
+- 232f21c: A client tool call for a tool that isn't in `clientTools` is now always answered with an error `client_tool_result`, including when `onUnhandledClientToolCall` is set. Previously, setting that callback stopped the result from being sent, leaving the agent waiting on a tool call nothing would answer. `onUnhandledClientToolCall` is still called, and still replaces the `onError` report.
+- Updated dependencies [bca0531]
+- Updated dependencies [194bf33]
+- Updated dependencies [232f21c]
+- Updated dependencies [12bec81]
+  - @elevenlabs/client@1.38.0
+  - @elevenlabs/react@1.24.0
+
 ## 1.2.42
 
 ### Patch Changes
