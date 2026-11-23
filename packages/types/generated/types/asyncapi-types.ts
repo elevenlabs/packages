@@ -1007,6 +1007,26 @@ export type ConfigVadCommitStrategy = "manual" | "vad";
 export interface PartialTranscript {
   message_type: "partial_transcript";
   text: string;
+  words?: Word[];
+}
+
+export interface Word {
+  text: string;
+  start?: number | null;
+  end?: number | null;
+  type: WordType;
+  speaker_id?: string | null;
+  logprob: number;
+  characters?: TranscriptCharacter[] | null;
+  channel_index?: number | null;
+}
+
+export type WordType = "word" | "spacing" | "audio_event";
+
+export interface TranscriptCharacter {
+  text: string;
+  start?: number;
+  end?: number;
 }
 
 export interface FinalTranscript {
@@ -1021,28 +1041,10 @@ export interface FinalTranscriptWithTimestamps {
   words?: Word[];
 }
 
-export interface Word {
-  text: string;
-  start?: number;
-  end?: number;
-  type: WordType;
-  speaker_id?: string;
-  logprob: number;
-  characters?: TranscriptCharacter[];
-  channel_index?: number;
-}
-
-export type WordType = "word" | "spacing" | "audio_event";
-
-export interface TranscriptCharacter {
-  text: string;
-  start?: number;
-  end?: number;
-}
-
 export interface CommittedTranscript {
   message_type: "committed_transcript";
   text: string;
+  segment_index?: number;
 }
 
 export interface CommittedTranscriptWithTimestamps {
@@ -1075,6 +1077,24 @@ export interface RedactedTranscript {
   message_type: "redacted_transcript";
   text: string;
   redacted_text: string;
+}
+
+export interface DiarizedTranscript {
+  message_type: "diarized_transcript";
+  segment_index: number;
+  text: string;
+  words: Word[];
+}
+
+export interface SpeakersMerged {
+  message_type: "speakers_merged";
+  from_speaker_id: string;
+  to_speaker_id: string;
+}
+
+export interface SpeakerNames {
+  message_type: "speaker_names";
+  speaker_names: Record<string, string>;
 }
 
 export interface Error {
@@ -1172,6 +1192,7 @@ export interface SessionStartedMessage {
 export interface PartialTranscriptMessage {
   message_type: "partial_transcript";
   text: string;
+  words?: Word[];
 }
 
 export interface FinalTranscriptMessage {
@@ -1189,6 +1210,7 @@ export interface FinalTranscriptWithTimestampsMessage {
 export interface CommittedTranscriptMessage {
   message_type: "committed_transcript";
   text: string;
+  segment_index?: number;
 }
 
 export interface CommittedTranscriptWithTimestampsMessage {
@@ -1214,6 +1236,24 @@ export interface RedactedTranscriptMessage {
   message_type: "redacted_transcript";
   text: string;
   redacted_text: string;
+}
+
+export interface DiarizedTranscriptMessage {
+  message_type: "diarized_transcript";
+  segment_index: number;
+  text: string;
+  words: Word[];
+}
+
+export interface SpeakersMergedMessage {
+  message_type: "speakers_merged";
+  from_speaker_id: string;
+  to_speaker_id: string;
+}
+
+export interface SpeakerNamesMessage {
+  message_type: "speaker_names";
+  speaker_names: Record<string, string>;
 }
 
 export interface ScribeErrorMessage {

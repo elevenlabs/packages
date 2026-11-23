@@ -13,6 +13,9 @@ import type {
   CommittedTranscriptWithTimestampsMessage,
   EditedTranscriptMessage,
   RedactedTranscriptMessage,
+  DiarizedTranscriptMessage,
+  SpeakersMergedMessage,
+  SpeakerNamesMessage,
   ScribeErrorMessage,
   ScribeAuthErrorMessage,
   ScribeQuotaExceededErrorMessage,
@@ -50,16 +53,16 @@ export interface WordTimestamp {
   /** The word or sound that was transcribed */
   text?: string;
   /** Start time in seconds */
-  start?: number;
+  start?: number | null;
   /** End time in seconds */
-  end?: number;
+  end?: number | null;
   /** `"audio_event"` covers non-word sounds such as laughter or footsteps */
   type?: "word" | "spacing" | "audio_event";
-  speaker_id?: string;
+  speaker_id?: string | null;
   logprob?: number;
-  characters?: WordTimestampCharacter[];
-  /** The channel this word was spoken on (for multichannel audio). Undefined for single-channel transcriptions. */
-  channel_index?: number;
+  characters?: WordTimestampCharacter[] | null;
+  /** The channel this word was spoken on (for multichannel audio). Null for single-channel transcriptions. */
+  channel_index?: number | null;
 }
 
 export interface TranscriptSegment {
@@ -79,8 +82,14 @@ export interface TranscriptSegment {
 
 export interface ScribeCallbacks {
   onSessionStarted?: () => void;
-  onPartialTranscript?: (data: { text: string }) => void;
-  onCommittedTranscript?: (data: { text: string }) => void;
+  onPartialTranscript?: (data: {
+    text: string;
+    words?: WordTimestamp[];
+  }) => void;
+  onCommittedTranscript?: (data: {
+    text: string;
+    segment_index?: number;
+  }) => void;
   onCommittedTranscriptWithTimestamps?: (data: {
     text: string;
     language_code?: string;
@@ -93,6 +102,19 @@ export interface ScribeCallbacks {
     text: string;
     redacted_text: string;
   }) => void;
+  /** Called with the words of a committed transcript and their final speakers (only when diarize is set) */
+  onDiarizedTranscript?: (data: {
+    segment_index: number;
+    text: string;
+    words: WordTimestamp[];
+  }) => void;
+  /** Called when two speaker IDs turn out to be the same person: earlier uses of `from_speaker_id` are `to_speaker_id` (only when diarize is set) */
+  onSpeakersMerged?: (data: {
+    from_speaker_id: string;
+    to_speaker_id: string;
+  }) => void;
+  /** Called with all inferred speaker names, keyed by speaker ID, each time they change (only when inferSpeakerNames is set) */
+  onSpeakerNames?: (data: { speaker_names: Record<string, string> }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
   onError?: (error: Error | Event) => void;
   onAuthError?: (data: { error: string }) => void;
@@ -158,6 +180,23 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   noVerbatim?: boolean;
 
   /**
+   * Add words to the partial transcripts passed to `onPartialTranscript`, each with a speaker
+   * ID that is null until the speaker is identified, and deliver each committed transcript's
+   * words with their final speakers through `onDiarizedTranscript`. Merged speaker IDs are
+   * reported through `onSpeakersMerged`. Only supported by `scribe_v3_live`. Cannot be
+   * combined with `filterBackgroundAudio`.
+   * @default false
+   */
+  diarize?: boolean;
+  /**
+   * Infer speaker names from the conversation (introductions, greetings, people addressed by
+   * name) and deliver them through `onSpeakerNames`. Requires `diarize`. Cannot be combined
+   * with `entityRedaction`.
+   * @default false
+   */
+  inferSpeakerNames?: boolean;
+
+  /**
    * Natural-language instruction applied to each committed transcript (max 2000
    * characters). The edited text is delivered through `onEditedTranscript` and attached
    * to the matching committed segment as `editedText`. Cannot be combined with entity
@@ -170,7 +209,7 @@ export interface ScribeHookOptions extends ScribeCallbacks {
    * Redact entities from committed transcripts. Accepts `"all"`, a single entity type or
    * category, or a list of types/categories. The redacted text is delivered through
    * `onRedactedTranscript` and attached to the matching committed segment as `redactedText`.
-   * Cannot be combined with `transcriptEdit`.
+   * Cannot be combined with `transcriptEdit` or `inferSpeakerNames`.
    */
   entityRedaction?: EntityDetectionOption | EntityDetectionOption[];
   /**
@@ -182,8 +221,7 @@ export interface ScribeHookOptions extends ScribeCallbacks {
   /**
    * Enable background speech filtering to reduce false activations from nearby
    * conversations and ambient noise. When enabled without an explicit `vadThreshold`,
-   * the server applies a lower default threshold. Cannot be combined with
-   * `includeTimestamps`.
+   * the server applies a lower default threshold. Cannot be combined with `diarize`.
    * @default false
    */
   filterBackgroundAudio?: boolean;
@@ -238,6 +276,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     onCommittedTranscriptWithTimestamps,
     onEditedTranscript,
     onRedactedTranscript,
+    onDiarizedTranscript,
+    onSpeakersMerged,
+    onSpeakerNames,
     onError,
     onAuthError,
     onQuotaExceededError,
@@ -282,6 +323,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
     // Keyterms and verbatim control
     keyterms: defaultKeyterms,
     noVerbatim: defaultNoVerbatim,
+    diarize: defaultDiarize,
+    inferSpeakerNames: defaultInferSpeakerNames,
     transcriptEdit: defaultTranscriptEdit,
     entityRedaction: defaultEntityRedaction,
     entityRedactionMode: defaultEntityRedactionMode,
@@ -377,6 +420,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
             runtimeOptions.secondaryLanguages ?? defaultSecondaryLanguages,
           keyterms: runtimeOptions.keyterms || defaultKeyterms,
           noVerbatim: runtimeOptions.noVerbatim ?? defaultNoVerbatim,
+          diarize: runtimeOptions.diarize ?? defaultDiarize,
+          inferSpeakerNames:
+            runtimeOptions.inferSpeakerNames ?? defaultInferSpeakerNames,
           transcriptEdit:
             runtimeOptions.transcriptEdit ?? defaultTranscriptEdit,
           entityRedaction:
@@ -560,6 +606,27 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
         );
 
         connection.on(
+          RealtimeEvents.DIARIZED_TRANSCRIPT,
+          onCurrentConnection((data: unknown) => {
+            onDiarizedTranscript?.(data as DiarizedTranscriptMessage);
+          })
+        );
+
+        connection.on(
+          RealtimeEvents.SPEAKERS_MERGED,
+          onCurrentConnection((data: unknown) => {
+            onSpeakersMerged?.(data as SpeakersMergedMessage);
+          })
+        );
+
+        connection.on(
+          RealtimeEvents.SPEAKER_NAMES,
+          onCurrentConnection((data: unknown) => {
+            onSpeakerNames?.(data as SpeakerNamesMessage);
+          })
+        );
+
+        connection.on(
           RealtimeEvents.ERROR,
           onCurrentConnection((err: unknown) => {
             const message = err as ScribeErrorMessage;
@@ -736,6 +803,8 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       defaultIncludeLanguageDetection,
       defaultKeyterms,
       defaultNoVerbatim,
+      defaultDiarize,
+      defaultInferSpeakerNames,
       defaultTranscriptEdit,
       defaultEntityRedaction,
       defaultEntityRedactionMode,
@@ -747,6 +816,9 @@ export function useScribe(options: ScribeHookOptions = {}): UseScribeReturn {
       onCommittedTranscriptWithTimestamps,
       onEditedTranscript,
       onRedactedTranscript,
+      onDiarizedTranscript,
+      onSpeakersMerged,
+      onSpeakerNames,
       onError,
       onAuthError,
       onQuotaExceededError,
