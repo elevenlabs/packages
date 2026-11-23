@@ -236,7 +236,10 @@ export class WebRTCConnection extends BaseConnection {
             );
           const switchOwnsMuteState =
             this.settingInputDevice && (!currentPublication?.track || !isMuted);
-          if (!switchOwnsMuteState) {
+          // Recheck after the await: the session may have ended while the
+          // mute was in flight, and starting microphone capture after
+          // teardown would reacquire a mic the user already released.
+          if (!switchOwnsMuteState && this.isConnected) {
             await this.room.localParticipant.setMicrophoneEnabled(!isMuted);
           }
         }
@@ -684,6 +687,12 @@ export class WebRTCConnection extends BaseConnection {
 
   public close() {
     if (this.isConnected) {
+      // Mark teardown synchronously, before stopping tracks: in-flight async
+      // work must stop starting new microphone capture once the session is
+      // ending. room.disconnect() only clears isConnected later, when LiveKit
+      // fires its Disconnected event.
+      this.isConnected = false;
+
       try {
         // Explicitly stop all local tracks before disconnecting to ensure microphone is released
         this.room.localParticipant.audioTrackPublications.forEach(
@@ -958,13 +967,20 @@ export class WebRTCConnection extends BaseConnection {
         // it rather than publishing a second one. Without this, a mute
         // skipped while the switch had no publication would never reach
         // the live microphone.
-        try {
-          await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
-        } catch (fallbackError) {
-          console.warn(
-            "Failed to apply mute state to new input device via participant control:",
-            fallbackError
-          );
+        // Recheck after the await: the session may have ended while the
+        // mute was in flight, and starting microphone capture after
+        // teardown would reacquire a mic the user already released.
+        if (this.isConnected) {
+          try {
+            await this.room.localParticipant.setMicrophoneEnabled(
+              !this._isMuted
+            );
+          } catch (fallbackError) {
+            console.warn(
+              "Failed to apply mute state to new input device via participant control:",
+              fallbackError
+            );
+          }
         }
       }
 
@@ -1003,13 +1019,18 @@ export class WebRTCConnection extends BaseConnection {
         "Failed to apply mute state to current input device:",
         error
       );
-      try {
-        await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
-      } catch (fallbackError) {
-        console.warn(
-          "Failed to apply mute state to current input device via participant control:",
-          fallbackError
-        );
+      // Recheck after the await: the session may have ended while the
+      // mute was in flight, and starting microphone capture after
+      // teardown would reacquire a mic the user already released.
+      if (this.isConnected) {
+        try {
+          await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+        } catch (fallbackError) {
+          console.warn(
+            "Failed to apply mute state to current input device via participant control:",
+            fallbackError
+          );
+        }
       }
     }
   }

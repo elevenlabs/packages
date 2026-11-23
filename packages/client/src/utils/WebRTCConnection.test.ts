@@ -2495,5 +2495,124 @@ describe("WebRTCConnection", () => {
       expect(mockRoom.localParticipant.unpublishTrack).not.toHaveBeenCalled();
       expect(connection!.input.isMuted()).toBe(false);
     });
+
+    it("does not start microphone capture when the session closes during pending capture", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+      const setMicrophoneEnabled = mockRoom.localParticipant
+        .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+      setMicrophoneEnabled.mockClear();
+
+      // Make the retained track's unmute fail so the reconciliation would
+      // fall back to participant control without the teardown guard.
+      oldTrack.unmute.mockRejectedValueOnce(new Error("unmute unsupported"));
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      connection!.close();
+
+      pendingCaptures.get("device-a")!.reject(new Error("device unavailable"));
+      await expect(failedSwitch).rejects.toThrow("device unavailable");
+
+      expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+      expect(publishedTracks).toEqual([oldTrack]);
+    });
+
+    it("does not start microphone capture when the session closes during a pending reconciliation unmute", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+      const setMicrophoneEnabled = mockRoom.localParticipant
+        .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+      setMicrophoneEnabled.mockClear();
+
+      // Hold the retained track's unmute open so close() lands while the
+      // reconciliation is in flight.
+      let rejectUnmute!: (error: Error) => void;
+      const unmuteGate = new Promise<void>((_resolve, reject) => {
+        rejectUnmute = reject;
+      });
+      oldTrack.unmute.mockImplementationOnce(() => unmuteGate);
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.reject(new Error("device unavailable"));
+
+      await vi.waitFor(() => expect(oldTrack.unmute).toHaveBeenCalled());
+      connection!.close();
+
+      rejectUnmute(new Error("unmute unsupported"));
+      await expect(failedSwitch).rejects.toThrow("device unavailable");
+
+      expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+      expect(publishedTracks).toEqual([oldTrack]);
+    });
+
+    it("does not start microphone capture when the session closes during a pending mute", async () => {
+      const { oldTrack } = await createConnectionWithMic();
+      const setMicrophoneEnabled = mockRoom.localParticipant
+        .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+      setMicrophoneEnabled.mockClear();
+
+      let rejectMute!: (error: Error) => void;
+      const muteGate = new Promise<void>((_resolve, reject) => {
+        rejectMute = reject;
+      });
+      oldTrack.mute.mockImplementationOnce(() => muteGate);
+
+      const setMutedPromise = connection!.input.setMuted(true);
+      await vi.waitFor(() => expect(oldTrack.mute).toHaveBeenCalled());
+      connection!.close();
+
+      rejectMute(new Error("mute unsupported"));
+      await setMutedPromise;
+
+      expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+      expect(connection!.input.isMuted()).toBe(true);
+    });
+
+    it("does not start microphone capture when the session closes during a pending post-publish mute", async () => {
+      const setupInputAnalysis = useAnalyserSpy();
+      try {
+        await createConnectionWithMic();
+        setupInputAnalysis.mockClear();
+        const setMicrophoneEnabled = mockRoom.localParticipant
+          .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+        setMicrophoneEnabled.mockClear();
+
+        let resolvePublish!: () => void;
+        const publishGate = new Promise<void>(resolve => {
+          resolvePublish = resolve;
+        });
+        (
+          mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(() =>
+          publishGate.then(() => {
+            publishedTracks.push(pendingCaptures.get("device-a")!.track);
+            micPublication = { track: pendingCaptures.get("device-a")!.track };
+          })
+        );
+
+        const firstSwitch = connection!.setAudioInputDevice("device-a");
+        pendingCaptures.get("device-a")!.resolve();
+        await vi.waitFor(() =>
+          expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+        );
+
+        await connection!.input.setMuted(true);
+        pendingCaptures
+          .get("device-a")!
+          .track.mute.mockRejectedValueOnce(new Error("mute unsupported"));
+
+        connection!.close();
+        resolvePublish();
+        await expect(firstSwitch).resolves.toBeUndefined();
+
+        const newTrack = pendingCaptures.get("device-a")!.track;
+        expect(publishedTracks).toEqual([newTrack]);
+        expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+        expect(setupInputAnalysis).toHaveBeenCalledWith(
+          newTrack.mediaStreamTrack
+        );
+        expect(connection!.input.isMuted()).toBe(true);
+      } finally {
+        setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+      }
+    });
   });
 });
