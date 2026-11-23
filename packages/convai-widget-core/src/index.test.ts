@@ -1237,6 +1237,118 @@ describe("elevenlabs-convai", () => {
     });
   });
 
+  describe("side panel layout", () => {
+    const sheetVariant = (widget: HTMLElement) =>
+      widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
+    // Repeats until the widget has loaded and is listening
+    const openPanel = (widget: HTMLElement) =>
+      expect
+        .poll(() => {
+          document.dispatchEvent(
+            new CustomEvent("elevenlabs-agent:expand", {
+              detail: { action: "expand" },
+            })
+          );
+          return sheetVariant(widget);
+        })
+        .toBe("panel");
+    const textInput = () =>
+      page.getByRole("textbox", { name: "Text message input" });
+
+    afterEach(() => page.viewport(414, 896));
+
+    it("should open as a panel on desktop and close from its header", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "side-panel",
+      });
+      await openPanel(widget);
+      await expect.element(textInput()).toBeVisible();
+
+      await page.getByRole("button", { name: "Collapse", exact: true }).click();
+      await expect.element(textInput()).not.toBeInTheDocument();
+    });
+
+    it("should go fullscreen on mobile", async () => {
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "side-panel",
+        "default-expanded": "true",
+      });
+
+      await expect.poll(() => sheetVariant(widget)).toBe("fullscreen");
+    });
+
+    it("should close with Escape", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "side-panel",
+      });
+
+      await openPanel(widget);
+      await expect.element(textInput()).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+      await expect.element(textInput()).not.toBeInTheDocument();
+    });
+
+    it("should leave Escape to the terms dialog over it", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "side-panel",
+      });
+
+      await openPanel(widget);
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await expect.element(page.getByText("Test terms")).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+      // Longer than the panel's slide out
+      await new Promise(resolve => setTimeout(resolve, 400));
+
+      await expect.element(page.getByText("Test terms")).toBeVisible();
+      expect(
+        widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-shown")
+      ).toBe("true");
+    });
+
+    it("should leave Escape to the end confirmation over it", async () => {
+      await page.viewport(1280, 800);
+      const widget = setupWebComponent({
+        "agent-id": "basic",
+        variant: "compact",
+        transcript: "true",
+        "text-input": "true",
+        layout: "side-panel",
+        "end-confirmation": "true",
+      });
+
+      await openPanel(widget);
+      await page.getByRole("button", { name: "Start a call" }).click();
+      await page.getByRole("button", { name: "Accept" }).click();
+      await page.getByRole("button", { name: "End", exact: true }).click();
+      const confirm = page.getByRole("button", { name: "End call" });
+      await expect.element(confirm).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+
+      await expect.element(confirm).not.toBeInTheDocument();
+      await expect.element(textInput()).toBeVisible();
+    });
+  });
+
   describe("default size", () => {
     const sheetVariant = (widget: HTMLElement) =>
       widget.shadowRoot?.querySelector(".sheet")?.getAttribute("data-variant");
