@@ -10,7 +10,7 @@ export function Root({ children, ...rest }: RootPortalProviderProps) {
   const [portal, setPortal] = useState<HTMLDivElement | null>(null);
 
   return (
-    <div ref={setPortal} {...rest}>
+    <div {...rest} ref={setPortal}>
       {portal && (
         <RootPortalContext.Provider value={portal}>
           {children}

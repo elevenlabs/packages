@@ -143,13 +143,12 @@ const MemoStrong = memo<StrongProps>(
 );
 MemoStrong.displayName = "MarkdownStrong";
 
-type AProps = WithNode<JSX.IntrinsicElements["a"]> & { href?: string };
+type AProps = WithNode<JSX.IntrinsicElements["a"]>;
 const MemoA = memo<AProps>(
-  ({ children, className, href, node, ...props }: AProps) => (
+  ({ children, className, node, ...props }: AProps) => (
     <a
       className={cn("wrap-anywhere font-medium underline", className)}
       data-streamdown="link"
-      href={href}
       rel="noreferrer"
       target="_blank"
       {...props}

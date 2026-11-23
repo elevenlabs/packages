@@ -1,4 +1,3 @@
-import { ImgHTMLAttributes } from "preact/compat";
 import { clsx } from "clsx";
 
 const SIZE_CLASSES = {
@@ -6,17 +5,13 @@ const SIZE_CLASSES = {
   md: "w-6 h-6",
 };
 
-interface FlagProps extends ImgHTMLAttributes<HTMLImageElement> {
+interface FlagProps {
   size?: keyof typeof SIZE_CLASSES;
   flagCode: string;
+  className?: string;
 }
 
-export function Flag({
-  size = "md",
-  flagCode,
-  className,
-  ...props
-}: FlagProps) {
+export function Flag({ size = "md", flagCode, className }: FlagProps) {
   return (
     <img
       className={clsx(
@@ -26,7 +21,6 @@ export function Flag({
       )}
       src={`https://storage.googleapis.com/eleven-public-cdn/images/flags/circle-flags/${flagCode}.svg`}
       alt={`${flagCode.toUpperCase()} flag`}
-      {...props}
     />
   );
 }

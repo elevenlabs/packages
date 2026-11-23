@@ -1,8 +1,7 @@
 import { useSignal } from "@preact/signals";
-import { JSX } from "preact";
+import type { SignalLike, Signalish } from "preact";
 
-type SignalLike<T> = JSX.SignalLike<T>;
-export type Signalish<T> = JSX.Signalish<T>;
+export type { Signalish };
 
 function isSignal<T>(value: SignalLike<T> | T): value is SignalLike<T> {
   return value && typeof value === "object" && "peek" in value;

@@ -7,7 +7,7 @@ interface CSSTransitionOptions {
 }
 
 export function useCSSTransition({ onStart, onEnd }: CSSTransitionOptions) {
-  const transitionProperties = useRef<Set<string>>();
+  const transitionProperties = useRef<Set<string>>(undefined);
   transitionProperties.current ??= new Set();
   const onStartRef = useRef(onStart);
   onStartRef.current = onStart;
