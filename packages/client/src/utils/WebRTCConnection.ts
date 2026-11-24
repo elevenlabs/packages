@@ -924,9 +924,11 @@ export class WebRTCConnection extends BaseConnection {
         if (publication?.track !== audioTrack) {
           audioTrack.stop();
         }
-        if (!publication?.track) {
+        if (!publication?.track && this.isConnected) {
           // The old track is already gone, so recover onto the default device
-          // rather than leaving the session without a microphone.
+          // rather than leaving the session without a microphone. Skipped
+          // once the session has ended: starting capture after teardown
+          // would reacquire a mic the user already released.
           try {
             await this.room.localParticipant.setMicrophoneEnabled(
               !this._isMuted
@@ -955,36 +957,47 @@ export class WebRTCConnection extends BaseConnection {
       // above and setMuted skipped it while the switch was in progress.
       // The new track is already published, so a failure here must not
       // fail the switch.
-      try {
-        if (this._isMuted) {
-          await audioTrack.mute();
-        } else if (mutedBeforePublish) {
-          await audioTrack.unmute();
-        }
-      } catch (error) {
-        console.warn("Failed to apply mute state to new input device:", error);
-        // The new track is published, so participant-level control toggles
-        // it rather than publishing a second one. Without this, a mute
-        // skipped while the switch had no publication would never reach
-        // the live microphone.
-        // Recheck after the await: the session may have ended while the
-        // mute was in flight, and starting microphone capture after
-        // teardown would reacquire a mic the user already released.
-        if (this.isConnected) {
-          try {
-            await this.room.localParticipant.setMicrophoneEnabled(
-              !this._isMuted
-            );
-          } catch (fallbackError) {
-            console.warn(
-              "Failed to apply mute state to new input device via participant control:",
-              fallbackError
-            );
+      if (!this.isConnected) {
+        // The session ended while publishing. close() already stopped the
+        // tracks it knew about, but this track was published after that,
+        // so stop it instead of reconciling mute state onto it: unmuting
+        // a stopped track would reacquire the microphone after teardown.
+        audioTrack.stop();
+      } else {
+        try {
+          if (this._isMuted) {
+            await audioTrack.mute();
+          } else if (mutedBeforePublish) {
+            await audioTrack.unmute();
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to apply mute state to new input device:",
+            error
+          );
+          // The new track is published, so participant-level control toggles
+          // it rather than publishing a second one. Without this, a mute
+          // skipped while the switch had no publication would never reach
+          // the live microphone.
+          // Recheck after the await: the session may have ended while the
+          // mute was in flight, and starting microphone capture after
+          // teardown would reacquire a mic the user already released.
+          if (this.isConnected) {
+            try {
+              await this.room.localParticipant.setMicrophoneEnabled(
+                !this._isMuted
+              );
+            } catch (fallbackError) {
+              console.warn(
+                "Failed to apply mute state to new input device via participant control:",
+                fallbackError
+              );
+            }
           }
         }
-      }
 
-      this.setupInputAnalyser(audioTrack.mediaStreamTrack);
+        this.setupInputAnalyser(audioTrack.mediaStreamTrack);
+      }
     } finally {
       this.settingInputDevice = false;
     }

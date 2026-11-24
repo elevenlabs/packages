@@ -2606,10 +2606,88 @@ describe("WebRTCConnection", () => {
         const newTrack = pendingCaptures.get("device-a")!.track;
         expect(publishedTracks).toEqual([newTrack]);
         expect(setMicrophoneEnabled).not.toHaveBeenCalled();
-        expect(setupInputAnalysis).toHaveBeenCalledWith(
-          newTrack.mediaStreamTrack
-        );
+        // The session ended while publishing, so the switch abandons the
+        // reconciliation and does not set up the analyser either.
+        expect(setupInputAnalysis).not.toHaveBeenCalled();
         expect(connection!.input.isMuted()).toBe(true);
+      } finally {
+        setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
+      }
+    });
+
+    it("does not recover onto the default mic when the session closes while publishing", async () => {
+      await createConnectionWithMic();
+      const setMicrophoneEnabled = mockRoom.localParticipant
+        .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+      setMicrophoneEnabled.mockClear();
+
+      let rejectPublish!: (error: Error) => void;
+      const publishGate = new Promise<void>((_resolve, reject) => {
+        rejectPublish = reject;
+      });
+      (
+        mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => publishGate);
+
+      const failedSwitch = connection!.setAudioInputDevice("device-a");
+      pendingCaptures.get("device-a")!.resolve();
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+      );
+
+      connection!.close();
+      rejectPublish(new Error("publish failed"));
+      await expect(failedSwitch).rejects.toThrow("publish failed");
+
+      expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+      expect(publishedTracks).toEqual([]);
+    });
+
+    it("does not unmute the new track when the session closes during publishing", async () => {
+      const setupInputAnalysis = useAnalyserSpy();
+      try {
+        await createConnectionWithMic();
+        await connection!.input.setMuted(true);
+        setupInputAnalysis.mockClear();
+        const setMicrophoneEnabled = mockRoom.localParticipant
+          .setMicrophoneEnabled as ReturnType<typeof vi.fn>;
+        setMicrophoneEnabled.mockClear();
+
+        let resolvePublish!: () => void;
+        const publishGate = new Promise<void>(resolve => {
+          resolvePublish = resolve;
+        });
+        (
+          mockRoom.localParticipant.publishTrack as ReturnType<typeof vi.fn>
+        ).mockImplementationOnce(() =>
+          publishGate.then(() => {
+            publishedTracks.push(pendingCaptures.get("device-a")!.track);
+            micPublication = { track: pendingCaptures.get("device-a")!.track };
+          })
+        );
+
+        const firstSwitch = connection!.setAudioInputDevice("device-a");
+        pendingCaptures.get("device-a")!.resolve();
+        await vi.waitFor(() =>
+          expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalled()
+        );
+
+        // Unmute during publishing so the re-check would unmute the new track.
+        await connection!.input.setMuted(false);
+
+        connection!.close();
+        resolvePublish();
+        await expect(firstSwitch).resolves.toBeUndefined();
+
+        const newTrack = pendingCaptures.get("device-a")!.track;
+        expect(publishedTracks).toEqual([newTrack]);
+        // The re-check must not unmute the stopped track, and no participant
+        // fallback may run either; the abandoned track is stopped instead.
+        expect(newTrack.unmute).not.toHaveBeenCalled();
+        expect(newTrack.stop).toHaveBeenCalledTimes(1);
+        expect(setMicrophoneEnabled).not.toHaveBeenCalled();
+        expect(setupInputAnalysis).not.toHaveBeenCalled();
+        expect(connection!.input.isMuted()).toBe(false);
       } finally {
         setWebRTCAudioAdapterFactory(() => new WebAudioAdapter());
       }
