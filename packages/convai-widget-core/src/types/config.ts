@@ -9,7 +9,7 @@ export function parseVariant(variant: string | undefined): Variant {
     : Variants[0];
 }
 
-export const Layouts = ["default", "page"] as const;
+export const Layouts = ["default", "page", "side-panel"] as const;
 export type Layout = (typeof Layouts)[number];
 
 export function parseLayout(layout: string | undefined): Layout {
@@ -150,6 +150,10 @@ export const DefaultTextContents = {
   change_language: "Change language",
   collapse: "Collapse",
   expand: "Expand",
+  expand_widget: "Expand widget",
+  collapse_widget: "Collapse widget",
+  dismiss: "Dismiss",
+  open_chat: "Open chat",
   copied: "Copied!",
   accept_terms: "Accept",
   dismiss_terms: "Cancel",
@@ -232,6 +236,7 @@ export const DefaultStyles = {
   accent_subtle: "#6b7280",
   accent_primary: "#ffffff",
   overlay_padding: 32,
+  panel_width: "clamp(400px, 33vw, 560px)",
   button_radius: 18,
   input_radius: 10,
   bubble_radius: 15,

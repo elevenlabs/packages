@@ -451,6 +451,106 @@ describe("useScribe", () => {
     });
   });
 
+  it("passes diarize and inferSpeakerNames through to the client", async () => {
+    const { result } = renderHook(() =>
+      useScribe({ diarize: true, inferSpeakerNames: true })
+    );
+
+    await act(async () => {
+      await result.current.connect({
+        token: "test-token",
+        modelId: "scribe_v3_live",
+        microphone: {},
+      });
+    });
+
+    expect(Scribe.connect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        diarize: true,
+        inferSpeakerNames: true,
+      })
+    );
+  });
+
+  describe("diarization", () => {
+    it("forwards speaker events from the current connection only", async () => {
+      const replaced = createMockConnection();
+      const current = createMockConnection();
+      vi.mocked(Scribe.connect)
+        .mockReturnValueOnce(replaced)
+        .mockReturnValueOnce(current);
+
+      const onDiarizedTranscript = vi.fn();
+      const onSpeakersMerged = vi.fn();
+      const onSpeakerNames = vi.fn();
+      const { result } = renderHook(() =>
+        useScribe({
+          diarize: true,
+          inferSpeakerNames: true,
+          onDiarizedTranscript,
+          onSpeakersMerged,
+          onSpeakerNames,
+        })
+      );
+
+      const session = {
+        token: "test-token",
+        modelId: "scribe_v3_live",
+        microphone: {},
+      };
+      await act(async () => {
+        await result.current.connect(session);
+      });
+      act(() => {
+        result.current.disconnect();
+      });
+      await act(async () => {
+        await result.current.connect(session);
+      });
+
+      const diarized = {
+        message_type: "diarized_transcript",
+        segment_index: 0,
+        text: "Hello",
+        words: [
+          {
+            text: "Hello",
+            type: "word",
+            speaker_id: "speaker_1",
+            logprob: -0.1,
+          },
+        ],
+      };
+      const merged = {
+        message_type: "speakers_merged",
+        from_speaker_id: "speaker_1",
+        to_speaker_id: "speaker_0",
+      };
+      const names = {
+        message_type: "speaker_names",
+        speaker_names: { speaker_0: "Anna" },
+      };
+
+      act(() => {
+        for (const connection of [replaced, current]) {
+          handlerFor(
+            connection,
+            RealtimeEvents.DIARIZED_TRANSCRIPT
+          )?.(diarized);
+          handlerFor(connection, RealtimeEvents.SPEAKERS_MERGED)?.(merged);
+          handlerFor(connection, RealtimeEvents.SPEAKER_NAMES)?.(names);
+        }
+      });
+
+      expect(onDiarizedTranscript).toHaveBeenCalledTimes(1);
+      expect(onDiarizedTranscript).toHaveBeenCalledWith(diarized);
+      expect(onSpeakersMerged).toHaveBeenCalledTimes(1);
+      expect(onSpeakersMerged).toHaveBeenCalledWith(merged);
+      expect(onSpeakerNames).toHaveBeenCalledTimes(1);
+      expect(onSpeakerNames).toHaveBeenCalledWith(names);
+    });
+  });
+
   describe("connected status", () => {
     const SESSION_STARTED = { message_type: "session_started" };
 

@@ -116,6 +116,22 @@ describe("Dismiss Button", () => {
         .element(page.getByRole("button", { name: "Open chat" }))
         .toBeVisible();
     });
+
+    it("should use custom text contents", async () => {
+      setupWebComponent({
+        "agent-id": "basic",
+        dismissible: "true",
+        "text-contents": JSON.stringify({
+          dismiss: "Réduire",
+          open_chat: "Ouvrir le chat",
+        }),
+      });
+
+      await page.getByRole("button", { name: "Réduire" }).click();
+      await expect
+        .element(page.getByRole("button", { name: "Ouvrir le chat" }))
+        .toBeVisible();
+    });
   });
 
   describe("when dismissible is disabled", () => {

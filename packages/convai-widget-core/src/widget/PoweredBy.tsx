@@ -1,7 +1,7 @@
 import { useWidgetConfig } from "../contexts/widget-config";
 import { clsx } from "clsx";
 
-export function PoweredBy() {
+export function PoweredBy({ inline }: { inline?: boolean }) {
   const config = useWidgetConfig();
 
   if (config.value.disable_banner) {
@@ -12,8 +12,8 @@ export function PoweredBy() {
     <p
       className={clsx(
         "whitespace-nowrap [line-height:var(--el-overlay-padding)] text-[10px] px-3 z-10",
-        // A page has no overlay padding to sit in
-        config.value.layout === "page"
+        // Inside a page or panel there's no overlay padding to sit in
+        inline
           ? undefined
           : config.value.placement.startsWith("top")
             ? "-translate-y-[calc(var(--el-overlay-padding))]"

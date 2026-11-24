@@ -7,6 +7,7 @@ import { SheetLanguageSelect } from "./SheetLanguageSelect";
 import { StatusLabel } from "./StatusLabel";
 import { useWidgetSize } from "../contexts/widget-size";
 import { ConversationModeToggle } from "./ConversationModeToggle";
+import { useWidgetConfig } from "../contexts/widget-config";
 
 interface SheetHeaderProps {
   showBackButton: boolean;
@@ -28,11 +29,17 @@ export function SheetHeader({
   onClose,
 }: SheetHeaderProps) {
   const text = useTextContents();
+  const config = useWidgetConfig();
   const { toggleSize, variant, fullscreenOnly } = useWidgetSize();
 
   const expandButtonLabel = useComputed(() =>
-    variant.value === "compact" ? "Expand widget" : "Collapse widget"
+    variant.value === "compact"
+      ? text.expand_widget.value
+      : text.collapse_widget.value
   );
+  const isSidePanel = config.value.layout === "side-panel";
+  // A side panel's close button stays, since its trigger may be hidden
+  const showClose = !!onClose && (fullscreenOnly.value || isSidePanel);
 
   return (
     <div className="w-full relative shrink-0 z-10">
@@ -68,7 +75,7 @@ export function SheetHeader({
           <InOutTransition active={showConversationModeToggle}>
             <ConversationModeToggle className="transition-opacity data-hidden:opacity-0" />
           </InOutTransition>
-          {onClose && fullscreenOnly.value ? (
+          {showClose ? (
             <Button
               variant="ghost"
               onClick={onClose}
@@ -78,19 +85,21 @@ export function SheetHeader({
               <Icon name="x" size="sm" />
             </Button>
           ) : (
-            <InOutTransition active={showExpandButton}>
-              <Button
-                variant="ghost"
-                onClick={toggleSize}
-                aria-label={expandButtonLabel}
-                className="h-8 w-8 transition-opacity data-hidden:opacity-0"
-              >
-                <Icon
-                  name={variant.value === "compact" ? "maximize" : "minimize"}
-                  size="sm"
-                />
-              </Button>
-            </InOutTransition>
+            !isSidePanel && (
+              <InOutTransition active={showExpandButton}>
+                <Button
+                  variant="ghost"
+                  onClick={toggleSize}
+                  aria-label={expandButtonLabel}
+                  className="h-8 w-8 transition-opacity data-hidden:opacity-0"
+                >
+                  <Icon
+                    name={variant.value === "compact" ? "maximize" : "minimize"}
+                    size="sm"
+                  />
+                </Button>
+              </InOutTransition>
+            )
           )}
         </div>
       </div>
