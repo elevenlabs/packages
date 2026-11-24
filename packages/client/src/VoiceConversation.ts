@@ -66,6 +66,7 @@ export class VoiceConversation extends BaseConversation {
           await sessionSetup.detach().catch(() => {});
         }
         fullOptions.onStatusChange?.({ status: "disconnected" });
+        BaseConversation.notifyStartupFailure(fullOptions, error);
       }
       throw error;
     }

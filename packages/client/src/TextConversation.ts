@@ -66,6 +66,7 @@ export class TextConversation extends BaseConversation {
       } else {
         fullOptions.onStatusChange?.({ status: "disconnected" });
         connection?.close();
+        BaseConversation.notifyStartupFailure(fullOptions, error);
       }
       throw error;
     }

@@ -293,11 +293,64 @@ describe("Conversation", () => {
         setTimeout(() => reject(new Error("timeout")), 5000);
       });
 
+      const onDisconnect = vi.fn();
+
       await expect(async () => {
         await Conversation.startSession({
           signedUrl: `wss://api.elevenlabs.io/${conversationType}/2`,
           connectionDelay: { default: 0 },
           textOnly: conversationType === "text",
+          onDisconnect,
+        });
+        await clientPromise;
+      }).rejects.toThrowError(
+        expect.objectContaining({
+          name: "SessionConnectionError",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
+        })
+      );
+
+      // A failed start still tears the session down, so onDisconnect must
+      // fire exactly once — otherwise callers never learn the session ended.
+      expect(onDisconnect).toHaveBeenCalledTimes(1);
+      expect(onDisconnect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reason: "error",
+          closeCode: 3000,
+          closeReason: "Test cancellation reason",
+        })
+      );
+    }
+  );
+
+  it.each(ConversationTypes)(
+    "preserves the original startup error when onDisconnect throws (%s)",
+    async conversationType => {
+      const server = new Server(
+        `wss://api.elevenlabs.io/${conversationType}/2b`
+      );
+      const clientPromise = new Promise<Client>((resolve, reject) => {
+        server.on("connection", socket => {
+          socket.close({
+            code: 3000,
+            reason: "Test cancellation reason",
+            wasClean: true,
+          });
+          resolve(socket);
+        });
+        server.on("error", reject);
+        setTimeout(() => reject(new Error("timeout")), 5000);
+      });
+
+      await expect(async () => {
+        await Conversation.startSession({
+          signedUrl: `wss://api.elevenlabs.io/${conversationType}/2b`,
+          connectionDelay: { default: 0 },
+          textOnly: conversationType === "text",
+          onDisconnect: () => {
+            throw new Error("disconnect listener failed");
+          },
         });
         await clientPromise;
       }).rejects.toThrowError(

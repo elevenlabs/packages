@@ -688,6 +688,80 @@ describe("ConversationProvider", () => {
     expect(onError).toHaveBeenCalledWith("agent not found", expect.any(Error));
   });
 
+  it("calls onDisconnect exactly once when startSession rejects", async () => {
+    const onDisconnect = vi.fn();
+    const onError = vi.fn();
+    const startError = new Error("agent not found");
+    vi.mocked(Conversation.startSession).mockImplementation(async opts => {
+      // The client fires onDisconnect for a failed start (see #677) before
+      // rejecting; the provider must deliver it exactly once and must not
+      // synthesize a second one in its own rejection handler.
+      (opts as MockStartSessionOptions).onDisconnect?.({
+        reason: "error",
+        message: "agent not found",
+        context: { type: "start_session", reason: "agent not found" },
+      });
+      throw startError;
+    });
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onDisconnect, onError }),
+    });
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    expect(onDisconnect).toHaveBeenCalledTimes(1);
+    expect(onDisconnect).toHaveBeenCalledWith({
+      reason: "error",
+      message: "agent not found",
+      context: { type: "start_session", reason: "agent not found" },
+    });
+    expect(onError).toHaveBeenCalledWith("agent not found", startError);
+    expect(result.current.conversation).toBeNull();
+  });
+
+  it("calls onDisconnect but not onError when endSession is called before startSession rejects", async () => {
+    const onDisconnect = vi.fn();
+    const onError = vi.fn();
+    const { promise, reject: rejectStartSession } =
+      Promise.withResolvers<Conversation>();
+    vi.mocked(Conversation.startSession).mockReturnValue(promise);
+
+    const { result } = renderHook(() => useTestContext(), {
+      wrapper: createWrapper({ onDisconnect, onError }),
+    });
+
+    act(() => {
+      result.current.startSession();
+    });
+
+    // User intentionally ends before the connection settles
+    act(() => {
+      result.current.endSession();
+    });
+
+    // The client still fires onDisconnect for the failed start; the
+    // provider must deliver it (teardown did happen) while still
+    // suppressing onError for the intentional disconnect.
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    act(() => {
+      (opts as MockStartSessionOptions).onDisconnect?.({
+        reason: "error",
+        message: "connection failed",
+        context: { type: "start_session", reason: "connection failed" },
+      });
+    });
+
+    await act(async () => {
+      rejectStartSession(new Error("connection failed"));
+    });
+
+    expect(onDisconnect).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("allows new connection after a failed startSession", async () => {
     vi.mocked(Conversation.startSession).mockRejectedValue(
       new Error("agent not found")
