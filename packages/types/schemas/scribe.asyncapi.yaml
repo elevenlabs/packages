@@ -50,9 +50,6 @@ channels:
           - $ref: "#/components/messages/CommittedTranscriptEntities"
           - $ref: "#/components/messages/EditedTranscript"
           - $ref: "#/components/messages/RedactedTranscript"
-          - $ref: "#/components/messages/DiarizedTranscript"
-          - $ref: "#/components/messages/SpeakersMerged"
-          - $ref: "#/components/messages/SpeakerNames"
           - $ref: "#/components/messages/Error"
           - $ref: "#/components/messages/AuthError"
           - $ref: "#/components/messages/QuotaExceededError"
@@ -159,30 +156,6 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/RedactedTranscriptPayload"
-
-    DiarizedTranscript:
-      name: DiarizedTranscriptMessage
-      title: Diarized Transcript
-      summary: Final words and speaker IDs of a committed transcript, sent after it in commit order. Only sent when the diarize option is set.
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/DiarizedTranscriptPayload"
-
-    SpeakersMerged:
-      name: SpeakersMergedMessage
-      title: Speakers Merged
-      summary: Two speaker IDs have been identified as the same person. Only sent when the diarize option is set.
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/SpeakersMergedPayload"
-
-    SpeakerNames:
-      name: SpeakerNamesMessage
-      title: Speaker Names
-      summary: Names inferred for diarized speakers, sent with the full map each time it changes. Only sent when the inferSpeakerNames option is set.
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/SpeakerNamesPayload"
 
     Error:
       name: ScribeErrorMessage
@@ -309,9 +282,6 @@ components:
         - committed_transcript_entities
         - edited_transcript
         - redacted_transcript
-        - diarized_transcript
-        - speakers_merged
-        - speaker_names
         - error
         - auth_error
         - invalid_request
@@ -337,10 +307,10 @@ components:
         - vad
       description: Strategy for committing transcriptions
 
-    # This shape is shared verbatim by every message that carries words: the
-    # live contract (fetched from
+    # This shape is shared verbatim by CommittedTranscriptWithTimestamps and
+    # FinalTranscriptWithTimestamps: the live contract (fetched from
     # https://api.elevenlabs.io/speech-to-text-asyncapi.yml) uses the exact
-    # same word schema for all of them, including "audio_event", structured
+    # same word schema for both, including "audio_event", structured
     # characters, and channel_index.
     Word:
       type: object
@@ -354,14 +324,10 @@ components:
           type: string
           description: The word or sound that was transcribed
         start:
-          anyOf:
-            - type: number
-            - type: "null"
+          type: number
           description: The start time of the word or sound in seconds
         end:
-          anyOf:
-            - type: number
-            - type: "null"
+          type: number
           description: The end time of the word or sound in seconds
         type:
           type: string
@@ -372,9 +338,7 @@ components:
             - spacing
             - audio_event
         speaker_id:
-          anyOf:
-            - type: string
-            - type: "null"
+          type: string
           description: Unique identifier for the speaker of this word
         logprob:
           type: number
@@ -383,16 +347,12 @@ components:
             Logprobs are in range [-infinity, 0], higher logprobs indicate a
             higher confidence the model has in its predictions.
         characters:
-          anyOf:
-            - type: array
-              items:
-                $ref: "#/components/schemas/TranscriptCharacter"
-            - type: "null"
+          type: array
           description: The characters that make up the word and their timing information
+          items:
+            $ref: "#/components/schemas/TranscriptCharacter"
         channel_index:
-          anyOf:
-            - type: integer
-            - type: "null"
+          type: integer
           description: The channel this word was spoken on (for multichannel audio). Null for single-channel transcriptions.
 
     TranscriptCharacter:
@@ -554,11 +514,6 @@ components:
         text:
           type: string
           description: Partial transcription text
-        words:
-          type: array
-          description: Draft words of the partial transcript, each with a speaker_id that is null until the speaker is identified. Speaker IDs and timestamps may change as more audio is received. Only sent when the diarize option is set.
-          items:
-            $ref: "#/components/schemas/Word"
 
     FinalTranscriptPayload:
       type: object
@@ -602,9 +557,6 @@ components:
         text:
           type: string
           description: Committed transcription text
-        segment_index:
-          type: integer
-          description: Zero-based commit index, matching the segment_index of the corresponding diarized_transcript. Only sent when the diarize option is set.
 
     CommittedTranscriptWithTimestampsPayload:
       type: object
@@ -670,52 +622,6 @@ components:
         redacted_text:
           type: string
           description: The transcript text with each redacted entity replaced by a marker such as `{NAME_0}`, formatted according to the entityRedactionMode option.
-
-    DiarizedTranscriptPayload:
-      type: object
-      required: [message_type, segment_index, text, words]
-      properties:
-        message_type:
-          type: string
-          const: diarized_transcript
-        segment_index:
-          type: integer
-          description: The segment_index of the committed transcript the words are of.
-        text:
-          type: string
-          description: The committed transcript text the words are of.
-        words:
-          type: array
-          description: The words, as in batch diarization, each with its speaker_id, null where the speaker could not be identified.
-          items:
-            $ref: "#/components/schemas/Word"
-
-    SpeakersMergedPayload:
-      type: object
-      required: [message_type, from_speaker_id, to_speaker_id]
-      properties:
-        message_type:
-          type: string
-          const: speakers_merged
-        from_speaker_id:
-          type: string
-          description: The speaker ID that turned out to be to_speaker_id. Every earlier use of it, in partial or diarized transcripts, is to_speaker_id. Speaker IDs are never reused.
-        to_speaker_id:
-          type: string
-          description: The speaker ID that from_speaker_id was merged into. Merges chain, so apply them in the order received.
-
-    SpeakerNamesPayload:
-      type: object
-      required: [message_type, speaker_names]
-      properties:
-        message_type:
-          type: string
-          const: speaker_names
-        speaker_names:
-          type: object
-          additionalProperties:
-            type: string
-          description: The names inferred so far, keyed by speaker_id. Sent in full each time a speaker is named or a merge changes the names.
 
     # Base error structure - used as anchor for all error payloads
     ScribeErrorBase: &ScribeErrorBase

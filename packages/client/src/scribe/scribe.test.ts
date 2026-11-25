@@ -360,24 +360,6 @@ describe("Scribe", () => {
       );
     });
 
-    it("builds URI with diarize and infer_speaker_names when set", async () => {
-      const query = connectionQuery();
-
-      const connection = Scribe.connect({
-        token: TEST_TOKEN,
-        modelId: "scribe_v3_live",
-        audioFormat: AudioFormat.PCM_16000,
-        sampleRate: 16000,
-        diarize: true,
-        inferSpeakerNames: true,
-      });
-      onTestFinished(() => connection.close());
-
-      const resolved = await query;
-      expect(resolved.get("diarize")).toBe("true");
-      expect(resolved.get("infer_speaker_names")).toBe("true");
-    });
-
     it.each([
       { filterBackgroundAudio: false, expected: "false" },
       { filterBackgroundAudio: true, expected: "true" },
@@ -417,8 +399,6 @@ describe("Scribe", () => {
       expect(resolved.has("entity_redaction")).toBe(false);
       expect(resolved.has("entity_redaction_mode")).toBe(false);
       expect(resolved.has("transcript_edit")).toBe(false);
-      expect(resolved.has("diarize")).toBe(false);
-      expect(resolved.has("infer_speaker_names")).toBe(false);
     });
 
     it("builds URI with keyterms as repeated query params", () => {
@@ -890,76 +870,6 @@ describe("Scribe", () => {
       await sleep(100);
       expect(onRedactedTranscript).toHaveBeenCalledTimes(1);
       expect(onRedactedTranscript).toHaveBeenCalledWith(payload);
-
-      connection.close();
-      server.close();
-    });
-
-    it("handles diarized_transcript, speakers_merged and speaker_names events", async () => {
-      const server = new Server(
-        "wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v3_live&token=sutkn_123"
-      );
-      const clientPromise = new Promise<Client>((resolve, reject) => {
-        server.on("connection", socket => resolve(socket));
-        server.on("error", reject);
-        setTimeout(() => reject(new Error("timeout")), 5000);
-      });
-
-      const onDiarizedTranscript = vi.fn();
-      const onSpeakersMerged = vi.fn();
-      const onSpeakerNames = vi.fn();
-
-      const connection = Scribe.connect({
-        token: TEST_TOKEN,
-        modelId: "scribe_v3_live",
-        audioFormat: AudioFormat.PCM_16000,
-        sampleRate: 16000,
-        diarize: true,
-        inferSpeakerNames: true,
-      });
-
-      connection.on(RealtimeEvents.DIARIZED_TRANSCRIPT, onDiarizedTranscript);
-      connection.on(RealtimeEvents.SPEAKERS_MERGED, onSpeakersMerged);
-      connection.on(RealtimeEvents.SPEAKER_NAMES, onSpeakerNames);
-
-      const client = await clientPromise;
-      await sleep(100);
-
-      const diarized = {
-        message_type: "diarized_transcript",
-        segment_index: 0,
-        text: "Hello",
-        words: [
-          {
-            text: "Hello",
-            start: 0,
-            end: 0.5,
-            type: "word",
-            speaker_id: "speaker_1",
-            logprob: -0.1,
-          },
-        ],
-      };
-      const merged = {
-        message_type: "speakers_merged",
-        from_speaker_id: "speaker_1",
-        to_speaker_id: "speaker_0",
-      };
-      const names = {
-        message_type: "speaker_names",
-        speaker_names: { speaker_0: "Anna" },
-      };
-      for (const payload of [diarized, merged, names]) {
-        client.send(JSON.stringify(payload));
-      }
-
-      await sleep(100);
-      expect(onDiarizedTranscript).toHaveBeenCalledTimes(1);
-      expect(onDiarizedTranscript).toHaveBeenCalledWith(diarized);
-      expect(onSpeakersMerged).toHaveBeenCalledTimes(1);
-      expect(onSpeakersMerged).toHaveBeenCalledWith(merged);
-      expect(onSpeakerNames).toHaveBeenCalledTimes(1);
-      expect(onSpeakerNames).toHaveBeenCalledWith(names);
 
       connection.close();
       server.close();

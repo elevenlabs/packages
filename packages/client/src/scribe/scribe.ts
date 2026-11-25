@@ -119,27 +119,6 @@ interface BaseOptions {
    */
   noVerbatim?: boolean;
   /**
-   * Add words to every partial transcript, each with a speaker ID (speaker_0, speaker_1, ...)
-   * that is null until the speaker is identified. Each committed transcript is followed by a
-   * diarized_transcript event with the same segment_index, carrying its words with their final
-   * speakers. A speakers_merged event reports two speaker IDs that turned out to be the same
-   * person.
-   *
-   * @remarks
-   * Only supported by scribe_v3_live. Cannot be combined with filterBackgroundAudio.
-   * @default false
-   */
-  diarize?: boolean;
-  /**
-   * Infer speaker names from the conversation (introductions, greetings, people addressed by
-   * name) and send them in speaker_names events.
-   *
-   * @remarks
-   * Requires diarize. Cannot be combined with entityRedaction.
-   * @default false
-   */
-  inferSpeakerNames?: boolean;
-  /**
    * Detect entities on committed transcripts. Accepts `"all"`, a single entity type or
    * category, or a list of types/categories. Detected entities are delivered in a separate
    * committed_transcript_entities event with their text, type, and character positions.
@@ -151,7 +130,7 @@ interface BaseOptions {
    * committed transcript, which itself stays unredacted.
    *
    * @remarks
-   * Cannot be combined with transcriptEdit or inferSpeakerNames.
+   * Cannot be combined with transcriptEdit.
    */
   entityRedaction?: EntityDetectionOption | EntityDetectionOption[];
   /**
@@ -175,7 +154,7 @@ interface BaseOptions {
    * lower default threshold.
    *
    * @remarks
-   * Cannot be combined with diarize.
+   * Cannot be combined with includeTimestamps.
    * @default false
    */
   filterBackgroundAudio?: boolean;
@@ -328,15 +307,6 @@ export class ScribeRealtime {
     }
     if (options.noVerbatim !== undefined) {
       params.append("no_verbatim", options.noVerbatim ? "true" : "false");
-    }
-    if (options.diarize !== undefined) {
-      params.append("diarize", options.diarize ? "true" : "false");
-    }
-    if (options.inferSpeakerNames !== undefined) {
-      params.append(
-        "infer_speaker_names",
-        options.inferSpeakerNames ? "true" : "false"
-      );
     }
     if (options.entityDetection !== undefined) {
       const entityDetection = Array.isArray(options.entityDetection)
