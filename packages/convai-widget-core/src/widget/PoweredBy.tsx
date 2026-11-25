@@ -11,13 +11,16 @@ export function PoweredBy({ inline }: { inline?: boolean }) {
   return (
     <p
       className={clsx(
-        "whitespace-nowrap [line-height:var(--el-overlay-padding)] text-[10px] px-3 z-10",
-        // Inside a page or panel there's no overlay padding to sit in
+        "whitespace-nowrap text-[10px] px-3 z-10",
+        // Inside a page or panel it sits in a fixed gap, not the overlay padding
         inline
-          ? undefined
-          : config.value.placement.startsWith("top")
-            ? "-translate-y-[calc(var(--el-overlay-padding))]"
-            : "translate-y-[calc(var(--el-overlay-padding))]"
+          ? "leading-[32px]"
+          : clsx(
+              "[line-height:var(--el-overlay-padding)]",
+              config.value.placement.startsWith("top")
+                ? "-translate-y-[calc(var(--el-overlay-padding))]"
+                : "translate-y-[calc(var(--el-overlay-padding))]"
+            )
       )}
     >
       <span className="opacity-30">Powered by</span>{" "}
