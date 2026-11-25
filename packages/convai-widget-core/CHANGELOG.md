@@ -1,5 +1,12 @@
 # @elevenlabs/convai-widget-core
 
+## 0.28.1
+
+### Patch Changes
+
+- b734909: Keep "Powered by ElevenAgents" clear of the message input in the side panel and page layouts when `overlay_padding` is larger than the default.
+- b734909: Show a minus instead of an X on the minimize button of the side panel and the mobile full-screen sheet, so it no longer reads as ending the conversation.
+
 ## 0.28.0
 
 ### Minor Changes
