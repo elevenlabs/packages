@@ -82,7 +82,7 @@ export function SheetHeader({
               aria-label={text.collapse}
               className="h-8 w-8"
             >
-              <Icon name="x" size="sm" />
+              <Icon name="minus" size="sm" />
             </Button>
           ) : (
             !isSidePanel && (
