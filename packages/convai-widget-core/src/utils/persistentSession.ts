@@ -40,8 +40,16 @@ export function configurePersistentSession(
     unavailable: boolean;
   }
 ) {
-  if (resume || (resumeOnly && (config.persistentSession || voiceResume))) {
-    config.persistentSession = { token: resume ?? undefined, resumeOnly };
+  if (resume) {
+    config.persistentSession = { token: resume, resumeOnly };
+  } else if (resumeOnly) {
+    // xi refuses a voice call's session unless the agent allows it, so a call
+    // without it connects as a new conversation straight away.
+    if (voiceResume) {
+      config.persistentSession = { resumeOnly };
+    } else {
+      delete config.persistentSession;
+    }
   }
   if (unavailable) {
     delete config.persistentSession;

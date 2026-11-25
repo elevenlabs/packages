@@ -9,6 +9,7 @@ import {
   vi,
 } from "vitest";
 import {
+  receivedConnections,
   receivedContextualUpdates,
   resetNavigationResumeMock,
   Worker,
@@ -22,6 +23,7 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 type ResumeAgent =
   | "navigation_resume"
   | "navigation_resume_agent_setting"
+  | "navigation_resume_attribute_only"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
   | "navigation_resume_no_override"
@@ -48,6 +50,12 @@ function storedRecord(
   const raw = sessionStorage.getItem(STORAGE_KEY_PREFIX + agentId);
   return raw ? (JSON.parse(raw) as NavigationResumeRecord) : null;
 }
+
+// Earlier tests' widgets can still connect, so count one agent's connections.
+const connectionsOf = (agentId: ResumeAgent) =>
+  receivedConnections().filter(
+    url => url.searchParams.get("agent_id") === agentId
+  );
 
 const resumeButton = () =>
   page.getByRole("button", { name: "Resume talking?" });
@@ -136,8 +144,29 @@ describe("Resuming a call after a navigation", () => {
     expect(receivedContextualUpdates()).toHaveLength(0);
   });
 
+  it("connects once and continues from the earlier turns without the agent's setting", async () => {
+    const firstMount = mountWidget("navigation_resume_attribute_only");
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    const firstPage = connectionsOf("navigation_resume_attribute_only");
+    expect(firstPage).toHaveLength(1);
+    expect(firstPage[0]?.searchParams.get("is_persistent")).toBeNull();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_attribute_only");
+    await resumeButton().click();
+
+    await expect
+      .element(page.getByText("Here are the mens casual shoes"))
+      .toBeInTheDocument();
+    await expectContextualUpdate("Looking at womens boots");
+    expect(connectionsOf("navigation_resume_attribute_only")).toHaveLength(2);
+  });
+
   it("does nothing when the option is off", async () => {
-    const mount = mountWidget("navigation_resume", {});
+    const mount = mountWidget("navigation_resume_attribute_only", {});
     await startCall();
     await expect
       .element(page.getByText("Looking at womens boots"))
@@ -145,8 +174,8 @@ describe("Resuming a call after a navigation", () => {
 
     navigateAway(mount);
 
-    expect(storedRecord()).toBeNull();
-    mountWidget("navigation_resume", {});
+    expect(storedRecord("navigation_resume_attribute_only")).toBeNull();
+    mountWidget("navigation_resume_attribute_only", {});
     await expect.element(callButton().first()).toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
   });
