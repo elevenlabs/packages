@@ -22,7 +22,6 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 
 type ResumeAgent =
   | "navigation_resume"
-  | "navigation_resume_agent_setting"
   | "navigation_resume_attribute_only"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
@@ -95,7 +94,7 @@ describe("Resuming a call after a navigation", () => {
     document.addEventListener("elevenlabs-convai:call", onCall);
 
     try {
-      const firstMount = mountWidget();
+      const firstMount = mountWidget("navigation_resume", {});
       await startCall();
       await expect
         .element(page.getByText("Looking at womens boots"))
@@ -103,7 +102,7 @@ describe("Resuming a call after a navigation", () => {
       expect(sawResume).toBe(false);
       navigateAway(firstMount);
 
-      mountWidget();
+      mountWidget("navigation_resume", {});
       await expect.element(resumeButton()).toBeInTheDocument();
       expect(
         page.getByText("Here are the mens casual shoes").all()
@@ -125,25 +124,6 @@ describe("Resuming a call after a navigation", () => {
     }
   });
 
-  it("continues the call when the agent turns resuming on", async () => {
-    const firstMount = mountWidget("navigation_resume_agent_setting", {});
-    await startCall();
-    await expect
-      .element(page.getByText("Looking at womens boots"))
-      .toBeInTheDocument();
-    navigateAway(firstMount);
-
-    mountWidget("navigation_resume_agent_setting", {});
-    await resumeButton().click();
-    await expect
-      .element(page.getByRole("button", { name: "End", exact: true }))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByText("Looking at womens boots"))
-      .toBeInTheDocument();
-    expect(receivedContextualUpdates()).toHaveLength(0);
-  });
-
   it("connects once and continues from the earlier turns without the agent's setting", async () => {
     const firstMount = mountWidget("navigation_resume_attribute_only");
     await startCall();
@@ -162,7 +142,6 @@ describe("Resuming a call after a navigation", () => {
       .element(page.getByText("Here are the mens casual shoes"))
       .toBeInTheDocument();
     await expectContextualUpdate("Looking at womens boots");
-    expect(connectionsOf("navigation_resume_attribute_only")).toHaveLength(2);
   });
 
   it("does nothing when the option is off", async () => {

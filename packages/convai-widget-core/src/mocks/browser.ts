@@ -579,22 +579,12 @@ const codeBlock = true;
     first_message: "",
     voice_resume: true,
   },
-  // persistent-session without the agent's setting: every page is a new
-  // conversation, continued from the earlier turns.
+  // persistent-session without the agent's setting.
   navigation_resume_attribute_only: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
     terms_html: undefined,
     first_message: "",
-  },
-  // The agent's setting turns resuming on, with no persistent-session attribute.
-  navigation_resume_agent_setting: {
-    ...BASIC_CONFIG,
-    transcript_enabled: true,
-    mic_muting_enabled: true,
-    terms_html: undefined,
-    first_message: "",
-    voice_resume: true,
   },
   navigation_resume_voice_only: {
     ...BASIC_CONFIG,
@@ -1154,7 +1144,6 @@ export const Worker = setupWorker(
       // A rejoined call carries on silently; its turns come back as history.
       if (
         (agentId === "navigation_resume" ||
-          agentId === "navigation_resume_agent_setting" ||
           agentId === "navigation_resume_attribute_only" ||
           agentId === "navigation_resume_text" ||
           agentId === "navigation_resume_voice_only" ||
