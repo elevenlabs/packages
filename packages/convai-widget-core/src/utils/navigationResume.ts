@@ -98,7 +98,8 @@ function isRecord(value: unknown): value is NavigationResumeRecord {
 
 /** Per tab, so a newly opened tab is never offered the call. */
 export function createNavigationResumeStore(
-  config: ReadonlySignal<SessionConfig>
+  config: ReadonlySignal<SessionConfig>,
+  { voiceResume }: { voiceResume: boolean }
 ) {
   const clear = () => {
     try {
@@ -143,7 +144,9 @@ export function createNavigationResumeStore(
   };
 
   // Kept until the continued call connects, so a failed start offers it again.
-  const pending = signal(config.peek().persistentSession ? consume() : null);
+  const pending = signal(
+    config.peek().persistentSession || voiceResume ? consume() : null
+  );
 
   return {
     pending,

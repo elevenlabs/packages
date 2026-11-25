@@ -114,6 +114,8 @@ export interface WidgetConfig {
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
+  /** The agent resumes a voice call on the next page without `persistent-session`. */
+  voice_resume?: boolean;
 }
 
 export type AvatarConfig =

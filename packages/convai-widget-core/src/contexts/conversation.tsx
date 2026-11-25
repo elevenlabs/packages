@@ -558,7 +558,9 @@ function useConversationSetup() {
     // this widget instance skip the refused handshake.
     let persistenceUnavailable = false;
 
-    const navigationResumeStore = createNavigationResumeStore(config);
+    const navigationResumeStore = createNavigationResumeStore(config, {
+      voiceResume: !!widgetConfig.peek().voice_resume,
+    });
     const pendingNavigationResume = navigationResumeStore.pending;
     const navigationResumeMicMuted = signal(false);
     const resumePromptEntry = (): TranscriptEntry => ({
@@ -693,6 +695,7 @@ function useConversationSetup() {
           resume: resume ?? rejoinToken,
           // A voice call ends with its connection, so xi has nothing to relay.
           resumeOnly: !processedConfig.textOnly,
+          voiceResume: !!widgetConfig.value.voice_resume,
           unavailable: persistenceUnavailable,
         });
         if (
@@ -1289,7 +1292,11 @@ function useConversationSetup() {
         );
       },
       storeNavigationResume: ({ micMuted }: { micMuted: boolean }) => {
-        if (!config.peek().persistentSession) return;
+        if (
+          !config.peek().persistentSession &&
+          !widgetConfig.peek().voice_resume
+        )
+          return;
         const conversation = conversationRef.current;
         if (!conversation?.isOpen()) {
           navigationResumeStore.carryOver();

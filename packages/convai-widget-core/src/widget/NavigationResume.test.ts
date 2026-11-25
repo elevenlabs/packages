@@ -21,6 +21,7 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 
 type ResumeAgent =
   | "navigation_resume"
+  | "navigation_resume_agent_setting"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
   | "navigation_resume_no_override"
@@ -114,6 +115,25 @@ describe("Resuming a call after a navigation", () => {
     } finally {
       document.removeEventListener("elevenlabs-convai:call", onCall);
     }
+  });
+
+  it("continues the call when the agent turns resuming on", async () => {
+    const firstMount = mountWidget("navigation_resume_agent_setting", {});
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+
+    mountWidget("navigation_resume_agent_setting", {});
+    await resumeButton().click();
+    await expect
+      .element(page.getByRole("button", { name: "End", exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    expect(receivedContextualUpdates()).toHaveLength(0);
   });
 
   it("does nothing when the option is off", async () => {

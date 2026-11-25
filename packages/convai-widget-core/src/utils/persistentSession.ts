@@ -31,10 +31,16 @@ export function configurePersistentSession(
   {
     resume,
     resumeOnly,
+    voiceResume,
     unavailable,
-  }: { resume: string | null; resumeOnly: boolean; unavailable: boolean }
+  }: {
+    resume: string | null;
+    resumeOnly: boolean;
+    voiceResume: boolean;
+    unavailable: boolean;
+  }
 ) {
-  if (resume || (resumeOnly && config.persistentSession)) {
+  if (resume || (resumeOnly && (config.persistentSession || voiceResume))) {
     config.persistentSession = { token: resume ?? undefined, resumeOnly };
   }
   if (unavailable) {
