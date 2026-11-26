@@ -79,6 +79,10 @@ export function constructOverrides(
     overridesEvent.branch_id = config.branchId;
   }
 
+  if (config.environment !== undefined) {
+    overridesEvent.environment = config.environment;
+  }
+
   if (config.startingWorkflowNodeId !== undefined) {
     overridesEvent.starting_workflow_node_id = config.startingWorkflowNodeId;
   }

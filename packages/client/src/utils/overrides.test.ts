@@ -296,6 +296,15 @@ describe("constructOverrides initiation fields", () => {
     });
   });
 
+  it("maps environment to environment", () => {
+    const event = constructOverrides({
+      agentId: "agent_123",
+      environment: "staging",
+    });
+
+    expect(event.environment).toBe("staging");
+  });
+
   it("sends an explicitly empty procedureIds list", () => {
     const event = constructOverrides({
       agentId: "agent_123",
@@ -310,6 +319,7 @@ describe("constructOverrides initiation fields", () => {
 
     for (const key of [
       "branch_id",
+      "environment",
       "starting_workflow_node_id",
       "procedure_ids",
       "start_procedure_ids",
