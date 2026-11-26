@@ -1426,8 +1426,10 @@ components:
       properties:
         voice_id:
           type: string
+          description: Voice of the agent audio that follows this event
         event_id:
           type: integer
+          description: Event id of the response whose audio this voice speaks
 
     ContextUsageData:
       type: object

@@ -120,6 +120,7 @@ export class VoiceConversation extends BaseConversation {
   ) {
     super(options, connection);
 
+    // Playback reports a speaker only for chunks tagged with a voice id, which WebSocketConnection does
     this.speakerFollowsPlayback = playbackEventTarget !== null;
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
   }

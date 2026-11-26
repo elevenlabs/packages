@@ -13,6 +13,7 @@ import { Mode, Status, Conversation } from "./platform/web/index.js";
 import { MediaDeviceInput } from "./platform/web/input.js";
 import { createConnection } from "./utils/ConnectionFactory.js";
 import type { SessionConfig } from "./utils/BaseConnection.js";
+import type { Callbacks } from "./types.js";
 import { PACKAGE_VERSION } from "./version.js";
 
 const CONVERSATION_ID = "TEST_CONVERSATION_ID";
@@ -450,58 +451,73 @@ describe("Conversation", () => {
   });
 });
 
-describe("Audio alignment playback", () => {
-  const ALIGNMENT = {
-    chars: ["H", "i"],
-    char_start_times_ms: [0, 50],
-    char_durations_ms: [50, 50],
-  };
-  // 100ms of silence at pcm_16000
-  const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
+const ALIGNMENT = {
+  chars: ["H", "i"],
+  char_start_times_ms: [0, 50],
+  char_durations_ms: [50, 50],
+};
+// 100ms of silence at pcm_16000
+const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
+// 1s of silence at pcm_16000
+const LONG_CHUNK = btoa(String.fromCharCode(...new Uint8Array(32000)));
 
-  it("emits alignment when the aligned chunk starts playing, skipping interrupted audio", async () => {
-    const server = new Server("wss://api.elevenlabs.io/voice/alignment-test");
-    const clientPromise = new Promise<Client>((resolve, reject) => {
-      server.on("connection", socket => resolve(socket));
-      server.on("error", reject);
-      setTimeout(() => reject(new Error("timeout")), 5000);
+async function startPlaybackSession(path: string, callbacks: Callbacks) {
+  const server = new Server(`wss://api.elevenlabs.io/voice/${path}`);
+  const clientPromise = new Promise<Client>((resolve, reject) => {
+    server.on("connection", socket => resolve(socket));
+    server.on("error", reject);
+    setTimeout(() => reject(new Error("timeout")), 5000);
+  });
+  const conversationPromise = Conversation.startSession({
+    signedUrl: `wss://api.elevenlabs.io/voice/${path}`,
+    connectionType: "websocket",
+    connectionDelay: { default: 0 },
+    ...callbacks,
+  });
+  const client = await clientPromise;
+  client.send(
+    JSON.stringify({
+      type: "conversation_initiation_metadata",
+      conversation_initiation_metadata_event: {
+        conversation_id: CONVERSATION_ID,
+        agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+      },
+    })
+  );
+  const conversation = await conversationPromise;
+  const send = (message: object) => client.send(JSON.stringify(message));
+  const sendAudio = (
+    eventId: number,
+    {
+      audio = SHORT_CHUNK,
+      alignment,
+    }: { audio?: string; alignment?: object } = {}
+  ) =>
+    send({
+      type: "audio",
+      audio_event: { audio_base_64: audio, event_id: eventId, alignment },
     });
+  const sendSpeaker = (eventId: number, voiceId: string) =>
+    send({
+      type: "agent_speaker",
+      agent_speaker_event: { voice_id: voiceId, event_id: eventId },
+    });
+  return { server, conversation, send, sendAudio, sendSpeaker };
+}
 
+describe("Audio alignment playback", () => {
+  it("emits alignment when the aligned chunk starts playing, skipping interrupted audio", async () => {
     const onAudioAlignment = vi.fn();
     const onAudioAlignmentPlayback = vi.fn();
-    const conversationPromise = Conversation.startSession({
-      signedUrl: "wss://api.elevenlabs.io/voice/alignment-test",
-      connectionType: "websocket",
-      connectionDelay: { default: 0 },
-      onAudioAlignment,
-      onAudioAlignmentPlayback,
-    });
+    const { server, conversation, send, sendAudio } =
+      await startPlaybackSession("alignment-test", {
+        onAudioAlignment,
+        onAudioAlignmentPlayback,
+      });
+    const sendAlignedAudio = (eventId: number) =>
+      sendAudio(eventId, { alignment: ALIGNMENT });
 
-    const client = await clientPromise;
-    client.send(
-      JSON.stringify({
-        type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: {
-          conversation_id: CONVERSATION_ID,
-          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
-        },
-      })
-    );
-    const conversation = await conversationPromise;
-
-    const sendAudio = (eventId: number) =>
-      client.send(
-        JSON.stringify({
-          type: "audio",
-          audio_event: {
-            audio_base_64: SHORT_CHUNK,
-            event_id: eventId,
-            alignment: ALIGNMENT,
-          },
-        })
-      );
-
-    sendAudio(100);
+    sendAlignedAudio(100);
     expect(onAudioAlignment).toHaveBeenCalledWith(ALIGNMENT);
     await vi.waitFor(() =>
       expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
@@ -510,18 +526,13 @@ describe("Audio alignment playback", () => {
       })
     );
 
-    client.send(
-      JSON.stringify({
-        type: "interruption",
-        interruption_event: { event_id: 200 },
-      })
-    );
-    sendAudio(150);
+    send({ type: "interruption", interruption_event: { event_id: 200 } });
+    sendAlignedAudio(150);
     await sleep(300);
     expect(onAudioAlignment).toHaveBeenCalledTimes(2);
     expect(onAudioAlignmentPlayback).toHaveBeenCalledTimes(1);
 
-    sendAudio(250);
+    sendAlignedAudio(250);
     await vi.waitFor(() =>
       expect(onAudioAlignmentPlayback).toHaveBeenLastCalledWith({
         event_id: 250,
@@ -536,55 +547,10 @@ describe("Audio alignment playback", () => {
 });
 
 describe("Agent speaker playback", () => {
-  // 100ms of silence at pcm_16000
-  const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
-  // 1s of silence at pcm_16000
-  const LONG_CHUNK = btoa(String.fromCharCode(...new Uint8Array(32000)));
-
   async function startSpeakerSession(path: string) {
-    const server = new Server(`wss://api.elevenlabs.io/voice/${path}`);
-    const clientPromise = new Promise<Client>((resolve, reject) => {
-      server.on("connection", socket => resolve(socket));
-      server.on("error", reject);
-      setTimeout(() => reject(new Error("timeout")), 5000);
-    });
     const onAgentSpeakerChange = vi.fn();
-    const conversationPromise = Conversation.startSession({
-      signedUrl: `wss://api.elevenlabs.io/voice/${path}`,
-      connectionType: "websocket",
-      connectionDelay: { default: 0 },
-      onAgentSpeakerChange,
-    });
-    const client = await clientPromise;
-    client.send(
-      JSON.stringify({
-        type: "conversation_initiation_metadata",
-        conversation_initiation_metadata_event: {
-          conversation_id: CONVERSATION_ID,
-          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
-        },
-      })
-    );
-    const conversation = await conversationPromise;
-    const send = (message: object) => client.send(JSON.stringify(message));
-    const sendAudio = (eventId: number, audio = SHORT_CHUNK) =>
-      send({
-        type: "audio",
-        audio_event: { audio_base_64: audio, event_id: eventId },
-      });
-    const sendSpeaker = (eventId: number, voiceId: string) =>
-      send({
-        type: "agent_speaker",
-        agent_speaker_event: { voice_id: voiceId, event_id: eventId },
-      });
-    return {
-      server,
-      conversation,
-      send,
-      sendAudio,
-      sendSpeaker,
-      onAgentSpeakerChange,
-    };
+    const session = await startPlaybackSession(path, { onAgentSpeakerChange });
+    return { ...session, onAgentSpeakerChange };
   }
 
   it("reports a new speaker when the audio after it starts playing", async () => {
@@ -596,7 +562,7 @@ describe("Agent speaker playback", () => {
       onAgentSpeakerChange,
     } = await startSpeakerSession("speaker-playback");
 
-    sendAudio(1, LONG_CHUNK);
+    sendAudio(1, { audio: LONG_CHUNK });
     sendSpeaker(1, "narrator");
     await sleep(200);
     expect(onAgentSpeakerChange).not.toHaveBeenCalled();
@@ -613,6 +579,29 @@ describe("Agent speaker playback", () => {
     server.close();
   });
 
+  it("reports the speaker and alignment of a chunk carrying both", async () => {
+    const onAgentSpeakerChange = vi.fn();
+    const onAudioAlignmentPlayback = vi.fn();
+    const { server, conversation, sendAudio, sendSpeaker } =
+      await startPlaybackSession("speaker-aligned", {
+        onAgentSpeakerChange,
+        onAudioAlignmentPlayback,
+      });
+
+    sendSpeaker(1, "narrator");
+    sendAudio(1, { alignment: ALIGNMENT });
+    await vi.waitFor(() =>
+      expect(onAudioAlignmentPlayback).toHaveBeenCalledWith({
+        event_id: 1,
+        alignment: ALIGNMENT,
+      })
+    );
+    expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator");
+
+    await conversation.endSession();
+    server.close();
+  });
+
   it("drops a speaker whose audio was interrupted", async () => {
     const {
       server,
@@ -623,7 +612,7 @@ describe("Agent speaker playback", () => {
       onAgentSpeakerChange,
     } = await startSpeakerSession("speaker-interrupted");
 
-    sendAudio(1, LONG_CHUNK);
+    sendAudio(1, { audio: LONG_CHUNK });
     sendSpeaker(1, "narrator");
     sendAudio(1);
     send({ type: "interruption", interruption_event: { event_id: 2 } });
