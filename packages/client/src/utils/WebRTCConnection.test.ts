@@ -941,6 +941,63 @@ describe("WebRTCConnection", () => {
     expect(newMockTrack.stop).toHaveBeenCalled();
   });
 
+  it("releases the mic when the room disconnects while the session-start capture is pending", async () => {
+    const mockRoom = new Room() as any;
+    (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "connected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+    (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+      (event: string, callback: () => void) => {
+        if (event === "signalConnected") {
+          queueMicrotask(callback);
+        }
+      }
+    );
+
+    // SignalConnected fires while the room is still connecting, so the
+    // session-start capture must not treat "not yet connected" as teardown.
+    mockRoom.state = "connecting";
+
+    const newMockTrack = {
+      mediaStreamTrack: { id: "selected-device-track", kind: "audio" },
+      stop: vi.fn(),
+    };
+    let resolveCapture!: (track: unknown) => void;
+    const capturePromise = new Promise<unknown>(resolve => {
+      resolveCapture = resolve;
+    });
+    (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockImplementationOnce(
+      () => capturePromise
+    );
+
+    const createPromise = WebRTCConnection.create({
+      conversationToken: "test-token",
+      connectionType: "webrtc",
+      inputDeviceId: "selected-mic-id",
+    });
+    await vi.waitFor(() => expect(createLocalAudioTrack).toHaveBeenCalled());
+
+    // The room mock is shared across tests, so restore its state.
+    const previousState = mockRoom.state;
+    mockRoom.state = "disconnected";
+    resolveCapture(newMockTrack);
+
+    try {
+      await expect(createPromise).rejects.toThrow("room not connected");
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalledWith(
+        newMockTrack,
+        expect.anything()
+      );
+    } finally {
+      mockRoom.state = previousState;
+    }
+  });
+
   it("publishes the new device muted when the session is muted", async () => {
     const mockRoom = new Room() as any;
 
@@ -1185,6 +1242,332 @@ describe("WebRTCConnection", () => {
     expect(analysedTracks.at(-1)).toBe(recoveredTrack.mediaStreamTrack);
 
     connection.close();
+  });
+
+  describe("changeInputDevice during session teardown", () => {
+    async function createConnectedConnection() {
+      const mockRoom = new Room() as any;
+      const eventHandlers = new Map<string, (...args: unknown[]) => void>();
+
+      (mockRoom.on as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          eventHandlers.set(event, callback);
+          if (event === "connected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+      (mockRoom.once as ReturnType<typeof vi.fn>).mockImplementation(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          if (event === "signalConnected") {
+            queueMicrotask(() => callback());
+          }
+        }
+      );
+
+      mockRoom.state = "connected";
+      const connection = await WebRTCConnection.create({
+        conversationToken: "test-token",
+        connectionType: "webrtc",
+      });
+      return { connection, eventHandlers, mockRoom };
+    }
+
+    // Read the mock's own call log: an earlier test replaces
+    // setMicrophoneEnabled with an implementation that never updates
+    // __mockCalls__, so counting through the global would compare zero to
+    // zero and miss an unwanted default-microphone capture.
+    function microphoneEnabledCalls(mockRoom: {
+      localParticipant: { setMicrophoneEnabled: ReturnType<typeof vi.fn> };
+    }) {
+      return mockRoom.localParticipant.setMicrophoneEnabled.mock.calls.map(
+        ([enabled]) => enabled
+      );
+    }
+
+    it("stops the captured track and rejects promptly when the session ends while capture is pending", async () => {
+      const { connection, eventHandlers, mockRoom } =
+        await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      let resolveCapture!: (track: unknown) => void;
+      const capturePromise = new Promise<unknown>(resolve => {
+        resolveCapture = resolve;
+      });
+      (
+        createLocalAudioTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => capturePromise);
+
+      const switchPromise = connection.setAudioInputDevice("new-device-id");
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      connection.close();
+      eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveCapture(newMockTrack);
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalledWith(
+        newMockTrack,
+        expect.anything()
+      );
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+    });
+
+    it("stops the captured track before the disconnected event when the session ends while capture is pending", async () => {
+      const { connection, mockRoom } = await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      let resolveCapture!: (track: unknown) => void;
+      const capturePromise = new Promise<unknown>(resolve => {
+        resolveCapture = resolve;
+      });
+      (
+        createLocalAudioTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => capturePromise);
+
+      const switchPromise = connection.setAudioInputDevice("new-device-id");
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      // No disconnected event: only the synchronous isConnected update in
+      // close() can stop the pending switch before capture resolves.
+      connection.close();
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveCapture(newMockTrack);
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalledWith(
+        newMockTrack,
+        expect.anything()
+      );
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+    });
+
+    it("stops the captured track without recovering the default mic on a muted session", async () => {
+      const { connection, eventHandlers, mockRoom } =
+        await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      await connection.input.setMuted(true);
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        mute: vi.fn(() => Promise.resolve()),
+        stop: vi.fn(),
+      };
+      let resolveCapture!: (track: unknown) => void;
+      const capturePromise = new Promise<unknown>(resolve => {
+        resolveCapture = resolve;
+      });
+      (
+        createLocalAudioTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => capturePromise);
+
+      const switchPromise = connection.setAudioInputDevice("new-device-id");
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      connection.close();
+      eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveCapture(newMockTrack);
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+      expect(connection.input.isMuted()).toBe(true);
+    });
+
+    it("does not publish or recover when the session ends while the old track is being unpublished", async () => {
+      const { connection, eventHandlers, mockRoom } =
+        await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      const oldMockTrack = {
+        mediaStreamTrack: { id: "old-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => ({ track: oldMockTrack }));
+
+      let resolveUnpublish!: () => void;
+      const unpublishPromise = new Promise<void>(resolve => {
+        resolveUnpublish = resolve;
+      });
+      (
+        mockRoom.localParticipant.unpublishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => unpublishPromise);
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        newMockTrack
+      );
+
+      const switchPromise = connection.setAudioInputDevice("selected-mic-id");
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+          oldMockTrack
+        )
+      );
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      connection.close();
+      eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveUnpublish();
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+    });
+
+    it("keeps a muted session muted when it ends while the old track is being unpublished", async () => {
+      const { connection, eventHandlers, mockRoom } =
+        await createConnectedConnection();
+      connection.onDisconnect(vi.fn());
+
+      await connection.input.setMuted(true);
+
+      const oldMockTrack = {
+        mediaStreamTrack: { id: "old-track", kind: "audio" },
+        mute: vi.fn(() => Promise.resolve()),
+        unmute: vi.fn(() => Promise.resolve()),
+        stop: vi.fn(),
+      };
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => ({ track: oldMockTrack }));
+
+      let resolveUnpublish!: () => void;
+      const unpublishPromise = new Promise<void>(resolve => {
+        resolveUnpublish = resolve;
+      });
+      (
+        mockRoom.localParticipant.unpublishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => unpublishPromise);
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        mute: vi.fn(() => Promise.resolve()),
+        stop: vi.fn(),
+      };
+      (createLocalAudioTrack as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        newMockTrack
+      );
+
+      const switchPromise = connection.setAudioInputDevice("selected-mic-id");
+      await vi.waitFor(() =>
+        expect(mockRoom.localParticipant.unpublishTrack).toHaveBeenCalledWith(
+          oldMockTrack
+        )
+      );
+      const micCallsBeforeEnd = microphoneEnabledCalls(mockRoom).length;
+
+      connection.close();
+      eventHandlers.get("disconnected")?.(DisconnectReason.CLIENT_INITIATED);
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => undefined);
+
+      resolveUnpublish();
+
+      await expect(switchPromise).rejects.toThrow("room not connected");
+      // The mute runs before the pre-publish check, so a muted switch that
+      // ends mid-swap still mutes the new track before releasing it.
+      expect(newMockTrack.mute).toHaveBeenCalled();
+      expect(mockRoom.localParticipant.publishTrack).not.toHaveBeenCalled();
+      expect(newMockTrack.stop).toHaveBeenCalled();
+      expect(microphoneEnabledCalls(mockRoom).length).toBe(micCallsBeforeEnd);
+      expect(connection.input.isMuted()).toBe(true);
+    });
+
+    it("publishes the captured track when the session stays connected", async () => {
+      const { connection, mockRoom } = await createConnectedConnection();
+
+      const oldMockTrack = {
+        mediaStreamTrack: { id: "old-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      let micPublication: { track: unknown } | undefined = {
+        track: oldMockTrack,
+      };
+      (
+        mockRoom.localParticipant.getTrackPublication as ReturnType<
+          typeof vi.fn
+        >
+      ).mockImplementation(() => micPublication);
+      (
+        mockRoom.localParticipant.unpublishTrack as ReturnType<typeof vi.fn>
+      ).mockImplementation(() => {
+        micPublication = undefined;
+        return Promise.resolve();
+      });
+
+      const newMockTrack = {
+        mediaStreamTrack: { id: "new-track", kind: "audio" },
+        stop: vi.fn(),
+      };
+      let resolveCapture!: (track: unknown) => void;
+      const capturePromise = new Promise<unknown>(resolve => {
+        resolveCapture = resolve;
+      });
+      (
+        createLocalAudioTrack as ReturnType<typeof vi.fn>
+      ).mockImplementationOnce(() => capturePromise);
+
+      const switchPromise = connection.setAudioInputDevice("selected-mic-id");
+      resolveCapture(newMockTrack);
+      await expect(switchPromise).resolves.toBeUndefined();
+
+      expect(mockRoom.localParticipant.publishTrack).toHaveBeenCalledWith(
+        newMockTrack,
+        expect.objectContaining({ source: "microphone" })
+      );
+      expect(newMockTrack.stop).not.toHaveBeenCalled();
+
+      connection.close();
+    });
   });
 
   it("properly reports sent messages", async () => {
