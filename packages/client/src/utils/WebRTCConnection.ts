@@ -132,6 +132,8 @@ export class WebRTCConnection extends BaseConnection {
   private isConnected = false;
   private audioEventId = 1;
   private outputDeviceId: string | null = null;
+  // The input device in use, or null when the browser default is in use.
+  private inputDeviceId: string | null = null;
 
   private audioAdapter: WebRTCAudioAdapter | null;
   private workletPaths: AudioWorkletConfig["workletPaths"];
@@ -187,8 +189,13 @@ export class WebRTCConnection extends BaseConnection {
 
       const inputDeviceId = config?.inputDeviceId;
       if (!inputDeviceId) {
-        // No device ID specified - this is a no-op for WebRTC
-        // The default device is already being used
+        // No device ID specified - switch back to the default device.
+        // A no-op only when the default device is already in use, so a
+        // session on a specific device re-acquires the default mic.
+        if (this.inputDeviceId === null) {
+          return;
+        }
+        await this.setAudioInputDevice();
         return;
       }
       await this.setAudioInputDevice(inputDeviceId);
@@ -270,8 +277,13 @@ export class WebRTCConnection extends BaseConnection {
 
       const outputDeviceId = config?.outputDeviceId;
       if (!outputDeviceId) {
-        // No device ID specified - this is a no-op for WebRTC
-        // The default device is already being used
+        // No device ID specified - switch back to the default device.
+        // A no-op only when the default device is already in use, so a
+        // session on a specific device resets the sink to the default.
+        if (this.outputDeviceId === null) {
+          return;
+        }
+        await this.setAudioOutputDevice("");
         return;
       }
       await this.setAudioOutputDevice(outputDeviceId);
@@ -830,11 +842,13 @@ export class WebRTCConnection extends BaseConnection {
 
     await this.audioAdapter.setOutputDevice(deviceId);
 
-    // Store the device ID for future audio elements
-    this.outputDeviceId = deviceId;
+    // Store the device ID for future audio elements. An empty ID resets
+    // playback to the default device, so store null and stop re-applying
+    // the previous device to later remote tracks.
+    this.outputDeviceId = deviceId || null;
   }
 
-  public async setAudioInputDevice(deviceId: string): Promise<void> {
+  public async setAudioInputDevice(deviceId?: string): Promise<void> {
     if (!this.isConnected || !this.room.localParticipant) {
       throw new Error(
         "Cannot change input device: room not connected or no local participant"
@@ -878,6 +892,7 @@ export class WebRTCConnection extends BaseConnection {
         // rather than leaving the session without a microphone.
         try {
           await this.room.localParticipant.setMicrophoneEnabled(!this._isMuted);
+          this.inputDeviceId = null;
           const recoveredTrack = this.room.localParticipant.getTrackPublication(
             Track.Source.Microphone
           )?.track;
@@ -895,12 +910,14 @@ export class WebRTCConnection extends BaseConnection {
       throw error;
     }
 
+    this.inputDeviceId = deviceId ?? null;
     this.setupInputAnalyser(audioTrack.mediaStreamTrack);
   }
 
   private async enableMicrophone(inputDeviceId?: string): Promise<void> {
     if (!inputDeviceId) {
       await this.room.localParticipant.setMicrophoneEnabled(true);
+      this.inputDeviceId = null;
       return;
     }
 
@@ -910,6 +927,7 @@ export class WebRTCConnection extends BaseConnection {
         name: "microphone",
         source: Track.Source.Microphone,
       });
+      this.inputDeviceId = inputDeviceId;
     } catch (error) {
       // An unpublished track is unknown to the room, so disconnecting would
       // leave the device captured.
@@ -918,9 +936,11 @@ export class WebRTCConnection extends BaseConnection {
     }
   }
 
-  private createMicrophoneTrack(deviceId: string): Promise<LocalAudioTrack> {
+  private createMicrophoneTrack(deviceId?: string): Promise<LocalAudioTrack> {
     return createLocalAudioTrack({
-      deviceId: { exact: deviceId },
+      // No device ID means no deviceId constraint, so the browser picks
+      // the default microphone - mirroring the WebSocket input path.
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
