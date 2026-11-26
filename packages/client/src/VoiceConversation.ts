@@ -74,6 +74,7 @@ export class VoiceConversation extends BaseConversation {
 
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
+  private readonly speakerFollowsPlayback: boolean;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     switch (event.data.type) {
@@ -104,8 +105,7 @@ export class VoiceConversation extends BaseConversation {
   }
 
   protected override handleAgentSpeaker(event: AgentSpeakerEvent) {
-    // With playback events the speaker is reported when its audio plays
-    if (!this.playbackEventTarget) {
+    if (!this.speakerFollowsPlayback) {
       super.handleAgentSpeaker(event);
     }
   }
@@ -120,6 +120,7 @@ export class VoiceConversation extends BaseConversation {
   ) {
     super(options, connection);
 
+    this.speakerFollowsPlayback = playbackEventTarget !== null;
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
   }
 

@@ -602,8 +602,11 @@ describe("Agent speaker playback", () => {
     expect(onAgentSpeakerChange).not.toHaveBeenCalled();
 
     sendAudio(1);
-    await vi.waitFor(() =>
-      expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")
+    await sleep(200);
+    expect(onAgentSpeakerChange).not.toHaveBeenCalled();
+    await vi.waitFor(
+      () => expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator"),
+      { timeout: 3000 }
     );
 
     await conversation.endSession();
@@ -628,6 +631,48 @@ describe("Agent speaker playback", () => {
     expect(onAgentSpeakerChange).not.toHaveBeenCalled();
 
     sendSpeaker(3, "narrator");
+    sendAudio(3);
+    await vi.waitFor(() =>
+      expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("drops a speaker interrupted before any of its audio arrived", async () => {
+    const {
+      server,
+      conversation,
+      send,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-interrupted-early");
+
+    sendSpeaker(1, "narrator");
+    send({ type: "interruption", interruption_event: { event_id: 2 } });
+    sendAudio(3);
+    await sleep(300);
+    expect(onAgentSpeakerChange).not.toHaveBeenCalled();
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("keeps a speaker for its own response when stale audio arrives first", async () => {
+    const {
+      server,
+      conversation,
+      send,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-stale-audio");
+
+    send({ type: "interruption", interruption_event: { event_id: 2 } });
+    sendSpeaker(3, "narrator");
+    sendAudio(1);
     sendAudio(3);
     await vi.waitFor(() =>
       expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")

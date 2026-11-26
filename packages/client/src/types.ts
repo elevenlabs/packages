@@ -217,8 +217,9 @@ export type Callbacks = {
   onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
   /**
    * Called with the voice id of the agent's speaker when audio in a different
-   * voice starts playing, skipping interrupted audio. On WebRTC it is called
-   * when the server announces the speaker, ahead of playback.
+   * voice starts playing, skipping interrupted audio. On WebRTC and in
+   * text-only conversations it is called when the server announces the
+   * speaker, ahead of playback.
    */
   onAgentSpeakerChange?: (voiceId: string) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
