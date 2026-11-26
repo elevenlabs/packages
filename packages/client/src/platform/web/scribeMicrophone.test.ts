@@ -4,59 +4,9 @@ vi.mock("./scribeAudioProcessor.generated.js", () => ({
   loadScribeAudioProcessor: vi.fn(),
 }));
 
+import { installAudioEnvironment } from "./__tests__/scribeAudioEnvironment.js";
 import { loadScribeAudioProcessor } from "./scribeAudioProcessor.generated.js";
 import { webScribeMicrophoneSetup } from "./scribeMicrophone.js";
-
-function installAudioEnvironment(options?: {
-  state?: "running" | "suspended";
-  resumeError?: Error;
-}) {
-  const track = {
-    getSettings: vi.fn(() => ({ sampleRate: 16000 })),
-    stop: vi.fn(),
-  };
-  const stream = {
-    getAudioTracks: vi.fn(() => [track]),
-    getTracks: vi.fn(() => [track]),
-  };
-  const source = {
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  };
-  const scribeNode = {
-    disconnect: vi.fn(),
-    port: {
-      onmessage: null,
-      postMessage: vi.fn(),
-    },
-  };
-  const audioContext = {
-    audioWorklet: {},
-    close: vi.fn().mockResolvedValue(undefined),
-    createMediaStreamSource: vi.fn(() => source),
-    resume: options?.resumeError
-      ? vi.fn().mockRejectedValue(options.resumeError)
-      : vi.fn().mockResolvedValue(undefined),
-    sampleRate: 16000,
-    state: options?.state ?? "running",
-  };
-
-  vi.stubGlobal("navigator", {
-    mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
-  });
-  vi.stubGlobal(
-    "AudioContext",
-    vi.fn(function MockAudioContext() {
-      return audioContext;
-    })
-  );
-
-  vi.mocked(loadScribeAudioProcessor).mockResolvedValue(
-    scribeNode as unknown as AudioWorkletNode
-  );
-
-  return { audioContext, scribeNode, source, track };
-}
 
 describe("webScribeMicrophoneSetup", () => {
   afterEach(() => {
