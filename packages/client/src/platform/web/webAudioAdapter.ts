@@ -5,8 +5,10 @@ import type {
   WebRTCAudioAdapter,
   AnalysisResult,
 } from "../../WebRTCAudioAdapter.js";
+import { addLibsamplerateModule } from "./addLibsamplerateModule.js";
 import { loadRawAudioProcessor } from "./rawAudioProcessor.generated.js";
 import { createAnalyserVolumeProvider } from "./volumeProvider.js";
+import { waitForResampler } from "./waitForResampler.js";
 
 /**
  * Web implementation of {@link WebRTCAudioAdapter}.
@@ -78,7 +80,8 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     track: RemoteAudioTrack,
     format: FormatConfig,
     onAudioData: (audioData: ArrayBuffer, maxVolume: number) => void,
-    workletPaths?: AudioWorkletConfig["workletPaths"]
+    workletPaths?: AudioWorkletConfig["workletPaths"],
+    libsampleratePath?: AudioWorkletConfig["libsampleratePath"]
   ): Promise<AnalysisResult> {
     // Clean up previous audio capture context
     if (this.audioCaptureContext) {
@@ -105,6 +108,10 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
       audioContext.sampleRate
     );
 
+    const needsResampling = audioContext.sampleRate !== format.sampleRate;
+    if (needsResampling) {
+      await addLibsamplerateModule(audioContext, libsampleratePath);
+    }
     const worklet = await loadRawAudioProcessor(
       audioContext,
       workletPaths?.rawAudioProcessor
@@ -112,12 +119,16 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
 
     // Configure the processor and set up the message listener
     // before connecting the graph, so no early messages are missed.
+    const resamplerReady = needsResampling
+      ? Promise.race([waitForResampler(worklet), rejectOnClose(audioContext)])
+      : Promise.resolve();
     worklet.port.postMessage({
       type: "setFormat",
       format: format.format,
       sampleRate: format.sampleRate,
     });
     worklet.port.onmessage = (event: MessageEvent) => {
+      if (!Array.isArray(event.data)) return;
       const [audioData, maxVolume] = event.data;
       onAudioData(audioData.buffer, maxVolume);
     };
@@ -125,6 +136,8 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     // Connect the audio graph: source → analyser → worklet
     source.connect(analyser);
     analyser.connect(worklet);
+
+    await resamplerReady;
 
     return { volumeProvider, analyser };
   }
@@ -176,4 +189,14 @@ export class WebAudioAdapter implements WebRTCAudioAdapter {
     }
     this.audioElements = [];
   }
+}
+
+function rejectOnClose(context: AudioContext): Promise<never> {
+  return new Promise((_, reject) => {
+    context.addEventListener("statechange", () => {
+      if (context.state === "closed") {
+        reject(new Error("Audio capture closed during setup"));
+      }
+    });
+  });
 }

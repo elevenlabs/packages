@@ -1207,14 +1207,16 @@ describe("WebRTCConnection", () => {
 
   it.each([
     {
-      name: "forwards configured workletPaths to the audio adapter",
+      name: "forwards configured workletPaths and libsampleratePath to the audio adapter",
       workletPaths: { rawAudioProcessor: "/vendor/raw-audio-processor.js" },
+      libsampleratePath: "/vendor/libsamplerate.worklet.js",
     },
     {
       name: "passes undefined to the audio adapter when none are configured",
       workletPaths: undefined,
+      libsampleratePath: undefined,
     },
-  ])("$name", async ({ workletPaths }) => {
+  ])("$name", async ({ workletPaths, libsampleratePath }) => {
     const mockRoom = new Room() as any;
     const handlers = new Map<string, (...args: any[]) => unknown>();
 
@@ -1251,6 +1253,7 @@ describe("WebRTCConnection", () => {
         conversationToken: "test-token",
         connectionType: "webrtc",
         ...(workletPaths ? { workletPaths } : {}),
+        ...(libsampleratePath ? { libsampleratePath } : {}),
       });
 
       const onTrackSubscribed = handlers.get("trackSubscribed");
@@ -1266,7 +1269,8 @@ describe("WebRTCConnection", () => {
         expect.anything(),
         expect.anything(),
         expect.any(Function),
-        workletPaths
+        workletPaths,
+        libsampleratePath
       );
 
       connection.close();
