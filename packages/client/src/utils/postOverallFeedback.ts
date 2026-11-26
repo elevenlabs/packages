@@ -1,3 +1,5 @@
+import type { ResponseLike } from "../platformTypes.js";
+
 const HTTPS_API_ORIGIN = "https://api.elevenlabs.io";
 
 export interface RatingFeedback {
@@ -11,17 +13,17 @@ export function postOverallFeedback(
   conversationId: string,
   like: boolean,
   origin?: string
-): Promise<Response>;
+): Promise<ResponseLike>;
 export function postOverallFeedback(
   conversationId: string,
   feedback: Feedback,
   origin?: string
-): Promise<Response>;
+): Promise<ResponseLike>;
 export function postOverallFeedback(
   conversationId: string,
   likeOrFeedback: boolean | Feedback,
   origin: string = HTTPS_API_ORIGIN
-): Promise<Response> {
+): Promise<ResponseLike> {
   const body: {
     feedback?: "like" | "dislike";
     rating?: number;

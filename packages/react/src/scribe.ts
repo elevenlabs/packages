@@ -116,7 +116,7 @@ export interface ScribeCallbacks {
   /** Called with all inferred speaker names, keyed by speaker ID, each time they change (only when inferSpeakerNames is set) */
   onSpeakerNames?: (data: { speaker_names: Record<string, string> }) => void;
   /** Called for any error (also called when specific error callbacks fire) */
-  onError?: (error: Error | Event) => void;
+  onError?: (error: Error) => void;
   onAuthError?: (data: { error: string }) => void;
   onQuotaExceededError?: (data: { error: string }) => void;
   onCommitThrottledError?: (data: { error: string }) => void;
