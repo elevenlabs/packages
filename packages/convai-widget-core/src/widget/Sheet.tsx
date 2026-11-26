@@ -23,7 +23,7 @@ import { useSheetContent } from "../contexts/sheet-content";
 import { useWidgetSize } from "../contexts/widget-size";
 import { SheetActions } from "./SheetActions";
 import { AvatarOverlay } from "./AvatarOverlay";
-import { stripAudioTags } from "../utils/stripAudioTags";
+import { stripAudioTags } from "@elevenlabs/client";
 import { useEndConfirmation } from "../contexts/end-confirmation";
 import { EndConfirmationDialog } from "./EndConfirmationDialog";
 import { usePersistentSessionLifecycle } from "../utils/usePersistentSessionLifecycle";
