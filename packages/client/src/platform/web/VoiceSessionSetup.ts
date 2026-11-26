@@ -109,7 +109,9 @@ export async function webSessionSetup(
     // Some browsers won't allow calling getSupportedConstraints or
     // enumerateDevices before getting approval for microphone access.
     preliminaryInputStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: options.inputDeviceId
+        ? { deviceId: { ideal: options.inputDeviceId } }
+        : true,
     });
 
     const platform = detectPlatform();
