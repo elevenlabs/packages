@@ -9,6 +9,7 @@ import type {
 import { uploadFile, type UploadFileResult } from "./utils/uploadFile.js";
 import { throttle, type ThrottledFunction } from "./utils/throttle.js";
 import { stripAudioTags } from "./utils/audioTags.js";
+import { SessionConnectionError } from "./utils/errors.js";
 import type { Conversation } from "./index.js";
 import type {
   AgentAudioEvent,
@@ -215,6 +216,43 @@ export abstract class BaseConversation {
         },
       },
     };
+  }
+
+  /**
+   * Notify onDisconnect for a session that failed before a conversation was
+   * created. startSession already reports onStatusChange("disconnected") on
+   * this path, but never called onDisconnect, so callers relying on it for
+   * teardown cleanup (e.g. ConversationProvider) never learned the session
+   * had ended. Only for the never-created case: when a conversation was
+   * created, endSession() fires onDisconnect exactly once, so calling this
+   * there would double-fire. A throwing onDisconnect must not mask the
+   * original startup error.
+   */
+  protected static notifyStartupFailure(
+    options: Options,
+    error: unknown
+  ): void {
+    const message =
+      error instanceof Error ? error.message : "Session failed to start";
+    const details: DisconnectionDetails = {
+      reason: "error",
+      message,
+      context: { type: "start_session", reason: message },
+      ...(error instanceof SessionConnectionError &&
+      error.closeCode !== undefined
+        ? { closeCode: error.closeCode }
+        : {}),
+      ...(error instanceof SessionConnectionError &&
+      error.closeReason !== undefined
+        ? { closeReason: error.closeReason }
+        : {}),
+    };
+    try {
+      options.onDisconnect?.(details);
+    } catch {
+      // Preserve the original startup error; a failing disconnect
+      // listener must not replace it.
+    }
   }
 
   protected constructor(
