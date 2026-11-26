@@ -55,6 +55,7 @@ describe("Conversation", () => {
       const onMessage = vi.fn();
       const onUnhandledClientToolCall = vi.fn();
       const onGuardrailTriggered = vi.fn();
+      const onConversationEnded = vi.fn();
       const clientToolHandler = vi.fn();
       let status: Status | null = null;
       let mode: Mode | null = null;
@@ -85,6 +86,7 @@ describe("Conversation", () => {
         },
         onUnhandledClientToolCall,
         onGuardrailTriggered,
+        onConversationEnded,
         connectionDelay: { default: 0 },
         textOnly: conversationType === "text",
       });
@@ -262,6 +264,19 @@ describe("Conversation", () => {
       );
       await sleep(50);
       expect(onGuardrailTriggered).toHaveBeenCalledTimes(1);
+
+      // Conversation ended
+      client.send(
+        JSON.stringify({
+          type: "conversation_ended",
+          conversation_ended_event: { reason: "max_duration_exceeded" },
+        })
+      );
+      await sleep(50);
+      expect(onConversationEnded).toHaveBeenCalledTimes(1);
+      expect(onConversationEnded).toHaveBeenCalledWith({
+        reason: "max_duration_exceeded",
+      });
 
       // End session
       await conversation.endSession();

@@ -273,6 +273,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "context_usage"
   | "asr_initiation_metadata"
   | "guardrail_triggered"
+  | "conversation_ended"
   | "internal_turn_probability"
   | "internal_tentative_agent_response"
   | "agent_typing"
@@ -676,6 +677,17 @@ export interface GuardrailTriggered {
   type: "guardrail_triggered";
 }
 
+export interface ConversationEnded {
+  type: "conversation_ended";
+  conversation_ended_event: ConversationEndedEvent;
+}
+
+export interface ConversationEndedEvent {
+  reason: ConversationEndedEventReason;
+}
+
+export type ConversationEndedEventReason = "max_duration_exceeded";
+
 export interface InternalTurnProbability {
   type: "internal_turn_probability";
   turn_probability_internal_event: TurnProbabilityInternalEvent;
@@ -860,6 +872,11 @@ export interface AsrInitiationMetadataEvent {
 
 export interface GuardrailTriggeredClientEvent {
   type: "guardrail_triggered";
+}
+
+export interface ConversationEndedClientEvent {
+  type: "conversation_ended";
+  conversation_ended_event: ConversationEndedEvent;
 }
 
 export interface TurnProbabilityInternalClientEvent {
