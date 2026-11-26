@@ -201,7 +201,7 @@ export interface AudioOptions extends BaseOptions {
  */
 export interface MicrophoneOptions extends BaseOptions {
   microphone?: {
-    deviceId?: MediaDeviceConstraint;
+    deviceId?: MediaTrackConstraints["deviceId"];
     echoCancellation?: boolean;
     noiseSuppression?: boolean;
     autoGainControl?: boolean;
