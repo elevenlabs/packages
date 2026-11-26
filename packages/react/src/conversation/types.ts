@@ -1,5 +1,6 @@
 import type {
   SessionConfig,
+  ClientToolResult,
   ClientToolsConfig,
   InputConfig,
   AudioWorkletConfig,
@@ -10,7 +11,12 @@ import type {
   Location,
 } from "@elevenlabs/client";
 
-export type ClientToolResult = string | number | void;
+/**
+ * Re-exported so the hook API and `@elevenlabs/client` agree on what a client
+ * tool may return. This used to be declared here as `string | number | void`,
+ * which was narrower than the coercion in `BaseConversation` accepts.
+ */
+export type { ClientToolResult };
 
 export type ClientTool<
   Parameters extends Record<string, unknown> = Record<string, unknown>,
