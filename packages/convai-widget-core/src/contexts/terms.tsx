@@ -1,4 +1,9 @@
-import { computed, ReadonlySignal, useSignal, useSignalEffect } from "@preact/signals";
+import {
+  computed,
+  ReadonlySignal,
+  useSignal,
+  useSignalEffect,
+} from "@preact/signals";
 import { ComponentChildren } from "preact";
 import { createContext, useMemo } from "preact/compat";
 
@@ -8,7 +13,7 @@ import { useLocalizedTerms } from "./widget-config";
 const TermsContext = createContext<{
   termsAccepted: ReadonlySignal<boolean>;
   termsShown: ReadonlySignal<boolean>;
-  requestTerms: () => Promise<void>;
+  requestTerms: () => Promise<boolean>;
   dismissTerms: () => void;
   acceptTerms: () => void;
 } | null>(null);
@@ -17,30 +22,25 @@ interface TermsProviderProps {
   children: ComponentChildren;
 }
 
-interface StoredPromise {
-  resolve: () => void;
-  reject: () => void;
-}
-
 export function TermsProvider({ children }: TermsProviderProps) {
   const localizedTerms = useLocalizedTerms();
 
   const termsShown = useSignal(false);
   const termsAcceptedState = useSignal(false);
-  
+
   const value = useMemo(() => {
     const termsAccepted = computed(
       () => !localizedTerms.value.terms_html || termsAcceptedState.value
     );
-    let termsPromises: StoredPromise[] = [];
+    let resolveRequests: ((accepted: boolean) => void)[] = [];
 
     return {
       termsShown,
       termsAccepted,
       dismissTerms: () => {
         termsShown.value = false;
-        termsPromises.forEach(value => value.reject());
-        termsPromises = [];
+        resolveRequests.forEach(resolve => resolve(false));
+        resolveRequests = [];
       },
       acceptTerms: () => {
         termsAcceptedState.value = true;
@@ -50,16 +50,15 @@ export function TermsProvider({ children }: TermsProviderProps) {
           localStorage.setItem(key, "true");
         }
 
-        termsPromises.forEach(value => value.resolve());
-        termsPromises = [];
+        resolveRequests.forEach(resolve => resolve(true));
+        resolveRequests = [];
       },
       requestTerms: async () => {
-        if (!termsAccepted.peek()) {
-          termsShown.value = true;
-          await new Promise<void>((resolve, reject) => {
-            termsPromises.push({ resolve, reject });
-          });
-        }
+        if (termsAccepted.peek()) return true;
+        termsShown.value = true;
+        return new Promise<boolean>(resolve => {
+          resolveRequests.push(resolve);
+        });
       },
     };
   }, [termsShown, termsAcceptedState, localizedTerms]);
