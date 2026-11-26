@@ -70,7 +70,10 @@ vi.mock("livekit-client", async importOriginal => {
 
 import { WebRTCConnection } from "./WebRTCConnection.js";
 import { Room, createLocalAudioTrack, DisconnectReason } from "livekit-client";
-import { setWebRTCAudioAdapterFactory } from "../WebRTCAudioAdapter.js";
+import {
+  setWebRTCAudioAdapterFactory,
+  type AnalysisResult,
+} from "../WebRTCAudioAdapter.js";
 import { WebAudioAdapter } from "../platform/web/webAudioAdapter.js";
 import { NO_VOLUME } from "./volumeProvider.js";
 import type { PongEvent } from "./events.js";
@@ -1293,8 +1296,9 @@ describe("WebRTCConnection", () => {
     const createAdapter = () => ({
       attachRemoteTrack: vi.fn((_track: unknown) => Promise.resolve()),
       setupInputAnalysis: vi.fn(() => ({ volumeProvider: NO_VOLUME })),
-      setupOutputAnalysis: vi.fn((_track: unknown) =>
-        Promise.resolve({ volumeProvider: NO_VOLUME })
+      setupOutputAnalysis: vi.fn(
+        (_track: unknown): Promise<AnalysisResult> =>
+          Promise.resolve({ volumeProvider: NO_VOLUME })
       ),
       setVolume: vi.fn(),
       setOutputDevice: vi.fn(() => Promise.resolve()),
@@ -1316,6 +1320,17 @@ describe("WebRTCConnection", () => {
       handlers.get("activeSpeakersChanged")?.(participants);
     const capturedTracks = () =>
       adapter.setupOutputAnalysis.mock.calls.map(([track]) => track);
+    const deferCapture = () => {
+      let finish!: (analyser: string) => void;
+      adapter.setupOutputAnalysis.mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            finish = analyser =>
+              resolve({ volumeProvider: NO_VOLUME, analyser });
+          })
+      );
+      return (analyser: string) => finish(analyser);
+    };
 
     beforeEach(async () => {
       mockRoom = new Room() as any;
@@ -1406,6 +1421,34 @@ describe("WebRTCConnection", () => {
       expect(onDisconnect).not.toHaveBeenCalled();
       expect(modes).toEqual(["speaking", "listening", "speaking"]);
       expect(capturedTracks()).toEqual([agentAudio, avatarAudio, agentAudio]);
+    });
+
+    it("drops a capture that finishes loading after close", async () => {
+      const finish = deferCapture();
+      await subscribe(avatarAudio, avatar);
+      const capture = speakers(avatar);
+
+      connection.close();
+      finish("stale");
+      await capture;
+
+      expect(connection.output.getAnalyser()).toBeUndefined();
+    });
+
+    it("keeps the newer capture when an older one finishes loading late", async () => {
+      const finishAvatar = deferCapture();
+      const finishAgent = deferCapture();
+      await subscribe(avatarAudio, avatar);
+      const avatarCapture = speakers(avatar);
+      const agentCapture = speakers(agent);
+
+      finishAgent("agent");
+      await agentCapture;
+      finishAvatar("avatar");
+      await avatarCapture;
+
+      expect(capturedTracks()).toEqual([agentAudio, avatarAudio, agentAudio]);
+      expect(connection.output.getAnalyser()).toBe("agent");
     });
 
     it("starts no capture for tracks that drop after close", async () => {
