@@ -66,6 +66,7 @@ channels:
           - $ref: "#/components/messages/VADScore"
           - $ref: "#/components/messages/Ping"
           - $ref: "#/components/messages/ContextUsage"
+          - $ref: "#/components/messages/AgentSpeaker"
           - $ref: "#/components/messages/ASRInitiationMetadata"
           - $ref: "#/components/messages/GuardrailTriggered"
           - $ref: "#/components/messages/InternalTurnProbability"
@@ -337,6 +338,14 @@ components:
       payload:
         $ref: "#/components/schemas/ContextUsagePayload"
 
+    AgentSpeaker:
+      name: AgentSpeakerClientEvent
+      title: Agent Speaker
+      summary: Who speaks the agent's audio that follows, identified by its voice. Sent before the first audio chunk of each response and before the first chunk after a voice switch.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/AgentSpeakerPayload"
+
     ASRInitiationMetadata:
       name: ASRInitiationMetadataEvent
       title: ASR Initiation Metadata
@@ -427,6 +436,7 @@ components:
         - vad_score
         - ping
         - context_usage
+        - agent_speaker
         - asr_initiation_metadata
         - guardrail_triggered
         - internal_turn_probability
@@ -1053,6 +1063,16 @@ components:
         context_usage_event:
           $ref: "#/components/schemas/ContextUsageData"
 
+    AgentSpeakerPayload:
+      type: object
+      required: [agent_speaker_event, type]
+      properties:
+        type:
+          type: string
+          const: agent_speaker
+        agent_speaker_event:
+          $ref: "#/components/schemas/AgentSpeakerData"
+
     # ===== NAMED SCHEMAS FOR EVENT DATA =====
 
     AudioEventData:
@@ -1399,6 +1419,15 @@ components:
             - type: integer
             - type: "null"
           description: Estimated ping in milliseconds, based on previous ping/pong timing.
+
+    AgentSpeakerData:
+      type: object
+      required: [voice_id, event_id]
+      properties:
+        voice_id:
+          type: string
+        event_id:
+          type: integer
 
     ContextUsageData:
       type: object

@@ -472,6 +472,27 @@ describe("BaseConversation", () => {
     });
   });
 
+  describe("agent_speaker events", () => {
+    const speaker = (voiceId: string, eventId: number) => ({
+      type: "agent_speaker" as const,
+      agent_speaker_event: { voice_id: voiceId, event_id: eventId },
+    });
+
+    it("reports a changed speaker on arrival when there is no playback sync", async () => {
+      const onAgentSpeakerChange = vi.fn();
+      const conversation = TestConversation.create({ onAgentSpeakerChange });
+
+      await conversation.receiveMessage(speaker("narrator", 1));
+      await conversation.receiveMessage(speaker("narrator", 2));
+      await conversation.receiveMessage(speaker("primary", 3));
+
+      expect(onAgentSpeakerChange.mock.calls).toEqual([
+        ["narrator"],
+        ["primary"],
+      ]);
+    });
+  });
+
   describe("rich_content events", () => {
     const richContentEvent = {
       type: "rich_content" as const,

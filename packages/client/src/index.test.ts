@@ -535,6 +535,136 @@ describe("Audio alignment playback", () => {
   });
 });
 
+describe("Agent speaker playback", () => {
+  // 100ms of silence at pcm_16000
+  const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
+  // 1s of silence at pcm_16000
+  const LONG_CHUNK = btoa(String.fromCharCode(...new Uint8Array(32000)));
+
+  async function startSpeakerSession(path: string) {
+    const server = new Server(`wss://api.elevenlabs.io/voice/${path}`);
+    const clientPromise = new Promise<Client>((resolve, reject) => {
+      server.on("connection", socket => resolve(socket));
+      server.on("error", reject);
+      setTimeout(() => reject(new Error("timeout")), 5000);
+    });
+    const onAgentSpeakerChange = vi.fn();
+    const conversationPromise = Conversation.startSession({
+      signedUrl: `wss://api.elevenlabs.io/voice/${path}`,
+      connectionType: "websocket",
+      connectionDelay: { default: 0 },
+      onAgentSpeakerChange,
+    });
+    const client = await clientPromise;
+    client.send(
+      JSON.stringify({
+        type: "conversation_initiation_metadata",
+        conversation_initiation_metadata_event: {
+          conversation_id: CONVERSATION_ID,
+          agent_output_audio_format: OUTPUT_AUDIO_FORMAT,
+        },
+      })
+    );
+    const conversation = await conversationPromise;
+    const send = (message: object) => client.send(JSON.stringify(message));
+    const sendAudio = (eventId: number, audio = SHORT_CHUNK) =>
+      send({
+        type: "audio",
+        audio_event: { audio_base_64: audio, event_id: eventId },
+      });
+    const sendSpeaker = (eventId: number, voiceId: string) =>
+      send({
+        type: "agent_speaker",
+        agent_speaker_event: { voice_id: voiceId, event_id: eventId },
+      });
+    return {
+      server,
+      conversation,
+      send,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    };
+  }
+
+  it("reports a new speaker when the audio after it starts playing", async () => {
+    const {
+      server,
+      conversation,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-playback");
+
+    sendAudio(1, LONG_CHUNK);
+    sendSpeaker(1, "narrator");
+    await sleep(200);
+    expect(onAgentSpeakerChange).not.toHaveBeenCalled();
+
+    sendAudio(1);
+    await vi.waitFor(() =>
+      expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("drops a speaker whose audio was interrupted", async () => {
+    const {
+      server,
+      conversation,
+      send,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-interrupted");
+
+    sendAudio(1, LONG_CHUNK);
+    sendSpeaker(1, "narrator");
+    sendAudio(1);
+    send({ type: "interruption", interruption_event: { event_id: 2 } });
+    await sleep(1300);
+    expect(onAgentSpeakerChange).not.toHaveBeenCalled();
+
+    sendSpeaker(3, "narrator");
+    sendAudio(3);
+    await vi.waitFor(() =>
+      expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
+  it("reports a speaker announced again for a new response only once", async () => {
+    const {
+      server,
+      conversation,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-repeated");
+
+    sendSpeaker(1, "narrator");
+    sendAudio(1);
+    sendSpeaker(2, "narrator");
+    sendAudio(2);
+    sendSpeaker(3, "primary");
+    sendAudio(3);
+    await vi.waitFor(() =>
+      expect(onAgentSpeakerChange).toHaveBeenLastCalledWith("primary")
+    );
+    expect(onAgentSpeakerChange.mock.calls).toEqual([
+      ["narrator"],
+      ["primary"],
+    ]);
+
+    await conversation.endSession();
+    server.close();
+  });
+});
+
 describe("Output resampling", () => {
   const AGENT_SAMPLE_RATE = 16000;
 

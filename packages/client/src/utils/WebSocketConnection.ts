@@ -33,6 +33,7 @@ export class WebSocketConnection
   public readonly outputFormat: FormatConfig;
 
   private outputListeners: Set<OutputListener> = new Set();
+  private pendingVoiceId: string | undefined;
   private pendingAudioEvents: OutputAudioEvent[] = [];
 
   private constructor(
@@ -279,12 +280,21 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
+    // The speaker applies from the next chunk on, so it plays with that chunk
+    if (parsedEvent.type === "agent_speaker") {
+      this.pendingVoiceId = parsedEvent.agent_speaker_event.voice_id;
+      return;
+    }
+
     // Emit audio events to output listeners
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
       const { audio_base_64, event_id, alignment } = parsedEvent.audio_event;
-      const audioEvent: OutputAudioEvent = alignment
-        ? { audio_base_64, metadata: { event_id, alignment } }
-        : { audio_base_64 };
+      const voice_id = this.pendingVoiceId;
+      this.pendingVoiceId = undefined;
+      const audioEvent: OutputAudioEvent =
+        alignment || voice_id
+          ? { audio_base_64, metadata: { event_id, alignment, voice_id } }
+          : { audio_base_64 };
       if (this.outputListeners.size === 0) {
         this.pendingAudioEvents.push(audioEvent);
         return;
