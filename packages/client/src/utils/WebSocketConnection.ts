@@ -136,12 +136,15 @@ export class WebSocketConnection
 
         if (config.persistentSession) {
           url += "&is_persistent=true&replay_history=true";
-          const token =
+          const { token, resumeOnly } =
             typeof config.persistentSession === "object"
-              ? config.persistentSession.token
-              : undefined;
+              ? config.persistentSession
+              : {};
           if (token) {
             url += `&persistent_session_token=${encodeURIComponent(token)}`;
+          }
+          if (resumeOnly) {
+            url += "&resume_only=true";
           }
         }
 

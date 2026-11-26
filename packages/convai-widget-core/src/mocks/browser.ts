@@ -577,17 +577,35 @@ const codeBlock = true;
     mic_muting_enabled: true,
     terms_html: undefined,
     first_message: "",
+    voice_resume: true,
+  },
+  // persistent-session without the agent's setting.
+  navigation_resume_attribute_only: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "",
   },
   navigation_resume_voice_only: {
     ...BASIC_CONFIG,
     terms_html: undefined,
     first_message: "",
+    voice_resume: true,
+  },
+  // A workspace without persistent sessions: every call is a new conversation.
+  navigation_resume_no_session: {
+    ...BASIC_CONFIG,
+    transcript_enabled: true,
+    terms_html: undefined,
+    first_message: "",
+    voice_resume: true,
   },
   navigation_resume_rich_content: {
     ...BASIC_CONFIG,
     transcript_enabled: true,
     terms_html: undefined,
     first_message: "",
+    voice_resume: true,
   },
   // Greets on a fresh call and replies to typed messages.
   navigation_resume_greeting: {
@@ -596,6 +614,7 @@ const codeBlock = true;
     text_input_enabled: true,
     terms_html: undefined,
     first_message: "Welcome to the shop",
+    voice_resume: true,
   },
   // Greets, but refuses an override of its first message.
   navigation_resume_no_override: {
@@ -603,6 +622,7 @@ const codeBlock = true;
     transcript_enabled: true,
     terms_html: undefined,
     first_message: "Welcome to the shop",
+    voice_resume: true,
   },
   navigation_resume_text: {
     ...BASIC_CONFIG,
@@ -631,6 +651,7 @@ type PersistentConversation = {
 const persistentConversations = new Map<string, PersistentConversation>();
 
 const contextualUpdates: string[] = [];
+const connections: URL[] = [];
 
 let sendProducts: (() => void) | null = null;
 
@@ -642,6 +663,10 @@ export function releaseProducts() {
 
 export function receivedContextualUpdates() {
   return [...contextualUpdates];
+}
+
+export function receivedConnections() {
+  return [...connections];
 }
 
 // Each connection replies differently, so tests can tell them apart.
@@ -656,6 +681,7 @@ const NAVIGATION_RESUME_REPLIES = [
 export function resetNavigationResumeMock() {
   navigationResumeConnections = 0;
   contextualUpdates.length = 0;
+  connections.length = 0;
 }
 
 export function persistentConversationIdFor(token: string | null) {
@@ -823,9 +849,11 @@ export const Worker = setupWorker(
       ) as keyof typeof AGENTS;
       const config = AGENTS[agentId];
       const conversationId = Math.random().toString(36).substring(7);
+      connections.push(new URL(client.url));
 
       // An empty override means the agent waits instead of greeting.
       let overriddenFirstMessage: string | undefined;
+      let overriddenTextOnly = false;
 
       client.addEventListener("message", event => {
         const data =
@@ -836,6 +864,8 @@ export const Worker = setupWorker(
         if (data?.type === "conversation_initiation_client_data") {
           overriddenFirstMessage =
             data.conversation_config_override?.agent?.first_message;
+          overriddenTextOnly =
+            data.conversation_config_override?.conversation?.text_only === true;
           // Like xi, refused after the metadata has already gone out.
           if (
             agentId === "navigation_resume_no_override" &&
@@ -850,7 +880,9 @@ export const Worker = setupWorker(
       });
 
       if (
-        agentId === "persistent_session_disabled" &&
+        (agentId === "persistent_session_disabled" ||
+          agentId === "navigation_resume_no_override" ||
+          agentId === "navigation_resume_no_session") &&
         client.url.searchParams.get("is_persistent") === "true"
       ) {
         client.close(
@@ -1109,12 +1141,20 @@ export const Worker = setupWorker(
       if (agentId === "aligned_voice") {
         sendAlignedAgentTurn(client);
       }
+      // A rejoined call carries on silently; its turns come back as history.
       if (
-        agentId === "navigation_resume" ||
-        agentId === "navigation_resume_text" ||
-        agentId === "navigation_resume_voice_only"
+        (agentId === "navigation_resume" ||
+          agentId === "navigation_resume_attribute_only" ||
+          agentId === "navigation_resume_text" ||
+          agentId === "navigation_resume_voice_only" ||
+          agentId === "navigation_resume_no_session") &&
+        !resumedConversation
       ) {
         const connection = navigationResumeConnections++;
+        persistentConversation?.rows.push({
+          role: "agent",
+          text: NAVIGATION_RESUME_REPLIES[connection] ?? "Still here",
+        });
         client.send(
           JSON.stringify({
             type: "agent_response",
@@ -1127,56 +1167,61 @@ export const Worker = setupWorker(
           })
         );
       }
-      if (agentId === "navigation_resume_rich_content") {
-        const connection = navigationResumeConnections++;
+      if (
+        agentId === "navigation_resume_rich_content" &&
+        !resumedConversation
+      ) {
+        const cards = [
+          {
+            rich_content_id: "rc_picks",
+            component: "carousel",
+            props: {
+              items: [
+                {
+                  title: "Albany",
+                  subtitle: "mens casual",
+                  description: "$139.95",
+                },
+              ],
+            },
+          },
+          {
+            rich_content_id: "rc_replies",
+            component: "buttons",
+            props: {
+              buttons: [
+                {
+                  type: "message",
+                  label: "Tell me more",
+                  message: "Tell me more",
+                },
+              ],
+            },
+          },
+        ];
+        persistentConversation?.rows.push(
+          { role: "agent", text: "Here are my picks" },
+          ...cards.map(card => ({
+            role: "agent" as const,
+            text: "",
+            rich_content: card,
+          }))
+        );
         client.send(
           JSON.stringify({
             type: "agent_response",
             agent_response_event: {
-              agent_response:
-                connection === 0 ? "Here are my picks" : "Picking up again",
+              agent_response: "Here are my picks",
               event_id: 1,
-              response_id: `rich-navigation-resume-${connection}`,
+              response_id: "rich-navigation-resume",
             },
           })
         );
-        if (connection === 0) {
+        for (const card of cards) {
           client.send(
             JSON.stringify({
               type: "rich_content",
-              rich_content: {
-                rich_content_id: "rc_picks",
-                component: "carousel",
-                props: {
-                  items: [
-                    {
-                      title: "Albany",
-                      subtitle: "mens casual",
-                      description: "$139.95",
-                    },
-                  ],
-                },
-                event_id: 1,
-              },
-            })
-          );
-          client.send(
-            JSON.stringify({
-              type: "rich_content",
-              rich_content: {
-                rich_content_id: "rc_replies",
-                component: "buttons",
-                props: {
-                  buttons: [
-                    {
-                      type: "message",
-                      label: "Tell me more",
-                      message: "Tell me more",
-                    },
-                  ],
-                },
-                event_id: 1,
-              },
+              rich_content: { ...card, event_id: 1 },
             })
           );
         }
@@ -2367,11 +2412,11 @@ export const Worker = setupWorker(
           );
         });
       }
-      if (agentId === "persistent_session_voice" && !persistentConversation) {
+      if (agentId === "persistent_session_voice") {
         // The voice call hangs up on its own so a test can check how the
         // widget treats that close.
         await new Promise(resolve => setTimeout(resolve, 500));
-        client.close();
+        if (!overriddenTextOnly) client.close();
       }
       if (agentId === "external_agent") {
         // Simulates a human agent takeover: the first user message triggers

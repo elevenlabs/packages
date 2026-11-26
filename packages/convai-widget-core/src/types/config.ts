@@ -114,6 +114,7 @@ export interface WidgetConfig {
   end_confirmation_enabled?: boolean;
   show_language_selector_on_trigger?: boolean;
   first_message_rich_content?: FirstMessageRichContent | null;
+  voice_resume?: boolean;
 }
 
 export type AvatarConfig =

@@ -9,6 +9,7 @@ import {
   vi,
 } from "vitest";
 import {
+  receivedConnections,
   receivedContextualUpdates,
   resetNavigationResumeMock,
   Worker,
@@ -21,11 +22,13 @@ const STORAGE_KEY_PREFIX = "elevenlabs_convai_navigation_resume_";
 
 type ResumeAgent =
   | "navigation_resume"
+  | "navigation_resume_attribute_only"
   | "navigation_resume_text"
   | "navigation_resume_greeting"
   | "navigation_resume_no_override"
   | "navigation_resume_rich_content"
-  | "navigation_resume_voice_only";
+  | "navigation_resume_voice_only"
+  | "navigation_resume_no_session";
 
 function mountWidget(
   agentId: ResumeAgent = "navigation_resume",
@@ -46,6 +49,12 @@ function storedRecord(
   const raw = sessionStorage.getItem(STORAGE_KEY_PREFIX + agentId);
   return raw ? (JSON.parse(raw) as NavigationResumeRecord) : null;
 }
+
+// Earlier tests' widgets can still connect, so count one agent's connections.
+const connectionsOf = (agentId: ResumeAgent) =>
+  receivedConnections().filter(
+    url => url.searchParams.get("agent_id") === agentId
+  );
 
 const resumeButton = () =>
   page.getByRole("button", { name: "Resume talking?" });
@@ -78,32 +87,65 @@ describe("Resuming a call after a navigation", () => {
   });
 
   it("offers the call back on the next page and continues it", async () => {
-    const firstMount = mountWidget();
+    let sawResume: boolean | undefined;
+    const onCall = (event: Event) => {
+      sawResume = (event as CustomEvent).detail.navigationResume;
+    };
+    document.addEventListener("elevenlabs-convai:call", onCall);
+
+    try {
+      const firstMount = mountWidget("navigation_resume", {});
+      await startCall();
+      await expect
+        .element(page.getByText("Looking at womens boots"))
+        .toBeInTheDocument();
+      expect(sawResume).toBe(false);
+      navigateAway(firstMount);
+
+      mountWidget("navigation_resume", {});
+      await expect.element(resumeButton()).toBeInTheDocument();
+      expect(
+        page.getByText("Here are the mens casual shoes").all()
+      ).toHaveLength(0);
+
+      await resumeButton().click();
+      await expect
+        .element(page.getByRole("button", { name: "End", exact: true }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Looking at womens boots"))
+        .toBeInTheDocument();
+      expect(resumeButton().all()).toHaveLength(0);
+      expect(sawResume).toBe(true);
+      // The same conversation carries on, so the agent needs no summary.
+      expect(receivedContextualUpdates()).toHaveLength(0);
+    } finally {
+      document.removeEventListener("elevenlabs-convai:call", onCall);
+    }
+  });
+
+  it("connects once and continues from the earlier turns without the agent's setting", async () => {
+    const firstMount = mountWidget("navigation_resume_attribute_only");
     await startCall();
     await expect
       .element(page.getByText("Looking at womens boots"))
       .toBeInTheDocument();
+    const firstPage = connectionsOf("navigation_resume_attribute_only");
+    expect(firstPage).toHaveLength(1);
+    expect(firstPage[0]?.searchParams.get("is_persistent")).toBeNull();
     navigateAway(firstMount);
 
-    mountWidget();
-    await expect.element(resumeButton()).toBeInTheDocument();
-    expect(page.getByText("Here are the mens casual shoes").all()).toHaveLength(
-      0
-    );
-
+    mountWidget("navigation_resume_attribute_only");
     await resumeButton().click();
+
     await expect
       .element(page.getByText("Here are the mens casual shoes"))
       .toBeInTheDocument();
-    await expect
-      .element(page.getByText("Looking at womens boots"))
-      .toBeInTheDocument();
-    expect(resumeButton().all()).toHaveLength(0);
     await expectContextualUpdate("Looking at womens boots");
   });
 
   it("does nothing when the option is off", async () => {
-    const mount = mountWidget("navigation_resume", {});
+    const mount = mountWidget("navigation_resume_attribute_only", {});
     await startCall();
     await expect
       .element(page.getByText("Looking at womens boots"))
@@ -111,8 +153,8 @@ describe("Resuming a call after a navigation", () => {
 
     navigateAway(mount);
 
-    expect(storedRecord()).toBeNull();
-    mountWidget("navigation_resume", {});
+    expect(storedRecord("navigation_resume_attribute_only")).toBeNull();
+    mountWidget("navigation_resume_attribute_only", {});
     await expect.element(callButton().first()).toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
   });
@@ -129,6 +171,50 @@ describe("Resuming a call after a navigation", () => {
     navigateAway(mount);
 
     expect(storedRecord("navigation_resume_text")).toBeNull();
+  });
+
+  it("continues from the earlier turns when the session can't be rejoined", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    // xi refuses a session that has ended, such as one that has settled.
+    const record = storedRecord();
+    expect(record?.persistentSessionToken).toBeTruthy();
+    sessionStorage.setItem(
+      STORAGE_KEY_PREFIX + "navigation_resume",
+      JSON.stringify({ ...record, persistentSessionToken: "expired-token" })
+    );
+
+    mountWidget();
+    await resumeButton().click();
+
+    await expect
+      .element(page.getByText("Here are the mens casual shoes"))
+      .toBeInTheDocument();
+    await expectContextualUpdate("Looking at womens boots");
+  });
+
+  it("continues from the earlier turns without persistent sessions", async () => {
+    const firstMount = mountWidget("navigation_resume_no_session");
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    expect(
+      storedRecord("navigation_resume_no_session")?.persistentSessionToken
+    ).toBeUndefined();
+
+    mountWidget("navigation_resume_no_session");
+    await resumeButton().click();
+
+    await expect
+      .element(page.getByText("Here are the mens casual shoes"))
+      .toBeInTheDocument();
+    await expectContextualUpdate("Looking at womens boots");
   });
 
   it("offers the call back again when the call fails to start", async () => {
@@ -155,12 +241,11 @@ describe("Resuming a call after a navigation", () => {
     await resumeButton().click();
 
     await expect
-      .element(page.getByText("Here are the mens casual shoes"))
+      .element(page.getByRole("button", { name: "End", exact: true }))
       .toBeInTheDocument();
     expect(page.getByText("Microphone permission denied").all()).toHaveLength(
       0
     );
-    await expectContextualUpdate("Looking at womens boots");
   });
 
   it("carries the agent's cards over and continues from a quick reply", async () => {
@@ -178,7 +263,6 @@ describe("Resuming a call after a navigation", () => {
       .element(page.getByRole("button", { name: "End", exact: true }))
       .toBeInTheDocument();
     await expect.element(page.getByText("Albany")).toBeInTheDocument();
-    await expectContextualUpdate("Here are my picks");
   });
 
   it("does not greet again on the continued call", async () => {
@@ -192,7 +276,9 @@ describe("Resuming a call after a navigation", () => {
     mountWidget("navigation_resume_greeting");
     await resumeButton().click();
 
-    await expectContextualUpdate("Welcome to the shop");
+    await expect
+      .element(page.getByRole("button", { name: "End", exact: true }))
+      .toBeInTheDocument();
     expect(page.getByText("Welcome to the shop").all()).toHaveLength(1);
   });
 
@@ -231,10 +317,10 @@ describe("Resuming a call after a navigation", () => {
     mountWidget("navigation_resume_voice_only");
     await resumeButton().click();
 
-    const endButton = page.getByRole("button", { name: "End" });
-    await expect.element(endButton).toBeInTheDocument();
+    await expect
+      .element(page.getByRole("button", { name: "End" }))
+      .toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
-    await endButton.click();
   });
 
   it("keeps the offer through quick navigations, not a long stay", async () => {
@@ -260,6 +346,49 @@ describe("Resuming a call after a navigation", () => {
     mountWidget();
     await expect.element(callButton().first()).toBeInTheDocument();
     expect(resumeButton().all()).toHaveLength(0);
+  });
+
+  it("keeps the offer's window from the end of its call across pages", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    const recordedAt = storedRecord()?.recordedAt;
+    expect(recordedAt).toBeTruthy();
+
+    const secondMount = mountWidget();
+    await expect.element(resumeButton()).toBeInTheDocument();
+    navigateAway(secondMount);
+
+    expect(storedRecord()?.recordedAt).toBe(recordedAt);
+  });
+
+  it("shows the end screen once the offer runs out", async () => {
+    const firstMount = mountWidget();
+    await startCall();
+    await expect
+      .element(page.getByText("Looking at womens boots"))
+      .toBeInTheDocument();
+    navigateAway(firstMount);
+    const record = storedRecord();
+    expect(record).toBeTruthy();
+    // Half a second of its two minutes left.
+    sessionStorage.setItem(
+      STORAGE_KEY_PREFIX + "navigation_resume",
+      JSON.stringify({ ...record, recordedAt: Date.now() - 2 * 60_000 + 500 })
+    );
+
+    const secondMount = mountWidget();
+    await expect.element(resumeButton()).toBeInTheDocument();
+
+    await expect
+      .element(page.getByText("You ended the conversation"))
+      .toBeInTheDocument();
+    expect(resumeButton().all()).toHaveLength(0);
+    navigateAway(secondMount);
+    expect(storedRecord()).toBeNull();
   });
 
   it("shows the end screen when the offer is turned down", async () => {

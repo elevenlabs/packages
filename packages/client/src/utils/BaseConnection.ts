@@ -135,14 +135,20 @@ export type BaseSessionConfig = {
   userId?: string;
   environment?: string;
   /**
-   * Text-only, websocket-only. `true` starts a resumable conversation and
-   * `{ token }` resumes one with the `persistent_session_token` received in
+   * Websocket-only. `true` starts a resumable conversation and `{ token }`
+   * resumes one with the `persistent_session_token` received in
    * `onConversationMetadata`.
+   *
+   * `resumeOnly` makes a session that can only be resumed, never rejoined
+   * live: nothing keeps running between connections, so each reconnect
+   * continues the conversation from its stored transcript. Set it for voice
+   * calls, including the first connection. Text sessions leave it out and can
+   * be rejoined live for a short while after a disconnect.
    *
    * @experimental This API is experimental and may change without following
    * semver guarantees.
    */
-  persistentSession?: true | { token: string };
+  persistentSession?: true | { token?: string; resumeOnly?: boolean };
 };
 
 export type ConnectionType = "websocket" | "webrtc";
