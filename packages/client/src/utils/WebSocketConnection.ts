@@ -281,7 +281,7 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
-    // The speaker applies from its response's next chunk on, so it plays with that chunk
+    // The speaker rides its response's next chunk; chunks with lower event ids are stale audio from an interrupted response
     if (parsedEvent.type === "agent_speaker") {
       this.pendingSpeaker = parsedEvent.agent_speaker_event;
       return;

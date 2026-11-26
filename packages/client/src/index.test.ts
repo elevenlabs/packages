@@ -649,6 +649,27 @@ describe("Agent speaker playback", () => {
     server.close();
   });
 
+  it("keeps a speaker announced for the response that interrupted", async () => {
+    const {
+      server,
+      conversation,
+      send,
+      sendAudio,
+      sendSpeaker,
+      onAgentSpeakerChange,
+    } = await startSpeakerSession("speaker-interrupting-response");
+
+    sendSpeaker(2, "narrator");
+    send({ type: "interruption", interruption_event: { event_id: 2 } });
+    sendAudio(2);
+    await vi.waitFor(() =>
+      expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator")
+    );
+
+    await conversation.endSession();
+    server.close();
+  });
+
   it("keeps a speaker for its own response when stale audio arrives first", async () => {
     const {
       server,
