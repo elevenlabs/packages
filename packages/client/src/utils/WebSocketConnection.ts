@@ -281,7 +281,6 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
-    // The speaker rides its response's next chunk; chunks with lower event ids are stale audio from an interrupted response
     if (parsedEvent.type === "agent_speaker") {
       this.pendingSpeaker = parsedEvent.agent_speaker_event;
       return;
@@ -300,6 +299,7 @@ export class WebSocketConnection
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
       const { audio_base_64, event_id, alignment } = parsedEvent.audio_event;
       let voice_id: string | undefined;
+      // Lower event ids are stale audio from an interrupted response
       if (this.pendingSpeaker && event_id >= this.pendingSpeaker.event_id) {
         voice_id = this.pendingSpeaker.voice_id;
         this.pendingSpeaker = undefined;

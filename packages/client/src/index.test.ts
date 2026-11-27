@@ -456,10 +456,8 @@ const ALIGNMENT = {
   char_start_times_ms: [0, 50],
   char_durations_ms: [50, 50],
 };
-// 100ms of silence at pcm_16000
-const SHORT_CHUNK = btoa(String.fromCharCode(...new Uint8Array(3200)));
-// 1s of silence at pcm_16000
-const LONG_CHUNK = btoa(String.fromCharCode(...new Uint8Array(32000)));
+const SILENCE_100MS = btoa(String.fromCharCode(...new Uint8Array(3200)));
+const SILENCE_1S = btoa(String.fromCharCode(...new Uint8Array(32000)));
 
 async function startPlaybackSession(path: string, callbacks: Callbacks) {
   const server = new Server(`wss://api.elevenlabs.io/voice/${path}`);
@@ -489,7 +487,7 @@ async function startPlaybackSession(path: string, callbacks: Callbacks) {
   const sendAudio = (
     eventId: number,
     {
-      audio = SHORT_CHUNK,
+      audio = SILENCE_100MS,
       alignment,
     }: { audio?: string; alignment?: object } = {}
   ) =>
@@ -562,7 +560,7 @@ describe("Agent speaker playback", () => {
       onAgentSpeakerChange,
     } = await startSpeakerSession("speaker-playback");
 
-    sendAudio(1, { audio: LONG_CHUNK });
+    sendAudio(1, { audio: SILENCE_1S });
     sendSpeaker(1, "narrator");
     await sleep(200);
     expect(onAgentSpeakerChange).not.toHaveBeenCalled();
@@ -612,7 +610,7 @@ describe("Agent speaker playback", () => {
       onAgentSpeakerChange,
     } = await startSpeakerSession("speaker-interrupted");
 
-    sendAudio(1, { audio: LONG_CHUNK });
+    sendAudio(1, { audio: SILENCE_1S });
     sendSpeaker(1, "narrator");
     sendAudio(1);
     send({ type: "interruption", interruption_event: { event_id: 2 } });
