@@ -4,6 +4,7 @@ export type {
   AgentReasoningResponsePartClientEvent,
   AgentResponseClientEvent,
   AgentResponseCorrectionClientEvent,
+  AgentSpeakerClientEvent,
   AgentToolRequestClientEvent,
   AgentToolResponseClientEvent,
   AgentToolResponseFullPayloadClientEvent,

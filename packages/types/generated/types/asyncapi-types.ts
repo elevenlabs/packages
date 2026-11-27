@@ -271,6 +271,7 @@ export type ConversationConfigOverrideConversationClientEventsItem =
   | "vad_score"
   | "ping"
   | "context_usage"
+  | "agent_speaker"
   | "asr_initiation_metadata"
   | "guardrail_triggered"
   | "internal_turn_probability"
@@ -667,6 +668,16 @@ export interface ContextUsageEvent {
   context_limit_tokens: number;
 }
 
+export interface AgentSpeaker {
+  type: "agent_speaker";
+  agent_speaker_event: AgentSpeakerEvent;
+}
+
+export interface AgentSpeakerEvent {
+  voice_id: string;
+  event_id: number;
+}
+
 export interface AsrInitiationMetadata {
   type: "asr_initiation_metadata";
   asr_initiation_metadata_event: Record<string, any>;
@@ -851,6 +862,11 @@ export interface VadScoreClientEvent {
 export interface ContextUsageClientEvent {
   type: "context_usage";
   context_usage_event: ContextUsageEvent;
+}
+
+export interface AgentSpeakerClientEvent {
+  type: "agent_speaker";
+  agent_speaker_event: AgentSpeakerEvent;
 }
 
 export interface AsrInitiationMetadataEvent {

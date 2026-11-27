@@ -409,4 +409,23 @@ describe("useConversation", () => {
 
     expect(onContextUsage).toHaveBeenCalledWith(usage);
   });
+
+  it("forwards speaker changes to a hook-level onAgentSpeakerChange", async () => {
+    const onAgentSpeakerChange = vi.fn();
+    mockStartSessionWithLifecycle();
+
+    const { result } = renderHook(
+      () => useConversation({ agentId: "hook-agent-id", onAgentSpeakerChange }),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.startSession();
+    });
+
+    const [[opts]] = vi.mocked(Conversation.startSession).mock.calls;
+    (opts as MockStartSessionOptions).onAgentSpeakerChange?.("narrator");
+
+    expect(onAgentSpeakerChange).toHaveBeenCalledWith("narrator");
+  });
 });

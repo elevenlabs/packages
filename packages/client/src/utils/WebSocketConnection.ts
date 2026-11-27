@@ -6,6 +6,7 @@ import {
 } from "./BaseConnection.js";
 import { sourceInfo } from "../sourceInfo.js";
 import {
+  type AgentSpeakerEvent,
   type ConfigEvent,
   isValidSocketEvent,
   type OutgoingSocketEvent,
@@ -33,6 +34,7 @@ export class WebSocketConnection
   public readonly outputFormat: FormatConfig;
 
   private outputListeners: Set<OutputListener> = new Set();
+  private pendingSpeaker: AgentSpeakerEvent["agent_speaker_event"] | undefined;
   private pendingAudioEvents: OutputAudioEvent[] = [];
 
   private constructor(
@@ -279,12 +281,33 @@ export class WebSocketConnection
   protected override handleMessage(parsedEvent: IncomingSocketEvent) {
     super.handleMessage(parsedEvent);
 
+    if (parsedEvent.type === "agent_speaker") {
+      this.pendingSpeaker = parsedEvent.agent_speaker_event;
+      return;
+    }
+
+    if (
+      parsedEvent.type === "interruption" &&
+      this.pendingSpeaker &&
+      this.pendingSpeaker.event_id < parsedEvent.interruption_event.event_id
+    ) {
+      this.pendingSpeaker = undefined;
+      return;
+    }
+
     // Emit audio events to output listeners
     if (parsedEvent.type === "audio" && parsedEvent.audio_event.audio_base_64) {
       const { audio_base_64, event_id, alignment } = parsedEvent.audio_event;
-      const audioEvent: OutputAudioEvent = alignment
-        ? { audio_base_64, metadata: { event_id, alignment } }
-        : { audio_base_64 };
+      let voice_id: string | undefined;
+      // Lower event ids are stale audio from an interrupted response
+      if (this.pendingSpeaker && event_id >= this.pendingSpeaker.event_id) {
+        voice_id = this.pendingSpeaker.voice_id;
+        this.pendingSpeaker = undefined;
+      }
+      const audioEvent: OutputAudioEvent =
+        alignment || voice_id
+          ? { audio_base_64, metadata: { event_id, alignment, voice_id } }
+          : { audio_base_64 };
       if (this.outputListeners.size === 0) {
         this.pendingAudioEvents.push(audioEvent);
         return;

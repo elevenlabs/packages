@@ -46,6 +46,7 @@ export type HookCallbacks = Pick<
   | "onRichContent"
   | "onAudioAlignment"
   | "onAudioAlignmentPlayback"
+  | "onAgentSpeakerChange"
   | "onGuardrailTriggered"
   | "onAgentTyping"
   | "onExternalAgentConnected"

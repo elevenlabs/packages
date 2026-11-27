@@ -10,7 +10,8 @@ export type OutputConfig = OutputDeviceConfig;
 // Passed to playback listeners when the chunk starts playing
 export type OutputChunkMetadata = {
   event_id: number;
-  alignment: AudioAlignmentEvent;
+  alignment?: AudioAlignmentEvent;
+  voice_id?: string;
 };
 
 // Audio data events from connection to output device

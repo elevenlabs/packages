@@ -3,6 +3,7 @@ import type {
   AgentReasoningResponsePartClientEvent,
   AgentResponse,
   AgentResponseCorrection,
+  AgentSpeakerClientEvent,
   AgentToolResponseClientEvent,
   AgentToolResponseFullPayloadClientEvent,
   AgentTypingClientEvent,
@@ -42,6 +43,7 @@ export type InternalTentativeAgentResponseEvent =
 export type ConfigEvent = ConversationMetadata;
 export type PingEvent = Ping;
 export type ContextUsageEvent = ContextUsageClientEvent;
+export type AgentSpeakerEvent = AgentSpeakerClientEvent;
 export type ClientToolCallEvent = ClientToolCallMessage;
 export type VadScoreEvent = VadScore;
 export type MCPToolCallClientEvent = McpToolCall;
@@ -76,6 +78,7 @@ export type IncomingSocketEvent =
   | ConfigEvent
   | PingEvent
   | ContextUsageEvent
+  | AgentSpeakerEvent
   | ClientToolCallEvent
   | VadScoreEvent
   | MCPToolCallClientEvent

@@ -16,6 +16,7 @@ import type {
   AgentReasoningResponsePartEvent,
   AgentResponseEvent,
   AgentResponseCorrectionEvent,
+  AgentSpeakerEvent,
   AgentTypingEvent,
   ClientToolCallEvent,
   ContextUsageEvent,
@@ -168,6 +169,7 @@ export abstract class BaseConversation {
   protected volume = 1;
   protected currentEventId = 1;
   protected canSendFeedback = false;
+  private lastVoiceId: string | undefined;
   /**
    * Every MCP tool call this conversation has dispatched to
    * `onMCPToolApprovalRequest`, keyed by `tool_call_id`. Entries are kept for
@@ -375,6 +377,18 @@ export abstract class BaseConversation {
     if (this.options.onPing) {
       this.options.onPing(event.ping_event);
     }
+  }
+
+  protected handleAgentSpeaker(event: AgentSpeakerEvent) {
+    this.emitAgentSpeaker(event.agent_speaker_event.voice_id);
+  }
+
+  protected emitAgentSpeaker(voiceId: string) {
+    if (voiceId === this.lastVoiceId) {
+      return;
+    }
+    this.lastVoiceId = voiceId;
+    this.options.onAgentSpeakerChange?.(voiceId);
   }
 
   protected handleContextUsage(event: ContextUsageEvent) {
@@ -741,6 +755,11 @@ export abstract class BaseConversation {
 
       case "context_usage": {
         this.handleContextUsage(parsedEvent);
+        return;
+      }
+
+      case "agent_speaker": {
+        this.handleAgentSpeaker(parsedEvent);
         return;
       }
 

@@ -215,6 +215,12 @@ export type Callbacks = {
   onAudioAlignment?: (props: AudioAlignmentEvent) => void;
   /** Called when an aligned chunk starts playing, skipping interrupted ones. Not called on WebRTC. */
   onAudioAlignmentPlayback?: (props: AudioAlignmentPlaybackEvent) => void;
+  /**
+   * Called with the voice id of the agent's speaker when audio in a different
+   * voice starts playing, skipping interrupted audio. On WebRTC and in
+   * text-only conversations it is called when the server announces the speaker.
+   */
+  onAgentSpeakerChange?: (voiceId: string) => void;
   onAgentTyping?: (props: AgentTypingClientEvent["agent_typing_event"]) => void;
   onExternalAgentConnected?: () => void;
   onExternalAgentDisconnected?: () => void;
@@ -279,6 +285,7 @@ export const CALLBACK_KEYS = [
   "onRichContent",
   "onAudioAlignment",
   "onAudioAlignmentPlayback",
+  "onAgentSpeakerChange",
   "onGuardrailTriggered",
   "onAgentTyping",
   "onExternalAgentConnected",

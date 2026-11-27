@@ -1,5 +1,6 @@
 import type { InputConfig } from "./InputController.js";
 import type {
+  OutputChunkMetadata,
   OutputConfig,
   PlaybackEventTarget,
   PlaybackListener,
@@ -7,7 +8,7 @@ import type {
 import type { BaseConnection, FormatConfig } from "./utils/BaseConnection.js";
 import type {
   AgentAudioEvent,
-  AudioAlignmentEvent,
+  AgentSpeakerEvent,
   InterruptionEvent,
 } from "./utils/events.js";
 import {
@@ -73,6 +74,7 @@ export class VoiceConversation extends BaseConversation {
 
   private inputFrequencyData?: Uint8Array<ArrayBuffer>;
   private outputFrequencyData?: Uint8Array<ArrayBuffer>;
+  private readonly speakerFollowsPlayback: boolean;
 
   private handlePlaybackEvent: PlaybackListener = event => {
     switch (event.data.type) {
@@ -80,20 +82,32 @@ export class VoiceConversation extends BaseConversation {
         this.updateMode(event.data.finished ? "listening" : "speaking");
         break;
       case "chunk_start":
-        this.emitAlignmentPlayback(event.data.event_id, event.data.alignment);
+        this.handleChunkStart(event.data);
         break;
     }
   };
 
-  private emitAlignmentPlayback(
-    eventId: number,
-    alignment: AudioAlignmentEvent
-  ) {
+  private handleChunkStart({
+    event_id,
+    alignment,
+    voice_id,
+  }: OutputChunkMetadata) {
     // Chunks queued before an interruption can still start during the fade-out
-    if (eventId < this.lastInterruptTimestamp) {
+    if (event_id < this.lastInterruptTimestamp) {
       return;
     }
-    this.options.onAudioAlignmentPlayback?.({ event_id: eventId, alignment });
+    if (voice_id) {
+      this.emitAgentSpeaker(voice_id);
+    }
+    if (alignment) {
+      this.options.onAudioAlignmentPlayback?.({ event_id, alignment });
+    }
+  }
+
+  protected override handleAgentSpeaker(event: AgentSpeakerEvent) {
+    if (!this.speakerFollowsPlayback) {
+      super.handleAgentSpeaker(event);
+    }
   }
 
   protected constructor(
@@ -106,6 +120,8 @@ export class VoiceConversation extends BaseConversation {
   ) {
     super(options, connection);
 
+    // Only WebSocketConnection tags chunks with a voice id
+    this.speakerFollowsPlayback = playbackEventTarget !== null;
     playbackEventTarget?.addListener(this.handlePlaybackEvent);
   }
 
